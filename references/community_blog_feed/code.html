@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Community Blog Feed - Enterprise Online Judge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d59f2",
+                        "primary-hover": "#0b4ecf",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#101622",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2130",
+                        "text-main": "#202124",
+                        "text-muted": "#5f6368",
+                        "border-light": "#e2e8f0",
+                        "border-dark": "#2d3748",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for sidebar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #475569;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-main dark:text-gray-100 font-display min-h-screen flex flex-col transition-colors duration-200">
+<!-- Navbar -->
+<header class="sticky top-0 z-50 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shadow-sm">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between h-16">
+<div class="flex items-center">
+<div class="flex-shrink-0 flex items-center gap-2 cursor-pointer">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold">OJ</div>
+<span class="font-semibold text-xl tracking-tight text-gray-900 dark:text-white">AlgoJudge</span>
+</div>
+<nav class="hidden md:ml-8 md:flex md:space-x-1">
+<a class="px-3 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-primary hover:bg-primary/5 dark:text-gray-400 dark:hover:text-white transition-colors" href="#">Problems</a>
+<a class="px-3 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-primary hover:bg-primary/5 dark:text-gray-400 dark:hover:text-white transition-colors" href="#">Contests</a>
+<a class="px-3 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-primary hover:bg-primary/5 dark:text-gray-400 dark:hover:text-white transition-colors" href="#">Rankings</a>
+<a class="px-3 py-2 rounded-lg text-sm font-medium text-primary bg-primary/10 dark:bg-primary/20 dark:text-white" href="#">Community</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden md:block">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons text-gray-400 text-sm">search</span>
+</div>
+<input class="block w-64 pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg leading-5 bg-gray-50 dark:bg-gray-800 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm transition-colors" placeholder="Search discussions..." type="text"/>
+</div>
+<button class="p-1 rounded-full text-gray-500 hover:text-primary hover:bg-primary/10 transition-colors relative">
+<span class="material-icons">notifications_none</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-surface-dark"></span>
+</button>
+<div class="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-blue-400 p-[2px] cursor-pointer" data-alt="User Avatar Gradient">
+<img alt="User Profile" class="h-full w-full rounded-full object-cover border-2 border-white dark:border-surface-dark" data-alt="Smiling man portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJTu4DcgDrAe7H4Agu-znvj7gnYupJiSdqouK4tAQ1rYmE0jeXoK9w3MdssHgPVJkOGZ2f0glMrKV4_9BdNZS61cokZP__hqcrSZfgktJd9i7xBLH-6L-7NcelHNZ52KsmqneNk6p4CeysKoeA0cTsZ4fj8iC3SGaq4SDH-e52PaJGDXELNR64C_axqCTmlVLxNnWcSOpZ5CmKKlbt80RuEqx-7tbswW3ymKutnFGRt-ZgX00oelYKv1UoJ3CXhLPu0I8awhB4MtQ"/>
+</div>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-grow max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+<div class="flex flex-col lg:flex-row gap-8">
+<!-- Left Sidebar: Navigation & Filters -->
+<aside class="w-full lg:w-64 flex-shrink-0 space-y-8">
+<!-- Action Button -->
+<button class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-3 rounded-xl font-medium shadow-sm shadow-primary/30 transition-all hover:shadow-md hover:shadow-primary/40 group">
+<span class="material-icons text-sm group-hover:scale-110 transition-transform">edit</span>
+<span>Write Post</span>
+</button>
+<!-- Navigation -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden">
+<div class="p-4">
+<h3 class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-2">Feeds</h3>
+<nav class="space-y-1">
+<a class="flex items-center px-2 py-2 text-sm font-medium bg-primary/10 text-primary rounded-lg" href="#">
+<span class="material-icons text-lg mr-3">feed</span>
+                                All Posts
+                            </a>
+<a class="flex items-center px-2 py-2 text-sm font-medium text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors" href="#">
+<span class="material-icons text-lg mr-3">star_border</span>
+                                Following
+                            </a>
+<a class="flex items-center px-2 py-2 text-sm font-medium text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors" href="#">
+<span class="material-icons text-lg mr-3">local_fire_department</span>
+                                Popular
+                            </a>
+</nav>
+</div>
+<div class="border-t border-border-light dark:border-border-dark p-4">
+<h3 class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3 px-2">Categories</h3>
+<div class="space-y-1">
+<label class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
+<input class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary" type="checkbox"/>
+<span class="ml-3 text-sm text-gray-700 dark:text-gray-300">Editorials</span>
+</label>
+<label class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
+<input class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary" type="checkbox"/>
+<span class="ml-3 text-sm text-gray-700 dark:text-gray-300">Announcements</span>
+</label>
+<label class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
+<input class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary" type="checkbox"/>
+<span class="ml-3 text-sm text-gray-700 dark:text-gray-300">Q&amp;A</span>
+</label>
+<label class="flex items-center px-2 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors">
+<input class="form-checkbox h-4 w-4 text-primary rounded border-gray-300 focus:ring-primary" type="checkbox"/>
+<span class="ml-3 text-sm text-gray-700 dark:text-gray-300">Tutorials</span>
+</label>
+</div>
+</div>
+</div>
+<!-- Trending Tags -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-4">
+<h3 class="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">Trending Tags</h3>
+<div class="flex flex-wrap gap-2">
+<a class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors" href="#">#dynamic-programming</a>
+<a class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors" href="#">#graphs</a>
+<a class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors" href="#">#segment-tree</a>
+<a class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors" href="#">#contest-104</a>
+<a class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors" href="#">#python3</a>
+</div>
+</div>
+</aside>
+<!-- Main Content Feed -->
+<div class="flex-grow space-y-6">
+<!-- Filters Bar -->
+<div class="flex flex-wrap items-center justify-between gap-4">
+<h1 class="text-2xl font-bold text-gray-900 dark:text-white">Community Feed</h1>
+<div class="flex items-center bg-surface-light dark:bg-surface-dark rounded-lg p-1 border border-border-light dark:border-border-dark shadow-sm">
+<button class="px-3 py-1.5 text-sm font-medium rounded-md bg-white dark:bg-gray-700 text-primary shadow-sm">Newest</button>
+<button class="px-3 py-1.5 text-sm font-medium rounded-md text-text-muted hover:text-gray-900 dark:hover:text-white">Top Rated</button>
+<button class="px-3 py-1.5 text-sm font-medium rounded-md text-text-muted hover:text-gray-900 dark:hover:text-white">Unanswered</button>
+</div>
+</div>
+<!-- Featured Post -->
+<div class="relative bg-surface-light dark:bg-surface-dark rounded-xl shadow-md border-t-4 border-primary overflow-hidden group cursor-pointer transition-transform hover:-translate-y-0.5">
+<div class="p-6 md:p-8 flex flex-col md:flex-row gap-6">
+<div class="flex-grow">
+<div class="flex items-center gap-2 mb-3">
+<span class="bg-primary/10 text-primary text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wide">Featured Editorial</span>
+<span class="text-xs text-text-muted flex items-center gap-1">
+<span class="material-icons text-[14px]">schedule</span> 2 hours ago
+                                </span>
+</div>
+<h2 class="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-primary transition-colors">Bi-Weekly Contest 104 Analysis - Official</h2>
+<p class="text-text-muted mb-4 line-clamp-2 md:line-clamp-3">
+                                Detailed breakdown of problem D (Maximized Subsequence) and E (Tree Decomposition). We discuss the intended O(N log N) approach and common pitfalls involving greedy strategies. Includes C++ and Python reference implementations.
+                            </p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t border-gray-100 dark:border-gray-800">
+<div class="flex items-center gap-3">
+<img alt="Admin Avatar" class="h-8 w-8 rounded-full ring-2 ring-red-500" data-alt="Administrator user portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBk6veLjbVswIG98DJMK4Ob4gA8HdLrkTYHegSM6mq-TJjAaLorPBYg_ZS1dcLwTAympdG3FJlOUvKH2va6hn5jKWQdIHDvsQct1G1MxZ5fWUJXL9rF4vdADSW3d9fnVuteTCBQ0AAC8b-yvOzlxPZ7KOAOJag7DuZqGYcbPV_muSkkWqFEW23DOLz72zMBzstRRkSI5KU38-DXsAPFMze8Y-MwIZZ_e9U-w9_TDLSqT0Ti3xSFDoctnMlkko1DuS-y_hX4n1zEwHE"/>
+<div class="flex flex-col">
+<span class="text-sm font-semibold text-gray-900 dark:text-white">System Admin</span>
+<span class="text-xs text-red-500 font-medium">Grandmaster</span>
+</div>
+</div>
+<div class="flex items-center gap-4 text-text-muted text-sm">
+<span class="flex items-center gap-1 hover:text-primary transition-colors"><span class="material-icons text-base">thumb_up</span> 428</span>
+<span class="flex items-center gap-1 hover:text-primary transition-colors"><span class="material-icons text-base">chat_bubble_outline</span> 56</span>
+</div>
+</div>
+</div>
+<!-- Abstract decorative thumbnail for coding context -->
+<div class="w-full md:w-48 h-32 md:h-auto flex-shrink-0 rounded-lg overflow-hidden relative bg-gray-900">
+<div class="absolute inset-0 bg-gradient-to-br from-gray-800 to-black p-3 font-mono text-[10px] text-green-400 opacity-80 leading-tight">
+                                // Solution.cpp<br/>
+                                void solve() {<br/>
+                                  int n; cin &gt;&gt; n;<br/>
+                                  vector&lt;int&gt; a(n);<br/>
+                                  for(auto &amp;x: a) cin &gt;&gt; x;<br/>
+                                  sort(all(a));<br/>
+                                }
+                             </div>
+<div class="absolute inset-0 bg-primary/10"></div>
+<div class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded backdrop-blur-sm">C++17</div>
+</div>
+</div>
+</div>
+<!-- Articles Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Card 1 -->
+<article class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden hover:shadow-md transition-all duration-200 group flex flex-col h-full">
+<div class="p-5 flex-grow">
+<div class="flex items-center justify-between mb-3">
+<div class="flex gap-2">
+<span class="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs px-2 py-0.5 rounded-full font-medium">Tutorial</span>
+<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">Hard</span>
+</div>
+</div>
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-primary transition-colors">
+<a href="#">Optimizing DP solutions for the Knapsack problem variants</a>
+</h3>
+<p class="text-sm text-text-muted mb-4 line-clamp-3">
+                                When N is large but weights are small, standard O(NW) fails. Let's explore bitset optimizations and meet-in-the-middle techniques...
+                            </p>
+</div>
+<div class="px-5 py-4 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2">
+<img alt="User" class="h-6 w-6 rounded-full" data-alt="Author portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxhuZVxvXR8CiUgLHx-cXno_9D8DVVuh_cv6U1veEt_uC_Z936MAA6A0G4PeEc1wn3TwjzAGRGJxOL_tGGeUegis9G78-BKAO650ZnyNUZZNvPiH9ATiZYBL2_s7nVO4k6yCYVsySJN07ggdoadhFurcKulEwF3WZ7zxWUcjYX6G5EFNoSIgtS_5UX3-G7Xi7b9Yo3aNz-InfFOznvjnuPwoFFnGDR4i5j6nd2rQnGA5B3iwoS4UcO15MR84IH9VIttxt4MwLH04Q"/>
+<span class="text-xs font-medium text-gray-700 dark:text-gray-300">alex_code</span>
+<div class="w-1.5 h-1.5 rounded-full bg-purple-500" title="Candidate Master"></div>
+</div>
+<div class="flex items-center gap-3 text-xs text-text-muted">
+<span class="flex items-center gap-1"><span class="material-icons text-sm">thumb_up_off_alt</span> 85</span>
+<span class="flex items-center gap-1"><span class="material-icons text-sm">chat_bubble_outline</span> 12</span>
+</div>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden hover:shadow-md transition-all duration-200 group flex flex-col h-full">
+<div class="p-5 flex-grow">
+<div class="flex items-center justify-between mb-3">
+<div class="flex gap-2">
+<span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2 py-0.5 rounded-full font-medium">Announcement</span>
+</div>
+<span class="text-xs text-text-muted">Yesterday</span>
+</div>
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-primary transition-colors">
+<a href="#">Server maintenance scheduled for Sunday</a>
+</h3>
+<p class="text-sm text-text-muted mb-4 line-clamp-3">
+                                We will be upgrading our judging servers to support Python 3.11 and newer GCC versions. Downtime expected: 2 hours (08:00 - 10:00 UTC).
+                            </p>
+</div>
+<div class="px-5 py-4 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2">
+<div class="h-6 w-6 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold">OJ</div>
+<span class="text-xs font-medium text-gray-700 dark:text-gray-300">AlgoJudge Team</span>
+</div>
+<div class="flex items-center gap-3 text-xs text-text-muted">
+<span class="flex items-center gap-1"><span class="material-icons text-sm">visibility</span> 1.2k</span>
+</div>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden hover:shadow-md transition-all duration-200 group flex flex-col h-full">
+<div class="p-5 flex-grow">
+<div class="flex items-center justify-between mb-3">
+<div class="flex gap-2">
+<span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-0.5 rounded-full font-medium">Help</span>
+<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">Python</span>
+</div>
+</div>
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-primary transition-colors">
+<a href="#">Why is my O(N^2) solution TLE on Test Case 45?</a>
+</h3>
+<p class="text-sm text-text-muted mb-4 line-clamp-3">
+                                I'm trying to solve "Maximize Grid Paths". The constraints say N &lt;= 5000, but my nested loop times out. Is the constant factor too high in Python? Code attached.
+                            </p>
+<!-- Code Snippet Preview -->
+<div class="bg-gray-100 dark:bg-gray-900 rounded p-2 mb-2">
+<code class="text-xs font-mono text-pink-600 dark:text-pink-400 block truncate">for i in range(n): for j in range(m): dp[i][j] = ...</code>
+</div>
+</div>
+<div class="px-5 py-4 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2">
+<img alt="User" class="h-6 w-6 rounded-full" data-alt="User profile picture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoFOlzpr1ChnfjGMGfMqF2V_9ujEdfNitFC0uO7nBt2BaywTA9J97D-Lw8qW1y4R1Bbe_mY2xI6s6cMiU0xbMhAH09Lcl4ZM-3iKQvZGOVz4ei5Yxk_gM9Bfrm5pAEOk0kdbbF47iEeZnsXCwxdvr9Zl_nHe3wMlFFthL8EiGjOqDgnL7HszMGMfCL8F74dXU0b3wCiHjyWUtiQu2zbY8pip4QMerTYn83lvEEzOI0_AsY95cFHnEm-TZcYZTivfgnMP6ltrJDfXo"/>
+<span class="text-xs font-medium text-gray-700 dark:text-gray-300">newbie_coder</span>
+<div class="w-1.5 h-1.5 rounded-full bg-gray-400" title="Newbie"></div>
+</div>
+<div class="flex items-center gap-3 text-xs text-text-muted">
+<span class="flex items-center gap-1 text-primary"><span class="material-icons text-sm">check_circle</span> Solved</span>
+<span class="flex items-center gap-1"><span class="material-icons text-sm">chat_bubble_outline</span> 8</span>
+</div>
+</div>
+</article>
+<!-- Card 4 -->
+<article class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden hover:shadow-md transition-all duration-200 group flex flex-col h-full">
+<div class="p-5 flex-grow">
+<div class="flex items-center justify-between mb-3">
+<div class="flex gap-2">
+<span class="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs px-2 py-0.5 rounded-full font-medium">Discussion</span>
+<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">Career</span>
+</div>
+</div>
+<h3 class="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-primary transition-colors">
+<a href="#">How much does Competitive Programming help in FAANG interviews?</a>
+</h3>
+<p class="text-sm text-text-muted mb-4 line-clamp-3">
+                                I'm currently a Specialist (1450 rating). Should I focus on reaching Expert, or switch to building projects and system design for my upcoming interviews?
+                            </p>
+</div>
+<div class="px-5 py-4 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2">
+<div class="h-6 w-6 rounded-full bg-orange-400 flex items-center justify-center text-[10px] text-white font-bold">JS</div>
+<span class="text-xs font-medium text-gray-700 dark:text-gray-300">just_start</span>
+<div class="w-1.5 h-1.5 rounded-full bg-cyan-500" title="Specialist"></div>
+</div>
+<div class="flex items-center gap-3 text-xs text-text-muted">
+<span class="flex items-center gap-1"><span class="material-icons text-sm">thumb_up_off_alt</span> 156</span>
+<span class="flex items-center gap-1"><span class="material-icons text-sm">chat_bubble_outline</span> 45</span>
+</div>
+</div>
+</article>
+</div>
+<!-- Load More / Pagination -->
+<div class="flex justify-center pt-8">
+<button class="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-full text-sm font-medium text-text-muted hover:text-primary hover:border-primary transition-all shadow-sm">
+<span class="material-icons text-lg animate-spin" style="display:none">refresh</span>
+                        Load more posts
+                    </button>
+</div>
+</div>
+<!-- Right Sidebar: Additional Info (Optional but balances layout on very wide screens) -->
+<aside class="hidden xl:block w-72 flex-shrink-0 space-y-6">
+<!-- Top Contributors -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-4">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-xs font-semibold text-text-muted uppercase tracking-wider">Top Contributors</h3>
+<a class="text-xs text-primary hover:underline" href="#">View All</a>
+</div>
+<ul class="space-y-4">
+<li class="flex items-center gap-3">
+<img alt="User" class="h-8 w-8 rounded-full ring-1 ring-red-500" data-alt="Top contributor portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBW-2HWUjfrqU5XB5VtlkDoZlXzw0T39pYYgB6-FErkSmpgsyngFZKWR85CszAQMmEZsHBwtHDSkDKCKPwk5KUfqTFCARLmT7jgiNSV8CMPxjI1R4OK1Smh4tV9G-p-4RRRAWzobBNoxBkj9ChbMLyup5f5SDv9HVx3RetQfPcqySdTJn0Ge8-0VGmsh8nD0VXEP7KbQFgYCrn94KcbuNvxHpwXJHwZzlL8PdjEn2Gv5rgVJGQKpSkEXGx7VfLgFVdTukt4iHa3vzY"/>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-gray-900 dark:text-white truncate">tourist_fan</p>
+<p class="text-xs text-text-muted">1,204 karma</p>
+</div>
+</li>
+<li class="flex items-center gap-3">
+<img alt="User" class="h-8 w-8 rounded-full ring-1 ring-orange-500" data-alt="Top contributor portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA60JjtF0ux8R8Wqjl2lQnEh0pIzHSOJ1RyQwpzCebT3sJh-Li0Ru8VoLXQeTZbkcsiHkdWZIJLwW_waPpDjkrnJfktSQcfssrRlcqrFe8mwJkhCzCmUUb6t2GZMaTjfOyq5ChFZjZ55jrIpEIhK_v33BkiWD49ZDPPUimbp7t1R1iGeO3Sob-VMjo5svcHlxvXFDFOLRnCq4jyy0zNUFVjiD0kkFwUbdwoxYcDpeCbLc7UhJ7Gp19mAg0s3SV_-sa-dU8SwoPt89s"/>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-gray-900 dark:text-white truncate">algo_master</p>
+<p class="text-xs text-text-muted">956 karma</p>
+</div>
+</li>
+<li class="flex items-center gap-3">
+<img alt="User" class="h-8 w-8 rounded-full ring-1 ring-purple-500" data-alt="Top contributor portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBN4HiAcW0icsGXFtmD5weAS9xJIMyZzHcHQul94TUUzOGN2SUDGrBsdwRT0MIyIshyU1-brNuepndwaHxN2JaP7JoXjVcfXk-cgJ5vxJpDEYijK4O6McnOdZ3tWOeBmOSwDET92X-3BzvdXlTQ6EMiCr94MdtaQgIzbXrN80RkdbT3xi9_NkYHRNy6lsDaO6osZmWk_v6dxUyi29o0RKMpiScADSPZwGrYlHeG54Wpdjd59eZBVH6V7_oyRWyrl4Jc5zsr1EqUkWY"/>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-gray-900 dark:text-white truncate">dp_wizard</p>
+<p class="text-xs text-text-muted">843 karma</p>
+</div>
+</li>
+</ul>
+</div>
+<!-- Footer Links -->
+<div class="px-4 text-xs text-text-muted space-y-2">
+<div class="flex flex-wrap gap-x-4 gap-y-1">
+<a class="hover:underline" href="#">About</a>
+<a class="hover:underline" href="#">Privacy</a>
+<a class="hover:underline" href="#">Terms</a>
+<a class="hover:underline" href="#">API</a>
+<a class="hover:underline" href="#">Help</a>
+</div>
+<p>© 2023 AlgoJudge Inc.</p>
+</div>
+</aside>
+</div>
+</main>
+<!-- Floating Action Button for Mobile -->
+<div class="fixed bottom-6 right-6 lg:hidden z-40">
+<button class="w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-primary-hover transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+<span class="material-icons text-2xl">edit</span>
+</button>
+</div>
+<script>
+        // Simple dark mode toggle logic for demonstration
+        // In a real app, this would check system preference or local storage
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            // document.documentElement.classList.add('dark'); // Disabled by default as per request for Light mode primary, but supported
+        }
+    </script>
+</body></html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Plagiarism Detection Report (Light Mode)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a73e8","primary-dark": "#1557b0",
+                        "surface": "#ffffff",
+                        "surface-variant": "#f1f3f4",
+                        "border": "#dadce0",
+                        "text-main": "#202124",
+                        "text-secondary": "#5f6368",
+                        "code-bg": "#ffffff",
+                        "highlight-yellow": "#fef7e0",
+                        "highlight-border": "#fbc02d",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
+                    },
+                    boxShadow: {
+                        "sm-light": "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+                        "card": "0 1px 2px 0 rgba(60,64,67,0.3)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>.code-scroll::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        .code-scroll::-webkit-scrollbar-track {
+            background: #f1f3f4; 
+        }
+        .code-scroll::-webkit-scrollbar-thumb {
+            background: #dadce0; 
+            border-radius: 5px;
+            border: 2px solid #f1f3f4;
+        }
+        .code-scroll::-webkit-scrollbar-thumb:hover {
+            background: #bdc1c6; 
+        }.token-keyword { color: #d73a49; font-weight: 500; }.token-function { color: #6f42c1; }.token-string { color: #032f62; }.token-comment { color: #6a737d; font-style: italic; }.token-number { color: #005cc5; }.token-type { color: #e36209; }.line-number {
+            color: #babbbd;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-white text-text-main font-display min-h-screen flex overflow-hidden">
+<aside class="w-20 lg:w-64 flex-shrink-0 flex flex-col border-r border-border bg-surface transition-all duration-300 z-20">
+<div class="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-border">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold text-xl mr-0 lg:mr-3 shadow-sm">
+            N
+        </div>
+<span class="text-xl font-bold tracking-tight hidden lg:block text-text-main">Nexus<span class="text-primary">Judge</span></span>
+</div>
+<nav class="flex-1 overflow-y-auto py-6 flex flex-col gap-1 px-3">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-surface-variant hover:text-primary transition-colors font-medium" href="#">
+<span class="material-icons text-[20px]">dashboard</span>
+<span class="hidden lg:block text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-surface-variant hover:text-primary transition-colors font-medium" href="#">
+<span class="material-icons text-[20px]">code</span>
+<span class="hidden lg:block text-sm">Problems</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary/10 text-primary font-bold" href="#">
+<span class="material-icons text-[20px]">policy</span>
+<span class="hidden lg:block text-sm">Plagiarism</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-surface-variant hover:text-primary transition-colors font-medium" href="#">
+<span class="material-icons text-[20px]">people</span>
+<span class="hidden lg:block text-sm">Users</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-surface-variant hover:text-primary transition-colors font-medium" href="#">
+<span class="material-icons text-[20px]">analytics</span>
+<span class="hidden lg:block text-sm">Reports</span>
+</a>
+</nav>
+<div class="p-4 border-t border-border">
+<button class="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-text-secondary hover:bg-surface-variant transition-colors mb-2">
+<span class="material-icons text-[20px]">settings</span>
+<span class="hidden lg:block text-sm font-medium">Settings</span>
+</button>
+<div class="flex items-center gap-3 px-2 pt-2">
+<img alt="Admin User" class="w-8 h-8 rounded-full border border-border" data-alt="User avatar generic male" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzo2UDMepAwRSg3I0KtfQB6egLEM2Sii9YYn0v6UXQZzJAsHk-TasJcg9_X938XW2LFvX57Q6XzlHXLOGIx-3S0t5F0P8KvsOuwk6FQYDEmvmPNAekLA1o08eojGj4_umYjVcTITBnWCupoiLagmrW7iUZ9iFGM6E-4Z2AirZlUIZ4TKUgzQCXD_phKBopvFSBVCYEwbweqlUTcri6eM2VFjO-9s-ifI8rhUaz0EEocF6buyvT8fvpUYg2totEwaAUauLPJTi0UHQ"/>
+<div class="hidden lg:block">
+<p class="text-sm font-medium text-text-main">Admin User</p>
+<p class="text-xs text-text-secondary">System Admin</p>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-white">
+<header class="h-16 flex-shrink-0 border-b border-border bg-white flex items-center justify-between px-6 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+<div class="flex items-center gap-6">
+<h1 class="text-xl font-medium text-text-main flex items-center gap-2">
+<span class="material-icons text-primary">analytics</span>
+                Report: Contest #842
+            </h1>
+<div class="h-6 w-px bg-border"></div>
+<div class="flex gap-8 text-sm">
+<div class="flex flex-col">
+<span class="text-[10px] text-text-secondary uppercase tracking-wider font-bold">Total Scanned</span>
+<span class="font-medium text-text-main">245 Subs</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-text-secondary uppercase tracking-wider font-bold">High Risk</span>
+<span class="font-bold text-red-600">12 Pairs</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-text-secondary uppercase tracking-wider font-bold">Avg Similarity</span>
+<span class="font-bold text-primary">14.2%</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 text-sm font-medium text-text-secondary hover:text-primary hover:bg-surface-variant rounded transition-colors">
+                Export PDF
+            </button>
+<button class="px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded shadow-sm flex items-center gap-2 transition-all">
+<span class="material-icons text-sm">done_all</span>
+                Resolve All
+            </button>
+</div>
+</header>
+<div class="flex-1 flex overflow-hidden">
+<div class="w-80 flex-shrink-0 flex flex-col border-r border-border bg-white">
+<div class="p-4 border-b border-border bg-white">
+<div class="relative group">
+<span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary text-[20px]">search</span>
+<input class="w-full bg-surface-variant border-transparent rounded-lg py-2 pl-10 pr-4 text-sm text-text-main focus:ring-2 focus:ring-primary/20 focus:border-primary/20 focus:bg-white transition-all placeholder-text-secondary" placeholder="Search students..." type="text"/>
+</div>
+<div class="flex items-center justify-between mt-3 text-xs text-text-secondary px-1 font-medium">
+<span>Sorted by Similarity</span>
+<button class="flex items-center gap-1 hover:text-primary transition-colors">
+                        Filter <span class="material-icons text-[16px]">filter_list</span>
+</button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto bg-white">
+<div class="group cursor-pointer p-4 border-l-[3px] border-primary bg-primary/5 hover:bg-primary/10 transition-colors">
+<div class="flex justify-between items-start mb-2">
+<div class="flex -space-x-2">
+<img alt="Student A" class="w-8 h-8 rounded-full border-2 border-white" data-alt="Student avatar male" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6-J_zH2NSkAvAOh7ZURCJHKvIStuBlKeJTtjJetIJ-UBNszpzS1Tp017RmdrAznL-nt6x3NLsoBT2RTYdYYVaqYIZ6A-kJBJoglklvae63NJ_RRcoiSMNYx84Bg-huojRwHQ6_S7Q_v9DiObEtlmSRF-ed4PbQrrQ21X0bowmoxome-4rrXsqszHFQjSdFKE2F_7A9pn_GQMC_xNqDo-E7duHn72YA1hGJnaPAQLceTptBNFlINW7kYLJWGWZLSyDjAvLSQeh2vU"/>
+<img alt="Student B" class="w-8 h-8 rounded-full border-2 border-white" data-alt="Student avatar female" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC__oOO5ZMa5Vcc_BvJnENK8dXsZYzcNn4z01x29E4XO80vA6ctZjpLFyvjD4u8wb2M8oWcLnWroCDfl13qHsMEQUJPZKj_vemO2VvYFAR3VaS3ypQjs16-acLpr_rAS2j3q0_1PziE44UHNdlSdz94kDgCKDFhiXzqgAFC6yUk8A0CJbrw1WkP3Q29fUnIiUlzjNGsjaq4nF1bGUx9u1zi5N6sv2xuS_r1GPen1qC6n38d4zGnpvbMlZR7aTazw8AB2bmWJp1OxX0"/>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-[11px] font-bold border border-red-200">98% Match</span>
+</div>
+<h3 class="text-sm font-semibold text-text-main mb-0.5">J. Smith vs A. Doe</h3>
+<p class="text-xs text-text-secondary">Problem: Binary Tree Max Path</p>
+<div class="mt-3 flex items-center gap-2">
+<span class="h-1.5 flex-1 bg-surface-variant rounded-full overflow-hidden">
+<span class="block h-full bg-red-500 w-[98%] rounded-full"></span>
+</span>
+</div>
+</div>
+<div class="group cursor-pointer p-4 border-l-[3px] border-transparent hover:border-gray-300 hover:bg-surface-variant/50 transition-colors border-b border-gray-50">
+<div class="flex justify-between items-start mb-2">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-white bg-purple-100 flex items-center justify-center text-[10px] text-purple-700 font-bold">BK</div>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-teal-100 flex items-center justify-center text-[10px] text-teal-700 font-bold">MR</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 text-[11px] font-bold border border-orange-200">85% Match</span>
+</div>
+<h3 class="text-sm font-semibold text-text-main mb-0.5">B. King vs M. Rose</h3>
+<p class="text-xs text-text-secondary">Problem: Dynamic Programming 101</p>
+<div class="mt-3 flex items-center gap-2">
+<span class="h-1.5 flex-1 bg-surface-variant rounded-full overflow-hidden">
+<span class="block h-full bg-orange-500 w-[85%] rounded-full"></span>
+</span>
+</div>
+</div>
+<div class="group cursor-pointer p-4 border-l-[3px] border-transparent hover:border-gray-300 hover:bg-surface-variant/50 transition-colors border-b border-gray-50">
+<div class="flex justify-between items-start mb-2">
+<div class="flex -space-x-2">
+<img alt="Student C" class="w-8 h-8 rounded-full border-2 border-white" data-alt="Student avatar male" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxhzx39lj-YR7sNDkbukpk5YUZVL0M3qqB958B_adDaMG4E_8gTCSGXi0A7O8c5xuHT_JK7BLkkavP7UuySeIoP9AhtscrJByQGYmtrEgfw-G9COVIZny86LqUmSvAoQxQHAJJaR0laYcLnFMC3h59p7zMZabSr_x-BN_bOFJl-ThFCS4ZFeYGy3ro1XCw8Zel-tgxjfJcvwPL7u2iQtq_gSqJoMGCZxXw4CJdPdtkP-UXvae6vVRozMoH8Iu8x8gjHN2QMHpNC4o"/>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-indigo-100 flex items-center justify-center text-[10px] text-indigo-700 font-bold">DL</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 text-[11px] font-bold border border-yellow-200">72% Match</span>
+</div>
+<h3 class="text-sm font-semibold text-text-main mb-0.5">C. Wilson vs D. Lee</h3>
+<p class="text-xs text-text-secondary">Problem: Graph BFS</p>
+<div class="mt-3 flex items-center gap-2">
+<span class="h-1.5 flex-1 bg-surface-variant rounded-full overflow-hidden">
+<span class="block h-full bg-yellow-500 w-[72%] rounded-full"></span>
+</span>
+</div>
+</div>
+<div class="group cursor-pointer p-4 border-l-[3px] border-transparent hover:border-gray-300 hover:bg-surface-variant/50 transition-colors border-b border-gray-50 opacity-80">
+<div class="flex justify-between items-start mb-2">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-[10px] text-gray-700 font-bold">GH</div>
+<div class="w-8 h-8 rounded-full border-2 border-white bg-gray-300 flex items-center justify-center text-[10px] text-gray-800 font-bold">IJ</div>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-bold border border-gray-200">45% Match</span>
+</div>
+<h3 class="text-sm font-semibold text-text-main mb-0.5">G. Hill vs I. Jones</h3>
+<p class="text-xs text-text-secondary">Problem: Sorting Array</p>
+</div>
+</div>
+</div>
+<div class="flex-1 flex flex-col bg-white overflow-hidden">
+<div class="h-12 flex items-center justify-between px-6 border-b border-border bg-white">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-xs font-medium text-text-secondary bg-surface-variant px-3 py-1.5 rounded-full border border-gray-200">
+<span class="material-icons text-[16px] text-text-secondary">sync</span>
+<span>Sync Scroll: <span class="font-bold text-primary">ON</span></span>
+</div>
+<div class="h-4 w-px bg-gray-300"></div>
+<div class="flex gap-2 items-center">
+<span class="w-3 h-3 rounded-sm bg-highlight-yellow border border-highlight-border"></span>
+<span class="text-xs text-text-secondary font-medium">Match Highlighting</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded border border-border text-text-secondary text-xs font-medium hover:bg-surface-variant hover:text-text-main transition-colors bg-white shadow-sm">
+<span class="material-icons text-[16px]">flag</span>
+                        Flag as Suspicious
+                    </button>
+<button class="flex items-center gap-2 px-3 py-1.5 rounded bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 text-xs font-medium transition-colors shadow-sm">
+<span class="material-icons text-[16px]">gavel</span>
+                        Confirm Plagiarism
+                    </button>
+</div>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<div class="flex-1 flex flex-col border-r border-border min-w-0">
+<div class="h-9 bg-surface-variant border-b border-border flex items-center justify-between px-4">
+<div class="flex items-center gap-2">
+<span class="material-icons text-[16px] text-text-secondary">description</span>
+<span class="text-xs font-mono text-text-main font-semibold">submission_1024.cpp</span>
+<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold">C++17</span>
+</div>
+<span class="text-xs text-text-secondary font-medium">User: <span class="text-text-main">John Smith</span></span>
+</div>
+<div class="flex-1 overflow-y-auto code-scroll bg-code-bg font-mono text-sm leading-6 p-4">
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">1</div>
+<div class="pl-4 whitespace-pre text-text-main"><span class="token-keyword">include</span> <span class="token-string">&lt;iostream&gt;</span></div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">2</div>
+<div class="pl-4 whitespace-pre text-text-main"><span class="token-keyword">include</span> <span class="token-string">&lt;vector&gt;</span></div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">3</div>
+<div class="pl-4 whitespace-pre text-text-main"><span class="token-keyword">using</span> <span class="token-keyword">namespace</span> std;</div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">4</div>
+<div class="pl-4 whitespace-pre text-text-main"></div>
+</div>
+<div class="relative bg-highlight-yellow">
+<div class="absolute inset-y-0 left-0 w-1 bg-highlight-border"></div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">5</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"><span class="token-keyword">int</span> <span class="token-function">maxPathSum</span>(TreeNode* root) {</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">6</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">int</span> maxSum = INT_MIN;</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">7</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-function">calculateMaxPath</span>(root, maxSum);</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">8</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">return</span> maxSum;</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">9</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main">}</div>
+</div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">10</div>
+<div class="pl-4 whitespace-pre text-text-main"></div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">11</div>
+<div class="pl-4 whitespace-pre text-text-main"><span class="token-comment">// Helper function for recursion</span></div>
+</div>
+<div class="relative bg-highlight-yellow">
+<div class="absolute inset-y-0 left-0 w-1 bg-highlight-border"></div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">12</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"><span class="token-keyword">int</span> <span class="token-function">calculateMaxPath</span>(TreeNode* node, <span class="token-keyword">int</span> &amp;maximum) {</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">13</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">if</span> (node == <span class="token-keyword">nullptr</span>) <span class="token-keyword">return</span> <span class="token-number">0</span>;</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">14</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">int</span> left = <span class="token-function">max</span>(<span class="token-number">0</span>, <span class="token-function">calculateMaxPath</span>(node-&gt;left, maximum));</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">15</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">int</span> right = <span class="token-function">max</span>(<span class="token-number">0</span>, <span class="token-function">calculateMaxPath</span>(node-&gt;right, maximum));</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">16</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main">    maximum = <span class="token-function">max</span>(maximum, left + right + node-&gt;val);</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">17</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">return</span> <span class="token-function">max</span>(left, right) + node-&gt;val;</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">18</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main">}</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex-1 flex flex-col min-w-0">
+<div class="h-9 bg-surface-variant border-b border-border flex items-center justify-between px-4">
+<div class="flex items-center gap-2">
+<span class="material-icons text-[16px] text-text-secondary">description</span>
+<span class="text-xs font-mono text-text-main font-semibold">submission_1098.cpp</span>
+<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold">C++17</span>
+</div>
+<span class="text-xs text-text-secondary font-medium">User: <span class="text-text-main">Alex Doe</span></span>
+</div>
+<div class="flex-1 overflow-y-auto code-scroll bg-code-bg font-mono text-sm leading-6 p-4">
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">1</div>
+<div class="pl-4 whitespace-pre text-text-main"><span class="token-keyword">include</span> <span class="token-string">&lt;iostream&gt;</span></div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">2</div>
+<div class="pl-4 whitespace-pre text-text-main"><span class="token-keyword">include</span> <span class="token-string">&lt;algorithm&gt;</span></div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">3</div>
+<div class="pl-4 whitespace-pre text-text-main"><span class="token-keyword">using</span> <span class="token-keyword">namespace</span> std;</div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">4</div>
+<div class="pl-4 whitespace-pre text-text-main"></div>
+</div>
+<div class="relative bg-highlight-yellow">
+<div class="absolute inset-y-0 left-0 w-1 bg-highlight-border"></div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">5</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"><span class="token-keyword">int</span> <span class="token-function">solution</span>(TreeNode* root) {</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">6</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">int</span> answer = -1e9;</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">7</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-function">dfs</span>(root, answer);</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">8</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">return</span> answer;</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">9</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main">}</div>
+</div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">10</div>
+<div class="pl-4 whitespace-pre text-text-main"></div>
+</div>
+<div class="flex hover:bg-gray-50">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-white pt-0.5">11</div>
+<div class="pl-4 whitespace-pre text-text-main"><span class="token-comment">// DFS Logic same as recursion</span></div>
+</div>
+<div class="relative bg-highlight-yellow">
+<div class="absolute inset-y-0 left-0 w-1 bg-highlight-border"></div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">12</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"><span class="token-keyword">int</span> <span class="token-function">dfs</span>(TreeNode* n, <span class="token-keyword">int</span> &amp;res) {</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">13</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">if</span> (!n) <span class="token-keyword">return</span> <span class="token-number">0</span>;</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">14</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">int</span> l = <span class="token-function">max</span>(<span class="token-number">0</span>, <span class="token-function">dfs</span>(n-&gt;left, res));</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">15</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">int</span> r = <span class="token-function">max</span>(<span class="token-number">0</span>, <span class="token-function">dfs</span>(n-&gt;right, res));</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">16</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main">    res = <span class="token-function">max</span>(res, l + r + n-&gt;val);</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">17</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main"> <span class="token-keyword">return</span> <span class="token-function">max</span>(l, r) + n-&gt;val;</div>
+</div>
+<div class="flex group">
+<div class="w-10 text-right pr-3 select-none line-number border-r border-border bg-transparent pt-0.5 relative z-10">18</div>
+<div class="pl-4 whitespace-pre relative z-10 text-text-main">}</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="h-8 bg-surface-variant border-t border-border flex items-center justify-between px-4 text-xs text-text-secondary">
+<span>Generated by <strong>NexusJudge Anti-Plagiarism Engine v4.2</strong></span>
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5 font-medium text-text-main"><span class="w-2 h-2 rounded-full bg-green-600"></span> Online</span>
+<span>Latency: 24ms</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+</body></html>

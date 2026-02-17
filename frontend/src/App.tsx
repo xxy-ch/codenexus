@@ -1,0 +1,123 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ToastProvider } from './components/ui/Toast'
+import { MainLayout } from './layouts/MainLayout'
+import { AdminLayout } from './layouts/AdminLayout'
+import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute'
+import { AdminRoute } from './components/auth/AdminRoute'
+import { LoginPage } from './pages/auth/LoginPage'
+import { RegisterPage } from './pages/auth/RegisterPage'
+import { UnauthorizedPage } from './pages/auth/UnauthorizedPage'
+import { NotFound } from './pages/error/NotFound'
+import { ServerError } from './pages/error/ServerError'
+import { DashboardEnhanced } from './pages/user/DashboardEnhanced'
+import { ProblemSet } from './pages/user/ProblemSet'
+import { ProblemDetail } from './pages/user/ProblemDetail'
+import { ProblemIDE } from './pages/user/ProblemIDE'
+import { SubmissionHistory } from './pages/user/SubmissionHistory'
+import { SubmissionDetail } from './pages/user/SubmissionDetail'
+import { ContestList } from './pages/user/ContestList'
+import { ContestDetail } from './pages/user/ContestDetail'
+import { Ranking } from './pages/user/Ranking'
+import { Discussions } from './pages/user/Discussions'
+import { Blog } from './pages/user/Blog'
+import { BlogDetail } from './pages/user/BlogDetail'
+import { Profile } from './pages/user/Profile'
+import { Settings } from './pages/user/Settings'
+import { AdminDashboard } from './pages/admin/AdminDashboard'
+import { UserManagement } from './pages/admin/UserManagement'
+import { ProblemManagement } from './pages/admin/ProblemManagement'
+import { ReportManagement } from './pages/admin/ReportManagement'
+import { PageLoading } from './components/ui/Loading'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+})
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+          {/* Public Routes */}
+          <Route
+            path="/login"
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicRoute>
+                <RegisterPage />
+              </PublicRoute>
+            }
+          />
+
+          {/* Protected Routes */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <MainLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardEnhanced />} />
+            <Route path="problems" element={<ProblemSet />} />
+            <Route path="problems/:problemId" element={<ProblemDetail />} />
+            <Route path="problems/:problemId/solve" element={<ProblemIDE />} />
+            <Route path="submissions" element={<SubmissionHistory />} />
+            <Route path="submissions/:submissionId" element={<SubmissionDetail />} />
+            <Route path="contests" element={<ContestList />} />
+            <Route path="contests/:contestId" element={<ContestDetail />} />
+            <Route path="ranking" element={<Ranking />} />
+            <Route path="discussions" element={<Discussions />} />
+            <Route path="discussions/:id" element={<Discussions />} />
+            <Route path="blog" element={<Blog />} />
+            <Route path="blog/:id" element={<BlogDetail />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
+            {/* Add more protected routes here */}
+          </Route>
+
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminLayout />
+              </AdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<UserManagement />} />
+            <Route path="problems" element={<ProblemManagement />} />
+            <Route path="reports" element={<ReportManagement />} />
+          </Route>
+
+          {/* Error Routes */}
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+          <Route path="/404" element={<NotFound />} />
+          <Route path="/500" element={<ServerError />} />
+
+          {/* Fallback */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+      </ToastProvider>
+    </QueryClientProvider>
+  )
+}
+
+export default App

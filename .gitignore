@@ -1,0 +1,40 @@
+# Binary targets
+target/
+debug/
+release/
+
+# Compiled output
+**/*.rs.bk
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+
+# Data storage
+.data
+*.db
+*.sqlite
+
+# Logs
+*.log
+
+# Cache
+.cache/
+node_modules/
+
+# Backup files
+*_backup*
+*_bak*

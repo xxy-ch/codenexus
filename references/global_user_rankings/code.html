@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Global User Rankings - Enterprise Online Judge</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+            extend: {
+                colors: {
+                "primary": "#0d59f2",
+                "background-light": "#f5f6f8",
+                "background-dark": "#101622",
+                },
+                fontFamily: {
+                "display": ["Inter", "sans-serif"]
+                },
+                borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+            },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for table container if needed */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #334155;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 antialiased min-h-screen flex flex-col">
+<!-- Navigation Header -->
+<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between h-16">
+<div class="flex items-center gap-8">
+<!-- Logo -->
+<div class="flex-shrink-0 flex items-center gap-2 cursor-pointer">
+<div class="h-8 w-8 bg-primary rounded flex items-center justify-center text-white font-bold text-lg">OJ</div>
+<span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white">AlgoJudge</span>
+</div>
+<!-- Nav Links -->
+<nav class="hidden md:flex space-x-1">
+<a class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">Problems</a>
+<a class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">Contests</a>
+<a class="px-3 py-2 rounded-md text-sm font-medium text-primary bg-primary/10 dark:bg-primary/20" href="#">Rankings</a>
+<a class="px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors" href="#">Discuss</a>
+</nav>
+</div>
+<!-- Right Side Actions -->
+<div class="flex items-center gap-4">
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+<span class="material-icons text-xl">search</span>
+</button>
+<button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 relative">
+<span class="material-icons text-xl">notifications</span>
+<span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900 transform translate-x-1/4 -translate-y-1/4"></span>
+</button>
+<div class="h-8 w-8 rounded-full bg-gradient-to-tr from-primary to-blue-400 p-[2px] cursor-pointer">
+<img alt="User profile avatar" class="h-full w-full rounded-full object-cover border-2 border-white dark:border-slate-900" data-alt="User profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx1sSJP2Fo8ObvOZMjt20wS7a8B8hIRuE7crvfCk_k54kyRX_ps1WNxNAjEgfjbqdtaMOOKDO9Hi4Km5UkZRhTXVsK_3B-_-ZFiBVCeHxd0_HLhKd5UC4ryKDv7x_ajtZRLz9k1joB-iODqYH4p97uk37au50n6NfGZsHCmYvvB5phaBPta_TCqi0lb9W-wIZfOk5cd3AEm1JdoZy3RQKyvIvKgGpNjn97YAQYkfn3mmbBg0m_T09N-zv7Jxc-D9dNpC3LNJh697U"/>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+<div>
+<h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Global Rankings</h1>
+<p class="text-slate-500 dark:text-slate-400">Top performers across all competitions and problem sets.</p>
+</div>
+<!-- Top 3 Mini-Widget (Optional Highlight) -->
+<div class="hidden lg:flex gap-4">
+<!-- Silver -->
+<div class="flex items-center gap-3 bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+<div class="relative">
+<img alt="Silver medalist avatar" class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of man with beard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCs3-gu5G3Kqn9kGikTFKApb8wCCaOmUySo8d-s9X3YqowX-d_OD1nQk8GZ448tnWNIuo-QgTmuUwwPXIgeI7V8q2nQqoSx1t0TW5ToCVmGP9VBCfJoNfSVVxtEJz07TB1gzMbZACjQcjb0A_9e0Wxd7ps3h3r4AHNEY2XUniVWZphqlxI036biH2n5PFe_BgS1LTi8hh_zMfW9zmjPI6Hs7OVlgz6_-osjWMp66PDEcdKc_8K973SSNApuvlOGHH_fJr62Bu3MR9I"/>
+<div class="absolute -bottom-1 -right-1 bg-slate-300 text-[10px] font-bold text-slate-800 w-5 h-5 flex items-center justify-center rounded-full border-2 border-white dark:border-slate-800">2</div>
+</div>
+<div>
+<div class="text-sm font-bold text-slate-800 dark:text-white">Marcus_K</div>
+<div class="text-xs text-slate-500">3,150 pts</div>
+</div>
+</div>
+<!-- Gold -->
+<div class="flex items-center gap-3 bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-md border border-primary/30 ring-1 ring-primary/20 transform -translate-y-2">
+<div class="relative">
+<img alt="Gold medalist avatar" class="w-12 h-12 rounded-full object-cover" data-alt="Portrait of woman smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlYZAE4B035Ny2mFqcKcNmwkjmGe-a5hlvSer4ofP2IZWNw2r6S5nSmfOBjYDgp6PzlJjXwfhWwaPj4uYFMCw6YGbRDiUFaVlfpRA0aY99eYo-EMsXb_CLKVaia8BWrZk0ODyW4-hLPJJT6c2RWwFYM99dpIUnpx99fcnKh9aRCVdwbz6UNgP4TLSX46H8FdgxrTa4NM8cUQiKXIGfZdJ_Vx5SLRYyRxFbdY0Rf8iHXviachJDDiC2jy7vhHQ9wx5B-G8g8Wb19Ls"/>
+<div class="absolute -bottom-1 -right-1 bg-yellow-400 text-[10px] font-bold text-yellow-900 w-6 h-6 flex items-center justify-center rounded-full border-2 border-white dark:border-slate-800">1</div>
+</div>
+<div>
+<div class="text-base font-bold text-slate-900 dark:text-white">Alice_Dev</div>
+<div class="text-xs text-primary font-medium">3,200 pts</div>
+</div>
+</div>
+<!-- Bronze -->
+<div class="flex items-center gap-3 bg-white dark:bg-slate-800 px-4 py-2 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700">
+<div class="relative">
+<img alt="Bronze medalist avatar" class="w-10 h-10 rounded-full object-cover" data-alt="Portrait of man with glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbLyKWWvr9slhu81x3j33g6U7o-r6DegPcn1s7e2lwnWQlXBQbiTguaexRinap2yaECXNEIc3sXt-gZypoNUIpQM-oTWRBPs6C8BlFwRZVo5SodUFfmPLYnYP3958h8Z6PJdtbymOeoOrXCpLDxhGV8QrE6hvkTqli8HQ-yeiqsreluav28b-44mFl02jrT0DjMyxpEzlTAgvnZqGEH84ytDSPqyqIXKpuZF1POBZs2cubG83XxkEY_X0bCoz-X-oybSxevJd7dpM"/>
+<div class="absolute -bottom-1 -right-1 bg-amber-600 text-[10px] font-bold text-white w-5 h-5 flex items-center justify-center rounded-full border-2 border-white dark:border-slate-800">3</div>
+</div>
+<div>
+<div class="text-sm font-bold text-slate-800 dark:text-white">Chen_Li</div>
+<div class="text-xs text-slate-500">3,120 pts</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Toolbar & Filters -->
+<div class="bg-white dark:bg-slate-800 p-4 rounded-t-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center">
+<div class="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+<!-- Search -->
+<div class="relative group w-full sm:w-64">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 group-focus-within:text-primary transition-colors">
+<span class="material-icons text-xl">search</span>
+</span>
+<input class="pl-10 pr-4 py-2 w-full border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all dark:text-white dark:placeholder-slate-500" placeholder="Search user or handle..." type="text"/>
+</div>
+<div class="h-6 w-px bg-slate-200 dark:bg-slate-700 hidden sm:block mx-1"></div>
+<!-- Filter: Period -->
+<div class="relative inline-block text-left w-full sm:w-auto">
+<select class="block w-full sm:w-auto pl-3 pr-10 py-2 text-sm border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-primary focus:border-primary rounded-lg bg-white dark:bg-slate-900 dark:text-white cursor-pointer shadow-sm">
+<option>All Time</option>
+<option>This Year</option>
+<option>This Month</option>
+<option>This Week</option>
+</select>
+</div>
+<!-- Filter: Org -->
+<div class="relative inline-block text-left w-full sm:w-auto">
+<select class="block w-full sm:w-auto pl-3 pr-10 py-2 text-sm border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-primary focus:border-primary rounded-lg bg-white dark:bg-slate-900 dark:text-white cursor-pointer shadow-sm">
+<option>Organization: All</option>
+<option>Universities</option>
+<option>Tech Companies</option>
+<option>High Schools</option>
+</select>
+</div>
+<!-- Filter: Language -->
+<div class="relative inline-block text-left w-full sm:w-auto">
+<select class="block w-full sm:w-auto pl-3 pr-10 py-2 text-sm border-slate-300 dark:border-slate-600 focus:outline-none focus:ring-primary focus:border-primary rounded-lg bg-white dark:bg-slate-900 dark:text-white cursor-pointer shadow-sm">
+<option>Language: All</option>
+<option>C++</option>
+<option>Java</option>
+<option>Python 3</option>
+<option>Rust</option>
+</select>
+</div>
+</div>
+<!-- Display Density Toggle -->
+<div class="flex items-center bg-slate-100 dark:bg-slate-900 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+<button class="p-1.5 rounded bg-white dark:bg-slate-700 shadow-sm text-slate-700 dark:text-slate-200" title="Comfortable View">
+<span class="material-icons text-lg">grid_view</span>
+</button>
+<button class="p-1.5 rounded hover:bg-white dark:hover:bg-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors" title="Compact View">
+<span class="material-icons text-lg">view_list</span>
+</button>
+</div>
+</div>
+<!-- Table Container -->
+<div class="bg-white dark:bg-slate-800 border-x border-b border-slate-200 dark:border-slate-700 rounded-b-xl shadow-sm overflow-hidden flex flex-col">
+<div class="overflow-x-auto custom-scrollbar">
+<table class="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+<thead class="bg-slate-50 dark:bg-slate-800/50">
+<tr>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider w-20" scope="col">Rank</th>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">User</th>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Country</th>
+<th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Rating</th>
+<th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Solved</th>
+<th class="px-6 py-3 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Accuracy</th>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-12" scope="col">Organization</th>
+</tr>
+</thead>
+<tbody class="bg-white dark:bg-slate-800 divide-y divide-slate-100 dark:divide-slate-700/50">
+<!-- Row 1: Gold -->
+<tr class="hover:bg-primary/5 dark:hover:bg-slate-700/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center justify-center w-8 h-8 rounded bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 font-bold text-sm">1</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0">
+<img alt="Avatar" class="h-10 w-10 rounded-full object-cover border border-slate-200 dark:border-slate-600" data-alt="Portrait of woman smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3yupahRIv11XVwdJm0JFIlRkGHHMuia4zX4sVCZjQ_Gi5Jw_I67jFJN6lGZISB6qzvDGEPju-xPYiH1eRgEclOFPLn_V2YMaVxXRYrYRPKZZm4mTrn4jYAQ2RphbUEoMqiOcwxCc7uXgsIkWb2v-3WfJ-CviEvePMcuMZpwEmsfinIx3fIgECDLb3Ojwpuz9iSlv0ecyDwyeJbCvvsR86vhcZk5JdRcL56HK8OIYZwEuYNG2QZCgLdDLscu6la-NdMbE0ejGuLSc"/>
+</div>
+<div class="ml-4">
+<div class="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Alice_Dev</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">Grandmaster</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-slate-600 dark:text-slate-300">
+<span class="text-xl mr-2">🇺🇸</span> USA
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold font-mono text-primary">3,200</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm text-slate-700 dark:text-slate-300 font-mono">450</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                    89%
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap pl-12 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-2">
+<span class="material-icons text-base text-slate-400">business</span>
+                                    Google
+                                </div>
+</td>
+</tr>
+<!-- Row 2: Silver -->
+<tr class="bg-slate-50/50 dark:bg-slate-800/30 hover:bg-primary/5 dark:hover:bg-slate-700/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center justify-center w-8 h-8 rounded bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold text-sm">2</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0">
+<img alt="Avatar" class="h-10 w-10 rounded-full object-cover border border-slate-200 dark:border-slate-600" data-alt="Portrait of man with beard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvP88lhPy41YkvNq7i0B6EyC4FO5zUpyrRvBbSzV3G2bE2W0qA2cVq792beZrKbNA-nnsCOWOS-q5qYnIb4m1QQ_puY5XnkwEjO0TSV-l1Vn-jo51VddcR4YtaPkNJ0sW0dwYQcqtbAwK_AHM-zsjJWP1XMDWKkVJ-N1p79FPQ_qZVt2-bk-4Bu5ECTJCpkODKj4UMaQKlelBe8MIxBVTBeeruB1NbpVNjlimy_iunnx7s3XH2gEo0F-624NZ0ed2tHTMRe1nZqfU"/>
+</div>
+<div class="ml-4">
+<div class="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Marcus_K</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">International Master</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-slate-600 dark:text-slate-300">
+<span class="text-xl mr-2">🇨🇦</span> CAN
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">3,150</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm text-slate-700 dark:text-slate-300 font-mono">442</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                    85%
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap pl-12 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-2">
+<span class="material-icons text-base text-slate-400">school</span>
+                                    Univ. of Toronto
+                                </div>
+</td>
+</tr>
+<!-- Row 3: Bronze -->
+<tr class="hover:bg-primary/5 dark:hover:bg-slate-700/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center justify-center w-8 h-8 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-500 font-bold text-sm">3</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0">
+<img alt="Avatar" class="h-10 w-10 rounded-full object-cover border border-slate-200 dark:border-slate-600" data-alt="Portrait of man with glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdqDj0ib2l1Ef_2TsH6g6fv8cOcpjcn_Gr9R5GXCqYslABT457U0I3e2rnA3e5eiqvXmiCV3i0xPfoWxxqrtrTfUFAJOFqTJ8quePyamzkd7aOxIr16D0-E74BYfv-8kpFNTGwaxlElDRgFX4773JiEi7MWNXRB2pt1sbcIiKntAbessdax7mmWhuslFjZesGKZDV8G01DuPHEoC_HganBO0RL3xSKBuHKRg8HgX_4zoaf0pBa90LI7jMUBDnR7MOkNOWdgWoEPJc"/>
+</div>
+<div class="ml-4">
+<div class="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Chen_Li</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">International Master</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-slate-600 dark:text-slate-300">
+<span class="text-xl mr-2">🇨🇳</span> CHN
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">3,120</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm text-slate-700 dark:text-slate-300 font-mono">438</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                    92%
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap pl-12 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-2">
+<span class="material-icons text-base text-slate-400">school</span>
+                                    Tsinghua Univ.
+                                </div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-slate-50/50 dark:bg-slate-800/30 hover:bg-primary/5 dark:hover:bg-slate-700/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center justify-center w-8 h-8 text-slate-500 dark:text-slate-400 font-medium text-sm">4</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                        SK
+                                    </div>
+<div class="ml-4">
+<div class="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Sarah_K</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">Master</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-slate-600 dark:text-slate-300">
+<span class="text-xl mr-2">🇬🇧</span> UK
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">2,980</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm text-slate-700 dark:text-slate-300 font-mono">310</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
+                                    76%
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap pl-12 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-2">
+<span class="material-icons text-base text-slate-400">business</span>
+                                    DeepMind
+                                </div>
+</td>
+</tr>
+<!-- Row 5 -->
+<tr class="hover:bg-primary/5 dark:hover:bg-slate-700/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center justify-center w-8 h-8 text-slate-500 dark:text-slate-400 font-medium text-sm">5</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0">
+<img alt="Avatar" class="h-10 w-10 rounded-full object-cover border border-slate-200 dark:border-slate-600" data-alt="Portrait of man smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA98XLu_AZIweug8DnmkmZ3lOs1a3Hac03-3qHl5_3vMA74OckKtar29FZPM4bHFEaIZwya-jNSdB29fJBdST3MxLO1snQDr3qufaVFepqrKz0KONR_AGS1TzPGw-J7TufcTRqiFNbwuq3CuEogrGJgjLEK2Sle2_TiFjzCdsxbWSNGpwGuOzFqBHYe8iUmld9Smp_ptS-9dhANK8ZxTEfN37qh4DySjbCg-y1uVzzg5cLm8ebiYWv_2wqnEL7QPY2Nh1wmJk_OrdU"/>
+</div>
+<div class="ml-4">
+<div class="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">David_W</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">Master</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-slate-600 dark:text-slate-300">
+<span class="text-xl mr-2">🇦🇺</span> AUS
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">2,915</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm text-slate-700 dark:text-slate-300 font-mono">289</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                    81%
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap pl-12 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-2">
+<span class="material-icons text-base text-slate-400">school</span>
+                                    UNSW
+                                </div>
+</td>
+</tr>
+<!-- Row 6 -->
+<tr class="bg-slate-50/50 dark:bg-slate-800/30 hover:bg-primary/5 dark:hover:bg-slate-700/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center justify-center w-8 h-8 text-slate-500 dark:text-slate-400 font-medium text-sm">6</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0 bg-gradient-to-br from-green-500 to-teal-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                        YT
+                                    </div>
+<div class="ml-4">
+<div class="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Yuki_T</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">Master</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-slate-600 dark:text-slate-300">
+<span class="text-xl mr-2">🇯🇵</span> JPN
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">2,880</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm text-slate-700 dark:text-slate-300 font-mono">356</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                                    65%
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap pl-12 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-2">
+<span class="material-icons text-base text-slate-400">business</span>
+                                    Sony AI
+                                </div>
+</td>
+</tr>
+<!-- Row 7 -->
+<tr class="hover:bg-primary/5 dark:hover:bg-slate-700/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center justify-center w-8 h-8 text-slate-500 dark:text-slate-400 font-medium text-sm">7</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center">
+<div class="h-10 w-10 flex-shrink-0">
+<img alt="Avatar" class="h-10 w-10 rounded-full object-cover border border-slate-200 dark:border-slate-600" data-alt="Portrait of man looking forward" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6yBEXMz25M1B8EHfxIiat8F2w5bks7dJLlRs2rdGmJnCdwdh5SrRiPPOZOXsOZdcgYl97W5GRdnGIObVI99Ay1v3LPRFk6yr1SElejqO7aLIKVj-yGCPrqYgKwq8eP-ijP6byHdIy4ssbtai0stdOvr1JpFQu4yvtzquVFT7fqcbEyQRzb3QwXTicR6kU7zfpOeQ36icB-UiulnEMqn7AZi0zprdUvgEK6uDdA_h3JS7Dp4PMDmRRdDDUqAVY3aZCVhTpuRAW9oE"/>
+</div>
+<div class="ml-4">
+<div class="text-sm font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">Alex_R</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">Expert</div>
+</div>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center text-sm text-slate-600 dark:text-slate-300">
+<span class="text-xl mr-2">🇩🇪</span> GER
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">2,810</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="text-sm text-slate-700 dark:text-slate-300 font-mono">215</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                    88%
+                                </div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap pl-12 text-sm text-slate-500 dark:text-slate-400">
+<div class="flex items-center gap-2">
+<span class="material-icons text-base text-slate-400">school</span>
+                                    TUM
+                                </div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="bg-white dark:bg-slate-800 px-4 py-3 flex items-center justify-between border-t border-slate-200 dark:border-slate-700">
+<div class="flex-1 flex justify-between sm:hidden">
+<a class="relative inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700" href="#">Previous</a>
+<a class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700" href="#">Next</a>
+</div>
+<div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+<div>
+<p class="text-sm text-slate-700 dark:text-slate-400">
+                            Showing <span class="font-medium text-slate-900 dark:text-white">1</span> to <span class="font-medium text-slate-900 dark:text-white">10</span> of <span class="font-medium text-slate-900 dark:text-white">2,492</span> results
+                        </p>
+</div>
+<div>
+<nav aria-label="Pagination" class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+<a class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700" href="#">
+<span class="sr-only">Previous</span>
+<span class="material-icons text-sm">chevron_left</span>
+</a>
+<a aria-current="page" class="z-10 bg-primary/10 border-primary text-primary relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">1</a>
+<a class="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">2</a>
+<a class="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 hidden md:inline-flex relative items-center px-4 py-2 border text-sm font-medium" href="#">3</a>
+<span class="relative inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-400">...</span>
+<a class="bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 relative inline-flex items-center px-4 py-2 border text-sm font-medium" href="#">250</a>
+<a class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-medium text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700" href="#">
+<span class="sr-only">Next</span>
+<span class="material-icons text-sm">chevron_right</span>
+</a>
+</nav>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-slate-500 dark:text-slate-400">
+<p>© 2023 AlgoJudge Enterprise. All rights reserved.</p>
+<div class="flex gap-6 mt-4 md:mt-0">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Help Center</a>
+</div>
+</div>
+</footer>
+</body></html>
