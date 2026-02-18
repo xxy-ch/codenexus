@@ -1,4 +1,5 @@
 use super::models::*;
+use super::queue::{self, SubmissionMessage};
 use crate::AppState;
 use anyhow::Result;
 use sqlx::{PgPool, Row};
@@ -7,11 +8,22 @@ use serde_json::json;
 
 pub struct SubmissionService {
     pool: PgPool,
+    redis_pool: Option<deadpool_redis::Pool>,
 }
 
 impl SubmissionService {
     pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+        Self {
+            pool,
+            redis_pool: None,
+        }
+    }
+
+    pub fn with_redis(pool: PgPool, redis_pool: deadpool_redis::Pool) -> Self {
+        Self {
+            pool,
+            redis_pool: Some(redis_pool),
+        }
     }
 
     pub async fn create_submission(
@@ -52,9 +64,8 @@ impl SubmissionService {
         .fetch_one(&self.pool)
         .await?;
 
-        // TODO: Send to judge queue
-        // This would typically publish to a message queue or call the judge service
-        self.queue_for_judging(submission.id).await?;
+        // Send to judge queue
+        self.queue_for_judging(submission.id, req.problem_id, user_id, &req.code, &req.language).await?;
 
         Ok(submission)
     }
@@ -204,31 +215,151 @@ impl SubmissionService {
         })
     }
 
-    async fn queue_for_judging(&self, submission_id: i64) -> Result<()> {
-        // In a real implementation, this would publish to a message queue
-        // For now, we'll just update the status to "running"
+    async fn queue_for_judging(
+        &self,
+        submission_id: i64,
+        problem_id: i64,
+        user_id: Uuid,
+        code: &str,
+        language: &str,
+    ) -> Result<()> {
+        // Update status to "queued"
         sqlx::query(
-            "UPDATE submissions SET status = 'running', updated_at = NOW() WHERE id = $1"
+            "UPDATE submissions SET status = 'queued', updated_at = NOW() WHERE id = $1"
         )
         .bind(submission_id)
         .execute(&self.pool)
         .await?;
 
-        // Simulate judging process
-        // In production, this would be handled by the judge-worker service
+        // If Redis is configured, send to queue
+        if let Some(redis_pool) = &self.redis_pool {
+            // Fetch problem limits
+            let problem = sqlx::query_as::<_, (i32, i32)>(
+                "SELECT time_limit, memory_limit FROM problems WHERE id = $1"
+            )
+            .bind(problem_id)
+            .fetch_optional(&self.pool)
+            .await?;
+
+            if let Some((time_limit, memory_limit)) = problem {
+                let message = SubmissionMessage {
+                    submission_id,
+                    problem_id,
+                    user_id,
+                    language: language.to_string(),
+                    source_code: code.to_string(),
+                    time_limit_ms: time_limit as u64,
+                    memory_limit_mb: memory_limit as u64,
+                };
+
+                match queue::queue_submission(redis_pool, &message).await {
+                    Ok(message_id) => {
+                        tracing::info!(
+                            "Submission {} queued with message ID {}",
+                            submission_id,
+                            message_id
+                        );
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            "Failed to queue submission {}: {}",
+                            submission_id,
+                            e
+                        );
+                        // Revert status to pending
+                        sqlx::query(
+                            "UPDATE submissions SET status = 'pending', updated_at = NOW() WHERE id = $1"
+                        )
+                        .bind(submission_id)
+                        .execute(&self.pool)
+                        .await?;
+                        return Err(e);
+                    }
+                }
+            } else {
+                tracing::warn!("Problem {} not found, skipping queue", problem_id);
+            }
+        } else {
+            tracing::warn!("Redis not configured, submission not queued");
+        }
+
         Ok(())
     }
 
-    pub async fn update_submission_status(&self, submission_id: i64, status: &str, score: Option<i32>) -> Result<()> {
+    /// Update submission with detailed judge results
+    pub async fn update_judge_result(
+        &self,
+        submission_id: i64,
+        status: &str,
+        score: Option<i32>,
+        runtime_ms: Option<i32>,
+        memory_kb: Option<i32>,
+    ) -> Result<()> {
         sqlx::query(
-            "UPDATE submissions SET status = $1, score = $2, updated_at = NOW() WHERE id = $3"
+            "UPDATE submissions
+             SET status = $1, score = $2, runtime_ms = $3, memory_kb = $4, updated_at = NOW()
+             WHERE id = $5"
         )
         .bind(status)
         .bind(score)
+        .bind(runtime_ms)
+        .bind(memory_kb)
         .bind(submission_id)
         .execute(&self.pool)
         .await?;
 
+        tracing::info!(
+            "Updated submission {} to status {} with score {:?}",
+            submission_id,
+            status,
+            score
+        );
+
         Ok(())
+    }
+
+    /// Store test case result for a submission
+    pub async fn store_test_case_result(
+        &self,
+        submission_id: i64,
+        test_case_id: i64,
+        status: &str,
+        expected_output: Option<String>,
+        actual_output: Option<String>,
+        error_message: Option<String>,
+        runtime_ms: Option<i32>,
+        memory_kb: Option<i32>,
+    ) -> Result<i64> {
+        let result_id = sqlx::query_scalar::<_, i64>(
+            r#"
+            INSERT INTO submissions_test_case_results (
+                submission_id, test_case_id, status,
+                expected_output, actual_output, error_message,
+                runtime_ms, memory_kb
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (submission_id, test_case_id)
+            DO UPDATE SET
+                status = EXCLUDED.status,
+                expected_output = EXCLUDED.expected_output,
+                actual_output = EXCLUDED.actual_output,
+                error_message = EXCLUDED.error_message,
+                runtime_ms = EXCLUDED.runtime_ms,
+                memory_kb = EXCLUDED.memory_kb
+            RETURNING id
+            "#
+        )
+        .bind(submission_id)
+        .bind(test_case_id)
+        .bind(status)
+        .bind(&expected_output)
+        .bind(&actual_output)
+        .bind(&error_message)
+        .bind(runtime_ms)
+        .bind(memory_kb)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(result_id)
     }
 }

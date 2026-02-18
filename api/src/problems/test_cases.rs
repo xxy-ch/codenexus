@@ -1,0 +1,237 @@
+use crate::middleware::auth::AuthExtractor;
+use axum::{
+    extract::{Path, State},
+    http::StatusCode,
+    response::Json,
+};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use uuid::Uuid;
+use sqlx::FromRow;
+use crate::AppState;
+
+/// Test case model
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct TestCase {
+    pub id: i64,
+    pub problem_id: i64,
+    pub input: String,
+    pub expected_output: String,
+    pub is_hidden: bool,
+    pub score: i32,
+    pub order: i32,
+    pub created_at: String,
+}
+
+/// Create test case request
+#[derive(Debug, Deserialize)]
+pub struct CreateTestCaseRequest {
+    pub input: String,
+    pub expected_output: String,
+    pub is_hidden: Option<bool>,
+    pub score: Option<i32>,
+    pub order: Option<i32>,
+}
+
+/// Update test case request
+#[derive(Debug, Deserialize)]
+pub struct UpdateTestCaseRequest {
+    pub input: Option<String>,
+    pub expected_output: Option<String>,
+    pub is_hidden: Option<bool>,
+    pub score: Option<i32>,
+    pub order: Option<i32>,
+}
+
+/// Batch import test cases request
+#[derive(Debug, Deserialize)]
+pub struct BatchImportTestCasesRequest {
+    pub test_cases: Vec<CreateTestCaseRequest>,
+}
+
+/// List test cases for a problem
+pub async fn list_test_cases(
+    State(state): State<AppState>,
+    AuthExtractor(_claims): AuthExtractor,
+    Path(problem_id): Path<i64>,
+) -> Result<Json<Vec<TestCase>>, StatusCode> {
+    let test_cases = sqlx::query_as::<_, TestCase>(
+        r#"
+        SELECT
+            id,
+            problem_id,
+            input,
+            expected_output,
+            is_hidden,
+            score,
+            order,
+            created_at::text as created_at
+        FROM problems_test_cases
+        WHERE problem_id = $1
+        ORDER BY order ASC, id ASC
+        "#
+    )
+    .bind(problem_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(test_cases))
+}
+
+/// Create a new test case
+pub async fn create_test_case(
+    State(state): State<AppState>,
+    AuthExtractor(_claims): AuthExtractor,
+    Path(problem_id): Path<i64>,
+    Json(req): Json<CreateTestCaseRequest>,
+) -> Result<Json<TestCase>, StatusCode> {
+    let test_case = sqlx::query_as::<_, TestCase>(
+        r#"
+        INSERT INTO problems_test_cases (
+            problem_id, input, expected_output, is_hidden, score, order
+        )
+        VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING
+            id,
+            problem_id,
+            input,
+            expected_output,
+            is_hidden,
+            score,
+            order,
+            created_at::text as created_at
+        "#
+    )
+    .bind(problem_id)
+    .bind(&req.input)
+    .bind(&req.expected_output)
+    .bind(req.is_hidden.unwrap_or(false))
+    .bind(req.score.unwrap_or(10))
+    .bind(req.order.unwrap_or(0))
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(test_case))
+}
+
+/// Update a test case
+pub async fn update_test_case(
+    State(state): State<AppState>,
+    AuthExtractor(_claims): AuthExtractor,
+    Path((problem_id, test_case_id)): Path<(i64, i64)>,
+    Json(req): Json<UpdateTestCaseRequest>,
+) -> Result<Json<TestCase>, StatusCode> {
+    let test_case = sqlx::query_as::<_, TestCase>(
+        r#"
+        UPDATE problems_test_cases
+        SET
+            input = COALESCE($1, input),
+            expected_output = COALESCE($2, expected_output),
+            is_hidden = COALESCE($3, is_hidden),
+            score = COALESCE($4, score),
+            order = COALESCE($5, order)
+        WHERE id = $6 AND problem_id = $7
+        RETURNING
+            id,
+            problem_id,
+            input,
+            expected_output,
+            is_hidden,
+            score,
+            order,
+            created_at::text as created_at
+        "#
+    )
+    .bind(req.input)
+    .bind(req.expected_output)
+    .bind(req.is_hidden)
+    .bind(req.score)
+    .bind(req.order)
+    .bind(test_case_id)
+    .bind(problem_id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match test_case {
+        Some(tc) => Ok(Json(tc)),
+        None => Err(StatusCode::NOT_FOUND),
+    }
+}
+
+/// Delete a test case
+pub async fn delete_test_case(
+    State(state): State<AppState>,
+    AuthExtractor(_claims): AuthExtractor,
+    Path((problem_id, test_case_id)): Path<(i64, i64)>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let result = sqlx::query(
+        "DELETE FROM problems_test_cases WHERE id = $1 AND problem_id = $2"
+    )
+    .bind(test_case_id)
+    .bind(problem_id)
+    .execute(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    if result.rows_affected() > 0 {
+        Ok(Json(json!({
+            "message": "Test case deleted successfully"
+        })))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
+}
+
+/// Batch import test cases
+pub async fn batch_import_test_cases(
+    State(state): State<AppState>,
+    AuthExtractor(_claims): AuthExtractor,
+    Path(problem_id): Path<i64>,
+    Json(req): Json<BatchImportTestCasesRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let mut imported_count = 0;
+    let mut errors = Vec::new();
+
+    for (index, test_case_req) in req.test_cases.iter().enumerate() {
+        let result = sqlx::query_as::<_, TestCase>(
+            r#"
+            INSERT INTO problems_test_cases (
+                problem_id, input, expected_output, is_hidden, score, order
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING
+                id,
+                problem_id,
+                input,
+                expected_output,
+                is_hidden,
+                score,
+                order,
+                created_at::text as created_at
+            "#
+        )
+        .bind(problem_id)
+        .bind(&test_case_req.input)
+        .bind(&test_case_req.expected_output)
+        .bind(test_case_req.is_hidden.unwrap_or(false))
+        .bind(test_case_req.score.unwrap_or(10))
+        .bind(test_case_req.order.unwrap_or(index as i32))
+        .fetch_one(&state.db_pool)
+        .await;
+
+        match result {
+            Ok(_) => imported_count += 1,
+            Err(e) => errors.push(format!("Test case {}: {}", index + 1, e)),
+        }
+    }
+
+    Ok(Json(json!({
+        "message": format!("Imported {} test cases", imported_count),
+        "imported_count": imported_count,
+        "total_count": req.test_cases.len(),
+        "errors": errors
+    })))
+}

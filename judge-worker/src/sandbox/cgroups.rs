@@ -1,10 +1,10 @@
 use anyhow::{Context, Result};
-use std::{fs, io::Write, path::Path, time::Duration};
+use std::{fs, io::Write, path::Path, path::PathBuf, time::Duration};
 use tracing::{debug, error, info};
 
 use crate::sandbox::SandboxConfig;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CgroupConfig {
     pub cpu_time_limit_ms: u64,
     pub memory_limit_bytes: u64,
@@ -13,6 +13,7 @@ pub struct CgroupConfig {
 
 pub struct CgroupController {
     cgroup_path: PathBuf,
+    config: CgroupConfig,
 }
 
 impl CgroupController {
@@ -22,7 +23,13 @@ impl CgroupController {
         fs::create_dir_all(&cgroup_path)
             .with_context(|| format!("Failed to create cgroup directory: {:?}", cgroup_path))?;
 
-        Self { cgroup_path }
+        let controller_config = CgroupConfig {
+            cpu_time_limit_ms: config.cpu_time_limit_ms,
+            memory_limit_bytes: config.memory_limit_bytes,
+            pids_max: config.pids_max,
+        };
+
+        Ok(Self { cgroup_path, config: controller_config })
     }
 
     pub fn create(&self) -> Result<()> {

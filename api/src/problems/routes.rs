@@ -1,17 +1,17 @@
 use axum::{
-    extract::{State, Path, Query, Extension},
+    extract::{State, Path, Query},
     http::StatusCode,
     response::Json,
 };
 use crate::AppState;
-use shared::models::Claims;
+use crate::middleware::auth::AuthExtractor;
 use uuid::Uuid;
 use std::collections::HashMap;
 use serde_json::json;
 
 pub async fn create_problem(
     State(state): State<AppState>,
-    Extension(_claims): Extension<Claims>,
+    AuthExtractor(claims): AuthExtractor,
     Json(req): Json<super::models::CreateProblemRequest>,
 ) -> Result<Json<super::models::Problem>, StatusCode> {
     // Create problem in database
@@ -27,7 +27,7 @@ pub async fn create_problem(
     .bind(&req.difficulty)
     .bind(req.time_limit)
     .bind(req.memory_limit)
-    .bind(Uuid::new_v4()) // TODO: Get from claims
+    .bind(claims.sub)  // Use actual user_id from JWT claims
     .fetch_one(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -37,7 +37,7 @@ pub async fn create_problem(
 
 pub async fn list_problems(
     State(state): State<AppState>,
-    Extension(_claims): Extension<Claims>,
+    AuthExtractor(_claims): AuthExtractor,
     Query(query): Query<HashMap<String, String>>,
 ) -> Result<Json<super::models::ProblemsListResponse>, StatusCode> {
     // Parse query parameters
@@ -113,7 +113,7 @@ pub async fn list_problems(
 
 pub async fn get_problem(
     State(state): State<AppState>,
-    Extension(_claims): Extension<Claims>,
+    AuthExtractor(_claims): AuthExtractor,
     Path(id): Path<Uuid>,
 ) -> Result<Json<super::models::Problem>, StatusCode> {
     let problem = sqlx::query_as::<_, super::models::Problem>(
@@ -132,7 +132,7 @@ pub async fn get_problem(
 
 pub async fn update_problem(
     State(state): State<AppState>,
-    Extension(_claims): Extension<Claims>,
+    AuthExtractor(_claims): AuthExtractor,
     Path(id): Path<Uuid>,
     Json(req): Json<super::models::UpdateProblemRequest>,
 ) -> Result<Json<super::models::Problem>, StatusCode> {
@@ -167,7 +167,7 @@ pub async fn update_problem(
 
 pub async fn delete_problem(
     State(state): State<AppState>,
-    Extension(_claims): Extension<Claims>,
+    AuthExtractor(_claims): AuthExtractor,
     Path(id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let result = sqlx::query("DELETE FROM problems WHERE id = $1")

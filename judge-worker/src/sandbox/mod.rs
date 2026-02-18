@@ -1,6 +1,6 @@
 pub mod chroot;
 pub mod cgroups;
-pub mod seccomp;
+// pub mod seccomp; // TODO: Requires libseccomp-sys dependency
 
 use anyhow::Result;
 
@@ -22,9 +22,9 @@ impl Default for SandboxConfig {
     }
 }
 
-pub fn create_sandbox(config: SandboxConfig) -> Result<cgroups::CgroupController, chroot::ChrootEnvironment> {
+pub fn create_sandbox(config: SandboxConfig) -> Result<(cgroups::CgroupController, chroot::ChrootEnvironment)> {
     let chroot_env = chroot::ChrootEnvironment::new(&config.sandbox_root, 1)?;
     let cgroup_ctrl = cgroups::CgroupController::new(&format!("judge-worker-{}", std::process::id()), &config)?;
-    
+
     Ok((cgroup_ctrl, chroot_env))
 }

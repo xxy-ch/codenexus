@@ -1,24 +1,39 @@
-// Re-export the produce function from the parent module
-pub use super::{produce};
+// Producer is only used by API, not by judge-worker
+// This file is kept for compatibility but will not be used
+pub use super::{JudgeResult};
 
 use anyhow::Result;
 use redis::Client;
 
-pub async fn produce_submission(
+/// Send judge result back to API via a callback queue
+///
+/// # Arguments
+/// * `redis_client` - Redis client
+/// * `stream_name` - Results stream name
+/// * `result` - Judging result to send
+///
+/// # Returns
+/// Message ID if successful
+pub async fn send_judge_result(
     redis_client: &Client,
     stream_name: &str,
-    message: &super::SubmissionMessage,
+    result: &JudgeResult,
 ) -> Result<String> {
-    let fields = vec![
-        ("submission_id".to_string(), message.submission_id.clone()),
-        ("problem_id".to_string(), message.problem_id.clone()),
-        ("user_id".to_string(), message.user_id.clone()),
-        ("organization_id".to_string(), message.organization_id.to_string()),
-        ("language".to_string(), message.language.clone()),
-        ("source_code".to_string(), message.source_code.clone()),
-        ("time_limit_ms".to_string(), message.time_limit_ms.to_string()),
-    ];
+    use redis::AsyncCommands;
 
-    // This will be implemented when we have async support
-    Ok("placeholder_id".to_string())
+    let mut conn = redis_client.get_async_connection().await?;
+
+    let result_json = serde_json::to_string(result)?;
+
+    let mut cmd = redis::cmd("XADD");
+    cmd.arg(stream_name)
+       .arg("*")
+       .arg("submission_id")
+       .arg(result.submission_id.to_string())
+       .arg("data")
+       .arg(result_json);
+
+    let message_id: String = cmd.query_async(&mut conn).await?;
+
+    Ok(message_id)
 }

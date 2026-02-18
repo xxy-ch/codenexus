@@ -1,10 +1,10 @@
 use anyhow::{Context, Result};
-use nix::unistd::{chdir, chroot, setgid, setuid, Gid};
-use std::{fs, path::Path};
+use nix::unistd::{chdir, chroot, setgid, setuid, Gid, Uid};
+use std::{fs, path::Path, path::PathBuf};
 
-const SANDBOX_USER: Gid = Gid::from_raw(1000);
+const SANDBOX_USER: Uid = Uid::from_raw(1000);
 const SANDBOX_GROUP: Gid = Gid::from_raw(1000);
-const SANDBOX_ROOT: &Path = Path::new("/var/lib/onlinejudge/sandbox");
+const SANDBOX_ROOT: &str = "/var/lib/onlinejudge/sandbox";
 
 pub struct ChrootEnvironment {
     pub root_path: PathBuf,
@@ -20,15 +20,15 @@ impl ChrootEnvironment {
         }
 
         let proc_path = root_path.join("proc");
-        fs::create_dir_all(proc_path)
+        fs::create_dir_all(&proc_path)
             .with_context(|| format!("Failed to create proc directory: {:?}", proc_path))?;
 
         let sys_path = root_path.join("sys");
-        fs::create_dir_all(sys_path)
+        fs::create_dir_all(&sys_path)
             .with_context(|| format!("Failed to create sys directory: {:?}", sys_path))?;
 
         Ok(Self {
-            root_path: root_path.clone(),
+            root_path: root_path.to_path_buf(),
             original_pid,
         })
     }

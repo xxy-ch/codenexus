@@ -1,45 +1,29 @@
-use anyhow::{Context, Result};
-use crate::queue::{SubmissionMessage, producer, acknowledge};
-use crate::processor::TestCaseResult;
-use redis::AsyncCommands;
+use anyhow::Result;
+use crate::queue::{SubmissionMessage, JudgeResult, TestCaseResult};
 
-pub async fn process_submission(
-    redis_client: &redis::Client,
-    message: SubmissionMessage,
-) -> Result<HashMap<String, serde_json::Value>, anyhow::Error> {
-    tracing::info!("Processing submission: {}", message.submission_id);
-
-    let verdict_data = crate::processor::determine_verdict(0, 0, None, false);
-
-    let mut test_results = Vec::new();
-
-    let test_case_result = crate::processor::TestCaseResult::ac();
-    test_results.push(test_case_result);
-
-    let mut results = crate::processor::create_submission_result(&message.submission_id, test_results, verdict_data);
-
-    results.insert(
-        "final_verdict".to_string(),
-        serde_json::json!(verdict_data.to_string()),
+/// Process a submission and return the judging result
+///
+/// This is a placeholder implementation that always returns "accepted"
+/// TODO: Implement actual judging logic:
+/// 1. Compile the code
+/// 2. Execute in sandbox
+/// 3. Run test cases
+/// 4. Collect results
+pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeResult> {
+    tracing::info!(
+        "Processing submission {} for problem {}",
+        submission.submission_id,
+        submission.problem_id
     );
 
-    let _ = producer::produce(redis_client, "submission_queue", &[
-        ("submission_id", message.submission_id.as_str()),
-        ("problem_id", message.problem_id.as_str()),
-        ("user_id", message.user_id.as_str()),
-        ("organization_id", message.organization_id.to_string()),
-        ("language", message.language.as_str()),
-        ("source_code", message.source_code.as_str()),
-        ("time_limit_ms", message.time_limit_ms.to_string()),
-    ])
-        .await
-        .context("Failed to produce submission to queue")?;
-
-    acknowledge(redis_client, "submission_queue", &[&message.submission_id])
-        .await
-        .context("Failed to acknowledge submission")?;
-
-    tracing::info!("Submission {} processed successfully", message.submission_id);
-
-    Ok(results)
+    // TODO: Implement actual judging
+    // For now, return a dummy result
+    Ok(JudgeResult {
+        submission_id: submission.submission_id,
+        status: "accepted".to_string(),
+        score: Some(100),
+        runtime_ms: Some(150),
+        memory_kb: Some(1024),
+        test_case_results: vec![],
+    })
 }

@@ -1,3 +1,3 @@
-pub mod producer;
-pub mod consumer;
 pub mod service;
+
+pub use service::process_submission;

@@ -14,3 +14,5 @@ shared = { path = "../shared" }
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+reqwest = { version = "0.12", features = ["json"] }

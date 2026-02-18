@@ -5,8 +5,8 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use uuid::Uuid;
 use crate::AppState;
+use crate::middleware::auth::AuthExtractor;
 
 pub fn user_router() -> axum::Router<AppState> {
     axum::Router::new()
@@ -26,40 +26,21 @@ pub async fn register(
 
 async fn get_me(
     State(state): State<AppState>,
-    headers: axum::http::HeaderMap,
+    AuthExtractor(claims): AuthExtractor,
 ) -> Result<impl IntoResponse, AppError> {
-    let user_id = extract_user_id(&headers)?;
     let service = UserService::new(state.db_pool, state.jwt_service);
-    let user = service.get_user_profile(user_id).await?;
+    let user = service.get_user_profile(claims.sub).await?;
     Ok(Json(user))
 }
 
 async fn update_me(
     State(state): State<AppState>,
-    headers: axum::http::HeaderMap,
+    AuthExtractor(claims): AuthExtractor,
     Json(updates): Json<UserProfileUpdate>,
 ) -> Result<impl IntoResponse, AppError> {
-    let user_id = extract_user_id(&headers)?;
     let service = UserService::new(state.db_pool, state.jwt_service);
-    let user = service.update_user_profile(user_id, updates).await?;
+    let user = service.update_user_profile(claims.sub, updates).await?;
     Ok(Json(user))
-}
-
-fn extract_user_id(headers: &axum::http::HeaderMap) -> Result<Uuid, AppError> {
-    let auth_header = headers
-        .get("authorization")
-        .ok_or_else(|| AppError::Auth("Missing authorization header".to_string()))?;
-
-    let token = auth_header
-        .to_str()
-        .map_err(|_| AppError::Auth("Invalid authorization header".to_string()))?
-        .strip_prefix("Bearer ")
-        .ok_or_else(|| AppError::Auth("Invalid authorization format".to_string()))?;
-
-    // Decode and verify token (simplified - in real app, this would use the JWT service)
-    // For now, just extract the user ID from the token
-    // In production, use the JWT service to verify the token
-    Ok(Uuid::parse_str(token).map_err(|_| AppError::Auth("Invalid token".to_string()))?)
 }
 
 #[derive(Debug)]
