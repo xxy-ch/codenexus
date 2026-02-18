@@ -6,6 +6,7 @@ mod rbac;
 mod problems;
 mod users;
 mod submissions;
+mod contests;
 
 use axum::{
     routing::{get, post},
@@ -93,6 +94,8 @@ fn create_router(state: AppState) -> Router {
         .nest("/users", users::user_router())
         // Problem routes
         .nest("/problems", problems::problems_router())
+        // Contest routes
+        .nest("/contests", contests::contests_router())
         // Submission routes
         .nest("/submissions", submissions::submissions_router())
         // Apply middleware
