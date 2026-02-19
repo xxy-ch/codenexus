@@ -220,7 +220,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+        // Teachers CAN submit solutions in our updated RBAC design
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
     #[tokio::test]

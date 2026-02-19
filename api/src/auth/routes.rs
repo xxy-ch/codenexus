@@ -91,6 +91,7 @@ mod tests {
             db_pool,
             redis_pool: None,
             jwt_service,
+            redis_url: String::new(),
         };
 
         Router::new()

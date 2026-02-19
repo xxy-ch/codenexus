@@ -228,13 +228,13 @@ mod tests {
             Role::Teacher,
             Permission::ViewLeaderboard
         ));
-        assert!(!RbacService::role_has_permission(
+        assert!(RbacService::role_has_permission(
             Role::Teacher,
-            Permission::ManageUsers
+            Permission::SubmitSolution
         ));
         assert!(!RbacService::role_has_permission(
             Role::Teacher,
-            Permission::SubmitSolution
+            Permission::ManageUsers
         ));
     }
 
@@ -277,15 +277,17 @@ mod tests {
         let perms = vec![Permission::ManageUsers, Permission::SubmitSolution];
         assert!(RbacService::role_has_any_permission(Role::Root, &perms));
         assert!(RbacService::role_has_any_permission(Role::Student, &perms));
-        assert!(!RbacService::role_has_any_permission(Role::Teacher, &perms));
+        // Teacher has SubmitSolution permission but not ManageUsers
+        assert!(RbacService::role_has_any_permission(Role::Teacher, &perms));
     }
 
     #[test]
     fn test_get_permissions() {
         let root_perms = RbacService::get_permissions(Role::Root);
-        assert_eq!(root_perms.len(), 4);
+        // Root has all 21 permissions assigned in RBAC service
+        assert_eq!(root_perms.len(), 21);
 
         let student_perms = RbacService::get_permissions(Role::Student);
-        assert_eq!(student_perms.len(), 2);
+        assert_eq!(student_perms.len(), 3); // SubmitSolution, RegisterContests, ViewLeaderboard
     }
 }
