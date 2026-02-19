@@ -23,31 +23,95 @@ impl RbacService {
             Role::Root => {
                 // Root has all permissions
                 let mut perms = HashSet::new();
+                // User Management
                 perms.insert(Permission::ManageUsers);
+                perms.insert(Permission::ViewUsers);
+                // Problem Management
                 perms.insert(Permission::ManageProblems);
+                perms.insert(Permission::ViewAllProblems);
                 perms.insert(Permission::SubmitSolution);
+                // Contest Management
+                perms.insert(Permission::ManageContests);
+                perms.insert(Permission::RegisterContests);
+                perms.insert(Permission::ViewContestProblems);
+                // Class Management
+                perms.insert(Permission::ManageClasses);
+                perms.insert(Permission::ManageAssignments);
+                perms.insert(Permission::GradeSubmissions);
+                perms.insert(Permission::ViewClassStats);
+                // Organization Management
+                perms.insert(Permission::ManageOrganization);
+                perms.insert(Permission::ManageCampus);
+                // Leaderboard & Statistics
                 perms.insert(Permission::ViewLeaderboard);
+                perms.insert(Permission::ViewStatistics);
+                // Content Moderation
+                perms.insert(Permission::ModerateContent);
+                perms.insert(Permission::ManageTags);
+                // System Administration
+                perms.insert(Permission::ManageSystem);
+                perms.insert(Permission::ViewLogs);
+                perms.insert(Permission::ManageApiKeys);
+                perms
+            }
+            Role::OrganizationAdmin => {
+                let mut perms = HashSet::new();
+                perms.insert(Permission::ManageUsers);
+                perms.insert(Permission::ViewUsers);
+                perms.insert(Permission::ManageProblems);
+                perms.insert(Permission::ViewAllProblems);
+                perms.insert(Permission::ManageContests);
+                perms.insert(Permission::ManageClasses);
+                perms.insert(Permission::ManageAssignments);
+                perms.insert(Permission::ManageOrganization);
+                perms.insert(Permission::ViewLeaderboard);
+                perms.insert(Permission::ViewStatistics);
+                perms.insert(Permission::ManageTags);
                 perms
             }
             Role::CampusAdmin => {
-                // CampusAdmin can manage users and problems, but not system-wide
                 let mut perms = HashSet::new();
                 perms.insert(Permission::ManageUsers);
+                perms.insert(Permission::ViewUsers);
                 perms.insert(Permission::ManageProblems);
+                perms.insert(Permission::ViewAllProblems);
+                perms.insert(Permission::ManageContests);
+                perms.insert(Permission::ManageClasses);
+                perms.insert(Permission::ManageAssignments);
+                perms.insert(Permission::ManageCampus);
                 perms.insert(Permission::ViewLeaderboard);
+                perms.insert(Permission::ViewStatistics);
                 perms
             }
             Role::Teacher => {
-                // Teacher can manage problems and view leaderboard
                 let mut perms = HashSet::new();
                 perms.insert(Permission::ManageProblems);
+                perms.insert(Permission::ViewAllProblems);
+                perms.insert(Permission::SubmitSolution);
+                perms.insert(Permission::ManageContests);
+                perms.insert(Permission::RegisterContests);
+                perms.insert(Permission::ManageClasses);
+                perms.insert(Permission::ManageAssignments);
+                perms.insert(Permission::GradeSubmissions);
+                perms.insert(Permission::ViewClassStats);
+                perms.insert(Permission::ViewLeaderboard);
+                perms.insert(Permission::ViewStatistics);
+                perms
+            }
+            Role::TeachingAssistant => {
+                let mut perms = HashSet::new();
+                perms.insert(Permission::ViewAllProblems);
+                perms.insert(Permission::SubmitSolution);
+                perms.insert(Permission::RegisterContests);
+                perms.insert(Permission::GradeSubmissions);
+                perms.insert(Permission::ViewClassStats);
                 perms.insert(Permission::ViewLeaderboard);
                 perms
             }
             Role::Student => {
-                // Student can submit and view
                 let mut perms = HashSet::new();
                 perms.insert(Permission::SubmitSolution);
+                perms.insert(Permission::RegisterContests);
                 perms.insert(Permission::ViewLeaderboard);
                 perms
             }
