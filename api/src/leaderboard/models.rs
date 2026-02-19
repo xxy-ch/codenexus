@@ -3,7 +3,7 @@ use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
 /// Leaderboard entry for a user
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct LeaderboardEntry {
     pub rank: i64,
     pub user_id: Uuid,
@@ -36,7 +36,7 @@ pub struct UserStats {
 }
 
 /// Recent accepted problem
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RecentAC {
     pub problem_id: Uuid,
     pub problem_title: String,
@@ -64,7 +64,7 @@ pub struct LeaderboardResponse {
 }
 
 /// Problem leaderboard (fastest solvers)
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ProblemLeaderboardEntry {
     pub rank: i64,
     pub user_id: Uuid,

@@ -73,7 +73,7 @@ pub struct AddProblemToContestRequest {
     pub order_index: Option<i32>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct ContestProblemDetail {
     pub id: i64,
     pub problem_id: i64,
@@ -104,7 +104,7 @@ pub struct ContestRankingEntry {
     pub submissions: Vec<ProblemSubmission>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, sqlx::FromRow)]
 pub struct ProblemSubmission {
     pub problem_id: i64,
     pub problem_title: String,

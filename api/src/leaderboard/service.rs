@@ -4,6 +4,7 @@ use anyhow::Result;
 use redis::AsyncCommands;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
+use chrono::{DateTime, Utc};
 
 pub struct LeaderboardService {
     pool: PgPool,
@@ -27,11 +28,8 @@ impl LeaderboardService {
         // Try to get from Redis cache first
         let cache_key = format!("leaderboard:global:{}:{}", limit, offset);
         if let Ok(mut conn) = self.redis_client.get_multiplexed_async_connection().await {
-            if let Ok(cached) = redis::cmd("GET")
-                .arg(&cache_key)
-                .query_async::<_, String>(&mut conn)
-                .await
-            {
+            let cached: Result<String, _> = conn.get(&cache_key).await;
+            if let Ok(cached) = cached {
                 if let Ok(entries) = serde_json::from_str::<Vec<LeaderboardEntry>>(&cached) {
                     return Ok(LeaderboardResponse {
                         total: entries.len() as i64,
@@ -54,8 +52,7 @@ impl LeaderboardService {
 
         let min_problems_filter = query.min_problems.unwrap_or(0);
 
-        let entries = sqlx::query_as::<_, LeaderboardEntry>(
-            format!(r#"
+        let query_str = format!(r#"
             WITH user_stats AS (
                 SELECT
                     u.id as user_id,
@@ -69,7 +66,6 @@ impl LeaderboardService {
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
                     ) as acceptance_rate,
-                    -- Calculate score: weighted by difficulty
                     SUM(
                         CASE
                             WHEN s.verdict = 'AC' THEN
@@ -102,8 +98,9 @@ impl LeaderboardService {
             FROM user_stats
             ORDER BY score DESC, problems_solved DESC, username ASC
             LIMIT $2 OFFSET $3
-            "#, time_filter)
-        )
+        "#, time_filter);
+
+        let entries = sqlx::query_as::<_, LeaderboardEntry>(&query_str)
         .bind(min_problems_filter)
         .bind(limit as i64)
         .bind(offset as i64)
@@ -111,29 +108,26 @@ impl LeaderboardService {
         .await?;
 
         // Get total count
-        let total: i64 = sqlx::query_scalar(
-            format!(r#"
+        let count_query = format!(r#"
             SELECT COUNT(DISTINCT u.id)
             FROM users u
             LEFT JOIN submissions s ON s.user_id = u.id {}
             LEFT JOIN problems p ON p.id = s.problem_id
             GROUP BY u.id
             HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC') >= $1
-            "#, time_filter)
-        )
-        .bind(min_problems_filter)
-        .fetch_one(&self.pool)
-        .await.unwrap_or(0);
+        "#, time_filter);
+
+        let total: i64 = sqlx::query_scalar(&count_query)
+            .bind(min_problems_filter)
+            .fetch_one(&self.pool)
+            .await
+            .unwrap_or(0);
 
         // Cache result
         if let Ok(mut conn) = self.redis_client.get_multiplexed_async_connection().await {
             if let Ok(serialized) = serde_json::to_string(&entries) {
-                let _: Result<(), redis::aio::MultiplexedConnectionError> = redis::cmd("SETEX")
-                    .arg(&cache_key)
-                    .arg(300) // 5 minute TTL
-                    .arg(serialized)
-                    .query_async(&mut conn)
-                    .await;
+                let _: Result<(), _> = conn.set_ex(&cache_key, serialized, 300).await;
+                // Ignore cache errors
             }
         }
 
@@ -429,9 +423,9 @@ impl LeaderboardService {
             total_submissions: stats.1,
             acceptance_rate,
             global_rank: Some(global_rank),
-            school_rank,
-            campus_rank,
-            class_rank,
+            school_rank: Some(school_rank),
+            campus_rank: Some(campus_rank),
+            class_rank: Some(class_rank),
             streak_days: 0, // TODO: Implement streak calculation
             max_streak_days: 0,
             last_ac_at: stats.2,
@@ -536,6 +530,7 @@ impl LeaderboardService {
             .bind(user_id)
             .fetch_one(&self.pool)
             .await?,
+            Some(_) => 0, // Not implemented yet
         };
 
         Ok(rank)
@@ -583,7 +578,7 @@ impl LeaderboardService {
                 .unwrap_or_default();
 
             if !keys.is_empty() {
-                let _: Result<(), redis::aio::MultiplexedConnectionError> = redis::cmd("DEL")
+                let _: Result<(), _> = redis::cmd("DEL")
                     .arg(keys)
                     .query_async(&mut conn)
                     .await;

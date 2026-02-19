@@ -189,7 +189,7 @@ pub async fn register_for_contest(
     let service = crate::contests::service::ContestService::new(state.db_pool);
 
     let participant = service
-        .register_for_contest(contest_id, claims.user_id)
+        .register_for_contest(contest_id, claims.sub)
         .await
         .map_err(|e| {
             if e.to_string().contains("Already registered") {

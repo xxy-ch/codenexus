@@ -5,8 +5,20 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
+    Router,
+    routing::get,
 };
 use uuid::Uuid;
+
+pub fn leaderboard_router() -> Router<AppState> {
+    Router::new()
+        .route("/global", get(get_global_leaderboard))
+        .route("/school/:school_id", get(get_school_leaderboard))
+        .route("/campus/:campus_id", get(get_campus_leaderboard))
+        .route("/class/:class_id", get(get_class_leaderboard))
+        .route("/user/:user_id/stats", get(get_user_stats))
+        .route("/problem/:problem_id", get(get_problem_leaderboard))
+}
 
 /// Get global leaderboard
 pub async fn get_global_leaderboard(

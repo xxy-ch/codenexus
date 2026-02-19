@@ -8,6 +8,7 @@ mod users;
 mod submissions;
 mod contests;
 mod leaderboard;
+mod classes;
 
 use axum::{
     routing::{get, post},
@@ -100,6 +101,8 @@ fn create_router(state: AppState) -> Router {
         .nest("/leaderboard", leaderboard::leaderboard_router())
         // Submission routes
         .nest("/submissions", submissions::submissions_router())
+        // Class routes
+        .nest("/classes", classes::classes_router())
         // Apply middleware
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
