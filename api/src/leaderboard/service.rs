@@ -127,7 +127,7 @@ impl LeaderboardService {
 
         // Cache result
         if let Ok(mut conn) = self.redis_client.get_multiplexed_async_connection().await {
-            if let Ok serialized) = serde_json::to_string(&entries) {
+            if let Ok(serialized) = serde_json::to_string(&entries) {
                 let _: Result<(), redis::aio::MultiplexedConnectionError> = redis::cmd("SETEX")
                     .arg(&cache_key)
                     .arg(300) // 5 minute TTL
