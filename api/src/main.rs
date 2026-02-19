@@ -7,6 +7,7 @@ mod problems;
 mod users;
 mod submissions;
 mod contests;
+mod leaderboard;
 
 use axum::{
     routing::{get, post},
@@ -27,6 +28,7 @@ use auth::JwtService;
 pub struct AppState {
     pub db_pool: PgPool,
     pub redis_pool: Option<RedisPool>,
+    pub redis_url: String,
     pub jwt_service: JwtService,
 }
 
@@ -44,7 +46,7 @@ async fn main() -> anyhow::Result<()> {
 
     let database_url =
         std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let redis_url = std::env::var("REDIS_URL").ok();
+    let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let jwt_secret =
         std::env::var("JWT_SECRET").unwrap_or_else(|_| "default_jwt_secret_change_me".to_string());
     let bind_address = std::env::var("API_BIND_ADDRESS")
@@ -54,18 +56,16 @@ async fn main() -> anyhow::Result<()> {
     let db_pool = db::create_pool(&database_url, Some(10), Some(30)).await?;
     info!("Database connection pool created");
 
-    let redis_pool = if let Some(url) = redis_url {
-        info!("Connecting to Redis...");
-        let pool = redis::create_pool(&url).await?;
+    let redis_pool = if let Ok(pool) = redis::create_pool(&redis_url).await {
         info!("Redis connection pool created");
         Some(pool)
     } else {
-        info!("Redis URL not configured, running without Redis");
+        info!("Redis connection failed, running without Redis pool");
         None
     };
 
     let jwt_service = auth::JwtService::new(&jwt_secret);
-    let state = AppState { db_pool, redis_pool, jwt_service };
+    let state = AppState { db_pool, redis_pool, redis_url, jwt_service };
 
     let app = create_router(state);
 
@@ -96,6 +96,8 @@ fn create_router(state: AppState) -> Router {
         .nest("/problems", problems::problems_router())
         // Contest routes
         .nest("/contests", contests::contests_router())
+        // Leaderboard routes
+        .nest("/leaderboard", leaderboard::leaderboard_router())
         // Submission routes
         .nest("/submissions", submissions::submissions_router())
         // Apply middleware
