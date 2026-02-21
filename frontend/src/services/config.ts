@@ -53,6 +53,16 @@ export const WS_CONFIG = {
   },
 }
 
+/**
+ * WebSocket connection status
+ */
+export enum ConnectionStatus {
+  CONNECTING = 'connecting',
+  CONNECTED = 'connected',
+  DISCONNECTED = 'disconnected',
+  ERROR = 'error',
+}
+
 // Storage keys
 export const STORAGE_KEYS = {
   TOKEN: 'oj_token',

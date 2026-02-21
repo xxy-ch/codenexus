@@ -14,6 +14,7 @@ import { DashboardEnhanced } from './pages/user/DashboardEnhanced'
 import { ProblemSet } from './pages/user/ProblemSet'
 import { ProblemDetail } from './pages/user/ProblemDetail'
 import { ProblemIDE } from './pages/user/ProblemIDE'
+import { ProblemIDEEnhanced } from './pages/user/ProblemIDEEnhanced'
 import { SubmissionHistory } from './pages/user/SubmissionHistory'
 import { SubmissionDetail } from './pages/user/SubmissionDetail'
 import { ContestList } from './pages/user/ContestList'
@@ -76,7 +77,7 @@ function App() {
             <Route path="dashboard" element={<DashboardEnhanced />} />
             <Route path="problems" element={<ProblemSet />} />
             <Route path="problems/:problemId" element={<ProblemDetail />} />
-            <Route path="problems/:problemId/solve" element={<ProblemIDE />} />
+            <Route path="problems/:problemId/solve" element={<ProblemIDEEnhanced />} />
             <Route path="submissions" element={<SubmissionHistory />} />
             <Route path="submissions/:submissionId" element={<SubmissionDetail />} />
             <Route path="contests" element={<ContestList />} />

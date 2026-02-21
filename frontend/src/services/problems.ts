@@ -3,7 +3,7 @@ import type { Problem, TestCase, ProblemSubmission } from '@/types/problems'
 import { getMockUserSubmissions, getMockSubmissionDetail } from './mockSubmissions'
 
 // 开发模式下使用模拟数据的标志
-const USE_MOCK_DATA = true // 临时启用模拟数据用于演示
+const USE_MOCK_DATA = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 
 export interface ProblemFilters {
   difficulty?: 'easy' | 'medium' | 'hard' | 'all'
