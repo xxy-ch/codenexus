@@ -92,6 +92,7 @@ mod tests {
             redis_pool: None,
             jwt_service,
             redis_url: String::new(),
+            websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
         };
 
         Router::new()

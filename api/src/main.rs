@@ -9,6 +9,7 @@ mod submissions;
 mod contests;
 mod leaderboard;
 mod classes;
+mod websocket;
 
 use axum::{
     routing::{get, post},
@@ -24,6 +25,7 @@ use std::net::SocketAddr;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use auth::JwtService;
+use websocket::WebSocketServer;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -31,6 +33,7 @@ pub struct AppState {
     pub redis_pool: Option<RedisPool>,
     pub redis_url: String,
     pub jwt_service: JwtService,
+    pub websocket_server: std::sync::Arc<WebSocketServer>,
 }
 
 #[tokio::main]
@@ -66,7 +69,14 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let jwt_service = auth::JwtService::new(&jwt_secret);
-    let state = AppState { db_pool, redis_pool, redis_url, jwt_service };
+    let websocket_server = std::sync::Arc::new(WebSocketServer::new());
+    let state = AppState {
+        db_pool,
+        redis_pool,
+        redis_url,
+        jwt_service,
+        websocket_server,
+    };
 
     let app = create_router(state);
 
@@ -103,6 +113,8 @@ fn create_router(state: AppState) -> Router {
         .nest("/submissions", submissions::submissions_router())
         // Class routes
         .nest("/classes", classes::classes_router())
+        // WebSocket route (public, auth handled in handler)
+        .route("/ws", get(websocket::handler::websocket_upgrade_handler))
         // Apply middleware
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
