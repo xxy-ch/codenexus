@@ -87,7 +87,6 @@ const STATUS_CONFIG = {
 
 export function SubmissionResult({ submission, onClose }: SubmissionResultProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const config = STATUS_CONFIG[submission.status]
 
   // 模拟实时状态更新 (在实际应用中会通过WebSocket或轮询获取)
   const [currentStatus, setCurrentStatus] = useState(submission.status)

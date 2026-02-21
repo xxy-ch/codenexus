@@ -13,7 +13,6 @@ import { ServerError } from './pages/error/ServerError'
 import { DashboardEnhanced } from './pages/user/DashboardEnhanced'
 import { ProblemSet } from './pages/user/ProblemSet'
 import { ProblemDetail } from './pages/user/ProblemDetail'
-import { ProblemIDE } from './pages/user/ProblemIDE'
 import { ProblemIDEEnhanced } from './pages/user/ProblemIDEEnhanced'
 import { SubmissionHistory } from './pages/user/SubmissionHistory'
 import { SubmissionDetail } from './pages/user/SubmissionDetail'
@@ -29,7 +28,6 @@ import { AdminDashboard } from './pages/admin/AdminDashboard'
 import { UserManagement } from './pages/admin/UserManagement'
 import { ProblemManagement } from './pages/admin/ProblemManagement'
 import { ReportManagement } from './pages/admin/ReportManagement'
-import { PageLoading } from './components/ui/Loading'
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -1,6 +1,6 @@
-import { useRef, useEffect } from 'react'
-import Editor, { Monaco } from '@monaco-editor/react'
-import { editor } from 'monaco-editor'
+import { useRef } from 'react'
+import Editor, { type Monaco } from '@monaco-editor/react'
+import { type editor } from 'monaco-editor'
 
 interface MonacoEditorProps {
   language: string
@@ -42,7 +42,6 @@ export function MonacoEditor({
   minimap = true,
   wordWrap = 'off',
   lineHeight = 24,
-  codeTemplates = {},
 }: MonacoEditorProps) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null)
 
@@ -107,7 +106,7 @@ export function MonacoEditor({
 
     // 添加自定义代码片段
     monaco.languages.registerCompletionItemProvider(monacoLanguage, {
-      provideCompletionItems: (model, position) => {
+      provideCompletionItems: (model: any, position: any) => {
         const word = model.getWordUntilPosition(position)
         const range = {
           startLineNumber: position.lineNumber,

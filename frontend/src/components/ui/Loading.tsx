@@ -4,12 +4,14 @@ import { cn } from '@/lib/utils'
 interface LoadingProps {
   size?: number
   className?: string
+  message?: string
 }
 
-export function Loading({ size = 40, className }: LoadingProps) {
+export function Loading({ size = 40, className, message }: LoadingProps) {
   return (
-    <div className={cn('flex items-center justify-center', className)}>
+    <div className={cn('flex flex-col items-center justify-center gap-4', className)}>
       <CircularProgress size={size} className="text-primary" />
+      {message && <p className="text-sm text-gray-600 dark:text-gray-400">{message}</p>}
     </div>
   )
 }

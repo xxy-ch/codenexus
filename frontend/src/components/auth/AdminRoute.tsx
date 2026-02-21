@@ -7,7 +7,7 @@ interface AdminRouteProps {
 }
 
 export function AdminRoute({ children }: AdminRouteProps) {
-  const { user, isLoading, checkAuth } = useAuthStore()
+  const { user, isLoading } = useAuthStore()
 
   if (isLoading) {
     return <Loading message="加载中..." />

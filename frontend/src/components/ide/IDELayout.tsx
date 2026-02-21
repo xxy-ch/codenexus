@@ -1,30 +1,23 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
-import { materialSymbols } from '@/utils/materialSymbols'
 
 interface IDELayoutProps {
   problemTitle: string
-  problemId: string
   language: string
   onLanguageChange: (language: string) => void
-  code: string
-  onCodeChange: (code: string) => void
   onSubmit: () => void
   isSubmitting: boolean
   timeLimit: number
   memoryLimit: number
-  languages: Array<{ id: string; name: string; icon: string; version: string }>
+  languages: Array<{ id: string; name: string; icon: string; version: string; extension?: string }>
   children?: React.ReactNode
 }
 
 export function IDELayout({
   problemTitle,
-  problemId,
   language,
   onLanguageChange,
-  code,
-  onCodeChange,
   onSubmit,
   isSubmitting,
   timeLimit,
