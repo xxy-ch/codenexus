@@ -1,0 +1,440 @@
+use sqlx::PgPool;
+use uuid::Uuid;
+use anyhow::Result;
+use chrono::Utc;
+
+use crate::blog::models::*;
+
+/// Blog service
+pub struct BlogService {
+    pool: PgPool,
+}
+
+impl BlogService {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+
+    /// Generate slug from title
+    fn generate_slug(title: &str) -> String {
+        title.to_lowercase()
+            .chars()
+            .map(|c| if c.is_alphanumeric() { c } else { '-' })
+            .collect::<String>()
+            .split('-')
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<&str>>()
+            .join("-")
+    }
+
+    /// Get articles list with filters
+    pub async fn get_articles(&self, filters: ArticleFilters) -> Result<ArticleListResponse> {
+        let page = filters.page.unwrap_or(1);
+        let limit = filters.limit.unwrap_or(20);
+        let offset = (page - 1) * limit;
+
+        let mut query = String::from("SELECT a.* FROM articles a WHERE 1=1");
+        let mut count_query = String::from("SELECT COUNT(*) FROM articles a WHERE 1=1");
+
+        // Apply filters
+        if let Some(author_id) = filters.author_id {
+            query.push_str(&format!(" AND a.author_id = '{}'", author_id));
+            count_query.push_str(&format!(" AND author_id = '{}'", author_id));
+        }
+
+        if let Some(category) = &filters.category {
+            query.push_str(&format!(" AND a.category = '{}'", category));
+            count_query.push_str(&format!(" AND category = '{}'", category));
+        }
+
+        if let Some(is_published) = filters.is_published {
+            query.push_str(&format!(" AND a.is_published = {}", is_published));
+            count_query.push_str(&format!(" AND is_published = {}", is_published));
+        }
+
+        if let Some(is_featured) = filters.is_featured {
+            query.push_str(&format!(" AND a.is_featured = {}", is_featured));
+        }
+
+        if let Some(search) = &filters.search {
+            let search_escaped = search.replace('\'', "''");
+            query.push_str(&format!(" AND (a.title ILIKE '%{}%' OR a.summary ILIKE '%{}%')",
+                search_escaped, search_escaped));
+            count_query.push_str(&format!(" AND (title ILIKE '%{}%' OR summary ILIKE '%{}%')",
+                search_escaped, search_escaped));
+        }
+
+        // Sorting
+        match filters.sort.as_deref() {
+            Some("popular") => {
+                query.push_str(" ORDER BY a.view_count DESC, a.created_at DESC");
+            }
+            Some("trending") => {
+                query.push_str(" ORDER BY (a.view_count * 0.5 + a.like_count) DESC, a.created_at DESC");
+            }
+            _ => {
+                query.push_str(" ORDER BY a.is_featured DESC, a.published_at DESC, a.created_at DESC");
+            }
+        }
+
+        query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
+
+        // Get total count
+        let total: i64 = sqlx::query_scalar(&count_query)
+            .fetch_one(&self.pool)
+            .await?;
+
+        // Get articles
+        let articles = sqlx::query_as::<_, Article>(&query)
+            .fetch_all(&self.pool)
+            .await?;
+
+        let pages = (total + limit - 1) / limit;
+
+        Ok(ArticleListResponse {
+            articles,
+            total,
+            page,
+            limit,
+            pages,
+        })
+    }
+
+    /// Get article by slug or ID
+    pub async fn get_article_detail(&self, slug_or_id: &str) -> Result<ArticleDetail> {
+        // Increment view count
+        sqlx::query("UPDATE articles SET view_count = view_count + 1 WHERE id = $1 OR slug = $2")
+            .bind(slug_or_id.parse::<i64>().unwrap_or(0))
+            .bind(slug_or_id)
+            .execute(&self.pool)
+            .await?;
+
+        // Get article
+        let article = sqlx::query_as::<_, Article>(
+            "SELECT * FROM articles WHERE id = $1 OR slug = $2"
+        )
+        .bind(slug_or_id.parse::<i64>().unwrap_or(0))
+        .bind(slug_or_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        // Get comments
+        let comments = sqlx::query_as::<_, ArticleComment>(
+            "SELECT * FROM article_comments
+             WHERE article_id = $1
+             ORDER BY created_at ASC"
+        )
+        .bind(article.id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(ArticleDetail {
+            article,
+            comments,
+        })
+    }
+
+    /// Create new article
+    pub async fn create_article(&self, author_id: Uuid, req: CreateArticleRequest) -> Result<Article> {
+        let slug = Self::generate_slug(&req.title);
+
+        let published_at = if req.is_published.unwrap_or(false) {
+            Some(Utc::now())
+        } else {
+            None
+        };
+
+        let article = sqlx::query_as::<_, Article>(
+            r#"
+            INSERT INTO articles (title, slug, content, summary, cover_image, author_id, tags, category, is_published, is_featured, published_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            RETURNING *
+            "#
+        )
+        .bind(&req.title)
+        .bind(&slug)
+        .bind(&req.content)
+        .bind(&req.summary)
+        .bind(&req.cover_image)
+        .bind(author_id)
+        .bind(&req.tags)
+        .bind(&req.category.unwrap_or_else(|| "general".to_string()))
+        .bind(req.is_published.unwrap_or(false))
+        .bind(req.is_featured.unwrap_or(false))
+        .bind(published_at)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(article)
+    }
+
+    /// Update article
+    pub async fn update_article(
+        &self,
+        id: i64,
+        author_id: Uuid,
+        req: UpdateArticleRequest,
+    ) -> Result<Article> {
+        let mut query = String::from("UPDATE articles SET ");
+        let mut updates = Vec::new();
+        let mut param_count = 0;
+
+        if req.title.is_some() {
+            updates.push(format!("title = ${}", param_count + 1));
+            param_count += 1;
+        }
+        if req.content.is_some() {
+            updates.push(format!("content = ${}", param_count + 1));
+            param_count += 1;
+        }
+        if req.summary.is_some() {
+            updates.push(format!("summary = ${}", param_count + 1));
+            param_count += 1;
+        }
+        if req.cover_image.is_some() {
+            updates.push(format!("cover_image = ${}", param_count + 1));
+            param_count += 1;
+        }
+        if let Some(tags) = &req.tags {
+            updates.push(format!("tags = ${}", param_count + 1));
+            param_count += 1;
+        }
+        if let Some(category) = &req.category {
+            updates.push(format!("category = ${}", param_count + 1));
+            param_count += 1;
+        }
+        if let Some(is_published) = req.is_published {
+            updates.push(format!("is_published = {}", is_published));
+            // Set/unset published_at
+            if is_published {
+                updates.push(format!("published_at = COALESCE(published_at, NOW())"));
+            }
+        }
+        if let Some(is_featured) = req.is_featured {
+            updates.push(format!("is_featured = {}", is_featured));
+        }
+
+        if updates.is_empty() {
+            return self.get_article_by_id(id).await;
+        }
+
+        query.push_str(&updates.join(", "));
+        query.push_str(&format!(" WHERE id = ${} AND author_id = ${} RETURNING *",
+            param_count + 1, param_count + 2));
+
+        let mut query_builder = sqlx::query_as::<_, Article>(&query);
+
+        if let Some(title) = req.title {
+            query_builder = query_builder.bind(title);
+        }
+        if let Some(content) = req.content {
+            query_builder = query_builder.bind(content);
+        }
+        if let Some(summary) = req.summary {
+            query_builder = query_builder.bind(summary);
+        }
+        if let Some(cover_image) = req.cover_image {
+            query_builder = query_builder.bind(cover_image);
+        }
+        if let Some(tags) = req.tags {
+            query_builder = query_builder.bind(tags);
+        }
+        if let Some(category) = req.category {
+            query_builder = query_builder.bind(category);
+        }
+
+        query_builder = query_builder.bind(id).bind(author_id);
+
+        let article = query_builder.fetch_one(&self.pool).await?;
+
+        Ok(article)
+    }
+
+    /// Delete article
+    pub async fn delete_article(&self, id: i64, user_id: Uuid, is_admin: bool) -> Result<bool> {
+        let result = if is_admin {
+            sqlx::query("DELETE FROM articles WHERE id = $1")
+                .bind(id)
+                .execute(&self.pool)
+                .await?
+        } else {
+            sqlx::query("DELETE FROM articles WHERE id = $1 AND author_id = $2")
+                .bind(id)
+                .bind(user_id)
+                .execute(&self.pool)
+                .await?
+        };
+
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Create comment
+    pub async fn create_comment(
+        &self,
+        article_id: i64,
+        author_id: Uuid,
+        req: CreateCommentRequest,
+    ) -> Result<ArticleComment> {
+        // Increment comment count
+        sqlx::query("UPDATE articles SET comment_count = comment_count + 1 WHERE id = $1")
+            .bind(article_id)
+            .execute(&self.pool)
+            .await?;
+
+        let comment = sqlx::query_as::<_, ArticleComment>(
+            r#"
+            INSERT INTO article_comments (article_id, parent_id, content, author_id)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+            "#
+        )
+        .bind(article_id)
+        .bind(req.parent_id)
+        .bind(&req.content)
+        .bind(author_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(comment)
+    }
+
+    /// Toggle like on article or comment
+    pub async fn toggle_like(
+        &self,
+        user_id: Uuid,
+        target_type: &str,
+        target_id: i64,
+    ) -> Result<bool> {
+        // Check if already liked
+        let existing = sqlx::query(
+            "SELECT id FROM likes WHERE user_id = $1 AND target_type = $2 AND target_id = $3"
+        )
+        .bind(user_id)
+        .bind(target_type)
+        .bind(target_id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        if existing.is_some() {
+            // Remove like
+            sqlx::query("DELETE FROM likes WHERE user_id = $1 AND target_type = $2 AND target_id = $3")
+                .bind(user_id)
+                .bind(target_type)
+                .bind(target_id)
+                .execute(&self.pool)
+                .await?;
+
+            // Decrement like count
+            let table = match target_type {
+                "article" => "articles",
+                "comment" => "article_comments",
+                _ => return Ok(false),
+            };
+            sqlx::query(&format!("UPDATE {} SET like_count = like_count - 1 WHERE id = $2", table))
+                .bind(target_id)
+                .execute(&self.pool)
+                .await?;
+
+            Ok(false)
+        } else {
+            // Add like
+            sqlx::query(
+                "INSERT INTO likes (user_id, target_type, target_id) VALUES ($1, $2, $3)"
+            )
+            .bind(user_id)
+            .bind(target_type)
+            .bind(target_id)
+            .execute(&self.pool)
+                .await?;
+
+            // Increment like count
+            let table = match target_type {
+                "article" => "articles",
+                "comment" => "article_comments",
+                _ => return Ok(true),
+            };
+            sqlx::query(&format!("UPDATE {} SET like_count = like_count + 1 WHERE id = $2", table))
+                .bind(target_id)
+                .execute(&self.pool)
+                .await?;
+
+            Ok(true)
+        }
+    }
+
+    /// Get categories
+    pub async fn get_categories(&self) -> Result<Vec<String>> {
+        let categories = sqlx::query_scalar::<_, String>(
+            "SELECT DISTINCT category FROM articles WHERE category IS NOT NULL ORDER BY category"
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(categories)
+    }
+
+    /// Get popular tags
+    pub async fn get_popular_tags(&self, limit: i64) -> Result<Vec<(String, i64)>> {
+        let tags = sqlx::query(
+            r#"
+            SELECT unnest(tags) as tag, COUNT(*) as count
+            FROM articles
+            WHERE is_published = true
+            GROUP BY tag
+            ORDER BY count DESC
+            LIMIT $1
+            "#
+        )
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(tags)
+    }
+
+    /// Get trending articles
+    pub async fn get_trending_articles(&self, limit: i64) -> Result<Vec<Article>> {
+        let articles = sqlx::query_as::<_, Article>(
+            r#"
+            SELECT * FROM articles
+            WHERE is_published = true
+            ORDER BY (view_count * 0.5 + like_count) DESC, published_at DESC
+            LIMIT $1
+            "#
+        )
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(articles)
+    }
+
+    /// Get featured articles
+    pub async fn get_featured_articles(&self, limit: i64) -> Result<Vec<Article>> {
+        let articles = sqlx::query_as::<_, Article>(
+            r#"
+            SELECT * FROM articles
+            WHERE is_published = true AND is_featured = true
+            ORDER BY published_at DESC
+            LIMIT $1
+            "#
+        )
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(articles)
+    }
+
+    /// Get article by ID
+    async fn get_article_by_id(&self, id: i64) -> Result<Article> {
+        let article = sqlx::query_as::<_, Article>(
+            "SELECT * FROM articles WHERE id = $1"
+        )
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(article)
+    }
+}

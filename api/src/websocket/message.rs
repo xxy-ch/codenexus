@@ -58,6 +58,31 @@ pub enum WebSocketMessage {
         timestamp: chrono::DateTime<chrono::Utc>,
     },
 
+    /// New discussion reply
+    DiscussionReply {
+        discussion_id: i64,
+        reply_id: i64,
+        user_id: Uuid,
+        username: String,
+        content: String,
+        created_at: chrono::DateTime<chrono::Utc>,
+    },
+
+    /// New article comment
+    ArticleComment {
+        article_id: i64,
+        comment_id: i64,
+        user_id: Uuid,
+        username: String,
+        content: String,
+        created_at: chrono::DateTime<chrono::Utc>,
+    },
+
+    /// Trending articles update
+    TrendingArticles {
+        articles: Vec<serde_json::Value>,
+    },
+
     /// Heartbeat/ping
     Ping {
         timestamp: i64,
@@ -95,6 +120,9 @@ impl WebSocketMessage {
             WebSocketMessage::ContestUpdate { .. } => "contest_update",
             WebSocketMessage::ProblemStats { .. } => "problem_stats",
             WebSocketMessage::ChatMessage { .. } => "chat_message",
+            WebSocketMessage::DiscussionReply { .. } => "discussion_reply",
+            WebSocketMessage::ArticleComment { .. } => "article_comment",
+            WebSocketMessage::TrendingArticles { .. } => "trending_articles",
             WebSocketMessage::Ping { .. } => "ping",
             WebSocketMessage::Pong { .. } => "pong",
             WebSocketMessage::Error { .. } => "error",
@@ -113,6 +141,10 @@ pub struct MessageFilter {
     pub contest_ids: Option<Vec<i64>>,
     /// Filter by problem IDs (for problem stats)
     pub problem_ids: Option<Vec<i64>>,
+    /// Filter by discussion IDs (for discussion replies)
+    pub discussion_ids: Option<Vec<i64>>,
+    /// Filter by article IDs (for article comments)
+    pub article_ids: Option<Vec<i64>>,
 }
 
 impl MessageFilter {
@@ -141,6 +173,16 @@ impl MessageFilter {
             WebSocketMessage::ProblemStats { problem_id, .. } => {
                 if let Some(ref ids) = self.problem_ids {
                     return ids.contains(problem_id);
+                }
+            }
+            WebSocketMessage::DiscussionReply { discussion_id, .. } => {
+                if let Some(ref ids) = self.discussion_ids {
+                    return ids.contains(discussion_id);
+                }
+            }
+            WebSocketMessage::ArticleComment { article_id, .. } => {
+                if let Some(ref ids) = self.article_ids {
+                    return ids.contains(article_id);
                 }
             }
             _ => {}

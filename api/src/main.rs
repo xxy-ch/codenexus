@@ -10,6 +10,8 @@ mod contests;
 mod leaderboard;
 mod classes;
 mod websocket;
+mod discussions;
+mod blog;
 
 use axum::{
     routing::{get, post},
@@ -113,6 +115,10 @@ fn create_router(state: AppState) -> Router {
         .nest("/submissions", submissions::submissions_router())
         // Class routes
         .nest("/classes", classes::classes_router())
+        // Discussions routes
+        .nest("/discussions", discussions::discussions_router())
+        // Blog routes
+        .nest("/blog", blog::blog_router())
         // WebSocket route (public, auth handled in handler)
         .route("/ws", get(websocket::handler::websocket_upgrade_handler))
         // Apply middleware
