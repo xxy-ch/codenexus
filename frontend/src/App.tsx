@@ -19,9 +19,8 @@ import { SubmissionDetail } from './pages/user/SubmissionDetail'
 import { ContestList } from './pages/user/ContestList'
 import { ContestDetail } from './pages/user/ContestDetail'
 import { Ranking } from './pages/user/Ranking'
-import { Discussions } from './pages/user/Discussions'
-import { Blog } from './pages/user/Blog'
-import { BlogDetail } from './pages/user/BlogDetail'
+import { DiscussionList } from './pages/community/DiscussionList'
+import { BlogList } from './pages/community/BlogList'
 import { Profile } from './pages/user/Profile'
 import { Settings } from './pages/user/Settings'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
@@ -81,10 +80,12 @@ function App() {
             <Route path="contests" element={<ContestList />} />
             <Route path="contests/:contestId" element={<ContestDetail />} />
             <Route path="ranking" element={<Ranking />} />
-            <Route path="discussions" element={<Discussions />} />
-            <Route path="discussions/:id" element={<Discussions />} />
-            <Route path="blog" element={<Blog />} />
-            <Route path="blog/:id" element={<BlogDetail />} />
+            <Route path="discussions" element={<DiscussionList />} />
+            <Route path="discussions/:id" element={<DiscussionList />} />
+            <Route path="discussions/new" element={<DiscussionList />} />
+            <Route path="blog" element={<BlogList />} />
+            <Route path="blog/:slug" element={<BlogList />} />
+            <Route path="blog/new" element={<BlogList />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             {/* Add more protected routes here */}

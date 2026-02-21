@@ -10,6 +10,9 @@ export type WebSocketMessage =
   | ContestUpdateMessage
   | ProblemStatsMessage
   | ChatMessage
+  | DiscussionReplyMessage
+  | ArticleCommentMessage
+  | TrendingArticlesMessage
   | PingMessage
   | PongMessage
   | ErrorMessage
@@ -76,6 +79,44 @@ export interface ChatMessage {
     username: string
     message: string
     timestamp: string
+  }
+}
+
+export interface DiscussionReplyMessage {
+  type: 'DiscussionReply'
+  data: {
+    discussion_id: number
+    reply_id: number
+    user_id: string
+    username: string
+    content: string
+    created_at: string
+  }
+}
+
+export interface ArticleCommentMessage {
+  type: 'ArticleComment'
+  data: {
+    article_id: number
+    comment_id: number
+    user_id: string
+    username: string
+    content: string
+    created_at: string
+  }
+}
+
+export interface TrendingArticlesMessage {
+  type: 'TrendingArticles'
+  data: {
+    articles: Array<{
+      id: number
+      title: string
+      slug: string
+      author: string
+      view_count: number
+      like_count: number
+    }>
   }
 }
 
