@@ -25,6 +25,7 @@ import { CreateDiscussion } from './pages/community/CreateDiscussion'
 import { BlogList } from './pages/community/BlogList'
 import { BlogDetail } from './pages/community/BlogDetail'
 import { CreateArticle } from './pages/community/CreateArticle'
+import { SearchResults } from './pages/search/SearchResults'
 import { Profile } from './pages/user/Profile'
 import { Settings } from './pages/user/Settings'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
@@ -91,6 +92,7 @@ function App() {
             <Route path="blog" element={<BlogList />} />
             <Route path="blog/new" element={<CreateArticle />} />
             <Route path="blog/:slug" element={<BlogDetail />} />
+            <Route path="search" element={<SearchResults />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
             {/* Add more protected routes here */}
