@@ -12,6 +12,7 @@ mod classes;
 mod websocket;
 mod discussions;
 mod blog;
+mod search;
 
 use axum::{
     routing::{get, post},
@@ -119,6 +120,8 @@ fn create_router(state: AppState) -> Router {
         .nest("/discussions", discussions::discussions_router())
         // Blog routes
         .nest("/blog", blog::blog_router())
+        // Search routes
+        .nest("/search", search::create_search_router(state.db_pool.clone()))
         // WebSocket route (public, auth handled in handler)
         .route("/ws", get(websocket::handler::websocket_upgrade_handler))
         // Apply middleware
