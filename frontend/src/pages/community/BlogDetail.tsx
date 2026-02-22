@@ -4,10 +4,12 @@ import { blogApi } from '@/services/communityApi'
 import type { ArticleDetail, ArticleComment } from '@/types/community'
 import { Loading } from '@/components/ui/Loading'
 import { useArticleUpdates } from '@/hooks/useCommunityUpdates'
+import { useAuth } from '@/hooks/useAuth'
 
 export function BlogDetail() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [article, setArticle] = useState<ArticleDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -309,6 +311,15 @@ export function BlogDetail() {
 
             {/* Article Actions */}
             <div className="flex items-center gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
+              {user && user.id === article.author.id && (
+                <button
+                  onClick={() => navigate(`/blog/${article.article.slug}/edit`)}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <span className="material-icons text-lg">edit</span>
+                  Edit
+                </button>
+              )}
               <button
                 onClick={handleLike}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors ${

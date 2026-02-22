@@ -4,10 +4,12 @@ import { discussionsApi } from '@/services/communityApi'
 import type { DiscussionDetail, DiscussionReply } from '@/types/community'
 import { Loading } from '@/components/ui/Loading'
 import { useDiscussionUpdates } from '@/hooks/useCommunityUpdates'
+import { useAuth } from '@/hooks/useAuth'
 
 export function DiscussionDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [discussion, setDiscussion] = useState<DiscussionDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -320,6 +322,15 @@ export function DiscussionDetail() {
 
             {/* Actions */}
             <div className="flex items-center gap-3">
+              {user && user.id === discussion.author.id && (
+                <button
+                  onClick={() => navigate(`/discussions/${discussion.discussion.id}/edit`)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <span className="material-icons text-lg">edit</span>
+                  Edit
+                </button>
+              )}
               <button
                 onClick={handleLike}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
