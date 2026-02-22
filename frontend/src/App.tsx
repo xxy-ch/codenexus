@@ -21,8 +21,10 @@ import { ContestDetail } from './pages/user/ContestDetail'
 import { Ranking } from './pages/user/Ranking'
 import { DiscussionList } from './pages/community/DiscussionList'
 import { DiscussionDetail } from './pages/community/DiscussionDetail'
+import { CreateDiscussion } from './pages/community/CreateDiscussion'
 import { BlogList } from './pages/community/BlogList'
 import { BlogDetail } from './pages/community/BlogDetail'
+import { CreateArticle } from './pages/community/CreateArticle'
 import { Profile } from './pages/user/Profile'
 import { Settings } from './pages/user/Settings'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
@@ -83,8 +85,11 @@ function App() {
             <Route path="contests/:contestId" element={<ContestDetail />} />
             <Route path="ranking" element={<Ranking />} />
             <Route path="discussions" element={<DiscussionList />} />
+            <Route path="discussions/new" element={<CreateDiscussion />} />
+            <Route path="discussions/:problemId/new" element={<CreateDiscussion />} />
             <Route path="discussions/:id" element={<DiscussionDetail />} />
             <Route path="blog" element={<BlogList />} />
+            <Route path="blog/new" element={<CreateArticle />} />
             <Route path="blog/:slug" element={<BlogDetail />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />

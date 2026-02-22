@@ -1,28 +1,51 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { websocketService } from '@/services/websocket'
-import type { DiscussionReply, ArticleComment } from '@/types/community'
 
 /**
  * Hook for receiving real-time updates for discussion replies
  */
 export function useDiscussionUpdates(discussionId?: number) {
   const [update, setUpdate] = useState<any>(null)
+  const handlerRef = useState<any>(() => (message: any) => {
+    if (message.type === 'DiscussionReply' && message.data.discussion_id === discussionId) {
+      setUpdate(message.data)
+    }
+  })[0]
 
   useEffect(() => {
     if (!discussionId) return
 
-    const handleDiscussionReply = (message: any) => {
+    const handle = (message: any) => {
       if (message.type === 'DiscussionReply' && message.data.discussion_id === discussionId) {
         setUpdate(message.data)
       }
     }
 
-    websocketService.addMessageHandler(handleDiscussionReply)
+    // Store current handler
+    handlerRef.current = handle
+
+    // Set up the message handler
+    const currentHandlers = (websocketService as any).handlers || {}
+    const originalOnMessage = currentHandlers.onMessage
+
+    const newOnMessage = (message: any) => {
+      originalOnMessage?.(message)
+      handle(message)
+    }
+
+    websocketService.setHandlers({
+      ...currentHandlers,
+      onMessage: newOnMessage,
+    })
 
     return () => {
-      websocketService.removeMessageHandler(handleDiscussionReply)
+      // Restore original handler
+      websocketService.setHandlers({
+        ...currentHandlers,
+        onMessage: originalOnMessage,
+      })
     }
-  }, [discussionId])
+  }, [discussionId, handlerRef])
 
   return { update }
 }
@@ -46,10 +69,26 @@ export function useArticleUpdates(articleSlugOrId?: string) {
       }
     }
 
-    websocketService.addMessageHandler(handleArticleComment)
+    // Set up the message handler
+    const currentHandlers = (websocketService as any).handlers || {}
+    const originalOnMessage = currentHandlers.onMessage
+
+    const newOnMessage = (message: any) => {
+      originalOnMessage?.(message)
+      handleArticleComment(message)
+    }
+
+    websocketService.setHandlers({
+      ...currentHandlers,
+      onMessage: newOnMessage,
+    })
 
     return () => {
-      websocketService.removeMessageHandler(handleArticleComment)
+      // Restore original handler
+      websocketService.setHandlers({
+        ...currentHandlers,
+        onMessage: originalOnMessage,
+      })
     }
   }, [articleSlugOrId])
 
@@ -69,10 +108,26 @@ export function useTrendingUpdates() {
       }
     }
 
-    websocketService.addMessageHandler(handleTrendingArticles)
+    // Set up the message handler
+    const currentHandlers = (websocketService as any).handlers || {}
+    const originalOnMessage = currentHandlers.onMessage
+
+    const newOnMessage = (message: any) => {
+      originalOnMessage?.(message)
+      handleTrendingArticles(message)
+    }
+
+    websocketService.setHandlers({
+      ...currentHandlers,
+      onMessage: newOnMessage,
+    })
 
     return () => {
-      websocketService.removeMessageHandler(handleTrendingArticles)
+      // Restore original handler
+      websocketService.setHandlers({
+        ...currentHandlers,
+        onMessage: originalOnMessage,
+      })
     }
   }, [])
 
