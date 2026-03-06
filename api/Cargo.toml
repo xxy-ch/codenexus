@@ -2,6 +2,7 @@
 name = "api"
 version = "0.1.0"
 edition = "2021"
+autotests = false
 
 [dependencies]
 axum = { workspace = true, features = ["ws"] }
@@ -33,9 +34,13 @@ futures-util = "0.3"
 async-trait = "0.1"
 # Search functionality
 regex = "1.11"
-utoipa = { version = "5", features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "8", features = ["axum"] }
+# utoipa = { version = "5", features = ["axum_extras"] }
+# utoipa-swagger-ui = { version = "8", features = ["axum"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
 hyper = "1"
+testcontainers = { version = "0.23", features = ["blocking"] }
+testcontainers-modules = { version = "0.11", features = ["postgres"] }
+tokio-test = "0.4"
+env_logger = "0.11"

@@ -1,9 +1,7 @@
 import api from './api'
 import type { Problem, TestCase, ProblemSubmission } from '@/types/problems'
 import { getMockUserSubmissions, getMockSubmissionDetail } from './mockSubmissions'
-
-// 开发模式下使用模拟数据的标志
-const USE_MOCK_DATA = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+import { USE_MOCK_DATA } from './config'
 
 export interface ProblemFilters {
   difficulty?: 'easy' | 'medium' | 'hard' | 'all'
@@ -119,7 +117,12 @@ export const problemsService = {
     status?: string
     language?: string
   }): Promise<{
-    submissions: ProblemSubmission[]
+    submissions: Array<
+      ProblemSubmission & {
+        problem_title: string
+        username: string
+      }
+    >
     total: number
     page: number
     limit: number
@@ -138,11 +141,19 @@ export const problemsService = {
 
     try {
       const response = await api.get(`/submissions?${params}`)
-      return response.data
+      const rawSubmissions = Array.isArray(response.data?.submissions)
+        ? response.data.submissions
+        : []
+
+      return {
+        submissions: rawSubmissions.map(normalizeSubmission),
+        total: Number(response.data?.total ?? rawSubmissions.length),
+        page: Number(response.data?.page ?? filters.page ?? 1),
+        limit: Number(response.data?.limit ?? filters.limit ?? 20),
+      }
     } catch (error) {
-      console.warn('API调用失败，使用模拟数据:', error)
-      // 如果API调用失败，回退到模拟数据
-      return getMockUserSubmissions(filters)
+      console.error('Failed to fetch user submissions:', error)
+      throw error
     }
   },
 
@@ -163,13 +174,69 @@ export const problemsService = {
         problem_title: string
         username: string
       }>(`/submissions/${submissionId}`)
-      return response.data
+      return normalizeSubmission(response.data) as ProblemSubmission & {
+        problem_title: string
+        username: string
+      }
     } catch (error) {
-      console.warn('API调用失败，使用模拟数据:', error)
-      // 如果API调用失败，回退到模拟数据
-      return getMockSubmissionDetail(submissionId)
+      console.error('Failed to fetch submission detail:', error)
+      throw error
     }
   },
+}
+
+function normalizeSubmission(submission: any): ProblemSubmission & {
+  problem_title: string
+  username: string
+} {
+  const normalizedStatus =
+    submission?.status === 'compile_error'
+      ? 'compilation_error'
+      : submission?.status
+
+  const testCases = Array.isArray(submission?.test_cases)
+    ? submission.test_cases.map((tc: any, index: number) => ({
+        id: Number(tc.id ?? index + 1),
+        input: String(tc.input ?? ''),
+        expected_output: String(tc.expected_output ?? ''),
+        actual_output: tc.actual_output ? String(tc.actual_output) : undefined,
+        status: (tc.status ?? 'pending') as 'passed' | 'failed' | 'pending' | 'running',
+        error: tc.error ?? tc.error_message ?? undefined,
+        time_ms:
+          tc.time_ms != null
+            ? Number(tc.time_ms)
+            : tc.runtime_ms != null
+            ? Number(tc.runtime_ms)
+            : undefined,
+      }))
+    : undefined
+
+  return {
+    id: String(submission?.id ?? ''),
+    problem_id: String(submission?.problem_id ?? ''),
+    user_id: String(submission?.user_id ?? ''),
+    code: String(submission?.code ?? ''),
+    language: String(submission?.language ?? ''),
+    status: (normalizedStatus ?? 'pending') as ProblemSubmission['status'],
+    time_ms:
+      submission?.time_ms != null
+        ? Number(submission.time_ms)
+        : submission?.runtime_ms != null
+        ? Number(submission.runtime_ms)
+        : undefined,
+    memory_kb:
+      submission?.memory_kb != null ? Number(submission.memory_kb) : undefined,
+    error_message:
+      submission?.error_message != null ? String(submission.error_message) : undefined,
+    test_cases: testCases,
+    created_at: String(submission?.created_at ?? ''),
+    updated_at: String(submission?.updated_at ?? submission?.created_at ?? ''),
+    problem_title: String(
+      submission?.problem_title ??
+        (submission?.problem_id != null ? `Problem #${submission.problem_id}` : 'Unknown Problem')
+    ),
+    username: String(submission?.username ?? 'unknown'),
+  }
 }
 
 // Mock数据用于开发测试

@@ -14,7 +14,7 @@ export function BlogDetail() {
   const [article, setArticle] = useState<ArticleDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [commentContent, setCommentContent] = useState('')
-  const [parentCommentId, setParentCommentId] = useState<number | undefined>()
+  const [parentCommentId, setParentCommentId] = useState<number | 'root' | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [liked, setLiked] = useState(false)
 
@@ -70,11 +70,11 @@ export function BlogDetail() {
     try {
       const comment = await blogApi.createComment(article.article.slug, {
         content: commentContent,
-        parent_comment_id: parentCommentId,
+        parent_comment_id: typeof parentCommentId === 'number' ? parentCommentId : undefined,
       })
 
       // Add comment to the article
-      if (parentCommentId) {
+      if (typeof parentCommentId === 'number') {
         // Nested comment - add to parent's comments
         setArticle((prev) => {
           if (!prev) return null
@@ -112,7 +112,7 @@ export function BlogDetail() {
       }
 
       setCommentContent('')
-      setParentCommentId(undefined)
+      setParentCommentId(null)
     } catch (error) {
       console.error('Failed to create comment:', error)
     } finally {
@@ -128,11 +128,14 @@ export function BlogDetail() {
       setLiked(result.liked)
       setArticle((prev) => {
         if (!prev) return null
+        const nextLikeCount = result.like_count >= 0
+          ? result.like_count
+          : Math.max(0, prev.article.like_count + (result.liked ? 1 : -1))
         return {
           ...prev,
           article: {
             ...prev.article,
-            like_count: result.like_count,
+            like_count: nextLikeCount,
           },
         }
       })
@@ -332,7 +335,7 @@ export function BlogDetail() {
                 {article.article.like_count} Likes
               </button>
               <button
-                onClick={() => setParentCommentId(undefined)}
+                onClick={() => setParentCommentId('root')}
                 className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
               >
                 <span className="material-icons text-lg">comment</span>
@@ -343,15 +346,15 @@ export function BlogDetail() {
         </article>
 
         {/* Comment Form */}
-        {parentCommentId !== undefined && (
+        {parentCommentId !== null && (
           <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                {parentCommentId ? 'Reply to comment' : 'Write a comment'}
+                {typeof parentCommentId === 'number' ? 'Reply to comment' : 'Write a comment'}
               </h3>
               <button
                 onClick={() => {
-                  setParentCommentId(undefined)
+                  setParentCommentId(null)
                   setCommentContent('')
                 }}
                 className="text-text-muted hover:text-gray-900 dark:hover:text-white"
@@ -389,7 +392,7 @@ export function BlogDetail() {
               <span className="material-icons text-5xl text-text-muted mb-3">chat_bubble_outline</span>
               <p className="text-text-muted mb-4">No comments yet. Be the first to comment!</p>
               <button
-                onClick={() => setParentCommentId(undefined)}
+                onClick={() => setParentCommentId('root')}
                 className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
               >
                 Write a Comment

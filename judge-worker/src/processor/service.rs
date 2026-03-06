@@ -1,127 +1,128 @@
 use anyhow::Result;
+use crate::db::{get_db_connection, TestCase};
 use crate::queue::{SubmissionMessage, JudgeResult, TestCaseResult};
 use std::process::Command;
 use std::path::PathBuf;
 use std::time::Duration;
 use tokio::fs;
+use tokio::time::timeout;
 use tracing::{error, info, warn};
 
-/// Process a submission and return the judging result
+/// Get memory usage in kilobytes for a process ID
+fn get_process_memory_kb(pid: u32) -> Option<i32> {
+    let status_path = format!("/proc/{}/status", pid);
+
+    if let Ok(content) = std::fs::read_to_string(&status_path) {
+        for line in content.lines() {
+            if line.starts_with("VmRSS:") {
+                let parts: Vec<&str> = line.split_whitespace().collect();
+                if parts.len() >= 2 {
+                    if let Ok(kb) = parts[1].parse::<i32>() {
+                        return Some(kb);
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
+/// Check if a process still exists
+fn process_exists(pid: u32) -> bool {
+    let pid_path = format!("/proc/{}", pid);
+    std::path::Path::new(&pid_path).exists()
+}
+
+/// Process a submission and return judging result
 ///
 /// Steps:
 /// 1. Save source code to file
-/// 2. Compile the code (if needed)
+/// 2. Compile code (if needed)
 /// 3. Execute in sandbox with test cases
 /// 4. Compare outputs
 /// 5. Return results
 pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeResult> {
-    info!(
-        "Processing submission {} for problem {} (language: {})",
-        submission.submission_id,
-        submission.problem_id,
-        submission.language
-    );
+    info!("Processing submission {}", submission.submission_id);
 
-    // Create working directory for this submission
     let work_dir = create_work_dir(submission.submission_id).await?;
-
-    // Save source code
     let source_file = save_source_code(&work_dir, submission).await?;
 
-    // Get test cases for this problem
     let test_cases = fetch_test_cases(submission.problem_id).await?;
 
-    if test_cases.is_empty() {
-        warn!("No test cases found for problem {}", submission.problem_id);
-        return Ok(JudgeResult {
-            submission_id: submission.submission_id,
-            status: "error".to_string(),
-            score: Some(0),
-            runtime_ms: None,
-            memory_kb: None,
-            test_case_results: vec![],
-        });
-    }
+    let mut final_status = "AC";
+    let mut final_score = 100;
+    let mut max_runtime_ms = 0i32;
+    let mut max_memory_kb = 0i32;
 
-    // Compile if needed
-    let executable_path = match submission.language.as_str() {
-        "c" | "cpp" | "rust" | "go" => {
-            match compile_code(&source_file, &submission.language, &work_dir).await {
-                Ok(path) => Some(path),
-                Err(e) => {
-                    return Ok(JudgeResult {
-                        submission_id: submission.submission_id,
-                        status: "compilation_error".to_string(),
-                        score: Some(0),
-                        runtime_ms: None,
-                        memory_kb: None,
-                        test_case_results: vec![],
-                    });
-                }
+    let mut test_case_results = Vec::new();
+
+    if matches!(submission.language.as_str(), "c" | "cpp" | "rust" | "go" | "java") {
+        match compile_code(&source_file, &submission.language, &work_dir).await {
+            Ok(_) => {}
+            Err(err) => {
+                error!("Compilation failed: {}", err);
+                return Ok(JudgeResult {
+                    submission_id: submission.submission_id,
+                    status: "CE".to_string(),
+                    score: Some(0),
+                    runtime_ms: None,
+                    memory_kb: Some(262144),
+                    test_case_results: vec![],
+                });
             }
         }
-        _ => None, // Interpreted languages
-    };
-
-    let mut all_passed = true;
-    let mut total_score = 0;
-    let mut max_score = 0;
-    let mut test_case_results = Vec::new();
-    let mut max_runtime_ms = 0;
-    let mut max_memory_kb = 0;
-
-    // Run each test case
-    for (index, test_case) in test_cases.iter().enumerate() {
-        info!(
-            "Running test case {} for submission {}",
-            index + 1,
-            submission.submission_id
-        );
-
-        let result = run_test_case(
-            submission,
-            &source_file,
-            executable_path.as_ref(),
-            test_case,
-            &work_dir,
-        ).await?;
-
-        max_score += test_case.score;
-
-        if result.status == "accepted" {
-            total_score += test_case.score;
-        } else {
-            all_passed = false;
-        }
-
-        if let Some(rt) = result.runtime_ms {
-            max_runtime_ms = max_runtime_ms.max(rt);
-        }
-        if let Some(mem) = result.memory_kb {
-            max_memory_kb = max_memory_kb.max(mem);
-        }
-
-        test_case_results.push(result);
     }
 
-    // Determine overall status
-    let final_status = if all_passed {
-        "accepted".to_string()
-    } else if total_score > 0 {
-        "partial".to_string()
+    let executable_path = if matches!(
+        submission.language.as_str(),
+        "c" | "cpp" | "rust" | "go" | "java"
+    ) {
+        Some(&source_file.with_extension(""))
     } else {
-        "wrong_answer".to_string()
+        None
     };
 
-    // Calculate final score as percentage
-    let final_score = if max_score > 0 {
-        (total_score * 100) / max_score
-    } else {
-        0
-    };
+    for test_case in &test_cases {
+        match run_test_case(submission, &source_file, executable_path, test_case, &work_dir).await {
+            Ok(result) => {
+                if result.status != "AC" && final_status == "AC" {
+                    final_status = &result.status;
+                }
 
-    // Cleanup
-    let _ = cleanup_work_dir(&work_dir).await;
+                let score = if result.status == "AC" {
+                    test_case.score
+                } else {
+                    0
+                };
+
+                final_score = final_score.saturating_sub(score);
+
+                if let Some(runtime) = result.runtime_ms {
+                    max_runtime_ms = max_runtime_ms.max(runtime);
+                }
+
+                if let Some(memory) = result.memory_kb {
+                    max_memory_kb = max_memory_kb.max(memory);
+                }
+
+                test_case_results.push(result);
+            }
+            Err(err) => {
+                error!("Error running test case {}: {}", test_case.id, err);
+                test_case_results.push(TestCaseResult {
+                    test_case_id: test_case.id,
+                    status: "error".to_string(),
+                    expected_output: Some(test_case.expected_output.clone()),
+                    actual_output: None,
+                    error_message: Some(err.to_string()),
+                    runtime_ms: None,
+                    memory_kb: Some(262144),
+                });
+                final_status = "error";
+            }
+        }
+    }
 
     info!(
         "Submission {} completed with status: {} (score: {})",
@@ -130,7 +131,7 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
 
     Ok(JudgeResult {
         submission_id: submission.submission_id,
-        status: final_status,
+        status: final_status.to_string(),
         score: Some(final_score),
         runtime_ms: Some(max_runtime_ms),
         memory_kb: Some(max_memory_kb),
@@ -142,14 +143,12 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
 async fn create_work_dir(submission_id: i64) -> Result<PathBuf> {
     let work_dir = PathBuf::from("/tmp/judge").join(format!("submission_{}", submission_id));
 
-    // Clean up if exists
     if work_dir.exists() {
         fs::remove_dir_all(&work_dir).await?;
     }
 
     fs::create_dir_all(&work_dir).await?;
 
-    // Set up sandbox (chroot)
     setup_sandbox(&work_dir).await?;
 
     Ok(work_dir)
@@ -157,13 +156,9 @@ async fn create_work_dir(submission_id: i64) -> Result<PathBuf> {
 
 /// Setup sandbox environment
 async fn setup_sandbox(work_dir: &PathBuf) -> Result<()> {
-    // Create necessary directories in sandbox
     fs::create_dir_all(work_dir.join("bin")).await?;
     fs::create_dir_all(work_dir.join("lib")).await?;
     fs::create_dir_all(work_dir.join("tmp")).await?;
-
-    // Copy necessary system libraries (simplified)
-    // In production, use proper chroot and cgroups
 
     Ok(())
 }
@@ -192,19 +187,23 @@ async fn save_source_code(
     Ok(file_path)
 }
 
-/// Fetch test cases for problem
-async fn fetch_test_cases(problem_id: i64) -> Result<Vec<TestCase>> {
-    // TODO: Fetch from API or database
-    // For now, return a dummy test case
-    Ok(vec![
-        TestCase {
-            id: 1,
-            input: "2 7 11 15\n9\n".to_string(),
-            expected_output: "0 1\n".to_string(),
-            is_hidden: false,
-            score: 10,
-        }
-    ])
+pub async fn fetch_test_cases(problem_id: i64) -> Result<Vec<TestCase>> {
+    let pool = get_db_connection().await?;
+
+    let test_cases = sqlx::query_as!(
+        TestCase,
+        r#"
+        SELECT id, input, expected_output, is_hidden, score
+        FROM problems_test_cases
+        WHERE problem_id = $1
+        ORDER BY order ASC, id ASC
+        "#
+    )
+    .bind(problem_id)
+    .fetch_all(&pool)
+    .await?;
+
+    Ok(test_cases)
 }
 
 /// Compile code
@@ -220,7 +219,8 @@ async fn compile_code(
             Command::new("gcc")
                 .arg(source_file)
                 .arg("-o")
-                .arg(work_dir.join("solution"))
+                .arg(source_file.with_extension(""))
+                .current_dir(work_dir)
                 .output()
                 .await?
         }
@@ -228,9 +228,10 @@ async fn compile_code(
             Command::new("g++")
                 .arg(source_file)
                 .arg("-o")
-                .arg(work_dir.join("solution"))
+                .arg(source_file.with_extension(""))
                 .arg("-std=c++17")
                 .arg("-O2")
+                .current_dir(work_dir)
                 .output()
                 .await?
         }
@@ -238,8 +239,10 @@ async fn compile_code(
             Command::new("rustc")
                 .arg(source_file)
                 .arg("-o")
-                .arg(work_dir.join("solution"))
-                .arg("-O")
+                .arg(source_file.with_extension(""))
+                .arg("--edition")
+                .arg("2021")
+                .current_dir(work_dir)
                 .output()
                 .await?
         }
@@ -247,22 +250,25 @@ async fn compile_code(
             Command::new("go")
                 .arg("build")
                 .arg("-o")
-                .arg(work_dir.join("solution"))
+                .arg(source_file.with_extension(""))
                 .arg(source_file)
+                .current_dir(work_dir)
                 .output()
                 .await?
         }
         _ => {
-            return Err(anyhow::anyhow!("Compilation not supported for language: {}", language));
+            anyhow::bail!("Unsupported language for compilation: {}", language);
         }
     };
 
     if !output.status.success() {
-        let error = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow::anyhow!("Compilation failed: {}", error));
+        anyhow::bail!(
+            "Compilation failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
 
-    Ok(work_dir.join("solution"))
+    Ok(source_file.with_extension(""))
 }
 
 /// Run a single test case
@@ -280,29 +286,45 @@ async fn run_test_case(
 
     let output = match submission.language.as_str() {
         "python3" => {
-            timeout(
-                Duration::from_millis(submission.time_limit_ms),
-                Command::new("python3")
-                    .arg(source_file)
-                    .current_dir(work_dir)
-                    .stdin(std::process::Stdio::piped())
-                    .stdout(std::process::Stdio::piped())
-                    .stderr(std::process::Stdio::piped())
-                    .output()
-            )
-            .await
+            let mut cmd = Command::new("python3");
+            cmd.arg(source_file)
+                .current_dir(work_dir)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped());
+
+            let mut child = cmd.spawn()?;
+
+            // Write input to stdin
+            use tokio::io::AsyncWriteExt;
+            let input_bytes = test_case.input.as_bytes();
+            child.stdin.as_mut().unwrap().write_all(input_bytes).await?;
+
+            // Wait for process completion with timeout
+            let _ = timeout(Duration::from_millis(submission.time_limit_ms), child.wait_with_output()).await;
+            child.kill().await?;
+
+            Ok::<_, anyhow::Error>(tokio::process::Command::new("cat").output().await?)
         }
         _ if executable_path.is_some() => {
-            timeout(
-                Duration::from_millis(submission.time_limit_ms),
-                Command::new(executable_path.unwrap())
-                    .current_dir(work_dir)
-                    .stdin(std::process::Stdio::piped())
-                    .stdout(std::process::Stdio::piped())
-                    .stderr(std::process::Stdio::piped())
-                    .output()
-            )
-            .await
+            let mut cmd = Command::new(executable_path.unwrap());
+            cmd.current_dir(work_dir)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped());
+
+            let mut child = cmd.spawn()?;
+
+            // Write input to stdin
+            use tokio::io::AsyncWriteExt;
+            let input_bytes = test_case.input.as_bytes();
+            child.stdin.as_mut().unwrap().write_all(input_bytes).await?;
+
+            // Wait for process completion with timeout
+            let _ = timeout(Duration::from_millis(submission.time_limit_ms), child.wait_with_output()).await;
+            child.kill().await?;
+
+            Ok::<_, anyhow::Error>(tokio::process::Command::new("cat").output().await?)
         }
         _ => {
             return Ok(TestCaseResult {
@@ -312,95 +334,47 @@ async fn run_test_case(
                 actual_output: None,
                 error_message: Some("Unsupported language".to_string()),
                 runtime_ms: None,
-                memory_kb: None,
+                memory_kb: Some(262144),
             });
         }
     };
 
-    let elapsed = start.elapsed();
+    let runtime_ms = start.elapsed().as_millis() as i32;
 
-    match output {
-        Ok(Ok(result)) => {
-            let stdout = String::from_utf8_lossy(&result.stdout);
-            let stderr = String::from_utf8_lossy(&result.stderr);
-            let runtime_ms = elapsed.as_millis() as i32;
+    let status = if runtime_ms > submission.time_limit_ms {
+        "TLE"
+    } else if output.stdout.trim() == test_case.expected_output.trim() {
+        "AC"
+    } else {
+        "WA"
+    };
 
-            // Check for timeout
-            if !result.status.success() {
-                return Ok(TestCaseResult {
-                    test_case_id: test_case.id,
-                    status: "runtime_error".to_string(),
-                    expected_output: Some(test_case.expected_output.clone()),
-                    actual_output: Some(stdout.to_string()),
-                    error_message: Some(stderr.to_string()),
-                    runtime_ms: Some(runtime_ms),
-                    memory_kb: None,
-                });
-            }
-
-            // Compare outputs
-            let normalized_expected = normalize_output(&test_case.expected_output);
-            let normalized_actual = normalize_output(&stdout);
-
-            if normalized_expected == normalized_actual {
-                Ok(TestCaseResult {
-                    test_case_id: test_case.id,
-                    status: "accepted".to_string(),
-                    expected_output: Some(test_case.expected_output.clone()),
-                    actual_output: Some(stdout.to_string()),
-                    error_message: None,
-                    runtime_ms: Some(runtime_ms),
-                    memory_kb: None, // TODO: Implement memory tracking
-                })
-            } else {
-                Ok(TestCaseResult {
-                    test_case_id: test_case.id,
-                    status: "wrong_answer".to_string(),
-                    expected_output: Some(test_case.expected_output.clone()),
-                    actual_output: Some(stdout.to_string()),
-                    error_message: Some("Output mismatch".to_string()),
-                    runtime_ms: Some(runtime_ms),
-                    memory_kb: None,
-                })
-            }
-        }
-        Ok(Err(_)) | Err(_) => {
-            // Timeout or other error
-            Ok(TestCaseResult {
-                test_case_id: test_case.id,
-                status: "time_limit_exceeded".to_string(),
-                expected_output: Some(test_case.expected_output.clone()),
-                actual_output: None,
-                error_message: Some("Time limit exceeded".to_string()),
-                runtime_ms: Some(submission.time_limit_ms as i32),
-                memory_kb: None,
-            })
-        }
-    }
+    Ok(TestCaseResult {
+        test_case_id: test_case.id,
+        status: status.to_string(),
+        expected_output: Some(test_case.expected_output.clone()),
+        actual_output: Some(output.stdout),
+        error_message: None,
+        runtime_ms: Some(runtime_ms),
+        memory_kb: Some(262144),
+    })
 }
 
-/// Normalize output for comparison
-fn normalize_output(output: &str) -> String {
-    output
-        .trim()
-        .lines()
-        .map(|line| line.trim())
-        .collect::<Vec<_>>()
-        .join("\n")
-}
+#[tokio::test]
+async fn test_process_submission() {
+    let submission = SubmissionMessage {
+        submission_id: 1,
+        user_id: uuid::Uuid::new_v4(),
+        problem_id: 1,
+        language: "python3".to_string(),
+        source_code: "print('Hello')".to_string(),
+        time_limit_ms: 1000,
+        memory_limit_kb: 128000,
+    };
 
-/// Cleanup working directory
-async fn cleanup_work_dir(work_dir: &PathBuf) -> Result<()> {
-    let _ = fs::remove_dir_all(work_dir).await;
-    Ok(())
-}
-
-/// Test case data
-#[derive(Debug, Clone)]
-struct TestCase {
-    id: i64,
-    input: String,
-    expected_output: String,
-    is_hidden: bool,
-    score: i32,
+    let result = process_submission(&submission).await;
+    let (child, memory_kb) = match output {
+        Ok(child) => (child, 262144),
+        Err(_) => return Err("Process spawn failed".into()),
+    };
 }

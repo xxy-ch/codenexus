@@ -146,19 +146,17 @@ async fn create_article_handler(
     match service.create_article(user_id, req).await {
         Ok(article) => {
             // Send WebSocket notification for new article (trending update)
-            if let Some(ws_server) = state.ws_server.as_ref() {
-                let msg = WebSocketMessage::TrendingArticles {
-                    articles: vec![json!({
-                        "id": article.id,
-                        "title": article.title,
-                        "slug": article.slug,
-                        "author": article.author_username,
-                        "view_count": article.view_count,
-                        "like_count": article.like_count,
-                    })],
-                };
-                let _ = ws_server.broadcast(msg.to_json().unwrap());
-            }
+            let msg = WebSocketMessage::TrendingArticles {
+                articles: vec![json!({
+                    "id": article.id,
+                    "title": article.title,
+                    "slug": article.slug,
+                    "author": article.author_id.to_string(),
+                    "view_count": article.view_count,
+                    "like_count": article.like_count,
+                })],
+            };
+            let _ = state.websocket_server.broadcast(&msg).await;
             Ok(Json(article))
         },
         Err(e) => {
@@ -282,17 +280,18 @@ async fn create_comment_handler(
     match service.create_comment(id, user_id, req).await {
         Ok(comment) => {
             // Send WebSocket notification for new comment
-            if let Some(ws_server) = state.ws_server.as_ref() {
-                let msg = WebSocketMessage::ArticleComment {
-                    article_id: id,
-                    comment_id: comment.id,
-                    user_id: comment.author_id,
-                    username: comment.author_username.clone(),
-                    content: comment.content.clone(),
-                    created_at: comment.created_at,
-                };
-                let _ = ws_server.send_to_topic(&format!("article:{}", id), msg.to_json().unwrap());
-            }
+            let msg = WebSocketMessage::ArticleComment {
+                article_id: id,
+                comment_id: comment.id,
+                user_id: comment.author_id,
+                username: comment.author_id.to_string(),
+                content: comment.content.clone(),
+                created_at: comment.created_at,
+            };
+            let _ = state
+                .websocket_server
+                .send_to_topic(&format!("article:{}", id), &msg)
+                .await;
             Ok(Json(comment))
         },
         Err(e) => {
@@ -310,7 +309,7 @@ async fn like_article_handler(
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "article", *id).await {
+    match service.toggle_like(user_id, "article", id).await {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);
@@ -327,7 +326,7 @@ async fn like_comment_handler(
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "comment", *comment_id).await {
+    match service.toggle_like(user_id, "comment", comment_id).await {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);

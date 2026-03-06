@@ -18,20 +18,33 @@ import { SubmissionHistory } from './pages/user/SubmissionHistory'
 import { SubmissionDetail } from './pages/user/SubmissionDetail'
 import { ContestList } from './pages/user/ContestList'
 import { ContestDetail } from './pages/user/ContestDetail'
+import { ContestScoreboard } from './pages/contest/ContestScoreboard'
 import { Ranking } from './pages/user/Ranking'
+import { LearningRoadmap } from './pages/user/LearningRoadmap'
 import { DiscussionList } from './pages/community/DiscussionList'
 import { DiscussionDetail } from './pages/community/DiscussionDetail'
 import { CreateDiscussion } from './pages/community/CreateDiscussion'
 import { BlogList } from './pages/community/BlogList'
 import { BlogDetail } from './pages/community/BlogDetail'
 import { CreateArticle } from './pages/community/CreateArticle'
+import { EditArticle } from './pages/community/EditArticle'
+import { DirectMessages } from './pages/community/DirectMessages'
 import { SearchResults } from './pages/search/SearchResults'
 import { Profile } from './pages/user/Profile'
 import { Settings } from './pages/user/Settings'
+import { ClassManagement } from './pages/teacher/ClassManagement'
+import { AssignmentReport } from './pages/teacher/AssignmentReport'
+import { ContestWizard } from './pages/teacher/ContestWizard'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
 import { UserManagement } from './pages/admin/UserManagement'
 import { ProblemManagement } from './pages/admin/ProblemManagement'
 import { ReportManagement } from './pages/admin/ReportManagement'
+import { JudgeSettings } from './pages/admin/JudgeSettings'
+import { ProblemContentConfig } from './pages/admin/ProblemContentConfig'
+import { SimilarityScanConfig } from './pages/admin/SimilarityScanConfig'
+import { PlagiarismReportList } from './pages/admin/PlagiarismReportList'
+import { PlagiarismReportDetail } from './pages/admin/PlagiarismReportDetail'
+import { FEATURE_FLAGS } from './services/config'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,7 +97,9 @@ function App() {
             <Route path="submissions/:submissionId" element={<SubmissionDetail />} />
             <Route path="contests" element={<ContestList />} />
             <Route path="contests/:contestId" element={<ContestDetail />} />
+            <Route path="contests/:contestId/scoreboard" element={<ContestScoreboard />} />
             <Route path="ranking" element={<Ranking />} />
+            <Route path="roadmap" element={<LearningRoadmap />} />
             <Route path="discussions" element={<DiscussionList />} />
             <Route path="discussions/new" element={<CreateDiscussion />} />
             <Route path="discussions/:problemId/new" element={<CreateDiscussion />} />
@@ -92,9 +107,16 @@ function App() {
             <Route path="blog" element={<BlogList />} />
             <Route path="blog/new" element={<CreateArticle />} />
             <Route path="blog/:slug" element={<BlogDetail />} />
+            <Route path="blog/:slug/edit" element={<EditArticle />} />
+            {FEATURE_FLAGS.directMessages && (
+              <Route path="messages" element={<DirectMessages />} />
+            )}
             <Route path="search" element={<SearchResults />} />
             <Route path="profile" element={<Profile />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="teacher/classes" element={<ClassManagement />} />
+            <Route path="teacher/assignment-report" element={<AssignmentReport />} />
+            <Route path="teacher/contest-wizard" element={<ContestWizard />} />
             {/* Add more protected routes here */}
           </Route>
 
@@ -110,6 +132,17 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="problems" element={<ProblemManagement />} />
+            <Route path="judge-settings" element={<JudgeSettings />} />
+            <Route path="problem-content" element={<ProblemContentConfig />} />
+            {FEATURE_FLAGS.plagiarism && (
+              <Route path="similarity-scan" element={<SimilarityScanConfig />} />
+            )}
+            {FEATURE_FLAGS.plagiarism && (
+              <Route path="plagiarism-reports" element={<PlagiarismReportList />} />
+            )}
+            {FEATURE_FLAGS.plagiarism && (
+              <Route path="plagiarism-reports/:reportId" element={<PlagiarismReportDetail />} />
+            )}
             <Route path="reports" element={<ReportManagement />} />
           </Route>
 

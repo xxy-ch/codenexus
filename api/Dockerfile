@@ -8,7 +8,8 @@ RUN apk add --no-cache \
     postgresql-client \
     pkgconf \
     openssl-dev \
-    curl
+    curl \
+    sqlx-cli
 
 # Set working directory
 WORKDIR /app
@@ -36,7 +37,8 @@ FROM alpine:3.19
 RUN apk add --no-cache \
     postgresql-client \
     ca-certificates \
-    curl
+    curl \
+    sqlx-cli
 
 # Create app user
 RUN addgroup -g 1000 appuser && \
@@ -47,6 +49,8 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /app/target/release/api /app/api
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
 
 # Change ownership
 RUN chown -R appuser:appuser /app
@@ -61,5 +65,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:3000/health || exit 1
 
+# Use entrypoint script
+ENTRYPOINT ["docker-entrypoint.sh"]
 # Run the application
 CMD ["/app/api"]

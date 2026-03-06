@@ -5,11 +5,11 @@ import { blogService } from '@/services/blog'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
+import type { BlogPost } from '@/types/blog'
 
 export function BlogDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [content, setContent] = useState('')
   const [isLiked, setIsLiked] = useState(false)
 
   const { data: post, isLoading, error } = useQuery({
@@ -30,17 +30,18 @@ export function BlogDetail() {
     )
   }
 
-  const catConfig = {
+  const categoryConfig: Record<string, { label: string; color: string }> = {
     tutorial: { label: '教程', color: 'bg-blue-100 text-blue-700' },
     experience: { label: '经验', color: 'bg-yellow-100 text-yellow-700' },
     solution: { label: '题解', color: 'bg-green-100 text-green-700' },
     news: { label: '资讯', color: 'bg-purple-100 text-purple-700' },
-  }[post.category]
+  }
+  const catConfig = categoryConfig[(post as BlogPost).category] || { label: '文章', color: 'bg-slate-100 text-slate-700' }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Back Button */}
-      <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+      <Button variant="ghost" size="small" onClick={() => navigate(-1)}>
         <span className="material-symbols-outlined mr-2">arrow_back</span>
         返回
       </Button>
@@ -83,7 +84,7 @@ export function BlogDetail() {
           {/* Tags */}
           {post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
-              {post.tags.map((tag) => (
+              {post.tags.map((tag: string) => (
                 <span key={tag} className="text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
                   #{tag}
                 </span>

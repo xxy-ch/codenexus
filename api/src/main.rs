@@ -13,6 +13,9 @@ mod websocket;
 mod discussions;
 mod blog;
 mod search;
+mod notifications;
+mod messages;
+mod plagiarism;
 
 use axum::{
     routing::{get, post},
@@ -97,39 +100,36 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn create_router(state: AppState) -> Router {
-    Router::new()
+    let public_router = Router::new()
         .route("/health", get(health_check))
         .route("/status", get(get_system_status))
-        // Auth routes (public)
+        // Public auth routes
         .route("/auth/login", post(auth::login))
         .route("/auth/refresh", post(auth::refresh))
         .route("/auth/register", post(users::register))
-        // User routes
-        .nest("/users", users::user_router())
-        // Problem routes
-        .nest("/problems", problems::problems_router())
-        // Contest routes
-        .nest("/contests", contests::contests_router())
-        // Leaderboard routes
-        .nest("/leaderboard", leaderboard::leaderboard_router())
-        // Submission routes
-        .nest("/submissions", submissions::submissions_router())
-        // Class routes
-        .nest("/classes", classes::classes_router())
-        // Discussions routes
-        .nest("/discussions", discussions::discussions_router())
-        // Blog routes
-        .nest("/blog", blog::blog_router())
-        // Search routes
-        .nest("/search", search::create_search_router(state.db_pool.clone()))
         // WebSocket route (public, auth handled in handler)
-        .route("/ws", get(websocket::handler::websocket_upgrade_handler))
-        // Apply middleware
-        .route_layer(axum::middleware::from_fn_with_state(
-            state.clone(),
-            middleware::tenant::tenant_middleware,
-        ))
-        .route_layer(axum::middleware::from_fn(middleware::auth::auth_middleware))
+        .route("/ws", get(websocket::handler::websocket_upgrade_handler));
+
+    let protected_router = Router::new()
+        // Protected routes
+        .nest("/users", users::user_router())
+        .nest("/problems", problems::problems_router())
+        .nest("/contests", contests::contests_router())
+        .nest("/leaderboard", leaderboard::leaderboard_router())
+        .nest("/submissions", submissions::submissions_router())
+        .nest("/classes", classes::classes_router())
+        .nest("/discussions", discussions::discussions_router())
+        .nest("/blog", blog::blog_router())
+        .nest("/search", search::create_search_router(state.db_pool.clone(), state.redis_url.clone()))
+        .nest("/notifications", notifications::notifications_router())
+        .nest("/messages", messages::messages_router())
+        .nest("/admin/plagiarism", plagiarism::plagiarism_router())
+        // Apply auth/tenant middleware only to protected routes
+        .route_layer(axum::middleware::from_fn(middleware::tenant::tenant_middleware))
+        .route_layer(axum::middleware::from_fn(middleware::auth::auth_middleware));
+
+    public_router
+        .merge(protected_router)
         .with_state(state)
 }
 

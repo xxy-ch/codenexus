@@ -1,4 +1,4 @@
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
 use anyhow::Result;
 use chrono::Utc;
@@ -375,7 +375,7 @@ impl BlogService {
 
     /// Get popular tags
     pub async fn get_popular_tags(&self, limit: i64) -> Result<Vec<(String, i64)>> {
-        let tags = sqlx::query(
+        let rows = sqlx::query(
             r#"
             SELECT unnest(tags) as tag, COUNT(*) as count
             FROM articles
@@ -388,6 +388,15 @@ impl BlogService {
         .bind(limit)
         .fetch_all(&self.pool)
         .await?;
+
+        let tags = rows
+            .into_iter()
+            .map(|row| {
+                let tag: String = row.get("tag");
+                let count: i64 = row.get("count");
+                (tag, count)
+            })
+            .collect();
 
         Ok(tags)
     }

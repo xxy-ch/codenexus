@@ -1,23 +1,38 @@
-import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
+import { usersService } from '@/services/users'
 
 type TabType = 'account' | 'preferences' | 'notifications' | 'security'
 
 export function Settings() {
   const { user } = useAuthStore()
-  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState<TabType>('account')
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   // Account Settings
   const [accountForm, setAccountForm] = useState({
-    username: user?.username || '',
+    username: '',
     email: user?.email || '',
+    display_name: '',
   })
+
+  const { data: profile } = useQuery({
+    queryKey: ['settings-profile'],
+    queryFn: () => usersService.getMyProfile(),
+    enabled: !!user?.id,
+  })
+
+  useEffect(() => {
+    if (!profile) return
+    setAccountForm({
+      username: profile.username || '',
+      email: profile.email || '',
+      display_name: profile.display_name || '',
+    })
+  }, [profile])
 
   // Preferences
   const [preferences, setPreferences] = useState({
@@ -39,10 +54,11 @@ export function Settings() {
   })
 
   const updateAccountMutation = useMutation({
-    mutationFn: async (data: typeof accountForm) => {
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      return { success: true }
-    },
+    mutationFn: async (data: typeof accountForm) =>
+      usersService.updateMyProfile({
+        email: data.email || undefined,
+        display_name: data.display_name || undefined,
+      }),
     onSuccess: () => {
       setMessage({ type: 'success', text: '账户信息更新成功' })
       setTimeout(() => setMessage(null), 3000)
@@ -54,7 +70,7 @@ export function Settings() {
   })
 
   const updatePreferencesMutation = useMutation({
-    mutationFn: async (data: typeof preferences) => {
+    mutationFn: async (_data: typeof preferences) => {
       await new Promise(resolve => setTimeout(resolve, 1000))
       return { success: true }
     },
@@ -65,7 +81,7 @@ export function Settings() {
   })
 
   const updateNotificationsMutation = useMutation({
-    mutationFn: async (data: typeof notifications) => {
+    mutationFn: async (_data: typeof notifications) => {
       await new Promise(resolve => setTimeout(resolve, 1000))
       return { success: true }
     },
@@ -134,7 +150,16 @@ export function Settings() {
                     <input
                       type="text"
                       value={accountForm.username}
-                      onChange={(e) => setAccountForm({ ...accountForm, username: e.target.value })}
+                      readOnly
+                      className="w-full px-4 py-2 border rounded-lg bg-slate-50 dark:bg-slate-800/60"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">显示名称</label>
+                    <input
+                      type="text"
+                      value={accountForm.display_name}
+                      onChange={(e) => setAccountForm({ ...accountForm, display_name: e.target.value })}
                       className="w-full px-4 py-2 border rounded-lg"
                     />
                   </div>
@@ -497,7 +522,7 @@ export function Settings() {
                         <p className="text-sm text-slate-600">{session.location} • {session.time}</p>
                       </div>
                       {!session.current && (
-                        <Button variant="outline" size="sm">撤销</Button>
+                        <Button variant="outline" size="small">撤销</Button>
                       )}
                       {session.current && (
                         <span className="text-xs text-primary">当前会话</span>

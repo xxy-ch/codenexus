@@ -37,7 +37,7 @@ export const authService = {
    * 获取当前用户信息
    */
   async getCurrentUser(): Promise<User> {
-    const response = await api.get<User>('/auth/me')
+    const response = await api.get<User>('/users/me')
     return response.data
   },
 

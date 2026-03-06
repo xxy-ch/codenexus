@@ -1,8 +1,6 @@
 import api from './api'
+import { USE_MOCK_DATA } from './config'
 import type { Contest, ContestDetail, ContestRegistration, ContestEntry } from '@/types/contests'
-
-// 开发模式下使用模拟数据的标志
-const USE_MOCK_DATA = true // 临时启用模拟数据用于演示
 
 export interface ContestFilters {
   status?: 'upcoming' | 'ongoing' | 'completed' | 'all'
@@ -48,8 +46,8 @@ export const contestsService = {
       const response = await api.get<ContestsResponse>(`/contests?${params}`)
       return response.data
     } catch (error) {
-      console.warn('API调用失败，使用模拟数据:', error)
-      return getMockContests(filters)
+      console.error('Failed to fetch contests:', error)
+      throw error
     }
   },
 
@@ -65,8 +63,8 @@ export const contestsService = {
       const response = await api.get<ContestDetail>(`/contests/${contestId}`)
       return response.data
     } catch (error) {
-      console.warn('API调用失败，使用模拟数据:', error)
-      return getMockContestDetail(contestId)
+      console.error('Failed to fetch contest detail:', error)
+      throw error
     }
   },
 
@@ -79,10 +77,11 @@ export const contestsService = {
     }
 
     try {
-      const response = await api.post<ContestRegistration>(`/contests/${contestId}/register`)
-      return response.data
+      await api.post(`/contests/${contestId}/register`)
+      return { success: true, message: 'Registration successful' }
     } catch (error) {
-      return { success: false, message: 'Registration failed' }
+      console.error('Failed to register contest:', error)
+      throw error
     }
   },
 
@@ -95,10 +94,18 @@ export const contestsService = {
     }
 
     try {
-      const response = await api.post<ContestEntry>(`/contests/${contestId}/enter`)
-      return response.data
+      const response = await api.get<{ status?: string }>(`/contests/${contestId}/status`)
+      const rawStatus = String(response.data?.status || '').toLowerCase()
+      const isActive = ['active', 'ongoing', 'running'].includes(rawStatus)
+
+      if (!isActive) {
+        throw new Error(`Contest is not active (status: ${rawStatus || 'unknown'})`)
+      }
+
+      return { success: true, message: 'Entered contest successfully' }
     } catch (error) {
-      return { success: false, message: 'Failed to enter contest' }
+      console.error('Failed to enter contest:', error)
+      throw error
     }
   },
 }
@@ -218,7 +225,7 @@ function getMockContestDetail(contestId: string): ContestDetail {
       {
         id: '1',
         title: 'Two Sum',
-        difficulty: 'easy',
+        difficulty: 'easy' as const,
         points: 10,
         accepted_count: 120,
         submission_count: 150,
@@ -226,7 +233,7 @@ function getMockContestDetail(contestId: string): ContestDetail {
       {
         id: '2',
         title: 'Add Two Numbers',
-        difficulty: 'medium',
+        difficulty: 'medium' as const,
         points: 20,
         accepted_count: 45,
         submission_count: 80,
@@ -234,7 +241,7 @@ function getMockContestDetail(contestId: string): ContestDetail {
       {
         id: '3',
         title: 'Longest Substring Without Repeating Characters',
-        difficulty: 'medium',
+        difficulty: 'medium' as const,
         points: 25,
         accepted_count: 30,
         submission_count: 60,
@@ -242,7 +249,7 @@ function getMockContestDetail(contestId: string): ContestDetail {
       {
         id: '4',
         title: 'Median of Two Sorted Arrays',
-        difficulty: 'hard',
+        difficulty: 'hard' as const,
         points: 40,
         accepted_count: 8,
         submission_count: 40,

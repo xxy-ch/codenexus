@@ -3,6 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { DashboardEnhanced } from '../DashboardEnhanced'
+import type { UserActivity, RecommendedProblem } from '@/types/users'
+import type { Problem } from '@/types/problems'
 
 // Mock the API services
 vi.mock('@/services/users', () => ({
@@ -39,7 +41,7 @@ describe('DashboardEnhanced', () => {
     accuracy_rate: 50,
   }
 
-  const mockRecentActivity = [
+  const mockRecentActivity: UserActivity[] = [
     {
       id: '1',
       type: 'submission',
@@ -67,7 +69,7 @@ describe('DashboardEnhanced', () => {
     },
   ]
 
-  const mockRecommendedProblems = [
+  const mockRecommendedProblems: RecommendedProblem[] = [
     {
       id: '5',
       title: 'Reverse Linked List',
@@ -297,6 +299,7 @@ describe('DashboardEnhanced', () => {
           {
             id: '10',
             title: 'Daily Challenge: Valid Parentheses',
+            description: 'Given a string containing just parentheses, determine if it is valid.',
             difficulty: 'medium',
             tags: ['Stack', 'String'],
             points: 30,
@@ -305,7 +308,7 @@ describe('DashboardEnhanced', () => {
             created_at: '2024-01-12T00:00:00Z',
             updated_at: '2024-01-12T00:00:00Z',
           },
-        ],
+        ] as Problem[],
         total: 1,
         page: 1,
         limit: 20,

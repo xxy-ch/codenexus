@@ -1,7 +1,6 @@
 import api from './api'
+import { USE_MOCK_DATA } from './config'
 import type { AdminStats, UserManagement, ProblemManagement, SystemHealth, Report } from '@/types/admin'
-
-const USE_MOCK_DATA = true
 
 export const adminService = {
   async getStats(): Promise<AdminStats> {

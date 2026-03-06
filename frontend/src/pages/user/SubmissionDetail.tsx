@@ -110,12 +110,9 @@ export function SubmissionDetail() {
     queryKey: ['submission', submissionId],
     queryFn: () => problemsService.getSubmissionDetail(submissionId!),
     enabled: !!submissionId,
-    refetchInterval: (data) => {
-      // 如果是pending或running状态，每2秒轮询一次
-      if (data?.status === 'pending' || data?.status === 'running') {
-        return 2000
-      }
-      return false
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+      return status === 'pending' || status === 'running' ? 2000 : false
     },
   })
 
@@ -187,7 +184,7 @@ export function SubmissionDetail() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+          <Button variant="ghost" size="small" onClick={() => navigate(-1)}>
             <span className="material-symbols-outlined">arrow_back</span>
           </Button>
           <div>
@@ -229,7 +226,7 @@ export function SubmissionDetail() {
 
           <div className="text-right">
             <Link to={`/problems/${submission.problem_id}/solve`}>
-              <Button variant="primary" size="sm">
+              <Button variant="primary" size="small">
                 <span className="material-symbols-outlined mr-2">replay</span>
                 再次挑战
               </Button>
@@ -420,7 +417,7 @@ export function SubmissionDetail() {
           </div>
           <Button
             variant="outline"
-            size="sm"
+            size="small"
             onClick={handleCopyCode}
             className="min-w-[100px]"
           >

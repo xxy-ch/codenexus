@@ -138,6 +138,7 @@ export interface ArticleFilters {
   category?: string
   tag?: string
   author_id?: string
+  sort?: 'recent' | 'popular' | 'trending'
 }
 
 export interface ArticleListResponse {

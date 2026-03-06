@@ -241,6 +241,8 @@ mod tests {
             submission_ids: Some(vec![1, 2, 3]),
             contest_ids: None,
             problem_ids: None,
+            discussion_ids: None,
+            article_ids: None,
         };
 
         let msg = WebSocketMessage::SubmissionUpdate {

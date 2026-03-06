@@ -7,6 +7,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 mod compiler;
 mod processor;
 mod queue;
+mod db;
 mod sandbox;
 
 use queue::consumer;

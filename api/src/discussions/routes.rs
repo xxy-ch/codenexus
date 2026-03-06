@@ -144,17 +144,18 @@ async fn create_reply_handler(
     match service.create_reply(id, user_id, req).await {
         Ok(reply) => {
             // Send WebSocket notification for new reply
-            if let Some(ws_server) = state.ws_server.as_ref() {
-                let msg = WebSocketMessage::DiscussionReply {
-                    discussion_id: id,
-                    reply_id: reply.id,
-                    user_id: reply.author_id,
-                    username: reply.author_username.clone(),
-                    content: reply.content.clone(),
-                    created_at: reply.created_at,
-                };
-                let _ = ws_server.send_to_topic(&format!("discussion:{}", id), msg.to_json().unwrap());
-            }
+            let msg = WebSocketMessage::DiscussionReply {
+                discussion_id: id,
+                reply_id: reply.id,
+                user_id: reply.author_id,
+                username: reply.author_id.to_string(),
+                content: reply.content.clone(),
+                created_at: reply.created_at,
+            };
+            let _ = state
+                .websocket_server
+                .send_to_topic(&format!("discussion:{}", id), &msg)
+                .await;
             Ok(Json(reply))
         },
         Err(e) => {

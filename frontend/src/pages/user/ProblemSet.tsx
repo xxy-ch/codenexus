@@ -3,78 +3,27 @@ import { useProblems } from '@/hooks/useProblems'
 import { ProblemTable } from '@/components/problems/ProblemTable'
 import { ProblemFilters } from '@/components/problems/ProblemFilters'
 import { Loading } from '@/components/ui/Loading'
-import { problemsService, type ProblemFilters } from '@/services/problems'
-import { mockProblems } from '@/services/problems'
+import type { ProblemFilters as ProblemFiltersParams } from '@/services/problems'
 
 export function ProblemSet() {
-  const [filters, setFilters] = useState<ProblemFilters>({
+  const [filters, setFilters] = useState<ProblemFiltersParams>({
     difficulty: 'all',
     sort: 'recent',
     page: 1,
-    limit: 50,
+    limit: 20,
   })
 
-  // 使用mock数据进行开发
-  const [problems, setProblems] = useState(mockProblems)
+  const { data, isLoading, error } = useProblems(filters)
+  const problems = data?.problems || []
+  const total = data?.total || 0
+  const page = filters.page || 1
+  const limit = filters.limit || 20
+  const totalPages =
+    data?.pages ||
+    (total > 0 ? Math.ceil(total / limit) : 1)
 
-  // TODO: 当后端API准备好时，启用这个查询
-  // const { data, isLoading, error } = useProblems(filters)
-  // const problems = data?.problems || []
-  // const total = data?.total || 0
-
-  const isLoading = false
-  const error = null
-  const total = problems.length
-
-  const handleFiltersChange = (newFilters: ProblemFilters) => {
+  const handleFiltersChange = (newFilters: ProblemFiltersParams) => {
     setFilters(newFilters)
-
-    // 客户端筛选 (仅用于开发)
-    let filtered = [...mockProblems]
-
-    if (newFilters.difficulty && newFilters.difficulty !== 'all') {
-      filtered = filtered.filter((p) => p.difficulty === newFilters.difficulty)
-    }
-
-    if (newFilters.search) {
-      const searchLower = newFilters.search.toLowerCase()
-      filtered = filtered.filter(
-        (p) =>
-          p.title.toLowerCase().includes(searchLower) ||
-          p.tags.some((tag) => tag.toLowerCase().includes(searchLower))
-      )
-    }
-
-    if (newFilters.tags && newFilters.tags.length > 0) {
-      filtered = filtered.filter((p) =>
-        newFilters.tags!.some((tag) => p.tags.includes(tag))
-      )
-    }
-
-    // 排序
-    switch (newFilters.sort) {
-      case 'easy_first':
-        filtered.sort((a, b) => {
-          const difficultyOrder = { easy: 0, medium: 1, hard: 2 }
-          return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]
-        })
-        break
-      case 'hard_first':
-        filtered.sort((a, b) => {
-          const difficultyOrder = { easy: 0, medium: 1, hard: 2 }
-          return difficultyOrder[b.difficulty] - difficultyOrder[a.difficulty]
-        })
-        break
-      case 'popular':
-        filtered.sort((a, b) => b.points - a.points)
-        break
-      case 'recent':
-      default:
-        // 保持默认顺序
-        break
-    }
-
-    setProblems(filtered)
   }
 
   if (isLoading) {
@@ -138,11 +87,33 @@ export function ProblemSet() {
       </div>
 
       {/* Pagination */}
-      {/* TODO: 当实现真实API时添加分页 */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-slate-600 dark:text-slate-400">
           Showing <span className="font-medium">{problems.length}</span> of{' '}
           <span className="font-medium">{total}</span> problems
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFilters((prev) => ({ ...prev, page: Math.max(1, page - 1) }))}
+            disabled={page <= 1}
+            className="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-700 disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <span className="text-sm text-slate-600 dark:text-slate-400">
+            {page} / {totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() =>
+              setFilters((prev) => ({ ...prev, page: Math.min(totalPages, page + 1) }))
+            }
+            disabled={page >= totalPages}
+            className="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-700 disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       </div>
     </div>

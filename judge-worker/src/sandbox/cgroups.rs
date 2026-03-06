@@ -84,4 +84,52 @@ impl CgroupController {
         debug!("Removed process {} from cgroup", pid);
         Ok(())
     }
+
+    /// Get current memory usage in bytes from cgroup
+    pub fn get_memory_usage(&self) -> Result<u64> {
+        let memory_file = self.cgroup_path.join("memory.current");
+        
+        if !memory_file.exists() {
+            return Ok(0);
+        }
+        
+        let content = fs::read_to_string(&memory_file)
+            .with_context(|| format!("Failed to read memory usage from {:?}", memory_file))?;
+        
+        let usage: u64 = content
+            .trim()
+            .parse()
+            .with_context(|| "Failed to parse memory usage value")?;
+        
+        Ok(usage)
+    }
+
+    /// Get maximum memory usage in bytes from cgroup
+    pub fn get_max_memory_usage(&self) -> Result<u64> {
+        let memory_file = self.cgroup_path.join("memory.peak");
+        
+        if !memory_file.exists() {
+            return Ok(0);
+        }
+        
+        let content = fs::read_to_string(&memory_file)
+            .with_context(|| format!("Failed to read max memory usage from {:?}", memory_file))?;
+        
+        let usage: u64 = content
+            .trim()
+            .parse()
+            .with_context(|| "Failed to parse max memory usage value")?;
+        
+        Ok(usage)
+    }
+
+    /// Clean up cgroup directory
+    pub fn destroy(&self) -> Result<()> {
+        if self.cgroup_path.exists() {
+            fs::remove_dir_all(&self.cgroup_path)
+                .with_context(|| format!("Failed to remove cgroup directory: {:?}", self.cgroup_path))?;
+            debug!("Destroyed cgroup at {:?}", self.cgroup_path);
+        }
+        Ok(())
+    }
 }

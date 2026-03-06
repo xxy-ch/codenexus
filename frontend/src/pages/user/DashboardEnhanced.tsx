@@ -4,7 +4,8 @@ import { usersService } from '@/services/users'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import type { UserActivity } from '@/types/users'
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
 export function DashboardEnhanced() {
   const queryClient = useQueryClient()
@@ -44,7 +45,10 @@ export function DashboardEnhanced() {
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
           加载失败
         </h3>
-        <Button variant="primary" onClick={() => queryClient.invalidateQueries(['userStats'])}>
+        <Button
+          variant="primary"
+          onClick={() => queryClient.invalidateQueries({ queryKey: ['userStats'] })}
+        >
           重试
         </Button>
       </div>
@@ -57,16 +61,29 @@ export function DashboardEnhanced() {
     hard: '#ef4444',
   }
 
-  // 模拟7天学习数据
-  const weeklyActivity = [
-    { day: '周一', 提交: 12, 通过: 8 },
-    { day: '周二', 提交: 8, 通过: 5 },
-    { day: '周三', 提交: 15, 通过: 10 },
-    { day: '周四', 提交: 10, 通过: 7 },
-    { day: '周五', 提交: 20, 通过: 12 },
-    { day: '周六', 提交: 18, 通过: 14 },
-    { day: '周日', 提交: 5, 通过: 4 },
-  ]
+  const weekNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const submissionActivities = (recentActivity ?? []).filter(
+    (activity) => activity.type === 'submission'
+  )
+
+  const weeklyActivity = Array.from({ length: 7 }).map((_, index) => {
+    const date = new Date()
+    date.setDate(date.getDate() - (6 - index))
+    const dateKey = date.toISOString().slice(0, 10)
+
+    const dailyActivities = submissionActivities.filter((activity) =>
+      activity.created_at.startsWith(dateKey)
+    )
+    const acceptedCount = dailyActivities.filter(
+      (activity) => activity.status === 'accepted'
+    ).length
+
+    return {
+      day: weekNames[date.getDay()],
+      提交: dailyActivities.length,
+      通过: acceptedCount,
+    }
+  })
 
   // 难度分布数据
   const difficultyDistribution = [
@@ -75,7 +92,7 @@ export function DashboardEnhanced() {
     { name: '困难', value: userStats.hard_solved, color: DIFFICULTY_COLORS.hard },
   ]
 
-  const getActivityIcon = (activity: any) => {
+  const getActivityIcon = (activity: UserActivity) => {
     switch (activity.type) {
       case 'submission':
         return activity.status === 'accepted' ? 'check_circle' : 'cancel'
@@ -88,7 +105,7 @@ export function DashboardEnhanced() {
     }
   }
 
-  const getActivityColor = (activity: any) => {
+  const getActivityColor = (activity: UserActivity) => {
     switch (activity.type) {
       case 'submission':
         return activity.status === 'accepted' ? 'text-green-500' : 'text-red-500'
@@ -228,7 +245,7 @@ export function DashboardEnhanced() {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"
@@ -266,42 +283,48 @@ export function DashboardEnhanced() {
             </Link>
           </div>
           <div className="space-y-3">
-            {recentActivity?.slice(0, 5).map((activity) => (
-              <div
-                key={activity.id}
-                className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <span className={cn('material-symbols-outlined text-xl', getActivityColor(activity))}>
-                  {getActivityIcon(activity)}
-                </span>
-                <div className="flex-1 min-w-0">
-                  {activity.type === 'submission' && (
-                    <Link
-                      to={`/problems/${activity.problem_id}`}
-                      className="text-sm font-medium text-slate-900 dark:text-white hover:text-primary truncate block"
-                    >
-                      {activity.problem_title}
-                    </Link>
-                  )}
-                  {activity.type === 'contest_registration' && (
-                    <Link
-                      to={`/contests/${activity.contest_id}`}
-                      className="text-sm font-medium text-slate-900 dark:text-white hover:text-primary truncate block"
-                    >
-                      {activity.contest_name}
-                    </Link>
-                  )}
-                  {activity.type === 'achievement' && (
-                    <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                      解锁成就: {activity.achievement_name}
+            {recentActivity && recentActivity.length > 0 ? (
+              recentActivity.slice(0, 5).map((activity) => (
+                <div
+                  key={activity.id}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <span className={cn('material-symbols-outlined text-xl', getActivityColor(activity))}>
+                    {getActivityIcon(activity)}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    {activity.type === 'submission' && (
+                      <Link
+                        to={`/problems/${activity.problem_id}`}
+                        className="text-sm font-medium text-slate-900 dark:text-white hover:text-primary truncate block"
+                      >
+                        {activity.problem_title}
+                      </Link>
+                    )}
+                    {activity.type === 'contest_registration' && (
+                      <Link
+                        to={`/contests/${activity.contest_id}`}
+                        className="text-sm font-medium text-slate-900 dark:text-white hover:text-primary truncate block"
+                      >
+                        {activity.contest_name}
+                      </Link>
+                    )}
+                    {activity.type === 'achievement' && (
+                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                        解锁成就: {activity.achievement_name}
+                      </p>
+                    )}
+                    <p className="text-xs text-slate-500">
+                      {new Date(activity.created_at).toLocaleString('zh-CN')}
                     </p>
-                  )}
-                  <p className="text-xs text-slate-500">
-                    {new Date(activity.created_at).toLocaleString('zh-CN')}
-                  </p>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-sm text-slate-500 dark:text-slate-400 py-6 text-center">
+                暂无最近活动
               </div>
-            ))}
+            )}
           </div>
         </div>
 

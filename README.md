@@ -1,6 +1,20 @@
+<!-- CI/CD Badges -->
+[![CI Pipeline](https://github.com/YOUR_USERNAME/online-judge/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/online-judge/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/YOUR_USERNAME/online-judge/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/online-judge)
+[![Docker Hub](https://img.shields.io/docker/pulls/online-judge/api)](https://hub.docker.com/r/online-judge/api)
+
+
 # Online Judge - 在线判题系统
 
 一个功能完整的在线编程判题系统，支持多语言、实时判题、竞赛和社区功能。
+
+## 📌 文档导航（2026-03-06）
+
+- 当前状态基线（唯一入口）：`docs/PROJECT_BASELINE_2026-03-06.md`
+- 执行计划（按需求驱动）：`docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md`
+- References 驱动网页与交付计划：`docs/REFERENCE_DRIVEN_WEB_PLAN_2026-03-06.md`
+- 交付执行 Backlog（按天 + 文件级）：`docs/DELIVERY_EXECUTION_BACKLOG_2026-03-06.md`
+- 历史记录（仅供参考）：`TODO.md`、`DEPLOYMENT_STATUS.md`、`PHASE*_*.md`、`*_REPORT.md`
 
 ## 🎯 项目特性
 

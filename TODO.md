@@ -1,3 +1,13 @@
+# ⚠️ 历史文档（已归档）
+
+本文件包含早期路线图，已不作为当前执行依据。
+
+请使用以下文档：
+- 当前状态：`docs/PROJECT_BASELINE_2026-03-06.md`
+- 当前计划：`docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md`
+
+---
+
 # Online Judge 开发路线图
 
 ## 项目当前状态: MVP v1.0.0

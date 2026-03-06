@@ -5,10 +5,11 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { websocketService } from '../services/websocket'
-import { ConnectionStatus, WebSocketEventHandlers } from '../types/websocket'
+import type { WebSocketEventHandlers } from '../types/websocket'
+import { ConnectionStatus, type ConnectionStatus as ConnectionStatusType } from '../services/config'
 
 export function useWebSocket() {
-  const [status, setStatus] = useState<ConnectionStatus>(ConnectionStatus.DISCONNECTED)
+  const [status, setStatus] = useState<ConnectionStatusType>(ConnectionStatus.DISCONNECTED)
   const handlersRef = useRef<WebSocketEventHandlers>({})
 
   // Update status when service status changes
@@ -104,7 +105,7 @@ export function useSubmissionUpdates(submissionId?: number) {
  */
 export function useContestUpdates(contestId?: number) {
   const [update, setUpdate] = useState<any>(null)
-  const [status, isConnected, subscribe, setHandlers] = useWebSocket()
+  const { status, isConnected, subscribe, setHandlers } = useWebSocket()
 
   useEffect(() => {
     setHandlers({
@@ -134,7 +135,7 @@ export function useContestUpdates(contestId?: number) {
  */
 export function useNotifications() {
   const [notifications, setNotifications] = useState<any[]>([])
-  const [status, isConnected, setHandlers] = useWebSocket()
+  const { status, isConnected, setHandlers } = useWebSocket()
 
   useEffect(() => {
     setHandlers({
@@ -172,7 +173,7 @@ export function useNotifications() {
  */
 export function useLeaderboardUpdates(scope: string, scopeId?: number) {
   const [update, setUpdate] = useState<any>(null)
-  const [status, isConnected, subscribe, setHandlers] = useWebSocket()
+  const { status, isConnected, setHandlers } = useWebSocket()
 
   useEffect(() => {
     setHandlers({

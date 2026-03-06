@@ -1,4 +1,4 @@
-import type { ProblemSubmission, TestCaseResult } from '@/types/problems'
+import type { ProblemSubmission } from '@/types/problems'
 
 // 模拟提交数据
 export const mockSubmissions: (ProblemSubmission & {

@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { FEATURE_FLAGS } from '@/services/config'
 
 export function AdminLayout() {
   const location = useLocation()
@@ -8,6 +9,14 @@ export function AdminLayout() {
     { name: '仪表板', href: '/admin', icon: 'dashboard' },
     { name: '用户管理', href: '/admin/users', icon: 'people' },
     { name: '题目管理', href: '/admin/problems', icon: 'library_books' },
+    { name: '判题设置', href: '/admin/judge-settings', icon: 'tune' },
+    { name: '题面配置', href: '/admin/problem-content', icon: 'edit_document' },
+    ...(FEATURE_FLAGS.plagiarism
+      ? [
+          { name: '相似度配置', href: '/admin/similarity-scan', icon: 'tune' },
+          { name: '抄袭报告', href: '/admin/plagiarism-reports', icon: 'find_in_page' },
+        ]
+      : []),
     { name: '举报管理', href: '/admin/reports', icon: 'flag' },
   ]
 

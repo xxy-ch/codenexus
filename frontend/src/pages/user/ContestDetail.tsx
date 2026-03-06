@@ -88,24 +88,14 @@ export function ContestDetail() {
     queryKey: ['contest', contestId],
     queryFn: () => contestsService.getContestDetail(contestId!),
     enabled: !!contestId,
-    refetchInterval: (data) => {
-      // 如果进行中，每分钟更新一次
-      if (data?.status === 'ongoing') {
-        return 60000
-      }
-      // 如果即将开始，每秒更新倒计时
-      if (data?.status === 'upcoming') {
-        return 1000
-      }
-      return false
-    },
+    refetchInterval: 30000,
   })
 
   // 注册竞赛
   const registerMutation = useMutation({
     mutationFn: () => contestsService.registerContest(contestId!),
     onSuccess: () => {
-      queryClient.invalidateQueries(['contest', contestId])
+      queryClient.invalidateQueries({ queryKey: ['contest', contestId] })
     },
   })
 
@@ -219,7 +209,7 @@ export function ContestDetail() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+        <Button variant="ghost" size="small" onClick={() => navigate(-1)}>
           <span className="material-symbols-outlined">arrow_back</span>
         </Button>
         <div className="flex-1">
@@ -416,15 +406,15 @@ export function ContestDetail() {
             </Button>
           )}
 
-          {contest.status === 'completed' && (
+          <Link to={`/contests/${contest.id}/scoreboard`}>
             <Button variant="outline">
               <span className="material-symbols-outlined mr-2">leaderboard</span>
-              查看排名
+              查看榜单
             </Button>
-          )}
+          </Link>
         </div>
 
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="small">
           <span className="material-symbols-outlined mr-2">share</span>
           分享
         </Button>

@@ -25,7 +25,7 @@ export const API_CONFIG = {
     contestDetail: (id: string) => `/contests/${id}`,
 
     // Rankings
-    ranking: '/ranking',
+    ranking: '/leaderboard/global',
 
     // Discussions
     discussions: '/discussions',
@@ -41,8 +41,23 @@ export const API_CONFIG = {
     adminProblems: '/admin/problems',
     adminReports: '/admin/reports',
     adminSystemHealth: '/admin/system/health',
+    adminPlagiarismConfig: '/admin/plagiarism/config',
+    adminPlagiarismScan: '/admin/plagiarism/scan',
+    adminPlagiarismReports: '/admin/plagiarism/reports',
   },
 }
+// Mock data flag
+export const USE_MOCK_DATA = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
+
+// Feature toggles for backend-dependent modules.
+// Default: enabled for release completeness; allow explicit disable via env=false.
+export const FEATURE_FLAGS = {
+  directMessages:
+    import.meta.env.VITE_ENABLE_DIRECT_MESSAGES !== 'false' || USE_MOCK_DATA,
+  plagiarism:
+    import.meta.env.VITE_ENABLE_PLAGIARISM !== 'false' || USE_MOCK_DATA,
+} as const
+
 
 export const WS_CONFIG = {
   baseURL: import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:3000',
@@ -56,12 +71,14 @@ export const WS_CONFIG = {
 /**
  * WebSocket connection status
  */
-export enum ConnectionStatus {
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  DISCONNECTED = 'disconnected',
-  ERROR = 'error',
-}
+export const ConnectionStatus = {
+  CONNECTING: 'connecting',
+  CONNECTED: 'connected',
+  DISCONNECTED: 'disconnected',
+  ERROR: 'error',
+} as const
+
+export type ConnectionStatus = (typeof ConnectionStatus)[keyof typeof ConnectionStatus]
 
 // Storage keys
 export const STORAGE_KEYS = {

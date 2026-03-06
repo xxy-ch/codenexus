@@ -1,0 +1,58 @@
+# Task 12 Evidence: Mock Data Functions Removal
+
+## Scenario: Mock data functions removed
+
+### File Analysis:
+- Original file: frontend/src/services/users.ts (212 lines)
+- Modified file: frontend/src/services/users.ts (44 lines)
+- Removed lines: 168 lines of mock data functions
+
+### Mock Functions Removed:
+1. getMockUserStats() - Lines 59-98 (40 lines)
+2. getMockUserActivity() - Lines 100-162 (63 lines)  
+3. getMockRecommendedProblems() - Lines 164-212 (49 lines)
+
+### Verification Commands:
+- rg "mockUsers|mockData" frontend/src/services/users.ts → 0 matches
+- Read final file content shows only real API calls
+
+### Current File Structure:
+```typescript
+import api from './api'
+import type { UserStats, UserActivity, RecommendedProblem } from '@/types/users'
+
+export const usersService = {
+  async getUserStats(): Promise<UserStats> {
+    try {
+      const response = await api.get<UserStats>('/users/stats')
+      return response.data
+    } catch (error) {
+      console.error('Failed to fetch user stats:', error)
+      throw error
+    }
+  },
+  
+  async getUserActivity(limit: number = 10): Promise<UserActivity[]> {
+    try {
+      const response = await api.get<UserActivity[]>(`/users/activity?limit=${limit}`)
+      return response.data
+    } catch (error) {
+      console.error('Failed to fetch user activity:', error)
+      throw error
+    }
+  },
+  
+  async getRecommendedProblems(limit: number = 5): Promise<RecommendedProblem[]> {
+    try {
+      const response = await api.get<RecommendedProblem[]>(`/users/recommended-problems?limit=${limit}`)
+      return response.data
+    } catch (error) {
+      console.error('Failed to fetch recommended problems:', error)
+      throw error
+    }
+  },
+}
+```
+
+### Status: PASSED
+All mock data functions successfully removed. Only real API calls remain.

@@ -1,8 +1,6 @@
 import api from './api'
+import { USE_MOCK_DATA } from './config'
 import type { RankingResponse, RankingFilters, RankingUser } from '@/types/ranking'
-
-// 开发模式下使用模拟数据的标志
-const USE_MOCK_DATA = true // 临时启用模拟数据用于演示
 
 export const rankingService = {
   /**
@@ -23,11 +21,11 @@ export const rankingService = {
     }
 
     try {
-      const response = await api.get<RankingResponse>(`/ranking?${params}`)
-      return response.data
+      const response = await api.get(`/leaderboard/global?${params}`)
+      return mapLeaderboardResponse(response.data, filters)
     } catch (error) {
-      console.warn('API调用失败，使用模拟数据:', error)
-      return getMockGlobalRanking(filters)
+      console.error('Failed to fetch global leaderboard:', error)
+      throw error
     }
   },
 
@@ -49,11 +47,15 @@ export const rankingService = {
     }
 
     try {
-      const response = await api.get<RankingResponse>(`/ranking/organizations?${params}`)
-      return response.data
+      if (filters.school_id) {
+        const response = await api.get(`/leaderboard/school/${filters.school_id}?${params}`)
+        return mapLeaderboardResponse(response.data, filters)
+      }
+      const response = await api.get(`/leaderboard/global?${params}`)
+      return mapLeaderboardResponse(response.data, filters)
     } catch (error) {
-      console.warn('API调用失败，使用模拟数据:', error)
-      return getMockOrganizationRanking(filters)
+      console.error('Failed to fetch organization leaderboard:', error)
+      throw error
     }
   },
 
@@ -66,13 +68,49 @@ export const rankingService = {
     }
 
     try {
-      const response = await api.get<RankingResponse>(`/users/search?q=${encodeURIComponent(query)}`)
-      return response.data
+      const response = await api.get('/leaderboard/global?limit=100')
+      const mapped = mapLeaderboardResponse(response.data, { page: 1, limit: 100 })
+      const keyword = query.trim().toLowerCase()
+      const users = mapped.users.filter((u) => u.username.toLowerCase().includes(keyword))
+      return {
+        ...mapped,
+        users,
+        total: users.length,
+      }
     } catch (error) {
-      console.warn('API调用失败，使用模拟数据:', error)
-      return getMockSearchUsers(query)
+      console.error('Failed to search users from leaderboard:', error)
+      throw error
     }
   },
+}
+
+function mapLeaderboardResponse(payload: any, filters: RankingFilters): RankingResponse {
+  const entries = Array.isArray(payload?.entries) ? payload.entries : []
+  const limit = Number(payload?.limit ?? filters.limit ?? 20)
+  const offset = Number(payload?.offset ?? 0)
+  const page = Math.floor(offset / Math.max(limit, 1)) + 1
+
+  return {
+    users: entries.map((entry: any) => ({
+      id: String(entry.user_id ?? ''),
+      username: String(entry.username ?? ''),
+      email: '',
+      first_name: '',
+      last_name: '',
+      ranking: Number(entry.rank ?? 0),
+      points: Number(entry.score ?? 0),
+      problems_solved: Number(entry.problems_solved ?? 0),
+      submissions: Number(entry.submissions ?? 0),
+      accuracy: Number(entry.acceptance_rate ?? 0),
+      school_id: entry.organization_id != null ? String(entry.organization_id) : undefined,
+      school_name: undefined,
+      avatar: null,
+      created_at: '',
+    })),
+    total: Number(payload?.total ?? entries.length),
+    page,
+    limit,
+  }
 }
 
 // 模拟数据
@@ -262,7 +300,7 @@ function getMockGlobalRanking(filters: RankingFilters): RankingResponse {
   }
 }
 
-function getMockOrganizationRanking(filters: RankingFilters): RankingResponse {
+function getMockOrganizationRanking(_filters: RankingFilters): RankingResponse {
   // 组织排行榜模拟数据（按学校统计）
   const orgRanking = [
     {

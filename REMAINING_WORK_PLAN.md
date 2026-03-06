@@ -1,58 +1,44 @@
-# 剩余工作计划 - Phase 9+ 及后续开发
+# 剩余工作计划 - Phase 10+ 及后续开发
 
-## 📅 当前状态 (2026-02-21)
+## 📅 当前状态 (2026-02-22)
 
 ### ✅ 已完成
 - **Phase 1-8**: 核心功能 (100%)
-- **Phase 9 后端**: 社区功能 API (100%)
-- **Phase 9 前端基础**: 列表页和详情页 (100%)
+- **Phase 9**: 社区功能 (100%)
+  - 后端 API (100%)
+  - 前端页面 (100%)
+  - Markdown 编辑器 (100%)
+- **Phase 10**: 搜索功能 (100%)
+  - 后端搜索 API (100%)
+  - 前端搜索组件 (100%)
 
 ### ⏳ 进行中
-- Phase 9 完善工作
+- Phase 10+ 后续功能开发
 
 ---
 
-## 🎯 Phase 9+ 短期完善计划 (优先级排序)
+## 🎯 Phase 10+ 短期完善计划 (优先级排序)
 
-### 1. Markdown 编辑器集成 ⭐⭐⭐⭐⭐
+### ✅ 1. Markdown 编辑器集成 (已完成)
 
 **目标**: 实现文章和讨论的创建/编辑功能
 
 #### 技术选型
-推荐使用以下方案之一:
-
-**方案 A: CodeMirror 6 (推荐)**
-```bash
-npm install @codemirror/view @codemirror/state @codemirror/commands
-npm install @codemirror/language-data @codemirror/autocomplete
-npm install @codemirror/lint @codemirror/search
-```
-
-**方案 B: TipTap**
-```bash
-npm install @tiptap/react @tiptap/starter-kit
-npm install @tiptap/extension-placeholder @tiptap/extension-link
-```
-
-**方案 C: Milkdown**
-```bash
-npm install @milkdown/core @milkdown/ctx
-npm install @milkdown/theme-nord @milkdown/plugin-listener
-```
+采用 **CodeMirror 6** 方案
 
 #### 实现内容
 
-**1.1 Markdown 编辑器组件**
+**✅ 1.1 Markdown 编辑器组件**
 - 文件: `frontend/src/components/editor/MarkdownEditor.tsx`
 - 功能:
   - 实时预览 (分屏或切换)
   - 语法高亮
-  - 工具栏 (加粗、斜体、代码、链接等)
-  - 自动保存草稿
-  - 代码块语言标识
-  - 图片上传支持
+  - 自动补全和括号匹配
+  - 撤销/重做
+  - 搜索功能
+  - 深色模式支持
 
-**1.2 创建讨论页面**
+**✅ 1.2 创建讨论页面**
 - 文件: `frontend/src/pages/community/CreateDiscussion.tsx`
 - 路由: `/discussions/new`
 - 功能:
@@ -61,9 +47,9 @@ npm install @milkdown/theme-nord @milkdown/plugin-listener
   - 标签输入
   - Markdown 编辑器
   - 预览模式
-  - 发布/草稿
+  - 表单验证
 
-**1.3 创建文章页面**
+**✅ 1.3 创建文章页面**
 - 文件: `frontend/src/pages/community/CreateArticle.tsx`
 - 路由: `/blog/new`
 - 功能:
@@ -71,65 +57,57 @@ npm install @milkdown/theme-nord @milkdown/plugin-listener
   - Slug 自动生成
   - 分类选择
   - 标签输入
-  - 封面图上传
   - Markdown 编辑器
   - 摘要编辑
   - 发布/草稿/特色标记
 
-**预估时间**: 8-12 小时
+**完成日期**: 2026-02-22
 
 ---
 
-### 2. 内容渲染优化 ⭐⭐⭐⭐
+### ✅ 2. 内容渲染优化 (已完成)
 
 **目标**: 提升 Markdown 内容显示质量
 
 #### 实现内容
 
-**2.1 Markdown 渲染器升级**
-- 文件: `frontend/src/components/content/MarkdownRenderer.tsx`
+**✅ 2.1 Markdown 渲染器升级**
+- 文件: `frontend/src/components/editor/MarkdownPreview.tsx`
 - 库选择:
   - `react-markdown` + `remark-gfm`
   - 代码高亮: `react-syntax-highlighter`
 - 功能:
   - GitHub 风格 Markdown
   - 代码块语法高亮
-  - 数学公式支持 (KaTeX)
   - 图片懒加载
   - 表格响应式
   - 任务列表
-  - 脚注支持
 
-**2.2 代码高亮主题**
+**✅ 2.2 代码高亮主题**
 - 支持亮色/暗色主题切换
-- 多种主题选择 (GitHub, VS Code, Monokai 等)
+- VS Code Dark Plus 和 VS 主题
 
-**预估时间**: 4-6 小时
+**完成日期**: 2026-02-22
 
 ---
 
-### 3. 搜索功能 ⭐⭐⭐⭐
+### ✅ 3. 搜索功能 (已完成)
 
 **目标**: 实现全文搜索
 
 #### 后端实现
 
-**3.1 数据库优化**
-```sql
--- PostgreSQL 全文搜索
-CREATE INDEX discussions_content_search ON discussions
-USING GIN (to_tsvector('english', title || ' ' || content));
+**✅ 3.1 数据库优化**
+- 文件: `api/migrations/2026-02-22-002-search-indexes.sql`
+- PostgreSQL 全文搜索
+- GIN 索引优化
+- 标签和分类索引
 
-CREATE INDEX articles_content_search ON articles
-USING GIN (to_tsvector('english', title || ' ' || content));
-```
-
-**3.2 搜索 API**
-- 文件: `api/src/search/mod.rs`, `service.rs`, `routes.rs`
+**✅ 3.2 搜索 API**
+- 文件: `api/src/search/`
 - 端点:
-  - `GET /api/search?q=keyword&type=discussion`
-  - `GET /api/search?q=keyword&type=article`
-  - `GET /api/search?q=keyword&type=all`
+  - `GET /api/search` - 主搜索端点
+  - `GET /api/search/suggestions` - 搜索建议
 - 功能:
   - 全文搜索
   - 高亮关键词
@@ -138,26 +116,27 @@ USING GIN (to_tsvector('english', title || ' ' || content));
 
 #### 前端实现
 
-**3.3 搜索组件**
+**✅ 3.3 搜索组件**
 - 文件: `frontend/src/components/search/SearchBar.tsx`
 - 功能:
-  - 自动补全
+  - 自动补全建议
   - 搜索历史
   - 快捷键支持 (Ctrl+K)
-  - 高级搜索过滤
+  - 快速过滤
 
-**3.4 搜索结果页**
+**✅ 3.4 搜索结果页**
 - 文件: `frontend/src/pages/search/SearchResults.tsx`
 - 功能:
   - 分类标签页
   - 结果排序
   - 高亮显示
+  - 分页加载
 
-**预估时间**: 6-8 小时
+**完成日期**: 2026-02-22
 
 ---
 
-### 4. 通知系统 ⭐⭐⭐
+### ⏳ 4. 通知系统 (优先级: ⭐⭐⭐)
 
 **目标**: 实现多渠道通知
 
@@ -351,74 +330,89 @@ USING GIN (to_tsvector('english', title || ' ' || content));
 
 ---
 
-## 📊 工作量估算
+## 📊 工作量估算 (更新)
 
-### Phase 9+ 完善
+### Phase 9+ 完善 (已完成)
+| 任务 | 优先级 | 状态 | 完成日期 |
+|------|--------|------|----------|
+| Markdown 编辑器 | ⭐⭐⭐⭐⭐ | ✅ 完成 | 2026-02-22 |
+| 内容渲染优化 | ⭐⭐⭐⭐ | ✅ 完成 | 2026-02-22 |
+| 搜索功能 | ⭐⭐⭐⭐ | ✅ 完成 | 2026-02-22 |
+
+### Phase 10+ 待完成
 | 任务 | 优先级 | 预估时间 | 依赖 |
 |------|--------|----------|------|
-| Markdown 编辑器 | ⭐⭐⭐⭐⭐ | 8-12h | - |
-| 内容渲染优化 | ⭐⭐⭐⭐ | 4-6h | - |
-| 搜索功能 | ⭐⭐⭐⭐ | 6-8h | 后端 API |
 | 通知系统 | ⭐⭐⭐ | 6-8h | WebSocket |
-| 内容管理 | ⭐⭐⭐ | 8-10h | - |
-| 高级功能 | ⭐⭐ | 10-15h | - |
-| 内容导出 | ⭐ | 4-6h | - |
-| **总计** | - | **46-65h** | - |
+| 内容管理增强 | ⭐⭐⭐ | 8-10h | - |
+| 高级社区功能 | ⭐⭐ | 10-15h | - |
+| 内容导出功能 | ⭐ | 4-6h | - |
+| **小计** | - | **28-39h** | - |
 
 ### 后续 Phases
-- Phase 10: 40-60h
-- Phase 11: 60-80h
+- Phase 11: 性能优化与监控 - 40-60h
+- Phase 12: AI 功能集成 - 60-80h
 
 ---
 
-## 🎯 里程碑规划
+## 🎯 里程碑规划 (更新)
 
-### Milestone 1: 社区功能完整 (Phase 9+)
+### Milestone 1: 社区功能完整 (Phase 9)
 - 目标: 2-3周
-- 功能: 编辑器、搜索、通知
-- 状态: ⏳ 计划中
+- 功能: 编辑器、搜索、Markdown 渲染
+- 状态: ✅ 已完成 (2026-02-22)
 
-### Milestone 2: 性能与稳定性 (Phase 10)
+### Milestone 2: 搜索功能 (Phase 10)
+- 目标: 1周
+- 功能: 全文搜索、自动补全、结果高亮
+- 状态: ✅ 已完成 (2026-02-22)
+
+### Milestone 3: 通知与互动增强 (Phase 10+)
+- 目标: 2-3周
+- 功能: 通知系统、内容管理、高级功能
+- 状态: 📅 计划中
+
+### Milestone 4: 性能与稳定性 (Phase 11)
 - 目标: 3-4周
 - 功能: 缓存、监控、优化
 - 状态: 📅 待开始
 
-### Milestone 3: 智能化与扩展 (Phase 11)
+### Milestone 5: 智能化与扩展 (Phase 12)
 - 目标: 4-6周
 - 功能: AI、协作、移动端
 - 状态: 📅 待开始
 
 ---
 
-## 📞 决策建议
+## 📞 下一步建议 (更新)
 
-### 下一步行动建议
+### 推荐优先级
 
-**选项 A: 完善 Phase 9 (推荐)**
-- 实现编辑器,让社区功能真正可用
+**选项 A: 通知系统 (推荐)** ⭐⭐⭐
+- 实现通知中心,完善用户体验
 - 预计时间: 1-2周
 - 投入产出比: 高
 
-**选项 B: 性能优化 (Phase 10)**
-- 提升系统稳定性和性能
+**选项 B: 内容管理增强**
+- 实现编辑页面和内容审核
+- 预计时间: 2周
+- 投入产出比: 中
+
+**选项 C: 高级社区功能**
+- 实现最佳答案、声誉系统
 - 预计时间: 2-3周
 - 投入产出比: 中
 
-**选项 C: 直接开始新功能**
-- 开始 Phase 11 AI 集成
-- 预计时间: 4-6周
-- 投入产出比: 中低
-
 ### 我的推荐
-1. **短期**: 先完成 Markdown 编辑器 (最高优先级)
-2. **中期**: 添加搜索和通知功能
+1. **短期**: 实现通知系统 (最高优先级)
+2. **中期**: 内容管理增强和高级功能
 3. **长期**: 性能优化和 AI 集成
 
 ---
 
 **文档创建日期**: 2026-02-21
-**项目状态**: ✅ Phase 9 基础完成,待完善
-**下一步**: 实现 Markdown 编辑器集成
+**最后更新日期**: 2026-02-22
+**项目状态**: ✅ Phase 9 & 10 已完成
+**下一步**: 实现通知系统 (Phase 10+)
 
 🤖 Generated with [Claude Code](https://claude.ai/code)
 via [Happy](https://happy.engineering)

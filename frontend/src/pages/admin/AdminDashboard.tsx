@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { adminService } from '@/services/admin'
 import { useAuthStore } from '@/store/authStore'
-import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
+import { FEATURE_FLAGS } from '@/services/config'
 
 export function AdminDashboard() {
   const { user } = useAuthStore()
@@ -164,7 +164,7 @@ export function AdminDashboard() {
       )}
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${FEATURE_FLAGS.plagiarism ? 'lg:grid-cols-5' : 'lg:grid-cols-3'} gap-4`}>
         <Link to="/admin/users" className="bg-white dark:bg-slate-900 rounded-xl border p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-4">
             <span className="material-symbols-outlined text-3xl text-blue-500">manage_accounts</span>
@@ -194,6 +194,30 @@ export function AdminDashboard() {
             </div>
           </div>
         </Link>
+
+        {FEATURE_FLAGS.plagiarism && (
+          <Link to="/admin/similarity-scan" className="bg-white dark:bg-slate-900 rounded-xl border p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <span className="material-symbols-outlined text-3xl text-indigo-500">tune</span>
+              <div>
+                <h3 className="font-semibold">相似度配置</h3>
+                <p className="text-sm text-slate-600">调整扫描阈值与策略</p>
+              </div>
+            </div>
+          </Link>
+        )}
+
+        {FEATURE_FLAGS.plagiarism && (
+          <Link to="/admin/plagiarism-reports" className="bg-white dark:bg-slate-900 rounded-xl border p-6 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-4">
+              <span className="material-symbols-outlined text-3xl text-red-500">find_in_page</span>
+              <div>
+                <h3 className="font-semibold">抄袭报告</h3>
+                <p className="text-sm text-slate-600">查看可疑提交对与风险</p>
+              </div>
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* Recent Activity */}

@@ -19,23 +19,35 @@ export function BlogList() {
   const page = parseInt(searchParams.get('page') || '1')
   const category = searchParams.get('category') || undefined
   const tag = searchParams.get('tag') || undefined
+  const sort = searchParams.get('sort') || undefined
 
   const fetchArticles = async () => {
     setLoading(true)
     try {
-      // Fetch main articles
-      const filters: ArticleFilters = {
-        page,
-        limit: 12,
-        category,
-        tag,
+      if (sort === 'trending') {
+        const trending = await blogApi.getTrendingArticles(12)
+        setArticles(trending)
+        setHasMore(false)
+      } else if (sort === 'featured') {
+        const featuredOnly = await blogApi.getFeaturedArticles(12)
+        setArticles(featuredOnly)
+        setHasMore(false)
+      } else {
+        // Fetch main articles
+        const filters: ArticleFilters = {
+          page,
+          limit: 12,
+          category,
+          tag,
+          sort: sort as ArticleFilters['sort'],
+        }
+        const response = await blogApi.getArticles(filters)
+        setArticles(response.articles)
+        setHasMore(response.has_more ?? page < Math.ceil(response.total / Math.max(1, response.limit)))
       }
-      const response = await blogApi.getArticles(filters)
-      setArticles(response.articles)
-      setHasMore(response.has_more)
 
       // Fetch featured and categories/tags only on first page
-      if (page === 1 && !category && !tag) {
+      if (page === 1 && !category && !tag && !sort) {
         const [featured, cats, tags] = await Promise.all([
           blogApi.getFeaturedArticles(3),
           blogApi.getCategories(),
@@ -54,7 +66,7 @@ export function BlogList() {
 
   useEffect(() => {
     fetchArticles()
-  }, [page, category, tag])
+  }, [page, category, tag, sort])
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams)
@@ -132,14 +144,22 @@ export function BlogList() {
                   </button>
                   <button
                     onClick={() => navigate('/blog?sort=trending')}
-                    className="w-full flex items-center px-2 py-2 text-sm font-medium text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors"
+                    className={`w-full flex items-center px-2 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      sort === 'trending'
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                    }`}
                   >
                     <span className="material-icons text-lg mr-3">local_fire_department</span>
                     Trending
                   </button>
                   <button
                     onClick={() => navigate('/blog?sort=featured')}
-                    className="w-full flex items-center px-2 py-2 text-sm font-medium text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors"
+                    className={`w-full flex items-center px-2 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      sort === 'featured'
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                    }`}
                   >
                     <span className="material-icons text-lg mr-3">star</span>
                     Featured
@@ -180,17 +200,17 @@ export function BlogList() {
                   Trending Tags
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {popularTags.map(({ tag }) => (
+                  {popularTags.map((item) => (
                     <button
-                      key={tag}
-                      onClick={() => updateFilter('tag', tag === tag ? '' : tag)}
+                      key={item.tag}
+                      onClick={() => updateFilter('tag', tag === item.tag ? '' : item.tag)}
                       className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                        tag === tag
+                        tag === item.tag
                           ? 'bg-primary text-white'
                           : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
                       }`}
                     >
-                      #{tag}
+                      #{item.tag}
                     </button>
                   ))}
                 </div>
@@ -203,10 +223,10 @@ export function BlogList() {
             {/* Filter Info */}
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {category || 'All Posts'}
+                {category || (sort ? `${sort[0].toUpperCase()}${sort.slice(1)} Posts` : 'All Posts')}
                 {tag && <span className="text-primary ml-2">#{tag}</span>}
               </h2>
-              {(category || tag) && (
+              {(category || tag || sort) && (
                 <button
                   onClick={() => navigate('/blog')}
                   className="text-sm text-text-muted hover:text-primary transition-colors"
@@ -222,7 +242,7 @@ export function BlogList() {
             ) : (
               <>
                 {/* Featured Articles (only on first page, no filters) */}
-                {page === 1 && !category && !tag && featuredArticles.length > 0 && (
+                {page === 1 && !category && !tag && !sort && featuredArticles.length > 0 && (
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                       <span className="material-icons text-yellow-500">star</span>
@@ -389,7 +409,7 @@ export function BlogList() {
                 )}
 
                 {/* Pagination */}
-                {articles.length > 0 && (
+                {articles.length > 0 && !sort && (
                   <div className="flex justify-center gap-2 pt-8">
                     <button
                       onClick={() => updateFilter('page', Math.max(1, page - 1).toString())}

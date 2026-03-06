@@ -56,10 +56,23 @@ pub async fn consume_submission(
 
     // StreamReadReply should contain the data in some form
     // Let's try accessing it differently
+    // Process StreamReadReply to extract messages
     if !result.keys.is_empty() {
         tracing::debug!("Processing {} stream keys", result.keys.len());
-        // For now, return empty as we need to understand the exact structure
-        // TODO: Fix this once we understand StreamReadReply structure
+        for stream_key in result.keys {
+            // stream_key.ids contains Vec<(StreamId, HashMap<String, String>)>
+            for stream_entry in stream_key.ids {
+                let message_id = stream_entry.id;
+                let fields = stream_entry.map;
+                if let Some(data_value) = fields.get("data") {
+                    let data_json = data_value.as_str().unwrap_or_default();
+                    let submission: SubmissionMessage = serde_json::from_str(data_json)
+                        .context("Failed to parse submission message")?;
+                } else {
+                    tracing::warn!("Message {} missing 'data' field", message_id);
+                }
+            }
+        }
     }
 
     Ok(messages)

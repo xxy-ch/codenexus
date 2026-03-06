@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { EditorView, basicSetup, ViewUpdate } from '@codemirror/view'
+import { EditorView, ViewUpdate } from '@codemirror/view'
 import { EditorState } from '@codemirror/state'
 import { markdown } from '@codemirror/lang-markdown'
 import { languages } from '@codemirror/language-data'
@@ -36,7 +36,6 @@ export function MarkdownEditor({
     const startState = EditorState.create({
       doc: value,
       extensions: [
-        basicSetup,
         markdown({ codeLanguages: languages }),
         EditorView.theme({
           '&': {

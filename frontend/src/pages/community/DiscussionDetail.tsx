@@ -14,9 +14,10 @@ export function DiscussionDetail() {
   const [discussion, setDiscussion] = useState<DiscussionDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [replyContent, setReplyContent] = useState('')
-  const [parentReplyId, setParentReplyId] = useState<number | undefined>()
+  const [parentReplyId, setParentReplyId] = useState<number | 'root' | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [liked, setLiked] = useState(false)
+  const [likedReplies, setLikedReplies] = useState<Record<number, boolean>>({})
 
   // WebSocket real-time updates
   const { update } = useDiscussionUpdates(id ? parseInt(id) : undefined)
@@ -72,11 +73,11 @@ export function DiscussionDetail() {
     try {
       const reply = await discussionsApi.createReply(discussion.discussion.id, {
         content: replyContent,
-        parent_reply_id: parentReplyId,
+        parent_reply_id: typeof parentReplyId === 'number' ? parentReplyId : undefined,
       })
 
       // Add reply to the discussion
-      if (parentReplyId) {
+      if (typeof parentReplyId === 'number') {
         // Nested reply - add to parent's replies
         setDiscussion((prev) => {
           if (!prev) return null
@@ -114,7 +115,7 @@ export function DiscussionDetail() {
       }
 
       setReplyContent('')
-      setParentReplyId(undefined)
+      setParentReplyId(null)
     } catch (error) {
       console.error('Failed to create reply:', error)
     } finally {
@@ -130,16 +131,65 @@ export function DiscussionDetail() {
       setLiked(result.liked)
       setDiscussion((prev) => {
         if (!prev) return null
+        const nextLikeCount = result.like_count >= 0
+          ? result.like_count
+          : Math.max(0, prev.discussion.like_count + (result.liked ? 1 : -1))
         return {
           ...prev,
           discussion: {
             ...prev.discussion,
-            like_count: result.like_count,
+            like_count: nextLikeCount,
           },
         }
       })
     } catch (error) {
       console.error('Failed to like discussion:', error)
+    }
+  }
+
+  const handleReplyLike = async (replyId: number) => {
+    if (!discussion) return
+
+    try {
+      const result = await discussionsApi.likeReply(replyId)
+
+      setLikedReplies((prev) => ({
+        ...prev,
+        [replyId]: result.liked,
+      }))
+
+      setDiscussion((prev) => {
+        if (!prev) return null
+
+        const updateLikeCount = (replies: DiscussionReply[]): DiscussionReply[] =>
+          replies.map((reply) => {
+            if (reply.id === replyId) {
+              const nextLikeCount = result.like_count >= 0
+                ? result.like_count
+                : Math.max(0, reply.like_count + (result.liked ? 1 : -1))
+              return {
+                ...reply,
+                like_count: nextLikeCount,
+              }
+            }
+
+            if (reply.replies && reply.replies.length > 0) {
+              return {
+                ...reply,
+                replies: updateLikeCount(reply.replies),
+              }
+            }
+
+            return reply
+          })
+
+        return {
+          ...prev,
+          replies: updateLikeCount(prev.replies),
+        }
+      })
+    } catch (error) {
+      console.error('Failed to like reply:', error)
     }
   }
 
@@ -189,8 +239,17 @@ export function DiscussionDetail() {
             <span className="material-icons text-base">reply</span>
             Reply
           </button>
-          <button className="flex items-center gap-1 text-text-muted hover:text-primary transition-colors">
-            <span className="material-icons text-base">thumb_up</span>
+          <button
+            onClick={() => handleReplyLike(reply.id)}
+            className={`flex items-center gap-1 transition-colors ${
+              likedReplies[reply.id]
+                ? 'text-primary'
+                : 'text-text-muted hover:text-primary'
+            }`}
+          >
+            <span className="material-icons text-base">
+              {likedReplies[reply.id] ? 'thumb_up' : 'thumb_up_off_alt'}
+            </span>
             {reply.like_count}
           </button>
         </div>
@@ -344,7 +403,7 @@ export function DiscussionDetail() {
               </button>
               {!discussion.discussion.is_locked && (
                 <button
-                  onClick={() => setParentReplyId(undefined)}
+                  onClick={() => setParentReplyId('root')}
                   className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
                 >
                   <span className="material-icons text-lg">reply</span>
@@ -356,15 +415,15 @@ export function DiscussionDetail() {
         </article>
 
         {/* Reply Form */}
-        {parentReplyId !== undefined && (
+        {parentReplyId !== null && (
           <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-4 mb-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                {parentReplyId ? 'Reply to comment' : 'Write a reply'}
+                {typeof parentReplyId === 'number' ? 'Reply to comment' : 'Write a reply'}
               </h3>
               <button
                 onClick={() => {
-                  setParentReplyId(undefined)
+                  setParentReplyId(null)
                   setReplyContent('')
                 }}
                 className="text-text-muted hover:text-gray-900 dark:hover:text-white"

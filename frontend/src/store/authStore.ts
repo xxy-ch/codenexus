@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User, AuthResponse } from '@/types/auth'
+import { API_CONFIG } from '@/services/config'
+
+const buildApiUrl = (path: string) => `${API_CONFIG.baseURL}${path}`
 
 interface AuthState {
   user: User | null
@@ -34,7 +37,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (credentials) => {
         set({ isLoading: true, error: null })
         try {
-          const response = await fetch('/api/auth/login', {
+          const response = await fetch(buildApiUrl('/auth/login'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(credentials),
@@ -64,7 +67,7 @@ export const useAuthStore = create<AuthState>()(
       register: async (data) => {
         set({ isLoading: true, error: null })
         try {
-          const response = await fetch('/api/auth/register', {
+          const response = await fetch(buildApiUrl('/auth/register'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data),
@@ -111,7 +114,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({ isLoading: true })
         try {
-          const response = await fetch('/api/auth/me', {
+          const response = await fetch(buildApiUrl('/users/me'), {
             headers: {
               Authorization: `Bearer ${token}`,
             },

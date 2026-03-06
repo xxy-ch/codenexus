@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
+import { FEATURE_FLAGS } from '@/services/config'
 
 interface NavItem {
   label: string
@@ -15,8 +16,13 @@ const navItems: NavItem[] = [
   { label: 'Submissions', path: '/submissions', icon: 'history' },
   { label: 'Contests', path: '/contests', icon: 'trophy', badge: 2 },
   { label: 'Ranking', path: '/ranking', icon: 'leaderboard' },
+  { label: 'Roadmap', path: '/roadmap', icon: 'route' },
   { label: 'Discuss', path: '/discussions', icon: 'forum' },
   { label: 'Blog', path: '/blog', icon: 'article' },
+  ...(FEATURE_FLAGS.directMessages ? [{ label: 'Messages', path: '/messages', icon: 'mail' }] : []),
+  { label: 'Classes', path: '/teacher/classes', icon: 'group' },
+  { label: 'Contest Wizard', path: '/teacher/contest-wizard', icon: 'build' },
+  { label: 'Reports', path: '/teacher/assignment-report', icon: 'insights' },
 ]
 
 export function Sidebar() {

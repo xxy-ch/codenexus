@@ -6,28 +6,6 @@ import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 
-interface Submission {
-  id: string
-  problem_id: string
-  problem_title: string
-  user_id: string
-  code: string
-  language: string
-  status: 'pending' | 'running' | 'accepted' | 'wrong_answer' | 'time_limit_exceeded' | 'memory_limit_exceeded' | 'compilation_error' | 'runtime_error'
-  time_ms?: number
-  memory_kb?: number
-  error_message?: string
-  created_at: string
-  updated_at: string
-}
-
-interface SubmissionsResponse {
-  submissions: Submission[]
-  total: number
-  page: number
-  limit: number
-}
-
 const STATUS_CONFIG = {
   pending: {
     label: 'Pending',
@@ -357,7 +335,7 @@ export function SubmissionHistory() {
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
-                size="sm"
+                size="small"
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page === 1}
               >
@@ -366,7 +344,7 @@ export function SubmissionHistory() {
               </Button>
               <Button
                 variant="outline"
-                size="sm"
+                size="small"
                 onClick={() => handlePageChange(page + 1)}
                 disabled={page === totalPages}
               >

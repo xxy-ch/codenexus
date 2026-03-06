@@ -1,7 +1,6 @@
 import api from './api'
+import { USE_MOCK_DATA } from './config'
 import type { Discussion, DiscussionDetail, DiscussionReply } from '@/types/discussions'
-
-const USE_MOCK_DATA = true
 
 export interface DiscussionFilters {
   category?: string
@@ -104,7 +103,7 @@ export const discussionsService = {
   },
 }
 
-function getMockDiscussions(filters: DiscussionFilters): DiscussionsResponse {
+function getMockDiscussions(_filters: DiscussionFilters): DiscussionsResponse {
   const discussions: Discussion[] = [
     {
       id: '1',

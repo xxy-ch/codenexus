@@ -1,6 +1,6 @@
 pub mod chroot;
 pub mod cgroups;
-// pub mod seccomp; // TODO: Requires libseccomp-sys dependency
+pub mod seccomp;
 
 use anyhow::Result;
 
