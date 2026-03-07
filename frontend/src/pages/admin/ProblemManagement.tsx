@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, ChevronRight, EyeOff, LibraryBig, Search, ShieldCheck, SlidersHorizontal } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, ChevronRight, EyeOff, LibraryBig, Pencil, Plus, Search, ShieldCheck, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { adminService } from '@/services/admin'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
@@ -15,11 +15,22 @@ const DIFFICULTY_CONFIG = {
 }
 
 export function ProblemManagement() {
+  const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
   const [difficulty, setDifficulty] = useState<string>('all')
   const [status, setStatus] = useState<string>('all')
   const [sortBy, setSortBy] = useState<SortType>('recent')
   const [page, setPage] = useState(1)
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    difficulty: 'easy' as DifficultyType,
+    visibility: 'private' as 'public' | 'campus' | 'class' | 'private',
+    time_limit: 1000,
+    memory_limit: 262144,
+  })
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['adminProblems', search, difficulty, status, sortBy, page],
@@ -56,6 +67,59 @@ export function ProblemManagement() {
 
     return { publishedCount, draftCount, lowCoverageCount, averageAcceptance }
   }, [problems])
+
+  const invalidateProblems = () => queryClient.invalidateQueries({ queryKey: ['adminProblems'] })
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      adminService.createProblem({
+        ...form,
+        organization_id: 1,
+      }),
+    onSuccess: () => {
+      invalidateProblems()
+      setForm({
+        title: '',
+        description: '',
+        difficulty: 'easy',
+        visibility: 'private',
+        time_limit: 1000,
+        memory_limit: 262144,
+      })
+      setFormMode('create')
+      setEditingId(null)
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: () =>
+      adminService.updateProblem(editingId!, form),
+    onSuccess: () => {
+      invalidateProblems()
+      setFormMode('create')
+      setEditingId(null)
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (problemId: string) => adminService.deleteProblem(problemId),
+    onSuccess: () => invalidateProblems(),
+  })
+
+  const submitLabel = formMode === 'create' ? '创建题目' : '保存修改'
+
+  const startEdit = (problem: typeof problems[number]) => {
+    setFormMode('edit')
+    setEditingId(problem.id)
+    setForm({
+      title: problem.title,
+      description: problem.description || '',
+      difficulty: (problem.difficulty as DifficultyType) ?? 'easy',
+      visibility: problem.visibility || (problem.status === 'published' ? 'public' : 'private'),
+      time_limit: problem.time_limit || 1000,
+      memory_limit: problem.memory_limit || 262144,
+    })
+  }
 
   if (isLoading) {
     return <Loading message="加载题目管理视图..." />
@@ -95,7 +159,7 @@ export function ProblemManagement() {
               <div>
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Problems</h1>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  按 reference 的后台题库页重做，但保持当前交付边界: 这是只读管理视图，用于观察题库质量和发布状态，不伪装 CRUD 能力。
+                  按 reference 的后台题库页重做，并接入当前真实的后台写操作。当前交付覆盖创建、编辑、删除与基础可见性维护。
                 </p>
               </div>
             </div>
@@ -108,28 +172,28 @@ export function ProblemManagement() {
               >
                 Refresh
               </button>
-              <div className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Read-only Surface</div>
+              <div className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">CRUD Live</div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="rounded-[24px] border border-amber-200 bg-amber-50 px-6 py-5 shadow-sm">
+      <section className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-6 py-5 shadow-sm">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex gap-3">
-            <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-amber-600 shadow-sm">
-              <AlertTriangle className="h-5 w-5" />
+            <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-emerald-600 shadow-sm">
+              <Plus className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-950">当前是只读运营视图</h2>
+              <h2 className="text-base font-semibold text-slate-950">当前已接入真实后台写操作</h2>
               <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-                本页用于核对题目发布状态、难度分布和提交表现。创建、编辑、删除、批量发布等后台写操作尚未接入独立
-                admin API，因此当前交付明确锁定为只读。
+                本页现在直接连接真实 `/problems` 写接口，交付范围覆盖创建、基础编辑、删除与可见性切换。更细粒度题面和测试数据维护继续在
+                `Problem Content` 与 `Judge Settings` 页面完成。
               </p>
             </div>
           </div>
-          <div className="rounded-2xl border border-amber-200 bg-white px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
-            no admin crud endpoints
+          <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+            create / edit / delete enabled
           </div>
         </div>
       </section>
@@ -168,6 +232,98 @@ export function ProblemManagement() {
           <p className="mt-2 text-sm text-slate-600">通过率低于 30% 或暂无提交的题目。</p>
         </div>
       </section>
+
+      <section className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <aside className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-950">
+                {formMode === 'create' ? '新建题目' : `编辑题目 #${editingId}`}
+              </h2>
+              <p className="mt-1 text-sm text-slate-600">这里维护后台最小可交付题目信息。</p>
+            </div>
+            {formMode === 'edit' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFormMode('create')
+                  setEditingId(null)
+                  setForm({
+                    title: '',
+                    description: '',
+                    difficulty: 'easy',
+                    visibility: 'private',
+                    time_limit: 1000,
+                    memory_limit: 262144,
+                  })
+                }}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600"
+              >
+                取消编辑
+              </button>
+            )}
+          </div>
+          <div className="mt-5 space-y-4">
+            <input
+              value={form.title}
+              onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+              placeholder="题目标题"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+            />
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+              placeholder="题目描述"
+              className="min-h-[160px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <select
+                value={form.difficulty}
+                onChange={(e) => setForm((prev) => ({ ...prev, difficulty: e.target.value as DifficultyType }))}
+                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              >
+                <option value="easy">简单</option>
+                <option value="medium">中等</option>
+                <option value="hard">困难</option>
+              </select>
+              <select
+                value={form.visibility}
+                onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value as typeof form.visibility }))}
+                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              >
+                <option value="private">private</option>
+                <option value="public">public</option>
+                <option value="campus">campus</option>
+                <option value="class">class</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="number"
+                value={form.time_limit}
+                onChange={(e) => setForm((prev) => ({ ...prev, time_limit: Number(e.target.value) }))}
+                placeholder="Time Limit"
+                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              />
+              <input
+                type="number"
+                value={form.memory_limit}
+                onChange={(e) => setForm((prev) => ({ ...prev, memory_limit: Number(e.target.value) }))}
+                placeholder="Memory Limit"
+                className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => (formMode === 'create' ? createMutation.mutate() : updateMutation.mutate())}
+              disabled={!form.title || !form.description || createMutation.isPending || updateMutation.isPending}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />
+              {submitLabel}
+            </button>
+          </div>
+        </aside>
 
       <section className="rounded-[28px] border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
@@ -250,7 +406,7 @@ export function ProblemManagement() {
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Tags</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Stats</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Delivery Note</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -303,8 +459,29 @@ export function ProblemManagement() {
                         <div className="mt-1 text-slate-500">{problem.accepted_count} accepted · {acceptanceRate}%</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">
-                      只读交付。写操作待独立 admin API 落地后再开放。
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(problem)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          编辑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(`确认删除题目 #${problem.id} ${problem.title} ?`)) {
+                              deleteMutation.mutate(problem.id)
+                            }
+                          }}
+                          className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-sm text-rose-600"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          删除
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -322,7 +499,7 @@ export function ProblemManagement() {
 
         <div className="flex flex-col gap-4 border-t border-slate-200 px-6 py-5 md:flex-row md:items-center md:justify-between">
           <div className="text-sm text-slate-500">
-            当前交付只读后台视图，第 {page} / {totalPages} 页
+            当前交付已接通后台 CRUD，第 {page} / {totalPages} 页
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -345,6 +522,7 @@ export function ProblemManagement() {
             </button>
           </div>
         </div>
+      </section>
       </section>
     </div>
   )

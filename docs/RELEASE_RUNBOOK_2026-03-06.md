@@ -35,7 +35,7 @@
    - 私信会话列表与消息发送可用
    - 反作弊配置、触发扫描、报告查看可用
    - 管理端用户列表、批量建号可用
-   - 管理端题目页为只读视图，不暴露不存在的 CRUD 动作
+   - 管理端题目页支持创建、编辑、删除与测试数据维护
 8. 监控 30 分钟：
    - 5xx 错误率
    - 提交积压
@@ -78,6 +78,7 @@ npx playwright test e2e/smoke.spec.ts
 2. `api/migrations/018_create_plagiarism_scan.sql`
 3. `api/migrations/020_create_contest_participants.sql`
 4. `api/migrations/021_add_user_code_and_status.sql`
+5. `api/migrations/022_create_blog_tables.sql`
 
 若使用 `sqlx migrate`：
 
@@ -92,6 +93,14 @@ DATABASE_URL=<prod_database_url> ~/.cargo/bin/sqlx migrate run
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/online_judge \
 ./scripts/bootstrap_demo.sh
 ```
+
+当前 demo 数据已覆盖的最小验收面：
+
+- 多角色登录：`1001`、`2001`、`3001`
+- 题库、提交、排行榜
+- 私信、反作弊
+- 竞赛列表、详情、榜单
+- 博客列表与编辑入口
 
 ## 2.3 上线开关策略
 
@@ -124,14 +133,18 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/online_judge \
 ## 2.5 当前受控降级边界
 
 - `admin/problems`
-  - 当前交付口径为只读运营视图
-  - 不提供独立 `/admin/problems` 写接口，也不暴露伪 CRUD 控件
+  - 当前已接通真实 `create / edit / delete` 流程
+  - 仍通过共享 `/problems` 合同提供能力，而不是独立 admin namespace
 - `teacher` 高级写路径
-  - `classes/enroll`、`assignments/:id/publish` 等当前 schema 不支持的动作维持 `501`
-  - 前端仅保留说明性入口，不应将其作为可用能力验收
+  - 已交付 live schema 替代流：建班、按邮箱加人、批量导入学生、创建/删除作业
+  - `classes/enroll`、`assignments/:id/publish` 等历史端点仍不纳入验收
 - 博客编辑器
   - 当前采用稳定的 textarea + preview 实现
   - 目标是避免运行态空白页，优先保证发布稳定性而非富文本框架复杂能力
+- `judge-worker` seccomp
+  - Linux 运行时默认启用 `PR_SET_NO_NEW_PRIVS`
+  - 如需更严格的内核限制，可在 Linux 环境设置 `JUDGE_SECCOMP_MODE=strict`
+  - macOS 本地开发环境不执行 Linux `prctl` 硬化路径
 
 ## 3. 回滚条件
 
@@ -186,3 +199,11 @@ npx playwright test
 - 豁免清单：`docs/WAIVER_LIST_2026-03-06.md`
 - 交付包结构：`docs/DELIVERY_PACKAGE_STRUCTURE_2026-03-06.md`
 - 验收清单：`docs/ACCEPTANCE_CHECKLIST_2026-03-06.md`
+
+
+## Multi-Role Auth Verification
+- Verify database-backed auth for all seeded demo roles:
+  - `1001 / admin123` -> admin dashboard
+  - `2001 / admin123` -> student routes such as `/submissions`
+  - `3001 / admin123` -> teacher routes such as `/teacher/classes`
+- Expected result: all three logins return `200` from `/auth/login` and can reach their protected routes in the browser.

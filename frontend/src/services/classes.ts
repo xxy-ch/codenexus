@@ -11,6 +11,16 @@ export interface ClassItem {
   created_at: string
 }
 
+export interface AssignmentItem {
+  id: number
+  class_id: number
+  problem_id: number
+  deadline: string
+  points: number
+  created_at: string
+  updated_at: string
+}
+
 export interface ClassesListResponse {
   classes: ClassItem[]
   total: number
@@ -74,5 +84,43 @@ export const classesService = {
       page: Number(payload.page) || page,
       limit: Number(payload.limit) || limit,
     }
+  },
+
+  async createClass(payload: {
+    organization_id: number
+    campus_id?: number | null
+    name: string
+    semester?: string
+  }) {
+    const response = await api.post<ClassItem>('/classes', payload)
+    return response.data
+  },
+
+  async addStudent(classId: number, student_email: string) {
+    const response = await api.post(`/classes/${classId}/students`, { student_email })
+    return response.data
+  },
+
+  async batchImportStudents(classId: number, emails: string[]) {
+    const response = await api.post(`/classes/${classId}/students/import`, { emails })
+    return response.data
+  },
+
+  async listAssignments(classId: number): Promise<AssignmentItem[]> {
+    const response = await api.get<AssignmentItem[]>(`/classes/${classId}/assignments`)
+    return response.data || []
+  },
+
+  async createAssignment(classId: number, payload: {
+    problem_id: number
+    deadline: string
+    points?: number
+  }) {
+    const response = await api.post<AssignmentItem>(`/classes/${classId}/assignments`, payload)
+    return response.data
+  },
+
+  async deleteAssignment(assignmentId: number) {
+    await api.delete(`/classes/assignments/${assignmentId}`)
   },
 }

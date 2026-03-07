@@ -112,8 +112,8 @@ export function AdminDashboard() {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Problem View</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">Read-only</div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">题目管理已收敛为安全的只读运营视图。</p>
+          <div className="mt-4 text-3xl font-semibold text-slate-950">CRUD</div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">题目管理当前已接通创建、编辑、删除与测试数据维护。</p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Plagiarism</div>

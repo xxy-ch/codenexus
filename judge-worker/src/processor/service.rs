@@ -247,6 +247,12 @@ async fn execute_program(
     let stderr = std::fs::File::create(&stderr_path)?;
 
     let mut command = build_runtime_command(submission, source_file, executable_path, work_dir)?;
+    unsafe {
+        command.pre_exec(|| {
+            crate::sandbox::seccomp::apply_seccomp(0)
+                .map_err(|err| std::io::Error::other(err.to_string()))
+        });
+    }
     command
         .stdin(Stdio::from(stdin))
         .stdout(Stdio::from(stdout))

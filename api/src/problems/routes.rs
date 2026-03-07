@@ -1,51 +1,80 @@
 use axum::{
-    extract::{State, Path, Query},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
 };
-use crate::AppState;
+
 use crate::middleware::auth::AuthExtractor;
-use uuid::Uuid;
+use crate::AppState;
+
+use super::models::{
+    CreateProblemRequest, ListProblemsQuery, Problem, ProblemDetail, ProblemStatistics,
+    ProblemsListResponse, UpdateProblemRequest,
+};
+
+fn normalize_visibility(visibility: &str, is_public: bool) -> Option<String> {
+    let normalized = match visibility {
+        "public" | "campus" | "class" | "private" => visibility.to_string(),
+        "global" if is_public => "public".to_string(),
+        _ => return None,
+    };
+
+    Some(normalized)
+}
 
 pub async fn create_problem(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
-    Json(req): Json<super::models::CreateProblemRequest>,
-) -> Result<Json<super::models::Problem>, StatusCode> {
-    // Validate difficulty
-    if !["easy", "medium", "hard", "expert"].contains(&req.difficulty.as_str()) {
+    Json(req): Json<CreateProblemRequest>,
+) -> Result<Json<Problem>, StatusCode> {
+    if !["easy", "medium", "hard"].contains(&req.difficulty.as_str()) {
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    // Validate visibility
-    if !["global", "school", "campus", "class", "private"].contains(&req.visibility.as_str()) {
-        return Err(StatusCode::BAD_REQUEST);
-    }
+    let visibility = normalize_visibility(&req.visibility, req.is_public)
+        .ok_or(StatusCode::BAD_REQUEST)?;
 
-    // Create problem in database
-    let problem = sqlx::query_as::<_, super::models::Problem>(
+    let problem = sqlx::query_as::<_, Problem>(
         r#"
         INSERT INTO problems (
-            title, description, difficulty, time_limit, memory_limit,
-            created_by, organization_id, is_public, visibility, tags,
-            source_url, author_note
+            organization_id,
+            author_id,
+            title,
+            description,
+            difficulty,
+            visibility,
+            time_limit_ms,
+            memory_limit_kb,
+            created_at,
+            updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        RETURNING *
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        RETURNING
+            id,
+            title,
+            description,
+            COALESCE(difficulty, 'easy') AS difficulty,
+            time_limit_ms AS time_limit,
+            memory_limit_kb AS memory_limit,
+            author_id AS created_by,
+            organization_id,
+            (visibility = 'public') AS is_public,
+            visibility,
+            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
+            NULL::TEXT AS source_url,
+            NULL::TEXT AS author_note,
+            created_at,
+            updated_at
         "#
     )
+    .bind(req.organization_id)
+    .bind(claims.sub)
     .bind(&req.title)
     .bind(&req.description)
     .bind(&req.difficulty)
+    .bind(visibility)
     .bind(req.time_limit)
     .bind(req.memory_limit)
-    .bind(claims.sub)
-    .bind(req.organization_id)
-    .bind(req.is_public)
-    .bind(&req.visibility)
-    .bind(&req.tags)
-    .bind(&req.source_url)
-    .bind(&req.author_note)
     .fetch_one(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -56,14 +85,14 @@ pub async fn create_problem(
 pub async fn list_problems(
     State(state): State<AppState>,
     AuthExtractor(_claims): AuthExtractor,
-    Query(query): Query<super::models::ListProblemsQuery>,
-) -> Result<Json<super::models::ProblemsListResponse>, StatusCode> {
+    Query(query): Query<ListProblemsQuery>,
+) -> Result<Json<ProblemsListResponse>, StatusCode> {
     let page = query.page.unwrap_or(1);
-    let limit = query.limit.unwrap_or(20);
+    let limit = query.limit.unwrap_or(20).clamp(1, 100);
     let offset = (page - 1) * limit;
     let search = query.search.clone().unwrap_or_default();
     let difficulty = query.difficulty.clone();
-    let visibility = query.visibility.clone().or(Some("public".to_string()));
+    let visibility = query.visibility.clone();
     let is_public = query.is_public.unwrap_or(true);
 
     let total = sqlx::query_scalar::<_, i64>(
@@ -85,32 +114,32 @@ pub async fn list_problems(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let problems = sqlx::query_as::<_, super::models::Problem>(
+    let problems = sqlx::query_as::<_, Problem>(
         r#"
         SELECT
-            id,
-            title,
-            description,
-            COALESCE(difficulty, 'easy') AS difficulty,
-            time_limit_ms AS time_limit,
-            memory_limit_kb AS memory_limit,
-            author_id AS created_by,
-            organization_id,
-            (visibility = 'public') AS is_public,
-            visibility,
-            ARRAY[]::TEXT[] AS tags,
+            p.id,
+            p.title,
+            p.description,
+            COALESCE(p.difficulty, 'easy') AS difficulty,
+            p.time_limit_ms AS time_limit,
+            p.memory_limit_kb AS memory_limit,
+            p.author_id AS created_by,
+            p.organization_id,
+            (p.visibility = 'public') AS is_public,
+            p.visibility,
+            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
             NULL::TEXT AS source_url,
             NULL::TEXT AS author_note,
-            created_at,
-            updated_at
-        FROM problems
-        WHERE ($1 = '' OR title ILIKE $2 OR description ILIKE $2)
-          AND ($3::TEXT IS NULL OR difficulty = $3)
-          AND ($4::TEXT IS NULL OR visibility = $4)
-          AND ($5::BOOLEAN = false OR visibility = 'public')
-        ORDER BY created_at DESC
+            p.created_at,
+            p.updated_at
+        FROM problems p
+        WHERE ($1 = '' OR p.title ILIKE $2 OR p.description ILIKE $2)
+          AND ($3::TEXT IS NULL OR p.difficulty = $3)
+          AND ($4::TEXT IS NULL OR p.visibility = $4)
+          AND ($5::BOOLEAN = false OR p.visibility = 'public')
+        ORDER BY p.created_at DESC
         LIMIT $6 OFFSET $7
-        "#,
+        "#
     )
     .bind(&search)
     .bind(format!("%{}%", search))
@@ -123,7 +152,7 @@ pub async fn list_problems(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(super::models::ProblemsListResponse {
+    Ok(Json(ProblemsListResponse {
         problems,
         total,
         page,
@@ -135,8 +164,8 @@ pub async fn get_problem(
     State(state): State<AppState>,
     AuthExtractor(_claims): AuthExtractor,
     Path(id): Path<i64>,
-) -> Result<Json<super::models::ProblemDetail>, StatusCode> {
-    let problem = sqlx::query_as::<_, super::models::Problem>(
+) -> Result<Json<ProblemDetail>, StatusCode> {
+    let problem = sqlx::query_as::<_, Problem>(
         r#"
         SELECT
             id,
@@ -149,7 +178,7 @@ pub async fn get_problem(
             organization_id,
             (visibility = 'public') AS is_public,
             visibility,
-            ARRAY[]::TEXT[] AS tags,
+            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
             NULL::TEXT AS source_url,
             NULL::TEXT AS author_note,
             created_at,
@@ -164,13 +193,11 @@ pub async fn get_problem(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let problem = match problem {
-        Some(p) => p,
+        Some(problem) => problem,
         None => return Err(StatusCode::NOT_FOUND),
     };
 
-    let stats = None;
-
-    let test_case_count: i64 = sqlx::query_scalar(
+    let test_case_count = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM test_cases WHERE problem_id = $1"
     )
     .bind(id)
@@ -178,7 +205,7 @@ pub async fn get_problem(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(super::models::ProblemDetail {
+    Ok(Json(ProblemDetail {
         id: problem.id,
         title: problem.title,
         description: problem.description,
@@ -194,7 +221,7 @@ pub async fn get_problem(
         author_note: problem.author_note,
         created_at: problem.created_at,
         updated_at: problem.updated_at,
-        statistics: stats,
+        statistics: None,
         test_case_count,
     }))
 }
@@ -202,39 +229,53 @@ pub async fn get_problem(
 pub async fn update_problem(
     State(state): State<AppState>,
     AuthExtractor(_claims): AuthExtractor,
-    Path(id): Path<Uuid>,
-    Json(req): Json<super::models::UpdateProblemRequest>,
-) -> Result<Json<super::models::Problem>, StatusCode> {
-    // Validate visibility if provided
-    if let Some(vis) = &req.visibility {
-        if !["global", "school", "campus", "class", "private"].contains(&vis.as_str()) {
-            return Err(StatusCode::BAD_REQUEST);
-        }
-    }
-
-    // Validate difficulty if provided
+    Path(id): Path<i64>,
+    Json(req): Json<UpdateProblemRequest>,
+) -> Result<Json<Problem>, StatusCode> {
     if let Some(diff) = &req.difficulty {
-        if !["easy", "medium", "hard", "expert"].contains(&diff.as_str()) {
+        if !["easy", "medium", "hard"].contains(&diff.as_str()) {
             return Err(StatusCode::BAD_REQUEST);
         }
     }
 
-    let problem = sqlx::query_as::<_, super::models::Problem>(
+    let visibility = match (&req.visibility, req.is_public) {
+        (Some(vis), is_public) => Some(
+            normalize_visibility(vis, is_public.unwrap_or(vis == "public"))
+                .ok_or(StatusCode::BAD_REQUEST)?,
+        ),
+        (None, Some(true)) => Some("public".to_string()),
+        (None, Some(false)) => Some("private".to_string()),
+        (None, None) => None,
+    };
+
+    let problem = sqlx::query_as::<_, Problem>(
         r#"
         UPDATE problems
-        SET title = COALESCE($1, title),
+        SET
+            title = COALESCE($1, title),
             description = COALESCE($2, description),
             difficulty = COALESCE($3, difficulty),
-            time_limit = COALESCE($4, time_limit),
-            memory_limit = COALESCE($5, memory_limit),
-            is_public = COALESCE($6, is_public),
-            visibility = COALESCE($7, visibility),
-            tags = COALESCE($8, tags),
-            source_url = COALESCE($9, source_url),
-            author_note = COALESCE($10, author_note),
+            time_limit_ms = COALESCE($4, time_limit_ms),
+            memory_limit_kb = COALESCE($5, memory_limit_kb),
+            visibility = COALESCE($6, visibility),
             updated_at = NOW()
-        WHERE id = $11
-        RETURNING *
+        WHERE id = $7
+        RETURNING
+            id,
+            title,
+            description,
+            COALESCE(difficulty, 'easy') AS difficulty,
+            time_limit_ms AS time_limit,
+            memory_limit_kb AS memory_limit,
+            author_id AS created_by,
+            organization_id,
+            (visibility = 'public') AS is_public,
+            visibility,
+            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
+            NULL::TEXT AS source_url,
+            NULL::TEXT AS author_note,
+            created_at,
+            updated_at
         "#
     )
     .bind(req.title)
@@ -242,11 +283,7 @@ pub async fn update_problem(
     .bind(req.difficulty)
     .bind(req.time_limit)
     .bind(req.memory_limit)
-    .bind(req.is_public)
-    .bind(req.visibility)
-    .bind(&req.tags)
-    .bind(&req.source_url)
-    .bind(&req.author_note)
+    .bind(visibility)
     .bind(id)
     .fetch_optional(&state.db_pool)
     .await
@@ -261,7 +298,7 @@ pub async fn update_problem(
 pub async fn delete_problem(
     State(state): State<AppState>,
     AuthExtractor(_claims): AuthExtractor,
-    Path(id): Path<Uuid>,
+    Path(id): Path<i64>,
 ) -> Result<StatusCode, StatusCode> {
     let result = sqlx::query("DELETE FROM problems WHERE id = $1")
         .bind(id)
@@ -276,21 +313,47 @@ pub async fn delete_problem(
     }
 }
 
-/// Get problem statistics
 pub async fn get_problem_statistics(
     State(state): State<AppState>,
-    Path(id): Path<Uuid>,
-) -> Result<Json<super::models::ProblemStatistics>, StatusCode> {
-    let stats = sqlx::query_as::<_, super::models::ProblemStatistics>(
-        "SELECT * FROM problem_statistics WHERE problem_id = $1"
+    Path(id): Path<i64>,
+) -> Result<Json<ProblemStatistics>, StatusCode> {
+    let stats = sqlx::query_as::<_, ProblemStatistics>(
+        r#"
+        SELECT
+            $1::BIGINT AS problem_id,
+            COUNT(*)::BIGINT AS total_submissions,
+            COUNT(*) FILTER (WHERE verdict = 'ac')::BIGINT AS accepted_submissions,
+            CASE
+                WHEN COUNT(*) = 0 THEN NULL
+                ELSE ROUND(
+                    (COUNT(*) FILTER (WHERE verdict = 'ac')::NUMERIC / COUNT(*)::NUMERIC) * 100,
+                    2
+                )::DOUBLE PRECISION
+            END AS acceptance_rate,
+            MIN(time_ms) FILTER (WHERE verdict = 'ac')::INTEGER AS fastest_time_ms,
+            (
+                SELECT s.user_id
+                FROM submissions s
+                WHERE s.problem_id = $1 AND s.verdict = 'ac'
+                ORDER BY s.created_at ASC
+                LIMIT 1
+            ) AS first_solver_id,
+            (
+                SELECT s.created_at
+                FROM submissions s
+                WHERE s.problem_id = $1 AND s.verdict = 'ac'
+                ORDER BY s.created_at ASC
+                LIMIT 1
+            ) AS first_solved_at,
+            MAX(created_at) FILTER (WHERE verdict = 'ac') AS last_solved_at
+        FROM submissions
+        WHERE problem_id = $1
+        "#
     )
     .bind(id)
-    .fetch_optional(&state.db_pool)
+    .fetch_one(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    match stats {
-        Some(stats) => Ok(Json(stats)),
-        None => Err(StatusCode::NOT_FOUND),
-    }
+    Ok(Json(stats))
 }

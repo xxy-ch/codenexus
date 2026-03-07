@@ -1,61 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { problemsService } from '@/services/problems'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
-
-const STATUS_CONFIG = {
-  pending: {
-    label: 'Pending',
-    bgColor: 'bg-slate-100 dark:bg-slate-800',
-    textColor: 'text-slate-600 dark:text-slate-400',
-    icon: 'schedule',
-  },
-  running: {
-    label: 'Running',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-    textColor: 'text-blue-700 dark:text-blue-400',
-    icon: 'sync',
-  },
-  accepted: {
-    label: 'Accepted',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-400',
-    icon: 'check_circle',
-  },
-  wrong_answer: {
-    label: 'Wrong Answer',
-    bgColor: 'bg-red-100 dark:bg-red-900/30',
-    textColor: 'text-red-700 dark:text-red-400',
-    icon: 'cancel',
-  },
-  time_limit_exceeded: {
-    label: 'Time Limit Exceeded',
-    bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-    textColor: 'text-yellow-700 dark:text-yellow-400',
-    icon: 'timer',
-  },
-  memory_limit_exceeded: {
-    label: 'Memory Limit Exceeded',
-    bgColor: 'bg-orange-100 dark:bg-orange-900/30',
-    textColor: 'text-orange-700 dark:text-orange-400',
-    icon: 'memory',
-  },
-  compilation_error: {
-    label: 'Compilation Error',
-    bgColor: 'bg-purple-100 dark:bg-purple-900/30',
-    textColor: 'text-purple-700 dark:text-purple-400',
-    icon: 'error',
-  },
-  runtime_error: {
-    label: 'Runtime Error',
-    bgColor: 'bg-pink-100 dark:bg-pink-900/30',
-    textColor: 'text-pink-700 dark:text-pink-400',
-    icon: 'warning',
-  },
-}
+import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
 
 const LANGUAGE_CONFIG = {
   cpp: { label: 'C++', icon: 'code' },
@@ -73,6 +23,7 @@ const LANGUAGE_CONFIG = {
 }
 
 export function SubmissionHistory() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [languageFilter, setLanguageFilter] = useState<string>('all')
@@ -280,7 +231,7 @@ export function SubmissionHistory() {
           </div>
           <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
             <span className="material-symbols-outlined text-sm">tune</span>
-            {statusFilter === 'all' ? 'All Status' : STATUS_CONFIG[statusFilter as keyof typeof STATUS_CONFIG]?.label ?? statusFilter}
+            {statusFilter === 'all' ? 'All Status' : getSubmissionStatusConfig(statusFilter).label}
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -309,7 +260,7 @@ export function SubmissionHistory() {
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {data.submissions.map((submission) => {
-                const statusConfig = STATUS_CONFIG[submission.status]
+                const statusConfig = getSubmissionStatusConfig(submission.status)
                 const languageConfig = LANGUAGE_CONFIG[submission.language as keyof typeof LANGUAGE_CONFIG] || {
                   label: submission.language,
                   icon: 'code',
@@ -319,7 +270,7 @@ export function SubmissionHistory() {
                   <tr
                     key={submission.id}
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
-                    onClick={() => window.location.href = `/submissions/${submission.id}`}
+                    onClick={() => navigate(`/submissions/${submission.id}`)}
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className={cn(

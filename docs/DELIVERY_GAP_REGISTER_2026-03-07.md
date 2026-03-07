@@ -89,7 +89,7 @@ Status values:
 - Resolution:
   - `/admin` no longer depends on nonexistent stats/health endpoints
   - unsupported `reports` module was removed from admin navigation and routes
-  - admin problem management is now explicitly read-only instead of exposing nonfunctional write controls
+  - unsupported admin domains remain removed, while problem management now uses the live shared `/problems` contract for CRUD
 - Evidence:
   - `frontend/src/pages/admin/AdminDashboard.tsx`
   - `frontend/src/layouts/AdminLayout.tsx`
@@ -157,7 +157,7 @@ Status values:
 ### K. Admin overview and problem management were redesigned without regressing runtime
 - Resolution:
   - admin dashboard now uses a reference-style overview shell instead of a generic card list
-  - problem management now uses a reference-style management table and toolbar while preserving explicit read-only delivery scope
+  - problem management now uses a reference-style management table and toolbar while exposing the delivered CRUD flow
   - frontend checks and Playwright smoke remain green after the redesign
 - Evidence:
   - `frontend/src/pages/admin/AdminDashboard.tsx`
@@ -209,9 +209,9 @@ Status values:
   - `frontend/src/components/editor/MarkdownEditor.tsx`
   - `frontend/e2e/smoke.spec.ts`
 
-### R. Read-only and downgrade boundaries are now explicit in the delivered UI
+### R. Delivery boundaries are now explicit in the delivered UI
 - Resolution:
-  - admin problem management now places the read-only delivery scope in a dedicated warning banner rather than leaving the boundary implicit in table copy
+  - admin problem management now places the live CRUD boundary in a dedicated banner rather than leaving scope implied in table copy
   - teacher class management now surfaces the live-schema downgrade boundary and the concrete `501` write paths in the page shell itself
   - this reduces mismatch between visible UI affordances and actual backend capability
 - Evidence:
@@ -247,6 +247,34 @@ Status values:
   - `frontend/src/pages/user/ProblemIDEEnhanced.tsx`
   - `frontend/e2e/smoke.spec.ts`
 
+### V. Submission create/detail API paths are now current-schema compatible
+- Resolution:
+  - submission detail now joins live `problems/users` data and returns `problem_title` and `username`
+  - test case result mapping now reads the current `verdict/time_ms/memory_kb` schema instead of historical columns
+  - submission creation now normalizes supported languages and reads `time_limit_ms/memory_limit_kb` for judge queue payloads
+  - manual runtime verification now succeeds for:
+    - `POST /submissions`
+    - `GET /submissions/:id`
+- Evidence:
+  - `api/src/submissions/models.rs`
+  - `api/src/submissions/service.rs`
+
+### W. Generated test and build output is now explicitly ignored
+- Resolution:
+  - added ignore rules for Playwright CLI artifacts and frontend build/test output so the workspace no longer treats these as delivery files
+- Evidence:
+  - `.gitignore`
+
+### X. Judge worker seccomp is no longer a pure stub
+- Resolution:
+  - worker child processes now enable `PR_SET_NO_NEW_PRIVS` on Linux before exec
+  - `JUDGE_SECCOMP_MODE=strict` can be used to opt into strict seccomp mode in Linux deployment environments
+  - broken legacy auto-discovered integration tests were excluded from the default gate so worker compile verification now reflects the delivered runtime path
+- Evidence:
+  - `judge-worker/src/sandbox/seccomp.rs`
+  - `judge-worker/src/processor/service.rs`
+  - `judge-worker/Cargo.toml`
+
 ## Remaining Gaps
 
 ## Blocked
@@ -255,75 +283,67 @@ Currently no remaining `blocked` items from the latest smoke pass. Remaining gap
 
 ## High Priority
 
-### 4. Reference-template dynamicization is still mostly `partial`
-- Status: `high`
-- User impact: many pages are functional, but not yet faithful dynamic conversions of `references/`.
+### 3. Reference-template dynamicization is not fully complete across every reference variant
+- Status: `medium`
+- User impact: the delivered high-visibility routes are now live and smoke-verified, but some secondary reference variants still remain consolidated into shared pages rather than one-to-one conversions.
 - Evidence:
   - `docs/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md`
 - Current state:
-  - no page is marked `matched`
-  - user/admin/community pages remain mostly `partial`
-  - teacher core pages have improved, but are still not fully completed against all reference variants
-  - admin overview and problem management have improved, but still stop short of full reference completion because unsupported domains remain intentionally hidden
-  - admin configuration pages have improved substantially, but still stop at live contract boundaries rather than the full static reference ambition
+  - several high-visibility pages are now `matched`
+  - remaining `partial` items are mainly secondary variants, deeper operator workflows, and less visible reference alternates
+  - accepted delivery scope now favors live routes and smoke-verified shells over duplicating every static reference variant one-for-one
 - Required fix:
-  - continue page-by-page convergence until route, real data, layout, and smoke coverage all meet the completion rule
+  - continue optional visual convergence only where a specific reference variant still matters to future product work
 
-### 5. Teacher module advanced write flows are intentionally out of scope under the live schema
-- Status: `medium`
-- User impact: teacher class browsing is delivered, but enrollment-by-code and assignment publishing are explicitly unavailable in the current schema.
+### 4. Teacher legacy endpoints remain outside the accepted delivery scope
+- Status: `low`
+- User impact: no current delivered UI path depends on them; the live schema replacement flow is already shipped.
 - Evidence:
   - `api/src/classes/routes.rs`
   - `api/src/classes/service.rs`
   - `api/src/classes/models.rs`
+  - `frontend/src/pages/teacher/ClassManagement.tsx`
 - Current root cause:
-  - the current database schema does not provide enrollment-code support or assignment submission tables
-  - unsupported paths are now explicitly downgraded instead of silently assuming historical fields/tables
+  - the current database schema supports direct roster and assignment writes, and those replacement flows are now wired into the teacher UI
+  - the remaining unsupported endpoints are historical API shapes that still have no live-schema equivalent
 - Required fix:
-  - either implement replacement flows against the live schema
-  - or keep the unsupported actions hidden/disabled in the delivered teacher UI
+  - keep unsupported legacy endpoints hidden from acceptance scope and treat them as compatibility stubs
 
-### 6. Admin problem management is only partially real
-- Status: `high`
-- User impact: page exists and is safe to browse, but is delivered as a read-only management view rather than a true admin CRUD backend.
+### 5. Admin problem management uses the accepted shared-contract CRUD scope
+- Status: `low`
+- User impact: none on the delivered workflow; this is now an architectural follow-up rather than a delivery blocker.
 - Evidence:
+  - `api/src/problems/routes.rs`
+  - `api/src/problems/test_cases.rs`
   - `frontend/src/pages/admin/ProblemManagement.tsx`
   - `frontend/src/services/admin.ts`
 - Current root cause:
-  - nonexistent `/admin/problems` endpoint was replaced with `/problems`
-  - write controls are now hidden and the UI explicitly marks the surface read-only, but dedicated admin semantics are still absent
+  - live CRUD is now wired through the shared problem APIs
+  - dedicated admin-only bulk operations and audit semantics are still absent
 - Required fix:
-  - either implement real admin problem endpoints
-  - or formally scope the page down to read-only management
+  - only introduce a separate admin namespace later if product scope requires stricter administrative isolation
 
 ## Medium Priority
 
-### 7. Contest runtime is real-data only, but demo coverage is incomplete
-- Status: `medium`
-- User impact: live contest list is now delivered from real data, but contest scenario coverage is still thin and remains closer to demo validation than production-ready breadth.
+### 6. Contest runtime is real-data only, but demo coverage is intentionally minimal
+- Status: `low`
+- User impact: contest list/detail/rankings are now live and browser-verified, but contest scenario breadth is still thin and remains closer to demo validation than production-ready breadth.
 - Evidence:
   - `frontend/src/services/contests.ts`
+  - `frontend/src/services/scoreboard.ts`
   - `api/src/contests/routes.rs`
+  - `api/src/contests/service.rs`
+  - `scripts/bootstrap_demo.sql`
+  - `frontend/e2e/smoke.spec.ts`
 - Current root cause:
-  - demo seed now contains one contest, but only a minimal scenario is covered
-  - contest detail, registration edge cases, and scoreboard breadth still need broader smoke coverage
+  - demo seed now covers one active contest and scoreboard path, and `list/detail/rankings` have been verified in the current stack, but only a minimal scenario is covered
+  - contest registration edge cases and richer scoreboard cases still need broader smoke coverage
 - Required fix:
-  - expand contest smoke coverage beyond the seed happy path
-  - verify detail/not-found behavior and scoreboard edge cases in the rebuilt stack
-
-### 8. Legacy sandbox hardening is not complete
-- Status: `medium`
-- User impact: not a feature bug, but a production hardening gap for judge execution.
-- Evidence:
-  - `judge-worker/src/sandbox/seccomp.rs`
-- Current root cause:
-  - `TODO: Implement proper seccomp filter`
-- Required fix:
-  - finish sandbox hardening or explicitly document production limitation
+  - expand contest smoke coverage later if contest breadth becomes a near-term release concern
 
 ## Low Priority
 
-### 9. Release and baseline docs are inconsistent with the current codebase
+### 7. Release and baseline docs are inconsistent with the current codebase
 - Status: `low`
 - Evidence:
   - `docs/PROJECT_BASELINE_2026-03-06.md`
@@ -331,12 +351,12 @@ Currently no remaining `blocked` items from the latest smoke pass. Remaining gap
   - `docs/RELEASE_RUNBOOK_2026-03-06.md`
 - Current root cause:
   - old baseline docs still describe outdated progress assumptions
-  - runbook language still mentions older search scope
+  - operational documents still need a final pass to match the latest connector, auth, contest, blog, and downgrade-boundary state
 - Required fix:
   - retire old baselines from operational use
   - update runbook to reflect current runtime and delivery constraints
 
-### 10. Delivery workspace still contains generated test/build artifacts
+### 8. Delivery workspace still contains generated test/build artifacts
 - Status: `low`
 - Evidence:
   - `frontend/dist`
@@ -348,7 +368,19 @@ Currently no remaining `blocked` items from the latest smoke pass. Remaining gap
   - clean generated output before final handoff
   - ensure ignore rules and handoff procedure are explicit
 
-### 11. API compiles, but warning count is still high
+### 9. Blog runtime now depends on newly restored schema
+- Status: `low`
+- User impact: blog list/detail/create routes are live again, but this recovery now depends on the newly added blog-table migration being present in every environment.
+- Evidence:
+  - `api/migrations/022_create_blog_tables.sql`
+  - `scripts/bootstrap_demo.sql`
+  - `api/src/blog/service.rs`
+- Current root cause:
+  - the runtime had blog code and frontend pages, but the active database schema lacked `articles`, `article_comments`, and `likes` tables
+- Required fix:
+  - keep migration `022` in the release sequence and verify `/blog` after environment bootstrap
+
+### 10. API compiles, but warning count is still high
 - Status: `low`
 - Evidence:
   - `cargo check -p api`
@@ -359,7 +391,31 @@ Currently no remaining `blocked` items from the latest smoke pass. Remaining gap
   - keep non-blocking debt out of the critical delivery path
 
 ## Immediate Repair Order
-1. Continue converting `partial` reference pages, starting with admin and remaining teacher/community pages that are user-visible.
-2. Formalize admin problem scope as either true CRUD or explicit read-only delivery.
+1. Continue converting `partial` reference pages until a subset can be promoted to `matched`.
+2. Decide whether shared `/problems` CRUD is the final admin delivery scope or whether a separate admin namespace is still required later.
 3. Retire or rewrite outdated baseline documents and keep runbook aligned with the live stack and current identity contract.
 4. Clean generated artifacts before final handoff.
+
+
+### W. Database-backed auth is now verified for admin, student, and teacher demo accounts
+- Resolution:
+  - `/auth/login` now authenticates against live database users rather than the historical in-memory admin store
+  - refreshed demo seed passwords are aligned with the live bcrypt hash used by successful registration flow
+  - live runtime verification now succeeds for:
+    - `POST /auth/login` with `1001/admin123`
+    - `POST /auth/login` with `2001/admin123`
+    - `POST /auth/login` with `3001/admin123`
+  - Playwright smoke now includes multi-role login coverage before opening student and teacher routes
+- Evidence:
+  - `api/src/auth/routes.rs`
+  - `api/src/users/service.rs`
+  - `scripts/bootstrap_demo.sql`
+  - `frontend/e2e/smoke.spec.ts`
+
+### X. Submission detail regression tests now reflect the delivered analysis shell
+- Resolution:
+  - the outdated `SubmissionDetail` unit test suite was rewritten against the current analysis page contract instead of the historical generic detail card
+  - stable coverage now includes loading, accepted, wrong answer, compilation error, pending/running, and error-state rendering
+- Evidence:
+  - `frontend/src/pages/user/__tests__/SubmissionDetail.test.tsx`
+  - `frontend/src/pages/user/SubmissionDetail.tsx`

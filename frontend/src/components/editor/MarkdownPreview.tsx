@@ -1,6 +1,4 @@
 import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import remarkGfm from 'remark-gfm'
 import { memo } from 'react'
 
@@ -19,20 +17,16 @@ export const MarkdownPreview = memo(({ content, darkMode = false }: MarkdownPrev
             const match = /language-(\w+)/.exec(className || '')
             const inline = (props as any).inline
             return !inline && match ? (
-              <SyntaxHighlighter
-                style={darkMode ? vscDarkPlus : vs}
-                language={match[1]}
-                PreTag="div"
-                className="rounded-lg text-sm"
-                customStyle={{
-                  background: darkMode ? '#1a1a1a' : '#f6f8fa',
-                  padding: '16px',
-                  margin: '8px 0',
-                }}
-                {...props}
-              >
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
+              <div className="my-2 overflow-x-auto rounded-lg border border-gray-200 bg-slate-950/95 dark:border-slate-700 dark:bg-slate-950">
+                <div className="border-b border-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+                  {match[1]}
+                </div>
+                <pre className="overflow-x-auto px-4 py-4 text-sm text-slate-100">
+                  <code className={className} {...props}>
+                    {String(children).replace(/\n$/, '')}
+                  </code>
+                </pre>
+              </div>
             ) : (
               <code
                 className={`${className} px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-sm font-mono`}

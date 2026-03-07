@@ -88,6 +88,7 @@ mod tests {
 
         let user = User {
             id: Uuid::new_v4(),
+            username: "test-user".to_string(),
             email: "test@example.com".to_string(),
             password_hash: "hashed_password".to_string(),
             role: "admin".to_string(),
@@ -125,6 +126,7 @@ mod tests {
 
         let user = User {
             id: Uuid::new_v4(),
+            username: "test-user".to_string(),
             email: "test@example.com".to_string(),
             password_hash: "hashed_password".to_string(),
             role: "admin".to_string(),

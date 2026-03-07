@@ -5,6 +5,7 @@ import { problemsService } from '@/services/problems'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
+import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
 
 interface TestCase {
   id: number
@@ -24,80 +25,13 @@ interface SubmissionDetail {
   username: string
   code: string
   language: string
-  status: 'pending' | 'running' | 'accepted' | 'wrong_answer' | 'time_limit_exceeded' | 'memory_limit_exceeded' | 'compilation_error' | 'runtime_error'
+  status: string
   time_ms?: number
   memory_kb?: number
   error_message?: string
   test_cases?: TestCase[]
   created_at: string
   updated_at: string
-}
-
-const STATUS_CONFIG = {
-  pending: {
-    label: 'Pending',
-    bgColor: 'bg-slate-100 dark:bg-slate-800',
-    textColor: 'text-slate-600 dark:text-slate-400',
-    borderColor: 'border-slate-300 dark:border-slate-700',
-    icon: 'schedule',
-    iconColor: 'text-slate-400',
-  },
-  running: {
-    label: 'Running',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-    textColor: 'text-blue-700 dark:text-blue-400',
-    borderColor: 'border-blue-300 dark:border-blue-700',
-    icon: 'sync',
-    iconColor: 'text-blue-500',
-  },
-  accepted: {
-    label: 'Accepted',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-400',
-    borderColor: 'border-green-300 dark:border-green-700',
-    icon: 'check_circle',
-    iconColor: 'text-green-500',
-  },
-  wrong_answer: {
-    label: 'Wrong Answer',
-    bgColor: 'bg-red-100 dark:bg-red-900/30',
-    textColor: 'text-red-700 dark:text-red-400',
-    borderColor: 'border-red-300 dark:border-red-700',
-    icon: 'cancel',
-    iconColor: 'text-red-500',
-  },
-  time_limit_exceeded: {
-    label: 'Time Limit Exceeded',
-    bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-    textColor: 'text-yellow-700 dark:text-yellow-400',
-    borderColor: 'border-yellow-300 dark:border-yellow-700',
-    icon: 'timer',
-    iconColor: 'text-yellow-500',
-  },
-  memory_limit_exceeded: {
-    label: 'Memory Limit Exceeded',
-    bgColor: 'bg-orange-100 dark:bg-orange-900/30',
-    textColor: 'text-orange-700 dark:text-orange-400',
-    borderColor: 'border-orange-300 dark:border-orange-700',
-    icon: 'memory',
-    iconColor: 'text-orange-500',
-  },
-  compilation_error: {
-    label: 'Compilation Error',
-    bgColor: 'bg-purple-100 dark:bg-purple-900/30',
-    textColor: 'text-purple-700 dark:text-purple-400',
-    borderColor: 'border-purple-300 dark:border-purple-700',
-    icon: 'error',
-    iconColor: 'text-purple-500',
-  },
-  runtime_error: {
-    label: 'Runtime Error',
-    bgColor: 'bg-pink-100 dark:bg-pink-900/30',
-    textColor: 'text-pink-700 dark:text-pink-400',
-    borderColor: 'border-pink-300 dark:border-pink-700',
-    icon: 'warning',
-    iconColor: 'text-pink-500',
-  },
 }
 
 export function SubmissionDetail() {
@@ -175,7 +109,7 @@ export function SubmissionDetail() {
     )
   }
 
-  const statusConfig = STATUS_CONFIG[submission.status]
+  const statusConfig = getSubmissionStatusConfig(submission.status)
   const passedTestCases = submission.test_cases?.filter(tc => tc.status === 'passed').length || 0
   const totalTestCases = submission.test_cases?.length || 0
   const statusLabel = statusConfig.label

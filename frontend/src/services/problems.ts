@@ -220,6 +220,8 @@ function normalizeSubmission(submission: any): ProblemSubmission & {
   const normalizedStatus =
     submission?.status === 'compile_error'
       ? 'compilation_error'
+      : submission?.status === 'internal_error'
+      ? 'system_error'
       : submission?.status
 
   const testCases = Array.isArray(submission?.test_cases)

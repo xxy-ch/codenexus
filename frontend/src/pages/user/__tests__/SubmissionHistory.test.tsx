@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { SubmissionHistory } from '../SubmissionHistory'
 
 // Mock the API service
@@ -13,6 +13,11 @@ vi.mock('@/services/problems', () => ({
 }))
 
 import { problemsService } from '@/services/problems'
+
+function LocationProbe() {
+  const location = useLocation()
+  return <div data-testid="location-probe">{location.pathname}</div>
+}
 
 describe('SubmissionHistory', () => {
   let queryClient: QueryClient
@@ -45,6 +50,17 @@ describe('SubmissionHistory', () => {
       created_at: '2024-01-01T09:00:00Z',
       updated_at: '2024-01-01T09:00:03Z',
     },
+    {
+      id: '3',
+      problem_id: '1',
+      problem_title: 'Two Sum',
+      user_id: 'user1',
+      code: 'int main() { return 0; }',
+      language: 'cpp',
+      status: 'queued',
+      created_at: '2024-01-01T11:00:00Z',
+      updated_at: '2024-01-01T11:00:01Z',
+    },
   ]
 
   beforeEach(() => {
@@ -57,13 +73,25 @@ describe('SubmissionHistory', () => {
     })
 
     vi.clearAllMocks()
+    window.scrollTo = vi.fn()
   })
 
   const renderComponent = () => {
     return render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter>
-          <SubmissionHistory />
+        <MemoryRouter initialEntries={['/submissions']}>
+          <Routes>
+            <Route
+              path="/submissions"
+              element={
+                <>
+                  <SubmissionHistory />
+                  <LocationProbe />
+                </>
+              }
+            />
+            <Route path="/submissions/:submissionId" element={<LocationProbe />} />
+          </Routes>
         </MemoryRouter>
       </QueryClientProvider>
     )
@@ -93,7 +121,7 @@ describe('SubmissionHistory', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Two Sum')).toBeInTheDocument()
+        expect(screen.getAllByText('Two Sum').length).toBeGreaterThan(0)
         expect(screen.getByText('Add Two Numbers')).toBeInTheDocument()
       })
     })
@@ -109,8 +137,9 @@ describe('SubmissionHistory', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/accepted|通过/i)).toBeInTheDocument()
-        expect(screen.getByText(/wrong answer|答案错误/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/accepted/i).length).toBeGreaterThan(0)
+        expect(screen.getAllByText(/wrong answer/i).length).toBeGreaterThan(0)
+        expect(screen.getAllByText(/queued/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -126,7 +155,7 @@ describe('SubmissionHistory', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/45ms/i)).toBeInTheDocument()
-        expect(screen.getByText(/1MB/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/1MB/i).length).toBeGreaterThan(0)
         expect(screen.getByText(/120ms/i)).toBeInTheDocument()
         expect(screen.getByText(/2MB/i)).toBeInTheDocument()
       })
@@ -143,8 +172,8 @@ describe('SubmissionHistory', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/cpp|c\+\+/i)).toBeInTheDocument()
-        expect(screen.getByText(/python/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/cpp|c\+\+/i).length).toBeGreaterThan(0)
+        expect(screen.getAllByText(/python/i).length).toBeGreaterThan(0)
       })
     })
   })
@@ -167,7 +196,7 @@ describe('SubmissionHistory', () => {
       })
 
       // 点击状态过滤器
-      const acceptedFilter = screen.getByText(/accepted|通过/i)
+      const acceptedFilter = screen.getByRole('button', { name: /^Accepted$/i })
       await user.click(acceptedFilter)
 
       await waitFor(() => {
@@ -192,11 +221,12 @@ describe('SubmissionHistory', () => {
       renderComponent()
 
       // 选择语言过滤器
-      const languageSelect = screen.getByLabelText(/语言|language/i)
-      await user.click(languageSelect)
+      await waitFor(() => {
+        expect(screen.getByLabelText(/语言|language/i)).toBeInTheDocument()
+      })
 
-      const cppOption = screen.getByText(/cpp|c\+\+/i)
-      await user.click(cppOption)
+      const languageSelect = screen.getByLabelText(/语言|language/i)
+      await user.selectOptions(languageSelect, 'cpp')
 
       await waitFor(() => {
         expect(problemsService.getUserSubmissions).toHaveBeenCalledWith(
@@ -226,7 +256,7 @@ describe('SubmissionHistory', () => {
       })
 
       // 点击下一页
-      const nextPageButton = screen.getByLabelText(/下一页|next/i)
+      const nextPageButton = screen.getByRole('button', { name: /下一页|next/i })
       await user.click(nextPageButton)
 
       await waitFor(() => {
@@ -267,9 +297,7 @@ describe('SubmissionHistory', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(
-          screen.getByText(/加载失败|error|failed/i)
-        ).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /加载失败/i })).toBeInTheDocument()
       })
     })
   })
@@ -288,16 +316,19 @@ describe('SubmissionHistory', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Two Sum')).toBeInTheDocument()
+        expect(screen.getAllByText('Two Sum').length).toBeGreaterThan(0)
       })
 
       // 点击第一个提交记录
-      const submissionRow = screen.getByText('Two Sum').closest('tr')
+      const table = screen.getByRole('table')
+      const firstBodyRow = within(table).getAllByRole('row')[1]
+      const submissionRow = firstBodyRow.closest('tr')
       if (submissionRow) {
         await user.click(submissionRow)
 
-        // 验证导航
-        expect(window.location.pathname).toContain('/submissions/1')
+        await waitFor(() => {
+          expect(screen.getByTestId('location-probe')).toHaveTextContent('/submissions/1')
+        })
       }
     })
   })
