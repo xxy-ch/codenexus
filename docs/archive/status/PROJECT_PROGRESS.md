@@ -181,7 +181,7 @@
 - Git 提交: 37c1154
 
 **文档**:
-- ✅ API 文档 (`docs/CONTEST_API.md`)
+- ✅ API 文档 (`docs/api/CONTEST_API.md`)
 - ✅ 实现总结 (`PHASE2_SUMMARY.md`)
 - ✅ 完成报告 (`PHASE2_COMPLETE.md`)
 - ✅ 测试脚本 (`tests/contest_api_test.sh`)

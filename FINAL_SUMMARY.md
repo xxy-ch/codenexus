@@ -105,14 +105,14 @@
 
 以下文件构成当前交付包的正式文档集合：
 
-- [docs/RELEASE_RUNBOOK_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/RELEASE_RUNBOOK_2026-03-06.md)
-- [docs/PROJECT_HANDBOOK_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/PROJECT_HANDBOOK_2026-03-07.md)
-- [docs/RELEASE_SCOPE_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/RELEASE_SCOPE_2026-03-06.md)
-- [docs/RELEASE_DECISION_RECORD_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/RELEASE_DECISION_RECORD_2026-03-06.md)
-- [docs/ACCEPTANCE_CHECKLIST_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/ACCEPTANCE_CHECKLIST_2026-03-06.md)
-- [docs/CONTRACT_ALIGNMENT_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/CONTRACT_ALIGNMENT_2026-03-06.md)
-- [docs/DELIVERY_GAP_REGISTER_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/DELIVERY_GAP_REGISTER_2026-03-07.md)
-- [docs/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md)
+- [docs/delivery/RELEASE_RUNBOOK_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/RELEASE_RUNBOOK_2026-03-06.md)
+- [docs/architecture/PROJECT_HANDBOOK_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/architecture/PROJECT_HANDBOOK_2026-03-07.md)
+- [docs/delivery/RELEASE_SCOPE_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/RELEASE_SCOPE_2026-03-06.md)
+- [docs/delivery/RELEASE_DECISION_RECORD_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/RELEASE_DECISION_RECORD_2026-03-06.md)
+- [docs/delivery/ACCEPTANCE_CHECKLIST_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/ACCEPTANCE_CHECKLIST_2026-03-06.md)
+- [docs/delivery/CONTRACT_ALIGNMENT_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/CONTRACT_ALIGNMENT_2026-03-06.md)
+- [docs/delivery/DELIVERY_GAP_REGISTER_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/DELIVERY_GAP_REGISTER_2026-03-07.md)
+- [docs/architecture/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/architecture/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md)
 
 ## 7. 当前已知事项
 

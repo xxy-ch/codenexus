@@ -32,8 +32,8 @@
 如果其他文档与本手册冲突，应以本手册及以下文档为准：
 
 - [FINAL_SUMMARY.md](/Users/xiexingyu/Documents/项目/Online_Judge/FINAL_SUMMARY.md)
-- [RELEASE_RUNBOOK_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/RELEASE_RUNBOOK_2026-03-06.md)
-- [DELIVERY_GAP_REGISTER_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/DELIVERY_GAP_REGISTER_2026-03-07.md)
+- [RELEASE_RUNBOOK_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/RELEASE_RUNBOOK_2026-03-06.md)
+- [DELIVERY_GAP_REGISTER_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/DELIVERY_GAP_REGISTER_2026-03-07.md)
 
 ## 3. 项目概述
 
@@ -704,7 +704,7 @@ cargo run
 
 当前高价值页面已经按真实数据与 reference 模板做过动态化收敛，详见：
 
-- [REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md)
+- [REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/architecture/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md)
 
 当前判断原则：
 
@@ -790,7 +790,7 @@ npx playwright test e2e/smoke.spec.ts
 
 详细步骤见：
 
-- [RELEASE_RUNBOOK_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/RELEASE_RUNBOOK_2026-03-06.md)
+- [RELEASE_RUNBOOK_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/RELEASE_RUNBOOK_2026-03-06.md)
 
 ## 15. 维护手册
 
@@ -912,7 +912,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/online_judge \
 
 1. 先看本手册
 2. 再看 [FINAL_SUMMARY.md](/Users/xiexingyu/Documents/项目/Online_Judge/FINAL_SUMMARY.md)
-3. 再看 [RELEASE_RUNBOOK_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/RELEASE_RUNBOOK_2026-03-06.md)
+3. 再看 [RELEASE_RUNBOOK_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/RELEASE_RUNBOOK_2026-03-06.md)
 4. 最后结合 `api/src/main.rs`、`frontend/src/App.tsx`、`docker-compose.yml` 阅读真实代码结构
 
 ## 20. 附录
@@ -920,12 +920,12 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/online_judge \
 ### 20.1 当前正式文档入口
 
 - [FINAL_SUMMARY.md](/Users/xiexingyu/Documents/项目/Online_Judge/FINAL_SUMMARY.md)
-- [DELIVERY_DOCUMENT_SET_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/DELIVERY_DOCUMENT_SET_2026-03-07.md)
-- [PROJECT_HANDBOOK_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/PROJECT_HANDBOOK_2026-03-07.md)
+- [DELIVERY_DOCUMENT_SET_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/DELIVERY_DOCUMENT_SET_2026-03-07.md)
+- [PROJECT_HANDBOOK_2026-03-07.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/architecture/PROJECT_HANDBOOK_2026-03-07.md)
 
 ### 20.2 当前历史文档口径
 
 以下文件为历史快照，不作为当前状态依据：
 
-- [PROJECT_BASELINE_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/PROJECT_BASELINE_2026-03-06.md)
-- [IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md)
+- [PROJECT_BASELINE_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/archive/legacy-docs/PROJECT_BASELINE_2026-03-06.md)
+- [IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md](/Users/xiexingyu/Documents/项目/Online_Judge/docs/archive/legacy-docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md)

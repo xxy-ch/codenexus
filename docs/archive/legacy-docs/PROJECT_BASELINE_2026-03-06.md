@@ -2,9 +2,9 @@
 
 > 已退役。自 2026-03-07 起，本文件仅保留历史快照，不再作为当前项目状态依据。
 > 当前状态请改看：
-> - `docs/DELIVERY_GAP_REGISTER_2026-03-07.md`
-> - `docs/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md`
-> - `docs/RELEASE_RUNBOOK_2026-03-06.md`
+> - `docs/delivery/DELIVERY_GAP_REGISTER_2026-03-07.md`
+> - `docs/architecture/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md`
+> - `docs/delivery/RELEASE_RUNBOOK_2026-03-06.md`
 
 本文件曾是阶段性状态入口，但内容已明显落后于当前仓库实现。
 
@@ -46,7 +46,7 @@
 ## 4. 文档治理规则（从今天开始）
 
 - 本文件维护“当前状态”。
-- `docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md` 维护“执行计划”。
+- `docs/archive/legacy-docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md` 维护“执行计划”。
 - 其余 `PHASE*`、`*_REPORT.md`、`TODO.md`、`DEPLOYMENT_STATUS.md` 视为历史记录，不作为当前决策依据。
 
 ## 5. 下一里程碑定义（M1）

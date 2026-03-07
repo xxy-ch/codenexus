@@ -2,9 +2,9 @@
 
 > 已退役。该计划反映的是 2026-03-06 的阶段性拆解，不再等同于当前执行面。
 > 当前交付收口请改看：
-> - `docs/DELIVERY_GAP_REGISTER_2026-03-07.md`
-> - `docs/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md`
-> - `docs/RELEASE_RUNBOOK_2026-03-06.md`
+> - `docs/delivery/DELIVERY_GAP_REGISTER_2026-03-07.md`
+> - `docs/architecture/REFERENCE_DYNAMICIZATION_MATRIX_2026-03-07.md`
+> - `docs/delivery/RELEASE_RUNBOOK_2026-03-06.md`
 
 本计划基于 2026-03-06 的代码现状形成，现仅保留为历史记录。
 

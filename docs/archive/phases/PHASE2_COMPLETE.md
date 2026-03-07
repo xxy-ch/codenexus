@@ -118,7 +118,7 @@ curl -X POST http://localhost:3000/contests/1/register \
 
 ## 文档
 
-- **API 文档**: `docs/CONTEST_API.md`
+- **API 文档**: `docs/api/CONTEST_API.md`
 - **实现总结**: `PHASE2_SUMMARY.md`
 - **数据库迁移**: `migrations/001_create_contests.sql`
 - **测试脚本**: `tests/contest_api_test.sh`

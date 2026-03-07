@@ -1,10 +1,10 @@
 # 📎 状态快照文档
 
 本文件是阶段性快照，当前统一状态入口已切换到：
-- `docs/PROJECT_BASELINE_2026-03-06.md`
+- `docs/archive/legacy-docs/PROJECT_BASELINE_2026-03-06.md`
 
 如需执行计划，请查看：
-- `docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md`
+- `docs/archive/legacy-docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md`
 
 ---
 

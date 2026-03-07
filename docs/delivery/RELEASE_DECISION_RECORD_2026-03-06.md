@@ -21,12 +21,12 @@
 
 - P0 缺陷为 0。
 - P1 缺陷为 0（或有业务负责人书面豁免）。
-- 验收清单通过：`docs/ACCEPTANCE_CHECKLIST_2026-03-06.md`。
+- 验收清单通过：`docs/delivery/ACCEPTANCE_CHECKLIST_2026-03-06.md`。
 - 静态门禁策略：生产构建通过，`typecheck/lint` 通过。
 
 ## 4. 回退条件
 
-- 主链路故障或 5xx 异常超阈值，按 `docs/RELEASE_RUNBOOK_2026-03-06.md` 执行回滚。
+- 主链路故障或 5xx 异常超阈值，按 `docs/delivery/RELEASE_RUNBOOK_2026-03-06.md` 执行回滚。
 
 ## 5. 审批
 

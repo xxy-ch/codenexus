@@ -283,7 +283,7 @@ curl http://localhost:3000/problems/{id}/statistics
 
 ## Documentation
 
-- ✅ Complete API documentation (`docs/PROBLEMS_API.md`)
+- ✅ Complete API documentation (`docs/api/PROBLEMS_API.md`)
 - ✅ Database schema in migration file
 - ✅ Code comments in models
 - ✅ Usage examples

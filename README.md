@@ -11,10 +11,10 @@
 
 正式文档请优先阅读：
 
-1. [项目完整开发与维护手册](/Users/xiexingyu/Documents/项目/Online_Judge/docs/PROJECT_HANDBOOK_2026-03-07.md)
-2. [交付文档集入口](/Users/xiexingyu/Documents/项目/Online_Judge/docs/DELIVERY_DOCUMENT_SET_2026-03-07.md)
+1. [项目完整开发与维护手册](/Users/xiexingyu/Documents/项目/Online_Judge/docs/architecture/PROJECT_HANDBOOK_2026-03-07.md)
+2. [交付文档集入口](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/DELIVERY_DOCUMENT_SET_2026-03-07.md)
 3. [最终交付总结](/Users/xiexingyu/Documents/项目/Online_Judge/FINAL_SUMMARY.md)
-4. [发布与回滚 Runbook](/Users/xiexingyu/Documents/项目/Online_Judge/docs/RELEASE_RUNBOOK_2026-03-06.md)
+4. [发布与回滚 Runbook](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/RELEASE_RUNBOOK_2026-03-06.md)
 
 历史状态文档已退役，不再作为当前状态依据。
 

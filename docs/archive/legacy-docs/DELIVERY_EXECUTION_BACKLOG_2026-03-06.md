@@ -1,6 +1,6 @@
 # 交付执行 Backlog（按天 + 文件级，2026-03-06）
 
-基于 `docs/REFERENCE_DRIVEN_WEB_PLAN_2026-03-06.md`，本文件用于直接执行。
+基于 `docs/archive/legacy-docs/REFERENCE_DRIVEN_WEB_PLAN_2026-03-06.md`，本文件用于直接执行。
 
 ## 0. 执行节奏
 

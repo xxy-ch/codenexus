@@ -7,7 +7,7 @@
 3. 关键自动化通过：
    - 前端单测（至少服务层关键用例 + 核心冒烟流）
    - 主链路冒烟（登录 -> 题目 -> 提交 -> 结果）
-4. 契约对齐清单确认：`docs/CONTRACT_ALIGNMENT_2026-03-06.md`。
+4. 契约对齐清单确认：`docs/delivery/CONTRACT_ALIGNMENT_2026-03-06.md`。
 5. 环境变量核对：
    - API Base URL
    - JWT Secret
@@ -195,10 +195,10 @@ npx playwright test
 
 ## 6. 关联文档
 
-- 发布范围：`docs/RELEASE_SCOPE_2026-03-06.md`
-- 豁免清单：`docs/WAIVER_LIST_2026-03-06.md`
-- 交付包结构：`docs/DELIVERY_PACKAGE_STRUCTURE_2026-03-06.md`
-- 验收清单：`docs/ACCEPTANCE_CHECKLIST_2026-03-06.md`
+- 发布范围：`docs/delivery/RELEASE_SCOPE_2026-03-06.md`
+- 豁免清单：`docs/delivery/WAIVER_LIST_2026-03-06.md`
+- 交付包结构：`docs/archive/legacy-docs/DELIVERY_PACKAGE_STRUCTURE_2026-03-06.md`
+- 验收清单：`docs/delivery/ACCEPTANCE_CHECKLIST_2026-03-06.md`
 
 
 ## Multi-Role Auth Verification

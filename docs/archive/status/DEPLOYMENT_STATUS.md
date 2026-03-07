@@ -3,8 +3,8 @@
 本文件中的完成度和缺陷描述来自早期阶段，可能与当前代码状态不一致。
 
 请使用以下文档：
-- 当前状态：`docs/PROJECT_BASELINE_2026-03-06.md`
-- 当前计划：`docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md`
+- 当前状态：`docs/archive/legacy-docs/PROJECT_BASELINE_2026-03-06.md`
+- 当前计划：`docs/archive/legacy-docs/IMPLEMENTATION_PLAN_BY_REQUIREMENT_2026-03-06.md`
 
 ---
 
