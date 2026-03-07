@@ -571,6 +571,141 @@ impl LeaderboardService {
             .bind(user_id)
             .fetch_one(&self.pool)
             .await?,
+            Some("campus") => {
+                let campus_id = match scope_id {
+                    Some(id) => Some(id),
+                    None => sqlx::query_scalar::<_, Option<i64>>(
+                        "SELECT campus_id FROM users WHERE id = $1",
+                    )
+                    .bind(user_id)
+                    .fetch_one(&self.pool)
+                    .await?,
+                };
+
+                if let Some(campus_id) = campus_id {
+                    sqlx::query_scalar(
+                        r#"
+                        WITH scored_users AS (
+                            SELECT
+                                s.user_id,
+                                SUM(
+                                    CASE p.difficulty
+                                        WHEN 'easy' THEN 1
+                                        WHEN 'medium' THEN 3
+                                        WHEN 'hard' THEN 5
+                                        WHEN 'expert' THEN 10
+                                        ELSE 1
+                                    END
+                                ) AS total_score
+                            FROM submissions s
+                            JOIN problems p ON p.id = s.problem_id
+                            JOIN users u ON u.id = s.user_id
+                            WHERE s.verdict = 'ac' AND u.campus_id = $2
+                            GROUP BY s.user_id
+                        ),
+                        user_score AS (
+                            SELECT COALESCE(
+                                SUM(
+                                    CASE p.difficulty
+                                        WHEN 'easy' THEN 1
+                                        WHEN 'medium' THEN 3
+                                        WHEN 'hard' THEN 5
+                                        WHEN 'expert' THEN 10
+                                        ELSE 1
+                                    END
+                                ),
+                                0
+                            ) AS total_score
+                            FROM submissions s
+                            JOIN problems p ON p.id = s.problem_id
+                            WHERE s.user_id = $1 AND s.verdict = 'ac'
+                        )
+                        SELECT COUNT(*) + 1
+                        FROM scored_users, user_score
+                        WHERE scored_users.total_score > user_score.total_score
+                        "#,
+                    )
+                    .bind(user_id)
+                    .bind(campus_id)
+                    .fetch_one(&self.pool)
+                    .await?
+                } else {
+                    0
+                }
+            }
+            Some("class") => {
+                let class_id = match scope_id {
+                    Some(id) => Some(id),
+                    None => sqlx::query_scalar::<_, Option<i64>>(
+                        r#"
+                        SELECT class_id
+                        FROM class_enrollments
+                        WHERE student_id = $1 AND status = 'active'
+                        ORDER BY enrolled_at DESC
+                        LIMIT 1
+                        "#,
+                    )
+                    .bind(user_id)
+                    .fetch_one(&self.pool)
+                    .await?,
+                };
+
+                if let Some(class_id) = class_id {
+                    sqlx::query_scalar(
+                        r#"
+                        WITH scoped_users AS (
+                            SELECT DISTINCT student_id AS user_id
+                            FROM class_enrollments
+                            WHERE class_id = $2 AND status = 'active'
+                        ),
+                        scored_users AS (
+                            SELECT
+                                s.user_id,
+                                SUM(
+                                    CASE p.difficulty
+                                        WHEN 'easy' THEN 1
+                                        WHEN 'medium' THEN 3
+                                        WHEN 'hard' THEN 5
+                                        WHEN 'expert' THEN 10
+                                        ELSE 1
+                                    END
+                                ) AS total_score
+                            FROM submissions s
+                            JOIN problems p ON p.id = s.problem_id
+                            JOIN scoped_users su ON su.user_id = s.user_id
+                            WHERE s.verdict = 'ac'
+                            GROUP BY s.user_id
+                        ),
+                        user_score AS (
+                            SELECT COALESCE(
+                                SUM(
+                                    CASE p.difficulty
+                                        WHEN 'easy' THEN 1
+                                        WHEN 'medium' THEN 3
+                                        WHEN 'hard' THEN 5
+                                        WHEN 'expert' THEN 10
+                                        ELSE 1
+                                    END
+                                ),
+                                0
+                            ) AS total_score
+                            FROM submissions s
+                            JOIN problems p ON p.id = s.problem_id
+                            WHERE s.user_id = $1 AND s.verdict = 'ac'
+                        )
+                        SELECT COUNT(*) + 1
+                        FROM scored_users, user_score
+                        WHERE scored_users.total_score > user_score.total_score
+                        "#,
+                    )
+                    .bind(user_id)
+                    .bind(class_id)
+                    .fetch_one(&self.pool)
+                    .await?
+                } else {
+                    0
+                }
+            }
             None => sqlx::query_scalar(
                 r#"
                 SELECT COUNT(*) + 1
@@ -613,7 +748,7 @@ impl LeaderboardService {
             .bind(user_id)
             .fetch_one(&self.pool)
             .await?,
-            Some(_) => 0, // Not implemented yet
+            Some(_) => 0,
         };
 
         Ok(rank)

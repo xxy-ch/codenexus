@@ -48,7 +48,13 @@ pub async fn get_contest(
     let contest = service
         .get_contest(contest_id)
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|err| {
+            if err.to_string().contains("Contest not found") {
+                StatusCode::NOT_FOUND
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+        })?;
 
     Ok(Json(contest))
 }

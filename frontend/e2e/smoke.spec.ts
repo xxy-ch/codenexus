@@ -31,7 +31,7 @@ test.describe('delivery smoke', () => {
 
     await page.goto(`${baseURL}/search?q=two`)
     await expect(page).toHaveURL(/search/)
-    await expect(page.getByText(/Two Sum/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Two Sum', exact: true })).toBeVisible()
   })
 
   test('admin can open plagiarism reports and problem management', async ({ page }) => {

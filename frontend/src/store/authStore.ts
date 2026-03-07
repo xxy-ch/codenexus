@@ -2,8 +2,33 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { User, AuthResponse } from '@/types/auth'
 import { API_CONFIG } from '@/services/config'
+import { STORAGE_KEYS } from '@/services/config'
 
 const buildApiUrl = (path: string) => `${API_CONFIG.baseURL}${path}`
+
+function persistAuthSession(data: { token?: string | null; refreshToken?: string | null; user?: User | null }) {
+  if (data.token) {
+    localStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
+    localStorage.setItem('token', data.token)
+  }
+
+  if (data.refreshToken) {
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, data.refreshToken)
+    localStorage.setItem('refresh_token', data.refreshToken)
+  }
+
+  if (data.user) {
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user))
+  }
+}
+
+function clearPersistedAuthSession() {
+  localStorage.removeItem(STORAGE_KEYS.TOKEN)
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
+  localStorage.removeItem(STORAGE_KEYS.USER)
+  localStorage.removeItem('token')
+  localStorage.removeItem('refresh_token')
+}
 
 interface AuthState {
   user: User | null
@@ -49,6 +74,11 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const data: AuthResponse = await response.json()
+          persistAuthSession({
+            token: data.token,
+            refreshToken: data.refresh_token,
+            user: data.user,
+          })
           set({
             user: data.user,
             token: data.token,
@@ -79,6 +109,11 @@ export const useAuthStore = create<AuthState>()(
           }
 
           const authData: AuthResponse = await response.json()
+          persistAuthSession({
+            token: authData.token,
+            refreshToken: authData.refresh_token,
+            user: authData.user,
+          })
           set({
             user: authData.user,
             token: authData.token,
@@ -96,6 +131,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
+        clearPersistedAuthSession()
         set({
           user: null,
           token: null,
@@ -132,6 +168,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
           })
         } catch (error) {
+          clearPersistedAuthSession()
           set({
             user: null,
             token: null,

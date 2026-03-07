@@ -1,9 +1,8 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useProblem, useTestCases } from '@/hooks/useProblems'
+import { useProblem } from '@/hooks/useProblems'
 import { Loading } from '@/components/ui/Loading'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
-import { problemsService, mockProblems } from '@/services/problems'
 
 const difficultyConfig = {
   easy: {
@@ -29,16 +28,7 @@ const difficultyConfig = {
 export function ProblemDetail() {
   const { problemId } = useParams<{ problemId: string }>()
   const navigate = useNavigate()
-
-  // 使用mock数据
-  const problem = mockProblems.find((p) => p.id === problemId)
-
-  // TODO: 当后端API准备好时，启用这个查询
-  // const { data: problem, isLoading, error } = useProblem(problemId!)
-  // const { data: testCases } = useTestCases(problemId!)
-
-  const isLoading = false
-  const error = !problem ? 'Problem not found' : null
+  const { data: problem, isLoading, error } = useProblem(problemId ?? '')
 
   const handleSolve = () => {
     navigate(`/problems/${problemId}/solve`)
@@ -58,10 +48,10 @@ export function ProblemDetail() {
           Problem Not Found
         </h3>
         <p className="text-slate-600 dark:text-slate-400 mb-4">
-          The problem you're looking for doesn't exist.
+          无法加载题目详情，请稍后重试。
         </p>
         <Link to="/problems">
-          <Button variant="primary">Back to Problems</Button>
+          <Button variant="primary">返回题库</Button>
         </Link>
       </div>
     )

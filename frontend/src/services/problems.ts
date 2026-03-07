@@ -74,16 +74,36 @@ export const problemsService = {
    * 获取单个题目详情
    */
   async getProblem(problemId: string): Promise<Problem> {
-    const response = await api.get<Problem>(`/problems/${problemId}`)
-    return response.data
+    const response = await api.get(`/problems/${problemId}`)
+    const problem = response.data
+
+    return {
+      id: String(problem?.id ?? problemId),
+      title: String(problem?.title ?? ''),
+      description: String(problem?.description ?? ''),
+      difficulty: (problem?.difficulty ?? 'easy') as Problem['difficulty'],
+      tags: Array.isArray(problem?.tags) ? problem.tags : [],
+      time_limit: Number(problem?.time_limit ?? 1000),
+      memory_limit: Number(problem?.memory_limit ?? 262144),
+      points: Number(problem?.points ?? 0),
+      created_at: String(problem?.created_at ?? ''),
+      updated_at: String(problem?.updated_at ?? problem?.created_at ?? ''),
+    }
   },
 
   /**
    * 获取题目的测试用例
    */
   async getTestCases(problemId: string): Promise<TestCase[]> {
-    const response = await api.get<TestCase[]>(`/problems/${problemId}/testcases`)
-    return response.data
+    const response = await api.get<any[]>(`/problems/${problemId}/test-cases`)
+    return (Array.isArray(response.data) ? response.data : []).map((testCase, index) => ({
+      id: String(testCase?.id ?? index + 1),
+      problem_id: String(testCase?.problem_id ?? problemId),
+      input: String(testCase?.input ?? ''),
+      expected_output: String(testCase?.expected_output ?? ''),
+      is_hidden: Boolean(testCase?.is_hidden),
+      order: Number(testCase?.order ?? index),
+    }))
   },
 
   /**

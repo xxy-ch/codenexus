@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { AlertCircle, ChevronRight, Loader2, Play, Save, Shield, SlidersHorizontal } from 'lucide-react'
 import { plagiarismService, type SimilarityScanConfig } from '@/services/plagiarism'
 import { Loading } from '@/components/ui/Loading'
 
@@ -15,6 +16,7 @@ export function SimilarityScanConfig() {
   })
 
   const effectiveForm = useMemo(() => form ?? data ?? null, [form, data])
+
   const patchForm = (updater: (current: SimilarityScanConfig) => SimilarityScanConfig) => {
     if (!effectiveForm) return
     setForm(updater(effectiveForm))
@@ -38,7 +40,7 @@ export function SimilarityScanConfig() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[320px]">
+      <div className="flex min-h-[320px] items-center justify-center">
         <Loading message="加载扫描配置中..." />
       </div>
     )
@@ -46,9 +48,12 @@ export function SimilarityScanConfig() {
 
   if (error || !effectiveForm) {
     return (
-      <div className="text-center py-16">
-        <p className="text-slate-600 dark:text-slate-300 mb-4">扫描配置加载失败</p>
-        <button type="button" onClick={() => refetch()} className="px-4 py-2 rounded bg-primary text-white">
+      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-rose-600">
+          <AlertCircle className="h-5 w-5" />
+        </div>
+        <h2 className="mt-4 text-lg font-semibold text-slate-950">扫描配置加载失败</h2>
+        <button type="button" onClick={() => refetch()} className="mt-5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
           重试
         </button>
       </div>
@@ -56,146 +61,194 @@ export function SimilarityScanConfig() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">代码相似度扫描配置</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">设置阈值、扫描窗口、忽略策略，并触发新的扫描任务</p>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <label className="text-sm">
-          <span className="text-slate-600 dark:text-slate-300">启用扫描</span>
-          <div className="mt-1">
-            <input
-              type="checkbox"
-              checked={effectiveForm.enabled}
-              onChange={(e) => patchForm((prev) => ({ ...prev, enabled: e.target.checked }))}
-            />
+    <div className="space-y-8">
+      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+        <div className="relative px-6 py-7 md:px-8">
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_58%,#eff6ff_100%)]" />
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <span>Admin</span>
+                <ChevronRight className="h-4 w-4" />
+                <span>Tools</span>
+                <ChevronRight className="h-4 w-4" />
+                <span className="font-medium text-slate-900">Code Similarity</span>
+              </div>
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">New Scan Configuration</h1>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  扫描配置页已按 reference 收拢。当前功能范围保持真实接口: 配置阈值、语言范围、忽略策略，并触发新的扫描任务。
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => saveMutation.mutate(effectiveForm)}
+                disabled={saveMutation.isPending}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
+              >
+                {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                Save Config
+              </button>
+              <button
+                type="button"
+                onClick={() => runMutation.mutate()}
+                disabled={runMutation.isPending || (!contestId && !assignmentId)}
+                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {runMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                Start Scan
+              </button>
+            </div>
           </div>
-        </label>
-
-        <label className="text-sm">
-          <span className="text-slate-600 dark:text-slate-300">语言范围</span>
-          <select
-            value={effectiveForm.language}
-            onChange={(e) =>
-              patchForm((prev) => ({ ...prev, language: e.target.value as SimilarityScanConfig['language'] }))
-            }
-            className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-          >
-            <option value="all">all</option>
-            <option value="cpp">cpp</option>
-            <option value="c">c</option>
-            <option value="java">java</option>
-            <option value="python">python</option>
-          </select>
-        </label>
-
-        <label className="text-sm">
-          <span className="text-slate-600 dark:text-slate-300">相似度阈值（0-1）</span>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            max="1"
-            value={effectiveForm.threshold}
-            onChange={(e) => patchForm((prev) => ({ ...prev, threshold: Number(e.target.value) }))}
-            className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-          />
-        </label>
-
-        <label className="text-sm">
-          <span className="text-slate-600 dark:text-slate-300">最小 token 长度</span>
-          <input
-            type="number"
-            min="1"
-            value={effectiveForm.min_token_length}
-            onChange={(e) => patchForm((prev) => ({ ...prev, min_token_length: Number(e.target.value) }))}
-            className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-          />
-        </label>
-
-        <label className="text-sm">
-          <span className="text-slate-600 dark:text-slate-300">窗口大小</span>
-          <input
-            type="number"
-            min="1"
-            value={effectiveForm.window_size}
-            onChange={(e) => patchForm((prev) => ({ ...prev, window_size: Number(e.target.value) }))}
-            className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-          />
-        </label>
-
-        <label className="text-sm">
-          <span className="text-slate-600 dark:text-slate-300">单次最多报告数</span>
-          <input
-            type="number"
-            min="1"
-            value={effectiveForm.max_reports_per_run}
-            onChange={(e) => patchForm((prev) => ({ ...prev, max_reports_per_run: Number(e.target.value) }))}
-            className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-          />
-        </label>
-
-        <label className="text-sm flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={effectiveForm.ignore_comments}
-            onChange={(e) => patchForm((prev) => ({ ...prev, ignore_comments: e.target.checked }))}
-          />
-          <span className="text-slate-600 dark:text-slate-300">忽略注释</span>
-        </label>
-
-        <label className="text-sm flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={effectiveForm.ignore_whitespace}
-            onChange={(e) => patchForm((prev) => ({ ...prev, ignore_whitespace: e.target.checked }))}
-          />
-          <span className="text-slate-600 dark:text-slate-300">忽略空白</span>
-        </label>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 space-y-4">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-white">手动触发扫描</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="text-sm">
-            <span className="text-slate-600 dark:text-slate-300">竞赛 ID（可选）</span>
-            <input
-              value={contestId}
-              onChange={(e) => setContestId(e.target.value.trim())}
-              className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-            />
-          </label>
-          <label className="text-sm">
-            <span className="text-slate-600 dark:text-slate-300">作业 ID（可选）</span>
-            <input
-              value={assignmentId}
-              onChange={(e) => setAssignmentId(e.target.value.trim())}
-              className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-            />
-          </label>
         </div>
-      </div>
+      </section>
 
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => saveMutation.mutate(effectiveForm)}
-          disabled={saveMutation.isPending}
-          className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50"
-        >
-          {saveMutation.isPending ? '保存中...' : '保存配置'}
-        </button>
-        <button
-          type="button"
-          onClick={() => runMutation.mutate()}
-          disabled={runMutation.isPending || (!contestId && !assignmentId)}
-          className="px-4 py-2 rounded border border-slate-300 dark:border-slate-700 disabled:opacity-50"
-        >
-          {runMutation.isPending ? '提交中...' : '触发扫描'}
-        </button>
-        {message && <span className="text-sm text-slate-600 dark:text-slate-300">{message}</span>}
+      <section className="rounded-[28px] border border-blue-200 bg-blue-50 px-5 py-4 text-sm leading-6 text-blue-900">
+        当前系统使用真实相似度接口，未再保留 mock fallback。只有 contest / assignment 级别的扫描入口，尚未扩展更复杂批处理策略。
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_360px]">
+        <section className="space-y-6">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2 text-lg font-semibold text-slate-950">
+              <Shield className="h-5 w-5 text-blue-600" />
+              Detection Settings
+            </div>
+            <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
+              <label className="text-sm">
+                <span className="text-slate-600">Enabled</span>
+                <div className="mt-2 rounded-2xl border border-slate-200 px-4 py-3">
+                  <label className="flex items-center gap-3 text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={effectiveForm.enabled}
+                      onChange={(e) => patchForm((prev) => ({ ...prev, enabled: e.target.checked }))}
+                    />
+                    启用扫描
+                  </label>
+                </div>
+              </label>
+              <label className="text-sm">
+                <span className="text-slate-600">Language</span>
+                <select
+                  value={effectiveForm.language}
+                  onChange={(e) => patchForm((prev) => ({ ...prev, language: e.target.value as SimilarityScanConfig['language'] }))}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                >
+                  <option value="all">all</option>
+                  <option value="cpp">cpp</option>
+                  <option value="c">c</option>
+                  <option value="java">java</option>
+                  <option value="python">python</option>
+                </select>
+              </label>
+              <label className="text-sm">
+                <span className="text-slate-600">Similarity Threshold</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="1"
+                  value={effectiveForm.threshold}
+                  onChange={(e) => patchForm((prev) => ({ ...prev, threshold: Number(e.target.value) }))}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+              <label className="text-sm">
+                <span className="text-slate-600">Min Token Length</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={effectiveForm.min_token_length}
+                  onChange={(e) => patchForm((prev) => ({ ...prev, min_token_length: Number(e.target.value) }))}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+              <label className="text-sm">
+                <span className="text-slate-600">Window Size</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={effectiveForm.window_size}
+                  onChange={(e) => patchForm((prev) => ({ ...prev, window_size: Number(e.target.value) }))}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+              <label className="text-sm">
+                <span className="text-slate-600">Max Reports Per Run</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={effectiveForm.max_reports_per_run}
+                  onChange={(e) => patchForm((prev) => ({ ...prev, max_reports_per_run: Number(e.target.value) }))}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={effectiveForm.ignore_comments}
+                  onChange={(e) => patchForm((prev) => ({ ...prev, ignore_comments: e.target.checked }))}
+                />
+                忽略注释
+              </label>
+              <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={effectiveForm.ignore_whitespace}
+                  onChange={(e) => patchForm((prev) => ({ ...prev, ignore_whitespace: e.target.checked }))}
+                />
+                忽略空白
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <aside className="space-y-6">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+              <SlidersHorizontal className="h-4 w-4 text-violet-600" />
+              Run Scan
+            </div>
+            <div className="mt-4 space-y-4">
+              <label className="block text-sm">
+                <span className="text-slate-600">Contest ID</span>
+                <input
+                  value={contestId}
+                  onChange={(e) => setContestId(e.target.value.trim())}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+              <label className="block text-sm">
+                <span className="text-slate-600">Assignment ID</span>
+                <input
+                  value={assignmentId}
+                  onChange={(e) => setAssignmentId(e.target.value.trim())}
+                  className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                />
+              </label>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-slate-900 p-6 text-white shadow-sm">
+            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">Current Signal</div>
+            <div className="mt-4 text-2xl font-semibold">{Math.round(effectiveForm.threshold * 100)}%</div>
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              当前阈值下，超过该相似度的提交对会进入报告列表等待人工复核。
+            </p>
+          </div>
+
+          {message && (
+            <div className="rounded-[28px] border border-slate-200 bg-white p-5 text-sm text-slate-700 shadow-sm">
+              {message}
+            </div>
+          )}
+        </aside>
       </div>
     </div>
   )

@@ -26,6 +26,7 @@ describe('classesService mapping', () => {
               id: 1,
               name: 'Class A',
               description: 'desc',
+              semester: '2026 Spring',
               teacher_id: 't1',
               code: 'ABC123',
               created_at: '2026-03-06T00:00:00Z',
@@ -44,6 +45,7 @@ describe('classesService mapping', () => {
     expect(mockApi.get).toHaveBeenNthCalledWith(2, '/classes/1/stats')
     expect(res.classes[0]).toMatchObject({
       id: 1,
+      semester: '2026 Spring',
       enrollment_code: 'ABC123',
       student_count: 42,
     })

@@ -36,9 +36,7 @@ import { ClassManagement } from './pages/teacher/ClassManagement'
 import { AssignmentReport } from './pages/teacher/AssignmentReport'
 import { ContestWizard } from './pages/teacher/ContestWizard'
 import { AdminDashboard } from './pages/admin/AdminDashboard'
-import { UserManagement } from './pages/admin/UserManagement'
 import { ProblemManagement } from './pages/admin/ProblemManagement'
-import { ReportManagement } from './pages/admin/ReportManagement'
 import { JudgeSettings } from './pages/admin/JudgeSettings'
 import { ProblemContentConfig } from './pages/admin/ProblemContentConfig'
 import { SimilarityScanConfig } from './pages/admin/SimilarityScanConfig'
@@ -130,7 +128,6 @@ function App() {
             }
           >
             <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<UserManagement />} />
             <Route path="problems" element={<ProblemManagement />} />
             <Route path="judge-settings" element={<JudgeSettings />} />
             <Route path="problem-content" element={<ProblemContentConfig />} />
@@ -143,7 +140,6 @@ function App() {
             {FEATURE_FLAGS.plagiarism && (
               <Route path="plagiarism-reports/:reportId" element={<PlagiarismReportDetail />} />
             )}
-            <Route path="reports" element={<ReportManagement />} />
           </Route>
 
           {/* Error Routes */}

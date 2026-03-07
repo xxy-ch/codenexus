@@ -1,252 +1,165 @@
-import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { adminService } from '@/services/admin'
+import {
+  Activity,
+  ArrowRight,
+  BookCopy,
+  ChevronRight,
+  FileSearch,
+  LayoutGrid,
+  ShieldAlert,
+  SlidersHorizontal,
+  Sparkles,
+} from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
-import { Loading } from '@/components/ui/Loading'
-import { cn } from '@/lib/utils'
 import { FEATURE_FLAGS } from '@/services/config'
 
 export function AdminDashboard() {
   const { user } = useAuthStore()
 
-  // 管理员权限检查
   if (user?.role !== 'admin') {
     return (
-      <div className="text-center py-12">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">lock</span>
-        <h2 className="text-xl font-bold mb-2">访问被拒绝</h2>
-        <p className="text-slate-600">您没有管理员权限</p>
+      <div className="py-16 text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-500">
+          <ShieldAlert className="h-7 w-7" />
+        </div>
+        <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">访问被拒绝</h2>
+        <p className="mt-2 text-slate-600 dark:text-slate-400">当前账号不具备管理员权限。</p>
       </div>
     )
   }
 
-  const { data: stats, isLoading, error } = useQuery({
-    queryKey: ['adminStats'],
-    queryFn: () => adminService.getStats(),
-  })
-
-  const { data: systemHealth } = useQuery({
-    queryKey: ['systemHealth'],
-    queryFn: () => adminService.getSystemHealth(),
-    refetchInterval: 30000, // 每30秒刷新
-  })
-
-  if (isLoading) return <Loading message="加载中..." />
-  if (error || !stats) return <div className="text-center py-12">加载失败</div>
-
-  const healthConfig = {
-    healthy: { label: '正常', color: 'text-green-500', bg: 'bg-green-100', icon: 'check_circle' },
-    warning: { label: '警告', color: 'text-yellow-500', bg: 'bg-yellow-100', icon: 'warning' },
-    error: { label: '错误', color: 'text-red-500', bg: 'bg-red-100', icon: 'error' },
-  }[stats.system_health]
+  const modules = [
+    {
+      title: '题目管理',
+      description: '查看题库状态、通过率和当前交付范围内的发布视图。',
+      href: '/admin/problems',
+      icon: BookCopy,
+      tone: 'bg-blue-50 text-blue-700 border-blue-200',
+    },
+    {
+      title: '判题设置',
+      description: '维护测试数据、时间空间限制与评测参数。',
+      href: '/admin/judge-settings',
+      icon: SlidersHorizontal,
+      tone: 'bg-amber-50 text-amber-700 border-amber-200',
+    },
+    {
+      title: '题面配置',
+      description: '集中编辑题面内容、约束、可见性与说明。',
+      href: '/admin/problem-content',
+      icon: LayoutGrid,
+      tone: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    },
+    ...(FEATURE_FLAGS.plagiarism
+      ? [
+          {
+            title: '相似度配置',
+            description: '调整扫描阈值并发起新的代码相似度任务。',
+            href: '/admin/similarity-scan',
+            icon: Activity,
+            tone: 'bg-violet-50 text-violet-700 border-violet-200',
+          },
+          {
+            title: '抄袭报告',
+            description: '查看真实扫描报告、可疑对照和风险详情。',
+            href: '/admin/plagiarism-reports',
+            icon: FileSearch,
+            tone: 'bg-rose-50 text-rose-700 border-rose-200',
+          },
+        ]
+      : []),
+  ]
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">管理员仪表板</h1>
-          <p className="text-sm text-slate-600">系统管理和监控</p>
-        </div>
-        <div className={cn('flex items-center gap-2 px-4 py-2 rounded-lg', healthConfig.bg)}>
-          <span className={cn('material-symbols-outlined', healthConfig.color)}>{healthConfig.icon}</span>
-          <span className={cn('text-sm font-medium', healthConfig.color)}>{healthConfig.label}</span>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="material-symbols-outlined text-2xl text-blue-500">people</span>
-            <Link to="/admin/users" className="text-xs text-primary hover:underline">查看详情</Link>
-          </div>
-          <p className="text-2xl font-bold">{stats.total_users}</p>
-          <p className="text-sm text-slate-600">总用户数</p>
-          <p className="text-xs text-green-500 mt-1">+{stats.active_users_today} 今日活跃</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl border p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="material-symbols-outlined text-2xl text-green-500">code</span>
-            <Link to="/admin/problems" className="text-xs text-primary hover:underline">查看详情</Link>
-          </div>
-          <p className="text-2xl font-bold">{stats.total_problems}</p>
-          <p className="text-sm text-slate-600">题目总数</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl border p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="material-symbols-outlined text-2xl text-purple-500">upload</span>
-            <Link to="/admin/submissions" className="text-xs text-primary hover:underline">查看详情</Link>
-          </div>
-          <p className="text-2xl font-bold">{stats.total_submissions}</p>
-          <p className="text-sm text-slate-600">总提交数</p>
-          <p className="text-xs text-blue-500 mt-1">+{stats.submissions_today} 今日</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl border p-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="material-symbols-outlined text-2xl text-orange-500">emoji_events</span>
-            <Link to="/admin/contests" className="text-xs text-primary hover:underline">查看详情</Link>
-          </div>
-          <p className="text-2xl font-bold">{stats.total_contests}</p>
-          <p className="text-sm text-slate-600">竞赛总数</p>
-          {stats.pending_reports > 0 && (
-            <p className="text-xs text-red-500 mt-1">{stats.pending_reports} 待处理</p>
-          )}
-        </div>
-      </div>
-
-      {/* System Health */}
-      {systemHealth && (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border p-6">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined">monitor_heart</span>
-            系统健康状态
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div>
-              <p className="text-xs text-slate-500 mb-1">CPU使用率</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className={cn('h-full rounded-full', systemHealth.cpu_usage > 80 ? 'bg-red-500' : systemHealth.cpu_usage > 60 ? 'bg-yellow-500' : 'bg-green-500')}
-                    style={{ width: `${systemHealth.cpu_usage}%` }}
-                  />
-                </div>
-                <span className="text-sm font-medium">{systemHealth.cpu_usage}%</span>
+    <div className="space-y-8">
+      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+        <div className="relative px-6 py-7 md:px-8">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(37,99,235,0.12),_transparent_38%),linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#eff6ff_100%)]" />
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <span>Admin</span>
+                <ChevronRight className="h-4 w-4" />
+                <span className="font-medium text-slate-900">Overview</span>
               </div>
-            </div>
-
-            <div>
-              <p className="text-xs text-slate-500 mb-1">内存使用率</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className={cn('h-full rounded-full', systemHealth.memory_usage > 80 ? 'bg-red-500' : systemHealth.memory_usage > 60 ? 'bg-yellow-500' : 'bg-green-500')}
-                    style={{ width: `${systemHealth.memory_usage}%` }}
-                  />
-                </div>
-                <span className="text-sm font-medium">{systemHealth.memory_usage}%</span>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-xs text-slate-500 mb-1">磁盘使用率</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
-                  <div
-                    className={cn('h-full rounded-full', systemHealth.disk_usage > 80 ? 'bg-red-500' : systemHealth.disk_usage > 60 ? 'bg-yellow-500' : 'bg-green-500')}
-                    style={{ width: `${systemHealth.disk_usage}%` }}
-                  />
-                </div>
-                <span className="text-sm font-medium">{systemHealth.disk_usage}%</span>
-              </div>
-            </div>
-
-            <div className="text-center">
-              <p className="text-xs text-slate-500 mb-1">活跃判题机</p>
-              <p className="text-2xl font-bold text-green-500">{systemHealth.active_judges}</p>
-            </div>
-
-            <div className="text-center">
-              <p className="text-xs text-slate-500 mb-1">队列长度</p>
-              <p className="text-2xl font-bold">{systemHealth.queue_length}</p>
-            </div>
-
-            <div className="text-center">
-              <p className="text-xs text-slate-500 mb-1">平均响应</p>
-              <p className="text-2xl font-bold">{systemHealth.avg_response_time}ms</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Actions */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${FEATURE_FLAGS.plagiarism ? 'lg:grid-cols-5' : 'lg:grid-cols-3'} gap-4`}>
-        <Link to="/admin/users" className="bg-white dark:bg-slate-900 rounded-xl border p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-3xl text-blue-500">manage_accounts</span>
-            <div>
-              <h3 className="font-semibold">用户管理</h3>
-              <p className="text-sm text-slate-600">管理用户和权限</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/admin/problems" className="bg-white dark:bg-slate-900 rounded-xl border p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-3xl text-green-500">library_books</span>
-            <div>
-              <h3 className="font-semibold">题目管理</h3>
-              <p className="text-sm text-slate-600">创建和编辑题目</p>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/admin/reports" className="bg-white dark:bg-slate-900 rounded-xl border p-6 hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-4">
-            <span className="material-symbols-outlined text-3xl text-orange-500">flag</span>
-            <div>
-              <h3 className="font-semibold">举报管理</h3>
-              <p className="text-sm text-slate-600">{stats.pending_reports} 待处理</p>
-            </div>
-          </div>
-        </Link>
-
-        {FEATURE_FLAGS.plagiarism && (
-          <Link to="/admin/similarity-scan" className="bg-white dark:bg-slate-900 rounded-xl border p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-              <span className="material-symbols-outlined text-3xl text-indigo-500">tune</span>
               <div>
-                <h3 className="font-semibold">相似度配置</h3>
-                <p className="text-sm text-slate-600">调整扫描阈值与策略</p>
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">System Overview</h1>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                  管理端当前只暴露已接入真实后端的能力。页面结构按 reference 收拢，但所有入口仍受真实接口边界约束。
+                </p>
               </div>
             </div>
-          </Link>
-        )}
 
-        {FEATURE_FLAGS.plagiarism && (
-          <Link to="/admin/plagiarism-reports" className="bg-white dark:bg-slate-900 rounded-xl border p-6 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-4">
-              <span className="material-symbols-outlined text-3xl text-red-500">find_in_page</span>
-              <div>
-                <h3 className="font-semibold">抄袭报告</h3>
-                <p className="text-sm text-slate-600">查看可疑提交对与风险</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur">
+                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Live Modules</div>
+                <div className="mt-3 text-3xl font-semibold text-slate-950">{modules.length}</div>
+                <div className="mt-1 text-sm text-slate-600">已接入真实后端的管理模块</div>
               </div>
-            </div>
-          </Link>
-        )}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border p-6">
-        <h3 className="font-semibold mb-4">最近活动</h3>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-            <span className="material-symbols-outlined text-blue-500">person_add</span>
-            <div className="flex-1">
-              <p className="text-sm font-medium">新用户注册</p>
-              <p className="text-xs text-slate-500">2分钟前</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-            <span className="material-symbols-outlined text-green-500">check_circle</span>
-            <div className="flex-1">
-              <p className="text-sm font-medium">题目审核通过</p>
-              <p className="text-xs text-slate-500">15分钟前</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-            <span className="material-symbols-outlined text-purple-500">emoji_events</span>
-            <div className="flex-1">
-              <p className="text-sm font-medium">新竞赛创建</p>
-              <p className="text-xs text-slate-500">1小时前</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-950 p-4 text-white shadow-sm">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
+                  <Sparkles className="h-4 w-4" />
+                  Delivery Mode
+                </div>
+                <div className="mt-3 text-2xl font-semibold">Controlled Surface</div>
+                <div className="mt-1 text-sm text-slate-300">无后端支撑的入口已从本次交付面移除</div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Problem View</div>
+          <div className="mt-4 text-3xl font-semibold text-slate-950">Read-only</div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">题目管理已收敛为安全的只读运营视图。</p>
+        </div>
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Plagiarism</div>
+          <div className="mt-4 text-3xl font-semibold text-slate-950">{FEATURE_FLAGS.plagiarism ? 'Enabled' : 'Disabled'}</div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">相似度扫描和报告页都已经接入真实接口。</p>
+        </div>
+        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Unsupported</div>
+          <div className="mt-4 text-3xl font-semibold text-slate-950">2</div>
+          <p className="mt-2 text-sm leading-6 text-slate-600">用户管理和举报管理已从主入口移除。</p>
+        </div>
+        <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-5 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Runtime Policy</div>
+          <div className="mt-4 text-3xl font-semibold text-slate-950">Real API</div>
+          <p className="mt-2 text-sm leading-6 text-blue-900">不再为管理端页面提供用户可见的 mock fallback。</p>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900">
+        当前后台不是全功能运营平台，而是这次交付范围内的受控后台。不存在真实后端的模块不会继续以假入口形式暴露。
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {modules.map((module) => {
+          const Icon = module.icon
+          return (
+            <Link
+              key={module.href}
+              to={module.href}
+              className="group rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className={`inline-flex rounded-2xl border px-3 py-3 ${module.tone}`}>
+                <Icon className="h-5 w-5" />
+              </div>
+              <div className="mt-5">
+                <h2 className="text-lg font-semibold text-slate-950">{module.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{module.description}</p>
+              </div>
+              <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-slate-900 transition group-hover:text-blue-700">
+                Open module
+                <ArrowRight className="h-4 w-4" />
+              </div>
+            </Link>
+          )
+        })}
+      </section>
     </div>
   )
 }

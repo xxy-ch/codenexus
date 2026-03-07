@@ -8,7 +8,7 @@ interface SearchBarProps {
   className?: string
 }
 
-export function SearchBar({ placeholder = 'Search discussions, articles...', className = '' }: SearchBarProps) {
+export function SearchBar({ placeholder = 'Search problems and discussions...', className = '' }: SearchBarProps) {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
@@ -82,7 +82,7 @@ export function SearchBar({ placeholder = 'Search discussions, articles...', cla
     if (suggestion.type === 'tag') {
       navigate(`/search?q=${encodeURIComponent(suggestion.text)}&type=all`)
     } else if (suggestion.type === 'category') {
-      navigate(`/search?q=&category=${encodeURIComponent(suggestion.text)}&type=article`)
+      navigate(`/search?q=${encodeURIComponent(suggestion.text)}&type=discussion`)
     }
     setShowSuggestions(false)
   }
@@ -167,7 +167,7 @@ export function SearchBar({ placeholder = 'Search discussions, articles...', cla
             <div className="px-4 py-3 text-sm text-text-muted">No suggestions found</div>
           ) : (
             <div className="px-4 py-3 text-sm text-text-muted">
-              Type to search discussions and articles...
+              Type to search problems and discussions...
             </div>
           )}
 
@@ -189,22 +189,22 @@ export function SearchBar({ placeholder = 'Search discussions, articles...', cla
                 <button
                   type="button"
                   onClick={() => {
+                    navigate(`/search?q=${encodeURIComponent(query)}&type=problem`)
+                    setShowSuggestions(false)
+                  }}
+                  className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                >
+                  Problems
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     navigate(`/search?q=${encodeURIComponent(query)}&type=discussion`)
                     setShowSuggestions(false)
                   }}
                   className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
                   Discussions
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate(`/search?q=${encodeURIComponent(query)}&type=article`)
-                    setShowSuggestions(false)
-                  }}
-                  className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  Articles
                 </button>
               </div>
             </div>

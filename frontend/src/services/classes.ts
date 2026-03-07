@@ -4,6 +4,7 @@ export interface ClassItem {
   id: number
   name: string
   description?: string
+  semester?: string
   teacher_id: string
   enrollment_code?: string
   student_count?: number
@@ -21,6 +22,7 @@ interface BackendClassItem {
   id: number
   name: string
   description?: string
+  semester?: string
   teacher_id: string
   code?: string
   created_at: string
@@ -58,6 +60,7 @@ export const classesService = {
         id: cls.id,
         name: cls.name,
         description: cls.description,
+        semester: cls.semester,
         teacher_id: cls.teacher_id,
         enrollment_code: cls.code,
         student_count: studentCount,

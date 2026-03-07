@@ -28,22 +28,22 @@
 ## Teacher
 | Reference | Intended Route | Current Page | Data Source | Status | Gap |
 | --- | --- | --- | --- | --- | --- |
-| `teacher_class_management_1` | `/teacher/classes` or monitoring sub-view | `frontend/src/pages/teacher/ClassManagement.tsx` | class services | `missing` | No explicit judge-node monitoring style view exists. |
-| `teacher_class_management_2` | `/teacher/contest-wizard` | `frontend/src/pages/teacher/ContestWizard.tsx` | teacher contest services | `partial` | Wizard exists, but not yet reference-faithful. |
-| `teacher_class_management_3` | `/teacher/assignment-report` | `frontend/src/pages/teacher/AssignmentReport.tsx` | teacher report services | `partial` | Report exists, but card/table layout differs from reference. |
+| `teacher_class_management_1` | `/teacher/classes` or monitoring sub-view | `frontend/src/pages/teacher/ClassManagement.tsx` | class services | `partial` | Class hub now follows the reference shell more closely, but there is still no dedicated monitoring sub-view. |
+| `teacher_class_management_2` | `/teacher/contest-wizard` | `frontend/src/pages/teacher/ContestWizard.tsx` | teacher contest services | `partial` | Wizard now follows the multi-step reference structure with real create flow, but later steps still defer to post-create pages. |
+| `teacher_class_management_3` | `/teacher/assignment-report` | `frontend/src/pages/teacher/AssignmentReport.tsx` | teacher report services | `partial` | Report now uses reference-style summary cards and tables, but deeper assignment analytics are still limited by live schema. |
 | `teacher_class_management_4` | discussion/thread related | `frontend/src/pages/community/DiscussionDetail.tsx` | discussion services | `partial` | Similar domain coverage, but not formally mapped or visually aligned. |
 | `teacher_class_management_5` | `/roadmap` | `frontend/src/pages/user/LearningRoadmap.tsx` | roadmap data | `partial` | Functional roadmap exists, but not yet reference-faithful. |
-| `teacher_class_management_6` | `/teacher/classes` | `frontend/src/pages/teacher/ClassManagement.tsx` | class services | `partial` | Closest mapped page, but multiple teacher references are collapsed into one general page. |
+| `teacher_class_management_6` | `/teacher/classes` | `frontend/src/pages/teacher/ClassManagement.tsx` | class services | `partial` | Main class management view is now much closer to the reference, but multiple teacher references remain partially collapsed. |
 
 ## Admin
 | Reference | Intended Route | Current Page | Data Source | Status | Gap |
 | --- | --- | --- | --- | --- | --- |
-| `admin_dashboard_overview` | `/admin` | `frontend/src/pages/admin/AdminDashboard.tsx` | admin services | `partial` | Admin overview exists, but template hierarchy and summary tiles need alignment. |
+| `admin_dashboard_overview` | `/admin` | `frontend/src/pages/admin/AdminDashboard.tsx` | admin services | `partial` | Overview shell and summary tiles now follow the reference more closely, but unsupported admin domains are still intentionally removed. |
 | `admin_user_management` | `/admin/users` | `frontend/src/pages/admin/UserManagement.tsx` | user admin services | `partial` | Functional table exists, but not yet converted into the reference layout. |
-| `admin_problem_management` | `/admin/problems` | `frontend/src/pages/admin/ProblemManagement.tsx` | problem admin services | `partial` | Functional page exists, but visual hierarchy and controls differ. |
-| `problem_content_configuration` | `/admin/problem-content` | `frontend/src/pages/admin/ProblemContentConfig.tsx` | admin content services | `partial` | Dynamic page exists, but reference-level editing shell needs work. |
-| `test_data_&_judge_settings` | `/admin/judge-settings` | `frontend/src/pages/admin/JudgeSettings.tsx` | judge settings services | `partial` | Settings exist, but template conversion is incomplete. |
-| `code_similarity_scan_config` | `/admin/similarity-scan` | `frontend/src/pages/admin/SimilarityScanConfig.tsx` | plagiarism service | `partial` | Dynamic config exists, but still needs full reference styling conversion. |
+| `admin_problem_management` | `/admin/problems` | `frontend/src/pages/admin/ProblemManagement.tsx` | problem admin services | `partial` | Layout is now much closer to the reference, but the delivered scope remains read-only because real admin CRUD endpoints are still absent. |
+| `problem_content_configuration` | `/admin/problem-content` | `frontend/src/pages/admin/ProblemContentConfig.tsx` | admin content services | `partial` | Editing shell now follows the reference much more closely, but only the live backend-supported problem fields are exposed. |
+| `test_data_&_judge_settings` | `/admin/judge-settings` | `frontend/src/pages/admin/JudgeSettings.tsx` | judge settings services | `partial` | Test-data shell now follows the reference structure, but advanced judge runtime options remain intentionally out of scope. |
+| `code_similarity_scan_config` | `/admin/similarity-scan` | `frontend/src/pages/admin/SimilarityScanConfig.tsx` | plagiarism service | `partial` | Config page now matches the reference hierarchy more closely, but scan scope still stops at current real API parameters. |
 
 ## Plagiarism Reports
 | Reference | Intended Route | Current Page | Data Source | Status | Gap |

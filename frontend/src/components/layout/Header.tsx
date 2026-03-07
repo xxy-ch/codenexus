@@ -19,7 +19,7 @@ export function Header({ title, showSearch = true, actions }: HeaderProps) {
         )}
         {showSearch && (
           <div className="w-full max-w-md hidden sm:block">
-            <SearchBar placeholder="Search problems, users, discussions..." />
+            <SearchBar placeholder="Search problems and discussions..." />
           </div>
         )}
       </div>

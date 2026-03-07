@@ -65,8 +65,6 @@ export function DashboardEnhanced() {
   const submissionActivities = (recentActivity ?? []).filter(
     (activity) => activity.type === 'submission'
   )
-  const solvedThisWeek = weeklyActivity.reduce((sum, item) => sum + item['通过'], 0)
-  const totalWeeklySubmissions = weeklyActivity.reduce((sum, item) => sum + item['提交'], 0)
 
   const weeklyActivity = Array.from({ length: 7 }).map((_, index) => {
     const date = new Date()
@@ -86,6 +84,8 @@ export function DashboardEnhanced() {
       通过: acceptedCount,
     }
   })
+  const solvedThisWeek = weeklyActivity.reduce((sum, item) => sum + item['通过'], 0)
+  const totalWeeklySubmissions = weeklyActivity.reduce((sum, item) => sum + item['提交'], 0)
 
   // 难度分布数据
   const difficultyDistribution = [

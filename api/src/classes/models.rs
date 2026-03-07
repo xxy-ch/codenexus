@@ -11,9 +11,10 @@ pub struct Class {
     pub name: String,
     pub description: Option<String>,
     pub teacher_id: Uuid,
-    pub code: String, // Unique enrollment code
+    pub code: Option<String>, // Enrollment code is not available in the current schema
     pub is_active: bool,
     pub max_students: Option<i32>,
+    pub semester: Option<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -23,16 +24,14 @@ pub struct CreateClassRequest {
     pub organization_id: i64,
     pub campus_id: Option<i64>,
     pub name: String,
-    pub description: Option<String>,
-    pub max_students: Option<i32>,
+    pub semester: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateClassRequest {
     pub name: Option<String>,
-    pub description: Option<String>,
-    pub is_active: Option<bool>,
-    pub max_students: Option<i32>,
+    pub campus_id: Option<i64>,
+    pub semester: Option<String>,
 }
 
 /// Student enrollment in class
@@ -41,10 +40,8 @@ pub struct ClassEnrollment {
     pub id: i64,
     pub class_id: i64,
     pub student_id: Uuid,
-    pub teacher_id: Uuid,
     pub status: String, // "active", "dropped", "completed"
     pub enrolled_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -57,36 +54,25 @@ pub struct AddStudentRequest {
 pub struct Assignment {
     pub id: i64,
     pub class_id: i64,
-    pub title: String,
-    pub description: Option<String>,
-    pub problem_ids: Vec<i64>, // Vector of problem IDs (stored as JSONB)
+    pub problem_id: i64,
     pub deadline: DateTime<Utc>,
-    pub late_penalty_percent: i32, // Penalty per day late
-    pub max_submissions: Option<i32>,
-    pub is_published: bool,
+    pub points: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CreateAssignmentRequest {
-    pub title: String,
-    pub description: Option<String>,
-    pub problem_ids: Vec<i64>,
+    pub problem_id: i64,
     pub deadline: DateTime<Utc>,
-    pub late_penalty_percent: i32,
-    pub max_submissions: Option<i32>,
+    pub points: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct UpdateAssignmentRequest {
-    pub title: Option<String>,
-    pub description: Option<String>,
-    pub problem_ids: Option<Vec<i64>>,
+    pub problem_id: Option<i64>,
     pub deadline: Option<DateTime<Utc>>,
-    pub late_penalty_percent: Option<i32>,
-    pub max_submissions: Option<i32>,
-    pub is_published: Option<bool>,
+    pub points: Option<i32>,
 }
 
 /// Assignment submission
@@ -149,7 +135,9 @@ pub struct ClassesListResponse {
 /// Request to enroll with code
 #[derive(Debug, Deserialize)]
 pub struct EnrollWithCodeRequest {
-    pub code: String,
+    pub code: Option<String>,
+    #[serde(default)]
+    pub enrollment_code: Option<String>,
 }
 
 /// Request to batch import students
