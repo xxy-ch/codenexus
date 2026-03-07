@@ -52,10 +52,8 @@ export const USE_MOCK_DATA = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
 // Feature toggles for backend-dependent modules.
 // Default: enabled for release completeness; allow explicit disable via env=false.
 export const FEATURE_FLAGS = {
-  directMessages:
-    import.meta.env.VITE_ENABLE_DIRECT_MESSAGES !== 'false' || USE_MOCK_DATA,
-  plagiarism:
-    import.meta.env.VITE_ENABLE_PLAGIARISM !== 'false' || USE_MOCK_DATA,
+  directMessages: import.meta.env.VITE_ENABLE_DIRECT_MESSAGES !== 'false',
+  plagiarism: import.meta.env.VITE_ENABLE_PLAGIARISM !== 'false',
 } as const
 
 

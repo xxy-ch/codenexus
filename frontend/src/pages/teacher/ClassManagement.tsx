@@ -129,6 +129,22 @@ export function ClassManagement() {
         </div>
       </div>
 
+      <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-700">Delivery Boundary</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
+              当前教师端已交付班级读取、规模统计和 roster 展示。邀请码入班、作业发布、作业提交记录等高级写路径因现有
+              schema 缺少对应表和字段，仍维持受控降级，不应作为可用能力验收。
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-amber-700 shadow-sm">/classes/enroll = 501</span>
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-amber-700 shadow-sm">/assignments/:id/publish = 501</span>
+          </div>
+        </div>
+      </div>
+
       <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
         <div className="border-b border-slate-200 dark:border-slate-800">
           <nav className="-mb-px flex">

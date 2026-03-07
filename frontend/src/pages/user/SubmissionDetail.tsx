@@ -251,6 +251,40 @@ export function SubmissionDetail() {
         </div>
       </div>
 
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Analysis Summary</p>
+              <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">判题分析摘要</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                当前详情页已收敛为 verdict、性能、测试点和源码四段式结构。这个摘要层把更新时间、语言和测试完成度拉到状态卡之前，更接近 reference 的分析入口。
+              </p>
+            </div>
+            <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              live submission
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Language</p>
+            <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{submission.language}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Updated</p>
+            <p className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">
+              {new Date(submission.updated_at).toLocaleString('zh-CN')}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Completion</p>
+            <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{passedTestCases}/{totalTestCases}</p>
+          </div>
+        </div>
+      </section>
+
       {/* Status Card */}
       <div className={cn(
         'rounded-xl border-2 p-6',
@@ -457,64 +491,74 @@ export function SubmissionDetail() {
         </div>
       )}
 
-      {/* Code Display */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-          <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white">提交代码</h3>
-            <p className="text-xs text-slate-500 mt-1">
-              语言: {submission.language} • {new Date(submission.created_at).toLocaleString('zh-CN')}
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.15fr)_360px]">
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-800/50">
+            <div>
+              <h3 className="font-semibold text-slate-900 dark:text-white">提交代码</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                语言: {submission.language} • {new Date(submission.created_at).toLocaleString('zh-CN')}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="small"
+              onClick={handleCopyCode}
+              className="min-w-[100px]"
+            >
+              <span className="material-symbols-outlined mr-2">
+                {copied ? 'check' : 'content_copy'}
+              </span>
+              {copied ? '已复制' : '复制代码'}
+            </Button>
+          </div>
+          <div className="p-6">
+            <pre className="overflow-x-auto rounded-lg bg-slate-50 p-4 font-mono text-sm dark:bg-slate-950">
+              <code>{submission.code}</code>
+            </pre>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Delivery Note</p>
+            <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">分析侧栏</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+              这里把提交元数据、操作者和题目标识提到代码面板右侧，保持和 reference 中“源码主区 + 侧栏摘要”的阅读顺序一致。
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="small"
-            onClick={handleCopyCode}
-            className="min-w-[100px]"
-          >
-            <span className="material-symbols-outlined mr-2">
-              {copied ? 'check' : 'content_copy'}
-            </span>
-            {copied ? '已复制' : '复制代码'}
-          </Button>
-        </div>
-        <div className="p-6">
-          <pre className="text-sm bg-slate-50 dark:bg-slate-900 p-4 rounded-lg overflow-x-auto font-mono">
-            <code>{submission.code}</code>
-          </pre>
-        </div>
-      </div>
 
-      {/* Submission Info */}
-      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-        <h3 className="font-semibold text-slate-900 dark:text-white mb-4">提交信息</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <span className="text-slate-600 dark:text-slate-400">提交时间:</span>
-            <span className="ml-2 text-slate-900 dark:text-white">
-              {new Date(submission.created_at).toLocaleString('zh-CN')}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-600 dark:text-slate-400">更新时间:</span>
-            <span className="ml-2 text-slate-900 dark:text-white">
-              {new Date(submission.updated_at).toLocaleString('zh-CN')}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-600 dark:text-slate-400">提交用户:</span>
-            <span className="ml-2 text-slate-900 dark:text-white">
-              {submission.username}
-            </span>
-          </div>
-          <div>
-            <span className="text-slate-600 dark:text-slate-400">题目ID:</span>
-            <span className="ml-2 text-slate-900 dark:text-white">
-              {submission.problem_id}
-            </span>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-800/50">
+            <h3 className="mb-4 font-semibold text-slate-900 dark:text-white">提交信息</h3>
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">提交时间</p>
+                <p className="mt-1 text-slate-900 dark:text-white">
+                  {new Date(submission.created_at).toLocaleString('zh-CN')}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">更新时间</p>
+                <p className="mt-1 text-slate-900 dark:text-white">
+                  {new Date(submission.updated_at).toLocaleString('zh-CN')}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">提交用户</p>
+                <p className="mt-1 text-slate-900 dark:text-white">{submission.username}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">题目 ID</p>
+                <p className="mt-1 text-slate-900 dark:text-white">{submission.problem_id}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">提交 ID</p>
+                <p className="mt-1 text-slate-900 dark:text-white">{submission.id}</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

@@ -26,12 +26,16 @@
 6. 部署前端静态资源。
 7. 执行发布后验证：
    - 登录成功
+   - `/leaderboard/global` 与 `/leaderboard/user/:id/stats` 返回 `200`
    - 题目列表/详情可访问
    - 提交状态能从 pending 走到终态
    - 讨论/博客创建与点赞可用
+   - `/blog` 与 `/blog/new` 可访问，编辑页不出现空白屏
    - 搜索返回真实题目/讨论结果
    - 私信会话列表与消息发送可用
    - 反作弊配置、触发扫描、报告查看可用
+   - 管理端用户列表、批量建号可用
+   - 管理端题目页为只读视图，不暴露不存在的 CRUD 动作
 8. 监控 30 分钟：
    - 5xx 错误率
    - 提交积压
@@ -63,6 +67,7 @@ npx vitest --run \
 # playwright smoke inventory
 npx playwright install chromium
 npx playwright test --list
+npx playwright test e2e/smoke.spec.ts
 ```
 
 ## 2.2 数据迁移顺序（本次涉及）
@@ -71,6 +76,8 @@ npx playwright test --list
 
 1. `api/migrations/017_create_direct_messages.sql`
 2. `api/migrations/018_create_plagiarism_scan.sql`
+3. `api/migrations/020_create_contest_participants.sql`
+4. `api/migrations/021_add_user_code_and_status.sql`
 
 若使用 `sqlx migrate`：
 
@@ -94,6 +101,37 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/online_judge \
 - 紧急降级：
   - `VITE_ENABLE_DIRECT_MESSAGES=false`
   - `VITE_ENABLE_PLAGIARISM=false`
+
+## 2.4 身份标识约束
+
+- 当前系统内部主键 `user_id` 为 `UUID`，用于：
+  - 数据库主外键
+  - JWT `sub`
+  - WebSocket/通知/消息/提交等内部关联
+- 不应将内部 `user_id` 直接改成业务编码字符串。
+- 如果需要引入类似 `240101070014` 的 12 位业务号，应采用：
+  - 外部业务号字段，例如 `user_code`
+  - 或受约束的 `username`
+  - 内部 `UUID` 继续保留为真实主键
+- 当前接口示例：
+  - `GET /leaderboard/user/11111111-1111-1111-1111-111111111111/stats`
+- 管理端批量建号约束：
+  - 输入业务号字段 `user_code`
+  - `user_code` 必须为 12 位纯数字，例如 `240101070014`
+  - 系统自动生成内部 `UUID`
+  - 推荐在后台录入格式中使用：`user_code,display_name,email,role`
+
+## 2.5 当前受控降级边界
+
+- `admin/problems`
+  - 当前交付口径为只读运营视图
+  - 不提供独立 `/admin/problems` 写接口，也不暴露伪 CRUD 控件
+- `teacher` 高级写路径
+  - `classes/enroll`、`assignments/:id/publish` 等当前 schema 不支持的动作维持 `501`
+  - 前端仅保留说明性入口，不应将其作为可用能力验收
+- 博客编辑器
+  - 当前采用稳定的 textarea + preview 实现
+  - 目标是避免运行态空白页，优先保证发布稳定性而非富文本框架复杂能力
 
 ## 3. 回滚条件
 
@@ -130,6 +168,7 @@ docker compose up -d api judge-worker frontend
 
 curl http://localhost:3000/health
 curl http://localhost:3000/status
+curl http://localhost:3000/leaderboard/global -H "Authorization: Bearer <token>"
 
 cd frontend
 npx playwright test

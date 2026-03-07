@@ -8,27 +8,27 @@
 ## User Experience
 | Reference | Intended Route | Current Page | Data Source | Status | Gap |
 | --- | --- | --- | --- | --- | --- |
-| `modular_homepage_dashboard_1` | `/dashboard` | `frontend/src/pages/user/DashboardEnhanced.tsx` | `usersService.getUserStats/getUserActivity/getRecommendedProblems` | `partial` | Functional dashboard exists, but card system, header composition, and panel layout are not reference-faithful. |
-| `modular_homepage_dashboard_2` | `/dashboard` | `frontend/src/pages/user/DashboardEnhanced.tsx` | same as above | `partial` | Second dashboard reference has not been explicitly merged into a final information architecture. |
-| `problem_repository` | `/problems` | `frontend/src/pages/user/ProblemSet.tsx` | `problemsService.getProblems` | `partial` | Dynamic list exists, but filter bar, overview cards, and repository-style chrome are simplified. |
-| `problem_solving_ide` | `/problems/:problemId/solve` | `frontend/src/pages/user/ProblemIDEEnhanced.tsx` | `problemsService.getProblemDetail/submitCode`, websocket updates | `partial` | Core IDE works, but shell, metadata strip, and result docking are not yet reference-faithful. |
+| `modular_homepage_dashboard_1` | `/dashboard` | `frontend/src/pages/user/DashboardEnhanced.tsx` | `usersService.getUserStats/getUserActivity/getRecommendedProblems` | `partial` | Dashboard now includes a stronger operations rail, progress snapshot, and smoke-covered summary blocks; remaining gap is finer reference choreography and denser secondary modules. |
+| `modular_homepage_dashboard_2` | `/dashboard` | `frontend/src/pages/user/DashboardEnhanced.tsx` | same as above | `partial` | Secondary dashboard reference is now partially merged via progress/weekly summary panels, but the full alternate information architecture is still not explicitly separated. |
+| `problem_repository` | `/problems` | `frontend/src/pages/user/ProblemSet.tsx` | `problemsService.getProblems` | `partial` | Problem repository now includes a repository-state summary rail and delivery note alongside the real catalog and smoke coverage; remaining gap is more sophisticated repo navigation and denser filtering chrome. |
+| `problem_solving_ide` | `/problems/:problemId/solve` | `frontend/src/pages/user/ProblemIDEEnhanced.tsx` | `problemsService.getProblem/submitCode`, websocket updates | `partial` | IDE runtime has been repaired and now exposes the summary rail, shell header, and live status strip under smoke coverage, but the page still stops short of a fully reference-faithful docked workflow. |
 | `submission_history` | `/submissions` | `frontend/src/pages/user/SubmissionHistory.tsx` | `problemsService.getUserSubmissions` | `partial` | Table works, but reference header, summary cards, and filter hierarchy are not fully implemented. |
 | `submission_detail_analysis` | `/submissions/:submissionId` | `frontend/src/pages/user/SubmissionDetail.tsx` | `problemsService.getSubmissionDetail` | `partial` | Detail page works, but reference-grade analysis layout and code/testcase pane structure are still simplified. |
-| `global_user_rankings` | `/ranking` | `frontend/src/pages/user/Ranking.tsx` | `rankingService` | `partial` | Ranking data exists, but visual system is not yet aligned to the reference composition. |
+| `global_user_rankings` | `/ranking` | `frontend/src/pages/user/Ranking.tsx` | `rankingService` | `partial` | Ranking page now uses a reference-style hero, podium cards, and data table, and smoke covers route access; remaining gap is broader leaderboard interaction coverage and finer reference polish. |
 | `live_contest_scoreboard_board` | `/contests/:contestId/scoreboard` | `frontend/src/pages/contest/ContestScoreboard.tsx` | `scoreboardService.getContestScoreboard` | `partial` | Functional scoreboard exists, but not yet transformed to the reference board presentation. |
-| `user_settings_&_profile` | `/profile`, `/settings` | `frontend/src/pages/user/Profile.tsx`, `frontend/src/pages/user/Settings.tsx` | `usersService.getMyProfile/updateMyProfile` | `partial` | Data and forms exist, but profile/settings reference is split across two pages and not visually unified. |
+| `user_settings_&_profile` | `/profile`, `/settings` | `frontend/src/pages/user/Profile.tsx`, `frontend/src/pages/user/Settings.tsx` | `usersService.getMyProfile/updateMyProfile` | `partial` | Profile and settings now share a unified account-center shell and consistent card language, but they are still split across two routes and lack dedicated smoke coverage for deeper settings actions. |
 
 ## Community
 | Reference | Intended Route | Current Page | Data Source | Status | Gap |
 | --- | --- | --- | --- | --- | --- |
-| `community_blog_feed` | `/blog` | `frontend/src/pages/community/BlogList.tsx` | blog services | `partial` | Feed exists, but not yet reference-faithful in information density and card treatment. |
-| `blog_article_editor` | `/blog/new`, `/blog/:slug/edit` | `frontend/src/pages/community/CreateArticle.tsx`, `frontend/src/pages/community/EditArticle.tsx` | blog services | `partial` | Dynamic editor exists, but shell and split-pane editing experience differ from reference. |
-| `direct_messages` | `/messages` | `frontend/src/pages/community/DirectMessages.tsx` | messages service | `partial` | Core messaging exists, but thread list/message pane styling needs closer reference conversion. |
+| `community_blog_feed` | `/blog` | `frontend/src/pages/community/BlogList.tsx` | blog services | `partial` | Feed now uses a reference-style hero, sidebar filters, featured card, and real article grid; remaining gap is deeper interaction coverage and finer card-density polish. |
+| `blog_article_editor` | `/blog/new`, `/blog/:slug/edit` | `frontend/src/pages/community/CreateArticle.tsx`, `frontend/src/pages/community/EditArticle.tsx` | blog services | `partial` | Create/edit pages now use a reference-style editor shell with metadata side panel and split preview, and smoke covers `/blog/new`; remaining gap is richer author workflow and editor ergonomics. |
+| `direct_messages` | `/messages` | `frontend/src/pages/community/DirectMessages.tsx` | messages service | `partial` | Messaging page now uses a reference-style shell with summary cards and split thread/detail panes, and smoke covers route access; remaining gap is deeper conversation interaction coverage. |
 
 ## Teacher
 | Reference | Intended Route | Current Page | Data Source | Status | Gap |
 | --- | --- | --- | --- | --- | --- |
-| `teacher_class_management_1` | `/teacher/classes` or monitoring sub-view | `frontend/src/pages/teacher/ClassManagement.tsx` | class services | `partial` | Class hub now follows the reference shell more closely, but there is still no dedicated monitoring sub-view. |
+| `teacher_class_management_1` | `/teacher/classes` or monitoring sub-view | `frontend/src/pages/teacher/ClassManagement.tsx` | class services | `partial` | Class hub now follows the reference shell more closely and explicitly surfaces the live-schema downgrade boundary; remaining gap is the absent dedicated monitoring sub-view. |
 | `teacher_class_management_2` | `/teacher/contest-wizard` | `frontend/src/pages/teacher/ContestWizard.tsx` | teacher contest services | `partial` | Wizard now follows the multi-step reference structure with real create flow, but later steps still defer to post-create pages. |
 | `teacher_class_management_3` | `/teacher/assignment-report` | `frontend/src/pages/teacher/AssignmentReport.tsx` | teacher report services | `partial` | Report now uses reference-style summary cards and tables, but deeper assignment analytics are still limited by live schema. |
 | `teacher_class_management_4` | discussion/thread related | `frontend/src/pages/community/DiscussionDetail.tsx` | discussion services | `partial` | Similar domain coverage, but not formally mapped or visually aligned. |
@@ -39,8 +39,8 @@
 | Reference | Intended Route | Current Page | Data Source | Status | Gap |
 | --- | --- | --- | --- | --- | --- |
 | `admin_dashboard_overview` | `/admin` | `frontend/src/pages/admin/AdminDashboard.tsx` | admin services | `partial` | Overview shell and summary tiles now follow the reference more closely, but unsupported admin domains are still intentionally removed. |
-| `admin_user_management` | `/admin/users` | `frontend/src/pages/admin/UserManagement.tsx` | user admin services | `partial` | Functional table exists, but not yet converted into the reference layout. |
-| `admin_problem_management` | `/admin/problems` | `frontend/src/pages/admin/ProblemManagement.tsx` | problem admin services | `partial` | Layout is now much closer to the reference, but the delivered scope remains read-only because real admin CRUD endpoints are still absent. |
+| `admin_user_management` | `/admin/users` | `frontend/src/pages/admin/UserManagement.tsx` | user admin services | `partial` | Page now uses a reference-style admin shell with overview cards, bulk-create side panel, and live role/status actions, and smoke covers the `UUID + user_code` identity boundary; remaining gap is deeper operator workflow coverage. |
+| `admin_problem_management` | `/admin/problems` | `frontend/src/pages/admin/ProblemManagement.tsx` | problem admin services | `partial` | Layout is now much closer to the reference, and the page now explicitly presents itself as a read-only management surface; remaining gap is the absence of real admin CRUD endpoints. |
 | `problem_content_configuration` | `/admin/problem-content` | `frontend/src/pages/admin/ProblemContentConfig.tsx` | admin content services | `partial` | Editing shell now follows the reference much more closely, but only the live backend-supported problem fields are exposed. |
 | `test_data_&_judge_settings` | `/admin/judge-settings` | `frontend/src/pages/admin/JudgeSettings.tsx` | judge settings services | `partial` | Test-data shell now follows the reference structure, but advanced judge runtime options remain intentionally out of scope. |
 | `code_similarity_scan_config` | `/admin/similarity-scan` | `frontend/src/pages/admin/SimilarityScanConfig.tsx` | plagiarism service | `partial` | Config page now matches the reference hierarchy more closely, but scan scope still stops at current real API parameters. |
@@ -48,11 +48,11 @@
 ## Plagiarism Reports
 | Reference | Intended Route | Current Page | Data Source | Status | Gap |
 | --- | --- | --- | --- | --- | --- |
-| `plagiarism_detection_report_1` | `/admin/plagiarism-reports/:reportId` | `frontend/src/pages/admin/PlagiarismReportDetail.tsx` | plagiarism service | `partial` | One detail view exists, but not yet parameterized to represent the report variants from references. |
-| `plagiarism_detection_report_2` | same as above | same as above | same as above | `partial` | Variant-specific layout not yet represented. |
-| `plagiarism_detection_report_3` | same as above | same as above | same as above | `partial` | Variant-specific layout not yet represented. |
-| `plagiarism_detection_report_4` | same as above | same as above | same as above | `partial` | Variant-specific layout not yet represented. |
-| `plagiarism_detection_report_5` | same as above | same as above | same as above | `partial` | Variant-specific layout not yet represented. |
+| `plagiarism_detection_report_1` | `/admin/plagiarism-reports/:reportId` | `frontend/src/pages/admin/PlagiarismReportDetail.tsx` | plagiarism service | `partial` | Detail page now uses a richer report shell with risk summary, evidence cards, and empty-pair handling; remaining gap is source diff and reviewer workflow. |
+| `plagiarism_detection_report_2` | same as above | same as above | same as above | `partial` | Variant tone is now derived from live pair count and risk level, but not all static reference states are fully reproduced. |
+| `plagiarism_detection_report_3` | same as above | same as above | same as above | `partial` | Multi-pair layout is now supported, but advanced evidence panes are still absent. |
+| `plagiarism_detection_report_4` | same as above | same as above | same as above | `partial` | Low/no-risk empty result state is now represented, but reviewer action surfaces are not implemented. |
+| `plagiarism_detection_report_5` | same as above | same as above | same as above | `partial` | Timeline and risk summary are now represented, but source-level comparison remains out of scope. |
 
 ## Execution Order
 1. User core pages: dashboard, problem repository, IDE, submission history, submission detail.

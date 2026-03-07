@@ -1,6 +1,13 @@
 import api from './api'
 import { USE_MOCK_DATA } from './config'
-import type { AdminStats, UserManagement, ProblemManagement, SystemHealth, Report } from '@/types/admin'
+import type {
+  AdminStats,
+  UserManagement,
+  ProblemManagement,
+  SystemHealth,
+  Report,
+  BatchCreateAdminUser,
+} from '@/types/admin'
 
 export const adminService = {
   async getStats(): Promise<AdminStats> {
@@ -28,21 +35,50 @@ export const adminService = {
     if (params?.page) queryParams.append('page', String(params.page))
     if (params?.limit) queryParams.append('limit', String(params.limit))
 
-    const response = await api.get(`/admin/users?${queryParams}`)
+    const response = await api.get(`/users/admin?${queryParams}`)
     return response.data
   },
 
   async updateUserRole(userId: string, role: string) {
     if (USE_MOCK_DATA) return { success: true }
 
-    const response = await api.patch(`/admin/users/${userId}/role`, { role })
+    const response = await api.patch(`/users/admin/${userId}/role`, { role })
     return response.data
   },
 
   async toggleUserStatus(userId: string) {
     if (USE_MOCK_DATA) return { success: true }
 
-    const response = await api.patch(`/admin/users/${userId}/status`)
+    const response = await api.patch(`/users/admin/${userId}/status`)
+    return response.data
+  },
+
+  async batchCreateUsers(payload: {
+    users: BatchCreateAdminUser[]
+    default_password?: string
+    organization_id: number
+    campus_id?: number | null
+  }) {
+    if (USE_MOCK_DATA) {
+      return {
+        created: payload.users.map((user, index) => ({
+          id: `mock-${index}`,
+          user_code: user.user_code,
+          username: user.user_code,
+          email: user.email ?? null,
+          display_name: user.display_name ?? user.user_code,
+          organization_id: payload.organization_id,
+          campus_id: user.campus_id ?? payload.campus_id ?? null,
+          role: user.role ?? 'user',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })),
+        skipped: [],
+      }
+    }
+
+    const response = await api.post('/users/admin/batch-create', payload)
     return response.data
   },
 
@@ -165,7 +201,7 @@ function getMockUsers(page = 1, limit = 20, role?: string, search?: string) {
       id: '2',
       username: 'moderator1',
       email: 'moderator@example.com',
-      role: 'moderator',
+      role: 'teacher',
       organization_id: 'org2',
       organization_name: 'Stanford',
       status: 'active',
@@ -195,7 +231,7 @@ function getMockUsers(page = 1, limit = 20, role?: string, search?: string) {
   if (search) {
     filtered = filtered.filter(u =>
       u.username.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
+      (u.email ?? '').toLowerCase().includes(search.toLowerCase())
     )
   }
 

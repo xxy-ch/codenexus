@@ -10,6 +10,8 @@ release/
 # IDE
 .vscode/
 .idea/
+.sisyphus/
+.github/
 *.swp
 *.swo
 *~
@@ -34,6 +36,10 @@ Thumbs.db
 # Cache
 .cache/
 node_modules/
+.playwright-cli/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
 
 # Backup files
 *_backup*

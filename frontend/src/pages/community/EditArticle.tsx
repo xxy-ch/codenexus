@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, RefreshCw, Save, Send, Tags } from 'lucide-react'
 import { blogApi } from '@/services/communityApi'
 import type { UpdateArticleRequest } from '@/types/community'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
@@ -84,151 +85,185 @@ export function EditArticle() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[360px]">
+      <div className="flex min-h-[360px] items-center justify-center">
         <Loading message="加载文章中..." />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      <header className="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(slug ? `/blog/${slug}` : '/blog')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <span className="material-icons text-gray-600 dark:text-gray-400">arrow_back</span>
-            </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Edit Article</h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Title *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-3 text-lg border border-border-light dark:border-border-dark rounded-lg bg-surface-light dark:bg-surface-dark text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
-              maxLength={500}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Category
-            </label>
-            <input
-              type="text"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-2 border border-border-light dark:border-border-dark rounded-lg bg-surface-light dark:bg-surface-dark text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Tags
-            </label>
-            <div className="flex items-center gap-2 mb-2">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    handleAddTag()
-                  }
-                }}
-                className="flex-1 px-4 py-2 border border-border-light dark:border-border-dark rounded-lg bg-surface-light dark:bg-surface-dark text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
-              />
+    <div className="space-y-6">
+      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_32%),linear-gradient(135deg,#eff6ff_0%,#ecfeff_42%,#ffffff_100%)] px-6 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.22),_transparent_32%),linear-gradient(135deg,#0f172a_0%,#111827_48%,#020617_100%)]">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="space-y-3">
               <button
                 type="button"
-                onClick={handleAddTag}
-                className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
+                onClick={() => navigate(slug ? `/blog/${slug}` : '/blog')}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300"
               >
-                Add
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Back To Article
               </button>
-            </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 text-primary rounded-full text-sm"
-                  >
-                    #{tag}
-                    <span className="material-icons text-[14px]">close</span>
-                  </button>
-                ))}
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Edit Article</h1>
+                <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+                  在同一篇文章上继续迭代标题、标签和正文。当前交付仍基于真实博客更新接口，不额外引入草稿版本系统。
+                </p>
               </div>
-            )}
-          </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Content *
-            </label>
-            <EditorWithPreview
-              value={content}
-              onChange={setContent}
-              placeholder="Write your article in Markdown..."
-            />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Status</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{isPublished ? 'Published' : 'Draft'}</p>
+              </div>
+              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Tags</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{tags.length}</p>
+              </div>
+              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Title</p>
+                <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{title.length}/500</p>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
 
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
-            <label className="flex items-center gap-2 cursor-pointer">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium">标题</label>
               <input
-                type="checkbox"
-                checked={isPublished}
-                onChange={(e) => setIsPublished(e.target.checked)}
-                className="w-4 h-4 text-primary rounded focus:ring-primary"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full rounded-xl border px-4 py-3 text-lg"
+                maxLength={500}
               />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Publish immediately
-              </span>
-            </label>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium">正文</label>
+              <EditorWithPreview
+                value={content}
+                onChange={setContent}
+                placeholder="Write your article in Markdown..."
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
+              <Tags className="h-4 w-4" />
+              <h2 className="text-lg font-semibold">Metadata</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium">分类</label>
+                <input
+                  type="text"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full rounded-xl border px-4 py-3"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">标签</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        handleAddTag()
+                      }
+                    }}
+                    className="flex-1 rounded-xl border px-4 py-3"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddTag}
+                    className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white dark:bg-white dark:text-slate-950"
+                  >
+                    Add
+                  </button>
+                </div>
+                {tags.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {tags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => handleRemoveTag(tag)}
+                        className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <label className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-4 dark:bg-slate-900">
+                <div>
+                  <p className="font-medium text-slate-900 dark:text-white">立即发布</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">关闭后保存为草稿状态</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isPublished}
+                  onChange={(e) => setIsPublished(e.target.checked)}
+                  className="h-4 w-4"
+                />
+              </label>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/60">
+            <p className="text-sm font-medium text-slate-900 dark:text-white">交付边界</p>
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+              当前编辑页支持标题、分类、标签和正文更新。不包含修订历史、多人协同和富媒体资源管理。
+            </p>
+          </div>
+
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={() => navigate(slug ? `/blog/${slug}` : '/blog')}
-              className="px-6 py-2.5 border border-border-light dark:border-border-dark rounded-lg font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium dark:border-slate-700"
             >
               Cancel
             </button>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => handleSubmit(false)}
-                disabled={submitting || !title.trim() || !content.trim()}
-                className="px-6 py-2.5 border border-primary text-primary rounded-lg font-medium hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? 'Saving...' : 'Save as Draft'}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSubmit(true)}
-                disabled={submitting || !title.trim() || !content.trim()}
-                className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? 'Publishing...' : 'Save & Publish'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => handleSubmit(false)}
+              disabled={submitting || !title.trim() || !content.trim()}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium disabled:opacity-50"
+            >
+              {submitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {submitting ? 'Saving...' : 'Save Draft'}
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSubmit(true)}
+              disabled={submitting || !title.trim() || !content.trim()}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-slate-950"
+            >
+              <Send className="h-4 w-4" />
+              {submitting ? 'Publishing...' : 'Save & Publish'}
+            </button>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 interface IDELayoutProps {
   problemTitle: string
   language: string
+  code: string
   onLanguageChange: (language: string) => void
   onSubmit: () => void
   isSubmitting: boolean
@@ -17,6 +18,7 @@ interface IDELayoutProps {
 export function IDELayout({
   problemTitle,
   language,
+  code,
   onLanguageChange,
   onSubmit,
   isSubmitting,

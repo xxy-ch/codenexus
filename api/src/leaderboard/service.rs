@@ -60,13 +60,13 @@ impl LeaderboardService {
                     u.organization_id,
                     u.campus_id,
                     COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
-                    COUNT(*) as submissions,
-                    ROUND(
+                    COUNT(s.id) as submissions,
+                    COALESCE(ROUND(
                         COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
-                    ) as acceptance_rate,
-                    SUM(
+                    ), 0)::FLOAT8 as acceptance_rate,
+                    COALESCE(SUM(
                         CASE
                             WHEN s.verdict = 'ac' THEN
                                 CASE p.difficulty
@@ -78,7 +78,7 @@ impl LeaderboardService {
                                 END
                             ELSE 0
                         END
-                    ) as score
+                    ), 0)::FLOAT8 as score
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id {}
                 LEFT JOIN problems p ON p.id = s.problem_id
@@ -109,12 +109,15 @@ impl LeaderboardService {
 
         // Get total count
         let count_query = format!(r#"
-            SELECT COUNT(DISTINCT u.id)
-            FROM users u
-            LEFT JOIN submissions s ON s.user_id = u.id {}
-            LEFT JOIN problems p ON p.id = s.problem_id
-            GROUP BY u.id
-            HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
+            SELECT COUNT(*)
+            FROM (
+                SELECT u.id
+                FROM users u
+                LEFT JOIN submissions s ON s.user_id = u.id {}
+                LEFT JOIN problems p ON p.id = s.problem_id
+                GROUP BY u.id
+                HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
+            ) qualified_users
         "#, time_filter);
 
         let total: i64 = sqlx::query_scalar(&count_query)
@@ -158,13 +161,13 @@ impl LeaderboardService {
                     u.organization_id,
                     u.campus_id,
                     COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
-                    COUNT(*) as submissions,
-                    ROUND(
+                    COUNT(s.id) as submissions,
+                    COALESCE(ROUND(
                         COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
-                    ) as acceptance_rate,
-                    SUM(
+                    ), 0)::FLOAT8 as acceptance_rate,
+                    COALESCE(SUM(
                         CASE
                             WHEN s.verdict = 'ac' THEN
                                 CASE p.difficulty
@@ -176,7 +179,7 @@ impl LeaderboardService {
                                 END
                             ELSE 0
                         END
-                    ) as score
+                    ), 0)::FLOAT8 as score
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id
                 LEFT JOIN problems p ON p.id = s.problem_id
@@ -231,13 +234,13 @@ impl LeaderboardService {
                     u.organization_id,
                     u.campus_id,
                     COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
-                    COUNT(*) as submissions,
-                    ROUND(
+                    COUNT(s.id) as submissions,
+                    COALESCE(ROUND(
                         COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
-                    ) as acceptance_rate,
-                    SUM(
+                    ), 0)::FLOAT8 as acceptance_rate,
+                    COALESCE(SUM(
                         CASE
                             WHEN s.verdict = 'ac' THEN
                                 CASE p.difficulty
@@ -249,7 +252,7 @@ impl LeaderboardService {
                                 END
                             ELSE 0
                         END
-                    ) as score
+                    ), 0)::FLOAT8 as score
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id
                 LEFT JOIN problems p ON p.id = s.problem_id
@@ -304,13 +307,13 @@ impl LeaderboardService {
                     u.organization_id,
                     u.campus_id,
                     COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
-                    COUNT(*) as submissions,
-                    ROUND(
+                    COUNT(s.id) as submissions,
+                    COALESCE(ROUND(
                         COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
-                    ) as acceptance_rate,
-                    SUM(
+                    ), 0)::FLOAT8 as acceptance_rate,
+                    COALESCE(SUM(
                         CASE
                             WHEN s.verdict = 'ac' THEN
                                 CASE p.difficulty
@@ -322,7 +325,7 @@ impl LeaderboardService {
                                 END
                             ELSE 0
                         END
-                    ) as score
+                    ), 0)::FLOAT8 as score
                 FROM users u
                 JOIN class_enrollments ce ON ce.student_id = u.id
                 LEFT JOIN submissions s ON s.user_id = u.id
@@ -636,7 +639,7 @@ impl LeaderboardService {
             Some("class") => {
                 let class_id = match scope_id {
                     Some(id) => Some(id),
-                    None => sqlx::query_scalar::<_, Option<i64>>(
+                    None => sqlx::query_scalar::<_, i64>(
                         r#"
                         SELECT class_id
                         FROM class_enrollments
@@ -646,7 +649,7 @@ impl LeaderboardService {
                         "#,
                     )
                     .bind(user_id)
-                    .fetch_one(&self.pool)
+                    .fetch_optional(&self.pool)
                     .await?,
                 };
 
@@ -757,7 +760,7 @@ impl LeaderboardService {
     /// Get problem leaderboard (fastest solvers)
     pub async fn get_problem_leaderboard(
         &self,
-        problem_id: Uuid,
+        problem_id: i64,
         limit: i64,
     ) -> Result<Vec<ProblemLeaderboardEntry>> {
         let entries = sqlx::query_as::<_, ProblemLeaderboardEntry>(

@@ -29,6 +29,9 @@ impl SubmissionService {
         user_id: Uuid,
         req: CreateSubmissionRequest,
     ) -> Result<Submission> {
+        let normalized_language = normalize_submission_language(&req.language)
+            .ok_or_else(|| anyhow::anyhow!("Invalid language"))?;
+
         // Validate problem exists
         let problem_exists = sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS(SELECT 1 FROM problems WHERE id = $1)"
@@ -39,12 +42,6 @@ impl SubmissionService {
 
         if !problem_exists {
             return Err(anyhow::anyhow!("Problem not found"));
-        }
-
-        // Validate language
-        let language_valid = LANGUAGE_CONFIG.iter().any(|(id, _, _)| id == &req.language);
-        if !language_valid {
-            return Err(anyhow::anyhow!("Invalid language"));
         }
 
         // Create submission
@@ -76,33 +73,49 @@ impl SubmissionService {
         .bind(user_id)
         .bind(req.problem_id)
         .bind(&req.code)
-        .bind(&req.language)
+        .bind(normalized_language)
         .fetch_one(&self.pool)
         .await?;
 
         // Send to judge queue
-        self.queue_for_judging(submission.id, req.problem_id, user_id, &req.code, &req.language).await?;
+        self.queue_for_judging(submission.id, req.problem_id, user_id, &req.code, normalized_language).await?;
 
         Ok(submission)
     }
 
     pub async fn get_submission(&self, submission_id: i64, user_id: Uuid) -> Result<SubmissionResponse> {
-        let submission = sqlx::query_as::<_, Submission>(
+        let submission = sqlx::query(
             r#"
             SELECT
-                id,
-                user_id,
-                problem_id,
-                code,
-                language,
-                status,
+                s.id,
+                s.user_id,
+                s.problem_id,
+                p.title as problem_title,
+                u.username,
+                s.code,
+                s.language,
+                COALESCE(
+                    CASE s.verdict
+                        WHEN 'ac' THEN 'accepted'
+                        WHEN 'wa' THEN 'wrong_answer'
+                        WHEN 'rte' THEN 'runtime_error'
+                        WHEN 'tle' THEN 'time_limit_exceeded'
+                        WHEN 'mle' THEN 'memory_limit_exceeded'
+                        WHEN 'ce' THEN 'compile_error'
+                        WHEN 'ie' THEN 'system_error'
+                        ELSE NULL
+                    END,
+                    s.status
+                ) as status,
                 NULL::INTEGER as score,
-                time_ms as runtime_ms,
-                memory_kb,
-                created_at,
-                updated_at
-            FROM submissions
-            WHERE id = $1 AND user_id = $2
+                s.time_ms as runtime_ms,
+                s.memory_kb,
+                s.created_at,
+                s.updated_at
+            FROM submissions s
+            JOIN problems p ON p.id = s.problem_id
+            JOIN users u ON u.id = s.user_id
+            WHERE s.id = $1 AND s.user_id = $2
             "#
         )
         .bind(submission_id)
@@ -112,36 +125,61 @@ impl SubmissionService {
         .ok_or_else(|| anyhow::anyhow!("Submission not found"))?;
 
         // Get test case results
-        let test_cases = sqlx::query_as::<_, SubmissionResult>(
-            "SELECT * FROM test_case_results WHERE submission_id = $1"
+        let test_cases = sqlx::query(
+            r#"
+            SELECT
+                tcr.id,
+                CASE tcr.verdict
+                    WHEN 'ac' THEN 'passed'
+                    WHEN 'wa' THEN 'failed'
+                    WHEN 'rte' THEN 'failed'
+                    WHEN 'tle' THEN 'failed'
+                    WHEN 'mle' THEN 'failed'
+                    WHEN 'ole' THEN 'failed'
+                    WHEN 'ce' THEN 'failed'
+                    WHEN 'ie' THEN 'failed'
+                    ELSE 'pending'
+                END as status,
+                tc.output as expected_output,
+                NULL::TEXT as actual_output,
+                NULL::TEXT as error_message,
+                tcr.time_ms as runtime_ms,
+                tcr.memory_kb
+            FROM test_case_results tcr
+            JOIN test_cases tc ON tc.id = tcr.test_case_id
+            WHERE tcr.submission_id = $1
+            ORDER BY tc.order_index ASC, tcr.id ASC
+            "#
         )
         .bind(submission_id)
         .fetch_all(&self.pool)
         .await?;
 
         let test_case_results = test_cases.into_iter().map(|tc| TestCaseResult {
-            id: tc.id,
-            status: tc.status,
-            expected_output: tc.expected_output,
-            actual_output: tc.actual_output,
-            error_message: tc.error_message,
-            runtime_ms: tc.runtime_ms,
-            memory_kb: tc.memory_kb,
+            id: tc.get("id"),
+            status: tc.get("status"),
+            expected_output: tc.get("expected_output"),
+            actual_output: tc.get("actual_output"),
+            error_message: tc.get("error_message"),
+            runtime_ms: tc.get("runtime_ms"),
+            memory_kb: tc.get("memory_kb"),
         }).collect();
 
         Ok(SubmissionResponse {
-            id: submission.id,
-            user_id: submission.user_id,
-            problem_id: submission.problem_id,
-            code: submission.code,
-            language: submission.language,
-            status: submission.status,
-            score: submission.score,
-            runtime_ms: submission.runtime_ms,
-            memory_kb: submission.memory_kb,
+            id: submission.get("id"),
+            user_id: submission.get("user_id"),
+            problem_id: submission.get("problem_id"),
+            problem_title: submission.get("problem_title"),
+            username: submission.get("username"),
+            code: submission.get("code"),
+            language: submission.get("language"),
+            status: submission.get("status"),
+            score: submission.get("score"),
+            runtime_ms: submission.get("runtime_ms"),
+            memory_kb: submission.get("memory_kb"),
             test_cases: test_case_results,
-            created_at: submission.created_at,
-            updated_at: submission.updated_at,
+            created_at: submission.get("created_at"),
+            updated_at: submission.get("updated_at"),
         })
     }
 
@@ -281,21 +319,21 @@ impl SubmissionService {
         if let Some(redis_pool) = &self.redis_pool {
             // Fetch problem limits
             let problem = sqlx::query_as::<_, (i32, i32)>(
-                "SELECT time_limit, memory_limit FROM problems WHERE id = $1"
+                "SELECT time_limit_ms, memory_limit_kb FROM problems WHERE id = $1"
             )
             .bind(problem_id)
             .fetch_optional(&self.pool)
             .await?;
 
-            if let Some((time_limit, memory_limit)) = problem {
+            if let Some((time_limit_ms, memory_limit_kb)) = problem {
                 let message = SubmissionMessage {
                     submission_id,
                     problem_id,
                     user_id,
                     language: language.to_string(),
                     source_code: code.to_string(),
-                    time_limit_ms: time_limit as u64,
-                    memory_limit_mb: memory_limit as u64,
+                    time_limit_ms: time_limit_ms as u64,
+                    memory_limit_mb: ((memory_limit_kb as u64) / 1024).max(1),
                 };
 
                 match queue::queue_submission(redis_pool, &message).await {
@@ -411,6 +449,15 @@ fn map_verdict(status: &str) -> Option<&'static str> {
         "memory_limit_exceeded" => Some("mle"),
         "compile_error" => Some("ce"),
         "system_error" | "failed" => Some("ie"),
+        _ => None,
+    }
+}
+
+fn normalize_submission_language(language: &str) -> Option<&'static str> {
+    match language {
+        "python" | "python3" => Some("python3"),
+        "c" => Some("c"),
+        "cpp" | "c++" => Some("cpp"),
         _ => None,
     }
 }

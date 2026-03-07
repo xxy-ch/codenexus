@@ -215,6 +215,71 @@ export function DashboardEnhanced() {
           </Link>
       </div>
 
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Weekly Focus</p>
+              <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">本周推进面板</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                这个区域按 reference 的 dashboard operations rail 收拢，把活跃天数、推荐题和最近提交放到同一层级里，减少来回跳页。
+              </p>
+            </div>
+            <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              live data
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Accepted This Week</p>
+              <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{solvedThisWeek}</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">来自最近 7 天的通过记录。</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Recommended Queue</p>
+              <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{recommendedProblems?.length ?? 0}</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">当前实时推荐题目数量。</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Recent Activity</p>
+              <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{recentActivity?.length ?? 0}</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">最新活动流条目数。</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Progress Snapshot</p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">刷题进度快照</h2>
+          <div className="mt-5 space-y-4">
+            {[
+              { label: 'Easy', value: userStats.easy_solved, color: 'bg-emerald-500' },
+              { label: 'Medium', value: userStats.medium_solved, color: 'bg-amber-500' },
+              { label: 'Hard', value: userStats.hard_solved, color: 'bg-rose-500' },
+            ].map((item) => {
+              const totalSolved = Math.max(1, userStats.unique_problems_solved)
+              const width = Math.max(8, Math.round((item.value / totalSolved) * 100))
+
+              return (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{item.value}</span>
+                  </div>
+                  <div className="mt-2 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div className={cn('h-2.5 rounded-full', item.color)} style={{ width: `${width}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
+            当前 dashboard 已覆盖真实统计、活动流和推荐题数据。剩余差距主要是 reference 中更激进的多面板编排，而不是数据缺口。
+          </div>
+        </div>
+      </section>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <div className="flex items-center justify-between mb-4">

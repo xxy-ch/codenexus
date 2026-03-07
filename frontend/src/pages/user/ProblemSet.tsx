@@ -165,6 +165,48 @@ export function ProblemSet() {
         />
       </section>
 
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Repository State</p>
+              <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">当前筛选状态</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                这个 summary rail 用来补齐 reference 里的仓库式概览层，把搜索、难度、标签和排序状态抬到结果表上方。
+              </p>
+            </div>
+            <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              live catalog
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-2">
+            <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              Difficulty: {filters.difficulty || 'all'}
+            </span>
+            <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              Sort: {filters.sort || 'recent'}
+            </span>
+            <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              Tags: {(filters.tags || []).length}
+            </span>
+            <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              Search: {filters.search?.trim() ? filters.search : 'none'}
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Repository Note</p>
+          <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">交付范围</h2>
+          <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
+            <p>题库页已接入真实题目列表、标签和分页，不再依赖 mock 数据。</p>
+            <p>当前差距主要是 reference 中更复杂的仓库导航和二级筛选编排，并非接口缺失。</p>
+            <p>如果当前环境题量较少，空态和统计卡会自然偏保守。</p>
+          </div>
+        </div>
+      </section>
+
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-2 border-b border-slate-200 px-6 py-5 dark:border-slate-800 md:flex-row md:items-center md:justify-between">
           <div>

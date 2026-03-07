@@ -1,7 +1,5 @@
 import api from './api'
 import type { Problem, TestCase, ProblemSubmission } from '@/types/problems'
-import { getMockUserSubmissions, getMockSubmissionDetail } from './mockSubmissions'
-import { USE_MOCK_DATA } from './config'
 
 export interface ProblemFilters {
   difficulty?: 'easy' | 'medium' | 'hard' | 'all'
@@ -167,11 +165,6 @@ export const problemsService = {
     page: number
     limit: number
   }> {
-    // 如果启用模拟数据，直接返回
-    if (USE_MOCK_DATA) {
-      return getMockUserSubmissions(filters)
-    }
-
     const params = new URLSearchParams()
 
     if (filters.page) params.append('page', filters.page.toString())
@@ -204,11 +197,6 @@ export const problemsService = {
     problem_title: string
     username: string
   }> {
-    // 如果启用模拟数据，直接返回
-    if (USE_MOCK_DATA) {
-      return getMockSubmissionDetail(submissionId)
-    }
-
     try {
       const response = await api.get<ProblemSubmission & {
         problem_title: string

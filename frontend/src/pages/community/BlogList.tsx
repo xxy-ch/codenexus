@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { ArrowRight, Bookmark, Flame, FolderKanban, PenSquare, Search, Sparkles, Star } from 'lucide-react'
 import { blogApi } from '@/services/communityApi'
 import type { Article, ArticleFilters, PopularTag } from '@/types/community'
 import { Loading } from '@/components/ui/Loading'
+import { cn } from '@/lib/utils'
 
 export function BlogList() {
   const navigate = useNavigate()
@@ -15,7 +17,6 @@ export function BlogList() {
   const [loading, setLoading] = useState(true)
   const [hasMore, setHasMore] = useState(false)
 
-  // Get filters from URL params
   const page = parseInt(searchParams.get('page') || '1')
   const category = searchParams.get('category') || undefined
   const tag = searchParams.get('tag') || undefined
@@ -33,7 +34,6 @@ export function BlogList() {
         setArticles(featuredOnly)
         setHasMore(false)
       } else {
-        // Fetch main articles
         const filters: ArticleFilters = {
           page,
           limit: 12,
@@ -46,7 +46,6 @@ export function BlogList() {
         setHasMore(response.has_more ?? page < Math.ceil(response.total / Math.max(1, response.limit)))
       }
 
-      // Fetch featured and categories/tags only on first page
       if (page === 1 && !category && !tag && !sort) {
         const [featured, cats, tags] = await Promise.all([
           blogApi.getFeaturedArticles(3),
@@ -94,347 +93,288 @@ export function BlogList() {
     return date.toLocaleDateString()
   }
 
+  const activeTitle = category || (sort ? `${sort[0].toUpperCase()}${sort.slice(1)} Posts` : 'All Posts')
+
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-8">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Blog</h1>
+    <div className="space-y-6">
+      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.18),_transparent_32%),linear-gradient(135deg,#fff7ed_0%,#fefce8_42%,#ffffff_100%)] px-6 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(249,115,22,0.22),_transparent_35%),linear-gradient(135deg,#0f172a_0%,#111827_48%,#020617_100%)]">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
+                <Sparkles className="h-3.5 w-3.5" />
+                Community Blog Feed
+              </div>
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Blog</h1>
+                <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+                  聚合教程、题解和公告内容。页面已接入真实文章数据、精选流和分类标签，不再是静态占位信息流。
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
+
+            <div className="flex flex-col gap-3 sm:flex-row">
               <button
                 onClick={() => navigate('/blog/new')}
-                className="flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-all"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-medium text-white dark:bg-white dark:text-slate-950"
               >
-                <span className="material-icons text-sm">edit</span>
-                <span>Write Article</span>
+                <PenSquare className="h-4 w-4" />
+                Write Article
               </button>
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Sidebar */}
-          <aside className="w-full lg:w-64 flex-shrink-0 space-y-6">
-            {/* Navigation */}
-            <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden">
-              <div className="p-4">
-                <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-                  Feeds
-                </h3>
-                <nav className="space-y-1">
+      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="space-y-4">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Feeds</p>
+            <div className="mt-4 space-y-2">
+              {[
+                { label: 'All Posts', icon: Bookmark, value: '' },
+                { label: 'Trending', icon: Flame, value: 'trending' },
+                { label: 'Featured', icon: Star, value: 'featured' },
+              ].map((item) => {
+                const active = item.value ? sort === item.value : !category && !tag && !sort
+                const Icon = item.icon
+                return (
                   <button
-                    onClick={() => {
-                      if (category || tag) {
-                        navigate('/blog')
-                      }
-                    }}
-                    className={`w-full flex items-center px-2 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      !category && !tag
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800'
-                    }`}
+                    key={item.label}
+                    onClick={() => (item.value ? navigate(`/blog?sort=${item.value}`) : navigate('/blog'))}
+                    className={cn(
+                      'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition',
+                      active
+                        ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
+                        : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900'
+                    )}
                   >
-                    <span className="material-icons text-lg mr-3">article</span>
-                    All Posts
+                    <Icon className="h-4 w-4" />
+                    {item.label}
                   </button>
-                  <button
-                    onClick={() => navigate('/blog?sort=trending')}
-                    className={`w-full flex items-center px-2 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      sort === 'trending'
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <span className="material-icons text-lg mr-3">local_fire_department</span>
-                    Trending
-                  </button>
-                  <button
-                    onClick={() => navigate('/blog?sort=featured')}
-                    className={`w-full flex items-center px-2 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      sort === 'featured'
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                    }`}
-                  >
-                    <span className="material-icons text-lg mr-3">star</span>
-                    Featured
-                  </button>
-                </nav>
-              </div>
-
-              {/* Categories */}
-              {categories.length > 0 && (
-                <div className="border-t border-border-light dark:border-border-dark p-4">
-                  <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
-                    Categories
-                  </h3>
-                  <div className="space-y-1">
-                    {categories.map((cat) => (
-                      <button
-                        key={cat}
-                        onClick={() => updateFilter('category', category === cat ? '' : cat)}
-                        className={`w-full flex items-center px-2 py-1.5 text-sm rounded-lg transition-colors ${
-                          category === cat
-                            ? 'bg-primary/10 text-primary font-medium'
-                            : 'text-text-muted hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        <span className="material-icons text-lg mr-3">folder</span>
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                )
+              })}
             </div>
+          </div>
 
-            {/* Trending Tags */}
-            {popularTags.length > 0 && (
-              <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-4">
-                <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-4">
-                  Trending Tags
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {popularTags.map((item) => (
-                    <button
-                      key={item.tag}
-                      onClick={() => updateFilter('tag', tag === item.tag ? '' : item.tag)}
-                      className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                        tag === item.tag
-                          ? 'bg-primary text-white'
-                          : 'bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700'
-                      }`}
-                    >
-                      #{item.tag}
-                    </button>
-                  ))}
-                </div>
+          {categories.length > 0 && (
+            <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <div className="flex items-center gap-2">
+                <FolderKanban className="h-4 w-4 text-slate-500" />
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Categories</p>
               </div>
-            )}
-          </aside>
+              <div className="mt-4 space-y-2">
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => updateFilter('category', category === cat ? '' : cat)}
+                    className={cn(
+                      'w-full rounded-2xl px-4 py-3 text-left text-sm font-medium transition',
+                      category === cat
+                        ? 'bg-orange-50 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300'
+                        : 'bg-slate-50 text-slate-700 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-300'
+                    )}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* Main Content */}
-          <div className="flex-grow space-y-6">
-            {/* Filter Info */}
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {category || (sort ? `${sort[0].toUpperCase()}${sort.slice(1)} Posts` : 'All Posts')}
-                {tag && <span className="text-primary ml-2">#{tag}</span>}
+          {popularTags.length > 0 && (
+            <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-slate-500" />
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Trending Tags</p>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {popularTags.map((item) => (
+                  <button
+                    key={item.tag}
+                    onClick={() => updateFilter('tag', tag === item.tag ? '' : item.tag)}
+                    className={cn(
+                      'rounded-full px-3 py-1.5 text-xs font-medium transition',
+                      tag === item.tag
+                        ? 'bg-slate-950 text-white dark:bg-white dark:text-slate-950'
+                        : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                    )}
+                  >
+                    #{item.tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </aside>
+
+        <div className="space-y-6">
+          <div className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-950 dark:text-white">
+                {activeTitle}
+                {tag && <span className="ml-2 text-orange-500">#{tag}</span>}
               </h2>
-              {(category || tag || sort) && (
-                <button
-                  onClick={() => navigate('/blog')}
-                  className="text-sm text-text-muted hover:text-primary transition-colors"
-                >
-                  Clear filters
-                </button>
-              )}
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                当前流展示真实博客内容和已落地过滤条件。
+              </p>
             </div>
+            {(category || tag || sort) && (
+              <button
+                onClick={() => navigate('/blog')}
+                className="text-sm font-medium text-slate-600 transition hover:text-slate-950 dark:text-slate-300 dark:hover:text-white"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
 
-            {/* Loading State */}
-            {loading && page === 1 ? (
-              <Loading message="Loading articles..." />
-            ) : (
-              <>
-                {/* Featured Articles (only on first page, no filters) */}
-                {page === 1 && !category && !tag && !sort && featuredArticles.length > 0 && (
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                      <span className="material-icons text-yellow-500">star</span>
-                      Featured Articles
-                    </h3>
-                    <div className="relative bg-surface-light dark:bg-surface-dark rounded-xl shadow-md border-t-4 border-yellow-500 overflow-hidden">
-                      <div
-                        onClick={() => navigate(`/blog/${featuredArticles[0].slug}`)}
-                        className="p-6 md:p-8 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase tracking-wide">
-                            Featured
-                          </span>
-                          {featuredArticles[0].category && (
-                            <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">
-                              {featuredArticles[0].category}
-                            </span>
-                          )}
-                          <span className="text-xs text-text-muted flex items-center gap-1">
-                            <span className="material-icons text-[14px]">schedule</span>
-                            {formatDate(featuredArticles[0].created_at)}
-                          </span>
+          {loading && page === 1 ? (
+            <Loading message="Loading articles..." />
+          ) : (
+            <>
+              {page === 1 && !category && !tag && !sort && featuredArticles.length > 0 && (
+                <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <div className="mb-4 flex items-center gap-2">
+                    <Star className="h-4 w-4 text-amber-500" />
+                    <h3 className="text-lg font-semibold text-slate-950 dark:text-white">Featured Articles</h3>
+                  </div>
+                  <div
+                    onClick={() => navigate(`/blog/${featuredArticles[0].slug}`)}
+                    className="cursor-pointer rounded-[24px] bg-gradient-to-br from-amber-50 via-white to-orange-50 p-6 transition hover:shadow-md dark:from-slate-900 dark:via-slate-950 dark:to-slate-900"
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+                        Featured
+                      </span>
+                      {featuredArticles[0].category && (
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                          {featuredArticles[0].category}
+                        </span>
+                      )}
+                      <span className="text-xs text-slate-500">{formatDate(featuredArticles[0].created_at)}</span>
+                    </div>
+                    <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                      {featuredArticles[0].title}
+                    </h2>
+                    <p className="mt-3 max-w-3xl text-sm text-slate-500 dark:text-slate-400">{featuredArticles[0].excerpt}</p>
+                    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-4 dark:border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-950 text-sm font-semibold text-white dark:bg-white dark:text-slate-950">
+                          {featuredArticles[0].author_username.charAt(0).toUpperCase()}
                         </div>
-                        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3 hover:text-primary transition-colors">
-                          {featuredArticles[0].title}
-                        </h2>
-                        <p className="text-text-muted mb-4 line-clamp-2">
-                          {featuredArticles[0].excerpt}
-                        </p>
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
-                          <div className="flex items-center gap-2">
-                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-sm font-semibold text-primary">
-                                {featuredArticles[0].author_username.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                              {featuredArticles[0].author_username}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-4 text-text-muted text-sm">
-                            <span className="flex items-center gap-1">
-                              <span className="material-icons text-base">visibility</span>
-                              {featuredArticles[0].view_count}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <span className="material-icons text-base">thumb_up</span>
-                              {featuredArticles[0].like_count}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <span className="material-icons text-base">chat_bubble_outline</span>
-                              {featuredArticles[0].comment_count}
-                            </span>
-                          </div>
-                        </div>
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{featuredArticles[0].author_username}</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+                        <span>{featuredArticles[0].view_count} views</span>
+                        <span>{featuredArticles[0].like_count} likes</span>
+                        <span>{featuredArticles[0].comment_count} comments</span>
                       </div>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                {/* Articles Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {articles.map((article) => (
-                    <article
-                      key={article.id}
-                      onClick={() => navigate(`/blog/${article.slug}`)}
-                      className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden hover:shadow-md transition-all duration-200 group cursor-pointer flex flex-col h-full"
-                    >
-                      <div className="p-5 flex-grow">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex gap-2 flex-wrap">
-                            {article.is_featured && (
-                              <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2 py-0.5 rounded-full font-medium">
-                                Featured
-                              </span>
-                            )}
-                            {article.category && (
-                              <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">
-                                {article.category}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs text-text-muted">
-                            {formatDate(article.created_at)}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {articles.map((article) => (
+                  <article
+                    key={article.id}
+                    onClick={() => navigate(`/blog/${article.slug}`)}
+                    className="group flex h-full cursor-pointer flex-col rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-950"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-wrap gap-2">
+                        {article.is_featured && (
+                          <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">
+                            Featured
                           </span>
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-primary transition-colors">
-                          {article.title}
-                        </h3>
-                        <p className="text-sm text-text-muted mb-4 line-clamp-3">
-                          {article.excerpt}
-                        </p>
-                        {article.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {article.tags.slice(0, 3).map((t) => (
-                              <span
-                                key={t}
-                                className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                              >
-                                #{t}
-                              </span>
-                            ))}
-                            {article.tags.length > 3 && (
-                              <span className="text-xs text-text-muted">
-                                +{article.tags.length - 3}
-                              </span>
-                            )}
-                          </div>
+                        )}
+                        {article.category && (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                            {article.category}
+                          </span>
                         )}
                       </div>
-                      <div className="px-5 py-4 bg-gray-50/50 dark:bg-gray-800/30 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-2">
-                          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-xs font-semibold text-primary">
-                              {article.author_username.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                            {article.author_username}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-text-muted">
-                          <span className="flex items-center gap-1">
-                            <span className="material-icons text-sm">visibility</span>
-                            {article.view_count}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span className="material-icons text-sm">thumb_up</span>
-                            {article.like_count}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <span className="material-icons text-sm">chat_bubble_outline</span>
-                            {article.comment_count}
-                          </span>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-
-                {/* Empty State */}
-                {!loading && articles.length === 0 && (
-                  <div className="text-center py-12">
-                    <span className="material-icons text-6xl text-text-muted mb-4">article</span>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      No articles found
+                      <span className="text-xs text-slate-500">{formatDate(article.created_at)}</span>
+                    </div>
+                    <h3 className="mt-4 text-xl font-semibold leading-tight text-slate-950 transition group-hover:text-orange-500 dark:text-white">
+                      {article.title}
                     </h3>
-                    <p className="text-text-muted mb-6">
-                      {category || tag
-                        ? 'Try adjusting your filters'
-                        : 'Be the first to write an article!'}
-                    </p>
-                    {!category && !tag && (
-                      <button
-                        onClick={() => navigate('/blog/new')}
-                        className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-medium"
-                      >
-                        <span className="material-icons">edit</span>
-                        Write Article
-                      </button>
+                    <p className="mt-3 flex-1 text-sm text-slate-500 dark:text-slate-400">{article.excerpt}</p>
+                    {article.tags.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {article.tags.slice(0, 3).map((t) => (
+                          <span key={t} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            #{t}
+                          </span>
+                        ))}
+                        {article.tags.length > 3 && (
+                          <span className="text-xs text-slate-500">+{article.tags.length - 3}</span>
+                        )}
+                      </div>
                     )}
-                  </div>
-                )}
+                    <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-700 dark:bg-orange-950/30 dark:text-orange-300">
+                          {article.author_username.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{article.author_username}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                        <span>{article.view_count}</span>
+                        <span>{article.like_count}</span>
+                        <span>{article.comment_count}</span>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
 
-                {/* Pagination */}
-                {articles.length > 0 && !sort && (
-                  <div className="flex justify-center gap-2 pt-8">
+              {!loading && articles.length === 0 && (
+                <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-16 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <PenSquare className="mx-auto h-10 w-10 text-slate-400" />
+                  <h3 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">No articles found</h3>
+                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                    {category || tag ? 'Try adjusting your filters' : 'Be the first to write an article'}
+                  </p>
+                  {!category && !tag && (
+                    <button
+                      onClick={() => navigate('/blog/new')}
+                      className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-medium text-white dark:bg-white dark:text-slate-950"
+                    >
+                      <PenSquare className="h-4 w-4" />
+                      Write Article
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {articles.length > 0 && !sort && (
+                <div className="flex items-center justify-between rounded-[24px] border border-slate-200 bg-white px-5 py-4 text-sm shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                  <span className="text-slate-500 dark:text-slate-400">Page {page}</span>
+                  <div className="flex gap-2">
                     <button
                       onClick={() => updateFilter('page', Math.max(1, page - 1).toString())}
                       disabled={page === 1}
-                      className="px-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg text-sm font-medium text-text-muted hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="rounded-xl border border-slate-200 px-4 py-2 font-medium disabled:opacity-50 dark:border-slate-700"
                     >
                       Previous
                     </button>
-                    <span className="px-4 py-2 text-sm font-medium text-text-muted">
-                      Page {page}
-                    </span>
                     <button
                       onClick={() => updateFilter('page', (page + 1).toString())}
                       disabled={!hasMore}
-                      className="px-4 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-border-dark rounded-lg text-sm font-medium text-text-muted hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-4 py-2 font-medium text-white disabled:opacity-50 dark:bg-white dark:text-slate-950"
                     >
                       Next
+                      <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
-                )}
-              </>
-            )}
-          </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
-      </main>
+      </div>
     </div>
   )
 }

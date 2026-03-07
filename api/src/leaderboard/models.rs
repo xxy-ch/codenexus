@@ -38,7 +38,7 @@ pub struct UserStats {
 /// Recent accepted problem
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RecentAC {
-    pub problem_id: Uuid,
+    pub problem_id: i64,
     pub problem_title: String,
     pub difficulty: String,
     pub solved_at: DateTime<Utc>,

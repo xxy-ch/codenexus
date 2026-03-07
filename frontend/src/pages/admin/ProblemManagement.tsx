@@ -114,6 +114,26 @@ export function ProblemManagement() {
         </div>
       </section>
 
+      <section className="rounded-[24px] border border-amber-200 bg-amber-50 px-6 py-5 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex gap-3">
+            <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-amber-600 shadow-sm">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-semibold text-slate-950">当前是只读运营视图</h2>
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+                本页用于核对题目发布状态、难度分布和提交表现。创建、编辑、删除、批量发布等后台写操作尚未接入独立
+                admin API，因此当前交付明确锁定为只读。
+              </p>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-amber-200 bg-white px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+            no admin crud endpoints
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
@@ -284,7 +304,7 @@ export function ProblemManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-slate-500">
-                      编辑、可见性切换和批量操作待真实后台接口交付后再开放。
+                      只读交付。写操作待独立 admin API 落地后再开放。
                     </td>
                   </tr>
                 )

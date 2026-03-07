@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { CalendarDays, IdCard, Mail, PencilLine, ShieldCheck, Sparkles } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { usersService } from '@/services/users'
 import { Button } from '@/components/ui/Button'
@@ -50,16 +51,16 @@ export function Profile() {
 
   const summaryCards = useMemo(
     () => [
-      { label: '已解决题目', value: stats?.unique_problems_solved ?? 0, color: 'text-primary' },
-      { label: '提交次数', value: stats?.total_submissions ?? 0, color: 'text-green-500' },
-      { label: '通过率', value: `${Math.round((stats?.accuracy_rate ?? 0) * 100)}%`, color: 'text-purple-500' },
-      { label: '全站排名', value: stats?.ranking ?? '-', color: 'text-orange-500' },
+      { label: '已解决题目', value: stats?.unique_problems_solved ?? 0 },
+      { label: '提交次数', value: stats?.total_submissions ?? 0 },
+      { label: '通过率', value: `${Math.round((stats?.accuracy_rate ?? 0) * 100)}%` },
+      { label: '全站排名', value: stats?.ranking ?? '-' },
     ],
     [stats]
   )
 
   if (isLoading) return <Loading message="加载中..." />
-  if (!profile) return <div className="text-center py-12">用户不存在</div>
+  if (!profile) return <div className="py-12 text-center">用户不存在</div>
 
   const getActivityLabel = (type: string) => {
     if (type === 'submission') return '提交'
@@ -71,121 +72,150 @@ export function Profile() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 rounded-xl border overflow-hidden">
-        <div className="h-40 bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20" />
-        <div className="px-6 pb-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start -mt-12">
-            <div className="w-24 h-24 bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center text-white text-3xl font-bold border-4 border-white dark:border-slate-900 shadow-lg">
-              {profile.username.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold mb-1">{profile.username}</h1>
-                  {profile.display_name && (
-                    <p className="text-lg text-slate-600 dark:text-slate-400">{profile.display_name}</p>
-                  )}
-                  <div className="flex items-center gap-4 mt-3 text-sm text-slate-600">
-                    <div className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-lg">badge</span>
-                      {profile.role}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-lg">school</span>
-                      Org #{profile.organization_id}
-                    </div>
-                    {profile.campus_id && (
-                      <div className="flex items-center gap-1">
-                        <span className="material-symbols-outlined text-lg">location_on</span>
-                        Campus #{profile.campus_id}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-lg">calendar_today</span>
-                      {new Date(profile.created_at).toLocaleDateString('zh-CN')}
-                    </div>
-                  </div>
+      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_32%),linear-gradient(135deg,#eff6ff_0%,#eef2ff_50%,#ffffff_100%)] px-6 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),_transparent_35%),linear-gradient(135deg,#0f172a_0%,#111827_48%,#020617_100%)]">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+            <div className="flex items-start gap-5">
+              <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-slate-950 text-3xl font-semibold text-white shadow-lg dark:bg-white dark:text-slate-950">
+                {profile.username.charAt(0).toUpperCase()}
+              </div>
+              <div className="space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Account Center
                 </div>
-
-                {currentUser?.id === profile.id && (
-                  <Button variant="outline" onClick={() => setIsEditing((prev) => !prev)}>
-                    <span className="material-symbols-outlined mr-2">{isEditing ? 'close' : 'edit'}</span>
-                    {isEditing ? '取消编辑' : '编辑资料'}
-                  </Button>
-                )}
+                <div>
+                  <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
+                    {profile.display_name || profile.username}
+                  </h1>
+                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">@{profile.username}</p>
+                </div>
+                <div className="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-300">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 dark:bg-slate-900/70">
+                    <ShieldCheck className="h-4 w-4" />
+                    {profile.role}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 dark:bg-slate-900/70">
+                    <IdCard className="h-4 w-4" />
+                    Org #{profile.organization_id}
+                  </span>
+                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 dark:bg-slate-900/70">
+                    <CalendarDays className="h-4 w-4" />
+                    {new Date(profile.created_at).toLocaleDateString('zh-CN')}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {currentUser?.id === profile.id && (
+              <Button variant="outline" onClick={() => setIsEditing((prev) => !prev)}>
+                <PencilLine className="mr-2 h-4 w-4" />
+                {isEditing ? '取消编辑' : '编辑资料'}
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      {isEditing && (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border p-6">
-          <h2 className="text-xl font-bold mb-4">编辑个人资料</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">显示名称</label>
-              <input
-                type="text"
-                value={editForm.display_name}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, display_name: e.target.value }))}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">邮箱</label>
-              <input
-                type="email"
-                value={editForm.email}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
-                className="w-full px-4 py-2 border rounded-lg"
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
-                取消
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() =>
-                  updateProfileMutation.mutate({
-                    display_name: editForm.display_name || undefined,
-                    email: editForm.email || undefined,
-                  })
-                }
-                disabled={updateProfileMutation.isPending}
-              >
-                {updateProfileMutation.isPending ? '保存中...' : '保存更改'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid gap-4 md:grid-cols-4">
         {summaryCards.map((item) => (
-          <div key={item.label} className="bg-white dark:bg-slate-900 rounded-xl border p-6 text-center">
-            <div className={`text-3xl font-bold mb-1 ${item.color}`}>{item.value}</div>
-            <div className="text-sm text-slate-600">{item.label}</div>
+          <div key={item.label} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{item.label}</p>
+            <p className="mt-3 text-2xl font-semibold text-slate-950 dark:text-white">{item.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl border p-6">
-        <h2 className="text-xl font-bold mb-4">最近活动</h2>
-        <div className="space-y-3">
-          {(activities || []).map((activity) => (
-            <div key={activity.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-              <div>
-                <p className="text-sm font-medium">{getActivityLabel(activity.type)}</p>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {activity.problem_title || activity.contest_name || activity.achievement_name || '-'}
-                </p>
-              </div>
-              <p className="text-xs text-slate-500">{new Date(activity.created_at).toLocaleString('zh-CN')}</p>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Recent Activity</p>
+              <h2 className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">最近活动</h2>
             </div>
-          ))}
-          {(activities || []).length === 0 && <p className="text-sm text-slate-500">暂无活动</p>}
+          </div>
+          <div className="mt-5 space-y-3">
+            {(activities || []).map((activity) => (
+              <div key={activity.id} className="rounded-2xl bg-slate-50 px-4 py-4 dark:bg-slate-900">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950 dark:text-white">{getActivityLabel(activity.type)}</p>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                      {activity.problem_title || activity.contest_name || activity.achievement_name || '-'}
+                    </p>
+                  </div>
+                  <span className="text-xs text-slate-400">{new Date(activity.created_at).toLocaleString('zh-CN')}</span>
+                </div>
+              </div>
+            ))}
+            {(activities || []).length === 0 && <p className="text-sm text-slate-500">暂无活动</p>}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Identity</p>
+            <div className="mt-5 space-y-4">
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Username</p>
+                <p className="mt-1 font-semibold text-slate-950 dark:text-white">{profile.username}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Email</p>
+                <p className="mt-1 font-semibold text-slate-950 dark:text-white">{profile.email || '未设置'}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Campus</p>
+                <p className="mt-1 font-semibold text-slate-950 dark:text-white">{profile.campus_id ? `Campus #${profile.campus_id}` : '未绑定'}</p>
+              </div>
+            </div>
+          </div>
+
+          {isEditing && (
+            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <div className="flex items-center gap-2 text-slate-900 dark:text-white">
+                <Mail className="h-4 w-4" />
+                <h2 className="text-lg font-semibold">编辑资料</h2>
+              </div>
+              <div className="mt-5 space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium">显示名称</label>
+                  <input
+                    type="text"
+                    value={editForm.display_name}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, display_name: e.target.value }))}
+                    className="w-full rounded-xl border px-4 py-3"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium">邮箱</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full rounded-xl border px-4 py-3"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsEditing(false)}>
+                    取消
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() =>
+                      updateProfileMutation.mutate({
+                        display_name: editForm.display_name || undefined,
+                        email: editForm.email || undefined,
+                      })
+                    }
+                    disabled={updateProfileMutation.isPending}
+                  >
+                    {updateProfileMutation.isPending ? '保存中...' : '保存更改'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

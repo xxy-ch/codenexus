@@ -20,6 +20,10 @@ impl UserService {
             return Err(anyhow::anyhow!("Username must be numeric only"));
         }
 
+        if let Some(user_code) = &req.user_code {
+            Self::validate_user_code(user_code)?;
+        }
+
         // Check if username already exists
         let existing_user = sqlx::query_scalar::<_, Uuid>(
             "SELECT id FROM users WHERE username = $1"
@@ -30,6 +34,19 @@ impl UserService {
 
         if existing_user.is_some() {
             return Err(anyhow::anyhow!("Username already exists"));
+        }
+
+        if let Some(user_code) = &req.user_code {
+            let existing_user_code = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM users WHERE user_code = $1"
+            )
+            .bind(user_code)
+            .fetch_optional(&self.pool)
+            .await?;
+
+            if existing_user_code.is_some() {
+                return Err(anyhow::anyhow!("User code already exists"));
+            }
         }
 
         // Check if email already exists (if provided)
@@ -57,11 +74,12 @@ impl UserService {
         // Create user
         let user_id = sqlx::query_scalar::<_, Uuid>(
             r#"
-            INSERT INTO users (username, email, password_hash, display_name, organization_id, campus_id)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO users (user_code, username, email, password_hash, display_name, organization_id, campus_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING id
             "#
         )
+        .bind(&req.user_code)
         .bind(&req.username)
         .bind(&req.email)
         .bind(&password_hash)
@@ -122,12 +140,14 @@ impl UserService {
         // Create user profile
         let user_profile = UserProfile {
             id: user.id,
+            user_code: user.user_code.clone(),
             username: user.username.clone(),
             email: user.email.clone(),
             display_name: user.display_name.clone(),
             organization_id: user.organization_id,
             campus_id: user.campus_id,
             role: role.clone(),
+            status: user.status.clone(),
             created_at: user.created_at,
             updated_at: user.updated_at,
         };
@@ -189,12 +209,14 @@ impl UserService {
         // Create user profile
         let user_profile = UserProfile {
             id: user.id,
+            user_code: user.user_code.clone(),
             username: user.username.clone(),
             email: user.email.clone(),
             display_name: user.display_name.clone(),
             organization_id: user.organization_id,
             campus_id: user.campus_id,
             role: role.clone(),
+            status: user.status.clone(),
             created_at: user.created_at,
             updated_at: user.updated_at,
         };
@@ -249,12 +271,14 @@ impl UserService {
 
         Ok(UserProfile {
             id: user.id,
+            user_code: user.user_code,
             username: user.username,
             email: user.email,
             display_name: user.display_name,
             organization_id: user.organization_id,
             campus_id: user.campus_id,
             role,
+            status: user.status,
             created_at: user.created_at,
             updated_at: user.updated_at,
         })
@@ -317,5 +341,221 @@ impl UserService {
         query_builder.execute(&self.pool).await?;
 
         self.get_user_profile(user_id).await
+    }
+
+    pub async fn list_admin_users(&self, query: AdminUserQuery) -> Result<AdminUserListResponse> {
+        let page = query.page.unwrap_or(1).max(1);
+        let limit = query.limit.unwrap_or(20).clamp(1, 100);
+        let offset = (page - 1) * limit;
+
+        let sort_clause = match query.sort.as_deref() {
+            Some("name") => "u.username ASC",
+            Some("submissions") => "submissions_count DESC, u.created_at DESC",
+            Some("rating") => "problems_solved DESC, submissions_count DESC",
+            _ => "u.created_at DESC",
+        };
+
+        let search = query.search.as_ref().map(|value| format!("%{}%", value.trim()));
+        let role = query.role.as_deref();
+        let status = query.status.as_deref();
+
+        let query_sql = format!(
+            r#"
+            WITH user_metrics AS (
+                SELECT
+                    u.id,
+                    u.user_code,
+                    u.username,
+                    u.email,
+                    u.display_name,
+                    u.status,
+                    u.organization_id,
+                    o.name AS organization_name,
+                    u.created_at,
+                    CASE ur.role
+                        WHEN 'root' THEN 'admin'
+                        WHEN 'campusadmin' THEN 'admin'
+                        WHEN 'teacher' THEN 'teacher'
+                        ELSE 'user'
+                    END AS role,
+                    COUNT(s.id) AS submissions_count,
+                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') AS problems_solved
+                FROM users u
+                JOIN organizations o ON o.id = u.organization_id
+                LEFT JOIN user_roles ur ON ur.user_id = u.id
+                LEFT JOIN submissions s ON s.user_id = u.id
+                WHERE ($1::TEXT IS NULL OR u.username ILIKE $1 OR COALESCE(u.email, '') ILIKE $1 OR COALESCE(u.user_code, '') ILIKE $1)
+                  AND ($2::TEXT IS NULL OR CASE ur.role
+                        WHEN 'root' THEN 'admin'
+                        WHEN 'campusadmin' THEN 'admin'
+                        WHEN 'teacher' THEN 'teacher'
+                        ELSE 'user'
+                    END = $2)
+                  AND ($3::TEXT IS NULL OR u.status = $3)
+                GROUP BY u.id, u.user_code, u.username, u.email, u.display_name, u.status, u.organization_id, o.name, u.created_at, ur.role
+            )
+            SELECT *
+            FROM user_metrics u
+            ORDER BY {sort_clause}
+            LIMIT $4 OFFSET $5
+            "#
+        );
+
+        let users = sqlx::query_as::<_, AdminUserRow>(&query_sql)
+            .bind(search.as_deref())
+            .bind(role)
+            .bind(status)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await?;
+
+        let total: i64 = sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*)
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            WHERE ($1::TEXT IS NULL OR u.username ILIKE $1 OR COALESCE(u.email, '') ILIKE $1 OR COALESCE(u.user_code, '') ILIKE $1)
+              AND ($2::TEXT IS NULL OR CASE ur.role
+                    WHEN 'root' THEN 'admin'
+                    WHEN 'campusadmin' THEN 'admin'
+                    WHEN 'teacher' THEN 'teacher'
+                    ELSE 'user'
+                END = $2)
+              AND ($3::TEXT IS NULL OR u.status = $3)
+            "#,
+        )
+        .bind(search.as_deref())
+        .bind(role)
+        .bind(status)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(AdminUserListResponse { users, total, page, limit })
+    }
+
+    pub async fn update_user_role(&self, user_id: Uuid, role: &str) -> Result<()> {
+        let normalized_role = match role {
+            "admin" => "root",
+            "teacher" => "teacher",
+            "user" => "student",
+            _ => return Err(anyhow::anyhow!("Unsupported role")),
+        };
+
+        let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&self.pool)
+            .await?;
+
+        sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
+            .bind(user_id)
+            .execute(&self.pool)
+            .await?;
+
+        sqlx::query(
+            "INSERT INTO user_roles (user_id, organization_id, campus_id, role) VALUES ($1, $2, $3, $4)"
+        )
+        .bind(user_id)
+        .bind(user.organization_id)
+        .bind(user.campus_id)
+        .bind(normalized_role)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn update_user_status(&self, user_id: Uuid) -> Result<String> {
+        let next_status: String = sqlx::query_scalar(
+            r#"
+            UPDATE users
+            SET status = CASE status
+                WHEN 'active' THEN 'inactive'
+                WHEN 'inactive' THEN 'active'
+                ELSE 'active'
+            END,
+            updated_at = NOW()
+            WHERE id = $1
+            RETURNING status
+            "#,
+        )
+        .bind(user_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(next_status)
+    }
+
+    pub async fn batch_create_users(
+        &self,
+        request: BatchCreateUsersRequest,
+    ) -> Result<BatchCreateUsersResponse> {
+        let mut created = Vec::new();
+        let mut skipped = Vec::new();
+        let default_password = request
+            .default_password
+            .clone()
+            .unwrap_or_else(|| "ChangeMe123".to_string());
+
+        for entry in request.users {
+            let user_code = entry.user_code.trim().to_string();
+
+            if let Err(err) = Self::validate_user_code(&user_code) {
+                skipped.push(BatchCreateUserSkip {
+                    user_code,
+                    reason: err.to_string(),
+                });
+                continue;
+            }
+
+            let exists = sqlx::query_scalar::<_, Uuid>(
+                "SELECT id FROM users WHERE user_code = $1 OR username = $1"
+            )
+            .bind(&user_code)
+            .fetch_optional(&self.pool)
+            .await?;
+
+            if exists.is_some() {
+                skipped.push(BatchCreateUserSkip {
+                    user_code,
+                    reason: "User code already exists".to_string(),
+                });
+                continue;
+            }
+
+            let password = entry.password.clone().unwrap_or_else(|| default_password.clone());
+            let profile = self
+                .register(RegisterRequest {
+                    user_code: Some(user_code.clone()),
+                    username: user_code.clone(),
+                    password,
+                    email: entry.email.clone(),
+                    display_name: entry
+                        .display_name
+                        .clone()
+                        .or_else(|| Some(user_code.clone())),
+                    organization_id: request.organization_id,
+                    campus_id: entry.campus_id.or(request.campus_id),
+                })
+                .await?;
+
+            if let Some(role) = entry.role.as_deref() {
+                if role != "user" {
+                    self.update_user_role(profile.id, role).await?;
+                }
+            }
+
+            created.push(self.get_user_profile(profile.id).await?);
+        }
+
+        Ok(BatchCreateUsersResponse { created, skipped })
+    }
+
+    fn validate_user_code(user_code: &str) -> Result<()> {
+        if user_code.len() != 12 || !user_code.chars().all(|c| c.is_ascii_digit()) {
+            return Err(anyhow::anyhow!("User code must be a 12-digit numeric string"));
+        }
+
+        Ok(())
     }
 }

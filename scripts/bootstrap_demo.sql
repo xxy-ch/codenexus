@@ -10,13 +10,22 @@ INSERT INTO campuses (id, organization_id, name, slug)
 VALUES (1, 1, 'Main Campus', 'main')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO users (id, username, email, password_hash, display_name, organization_id, campus_id)
+INSERT INTO users (id, user_code, username, email, password_hash, display_name, organization_id, campus_id, status)
 VALUES
-  ('11111111-1111-1111-1111-111111111111', '1001', 'admin@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzpWMeQJUu', '管理员', 1, 1),
-  ('22222222-2222-2222-2222-222222222222', '2001', 'student1@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzpWMeQJUu', '学生甲', 1, 1),
-  ('33333333-3333-3333-3333-333333333333', '2002', 'student2@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzpWMeQJUu', '学生乙', 1, 1),
-  ('44444444-4444-4444-4444-444444444444', '3001', 'teacher@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzpWMeQJUu', '教师用户', 1, 1)
-ON CONFLICT (id) DO NOTHING;
+  ('11111111-1111-1111-1111-111111111111', '240101070014', '1001', 'admin@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzpWMeQJUu', '管理员', 1, 1, 'active'),
+  ('22222222-2222-2222-2222-222222222222', '240101070015', '2001', 'student1@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzpWMeQJUu', '学生甲', 1, 1, 'active'),
+  ('33333333-3333-3333-3333-333333333333', '240101070016', '2002', 'student2@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzpWMeQJUu', '学生乙', 1, 1, 'active'),
+  ('44444444-4444-4444-4444-444444444444', '240101070017', '3001', 'teacher@example.com', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYzpWMeQJUu', '教师用户', 1, 1, 'active')
+ON CONFLICT (id) DO UPDATE
+SET
+  user_code = EXCLUDED.user_code,
+  username = EXCLUDED.username,
+  email = EXCLUDED.email,
+  display_name = EXCLUDED.display_name,
+  organization_id = EXCLUDED.organization_id,
+  campus_id = EXCLUDED.campus_id,
+  status = EXCLUDED.status,
+  updated_at = NOW();
 
 INSERT INTO user_roles (user_id, organization_id, campus_id, role)
 VALUES
@@ -84,8 +93,44 @@ VALUES
     'public',
     1000,
     262144
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO contests (
+  id,
+  organization_id,
+  campus_id,
+  name,
+  description,
+  rules,
+  start_time,
+  end_time,
+  freeze_minutes
+)
+VALUES
+  (
+    1,
+    1,
+    1,
+    '春季热身赛',
+    '用于本地交付验收的示范竞赛，覆盖报名、详情、题目与榜单页面。',
+    'acm',
+    NOW() - INTERVAL '30 minutes',
+    NOW() + INTERVAL '90 minutes',
+    30
   )
 ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO contest_problems (contest_id, problem_id, points, order_index)
+VALUES
+  (1, 1, 100, 1)
+ON CONFLICT (contest_id, problem_id) DO NOTHING;
+
+INSERT INTO contest_participants (contest_id, user_id)
+VALUES
+  (1, '22222222-2222-2222-2222-222222222222'),
+  (1, '33333333-3333-3333-3333-333333333333')
+ON CONFLICT (contest_id, user_id) DO NOTHING;
 
 INSERT INTO discussions (id, problem_id, user_id, content, is_pinned)
 VALUES
@@ -134,8 +179,14 @@ VALUES
     'ac',
     15,
     9216
-  )
+)
 ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO contest_submissions (contest_id, submission_id, penalty_time)
+VALUES
+  (1, 1, 12),
+  (1, 2, 15)
+ON CONFLICT (submission_id) DO NOTHING;
 
 INSERT INTO plagiarism_scan_reports (
   id,

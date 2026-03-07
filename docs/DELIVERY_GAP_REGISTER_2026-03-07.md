@@ -88,7 +88,7 @@ Status values:
 ### H. Admin unsupported modules removed from primary entry surface
 - Resolution:
   - `/admin` no longer depends on nonexistent stats/health endpoints
-  - unsupported `users` and `reports` modules were removed from admin navigation and routes
+  - unsupported `reports` module was removed from admin navigation and routes
   - admin problem management is now explicitly read-only instead of exposing nonfunctional write controls
 - Evidence:
   - `frontend/src/pages/admin/AdminDashboard.tsx`
@@ -99,9 +99,50 @@ Status values:
 ### I. Scoped leaderboard rank placeholder removed and verified in live stack
 - Resolution:
   - campus/class scoped ranking no longer falls back to `0`
-  - refreshed Docker API verified user stats endpoint returns `200`
+  - refreshed Docker API verified:
+    - `/leaderboard/global` -> `200`
+    - `/leaderboard/user/:id/stats` -> `200`
+  - leaderboard runtime is now current-schema compatible for:
+    - aggregate score decoding
+    - total count query
+    - empty-submission users
+    - users without active class enrollment
 - Evidence:
   - `api/src/leaderboard/service.rs`
+  - `api/src/leaderboard/models.rs`
+  - `api/src/leaderboard/routes.rs`
+
+### M. Contest and ranking production connectors are verified against the live stack
+- Resolution:
+  - contest frontend service no longer falls back to mock data
+  - ranking frontend service now consumes the live leaderboard payload
+  - refreshed Docker API verified:
+    - `/contests` -> `200`
+    - `/leaderboard/global` -> `200`
+  - Playwright smoke is green again after connector and assertion updates
+- Evidence:
+  - `frontend/src/services/contests.ts`
+  - `frontend/src/services/ranking.ts`
+  - `frontend/e2e/smoke.spec.ts`
+  - `scripts/bootstrap_demo.sql`
+
+### N. Admin user management now uses business-facing `user_code` while keeping internal UUIDs
+- Resolution:
+  - internal `user_id` remains `UUID` across database keys, JWT claims, and route parameters
+  - admin bulk account creation now accepts 12-digit `user_code` values and lets the system generate the real UUID primary key
+  - live stack verified:
+    - `GET /users/admin` -> `200`
+    - `POST /users/admin/batch-create` -> `200`
+  - seeded demo accounts now carry non-null `user_code` values after re-running the bootstrap script
+- Evidence:
+  - `api/migrations/021_add_user_code_and_status.sql`
+  - `api/src/users/models.rs`
+  - `api/src/users/service.rs`
+  - `api/src/users/routes.rs`
+  - `frontend/src/pages/admin/UserManagement.tsx`
+  - `frontend/src/services/admin.ts`
+  - `scripts/bootstrap_demo.sql`
+  - `frontend/e2e/smoke.spec.ts`
 
 ### J. Teacher reference pages advanced from generic placeholders
 - Resolution:
@@ -132,6 +173,78 @@ Status values:
   - `frontend/src/pages/admin/JudgeSettings.tsx`
   - `frontend/src/pages/admin/ProblemContentConfig.tsx`
   - `frontend/src/pages/admin/SimilarityScanConfig.tsx`
+  - `frontend/e2e/smoke.spec.ts`
+
+### O. Ranking, direct messages, and plagiarism detail pages advanced to richer reference shells
+- Resolution:
+  - ranking now uses a reference-style hero, podium summary, and leaderboard table fed by the live ranking service
+  - direct messages now use a two-pane shell with summary cards and explicit delivery-boundary copy while preserving the live messaging contract
+  - plagiarism detail now supports richer report variants from live risk level and suspicious-pair density instead of a single generic table shell
+  - refreshed Docker frontend verified by Playwright smoke after rebuilding the runtime image
+- Evidence:
+  - `frontend/src/pages/user/Ranking.tsx`
+  - `frontend/src/pages/community/DirectMessages.tsx`
+  - `frontend/src/pages/admin/PlagiarismReportDetail.tsx`
+  - `frontend/e2e/smoke.spec.ts`
+
+### P. Profile and settings now share a unified account-center presentation
+- Resolution:
+  - profile page now uses a reference-style account hero, stat cards, and identity panel while keeping the live profile/update contract
+  - settings page now uses the same account-center visual system and explicitly distinguishes live account fields from local preference placeholders
+  - frontend quality gates remain green after the redesign
+- Evidence:
+  - `frontend/src/pages/user/Profile.tsx`
+  - `frontend/src/pages/user/Settings.tsx`
+
+### Q. Blog feed and editor now use stable reference-style shells on the live stack
+- Resolution:
+  - blog feed now uses a reference-style hero, filter rail, featured article block, and live article grid
+  - create/edit article pages now use a reference-style editor shell with metadata side panel and split preview
+  - the markdown editor runtime was simplified to a stable textarea-based implementation so `/blog/new` no longer blanks the page in Docker
+  - Playwright smoke now verifies `/blog` and `/blog/new` against the refreshed frontend image
+- Evidence:
+  - `frontend/src/pages/community/BlogList.tsx`
+  - `frontend/src/pages/community/CreateArticle.tsx`
+  - `frontend/src/pages/community/EditArticle.tsx`
+  - `frontend/src/components/editor/MarkdownEditor.tsx`
+  - `frontend/e2e/smoke.spec.ts`
+
+### R. Read-only and downgrade boundaries are now explicit in the delivered UI
+- Resolution:
+  - admin problem management now places the read-only delivery scope in a dedicated warning banner rather than leaving the boundary implicit in table copy
+  - teacher class management now surfaces the live-schema downgrade boundary and the concrete `501` write paths in the page shell itself
+  - this reduces mismatch between visible UI affordances and actual backend capability
+- Evidence:
+  - `frontend/src/pages/admin/ProblemManagement.tsx`
+  - `frontend/src/pages/teacher/ClassManagement.tsx`
+
+### S. Admin user management now uses a reference-style shell and smoke-verified identity boundary
+- Resolution:
+  - user management now uses a richer admin shell with overview cards, bulk-create panel, and clearer separation between `UUID` and 12-digit `user_code`
+  - live role/status actions remain wired to the real admin endpoints
+  - Playwright smoke now verifies the identity-boundary copy on `/admin/users`
+- Evidence:
+  - `frontend/src/pages/admin/UserManagement.tsx`
+  - `frontend/e2e/smoke.spec.ts`
+
+### T. Dashboard and problem repository now expose stronger reference-style summary rails
+- Resolution:
+  - dashboard now includes a weekly focus panel and progress snapshot above the existing analytics blocks
+  - problem repository now includes a repository-state summary rail and delivery note above the result table
+  - Playwright smoke now checks these summary structures on `/dashboard` and `/problems`
+- Evidence:
+  - `frontend/src/pages/user/DashboardEnhanced.tsx`
+  - `frontend/src/pages/user/ProblemSet.tsx`
+  - `frontend/e2e/smoke.spec.ts`
+
+### U. Problem IDE runtime regression is closed and smoke-verified in Docker
+- Resolution:
+  - fixed the IDE shell contract so the layout receives the live `code` value and submit metadata instead of referencing an undefined variable at runtime
+  - aligned the IDE page to the live `problemsService.getProblem` contract and passed the full layout props needed by the docked editor shell
+  - rebuilt Docker frontend and re-ran Playwright smoke against the live stack
+- Evidence:
+  - `frontend/src/components/ide/IDELayout.tsx`
+  - `frontend/src/pages/user/ProblemIDEEnhanced.tsx`
   - `frontend/e2e/smoke.spec.ts`
 
 ## Remaining Gaps
@@ -178,7 +291,7 @@ Currently no remaining `blocked` items from the latest smoke pass. Remaining gap
   - `frontend/src/services/admin.ts`
 - Current root cause:
   - nonexistent `/admin/problems` endpoint was replaced with `/problems`
-  - write controls are now hidden, but dedicated admin semantics are still absent
+  - write controls are now hidden and the UI explicitly marks the surface read-only, but dedicated admin semantics are still absent
 - Required fix:
   - either implement real admin problem endpoints
   - or formally scope the page down to read-only management
@@ -187,16 +300,16 @@ Currently no remaining `blocked` items from the latest smoke pass. Remaining gap
 
 ### 7. Contest runtime is real-data only, but demo coverage is incomplete
 - Status: `medium`
-- User impact: frontend no longer falls back to fake contests, but the demo environment currently has no contest records and detail/not-found behavior still needs refreshed-stack verification.
+- User impact: live contest list is now delivered from real data, but contest scenario coverage is still thin and remains closer to demo validation than production-ready breadth.
 - Evidence:
   - `frontend/src/services/contests.ts`
   - `api/src/contests/routes.rs`
 - Current root cause:
-  - demo seed currently contains no contest records
-  - contest detail handling was corrected in code but still needs runtime verification after container refresh
+  - demo seed now contains one contest, but only a minimal scenario is covered
+  - contest detail, registration edge cases, and scoreboard breadth still need broader smoke coverage
 - Required fix:
-  - seed at least one demo contest or accept explicit empty-state delivery
-  - verify detail/not-found behavior in the rebuilt stack
+  - expand contest smoke coverage beyond the seed happy path
+  - verify detail/not-found behavior and scoreboard edge cases in the rebuilt stack
 
 ### 8. Legacy sandbox hardening is not complete
 - Status: `medium`
@@ -248,5 +361,5 @@ Currently no remaining `blocked` items from the latest smoke pass. Remaining gap
 ## Immediate Repair Order
 1. Continue converting `partial` reference pages, starting with admin and remaining teacher/community pages that are user-visible.
 2. Formalize admin problem scope as either true CRUD or explicit read-only delivery.
-3. Retire or rewrite outdated baseline documents and keep runbook aligned with the live stack.
+3. Retire or rewrite outdated baseline documents and keep runbook aligned with the live stack and current identity contract.
 4. Clean generated artifacts before final handoff.

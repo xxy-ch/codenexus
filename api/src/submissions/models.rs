@@ -44,6 +44,8 @@ pub struct SubmissionResponse {
     pub id: i64,
     pub user_id: Uuid,
     pub problem_id: i64,
+    pub problem_title: String,
+    pub username: String,
     pub code: String,
     pub language: String,
     pub status: String,

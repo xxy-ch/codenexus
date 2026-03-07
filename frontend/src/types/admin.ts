@@ -11,9 +11,11 @@ export interface AdminStats {
 
 export interface UserManagement {
   id: string
+  user_code?: string | null
   username: string
-  email: string
-  role: 'admin' | 'moderator' | 'user'
+  email?: string | null
+  display_name?: string | null
+  role: 'admin' | 'teacher' | 'user'
   organization_id?: string
   organization_name?: string
   status: 'active' | 'inactive' | 'banned'
@@ -21,6 +23,15 @@ export interface UserManagement {
   last_login?: string
   submissions_count: number
   problems_solved: number
+}
+
+export interface BatchCreateAdminUser {
+  user_code: string
+  display_name?: string
+  email?: string
+  campus_id?: number
+  password?: string
+  role?: 'admin' | 'teacher' | 'user'
 }
 
 export interface ProblemManagement {

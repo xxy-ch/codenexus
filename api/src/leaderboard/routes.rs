@@ -116,7 +116,7 @@ pub async fn get_user_stats(
 /// Get problem leaderboard (fastest solvers)
 pub async fn get_problem_leaderboard(
     State(state): State<AppState>,
-    Path(problem_id): Path<Uuid>,
+    Path(problem_id): Path<i64>,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<Vec<ProblemLeaderboardEntry>>, StatusCode> {
     let limit: i64 = params

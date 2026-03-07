@@ -35,7 +35,7 @@ export function ProblemIDEEnhanced() {
   useEffect(() => {
     const loadProblem = async () => {
       try {
-        const data = await problemsService.getProblemDetail(problemId!)
+        const data = await problemsService.getProblem(problemId!)
         setProblem(data)
       } catch (error) {
         console.error('Failed to load problem:', error)
@@ -79,7 +79,13 @@ export function ProblemIDEEnhanced() {
   }, [wsUpdate])
 
   // Supported languages
-  const supportedLanguages = getAllLanguages()
+  const supportedLanguages = getAllLanguages().map((lang) => ({
+    id: lang.id,
+    name: lang.label,
+    icon: lang.icon,
+    version: lang.version,
+    extension: lang.extension,
+  }))
 
   // Update code template when language changes
   useEffect(() => {
@@ -269,14 +275,52 @@ export function ProblemIDEEnhanced() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-4 border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-800 dark:bg-slate-950/60 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">IDE Summary</p>
+              <h2 className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">工作区摘要</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                当前 IDE 已按 reference 收敛为题面、编辑器、结果侧栏三段式结构。这里把语言、模板和实时连接状态提升到首屏，减少进入编辑器后再找上下文。
+              </p>
+            </div>
+            <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              live judge
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Language</p>
+            <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{getLanguageConfig(selectedLanguage).label}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Template</p>
+            <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{code.trim() ? 'Ready' : 'Empty'}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Realtime</p>
+            <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{wsConnected ? 'Connected' : 'Pending'}</p>
+          </div>
+        </div>
+      </div>
+
       <IDELayout
-        problemId={problem.id}
+        problemTitle={problem.title}
         language={selectedLanguage}
+        code={code}
         onLanguageChange={handleLanguageChange}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        timeLimit={problem.time_limit}
+        memoryLimit={problem.memory_limit}
+        languages={supportedLanguages}
       >
         <MonacoEditor
           language={selectedLanguage}
-          code={code}
+          value={code}
           onChange={setCode}
           height="100%"
         />
