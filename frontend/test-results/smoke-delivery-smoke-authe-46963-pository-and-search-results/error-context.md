@@ -1,0 +1,83 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e8]: code
+        - generic [ref=e9]: AlgoMaster
+      - navigation [ref=e10]:
+        - link "dashboard Dashboard" [ref=e11] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e12]: dashboard
+          - generic [ref=e13]: Dashboard
+        - link "terminal Problems" [ref=e14] [cursor=pointer]:
+          - /url: /problems
+          - generic [ref=e15]: terminal
+          - generic [ref=e16]: Problems
+        - link "history Submissions" [ref=e17] [cursor=pointer]:
+          - /url: /submissions
+          - generic [ref=e18]: history
+          - generic [ref=e19]: Submissions
+        - link "trophy Contests 2" [ref=e20] [cursor=pointer]:
+          - /url: /contests
+          - generic [ref=e21]: trophy
+          - generic [ref=e22]: Contests
+          - generic [ref=e23]: "2"
+        - link "leaderboard Ranking" [ref=e24] [cursor=pointer]:
+          - /url: /ranking
+          - generic [ref=e25]: leaderboard
+          - generic [ref=e26]: Ranking
+        - link "route Roadmap" [ref=e27] [cursor=pointer]:
+          - /url: /roadmap
+          - generic [ref=e28]: route
+          - generic [ref=e29]: Roadmap
+        - link "forum Discuss" [ref=e30] [cursor=pointer]:
+          - /url: /discussions
+          - generic [ref=e31]: forum
+          - generic [ref=e32]: Discuss
+        - link "article Blog" [ref=e33] [cursor=pointer]:
+          - /url: /blog
+          - generic [ref=e34]: article
+          - generic [ref=e35]: Blog
+        - link "mail Messages" [ref=e36] [cursor=pointer]:
+          - /url: /messages
+          - generic [ref=e37]: mail
+          - generic [ref=e38]: Messages
+        - link "group Classes" [ref=e39] [cursor=pointer]:
+          - /url: /teacher/classes
+          - generic [ref=e40]: group
+          - generic [ref=e41]: Classes
+        - link "build Contest Wizard" [ref=e42] [cursor=pointer]:
+          - /url: /teacher/contest-wizard
+          - generic [ref=e43]: build
+          - generic [ref=e44]: Contest Wizard
+        - link "insights Reports" [ref=e45] [cursor=pointer]:
+          - /url: /teacher/assignment-report
+          - generic [ref=e46]: insights
+          - generic [ref=e47]: Reports
+    - generic [ref=e49]:
+      - link "10" [ref=e50] [cursor=pointer]:
+        - /url: /profile
+      - generic [ref=e51]:
+        - link "1001" [ref=e52] [cursor=pointer]:
+          - /url: /profile
+        - paragraph [ref=e53]: admin
+      - generic [ref=e54]:
+        - link "settings" [ref=e55] [cursor=pointer]:
+          - /url: /settings
+          - generic [ref=e56]: settings
+        - button "logout" [ref=e57]:
+          - generic [ref=e58]: logout
+  - main [ref=e59]:
+    - generic [ref=e61]:
+      - button "notifications" [ref=e62]:
+        - generic [ref=e63]: notifications
+      - button "add" [ref=e65]:
+        - generic [ref=e66]: add
+    - generic [ref=e68]:
+      - generic [ref=e69]: error
+      - heading "Failed to Load Problems" [level=3] [ref=e70]
+      - paragraph [ref=e71]: Please try again later.
+```

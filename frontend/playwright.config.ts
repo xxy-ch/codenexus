@@ -9,7 +9,8 @@ const config: PlaywrightTestConfig = {
   retries: 0, // No retries for now
   use: {
     headless: true,
-  // Use headed mode for local debugging if needed
+    channel: 'chrome',
+    // Use headed mode for local debugging if needed
   },
   reporter: [
     ['html'], // HTML reporter

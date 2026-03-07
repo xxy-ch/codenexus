@@ -71,16 +71,13 @@ export const searchApi = {
     })
   },
 
-  /**
-   * Search only articles
-   */
-  async searchArticles(
+  async searchProblems(
     query: string,
     options: Partial<SearchQuery> = {}
   ): Promise<SearchResponse> {
     return this.search({
       q: query,
-      type: 'article',
+      type: 'problem',
       sort: 'relevance',
       page: 1,
       limit: 20,

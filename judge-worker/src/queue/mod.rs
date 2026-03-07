@@ -1,7 +1,6 @@
 pub mod producer;
 pub mod consumer;
 
-use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 /// Submission message received from judge queue

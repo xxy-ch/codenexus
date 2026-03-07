@@ -178,23 +178,76 @@ export function SubmissionDetail() {
   const statusConfig = STATUS_CONFIG[submission.status]
   const passedTestCases = submission.test_cases?.filter(tc => tc.status === 'passed').length || 0
   const totalTestCases = submission.test_cases?.length || 0
+  const statusLabel = statusConfig.label
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="small" onClick={() => navigate(-1)}>
-            <span className="material-symbols-outlined">arrow_back</span>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {submission.problem_title}
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              提交 ID: {submission.id}
-            </p>
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <button type="button" className="hover:text-primary" onClick={() => navigate('/problems')}>
+                Problems
+              </button>
+              <span>/</span>
+              <button type="button" className="hover:text-primary" onClick={() => navigate(`/problems/${submission.problem_id}`)}>
+                {submission.problem_title}
+              </button>
+              <span>/</span>
+              <span className="text-slate-900 dark:text-white">Submission #{submission.id}</span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="small" onClick={() => navigate(-1)}>
+                <span className="material-symbols-outlined">arrow_back</span>
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  Submission #{submission.id}
+                </h1>
+                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                  {submission.problem_title} 的完整判题分析，包含状态摘要、性能数据和测试用例详情。
+                </p>
+              </div>
+            </div>
           </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <div className={cn(
+              'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold',
+              statusConfig.bgColor,
+              statusConfig.textColor,
+              statusConfig.borderColor
+            )}>
+              <span className="material-symbols-outlined text-base">{statusConfig.icon}</span>
+              {statusLabel}
+            </div>
+            <Link to={`/problems/${submission.problem_id}/solve`}>
+              <Button variant="primary" size="small">
+                <span className="material-symbols-outlined mr-2">replay</span>
+                再次挑战
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Verdict</p>
+          <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{statusLabel}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Runtime</p>
+          <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{submission.time_ms !== undefined ? `${submission.time_ms}ms` : '-'}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Memory</p>
+          <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{submission.memory_kb !== undefined ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}</p>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tests</p>
+          <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{passedTestCases}/{totalTestCases}</p>
         </div>
       </div>
 
@@ -225,12 +278,10 @@ export function SubmissionDetail() {
           </div>
 
           <div className="text-right">
-            <Link to={`/problems/${submission.problem_id}/solve`}>
-              <Button variant="primary" size="small">
-                <span className="material-symbols-outlined mr-2">replay</span>
-                再次挑战
-              </Button>
-            </Link>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-75">Updated</p>
+            <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">
+              {new Date(submission.updated_at).toLocaleString('zh-CN')}
+            </p>
           </div>
         </div>
 

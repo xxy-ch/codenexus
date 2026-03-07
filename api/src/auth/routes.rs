@@ -1,6 +1,7 @@
 use axum::{extract::State, http::StatusCode, response::Json};
 use shared::models::{LoginRequest, LoginResponse, RefreshRequest, RefreshResponse};
 use crate::AppState;
+use crate::users::{models::RegisterRequest, service::UserService};
 
 pub async fn login(
     State(state): State<AppState>,
@@ -55,6 +56,42 @@ pub async fn refresh(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(RefreshResponse { token: new_token }))
+}
+
+pub async fn register(
+    State(state): State<AppState>,
+    Json(request): Json<RegisterRequest>,
+) -> Result<Json<crate::users::models::AuthResponse>, StatusCode> {
+    let service = UserService::new(state.db_pool.clone(), state.jwt_service.clone());
+    let profile = service
+        .register(request)
+        .await
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    let shared_user = shared::models::User {
+        id: profile.id,
+        username: profile.username.clone(),
+        email: profile.email.clone().unwrap_or_default(),
+        password_hash: String::new(),
+        role: profile.role.clone(),
+        school_id: profile.organization_id,
+        campus_id: profile.campus_id,
+    };
+
+    let token = state
+        .jwt_service
+        .generate_access_token(&shared_user)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let refresh_token = state
+        .jwt_service
+        .generate_refresh_token(&shared_user)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(crate::users::models::AuthResponse {
+        token,
+        refresh_token,
+        user: profile,
+    }))
 }
 
 #[cfg(test)]

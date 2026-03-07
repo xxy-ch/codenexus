@@ -1,10 +1,8 @@
 use super::models::*;
 use super::queue::{self, SubmissionMessage};
-use crate::AppState;
 use anyhow::Result;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
-use serde_json::json;
 
 pub struct SubmissionService {
     pool: PgPool,
@@ -52,9 +50,27 @@ impl SubmissionService {
         // Create submission
         let submission = sqlx::query_as::<_, Submission>(
             r#"
-            INSERT INTO submissions (user_id, problem_id, code, language, status)
-            VALUES ($1, $2, $3, $4, 'pending')
-            RETURNING *
+            INSERT INTO submissions (organization_id, user_id, problem_id, code, language, status)
+            VALUES (
+                COALESCE((SELECT organization_id FROM users WHERE id = $1), 1),
+                $1,
+                $2,
+                $3,
+                $4,
+                'queued'
+            )
+            RETURNING
+                id,
+                user_id,
+                problem_id,
+                code,
+                language,
+                status,
+                NULL::INTEGER as score,
+                time_ms as runtime_ms,
+                memory_kb,
+                created_at,
+                updated_at
             "#
         )
         .bind(user_id)
@@ -72,7 +88,22 @@ impl SubmissionService {
 
     pub async fn get_submission(&self, submission_id: i64, user_id: Uuid) -> Result<SubmissionResponse> {
         let submission = sqlx::query_as::<_, Submission>(
-            "SELECT * FROM submissions WHERE id = $1 AND user_id = $2"
+            r#"
+            SELECT
+                id,
+                user_id,
+                problem_id,
+                code,
+                language,
+                status,
+                NULL::INTEGER as score,
+                time_ms as runtime_ms,
+                memory_kb,
+                created_at,
+                updated_at
+            FROM submissions
+            WHERE id = $1 AND user_id = $2
+            "#
         )
         .bind(submission_id)
         .bind(user_id)
@@ -124,7 +155,22 @@ impl SubmissionService {
         offset: i64,
     ) -> Result<(Vec<Submission>, i64)> {
         let mut query = String::from(
-            "SELECT * FROM submissions WHERE user_id = $1"
+            r#"
+            SELECT
+                id,
+                user_id,
+                problem_id,
+                code,
+                language,
+                status,
+                NULL::INTEGER as score,
+                time_ms as runtime_ms,
+                memory_kb,
+                created_at,
+                updated_at
+            FROM submissions
+            WHERE user_id = $1
+            "#
         );
         let mut count_query = String::from(
             "SELECT COUNT(*) FROM submissions WHERE user_id = $1"
@@ -184,9 +230,9 @@ impl SubmissionService {
             r#"
             SELECT
                 COUNT(*) as total_submissions,
-                COUNT(*) FILTER (WHERE status = 'accepted') as accepted_submissions,
-                COALESCE(AVG(runtime_ms) FILTER (WHERE status = 'accepted'), 0) as average_runtime,
-                COALESCE(AVG(memory_kb) FILTER (WHERE status = 'accepted'), 0) as average_memory
+                COUNT(*) FILTER (WHERE verdict = 'ac') as accepted_submissions,
+                COALESCE((AVG(time_ms) FILTER (WHERE verdict = 'ac'))::DOUBLE PRECISION, 0.0::DOUBLE PRECISION) as average_runtime,
+                COALESCE((AVG(memory_kb) FILTER (WHERE verdict = 'ac'))::DOUBLE PRECISION, 0.0::DOUBLE PRECISION) as average_memory
             FROM submissions
             WHERE user_id = $1
             "#
@@ -197,8 +243,8 @@ impl SubmissionService {
 
         let total_submissions: i64 = row.get("total_submissions");
         let accepted_submissions: i64 = row.get("accepted_submissions");
-        let average_runtime: Option<f64> = row.get("average_runtime");
-        let average_memory: Option<f64> = row.get("average_memory");
+        let average_runtime: f64 = row.get("average_runtime");
+        let average_memory: f64 = row.get("average_memory");
 
         let acceptance_rate = if total_submissions > 0 {
             (accepted_submissions as f64 / total_submissions as f64) * 100.0
@@ -297,11 +343,11 @@ impl SubmissionService {
     ) -> Result<()> {
         sqlx::query(
             "UPDATE submissions
-             SET status = $1, score = $2, runtime_ms = $3, memory_kb = $4, updated_at = NOW()
+             SET status = $1, verdict = $2, time_ms = $3, memory_kb = $4, updated_at = NOW()
              WHERE id = $5"
         )
-        .bind(status)
-        .bind(score)
+        .bind(if status == "accepted" || status == "wrong_answer" || status == "runtime_error" || status == "time_limit_exceeded" || status == "memory_limit_exceeded" || status == "compile_error" { "judged" } else if status == "failed" { "failed" } else { status })
+        .bind(map_verdict(status))
         .bind(runtime_ms)
         .bind(memory_kb)
         .bind(submission_id)
@@ -332,20 +378,12 @@ impl SubmissionService {
     ) -> Result<i64> {
         let result_id = sqlx::query_scalar::<_, i64>(
             r#"
-            INSERT INTO submissions_test_case_results (
+            INSERT INTO test_case_results (
                 submission_id, test_case_id, status,
                 expected_output, actual_output, error_message,
                 runtime_ms, memory_kb
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (submission_id, test_case_id)
-            DO UPDATE SET
-                status = EXCLUDED.status,
-                expected_output = EXCLUDED.expected_output,
-                actual_output = EXCLUDED.actual_output,
-                error_message = EXCLUDED.error_message,
-                runtime_ms = EXCLUDED.runtime_ms,
-                memory_kb = EXCLUDED.memory_kb
             RETURNING id
             "#
         )
@@ -361,5 +399,18 @@ impl SubmissionService {
         .await?;
 
         Ok(result_id)
+    }
+}
+
+fn map_verdict(status: &str) -> Option<&'static str> {
+    match status {
+        "accepted" => Some("ac"),
+        "wrong_answer" => Some("wa"),
+        "runtime_error" => Some("rte"),
+        "time_limit_exceeded" => Some("tle"),
+        "memory_limit_exceeded" => Some("mle"),
+        "compile_error" => Some("ce"),
+        "system_error" | "failed" => Some("ie"),
+        _ => None,
     }
 }

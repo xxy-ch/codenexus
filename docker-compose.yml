@@ -78,8 +78,8 @@ services:
 
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
     container_name: online-judge-api
     restart: unless-stopped
     ports:
@@ -101,9 +101,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-    volumes:
-      - ./api:/app
-      - cargo_cache:/usr/local/cargo/registry
 
   frontend:
     build:
@@ -112,7 +109,7 @@ services:
     container_name: online-judge-frontend
     restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "5173:80"
     environment:
       VITE_API_BASE_URL: http://localhost:3000
       VITE_WS_BASE_URL: ws://localhost:3000
@@ -120,28 +117,26 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
 
   judge-worker:
     build:
-      context: ./judge-worker
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: judge-worker/Dockerfile
     container_name: online-judge-judge-worker
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/online_judge
       REDIS_URL: redis://redis:6379
+      API_URL: http://api:3000
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      api:
+        condition: service_healthy
     volumes:
-      - ./judge-worker:/app
       - /var/run/docker.sock:/var/run/docker.sock
-      - cargo_cache:/usr/local/cargo/registry
     privileged: true
     cap_add:
       - SYS_ADMIN
@@ -150,6 +145,4 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
-    driver: local
-  cargo_cache:
     driver: local

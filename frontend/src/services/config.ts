@@ -1,6 +1,6 @@
 // API Configuration
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 30000,
   endpoints: {
     // Auth
@@ -60,7 +60,9 @@ export const FEATURE_FLAGS = {
 
 
 export const WS_CONFIG = {
-  baseURL: import.meta.env.VITE_WS_BASE_URL || 'ws://localhost:3000',
+  baseURL:
+    import.meta.env.VITE_WS_BASE_URL ||
+    `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`,
   endpoints: {
     submission: (id: string) => `/ws/submissions/${id}`,
     contest: (id: string) => `/ws/contests/${id}`,

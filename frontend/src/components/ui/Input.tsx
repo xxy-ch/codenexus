@@ -1,4 +1,5 @@
-import { TextField, TextFieldProps } from '@mui/material'
+import { TextField } from '@mui/material'
+import type { TextFieldProps } from '@mui/material/TextField'
 import { cn } from '@/lib/utils'
 
 interface InputProps extends Omit<TextFieldProps, 'className'> {

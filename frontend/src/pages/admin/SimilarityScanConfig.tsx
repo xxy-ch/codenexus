@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { plagiarismService, type SimilarityScanConfig } from '@/services/plagiarism'
 import { Loading } from '@/components/ui/Loading'
@@ -14,9 +14,11 @@ export function SimilarityScanConfig() {
     queryFn: () => plagiarismService.getScanConfig(),
   })
 
-  useEffect(() => {
-    if (data) setForm(data)
-  }, [data])
+  const effectiveForm = useMemo(() => form ?? data ?? null, [form, data])
+  const patchForm = (updater: (current: SimilarityScanConfig) => SimilarityScanConfig) => {
+    if (!effectiveForm) return
+    setForm(updater(effectiveForm))
+  }
 
   const saveMutation = useMutation({
     mutationFn: (payload: SimilarityScanConfig) => plagiarismService.updateScanConfig(payload),
@@ -42,7 +44,7 @@ export function SimilarityScanConfig() {
     )
   }
 
-  if (error || !form) {
+  if (error || !effectiveForm) {
     return (
       <div className="text-center py-16">
         <p className="text-slate-600 dark:text-slate-300 mb-4">扫描配置加载失败</p>
@@ -66,8 +68,8 @@ export function SimilarityScanConfig() {
           <div className="mt-1">
             <input
               type="checkbox"
-              checked={form.enabled}
-              onChange={(e) => setForm((prev) => (prev ? { ...prev, enabled: e.target.checked } : prev))}
+              checked={effectiveForm.enabled}
+              onChange={(e) => patchForm((prev) => ({ ...prev, enabled: e.target.checked }))}
             />
           </div>
         </label>
@@ -75,13 +77,9 @@ export function SimilarityScanConfig() {
         <label className="text-sm">
           <span className="text-slate-600 dark:text-slate-300">语言范围</span>
           <select
-            value={form.language}
+            value={effectiveForm.language}
             onChange={(e) =>
-              setForm((prev) =>
-                prev
-                  ? { ...prev, language: e.target.value as SimilarityScanConfig['language'] }
-                  : prev
-              )
+              patchForm((prev) => ({ ...prev, language: e.target.value as SimilarityScanConfig['language'] }))
             }
             className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
           >
@@ -100,8 +98,8 @@ export function SimilarityScanConfig() {
             step="0.01"
             min="0"
             max="1"
-            value={form.threshold}
-            onChange={(e) => setForm((prev) => (prev ? { ...prev, threshold: Number(e.target.value) } : prev))}
+            value={effectiveForm.threshold}
+            onChange={(e) => patchForm((prev) => ({ ...prev, threshold: Number(e.target.value) }))}
             className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
           />
         </label>
@@ -111,8 +109,8 @@ export function SimilarityScanConfig() {
           <input
             type="number"
             min="1"
-            value={form.min_token_length}
-            onChange={(e) => setForm((prev) => (prev ? { ...prev, min_token_length: Number(e.target.value) } : prev))}
+            value={effectiveForm.min_token_length}
+            onChange={(e) => patchForm((prev) => ({ ...prev, min_token_length: Number(e.target.value) }))}
             className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
           />
         </label>
@@ -122,8 +120,8 @@ export function SimilarityScanConfig() {
           <input
             type="number"
             min="1"
-            value={form.window_size}
-            onChange={(e) => setForm((prev) => (prev ? { ...prev, window_size: Number(e.target.value) } : prev))}
+            value={effectiveForm.window_size}
+            onChange={(e) => patchForm((prev) => ({ ...prev, window_size: Number(e.target.value) }))}
             className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
           />
         </label>
@@ -133,8 +131,8 @@ export function SimilarityScanConfig() {
           <input
             type="number"
             min="1"
-            value={form.max_reports_per_run}
-            onChange={(e) => setForm((prev) => (prev ? { ...prev, max_reports_per_run: Number(e.target.value) } : prev))}
+            value={effectiveForm.max_reports_per_run}
+            onChange={(e) => patchForm((prev) => ({ ...prev, max_reports_per_run: Number(e.target.value) }))}
             className="mt-1 w-full px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
           />
         </label>
@@ -142,8 +140,8 @@ export function SimilarityScanConfig() {
         <label className="text-sm flex items-center gap-2">
           <input
             type="checkbox"
-            checked={form.ignore_comments}
-            onChange={(e) => setForm((prev) => (prev ? { ...prev, ignore_comments: e.target.checked } : prev))}
+            checked={effectiveForm.ignore_comments}
+            onChange={(e) => patchForm((prev) => ({ ...prev, ignore_comments: e.target.checked }))}
           />
           <span className="text-slate-600 dark:text-slate-300">忽略注释</span>
         </label>
@@ -151,8 +149,8 @@ export function SimilarityScanConfig() {
         <label className="text-sm flex items-center gap-2">
           <input
             type="checkbox"
-            checked={form.ignore_whitespace}
-            onChange={(e) => setForm((prev) => (prev ? { ...prev, ignore_whitespace: e.target.checked } : prev))}
+            checked={effectiveForm.ignore_whitespace}
+            onChange={(e) => patchForm((prev) => ({ ...prev, ignore_whitespace: e.target.checked }))}
           />
           <span className="text-slate-600 dark:text-slate-300">忽略空白</span>
         </label>
@@ -183,7 +181,7 @@ export function SimilarityScanConfig() {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          onClick={() => saveMutation.mutate(form)}
+          onClick={() => saveMutation.mutate(effectiveForm)}
           disabled={saveMutation.isPending}
           className="px-4 py-2 rounded bg-primary text-white disabled:opacity-50"
         >

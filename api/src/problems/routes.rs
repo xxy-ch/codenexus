@@ -61,109 +61,67 @@ pub async fn list_problems(
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(20);
     let offset = (page - 1) * limit;
+    let search = query.search.clone().unwrap_or_default();
+    let difficulty = query.difficulty.clone();
+    let visibility = query.visibility.clone().or(Some("public".to_string()));
+    let is_public = query.is_public.unwrap_or(true);
 
-    // Build dynamic query
-    let mut base_query = "SELECT * FROM problems WHERE 1=1".to_string();
-    let mut count_query = "SELECT COUNT(*) FROM problems WHERE 1=1".to_string();
-    let mut conditions = vec![];
-    let mut param_count = 0;
+    let total = sqlx::query_scalar::<_, i64>(
+        r#"
+        SELECT COUNT(*)
+        FROM problems
+        WHERE ($1 = '' OR title ILIKE $2 OR description ILIKE $2)
+          AND ($3::TEXT IS NULL OR difficulty = $3)
+          AND ($4::TEXT IS NULL OR visibility = $4)
+          AND ($5::BOOLEAN = false OR visibility = 'public')
+        "#,
+    )
+    .bind(&search)
+    .bind(format!("%{}%", search))
+    .bind(difficulty.clone())
+    .bind(visibility.clone())
+    .bind(is_public)
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    // Difficulty filter
-    if let Some(diff) = &query.difficulty {
-        param_count += 1;
-        conditions.push(format!(" AND difficulty = ${}", param_count));
-    }
-
-    // Visibility filter
-    if let Some(vis) = &query.visibility {
-        param_count += 1;
-        conditions.push(format!(" AND visibility = ${}", param_count));
-    }
-
-    // Public filter
-    if let Some(is_pub) = query.is_public {
-        param_count += 1;
-        conditions.push(format!(" AND is_public = ${}", param_count));
-    }
-
-    // Tags filter (array overlap)
-    if let Some(tags) = &query.tags {
-        if !tags.is_empty() {
-            param_count += 1;
-            conditions.push(format!(" AND tags && ${}", param_count));
-        }
-    }
-
-    // Search filter (full-text search)
-    if let Some(search_term) = &query.search {
-        param_count += 1;
-        conditions.push(format!(" AND (to_tsvector('english', title) || to_tsvector('english', description) @@ plainto_tsquery('english', ${}))", param_count));
-    }
-
-    let conditions_str = conditions.join("");
-    base_query.push_str(&conditions_str);
-    count_query.push_str(&conditions_str);
-
-    // Sorting
-    let sort_by = query.sort_by.as_ref().map(|s| s.as_str()).unwrap_or("created_at");
-    let sort_order = query.sort_order.as_ref().map(|s| s.as_str()).unwrap_or("desc");
-    let sort_dir = if sort_order == "asc" { "ASC" } else { "DESC" };
-
-    // Validate sort_by to prevent SQL injection
-    let valid_sort_columns = ["created_at", "title", "difficulty", "updated_at"];
-    if !valid_sort_columns.contains(&sort_by) {
-        return Err(StatusCode::BAD_REQUEST);
-    }
-
-    base_query.push_str(&format!(" ORDER BY {} {} LIMIT {} OFFSET {}", sort_by, sort_dir, limit, offset));
-
-    // Execute count query
-    let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query);
-    if let Some(diff) = &query.difficulty {
-        count_builder = count_builder.bind(diff);
-    }
-    if let Some(vis) = &query.visibility {
-        count_builder = count_builder.bind(vis);
-    }
-    if let Some(is_pub) = query.is_public {
-        count_builder = count_builder.bind(is_pub);
-    }
-    if let Some(tags) = &query.tags {
-        if !tags.is_empty() {
-            count_builder = count_builder.bind(tags);
-        }
-    }
-    if let Some(search_term) = &query.search {
-        count_builder = count_builder.bind(search_term);
-    }
-
-    let total = count_builder.fetch_one(&state.db_pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    // Execute main query
-    let mut query_builder = sqlx::query_as::<_, super::models::Problem>(&base_query);
-    if let Some(diff) = &query.difficulty {
-        query_builder = query_builder.bind(diff);
-    }
-    if let Some(vis) = &query.visibility {
-        query_builder = query_builder.bind(vis);
-    }
-    if let Some(is_pub) = query.is_public {
-        query_builder = query_builder.bind(is_pub);
-    }
-    if let Some(tags) = &query.tags {
-        if !tags.is_empty() {
-            query_builder = query_builder.bind(tags);
-        }
-    }
-    if let Some(search_term) = &query.search {
-        query_builder = query_builder.bind(search_term);
-    }
-
-    let problems = query_builder.fetch_all(&state.db_pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let problems = sqlx::query_as::<_, super::models::Problem>(
+        r#"
+        SELECT
+            id,
+            title,
+            description,
+            COALESCE(difficulty, 'easy') AS difficulty,
+            time_limit_ms AS time_limit,
+            memory_limit_kb AS memory_limit,
+            author_id AS created_by,
+            organization_id,
+            (visibility = 'public') AS is_public,
+            visibility,
+            ARRAY[]::TEXT[] AS tags,
+            NULL::TEXT AS source_url,
+            NULL::TEXT AS author_note,
+            created_at,
+            updated_at
+        FROM problems
+        WHERE ($1 = '' OR title ILIKE $2 OR description ILIKE $2)
+          AND ($3::TEXT IS NULL OR difficulty = $3)
+          AND ($4::TEXT IS NULL OR visibility = $4)
+          AND ($5::BOOLEAN = false OR visibility = 'public')
+        ORDER BY created_at DESC
+        LIMIT $6 OFFSET $7
+        "#,
+    )
+    .bind(&search)
+    .bind(format!("%{}%", search))
+    .bind(difficulty)
+    .bind(visibility)
+    .bind(is_public)
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(super::models::ProblemsListResponse {
         problems,
@@ -176,11 +134,29 @@ pub async fn list_problems(
 pub async fn get_problem(
     State(state): State<AppState>,
     AuthExtractor(_claims): AuthExtractor,
-    Path(id): Path<Uuid>,
+    Path(id): Path<i64>,
 ) -> Result<Json<super::models::ProblemDetail>, StatusCode> {
-    // Get problem
     let problem = sqlx::query_as::<_, super::models::Problem>(
-        "SELECT * FROM problems WHERE id = $1"
+        r#"
+        SELECT
+            id,
+            title,
+            description,
+            COALESCE(difficulty, 'easy') AS difficulty,
+            time_limit_ms AS time_limit,
+            memory_limit_kb AS memory_limit,
+            author_id AS created_by,
+            organization_id,
+            (visibility = 'public') AS is_public,
+            visibility,
+            ARRAY[]::TEXT[] AS tags,
+            NULL::TEXT AS source_url,
+            NULL::TEXT AS author_note,
+            created_at,
+            updated_at
+        FROM problems
+        WHERE id = $1
+        "#
     )
     .bind(id)
     .fetch_optional(&state.db_pool)
@@ -192,18 +168,10 @@ pub async fn get_problem(
         None => return Err(StatusCode::NOT_FOUND),
     };
 
-    // Get statistics
-    let stats = sqlx::query_as::<_, super::models::ProblemStatistics>(
-        "SELECT * FROM problem_statistics WHERE problem_id = $1"
-    )
-    .bind(id)
-    .fetch_optional(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let stats = None;
 
-    // Get test case count
     let test_case_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM problems_test_cases WHERE problem_id = $1"
+        "SELECT COUNT(*) FROM test_cases WHERE problem_id = $1"
     )
     .bind(id)
     .fetch_one(&state.db_pool)

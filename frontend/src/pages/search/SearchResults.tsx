@@ -74,6 +74,45 @@ export function SearchResults() {
   }
 
   const renderResultItem = (item: SearchResultItem) => {
+    if (item.type === 'Problem') {
+      return (
+        <article
+          key={`problem-${item.id}`}
+          onClick={() => navigate(`/problems/${item.problem_id}`)}
+          className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6 hover:shadow-md transition-shadow cursor-pointer"
+        >
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-semibold uppercase">
+              Problem
+            </span>
+            {item.difficulty && (
+              <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">
+                {item.difficulty}
+              </span>
+            )}
+          </div>
+
+          <h3
+            className="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+            dangerouslySetInnerHTML={{ __html: item.highlighted_title || item.title }}
+          />
+
+          <div
+            className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2"
+            dangerouslySetInnerHTML={{ __html: item.highlighted_content || item.excerpt }}
+          />
+
+          <div className="flex items-center justify-between text-xs text-text-muted">
+            <div className="flex items-center gap-3">
+              <span className="font-medium">{item.author_username}</span>
+              <span>{formatDate(item.created_at)}</span>
+            </div>
+            <div className="font-medium text-primary">#{item.problem_id}</div>
+          </div>
+        </article>
+      )
+    }
+
     if (item.type === 'Discussion') {
       return (
         <article
@@ -146,77 +185,9 @@ export function SearchResults() {
           </div>
         </article>
       )
-    } else {
-      return (
-        <article
-          key={`article-${item.id}`}
-          onClick={() => navigate(`/blog/${item.slug}`)}
-          className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6 hover:shadow-md transition-shadow cursor-pointer"
-        >
-          {/* Tags and category */}
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            {item.is_featured && (
-              <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase">
-                Featured
-              </span>
-            )}
-            {item.category && (
-              <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">
-                {item.category}
-              </span>
-            )}
-            {item.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-
-          {/* Title */}
-          <h3
-            className="text-lg font-semibold text-gray-900 dark:text-white mb-2"
-            dangerouslySetInnerHTML={{ __html: item.highlighted_title || item.title }}
-          />
-
-          {/* Excerpt or highlighted content */}
-          <div
-            className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2"
-            dangerouslySetInnerHTML={{
-              __html: item.highlighted_content || item.excerpt,
-            }}
-          />
-
-          {/* Metadata */}
-          <div className="flex items-center justify-between text-xs text-text-muted">
-            <div className="flex items-center gap-3">
-              <span className="font-medium">{item.author_username}</span>
-              <span>
-                {item.published_at
-                  ? formatDate(item.published_at)
-                  : formatDate(item.created_at)}
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <span className="material-icons text-base">visibility</span>
-                {item.view_count}
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="material-icons text-base">chat_bubble_outline</span>
-                {item.comment_count}
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="material-icons text-base">thumb_up</span>
-                {item.like_count}
-              </span>
-            </div>
-          </div>
-        </article>
-      )
     }
+
+    return null
   }
 
   return (
@@ -240,7 +211,7 @@ export function SearchResults() {
           <div className="flex items-center gap-3 flex-wrap">
             {/* Type filter */}
             <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-              {(['all', 'discussion', 'article'] as SearchType[]).map((typeOption) => (
+              {(['all', 'problem', 'discussion'] as SearchType[]).map((typeOption) => (
                 <button
                   key={typeOption}
                   onClick={() => updateFilter('type', typeOption)}
@@ -252,9 +223,11 @@ export function SearchResults() {
                 >
                   {typeOption === 'all'
                     ? 'All'
+                    : typeOption === 'problem'
+                      ? 'Problems'
                     : typeOption === 'discussion'
                       ? 'Discussions'
-                      : 'Articles'}
+                      : 'Unknown'}
                 </button>
               ))}
             </div>
@@ -276,7 +249,7 @@ export function SearchResults() {
                 {results.total_count} results
                 {results.total_count > 0 && (
                   <span className="ml-2">
-                    ({results.discussion_count} discussions, {results.article_count} articles)
+                    ({results.problem_count} problems, {results.discussion_count} discussions)
                   </span>
                 )}
               </div>
@@ -301,7 +274,7 @@ export function SearchResults() {
               Enter a search query
             </h2>
             <p className="text-text-muted">
-              Search across discussions and blog articles
+              Search across problems and discussions
             </p>
           </div>
         ) : results && results.results.length === 0 ? (
@@ -316,7 +289,6 @@ export function SearchResults() {
             <button
               onClick={() => {
                 setSearchParams(new URLSearchParams())
-                setQuery(query)
               }}
               className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
             >

@@ -91,18 +91,18 @@ export function LoginPage() {
                 </div>
               )}
 
-              {/* Email Field */}
+              {/* Username Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Email Address
+                <label htmlFor="username" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Username
                 </label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                  value={formData.email}
+                  id="username"
+                  name="username"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="1001"
+                  value={formData.username}
                   onChange={handleChange}
                   required
                   disabled={isSubmitting}

@@ -19,9 +19,7 @@ pub async fn send_judge_result(
     stream_name: &str,
     result: &JudgeResult,
 ) -> Result<String> {
-    use redis::AsyncCommands;
-
-    let mut conn = redis_client.get_async_connection().await?;
+    let mut conn = redis_client.get_multiplexed_async_connection().await?;
 
     let result_json = serde_json::to_string(result)?;
 

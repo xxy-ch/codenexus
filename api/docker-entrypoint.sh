@@ -29,39 +29,11 @@ wait_for_postgres() {
     echo "PostgreSQL is healthy and ready!"
 }
 
-# Function to run migrations
-run_migrations() {
-    echo "Running database migrations..."
-    
-    # Check if migrations have already been applied by checking for a recent migration
-    # We'll use sqlx migrate info to check the current state
-    if sqlx migrate info --database-url "$DATABASE_URL" >/dev/null 2>&1; then
-        echo "Checking migration status..."
-        MIGRATION_OUTPUT=$(sqlx migrate info --database-url "$DATABASE_URL" 2>&1 || true)
-        
-        if echo "$MIGRATION_OUTPUT" | grep -q "No pending migrations"; then
-            echo "All migrations are already applied. Skipping migration run."
-            return 0
-        fi
-    fi
-    
-    # Run migrations
-    if sqlx migrate run --database-url "$DATABASE_URL"; then
-        echo "✅ Migrations applied successfully!"
-    else
-        echo "❌ Migration failed!"
-        exit 1
-    fi
-}
-
 # Main execution
 main() {
     # Wait for PostgreSQL to be healthy
     wait_for_postgres
-    
-    # Run migrations
-    run_migrations
-    
+
     echo "Starting API application..."
     
     # Start the API application

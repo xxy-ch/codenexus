@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Problem {
-    pub id: Uuid,
+    pub id: i64,
     pub title: String,
     pub description: String,
     pub difficulty: String,
@@ -73,7 +73,7 @@ pub struct ProblemsListResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProblemDetail {
-    pub id: Uuid,
+    pub id: i64,
     pub title: String,
     pub description: String,
     pub difficulty: String,
@@ -94,7 +94,7 @@ pub struct ProblemDetail {
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct ProblemStatistics {
-    pub problem_id: Uuid,
+    pub problem_id: i64,
     pub total_submissions: i64,
     pub accepted_submissions: i64,
     pub acceptance_rate: Option<f64>,

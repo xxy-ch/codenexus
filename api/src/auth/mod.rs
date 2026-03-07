@@ -8,7 +8,7 @@ mod password;
 mod routes;
 
 pub use jwt_service::JwtService;
-pub use routes::{login, refresh};
+pub use routes::{login, refresh, register};
 
 pub trait AuthUserStore: Send + Sync {
     fn get_by_username(&self, username: &str) -> Option<User>;
@@ -37,10 +37,12 @@ impl InMemoryUserStore {
 
         let password_hash =
             password::hash_password(&password).expect("Failed to hash demo password");
-        let user_id = Uuid::new_v4();
+        let user_id = Uuid::parse_str("11111111-1111-1111-1111-111111111111")
+            .expect("hard-coded demo user UUID must be valid");
 
         let user = User {
             id: user_id,
+            username: username.to_string(),
             email: email.to_string(),
             password_hash,
             role: role.to_string(),

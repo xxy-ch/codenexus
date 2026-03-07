@@ -1,6 +1,6 @@
 # Multi-stage build for Rust API service
 # Stage 1: Build
-FROM rust:1.75-alpine AS builder
+FROM rust:1.88-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -8,27 +8,20 @@ RUN apk add --no-cache \
     postgresql-client \
     pkgconf \
     openssl-dev \
-    curl \
-    sqlx-cli
+    curl
 
 # Set working directory
 WORKDIR /app
 
-# Copy Cargo files
+# Copy workspace sources required by api
 COPY Cargo.toml Cargo.lock ./
-
-# Create dummy main.rs to build dependencies
-RUN mkdir src && \
-    echo "fn main() {}" > src/main.rs && \
-    cargo build --release && \
-    rm -rf src
-
-# Copy source code
-COPY src ./src
+COPY judge-worker/Cargo.toml ./judge-worker/Cargo.toml
+COPY api ./api
+COPY shared ./shared
+RUN mkdir -p judge-worker/src && printf 'fn main() {}\n' > judge-worker/src/main.rs
 
 # Build the actual application
-RUN touch src/main.rs && \
-    cargo build --release
+RUN cargo build --release -p api
 
 # Stage 2: Runtime
 FROM alpine:3.19
@@ -37,8 +30,7 @@ FROM alpine:3.19
 RUN apk add --no-cache \
     postgresql-client \
     ca-certificates \
-    curl \
-    sqlx-cli
+    curl
 
 # Create app user
 RUN addgroup -g 1000 appuser && \
@@ -47,10 +39,10 @@ RUN addgroup -g 1000 appuser && \
 # Set working directory
 WORKDIR /app
 
-# Copy binary from builder
+# Copy binary, migrations, and entrypoint
 COPY --from=builder /app/target/release/api /app/api
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
+COPY api/migrations /app/migrations
+COPY api/docker-entrypoint.sh /usr/local/bin/
 
 # Change ownership
 RUN chown -R appuser:appuser /app

@@ -59,13 +59,31 @@ export const adminService = {
     const queryParams = new URLSearchParams()
     if (params?.search) queryParams.append('search', params.search)
     if (params?.difficulty) queryParams.append('difficulty', params.difficulty)
-    if (params?.status) queryParams.append('status', params.status)
-    if (params?.sort) queryParams.append('sort', params.sort)
     if (params?.page) queryParams.append('page', String(params.page))
     if (params?.limit) queryParams.append('limit', String(params.limit))
 
-    const response = await api.get(`/admin/problems?${queryParams}`)
-    return response.data
+    const response = await api.get(`/problems?${queryParams}`)
+    const payload = response.data
+    const problems = Array.isArray(payload?.problems) ? payload.problems : []
+
+    return {
+      problems: problems.map((problem: any) => ({
+        id: String(problem.id),
+        title: String(problem.title ?? ''),
+        difficulty: (problem.difficulty ?? 'easy') as ProblemManagement['difficulty'],
+        status: problem.visibility === 'public' ? 'published' : 'draft',
+        tags: Array.isArray(problem.tags) ? problem.tags : [],
+        submissions_count: Number(problem.submissions_count ?? 0),
+        accepted_count: Number(problem.accepted_count ?? 0),
+        author_id: String(problem.created_by ?? ''),
+        author_username: String(problem.created_by ?? 'system'),
+        created_at: String(problem.created_at ?? ''),
+        is_published: problem.visibility === 'public',
+      })),
+      total: Number(payload?.total ?? problems.length),
+      page: Number(payload?.page ?? params?.page ?? 1),
+      limit: Number(payload?.limit ?? params?.limit ?? 20),
+    }
   },
 
   async toggleProblemVisibility(problemId: string) {

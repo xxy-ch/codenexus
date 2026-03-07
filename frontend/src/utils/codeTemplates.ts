@@ -292,7 +292,7 @@ fun main() {
     val sol = Solution()
 
     // TODO: 读取输入
-    val scanner = Scanner(System.`in`)
+    val scanner = Scanner(System.\`in\`)
     val n = scanner.nextInt()
 
     // TODO: 调用解决方案并输出结果

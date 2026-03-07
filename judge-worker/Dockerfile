@@ -1,6 +1,6 @@
 # Multi-stage build for Rust judge-worker
 # Stage 1: Build
-FROM rust:1.75-alpine AS builder
+FROM rust:1.88-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -11,21 +11,15 @@ RUN apk add --no-cache \
 # Set working directory
 WORKDIR /app
 
-# Copy Cargo files
+# Copy workspace sources required by judge-worker
 COPY Cargo.toml Cargo.lock ./
-
-# Create dummy main.rs to build dependencies
-RUN mkdir src && \
-    echo "fn main() {}" > src/main.rs && \
-    cargo build --release && \
-    rm -rf src
-
-# Copy source code
-COPY src ./src
+COPY api/Cargo.toml ./api/Cargo.toml
+COPY judge-worker ./judge-worker
+COPY shared ./shared
+RUN mkdir -p api/src && printf 'fn main() {}\n' > api/src/main.rs
 
 # Build the actual application
-RUN touch src/main.rs && \
-    cargo build --release
+RUN cargo build --release -p judge-worker
 
 # Stage 2: Runtime with Docker
 FROM alpine:3.19
@@ -34,7 +28,18 @@ FROM alpine:3.19
 RUN apk add --no-cache \
     docker \
     ca-certificates \
-    curl
+    curl \
+    bash \
+    python3 \
+    nodejs \
+    npm \
+    gcc \
+    g++ \
+    musl-dev \
+    openjdk17-jdk \
+    go \
+    rust \
+    cargo
 
 # Create app user
 RUN addgroup -g 1000 appuser && \
@@ -49,13 +54,6 @@ COPY --from=builder /app/target/release/judge-worker /app/judge-worker
 
 # Change ownership
 RUN chown -R appuser:appuser /app
-
-# Expose metrics port (optional)
-EXPOSE 9090
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:9090/metrics || exit 1
 
 # Switch to non-root user
 USER appuser

@@ -59,16 +59,16 @@ impl LeaderboardService {
                     u.username,
                     u.organization_id,
                     u.campus_id,
-                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC') as problems_solved,
+                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
                     COUNT(*) as submissions,
                     ROUND(
-                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC')::NUMERIC /
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
                     ) as acceptance_rate,
                     SUM(
                         CASE
-                            WHEN s.verdict = 'AC' THEN
+                            WHEN s.verdict = 'ac' THEN
                                 CASE p.difficulty
                                     WHEN 'easy' THEN 1
                                     WHEN 'medium' THEN 3
@@ -83,7 +83,7 @@ impl LeaderboardService {
                 LEFT JOIN submissions s ON s.user_id = u.id {}
                 LEFT JOIN problems p ON p.id = s.problem_id
                 GROUP BY u.id, u.username, u.organization_id, u.campus_id
-                HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC') >= $1
+                HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
             )
             SELECT
                 ROW_NUMBER() OVER (ORDER BY score DESC, problems_solved DESC, username ASC) as rank,
@@ -114,7 +114,7 @@ impl LeaderboardService {
             LEFT JOIN submissions s ON s.user_id = u.id {}
             LEFT JOIN problems p ON p.id = s.problem_id
             GROUP BY u.id
-            HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC') >= $1
+            HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
         "#, time_filter);
 
         let total: i64 = sqlx::query_scalar(&count_query)
@@ -157,16 +157,16 @@ impl LeaderboardService {
                     u.username,
                     u.organization_id,
                     u.campus_id,
-                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC') as problems_solved,
+                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
                     COUNT(*) as submissions,
                     ROUND(
-                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC')::NUMERIC /
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
                     ) as acceptance_rate,
                     SUM(
                         CASE
-                            WHEN s.verdict = 'AC' THEN
+                            WHEN s.verdict = 'ac' THEN
                                 CASE p.difficulty
                                     WHEN 'easy' THEN 1
                                     WHEN 'medium' THEN 3
@@ -230,16 +230,16 @@ impl LeaderboardService {
                     u.username,
                     u.organization_id,
                     u.campus_id,
-                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC') as problems_solved,
+                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
                     COUNT(*) as submissions,
                     ROUND(
-                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC')::NUMERIC /
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
                     ) as acceptance_rate,
                     SUM(
                         CASE
-                            WHEN s.verdict = 'AC' THEN
+                            WHEN s.verdict = 'ac' THEN
                                 CASE p.difficulty
                                     WHEN 'easy' THEN 1
                                     WHEN 'medium' THEN 3
@@ -303,16 +303,16 @@ impl LeaderboardService {
                     u.username,
                     u.organization_id,
                     u.campus_id,
-                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC') as problems_solved,
+                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
                     COUNT(*) as submissions,
                     ROUND(
-                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'AC')::NUMERIC /
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
                     ) as acceptance_rate,
                     SUM(
                         CASE
-                            WHEN s.verdict = 'AC' THEN
+                            WHEN s.verdict = 'ac' THEN
                                 CASE p.difficulty
                                     WHEN 'easy' THEN 1
                                     WHEN 'medium' THEN 3
@@ -374,9 +374,9 @@ impl LeaderboardService {
         let stats: (i64, i64, Option<DateTime<Utc>>) = sqlx::query_as(
             r#"
             SELECT
-                COUNT(DISTINCT problem_id) FILTER (WHERE verdict = 'AC') as solved,
+                COUNT(DISTINCT problem_id) FILTER (WHERE verdict = 'ac') as solved,
                 COUNT(*) as total,
-                MAX(created_at) FILTER (WHERE verdict = 'AC') as last_ac
+                MAX(created_at) FILTER (WHERE verdict = 'ac') as last_ac
             FROM submissions
             WHERE user_id = $1
             "#
@@ -407,7 +407,7 @@ impl LeaderboardService {
                 s.created_at as solved_at
             FROM submissions s
             JOIN problems p ON p.id = s.problem_id
-            WHERE s.user_id = $1 AND s.verdict = 'AC'
+            WHERE s.user_id = $1 AND s.verdict = 'ac'
             ORDER BY s.created_at DESC
             LIMIT 10
             "#
@@ -454,7 +454,7 @@ impl LeaderboardService {
             r#"
             SELECT DISTINCT DATE(created_at AT TIME ZONE 'UTC') as ac_date
             FROM submissions
-            WHERE user_id = $1 AND verdict = 'AC'
+            WHERE user_id = $1 AND verdict = 'ac'
             ORDER BY ac_date DESC
             "#
         )
@@ -542,7 +542,7 @@ impl LeaderboardService {
                             END as score
                         FROM submissions s
                         JOIN problems p ON p.id = s.problem_id
-                        WHERE s.verdict = 'AC' AND s.user_id IN (
+                        WHERE s.verdict = 'ac' AND s.user_id IN (
                             SELECT id FROM users WHERE organization_id = (
                                 SELECT organization_id FROM users WHERE id = $1
                             )
@@ -562,7 +562,7 @@ impl LeaderboardService {
                                 END as score
                             FROM submissions s
                             JOIN problems p ON p.id = s.problem_id
-                            WHERE s.user_id = $1 AND s.verdict = 'AC'
+                            WHERE s.user_id = $1 AND s.verdict = 'ac'
                         ) sub
                     )
                 ) ranks
@@ -588,7 +588,7 @@ impl LeaderboardService {
                             END as score
                         FROM submissions s
                         JOIN problems p ON p.id = s.problem_id
-                        WHERE s.verdict = 'AC'
+                        WHERE s.verdict = 'ac'
                     ) sub
                     GROUP BY user_id
                     HAVING SUM(score) > (
@@ -604,7 +604,7 @@ impl LeaderboardService {
                                 END as score
                             FROM submissions s
                             JOIN problems p ON p.id = s.problem_id
-                            WHERE s.user_id = $1 AND s.verdict = 'AC'
+                            WHERE s.user_id = $1 AND s.verdict = 'ac'
                         ) sub
                     )
                 ) ranks
@@ -637,7 +637,7 @@ impl LeaderboardService {
                 s.created_at as solved_at
             FROM submissions s
             JOIN users u ON u.id = s.user_id
-            WHERE s.problem_id = $1 AND s.verdict = 'AC'
+            WHERE s.problem_id = $1 AND s.verdict = 'ac'
             ORDER BY s.time_ms ASC, s.created_at ASC
             LIMIT $2
             "#

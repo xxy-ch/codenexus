@@ -9,6 +9,7 @@ CREATE TABLE campuses (
     slug TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(id, organization_id),
     UNIQUE(organization_id, slug)
 );
 

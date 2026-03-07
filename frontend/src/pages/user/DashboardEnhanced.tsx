@@ -65,6 +65,8 @@ export function DashboardEnhanced() {
   const submissionActivities = (recentActivity ?? []).filter(
     (activity) => activity.type === 'submission'
   )
+  const solvedThisWeek = weeklyActivity.reduce((sum, item) => sum + item['通过'], 0)
+  const totalWeeklySubmissions = weeklyActivity.reduce((sum, item) => sum + item['提交'], 0)
 
   const weeklyActivity = Array.from({ length: 7 }).map((_, index) => {
     const date = new Date()
@@ -120,17 +122,85 @@ export function DashboardEnhanced() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-            欢迎回来! 👋
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            继续保持学习热情，今天也要加油！
-          </p>
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-8 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-2xl space-y-4">
+              <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+                Dashboard Overview
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  欢迎回来，继续把这周的通过数往上推。
+                </h1>
+                <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
+                  过去 7 天共提交 {totalWeeklySubmissions} 次，成功通过 {solvedThisWeek} 次。当前连续活跃 {userStats.current_streak} 天，保持今天的节奏就能继续拉高排名。
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-6">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Global Rank</p>
+                  <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">#{userStats.ranking}</p>
+                </div>
+                <div className="h-10 w-px bg-slate-200 dark:bg-slate-700" />
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Total Points</p>
+                  <p className="mt-1 text-2xl font-bold text-primary">{userStats.total_points}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex w-full max-w-52 items-end gap-2 self-stretch sm:w-52">
+              {weeklyActivity.map((item) => {
+                const height = Math.max(20, item['提交'] * 14)
+
+                return (
+                  <div key={item.day} className="flex flex-1 flex-col items-center justify-end gap-2">
+                    <div
+                      className="w-full rounded-sm bg-primary/15 transition-colors hover:bg-primary/30"
+                      style={{ height }}
+                    />
+                    <span className="text-[11px] font-medium text-slate-400">{item.day}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-3">
+
+        <div className="lg:col-span-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Current Streak</p>
+              <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{userStats.current_streak} 天</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">最高纪录 {userStats.longest_streak} 天，今天再完成 1 道题就能继续保持。</p>
+            </div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-orange-100 text-orange-500 dark:bg-orange-900/30 dark:text-orange-400">
+              <span className="material-symbols-outlined filled">local_fire_department</span>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-7 gap-2 text-center text-xs text-slate-500 dark:text-slate-400">
+            {weeklyActivity.map((item, index) => (
+              <div key={item.day} className="space-y-2">
+                <div>{item.day}</div>
+                <div className={cn(
+                  'flex h-9 w-9 items-center justify-center rounded-full border text-xs font-semibold',
+                  index === 6
+                    ? 'border-primary bg-primary text-white shadow-sm shadow-primary/30'
+                    : item['提交'] > 0
+                      ? 'border-primary/20 bg-primary/10 text-primary'
+                      : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800'
+                )}>
+                  {item['提交'] > 0 ? item['提交'] : '-'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap gap-3">
           <Link to="/problems">
             <Button variant="primary">
               <span className="material-symbols-outlined mr-2">code</span>
@@ -143,12 +213,9 @@ export function DashboardEnhanced() {
               查看竞赛
             </Button>
           </Link>
-        </div>
       </div>
 
-      {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Problems Solved */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <div className="flex items-center justify-between mb-4">
             <span className="material-symbols-outlined text-3xl text-green-500">
@@ -164,7 +231,6 @@ export function DashboardEnhanced() {
           </p>
         </div>
 
-        {/* Submissions */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <div className="flex items-center justify-between mb-4">
             <span className="material-symbols-outlined text-3xl text-blue-500">
@@ -180,7 +246,6 @@ export function DashboardEnhanced() {
           </p>
         </div>
 
-        {/* Accuracy */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <div className="flex items-center justify-between mb-4">
             <span className="material-symbols-outlined text-3xl text-purple-500">
@@ -196,7 +261,6 @@ export function DashboardEnhanced() {
           </p>
         </div>
 
-        {/* Streak */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <div className="flex items-center justify-between mb-4">
             <span className="material-symbols-outlined text-3xl text-orange-500">
@@ -213,9 +277,7 @@ export function DashboardEnhanced() {
         </div>
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Weekly Activity Chart */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
             本周学习活动
@@ -233,7 +295,6 @@ export function DashboardEnhanced() {
           </ResponsiveContainer>
         </div>
 
-        {/* Difficulty Distribution */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
             难度分布
@@ -270,9 +331,7 @@ export function DashboardEnhanced() {
         </div>
       </div>
 
-      {/* Lower Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
         <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
@@ -328,9 +387,7 @@ export function DashboardEnhanced() {
           </div>
         </div>
 
-        {/* Right Column */}
         <div className="space-y-6">
-          {/* Ranking & Points */}
           <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
               排名与积分
@@ -361,7 +418,6 @@ export function DashboardEnhanced() {
             </div>
           </div>
 
-          {/* Achievements */}
           {userStats.achievements && userStats.achievements.length > 0 && (
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
               <div className="flex items-center justify-between mb-4">
@@ -397,7 +453,6 @@ export function DashboardEnhanced() {
         </div>
       </div>
 
-      {/* Recommended Problems */}
       {recommendedProblems && recommendedProblems.length > 0 && (
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <div className="flex items-center justify-between mb-4">

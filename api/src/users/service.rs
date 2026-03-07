@@ -3,7 +3,6 @@ use crate::auth::JwtService;
 use anyhow::Result;
 use sqlx::PgPool;
 use uuid::Uuid;
-use serde::Deserialize;
 
 pub struct UserService {
     pool: PgPool,
@@ -74,9 +73,11 @@ impl UserService {
 
         // Assign default user role
         sqlx::query(
-            "INSERT INTO user_roles (user_id, role) VALUES ($1, 'user')"
+            "INSERT INTO user_roles (user_id, organization_id, campus_id, role) VALUES ($1, $2, $3, 'student')"
         )
         .bind(user_id)
+        .bind(req.organization_id)
+        .bind(req.campus_id)
         .execute(&self.pool)
         .await?;
 
@@ -101,7 +102,18 @@ impl UserService {
 
         // Get user role
         let role = sqlx::query_scalar::<_, String>(
-            "SELECT role FROM user_roles WHERE user_id = $1"
+            r#"
+            SELECT CASE role
+                WHEN 'root' THEN 'admin'
+                WHEN 'campusadmin' THEN 'admin'
+                WHEN 'teacher' THEN 'teacher'
+                ELSE 'user'
+            END
+            FROM user_roles
+            WHERE user_id = $1
+            ORDER BY created_at ASC
+            LIMIT 1
+            "#
         )
         .bind(user.id)
         .fetch_one(&self.pool)
@@ -123,6 +135,7 @@ impl UserService {
         // Generate tokens - convert to shared User model
         let shared_user = shared::models::User {
             id: user.id,
+            username: user.username.clone(),
             email: user.email.unwrap_or_else(|| "".to_string()), // Handle optional email
             password_hash: user.password_hash,
             role,
@@ -156,7 +169,18 @@ impl UserService {
 
         // Get user role
         let role = sqlx::query_scalar::<_, String>(
-            "SELECT role FROM user_roles WHERE user_id = $1"
+            r#"
+            SELECT CASE role
+                WHEN 'root' THEN 'admin'
+                WHEN 'campusadmin' THEN 'admin'
+                WHEN 'teacher' THEN 'teacher'
+                ELSE 'user'
+            END
+            FROM user_roles
+            WHERE user_id = $1
+            ORDER BY created_at ASC
+            LIMIT 1
+            "#
         )
         .bind(user.id)
         .fetch_one(&self.pool)
@@ -178,6 +202,7 @@ impl UserService {
         // Generate new tokens - convert to shared User model
         let shared_user = shared::models::User {
             id: user.id,
+            username: user.username.clone(),
             email: user.email.unwrap_or_else(|| "".to_string()),
             password_hash: user.password_hash,
             role,
@@ -205,7 +230,18 @@ impl UserService {
 
         // Get user role
         let role = sqlx::query_scalar::<_, String>(
-            "SELECT role FROM user_roles WHERE user_id = $1"
+            r#"
+            SELECT CASE role
+                WHEN 'root' THEN 'admin'
+                WHEN 'campusadmin' THEN 'admin'
+                WHEN 'teacher' THEN 'teacher'
+                ELSE 'user'
+            END
+            FROM user_roles
+            WHERE user_id = $1
+            ORDER BY created_at ASC
+            LIMIT 1
+            "#
         )
         .bind(user_id)
         .fetch_one(&self.pool)

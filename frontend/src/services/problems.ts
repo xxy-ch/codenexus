@@ -46,8 +46,28 @@ export const problemsService = {
       params.append('sort', filters.sort)
     }
 
-    const response = await api.get<ProblemsResponse>(`/problems?${params}`)
-    return response.data
+    const response = await api.get(`/problems?${params}`)
+    const payload = response.data
+    const problems = Array.isArray(payload?.problems) ? payload.problems : []
+
+    return {
+      problems: problems.map((problem: any) => ({
+        id: String(problem.id),
+        title: String(problem.title ?? ''),
+        description: String(problem.description ?? ''),
+        difficulty: (problem.difficulty ?? 'easy') as Problem['difficulty'],
+        tags: Array.isArray(problem.tags) ? problem.tags : [],
+        time_limit: Number(problem.time_limit ?? 1000),
+        memory_limit: Number(problem.memory_limit ?? 262144),
+        points: Number(problem.points ?? 0),
+        created_at: String(problem.created_at ?? ''),
+        updated_at: String(problem.updated_at ?? problem.created_at ?? ''),
+      })),
+      total: Number(payload?.total ?? problems.length),
+      page: Number(payload?.page ?? filters.page ?? 1),
+      limit: Number(payload?.limit ?? filters.limit ?? 20),
+      pages: Math.max(1, Math.ceil(Number(payload?.total ?? problems.length) / Number(payload?.limit ?? filters.limit ?? 20))),
+    }
   },
 
   /**

@@ -67,6 +67,7 @@ pub async fn auth_middleware(
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
     let mut request = request;
+    request.extensions_mut().insert(claims.sub);
     request.extensions_mut().insert(claims);
 
     Ok(next.run(request).await)

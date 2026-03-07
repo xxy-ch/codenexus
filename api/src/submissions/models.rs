@@ -71,8 +71,8 @@ pub struct SubmissionStats {
     pub total_submissions: i64,
     pub accepted_submissions: i64,
     pub acceptance_rate: f64,
-    pub average_runtime: Option<f64>,
-    pub average_memory: Option<f64>,
+    pub average_runtime: f64,
+    pub average_memory: f64,
 }
 
 pub const SUBMISSION_STATUS: &[&str] = &[

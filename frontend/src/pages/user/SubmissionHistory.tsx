@@ -154,25 +154,62 @@ export function SubmissionHistory() {
   }
 
   const totalPages = Math.ceil(data.total / limit)
+  const acceptedCount = data.submissions.filter((submission) => submission.status === 'accepted').length
+  const averageRuntime = data.submissions.reduce((sum, submission) => sum + (submission.time_ms ?? 0), 0) / Math.max(1, data.submissions.length)
+  const averageMemory = data.submissions.reduce((sum, submission) => sum + (submission.memory_kb ?? 0), 0) / Math.max(1, data.submissions.length)
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-3">
+            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
+              Submission Archive
+            </span>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                提交历史
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
+                统一查看最近提交的状态、运行表现和语言分布。当前结果集共 {data.total} 条记录，已通过 {acceptedCount} 条。
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/40">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Current Page</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{page}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/40">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Accepted</p>
+              <p className="mt-2 text-2xl font-bold text-green-600 dark:text-green-400">{acceptedCount}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/40">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Avg Runtime</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{Math.round(averageRuntime)}ms</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/40">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Avg Memory</p>
+              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{Math.round(averageMemory / 1024)}MB</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
             提交历史
-          </h1>
+          </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400">
             共 {data.total} 条提交记录
           </p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-4">
-          {/* Status Filter */}
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
               状态:
@@ -214,7 +251,6 @@ export function SubmissionHistory() {
             </div>
           </div>
 
-          {/* Language Filter */}
           <div className="flex items-center gap-2">
             <label htmlFor="language-filter" className="text-sm font-medium text-slate-700 dark:text-slate-300">
               语言:
@@ -236,8 +272,17 @@ export function SubmissionHistory() {
         </div>
       </div>
 
-      {/* Submissions Table */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Result Ledger</h3>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">按时间倒序展示，点击任一行进入提交详情分析。</p>
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <span className="material-symbols-outlined text-sm">tune</span>
+            {statusFilter === 'all' ? 'All Status' : STATUS_CONFIG[statusFilter as keyof typeof STATUS_CONFIG]?.label ?? statusFilter}
+          </div>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
@@ -326,7 +371,6 @@ export function SubmissionHistory() {
           </table>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div className="text-sm text-slate-600 dark:text-slate-400">

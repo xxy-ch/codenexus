@@ -12,13 +12,14 @@ interface AuthState {
   isLoading: boolean
   error: string | null
 
-  login: (credentials: { email: string; password: string }) => Promise<void>
+  login: (credentials: { username: string; password: string }) => Promise<void>
   register: (data: {
-    email: string
+    email?: string
     username: string
     password: string
-    first_name?: string
-    last_name?: string
+    display_name?: string
+    organization_id: number
+    campus_id?: number | null
   }) => Promise<void>
   logout: () => void
   clearError: () => void

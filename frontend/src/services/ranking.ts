@@ -300,7 +300,8 @@ function getMockGlobalRanking(filters: RankingFilters): RankingResponse {
   }
 }
 
-function getMockOrganizationRanking(_filters: RankingFilters): RankingResponse {
+function getMockOrganizationRanking(filters: RankingFilters): RankingResponse {
+  void filters
   // 组织排行榜模拟数据（按学校统计）
   const orgRanking = [
     {

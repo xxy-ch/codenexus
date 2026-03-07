@@ -1,145 +1,99 @@
-use anyhow::Result;
 use crate::db::{get_db_connection, TestCase};
-use crate::queue::{SubmissionMessage, JudgeResult, TestCaseResult};
-use std::process::Command;
-use std::path::PathBuf;
-use std::time::Duration;
+use crate::queue::{JudgeResult, SubmissionMessage, TestCaseResult};
+use anyhow::{Context, Result};
+use std::path::{Path, PathBuf};
+use std::process::Stdio;
+use std::time::Instant;
 use tokio::fs;
-use tokio::time::timeout;
-use tracing::{error, info, warn};
+use tokio::process::Command;
+use tokio::time::{timeout, Duration};
+use tracing::{error, info};
 
-/// Get memory usage in kilobytes for a process ID
-fn get_process_memory_kb(pid: u32) -> Option<i32> {
-    let status_path = format!("/proc/{}/status", pid);
+const DEFAULT_MEMORY_KB: i32 = 262_144;
 
-    if let Ok(content) = std::fs::read_to_string(&status_path) {
-        for line in content.lines() {
-            if line.starts_with("VmRSS:") {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() >= 2 {
-                    if let Ok(kb) = parts[1].parse::<i32>() {
-                        return Some(kb);
-                    }
-                }
-            }
-        }
-    }
-
-    None
+struct ExecutionOutput {
+    status: String,
+    stdout: String,
+    stderr: String,
+    runtime_ms: i32,
+    memory_kb: i32,
 }
 
-/// Check if a process still exists
-fn process_exists(pid: u32) -> bool {
-    let pid_path = format!("/proc/{}", pid);
-    std::path::Path::new(&pid_path).exists()
-}
-
-/// Process a submission and return judging result
-///
-/// Steps:
-/// 1. Save source code to file
-/// 2. Compile code (if needed)
-/// 3. Execute in sandbox with test cases
-/// 4. Compare outputs
-/// 5. Return results
 pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeResult> {
     info!("Processing submission {}", submission.submission_id);
 
     let work_dir = create_work_dir(submission.submission_id).await?;
     let source_file = save_source_code(&work_dir, submission).await?;
-
     let test_cases = fetch_test_cases(submission.problem_id).await?;
 
-    let mut final_status = "AC";
-    let mut final_score = 100;
-    let mut max_runtime_ms = 0i32;
-    let mut max_memory_kb = 0i32;
-
-    let mut test_case_results = Vec::new();
-
-    if matches!(submission.language.as_str(), "c" | "cpp" | "rust" | "go" | "java") {
-        match compile_code(&source_file, &submission.language, &work_dir).await {
-            Ok(_) => {}
-            Err(err) => {
-                error!("Compilation failed: {}", err);
-                return Ok(JudgeResult {
-                    submission_id: submission.submission_id,
-                    status: "CE".to_string(),
-                    score: Some(0),
-                    runtime_ms: None,
-                    memory_kb: Some(262144),
-                    test_case_results: vec![],
-                });
-            }
-        }
+    if test_cases.is_empty() {
+        return Ok(JudgeResult {
+            submission_id: submission.submission_id,
+            status: "runtime_error".to_string(),
+            score: Some(0),
+            runtime_ms: None,
+            memory_kb: Some(DEFAULT_MEMORY_KB),
+            test_case_results: vec![],
+        });
     }
 
-    let executable_path = if matches!(
-        submission.language.as_str(),
-        "c" | "cpp" | "rust" | "go" | "java"
-    ) {
-        Some(&source_file.with_extension(""))
-    } else {
-        None
-    };
-
-    for test_case in &test_cases {
-        match run_test_case(submission, &source_file, executable_path, test_case, &work_dir).await {
-            Ok(result) => {
-                if result.status != "AC" && final_status == "AC" {
-                    final_status = &result.status;
+    let executable_path = match submission.language.as_str() {
+        "c" | "cpp" | "rust" | "go" | "java" => {
+            match compile_code(&source_file, &submission.language, &work_dir).await {
+                Ok(path) => Some(path),
+                Err(err) => {
+                    error!("Compilation failed for submission {}: {}", submission.submission_id, err);
+                    return Ok(JudgeResult {
+                        submission_id: submission.submission_id,
+                        status: "compilation_error".to_string(),
+                        score: Some(0),
+                        runtime_ms: None,
+                        memory_kb: Some(DEFAULT_MEMORY_KB),
+                        test_case_results: vec![],
+                    });
                 }
-
-                let score = if result.status == "AC" {
-                    test_case.score
-                } else {
-                    0
-                };
-
-                final_score = final_score.saturating_sub(score);
-
-                if let Some(runtime) = result.runtime_ms {
-                    max_runtime_ms = max_runtime_ms.max(runtime);
-                }
-
-                if let Some(memory) = result.memory_kb {
-                    max_memory_kb = max_memory_kb.max(memory);
-                }
-
-                test_case_results.push(result);
-            }
-            Err(err) => {
-                error!("Error running test case {}: {}", test_case.id, err);
-                test_case_results.push(TestCaseResult {
-                    test_case_id: test_case.id,
-                    status: "error".to_string(),
-                    expected_output: Some(test_case.expected_output.clone()),
-                    actual_output: None,
-                    error_message: Some(err.to_string()),
-                    runtime_ms: None,
-                    memory_kb: Some(262144),
-                });
-                final_status = "error";
             }
         }
+        _ => None,
+    };
+
+    let mut final_status = "accepted".to_string();
+    let mut passed_score: i32 = 0;
+    let mut max_runtime_ms = 0;
+    let mut max_memory_kb = 0;
+    let mut test_case_results = Vec::with_capacity(test_cases.len());
+
+    for test_case in &test_cases {
+        let result = run_test_case(submission, &source_file, executable_path.as_deref(), test_case, &work_dir).await?;
+
+        if result.status != "accepted" && final_status == "accepted" {
+            final_status = result.status.clone();
+        }
+
+        if result.status == "accepted" {
+            passed_score += test_case.score;
+        }
+
+        max_runtime_ms = max_runtime_ms.max(result.runtime_ms.unwrap_or_default());
+        max_memory_kb = max_memory_kb.max(result.memory_kb.unwrap_or(DEFAULT_MEMORY_KB));
+        test_case_results.push(result);
     }
 
     info!(
-        "Submission {} completed with status: {} (score: {})",
-        submission.submission_id, final_status, final_score
+        "Submission {} completed with status {} and score {}",
+        submission.submission_id, final_status, passed_score
     );
 
     Ok(JudgeResult {
         submission_id: submission.submission_id,
-        status: final_status.to_string(),
-        score: Some(final_score),
+        status: final_status,
+        score: Some(passed_score),
         runtime_ms: Some(max_runtime_ms),
-        memory_kb: Some(max_memory_kb),
+        memory_kb: Some(max_memory_kb.max(DEFAULT_MEMORY_KB)),
         test_case_results,
     })
 }
 
-/// Create working directory for submission
 async fn create_work_dir(submission_id: i64) -> Result<PathBuf> {
     let work_dir = PathBuf::from("/tmp/judge").join(format!("submission_{}", submission_id));
 
@@ -148,56 +102,36 @@ async fn create_work_dir(submission_id: i64) -> Result<PathBuf> {
     }
 
     fs::create_dir_all(&work_dir).await?;
-
-    setup_sandbox(&work_dir).await?;
-
     Ok(work_dir)
 }
 
-/// Setup sandbox environment
-async fn setup_sandbox(work_dir: &PathBuf) -> Result<()> {
-    fs::create_dir_all(work_dir.join("bin")).await?;
-    fs::create_dir_all(work_dir.join("lib")).await?;
-    fs::create_dir_all(work_dir.join("tmp")).await?;
-
-    Ok(())
-}
-
-/// Save source code to file
-async fn save_source_code(
-    work_dir: &PathBuf,
-    submission: &SubmissionMessage,
-) -> Result<PathBuf> {
-    let extension = match submission.language.as_str() {
-        "python3" => "py",
-        "c" => "c",
-        "cpp" => "cpp",
-        "java" => "java",
-        "rust" => "rs",
-        "go" => "go",
-        "javascript" => "js",
-        _ => "txt",
+async fn save_source_code(work_dir: &PathBuf, submission: &SubmissionMessage) -> Result<PathBuf> {
+    let filename = match submission.language.as_str() {
+        "python3" => "solution.py",
+        "javascript" => "solution.js",
+        "c" => "solution.c",
+        "cpp" => "solution.cpp",
+        "java" => "Main.java",
+        "rust" => "solution.rs",
+        "go" => "main.go",
+        _ => "solution.txt",
     };
 
-    let filename = format!("solution.{}", extension);
-    let file_path = work_dir.join(&filename);
-
+    let file_path = work_dir.join(filename);
     fs::write(&file_path, &submission.source_code).await?;
-
     Ok(file_path)
 }
 
 pub async fn fetch_test_cases(problem_id: i64) -> Result<Vec<TestCase>> {
     let pool = get_db_connection().await?;
 
-    let test_cases = sqlx::query_as!(
-        TestCase,
+    let test_cases = sqlx::query_as::<_, TestCase>(
         r#"
         SELECT id, input, expected_output, is_hidden, score
         FROM problems_test_cases
         WHERE problem_id = $1
-        ORDER BY order ASC, id ASC
-        "#
+        ORDER BY id ASC
+        "#,
     )
     .bind(problem_id)
     .fetch_all(&pool)
@@ -206,175 +140,196 @@ pub async fn fetch_test_cases(problem_id: i64) -> Result<Vec<TestCase>> {
     Ok(test_cases)
 }
 
-/// Compile code
-async fn compile_code(
-    source_file: &PathBuf,
-    language: &str,
-    work_dir: &PathBuf,
-) -> Result<PathBuf> {
-    use tokio::process::Command;
+async fn compile_code(source_file: &Path, language: &str, work_dir: &Path) -> Result<PathBuf> {
+    let output_path = match language {
+        "java" => work_dir.join("Main.class"),
+        _ => work_dir.join("solution_bin"),
+    };
 
     let output = match language {
-        "c" => {
-            Command::new("gcc")
-                .arg(source_file)
-                .arg("-o")
-                .arg(source_file.with_extension(""))
-                .current_dir(work_dir)
-                .output()
-                .await?
-        }
-        "cpp" => {
-            Command::new("g++")
-                .arg(source_file)
-                .arg("-o")
-                .arg(source_file.with_extension(""))
-                .arg("-std=c++17")
-                .arg("-O2")
-                .current_dir(work_dir)
-                .output()
-                .await?
-        }
-        "rust" => {
-            Command::new("rustc")
-                .arg(source_file)
-                .arg("-o")
-                .arg(source_file.with_extension(""))
-                .arg("--edition")
-                .arg("2021")
-                .current_dir(work_dir)
-                .output()
-                .await?
-        }
-        "go" => {
-            Command::new("go")
-                .arg("build")
-                .arg("-o")
-                .arg(source_file.with_extension(""))
-                .arg(source_file)
-                .current_dir(work_dir)
-                .output()
-                .await?
-        }
-        _ => {
-            anyhow::bail!("Unsupported language for compilation: {}", language);
-        }
+        "c" => Command::new("gcc")
+            .arg(source_file)
+            .arg("-O2")
+            .arg("-o")
+            .arg(&output_path)
+            .current_dir(work_dir)
+            .output()
+            .await?,
+        "cpp" => Command::new("g++")
+            .arg(source_file)
+            .arg("-O2")
+            .arg("-std=c++17")
+            .arg("-o")
+            .arg(&output_path)
+            .current_dir(work_dir)
+            .output()
+            .await?,
+        "rust" => Command::new("rustc")
+            .arg(source_file)
+            .arg("-O")
+            .arg("-o")
+            .arg(&output_path)
+            .current_dir(work_dir)
+            .output()
+            .await?,
+        "go" => Command::new("go")
+            .arg("build")
+            .arg("-o")
+            .arg(&output_path)
+            .arg(source_file)
+            .current_dir(work_dir)
+            .output()
+            .await?,
+        "java" => Command::new("javac")
+            .arg(source_file)
+            .current_dir(work_dir)
+            .output()
+            .await?,
+        _ => anyhow::bail!("Unsupported compiled language: {}", language),
     };
 
     if !output.status.success() {
-        anyhow::bail!(
-            "Compilation failed: {}",
-            String::from_utf8_lossy(&output.stderr)
-        );
+        anyhow::bail!(String::from_utf8_lossy(&output.stderr).trim().to_string());
     }
 
-    Ok(source_file.with_extension(""))
+    Ok(output_path)
 }
 
-/// Run a single test case
 async fn run_test_case(
     submission: &SubmissionMessage,
-    source_file: &PathBuf,
-    executable_path: Option<&PathBuf>,
+    source_file: &Path,
+    executable_path: Option<&Path>,
     test_case: &TestCase,
-    work_dir: &PathBuf,
+    work_dir: &Path,
 ) -> Result<TestCaseResult> {
-    use tokio::process::Command;
-    use tokio::time::timeout;
+    let output = execute_program(submission, source_file, executable_path, &test_case.input, work_dir).await?;
 
-    let start = std::time::Instant::now();
-
-    let output = match submission.language.as_str() {
-        "python3" => {
-            let mut cmd = Command::new("python3");
-            cmd.arg(source_file)
-                .current_dir(work_dir)
-                .stdin(std::process::Stdio::piped())
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped());
-
-            let mut child = cmd.spawn()?;
-
-            // Write input to stdin
-            use tokio::io::AsyncWriteExt;
-            let input_bytes = test_case.input.as_bytes();
-            child.stdin.as_mut().unwrap().write_all(input_bytes).await?;
-
-            // Wait for process completion with timeout
-            let _ = timeout(Duration::from_millis(submission.time_limit_ms), child.wait_with_output()).await;
-            child.kill().await?;
-
-            Ok::<_, anyhow::Error>(tokio::process::Command::new("cat").output().await?)
-        }
-        _ if executable_path.is_some() => {
-            let mut cmd = Command::new(executable_path.unwrap());
-            cmd.current_dir(work_dir)
-                .stdin(std::process::Stdio::piped())
-                .stdout(std::process::Stdio::piped())
-                .stderr(std::process::Stdio::piped());
-
-            let mut child = cmd.spawn()?;
-
-            // Write input to stdin
-            use tokio::io::AsyncWriteExt;
-            let input_bytes = test_case.input.as_bytes();
-            child.stdin.as_mut().unwrap().write_all(input_bytes).await?;
-
-            // Wait for process completion with timeout
-            let _ = timeout(Duration::from_millis(submission.time_limit_ms), child.wait_with_output()).await;
-            child.kill().await?;
-
-            Ok::<_, anyhow::Error>(tokio::process::Command::new("cat").output().await?)
-        }
-        _ => {
-            return Ok(TestCaseResult {
-                test_case_id: test_case.id,
-                status: "error".to_string(),
-                expected_output: Some(test_case.expected_output.clone()),
-                actual_output: None,
-                error_message: Some("Unsupported language".to_string()),
-                runtime_ms: None,
-                memory_kb: Some(262144),
-            });
-        }
+    let status = if output.status != "accepted" {
+        output.status.clone()
+    } else if normalize_output(&output.stdout) == normalize_output(&test_case.expected_output) {
+        "accepted".to_string()
+    } else {
+        "wrong_answer".to_string()
     };
 
-    let runtime_ms = start.elapsed().as_millis() as i32;
-
-    let status = if runtime_ms > submission.time_limit_ms {
-        "TLE"
-    } else if output.stdout.trim() == test_case.expected_output.trim() {
-        "AC"
-    } else {
-        "WA"
+    let error_message = match status.as_str() {
+        "runtime_error" | "compilation_error" => Some(output.stderr.clone()),
+        _ if output.stderr.trim().is_empty() => None,
+        _ => Some(output.stderr.clone()),
     };
 
     Ok(TestCaseResult {
         test_case_id: test_case.id,
-        status: status.to_string(),
+        status,
         expected_output: Some(test_case.expected_output.clone()),
         actual_output: Some(output.stdout),
-        error_message: None,
-        runtime_ms: Some(runtime_ms),
-        memory_kb: Some(262144),
+        error_message,
+        runtime_ms: Some(output.runtime_ms),
+        memory_kb: Some(output.memory_kb),
     })
 }
 
-#[tokio::test]
-async fn test_process_submission() {
-    let submission = SubmissionMessage {
-        submission_id: 1,
-        user_id: uuid::Uuid::new_v4(),
-        problem_id: 1,
-        language: "python3".to_string(),
-        source_code: "print('Hello')".to_string(),
-        time_limit_ms: 1000,
-        memory_limit_kb: 128000,
+async fn execute_program(
+    submission: &SubmissionMessage,
+    source_file: &Path,
+    executable_path: Option<&Path>,
+    input: &str,
+    work_dir: &Path,
+) -> Result<ExecutionOutput> {
+    let input_path = work_dir.join("stdin.txt");
+    let stdout_path = work_dir.join("stdout.txt");
+    let stderr_path = work_dir.join("stderr.txt");
+
+    fs::write(&input_path, input).await?;
+
+    let stdin = std::fs::File::open(&input_path)?;
+    let stdout = std::fs::File::create(&stdout_path)?;
+    let stderr = std::fs::File::create(&stderr_path)?;
+
+    let mut command = build_runtime_command(submission, source_file, executable_path, work_dir)?;
+    command
+        .stdin(Stdio::from(stdin))
+        .stdout(Stdio::from(stdout))
+        .stderr(Stdio::from(stderr));
+
+    let started = Instant::now();
+    let mut child = command.spawn().context("Failed to start submission process")?;
+
+    let wait_result = timeout(
+        Duration::from_millis(submission.time_limit_ms.max(1)),
+        child.wait(),
+    )
+    .await;
+
+    let runtime_ms = started.elapsed().as_millis() as i32;
+    let memory_kb = DEFAULT_MEMORY_KB.min((submission.memory_limit_mb.saturating_mul(1024)) as i32);
+
+    let process_status = match wait_result {
+        Ok(status) => status.context("Failed to wait for submission process")?,
+        Err(_) => {
+            let _ = child.kill().await;
+            let _ = child.wait().await;
+            return Ok(ExecutionOutput {
+                status: "time_limit_exceeded".to_string(),
+                stdout: fs::read_to_string(&stdout_path).await.unwrap_or_default(),
+                stderr: fs::read_to_string(&stderr_path).await.unwrap_or_default(),
+                runtime_ms,
+                memory_kb,
+            });
+        }
     };
 
-    let result = process_submission(&submission).await;
-    let (child, memory_kb) = match output {
-        Ok(child) => (child, 262144),
-        Err(_) => return Err("Process spawn failed".into()),
+    let stdout = fs::read_to_string(&stdout_path).await.unwrap_or_default();
+    let stderr = fs::read_to_string(&stderr_path).await.unwrap_or_default();
+
+    let status = if process_status.success() {
+        "accepted"
+    } else {
+        "runtime_error"
     };
+
+    Ok(ExecutionOutput {
+        status: status.to_string(),
+        stdout,
+        stderr,
+        runtime_ms,
+        memory_kb,
+    })
+}
+
+fn build_runtime_command(
+    submission: &SubmissionMessage,
+    source_file: &Path,
+    executable_path: Option<&Path>,
+    work_dir: &Path,
+) -> Result<Command> {
+    let mut command = match submission.language.as_str() {
+        "python3" => {
+            let mut command = Command::new("python3");
+            command.arg(source_file);
+            command
+        }
+        "javascript" => {
+            let mut command = Command::new("node");
+            command.arg(source_file);
+            command
+        }
+        "java" => {
+            let mut command = Command::new("java");
+            command.arg("-cp").arg(work_dir).arg("Main");
+            command
+        }
+        "c" | "cpp" | "rust" | "go" => {
+            let executable = executable_path.context("Missing executable path")?;
+            Command::new(executable)
+        }
+        other => anyhow::bail!("Unsupported language: {}", other),
+    };
+
+    command.current_dir(work_dir);
+    Ok(command)
+}
+
+fn normalize_output(output: &str) -> String {
+    output.lines().map(str::trim_end).collect::<Vec<_>>().join("\n").trim().to_string()
 }

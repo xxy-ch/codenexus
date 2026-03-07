@@ -22,16 +22,18 @@ use axum::{
     Router,
     extract::State,
     response::Json,
-    http::StatusCode,
+    http::{header, Method, StatusCode},
 };
 use axum::serve;
 use deadpool_redis::Pool as RedisPool;
 use sqlx::PgPool;
 use std::net::SocketAddr;
+use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use auth::JwtService;
 use websocket::WebSocketServer;
+use db::schema::MIGRATOR;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -65,6 +67,9 @@ async fn main() -> anyhow::Result<()> {
     info!("Connecting to database...");
     let db_pool = db::create_pool(&database_url, Some(10), Some(30)).await?;
     info!("Database connection pool created");
+    info!("Running embedded database migrations...");
+    MIGRATOR.run(&db_pool).await?;
+    info!("Database migrations complete");
 
     let redis_pool = if let Ok(pool) = redis::create_pool(&redis_url).await {
         info!("Redis connection pool created");
@@ -100,13 +105,18 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn create_router(state: AppState) -> Router {
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE, Method::OPTIONS])
+        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
+
     let public_router = Router::new()
         .route("/health", get(health_check))
         .route("/status", get(get_system_status))
         // Public auth routes
         .route("/auth/login", post(auth::login))
         .route("/auth/refresh", post(auth::refresh))
-        .route("/auth/register", post(users::register))
+        .route("/auth/register", post(auth::register))
         // WebSocket route (public, auth handled in handler)
         .route("/ws", get(websocket::handler::websocket_upgrade_handler));
 
@@ -130,6 +140,7 @@ fn create_router(state: AppState) -> Router {
 
     public_router
         .merge(protected_router)
+        .layer(cors)
         .with_state(state)
 }
 

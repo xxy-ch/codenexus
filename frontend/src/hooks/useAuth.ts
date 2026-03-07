@@ -15,7 +15,7 @@ export function useAuth() {
     try {
       const response = await authService.login(credentials)
       login({
-        email: response.user.email,
+        username: response.user.username,
         password: credentials.password,
       })
       // 手动设置状态

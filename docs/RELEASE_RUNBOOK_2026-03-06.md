@@ -13,6 +13,8 @@
    - JWT Secret
    - Redis/DB 连接
    - CORS 允许来源
+6. 本地全栈验收前执行演示数据引导：
+   - `DATABASE_URL=<db_url> ./scripts/bootstrap_demo.sh`
 
 ## 2. 发布步骤（建议）
 
@@ -27,6 +29,9 @@
    - 题目列表/详情可访问
    - 提交状态能从 pending 走到终态
    - 讨论/博客创建与点赞可用
+   - 搜索返回真实讨论/博客结果
+   - 私信会话列表与消息发送可用
+   - 反作弊配置、触发扫描、报告查看可用
 8. 监控 30 分钟：
    - 5xx 错误率
    - 提交积压
@@ -46,13 +51,18 @@ npm run lint
 npm run typecheck
 npm run build
 
-# frontend smoke set (>= 5)
+# frontend smoke set
 npx vitest --run \
   src/services/__tests__/communityApi.test.ts \
   src/services/__tests__/classes.test.ts \
   src/services/__tests__/messages.test.ts \
   src/services/__tests__/plagiarism.test.ts \
+  src/services/__tests__/searchApi.test.ts \
   src/services/__tests__/smokeCoreFlows.test.ts
+
+# playwright smoke inventory
+npx playwright install chromium
+npx playwright test --list
 ```
 
 ## 2.2 数据迁移顺序（本次涉及）
@@ -67,6 +77,13 @@ npx vitest --run \
 ```bash
 cd api
 DATABASE_URL=<prod_database_url> ~/.cargo/bin/sqlx migrate run
+```
+
+若是本地 Docker 全栈验收：
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/online_judge \
+./scripts/bootstrap_demo.sh
 ```
 
 ## 2.3 上线开关策略
@@ -99,6 +116,24 @@ DATABASE_URL=<prod_database_url> ~/.cargo/bin/sqlx migrate run
    - 提交查询
    - 私信会话列表
    - 反作弊配置页
+   - 搜索页
+
+## 4.1 本地 Docker 验收命令
+
+```bash
+docker compose up -d postgres redis
+
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/online_judge \
+./scripts/bootstrap_demo.sh
+
+docker compose up -d api judge-worker frontend
+
+curl http://localhost:3000/health
+curl http://localhost:3000/status
+
+cd frontend
+npx playwright test
+```
 
 ## 5. 发布后记录
 

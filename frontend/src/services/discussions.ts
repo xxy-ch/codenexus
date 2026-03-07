@@ -103,7 +103,8 @@ export const discussionsService = {
   },
 }
 
-function getMockDiscussions(_filters: DiscussionFilters): DiscussionsResponse {
+function getMockDiscussions(filters: DiscussionFilters): DiscussionsResponse {
+  void filters
   const discussions: Discussion[] = [
     {
       id: '1',

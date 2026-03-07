@@ -11,11 +11,12 @@ export function RegisterPage() {
   const navigate = useNavigate()
   const { register, isAuthenticated, isLoading } = useAuth()
   const [formData, setFormData] = useState<RegisterRequest>({
-    email: '',
     username: '',
     password: '',
-    first_name: '',
-    last_name: '',
+    email: '',
+    display_name: '',
+    organization_id: 1,
+    campus_id: 1,
   })
   const [confirmPassword, setConfirmPassword] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -42,19 +43,15 @@ export function RegisterPage() {
     // Username validation
     if (!formData.username) {
       errors.username = 'Username is required'
-    } else if (formData.username.length < 3) {
-      errors.username = 'Username must be at least 3 characters'
-    } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      errors.username = 'Username can only contain letters, numbers, and underscores'
+    } else if (!/^[0-9]+$/.test(formData.username)) {
+      errors.username = 'Username must be numeric only'
     }
 
     // Password validation
     if (!formData.password) {
       errors.password = 'Password is required'
-    } else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters'
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      errors.password = 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters'
     }
 
     // Confirm password validation
@@ -155,38 +152,21 @@ export function RegisterPage() {
                 </div>
               )}
 
-              {/* Name Fields */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="first_name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    First Name
-                  </label>
-                  <Input
-                    id="first_name"
-                    name="first_name"
-                    type="text"
-                    autoComplete="given-name"
-                    placeholder="John"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                  />
-                </div>
-                <div>
-                  <label htmlFor="last_name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Last Name
-                  </label>
-                  <Input
-                    id="last_name"
-                    name="last_name"
-                    type="text"
-                    autoComplete="family-name"
-                    placeholder="Doe"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    disabled={isSubmitting}
-                  />
-                </div>
+              {/* Display Name */}
+              <div>
+                <label htmlFor="display_name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Display Name
+                </label>
+                <Input
+                  id="display_name"
+                  name="display_name"
+                  type="text"
+                  autoComplete="nickname"
+                  placeholder="Student 2001"
+                  value={formData.display_name || ''}
+                  onChange={handleChange}
+                  disabled={isSubmitting}
+                />
               </div>
 
               {/* Username Field */}
@@ -199,7 +179,7 @@ export function RegisterPage() {
                   name="username"
                   type="text"
                   autoComplete="username"
-                  placeholder="johndoe"
+                  placeholder="2001"
                   value={formData.username}
                   onChange={handleChange}
                   required

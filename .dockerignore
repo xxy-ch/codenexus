@@ -1,0 +1,16 @@
+.git
+.DS_Store
+**/node_modules
+**/dist
+**/build
+**/target
+**/.turbo
+**/.next
+**/coverage
+**/playwright-report
+**/test-results
+**/.playwright
+**/.playwright-cli
+frontend/.env*
+api/.env*
+judge-worker/.env*

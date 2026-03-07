@@ -4,6 +4,7 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
     pub id: Uuid,
+    pub username: String,
     pub email: String,
     pub password_hash: String,
     pub role: String,
@@ -14,6 +15,7 @@ pub struct User {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserPublic {
     pub id: Uuid,
+    pub username: String,
     pub email: String,
     pub role: String,
     pub school_id: i64,
@@ -24,6 +26,7 @@ impl From<User> for UserPublic {
     fn from(user: User) -> Self {
         Self {
             id: user.id,
+            username: user.username,
             email: user.email,
             role: user.role,
             school_id: user.school_id,

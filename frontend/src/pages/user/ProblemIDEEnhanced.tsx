@@ -71,7 +71,7 @@ export function ProblemIDEEnhanced() {
           runtime_error: '⚠️ Runtime Error.',
         }
 
-        toast(statusMessages[wsUpdate] || `Submission: ${wsUpdate.status}`, {
+        toast(statusMessages[wsUpdate.status] || `Submission: ${wsUpdate.status}`, {
           icon: wsUpdate.status === 'accepted' ? '✅' : 'ℹ️',
         })
       }
@@ -203,9 +203,8 @@ export function ProblemIDEEnhanced() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-3 border-b bg-white">
+    <div className="h-screen flex flex-col bg-background-light dark:bg-background-dark">
+      <div className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-4">
           <Link
             to={`/problems/${problem.id}`}
@@ -214,7 +213,10 @@ export function ProblemIDEEnhanced() {
             <span className="material-symbols-outlined">arrow_back</span>
           </Link>
           <div>
-            <h1 className="text-xl font-semibold text-gray-900">{problem.title}</h1>
+            <div className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-primary">
+              Problem Solving IDE
+            </div>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">{problem.title}</h1>
             <div className="flex items-center gap-3 mt-1">
               <span className={`text-xs font-medium px-2 py-0.5 rounded ${
                 problem.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
@@ -223,7 +225,7 @@ export function ProblemIDEEnhanced() {
               }`}>
                 {problem.difficulty}
               </span>
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-gray-600 dark:text-slate-400">
                 {problem.time_limit}ms • {problem.memory_limit}MB
               </span>
             </div>
@@ -232,6 +234,13 @@ export function ProblemIDEEnhanced() {
 
         <div className="flex items-center gap-4">
           <ConnectionStatus />
+          <button
+            onClick={() => navigate(`/submissions`)}
+            className="hidden items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-primary hover:text-primary dark:border-slate-700 dark:text-slate-200 lg:flex"
+          >
+            <span className="material-symbols-outlined text-base">history</span>
+            Submission Archive
+          </button>
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !code.trim()}
@@ -245,7 +254,21 @@ export function ProblemIDEEnhanced() {
         </div>
       </div>
 
-      {/* IDE Layout */}
+      <div className="grid grid-cols-1 gap-4 border-b border-slate-200 bg-white px-6 py-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 lg:grid-cols-3">
+        <div>
+          <span className="font-semibold text-slate-900 dark:text-white">Workspace</span>
+          <p className="mt-1">按 reference 模板整理为题面 + 编辑区 + 结果侧栏结构。</p>
+        </div>
+        <div>
+          <span className="font-semibold text-slate-900 dark:text-white">Language</span>
+          <p className="mt-1">当前语言 {getLanguageConfig(selectedLanguage).label}，切换语言时会同步模板代码。</p>
+        </div>
+        <div>
+          <span className="font-semibold text-slate-900 dark:text-white">Realtime</span>
+          <p className="mt-1">WebSocket {wsConnected ? '已连接' : '连接中'}，提交后会自动轮询并显示最终状态。</p>
+        </div>
+      </div>
+
       <IDELayout
         problemId={problem.id}
         language={selectedLanguage}
