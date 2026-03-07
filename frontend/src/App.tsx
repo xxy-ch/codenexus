@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ComponentType } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ToastProvider } from './components/ui/Toast'
@@ -5,45 +6,53 @@ import { MainLayout } from './layouts/MainLayout'
 import { AdminLayout } from './layouts/AdminLayout'
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
-import { LoginPage } from './pages/auth/LoginPage'
-import { RegisterPage } from './pages/auth/RegisterPage'
-import { UnauthorizedPage } from './pages/auth/UnauthorizedPage'
-import { NotFound } from './pages/error/NotFound'
-import { ServerError } from './pages/error/ServerError'
-import { DashboardEnhanced } from './pages/user/DashboardEnhanced'
-import { ProblemSet } from './pages/user/ProblemSet'
-import { ProblemDetail } from './pages/user/ProblemDetail'
-import { ProblemIDEEnhanced } from './pages/user/ProblemIDEEnhanced'
-import { SubmissionHistory } from './pages/user/SubmissionHistory'
-import { SubmissionDetail } from './pages/user/SubmissionDetail'
-import { ContestList } from './pages/user/ContestList'
-import { ContestDetail } from './pages/user/ContestDetail'
-import { ContestScoreboard } from './pages/contest/ContestScoreboard'
-import { Ranking } from './pages/user/Ranking'
-import { LearningRoadmap } from './pages/user/LearningRoadmap'
-import { DiscussionList } from './pages/community/DiscussionList'
-import { DiscussionDetail } from './pages/community/DiscussionDetail'
-import { CreateDiscussion } from './pages/community/CreateDiscussion'
-import { BlogList } from './pages/community/BlogList'
-import { BlogDetail } from './pages/community/BlogDetail'
-import { CreateArticle } from './pages/community/CreateArticle'
-import { EditArticle } from './pages/community/EditArticle'
-import { DirectMessages } from './pages/community/DirectMessages'
-import { SearchResults } from './pages/search/SearchResults'
-import { Profile } from './pages/user/Profile'
-import { Settings } from './pages/user/Settings'
-import { ClassManagement } from './pages/teacher/ClassManagement'
-import { AssignmentReport } from './pages/teacher/AssignmentReport'
-import { ContestWizard } from './pages/teacher/ContestWizard'
-import { AdminDashboard } from './pages/admin/AdminDashboard'
-import { UserManagement } from './pages/admin/UserManagement'
-import { ProblemManagement } from './pages/admin/ProblemManagement'
-import { JudgeSettings } from './pages/admin/JudgeSettings'
-import { ProblemContentConfig } from './pages/admin/ProblemContentConfig'
-import { SimilarityScanConfig } from './pages/admin/SimilarityScanConfig'
-import { PlagiarismReportList } from './pages/admin/PlagiarismReportList'
-import { PlagiarismReportDetail } from './pages/admin/PlagiarismReportDetail'
+import { Loading } from './components/ui/Loading'
 import { FEATURE_FLAGS } from './services/config'
+
+const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
+  lazy(async () => {
+    const module = await loader()
+    return { default: module[exportName] as ComponentType }
+  })
+
+const LoginPage = lazyNamed(() => import('./pages/auth/LoginPage'), 'LoginPage')
+const RegisterPage = lazyNamed(() => import('./pages/auth/RegisterPage'), 'RegisterPage')
+const UnauthorizedPage = lazyNamed(() => import('./pages/auth/UnauthorizedPage'), 'UnauthorizedPage')
+const NotFound = lazyNamed(() => import('./pages/error/NotFound'), 'NotFound')
+const ServerError = lazyNamed(() => import('./pages/error/ServerError'), 'ServerError')
+const DashboardEnhanced = lazyNamed(() => import('./pages/user/DashboardEnhanced'), 'DashboardEnhanced')
+const ProblemSet = lazyNamed(() => import('./pages/user/ProblemSet'), 'ProblemSet')
+const ProblemDetail = lazyNamed(() => import('./pages/user/ProblemDetail'), 'ProblemDetail')
+const ProblemIDEEnhanced = lazyNamed(() => import('./pages/user/ProblemIDEEnhanced'), 'ProblemIDEEnhanced')
+const SubmissionHistory = lazyNamed(() => import('./pages/user/SubmissionHistory'), 'SubmissionHistory')
+const SubmissionDetail = lazyNamed(() => import('./pages/user/SubmissionDetail'), 'SubmissionDetail')
+const ContestList = lazyNamed(() => import('./pages/user/ContestList'), 'ContestList')
+const ContestDetail = lazyNamed(() => import('./pages/user/ContestDetail'), 'ContestDetail')
+const ContestScoreboard = lazyNamed(() => import('./pages/contest/ContestScoreboard'), 'ContestScoreboard')
+const Ranking = lazyNamed(() => import('./pages/user/Ranking'), 'Ranking')
+const LearningRoadmap = lazyNamed(() => import('./pages/user/LearningRoadmap'), 'LearningRoadmap')
+const DiscussionList = lazyNamed(() => import('./pages/community/DiscussionList'), 'DiscussionList')
+const DiscussionDetail = lazyNamed(() => import('./pages/community/DiscussionDetail'), 'DiscussionDetail')
+const CreateDiscussion = lazyNamed(() => import('./pages/community/CreateDiscussion'), 'CreateDiscussion')
+const BlogList = lazyNamed(() => import('./pages/community/BlogList'), 'BlogList')
+const BlogDetail = lazyNamed(() => import('./pages/community/BlogDetail'), 'BlogDetail')
+const CreateArticle = lazyNamed(() => import('./pages/community/CreateArticle'), 'CreateArticle')
+const EditArticle = lazyNamed(() => import('./pages/community/EditArticle'), 'EditArticle')
+const DirectMessages = lazyNamed(() => import('./pages/community/DirectMessages'), 'DirectMessages')
+const SearchResults = lazyNamed(() => import('./pages/search/SearchResults'), 'SearchResults')
+const Profile = lazyNamed(() => import('./pages/user/Profile'), 'Profile')
+const Settings = lazyNamed(() => import('./pages/user/Settings'), 'Settings')
+const ClassManagement = lazyNamed(() => import('./pages/teacher/ClassManagement'), 'ClassManagement')
+const AssignmentReport = lazyNamed(() => import('./pages/teacher/AssignmentReport'), 'AssignmentReport')
+const ContestWizard = lazyNamed(() => import('./pages/teacher/ContestWizard'), 'ContestWizard')
+const AdminDashboard = lazyNamed(() => import('./pages/admin/AdminDashboard'), 'AdminDashboard')
+const UserManagement = lazyNamed(() => import('./pages/admin/UserManagement'), 'UserManagement')
+const ProblemManagement = lazyNamed(() => import('./pages/admin/ProblemManagement'), 'ProblemManagement')
+const JudgeSettings = lazyNamed(() => import('./pages/admin/JudgeSettings'), 'JudgeSettings')
+const ProblemContentConfig = lazyNamed(() => import('./pages/admin/ProblemContentConfig'), 'ProblemContentConfig')
+const SimilarityScanConfig = lazyNamed(() => import('./pages/admin/SimilarityScanConfig'), 'SimilarityScanConfig')
+const PlagiarismReportList = lazyNamed(() => import('./pages/admin/PlagiarismReportList'), 'PlagiarismReportList')
+const PlagiarismReportDetail = lazyNamed(() => import('./pages/admin/PlagiarismReportDetail'), 'PlagiarismReportDetail')
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,6 +62,22 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[320px] items-center justify-center">
+      <Loading message="页面加载中..." />
+    </div>
+  )
+}
+
+function renderLazy(Component: ComponentType) {
+  return (
+    <Suspense fallback={<RouteFallback />}>
+      <Component />
+    </Suspense>
+  )
+}
 
 function App() {
   return (
@@ -65,7 +90,7 @@ function App() {
             path="/login"
             element={
               <PublicRoute>
-                <LoginPage />
+                {renderLazy(LoginPage)}
               </PublicRoute>
             }
           />
@@ -73,7 +98,7 @@ function App() {
             path="/register"
             element={
               <PublicRoute>
-                <RegisterPage />
+                {renderLazy(RegisterPage)}
               </PublicRoute>
             }
           />
@@ -88,34 +113,34 @@ function App() {
             }
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<DashboardEnhanced />} />
-            <Route path="problems" element={<ProblemSet />} />
-            <Route path="problems/:problemId" element={<ProblemDetail />} />
-            <Route path="problems/:problemId/solve" element={<ProblemIDEEnhanced />} />
-            <Route path="submissions" element={<SubmissionHistory />} />
-            <Route path="submissions/:submissionId" element={<SubmissionDetail />} />
-            <Route path="contests" element={<ContestList />} />
-            <Route path="contests/:contestId" element={<ContestDetail />} />
-            <Route path="contests/:contestId/scoreboard" element={<ContestScoreboard />} />
-            <Route path="ranking" element={<Ranking />} />
-            <Route path="roadmap" element={<LearningRoadmap />} />
-            <Route path="discussions" element={<DiscussionList />} />
-            <Route path="discussions/new" element={<CreateDiscussion />} />
-            <Route path="discussions/:problemId/new" element={<CreateDiscussion />} />
-            <Route path="discussions/:id" element={<DiscussionDetail />} />
-            <Route path="blog" element={<BlogList />} />
-            <Route path="blog/new" element={<CreateArticle />} />
-            <Route path="blog/:slug" element={<BlogDetail />} />
-            <Route path="blog/:slug/edit" element={<EditArticle />} />
+            <Route path="dashboard" element={renderLazy(DashboardEnhanced)} />
+            <Route path="problems" element={renderLazy(ProblemSet)} />
+            <Route path="problems/:problemId" element={renderLazy(ProblemDetail)} />
+            <Route path="problems/:problemId/solve" element={renderLazy(ProblemIDEEnhanced)} />
+            <Route path="submissions" element={renderLazy(SubmissionHistory)} />
+            <Route path="submissions/:submissionId" element={renderLazy(SubmissionDetail)} />
+            <Route path="contests" element={renderLazy(ContestList)} />
+            <Route path="contests/:contestId" element={renderLazy(ContestDetail)} />
+            <Route path="contests/:contestId/scoreboard" element={renderLazy(ContestScoreboard)} />
+            <Route path="ranking" element={renderLazy(Ranking)} />
+            <Route path="roadmap" element={renderLazy(LearningRoadmap)} />
+            <Route path="discussions" element={renderLazy(DiscussionList)} />
+            <Route path="discussions/new" element={renderLazy(CreateDiscussion)} />
+            <Route path="discussions/:problemId/new" element={renderLazy(CreateDiscussion)} />
+            <Route path="discussions/:id" element={renderLazy(DiscussionDetail)} />
+            <Route path="blog" element={renderLazy(BlogList)} />
+            <Route path="blog/new" element={renderLazy(CreateArticle)} />
+            <Route path="blog/:slug" element={renderLazy(BlogDetail)} />
+            <Route path="blog/:slug/edit" element={renderLazy(EditArticle)} />
             {FEATURE_FLAGS.directMessages && (
-              <Route path="messages" element={<DirectMessages />} />
+              <Route path="messages" element={renderLazy(DirectMessages)} />
             )}
-            <Route path="search" element={<SearchResults />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="teacher/classes" element={<ClassManagement />} />
-            <Route path="teacher/assignment-report" element={<AssignmentReport />} />
-            <Route path="teacher/contest-wizard" element={<ContestWizard />} />
+            <Route path="search" element={renderLazy(SearchResults)} />
+            <Route path="profile" element={renderLazy(Profile)} />
+            <Route path="settings" element={renderLazy(Settings)} />
+            <Route path="teacher/classes" element={renderLazy(ClassManagement)} />
+            <Route path="teacher/assignment-report" element={renderLazy(AssignmentReport)} />
+            <Route path="teacher/contest-wizard" element={renderLazy(ContestWizard)} />
             {/* Add more protected routes here */}
           </Route>
 
@@ -128,29 +153,29 @@ function App() {
               </AdminRoute>
             }
           >
-            <Route index element={<AdminDashboard />} />
-            <Route path="users" element={<UserManagement />} />
-            <Route path="problems" element={<ProblemManagement />} />
-            <Route path="judge-settings" element={<JudgeSettings />} />
-            <Route path="problem-content" element={<ProblemContentConfig />} />
+            <Route index element={renderLazy(AdminDashboard)} />
+            <Route path="users" element={renderLazy(UserManagement)} />
+            <Route path="problems" element={renderLazy(ProblemManagement)} />
+            <Route path="judge-settings" element={renderLazy(JudgeSettings)} />
+            <Route path="problem-content" element={renderLazy(ProblemContentConfig)} />
             {FEATURE_FLAGS.plagiarism && (
-              <Route path="similarity-scan" element={<SimilarityScanConfig />} />
+              <Route path="similarity-scan" element={renderLazy(SimilarityScanConfig)} />
             )}
             {FEATURE_FLAGS.plagiarism && (
-              <Route path="plagiarism-reports" element={<PlagiarismReportList />} />
+              <Route path="plagiarism-reports" element={renderLazy(PlagiarismReportList)} />
             )}
             {FEATURE_FLAGS.plagiarism && (
-              <Route path="plagiarism-reports/:reportId" element={<PlagiarismReportDetail />} />
+              <Route path="plagiarism-reports/:reportId" element={renderLazy(PlagiarismReportDetail)} />
             )}
           </Route>
 
           {/* Error Routes */}
-          <Route path="/unauthorized" element={<UnauthorizedPage />} />
-          <Route path="/404" element={<NotFound />} />
-          <Route path="/500" element={<ServerError />} />
+          <Route path="/unauthorized" element={renderLazy(UnauthorizedPage)} />
+          <Route path="/404" element={renderLazy(NotFound)} />
+          <Route path="/500" element={renderLazy(ServerError)} />
 
           {/* Fallback */}
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={renderLazy(NotFound)} />
         </Routes>
       </BrowserRouter>
       </ToastProvider>

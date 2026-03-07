@@ -1,61 +1,48 @@
 use axum::{extract::State, http::StatusCode, response::Json};
-use shared::models::{LoginRequest, LoginResponse, RefreshRequest, RefreshResponse};
+use shared::models::{LoginRequest, LoginResponse, RefreshRequest, RefreshResponse, UserPublic};
 use crate::AppState;
-use crate::users::{models::RegisterRequest, service::UserService};
+use crate::users::{models::{RegisterRequest, LoginRequest as DbLoginRequest, RefreshTokenRequest}, service::UserService};
 
 pub async fn login(
     State(state): State<AppState>,
     Json(request): Json<LoginRequest>,
 ) -> Result<Json<LoginResponse>, StatusCode> {
-    let user_store = crate::auth::get_user_store();
+    let service = UserService::new(state.db_pool.clone(), state.jwt_service.clone());
+    let response = service
+        .login(DbLoginRequest {
+            username: request.username,
+            password: request.password,
+        })
+        .await
+        .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    let user = user_store
-        .get_by_username(&request.username)
-        .ok_or(StatusCode::UNAUTHORIZED)?;
-
-    if crate::auth::password::verify_password(&request.password, &user.password_hash)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-    {
-        let token = state
-            .jwt_service
-            .generate_access_token(&user)
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-        let refresh_token = state
-            .jwt_service
-            .generate_refresh_token(&user)
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-        Ok(Json(LoginResponse {
-            token,
-            refresh_token,
-            user: user.clone().into(),
-        }))
-    } else {
-        Err(StatusCode::UNAUTHORIZED)
-    }
+    Ok(Json(LoginResponse {
+        token: response.token,
+        refresh_token: response.refresh_token,
+        user: UserPublic {
+            id: response.user.id,
+            username: response.user.username,
+            email: response.user.email.unwrap_or_default(),
+            role: response.user.role,
+            school_id: response.user.organization_id,
+            campus_id: response.user.campus_id,
+        },
+    }))
 }
 
 pub async fn refresh(
     State(state): State<AppState>,
     Json(request): Json<RefreshRequest>,
 ) -> Result<Json<RefreshResponse>, StatusCode> {
-    let user_store = crate::auth::get_user_store();
-
-    let claims = state
-        .jwt_service
-        .validate_token(&request.refresh_token)
+    let service = UserService::new(state.db_pool.clone(), state.jwt_service.clone());
+    let response = service
+        .refresh_token(RefreshTokenRequest {
+            refresh_token: request.refresh_token,
+        })
+        .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    let user = user_store
-        .get_by_id(&claims.sub)
-        .ok_or(StatusCode::UNAUTHORIZED)?;
-
-    let new_token = state
-        .jwt_service
-        .generate_access_token(&user)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    Ok(Json(RefreshResponse { token: new_token }))
+    Ok(Json(RefreshResponse { token: response.token }))
 }
 
 pub async fn register(

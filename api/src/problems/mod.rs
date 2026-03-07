@@ -14,7 +14,8 @@ pub fn problems_router() -> Router<AppState> {
         .route("/:id", delete(routes::delete_problem))
         .route("/:id/statistics", get(routes::get_problem_statistics))
         .route("/:id/test-cases", get(test_cases::list_test_cases))
-        .route("/:id/test-cases", post(test_cases::batch_import_test_cases))
+        .route("/:id/test-cases", post(test_cases::create_test_case))
+        .route("/:id/test-cases/import", post(test_cases::batch_import_test_cases))
         .route("/:id/test-cases/:test_case_id", put(test_cases::update_test_case))
         .route("/:id/test-cases/:test_case_id", delete(test_cases::delete_test_case))
 }

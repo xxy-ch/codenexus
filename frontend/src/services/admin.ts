@@ -106,8 +106,10 @@ export const adminService = {
       problems: problems.map((problem: any) => ({
         id: String(problem.id),
         title: String(problem.title ?? ''),
+        description: String(problem.description ?? ''),
         difficulty: (problem.difficulty ?? 'easy') as ProblemManagement['difficulty'],
         status: problem.visibility === 'public' ? 'published' : 'draft',
+        visibility: (problem.visibility ?? 'private') as ProblemManagement['visibility'],
         tags: Array.isArray(problem.tags) ? problem.tags : [],
         submissions_count: Number(problem.submissions_count ?? 0),
         accepted_count: Number(problem.accepted_count ?? 0),
@@ -115,6 +117,8 @@ export const adminService = {
         author_username: String(problem.created_by ?? 'system'),
         created_at: String(problem.created_at ?? ''),
         is_published: problem.visibility === 'public',
+        time_limit: Number(problem.time_limit ?? 1000),
+        memory_limit: Number(problem.memory_limit ?? 262144),
       })),
       total: Number(payload?.total ?? problems.length),
       page: Number(payload?.page ?? params?.page ?? 1),
@@ -122,11 +126,52 @@ export const adminService = {
     }
   },
 
-  async toggleProblemVisibility(problemId: string) {
+  async createProblem(payload: {
+    title: string
+    description: string
+    difficulty: 'easy' | 'medium' | 'hard'
+    time_limit: number
+    memory_limit: number
+    visibility: 'public' | 'campus' | 'class' | 'private'
+    organization_id: number
+  }) {
+    if (USE_MOCK_DATA) {
+      return {
+        id: `mock-${Date.now()}`,
+        ...payload,
+      }
+    }
+
+    const response = await api.post('/problems', {
+      ...payload,
+      is_public: payload.visibility === 'public',
+      tags: [],
+    })
+    return response.data
+  },
+
+  async updateProblem(problemId: string, payload: {
+    title?: string
+    description?: string
+    difficulty?: 'easy' | 'medium' | 'hard'
+    time_limit?: number
+    memory_limit?: number
+    visibility?: 'public' | 'campus' | 'class' | 'private'
+  }) {
     if (USE_MOCK_DATA) return { success: true }
 
-    const response = await api.patch(`/admin/problems/${problemId}/visibility`)
+    const response = await api.put(`/problems/${problemId}`, {
+      ...payload,
+      is_public: payload.visibility ? payload.visibility === 'public' : undefined,
+    })
     return response.data
+  },
+
+  async deleteProblem(problemId: string) {
+    if (USE_MOCK_DATA) return { success: true }
+
+    await api.delete(`/problems/${problemId}`)
+    return { success: true }
   },
 
   async getSystemHealth(): Promise<SystemHealth> {

@@ -6,29 +6,24 @@ import type { LoginRequest, RegisterRequest } from '@/types/auth'
 
 export function useAuth() {
   const navigate = useNavigate()
-  const { user, token, isAuthenticated, isLoading, error, login, register, logout, clearError, checkAuth } = useAuthStore()
+  const {
+    user,
+    token,
+    isAuthenticated,
+    isLoading,
+    error,
+    login: storeLogin,
+    register: storeRegister,
+    logout,
+    clearError,
+  } = useAuthStore()
 
   /**
    * 处理登录
    */
   const handleLogin = useCallback(async (credentials: LoginRequest) => {
     try {
-      const response = await authService.login(credentials)
-      login({
-        username: response.user.username,
-        password: credentials.password,
-      })
-      // 手动设置状态
-      useAuthStore.setState({
-        user: response.user,
-        token: response.token,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-      })
-      // 保存令牌到localStorage
-      localStorage.setItem('token', response.token)
-      localStorage.setItem('refresh_token', response.refresh_token)
+      await storeLogin(credentials)
       navigate('/dashboard')
       return { success: true }
     } catch (error) {
@@ -39,25 +34,14 @@ export function useAuth() {
       })
       return { success: false, error: message }
     }
-  }, [login, navigate])
+  }, [storeLogin, navigate])
 
   /**
    * 处理注册
    */
   const handleRegister = useCallback(async (data: RegisterRequest) => {
     try {
-      const response = await authService.register(data)
-      // 设置状态
-      useAuthStore.setState({
-        user: response.user,
-        token: response.token,
-        isAuthenticated: true,
-        isLoading: false,
-        error: null,
-      })
-      // 保存令牌到localStorage
-      localStorage.setItem('token', response.token)
-      localStorage.setItem('refresh_token', response.refresh_token)
+      await storeRegister(data)
       navigate('/dashboard')
       return { success: true }
     } catch (error) {
@@ -68,7 +52,7 @@ export function useAuth() {
       })
       return { success: false, error: message }
     }
-  }, [register, navigate])
+  }, [storeRegister, navigate])
 
   /**
    * 处理登出

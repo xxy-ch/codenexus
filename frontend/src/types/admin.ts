@@ -37,6 +37,7 @@ export interface BatchCreateAdminUser {
 export interface ProblemManagement {
   id: string
   title: string
+  description?: string
   difficulty: 'easy' | 'medium' | 'hard'
   status: 'published' | 'draft' | 'archived'
   tags: string[]
@@ -46,6 +47,9 @@ export interface ProblemManagement {
   author_username: string
   created_at: string
   is_published: boolean
+  visibility?: 'public' | 'campus' | 'class' | 'private'
+  time_limit?: number
+  memory_limit?: number
 }
 
 export interface SystemHealth {

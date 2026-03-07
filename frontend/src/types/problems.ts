@@ -26,7 +26,19 @@ export interface ProblemSubmission {
   user_id: string
   code: string
   language: string
-  status: 'pending' | 'running' | 'accepted' | 'wrong_answer' | 'time_limit_exceeded' | 'memory_limit_exceeded' | 'compilation_error' | 'runtime_error'
+  status:
+    | 'pending'
+    | 'queued'
+    | 'running'
+    | 'judged'
+    | 'accepted'
+    | 'wrong_answer'
+    | 'time_limit_exceeded'
+    | 'memory_limit_exceeded'
+    | 'compilation_error'
+    | 'runtime_error'
+    | 'system_error'
+    | 'failed'
   time_ms?: number
   memory_kb?: number
   error_message?: string

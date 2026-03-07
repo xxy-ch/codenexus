@@ -135,15 +135,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_auth_middleware_valid_token() {
-        std::env::set_var("DEMO_ADMIN_EMAIL", "admin@example.com");
-        std::env::set_var("DEMO_ADMIN_PASSWORD", "admin123");
-        std::env::set_var("DEMO_ADMIN_SCHOOL_ID", "1");
-        std::env::set_var("DEMO_ADMIN_ROLE", "admin");
         std::env::set_var("JWT_SECRET", "test_secret_key");
 
-        let user = crate::auth::get_user_store()
-            .get_by_email("admin@example.com")
-            .unwrap();
+        let user = shared::models::User {
+            id: uuid::Uuid::parse_str("11111111-1111-1111-1111-111111111111").unwrap(),
+            username: "1001".to_string(),
+            email: "admin@example.com".to_string(),
+            password_hash: String::new(),
+            role: "admin".to_string(),
+            school_id: 1,
+            campus_id: Some(1),
+        };
 
         let jwt_service = JwtService::new("test_secret_key");
         let token = jwt_service.generate_access_token(&user).unwrap();

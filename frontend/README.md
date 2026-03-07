@@ -266,4 +266,4 @@ Vite 支持热更新，修改代码后会自动刷新页面。
 
 ## 📄 许可证
 
-MIT License
+Private License

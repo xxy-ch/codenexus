@@ -6,7 +6,6 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use uuid::Uuid;
 use sqlx::FromRow;
 use crate::AppState;
 
@@ -61,14 +60,14 @@ pub async fn list_test_cases(
             id,
             problem_id,
             input,
-            expected_output,
-            is_hidden,
-            score,
-            order,
+            output AS expected_output,
+            is_secret AS is_hidden,
+            points AS score,
+            order_index AS "order",
             created_at::text as created_at
-        FROM problems_test_cases
+        FROM test_cases
         WHERE problem_id = $1
-        ORDER BY order ASC, id ASC
+        ORDER BY order_index ASC, id ASC
         "#
     )
     .bind(problem_id)
@@ -88,18 +87,18 @@ pub async fn create_test_case(
 ) -> Result<Json<TestCase>, StatusCode> {
     let test_case = sqlx::query_as::<_, TestCase>(
         r#"
-        INSERT INTO problems_test_cases (
-            problem_id, input, expected_output, is_hidden, score, order
+        INSERT INTO test_cases (
+            problem_id, input, output, is_secret, points, order_index
         )
         VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING
             id,
             problem_id,
             input,
-            expected_output,
-            is_hidden,
-            score,
-            order,
+            output AS expected_output,
+            is_secret AS is_hidden,
+            points AS score,
+            order_index AS "order",
             created_at::text as created_at
         "#
     )
@@ -128,19 +127,19 @@ pub async fn update_test_case(
         UPDATE problems_test_cases
         SET
             input = COALESCE($1, input),
-            expected_output = COALESCE($2, expected_output),
-            is_hidden = COALESCE($3, is_hidden),
-            score = COALESCE($4, score),
-            order = COALESCE($5, order)
+            output = COALESCE($2, output),
+            is_secret = COALESCE($3, is_secret),
+            points = COALESCE($4, points),
+            order_index = COALESCE($5, order_index)
         WHERE id = $6 AND problem_id = $7
         RETURNING
             id,
             problem_id,
             input,
-            expected_output,
-            is_hidden,
-            score,
-            order,
+            output AS expected_output,
+            is_secret AS is_hidden,
+            points AS score,
+            order_index AS "order",
             created_at::text as created_at
         "#
     )
@@ -168,7 +167,7 @@ pub async fn delete_test_case(
     Path((problem_id, test_case_id)): Path<(i64, i64)>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let result = sqlx::query(
-        "DELETE FROM problems_test_cases WHERE id = $1 AND problem_id = $2"
+        "DELETE FROM test_cases WHERE id = $1 AND problem_id = $2"
     )
     .bind(test_case_id)
     .bind(problem_id)
@@ -198,18 +197,18 @@ pub async fn batch_import_test_cases(
     for (index, test_case_req) in req.test_cases.iter().enumerate() {
         let result = sqlx::query_as::<_, TestCase>(
             r#"
-            INSERT INTO problems_test_cases (
-                problem_id, input, expected_output, is_hidden, score, order
+            INSERT INTO test_cases (
+                problem_id, input, output, is_secret, points, order_index
             )
             VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING
                 id,
                 problem_id,
                 input,
-                expected_output,
-                is_hidden,
-                score,
-                order,
+                output AS expected_output,
+                is_secret AS is_hidden,
+                points AS score,
+                order_index AS "order",
                 created_at::text as created_at
             "#
         )

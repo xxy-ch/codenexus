@@ -308,9 +308,9 @@ impl ContestService {
                         cp.problem_id,
                         p.title,
                         s.verdict,
-                        s.submitted_at,
+                        s.created_at,
                         cp.points,
-                        ROW_NUMBER() OVER (PARTITION BY cp.problem_id ORDER BY s.submitted_at ASC) as attempt_number
+                        ROW_NUMBER() OVER (PARTITION BY cp.problem_id ORDER BY s.created_at ASC) as attempt_number
                     FROM contest_submissions cs
                     JOIN submissions s ON s.id = cs.submission_id
                     JOIN contest_problems cp ON cp.contest_id = cs.contest_id AND cp.problem_id = s.problem_id
@@ -321,26 +321,23 @@ impl ContestService {
                     SELECT
                         problem_id,
                         title,
-                        submitted_at,
+                        created_at,
                         points,
                         attempt_number
                     FROM user_submissions
-                    WHERE verdict = 'AC'
-                    ORDER BY submitted_at ASC
-                    LIMIT 1
+                    WHERE verdict = 'ac'
                 ),
                 submission_stats AS (
                     SELECT
                         us.problem_id,
-                        p.title,
+                        us.title,
                         us.points,
-                        COUNT(*) as attempts,
-                        fa.submitted_at as first_solved_at,
+                        COUNT(*)::int as attempts,
+                        fa.created_at as first_solved_at,
                         fa.attempt_number as successful_attempt
                     FROM user_submissions us
-                    JOIN problems p ON p.id = us.problem_id
                     LEFT JOIN first_ac fa ON fa.problem_id = us.problem_id
-                    GROUP BY us.problem_id, p.title, us.points, fa.submitted_at, fa.attempt_number
+                    GROUP BY us.problem_id, us.title, us.points, fa.created_at, fa.attempt_number
                 )
                 SELECT
                     problem_id,
@@ -348,13 +345,13 @@ impl ContestService {
                     COALESCE(points, 0) as score,
                     COALESCE(attempts, 0) as attempts,
                     COALESCE(
-                        CASE
+                        GREATEST(0, CASE
                             WHEN first_solved_at IS NOT NULL THEN
                                 EXTRACT(EPOCH FROM (first_solved_at - (
                                     SELECT start_time FROM contests WHERE id = $1
                                 ))) / 60 + ((successful_attempt - 1) * 20)
                             ELSE 0
-                        END, 0
+                        END), 0
                     )::int as time_penalty,
                     first_solved_at
                 FROM submission_stats

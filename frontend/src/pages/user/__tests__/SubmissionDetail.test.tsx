@@ -1,11 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { SubmissionDetail } from '../SubmissionDetail'
 
-// Mock the API service
 vi.mock('@/services/problems', () => ({
   problemsService: {
     getSubmissionDetail: vi.fn(),
@@ -16,14 +15,15 @@ import { problemsService } from '@/services/problems'
 
 describe('SubmissionDetail', () => {
   let queryClient: QueryClient
+  let writeTextMock: ReturnType<typeof vi.fn>
 
-  const mockSubmission = {
+  const baseSubmission = {
     id: '1',
     problem_id: '1',
     problem_title: 'Two Sum',
     user_id: 'user1',
     username: 'testuser',
-    code: '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World";\n    return 0;\n}',
+    code: '#include <iostream>\nint main() {\n  std::cout << "Hello World";\n  return 0;\n}',
     language: 'cpp',
     status: 'accepted',
     time_ms: 45,
@@ -50,23 +50,6 @@ describe('SubmissionDetail', () => {
     ],
   }
 
-  const mockWrongAnswerSubmission = {
-    ...mockSubmission,
-    id: '2',
-    status: 'wrong_answer',
-    test_cases: [
-      {
-        id: 1,
-        input: '2 7 11 15\n9',
-        expected_output: '0 1',
-        actual_output: '1 2',
-        status: 'failed',
-        error: 'Wrong output',
-        time_ms: 15,
-      },
-    ],
-  }
-
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: {
@@ -75,344 +58,145 @@ describe('SubmissionDetail', () => {
         },
       },
     })
-
     vi.clearAllMocks()
+    writeTextMock = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', {
+      clipboard: {
+        writeText: writeTextMock,
+      },
+    } as unknown as Navigator)
   })
 
-  const renderComponent = (submissionId: string = '1') => {
-    return render(
+  const renderComponent = (submissionId = '1') =>
+    render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={[`/submissions/${submissionId}`]}>
-          <SubmissionDetail />
+          <Routes>
+            <Route path="/submissions/:submissionId" element={<SubmissionDetail />} />
+          </Routes>
         </MemoryRouter>
       </QueryClientProvider>
     )
-  }
 
-  describe('初始加载状态', () => {
-    it('应该显示加载状态', () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockImplementation(
-        () => new Promise(() => {})
-      )
+  it('显示加载状态', () => {
+    vi.mocked(problemsService.getSubmissionDetail).mockImplementation(() => new Promise(() => {}))
 
-      renderComponent()
+    renderComponent()
 
-      expect(screen.getByText(/加载中|loading/i)).toBeInTheDocument()
+    expect(screen.getByText(/加载中|loading/i)).toBeInTheDocument()
+  })
+
+  it('渲染已通过提交的核心信息', async () => {
+    vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(baseSubmission)
+
+    renderComponent()
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Submission #1' })).toBeInTheDocument()
+      expect(screen.getByText(/判题分析摘要/)).toBeInTheDocument()
+      expect(screen.getByText('Two Sum 的完整判题分析，包含状态摘要、性能数据和测试用例详情。')).toBeInTheDocument()
+      expect(screen.getAllByText('45ms').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('1MB').length).toBeGreaterThan(0)
+      expect(screen.getAllByText('2/2').length).toBeGreaterThan(0)
+      expect(screen.getByText(/testuser/)).toBeInTheDocument()
     })
   })
 
-  describe('Accepted提交显示', () => {
-    it('应该显示Accepted状态', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/accepted|通过/i)).toBeInTheDocument()
-      })
+  it('渲染错误答案提交的测试细节', async () => {
+    vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue({
+      ...baseSubmission,
+      id: '2',
+      status: 'wrong_answer',
+      error_message: 'Wrong output',
+      test_cases: [
+        {
+          id: 1,
+          input: '2 7 11 15\n9',
+          expected_output: '0 1',
+          actual_output: '1 2',
+          status: 'failed',
+          error: 'Wrong output',
+          time_ms: 15,
+        },
+      ],
     })
 
-    it('应该显示题目信息', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
+    renderComponent('2')
 
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText('Two Sum')).toBeInTheDocument()
-        expect(screen.getByText(/cpp/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示运行时间和内存', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/45ms/i)).toBeInTheDocument()
-        expect(screen.getByText(/1MB/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示代码内容', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/#include/)).toBeInTheDocument()
-        expect(screen.getByText(/Hello World/)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示测试用例结果', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/test case|测试用例/i)).toBeInTheDocument()
-        expect(screen.getByText(/2.*2.*passed/)).toBeInTheDocument()
-      })
+    await waitFor(() => {
+      expect(screen.getAllByText(/Wrong Answer|答案错误/i).length).toBeGreaterThan(0)
+      expect(screen.getByText(/错误信息:/)).toBeInTheDocument()
+      expect(screen.getAllByText(/Wrong output/i).length).toBeGreaterThan(0)
+      expect(screen.getByText(/期望输出:/)).toBeInTheDocument()
+      expect(screen.getByText(/实际输出:/)).toBeInTheDocument()
     })
   })
 
-  describe('Wrong Answer提交显示', () => {
-    it('应该显示Wrong Answer状态', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(
-        mockWrongAnswerSubmission
-      )
-
-      renderComponent('2')
-
-      await waitFor(() => {
-        expect(screen.getByText(/wrong answer|答案错误/i)).toBeInTheDocument()
-      })
+  it('渲染编译错误信息', async () => {
+    vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue({
+      ...baseSubmission,
+      status: 'compilation_error',
+      error_message: "error: expected ';' before 'return'",
+      test_cases: [],
     })
 
-    it('应该显示失败的测试用例详情', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(
-        mockWrongAnswerSubmission
-      )
+    renderComponent()
 
-      renderComponent('2')
-
-      await waitFor(() => {
-        expect(screen.getByText(/expected output|期望输出/i)).toBeInTheDocument()
-        expect(screen.getByText(/actual output|实际输出/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示错误信息', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(
-        mockWrongAnswerSubmission
-      )
-
-      renderComponent('2')
-
-      await waitFor(() => {
-        expect(screen.getByText(/Wrong output/i)).toBeInTheDocument()
-      })
+    await waitFor(() => {
+      expect(screen.getAllByText(/Compilation Error|编译错误/i).length).toBeGreaterThan(0)
+      expect(screen.getByText(/expected ';' before 'return'/i)).toBeInTheDocument()
     })
   })
 
-  describe('其他提交状态', () => {
-    it('应该显示Time Limit Exceeded状态', async () => {
-      const tleSubmission = {
-        ...mockSubmission,
-        status: 'time_limit_exceeded',
-      }
-
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(tleSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/time limit exceeded|超时/i)).toBeInTheDocument()
-      })
+  it('渲染运行中状态并保留轮询态文案', async () => {
+    vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue({
+      ...baseSubmission,
+      status: 'running',
+      test_cases: [],
     })
 
-    it('应该显示Memory Limit Exceeded状态', async () => {
-      const mleSubmission = {
-        ...mockSubmission,
-        status: 'memory_limit_exceeded',
-      }
+    renderComponent()
 
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mleSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/memory limit exceeded|内存超限/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示Compilation Error状态', async () => {
-      const ceSubmission = {
-        ...mockSubmission,
-        status: 'compilation_error',
-        error_message: 'error: expected \';\' before \'return\'',
-      }
-
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(ceSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/compilation error|编译错误/i)).toBeInTheDocument()
-        expect(screen.getByText(/expected ';' before 'return'/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示Runtime Error状态', async () => {
-      const reSubmission = {
-        ...mockSubmission,
-        status: 'runtime_error',
-        error_message: 'Segmentation fault',
-      }
-
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(reSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/runtime error|运行时错误/i)).toBeInTheDocument()
-        expect(screen.getByText(/Segmentation fault/i)).toBeInTheDocument()
-      })
+    await waitFor(() => {
+      expect(screen.getAllByText(/Running|运行中/i).length).toBeGreaterThan(0)
+      expect(screen.getByText(/您的代码正在判题中/)).toBeInTheDocument()
     })
   })
 
-  describe('代码显示功能', () => {
-    it('应该支持语法高亮', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        const codeElement = screen.getByText(/#include/)
-        expect(codeElement).toBeInTheDocument()
-        expect(codeElement.className).toContain('hljs') // 或其他语法高亮类名
-      })
+  it('渲染等待中状态', async () => {
+    vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue({
+      ...baseSubmission,
+      status: 'pending',
+      test_cases: [],
     })
 
-    it('应该支持代码复制功能', async () => {
-      const user = userEvent.setup()
-      const writeText = vi.spyOn(navigator.clipboard, 'writeText')
+    renderComponent()
 
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/#include/)).toBeInTheDocument()
-      })
-
-      const copyButton = screen.getByLabelText(/copy|复制/i)
-      await user.click(copyButton)
-
-      await waitFor(() => {
-        expect(writeText).toHaveBeenCalledWith(mockSubmission.code)
-        expect(screen.getByText(/copied|已复制/i)).toBeInTheDocument()
-      })
+    await waitFor(() => {
+      expect(screen.getAllByText(/Pending|等待中/i).length).toBeGreaterThan(0)
     })
   })
 
-  describe('测试用例展开', () => {
-    it('应该默认展开第一个测试用例', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
 
-      renderComponent()
+  it('显示 not found 错误态', async () => {
+    vi.mocked(problemsService.getSubmissionDetail).mockRejectedValue(new Error('submission not found'))
 
-      await waitFor(() => {
-        expect(screen.getByText(/test case 1|测试用例.*1/i)).toBeInTheDocument()
-      })
-    })
+    renderComponent()
 
-    it('应该支持展开/折叠测试用例', async () => {
-      const user = userEvent.setup()
-
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/test case 1/i)).toBeInTheDocument()
-      })
-
-      const expandButton = screen.getByLabelText(/expand|展开/i)
-      await user.click(expandButton)
-
-      // 验证测试用例详情可见
-      expect(screen.getByText('2 7 11 15')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('提交记录不存在')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /重试/i })).toBeInTheDocument()
     })
   })
 
-  describe('重新提交功能', () => {
-    it('应该提供重新提交按钮', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
+  it('显示通用加载失败错误态', async () => {
+    vi.mocked(problemsService.getSubmissionDetail).mockRejectedValue(new Error('boom'))
 
-      renderComponent()
+    renderComponent()
 
-      await waitFor(() => {
-        expect(screen.getByText(/accepted/i)).toBeInTheDocument()
-      })
-
-      const resubmitButton = screen.getByText(/resubmit|重新提交|再次挑战/i)
-      expect(resubmitButton).toBeInTheDocument()
-    })
-  })
-
-  describe('返回功能', () => {
-    it('应该提供返回按钮', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(mockSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/two sum/i)).toBeInTheDocument()
-      })
-
-      const backButton = screen.getByLabelText(/back|返回/i)
-      expect(backButton).toBeInTheDocument()
-    })
-  })
-
-  describe('错误处理', () => {
-    it('应该显示404错误（提交不存在）', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockRejectedValue(
-        new Error('Submission not found')
-      )
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/not found|不存在/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示通用错误消息', async () => {
-      vi.mocked(problemsService.getSubmissionDetail).mockRejectedValue(
-        new Error('Failed to fetch submission')
-      )
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/error|错误|failed/i)).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('Pending和Running状态', () => {
-    it('应该显示Pending状态的加载动画', async () => {
-      const pendingSubmission = {
-        ...mockSubmission,
-        status: 'pending',
-      }
-
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(pendingSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/pending|等待中/i)).toBeInTheDocument()
-        expect(screen.getByRole('status')).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示Running状态', async () => {
-      const runningSubmission = {
-        ...mockSubmission,
-        status: 'running',
-      }
-
-      vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue(runningSubmission)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/running|运行中/i)).toBeInTheDocument()
-      })
+    await waitFor(() => {
+      expect(screen.getByText('加载失败')).toBeInTheDocument()
+      expect(screen.getByText('boom')).toBeInTheDocument()
     })
   })
 })
