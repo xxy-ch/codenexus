@@ -66,7 +66,7 @@ The redesign covers all currently routed pages under the following groups:
 - [`frontend/src/components/ui/Card.tsx`](/Users/xiexingyu/Documents/项目/Online_Judge/frontend/src/components/ui/Card.tsx)
 - [`frontend/src/components/ui/Loading.tsx`](/Users/xiexingyu/Documents/项目/Online_Judge/frontend/src/components/ui/Loading.tsx)
 - [`frontend/src/components/ui/StatusBadge.tsx`](/Users/xiexingyu/Documents/项目/Online_Judge/frontend/src/components/ui/StatusBadge.tsx)
-- Related tests
+- related tests
 
 ## Design Direction
 
@@ -271,15 +271,15 @@ The rewrite will land incrementally. Shared shell and primitives are introduced 
 
 ## Implementation Order
 
-1. Design tokens, CSS variables, shell foundations, and shared primitives
-2. Main layout and admin layout convergence
-3. Auth, error, and search pages
-4. User list pages
-5. User detail pages and IDE-related pages
-6. Community pages
-7. Teacher pages
-8. Admin pages
-9. Final consistency sweep and regression pass
+1. design tokens, CSS variables, shell foundations, and shared primitives
+2. main layout and admin layout convergence
+3. auth, error, and search pages
+4. user list pages
+5. user detail pages and IDE-related pages
+6. community pages
+7. teacher pages
+8. admin pages
+9. final consistency sweep and regression pass
 
 This order minimizes rework because pages migrate after the shell and base components are stable.
 
