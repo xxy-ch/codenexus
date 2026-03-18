@@ -32,29 +32,11 @@ export default defineConfig({
           if (!id.includes('node_modules')) return
 
           if (
-            id.includes('/react/') ||
-            id.includes('/react-dom/') ||
-            id.includes('/react-router-dom/') ||
-            id.includes('/scheduler/') ||
-            id.includes('/use-sync-external-store/') ||
-            id.includes('/react-is/')
-          ) {
-            return 'react-core'
-          }
-
-          if (
             id.includes('@tanstack/react-query') ||
             id.includes('/axios/') ||
             id.includes('/zustand/')
           ) {
             return 'data-core'
-          }
-
-          if (
-            id.includes('@mui/') ||
-            id.includes('@emotion/')
-          ) {
-            return 'mui-kit'
           }
 
           if (id.includes('/lucide-react/')) {

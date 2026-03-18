@@ -7,6 +7,8 @@ use crate::AppState;
 
 pub fn problems_router() -> Router<AppState> {
     Router::new()
+        .route("/languages", get(routes::get_supported_languages))
+        .route("/languages", put(routes::update_supported_languages))
         .route("/", get(routes::list_problems))
         .route("/", post(routes::create_problem))
         .route("/:id", get(routes::get_problem))

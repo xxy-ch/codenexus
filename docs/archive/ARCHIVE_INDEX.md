@@ -59,6 +59,12 @@
 - 备份文件
 - 一次性交付或迁移产物
 
+### `legacy-assets`
+
+- 历史根目录迁移脚本
+- 历史 shell 测试脚本
+- 已不作为当前项目运行入口
+
 ## 当前正式文档入口
 
 请优先使用以下文档：
@@ -67,3 +73,17 @@
 2. [交付文档集入口](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/DELIVERY_DOCUMENT_SET_2026-03-07.md)
 3. [发布与回滚 Runbook](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/RELEASE_RUNBOOK_2026-03-06.md)
 4. [最终交付总结](/Users/xiexingyu/Documents/项目/Online_Judge/FINAL_SUMMARY.md)
+
+## 已清理的冗余目录
+
+以下目录已从仓库根目录移除，不再作为当前项目组成部分保留：
+
+- `examples/`
+- `sqlx/`
+- `testcontainers-rs/`
+- `target/`
+
+清理原因：
+
+- `examples/`、`sqlx/`、`testcontainers-rs/` 为第三方示例或 vendored 副本，不参与当前项目运行
+- `target/` 为构建产物目录，可随时重新生成

@@ -138,10 +138,10 @@ export const problemsService = {
    * 获取支持的语言列表
    */
   async getSupportedLanguages(): Promise<
-    Array<{ id: string; name: string; extension: string }>
+    Array<{ id: string; name: string; extension: string; enabled: boolean; is_default: boolean }>
   > {
     const response = await api.get(
-      '/languages'
+      '/problems/languages'
     )
     return response.data
   },

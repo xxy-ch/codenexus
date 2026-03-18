@@ -117,6 +117,7 @@ fn create_router(state: AppState) -> Router {
         .route("/auth/login", post(auth::login))
         .route("/auth/refresh", post(auth::refresh))
         .route("/auth/register", post(auth::register))
+        .route("/auth/logout", post(auth::logout))
         // WebSocket route (public, auth handled in handler)
         .route("/ws", get(websocket::handler::websocket_upgrade_handler));
 

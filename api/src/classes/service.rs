@@ -22,11 +22,12 @@ impl ClassService {
         teacher_id: Uuid,
     ) -> Result<Class> {
         let now = Utc::now();
+        let code = format!("CLS{}", &Uuid::new_v4().simple().to_string()[..6].to_uppercase());
 
         let class = sqlx::query_as::<_, Class>(
             r#"
-            INSERT INTO classes (organization_id, campus_id, name, teacher_id, semester, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $6)
+            INSERT INTO classes (organization_id, campus_id, name, teacher_id, semester, code, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
             RETURNING
                 id,
                 organization_id,
@@ -34,7 +35,7 @@ impl ClassService {
                 name,
                 NULL::TEXT AS description,
                 teacher_id,
-                NULL::TEXT AS code,
+                code,
                 TRUE AS is_active,
                 NULL::INTEGER AS max_students,
                 semester,
@@ -47,6 +48,7 @@ impl ClassService {
         .bind(&request.name)
         .bind(teacher_id)
         .bind(&request.semester)
+        .bind(&code)
         .bind(now)
         .fetch_one(&self.pool)
         .await?;
@@ -65,7 +67,7 @@ impl ClassService {
                 name,
                 NULL::TEXT AS description,
                 teacher_id,
-                NULL::TEXT AS code,
+                code,
                 TRUE AS is_active,
                 NULL::INTEGER AS max_students,
                 semester,
@@ -84,8 +86,30 @@ impl ClassService {
 
     /// Get class by enrollment code
     pub async fn get_class_by_code(&self, code: &str) -> Result<Class> {
-        let _ = code;
-        Err(anyhow::anyhow!("Enrollment codes are not supported by the current schema"))
+        let class = sqlx::query_as::<_, Class>(
+            r#"
+            SELECT
+                id,
+                organization_id,
+                campus_id,
+                name,
+                NULL::TEXT AS description,
+                teacher_id,
+                code,
+                TRUE AS is_active,
+                NULL::INTEGER AS max_students,
+                semester,
+                created_at,
+                updated_at
+            FROM classes
+            WHERE code = $1
+            "#
+        )
+        .bind(code)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(class)
     }
 
     /// List classes with filters
@@ -130,7 +154,7 @@ impl ClassService {
                 name,
                 NULL::TEXT AS description,
                 teacher_id,
-                NULL::TEXT AS code,
+                code,
                 TRUE AS is_active,
                 NULL::INTEGER AS max_students,
                 semester,
@@ -203,7 +227,7 @@ impl ClassService {
                 name,
                 NULL::TEXT AS description,
                 teacher_id,
-                NULL::TEXT AS code,
+                code,
                 TRUE AS is_active,
                 NULL::INTEGER AS max_students,
                 semester,
@@ -254,8 +278,15 @@ impl ClassService {
         .unwrap_or(0);
 
         let total_submissions: i64 = sqlx::query_scalar(
-            "SELECT 0"
+            r#"
+            SELECT COUNT(*)
+            FROM assignments a
+            JOIN class_enrollments ce ON ce.class_id = a.class_id AND ce.status = 'active'
+            JOIN submissions s ON s.problem_id = a.problem_id AND s.user_id = ce.student_id
+            WHERE a.class_id = $1
+            "#
         )
+        .bind(class_id)
         .fetch_one(&self.pool)
         .await
         .unwrap_or(0);
@@ -345,8 +376,20 @@ impl ClassService {
             return Err(anyhow::anyhow!("Already enrolled in this class"));
         }
 
-        let _ = (class, student_id);
-        Err(anyhow::anyhow!("Enrollment by code is not supported by the current schema"))
+        let enrollment = sqlx::query_as::<_, ClassEnrollment>(
+            r#"
+            INSERT INTO class_enrollments (class_id, student_id, status, enrolled_at)
+            VALUES ($1, $2, 'active', $3)
+            RETURNING id, class_id, student_id, status, enrolled_at
+            "#
+        )
+        .bind(class.id)
+        .bind(student_id)
+        .bind(Utc::now())
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(enrollment)
     }
 
     /// Remove student from class
@@ -422,7 +465,7 @@ impl ClassService {
             r#"
             INSERT INTO assignments (class_id, problem_id, deadline, points, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $5)
-            RETURNING *
+            RETURNING id, class_id, problem_id, deadline, points, published_at, created_at, updated_at
             "#
         )
         .bind(class_id)
@@ -439,7 +482,7 @@ impl ClassService {
     /// Get assignment
     pub async fn get_assignment(&self, assignment_id: i64) -> Result<Assignment> {
         let assignment = sqlx::query_as::<_, Assignment>(
-            "SELECT * FROM assignments WHERE id = $1"
+            "SELECT id, class_id, problem_id, deadline, points, published_at, created_at, updated_at FROM assignments WHERE id = $1"
         )
         .bind(assignment_id)
         .fetch_one(&self.pool)
@@ -451,7 +494,7 @@ impl ClassService {
     /// List assignments for class
     pub async fn list_assignments(&self, class_id: i64) -> Result<Vec<Assignment>> {
         let assignments = sqlx::query_as::<_, Assignment>(
-            "SELECT * FROM assignments WHERE class_id = $1 ORDER BY deadline ASC"
+            "SELECT id, class_id, problem_id, deadline, points, published_at, created_at, updated_at FROM assignments WHERE class_id = $1 ORDER BY deadline ASC"
         )
         .bind(class_id)
         .fetch_all(&self.pool)
@@ -476,7 +519,7 @@ impl ClassService {
                 points = COALESCE($3, points),
                 updated_at = $4
             WHERE id = $5
-            RETURNING *
+            RETURNING id, class_id, problem_id, deadline, points, published_at, created_at, updated_at
             "#
         )
         .bind(request.problem_id)
@@ -502,8 +545,20 @@ impl ClassService {
 
     /// Publish assignment
     pub async fn publish_assignment(&self, assignment_id: i64) -> Result<Assignment> {
-        let _ = assignment_id;
-        Err(anyhow::anyhow!("Assignment publishing is not supported by the current schema"))
+        let assignment = sqlx::query_as::<_, Assignment>(
+            r#"
+            UPDATE assignments
+            SET published_at = COALESCE(published_at, NOW()),
+                updated_at = NOW()
+            WHERE id = $1
+            RETURNING id, class_id, problem_id, deadline, points, published_at, created_at, updated_at
+            "#
+        )
+        .bind(assignment_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(assignment)
     }
 
     /// Record submission for assignment
@@ -522,7 +577,28 @@ impl ClassService {
 
     /// Get submissions for assignment
     pub async fn get_assignment_submissions(&self, assignment_id: i64) -> Result<Vec<AssignmentSubmission>> {
-        let _ = assignment_id;
-        Ok(vec![])
+        let submissions = sqlx::query_as::<_, AssignmentSubmission>(
+            r#"
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY s.created_at DESC)::BIGINT AS id,
+                a.id AS assignment_id,
+                s.user_id,
+                s.id AS submission_id,
+                CASE WHEN s.verdict = 'ac' THEN a.points ELSE 0 END AS score,
+                (s.created_at > a.deadline) AS is_late,
+                GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (s.created_at - a.deadline)) / 86400))::INTEGER AS late_days,
+                s.created_at AS submitted_at
+            FROM assignments a
+            JOIN class_enrollments ce ON ce.class_id = a.class_id AND ce.status = 'active'
+            JOIN submissions s ON s.problem_id = a.problem_id AND s.user_id = ce.student_id
+            WHERE a.id = $1
+            ORDER BY s.created_at DESC
+            "#
+        )
+        .bind(assignment_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(submissions)
     }
 }

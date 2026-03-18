@@ -3,14 +3,102 @@ use axum::{
     http::StatusCode,
     response::Json,
 };
+use sqlx::Row;
 
 use crate::middleware::auth::AuthExtractor;
 use crate::AppState;
 
 use super::models::{
     CreateProblemRequest, ListProblemsQuery, Problem, ProblemDetail, ProblemStatistics,
-    ProblemsListResponse, UpdateProblemRequest,
+    ProblemsListResponse, SupportedLanguage, UpdateProblemRequest, UpdateSupportedLanguagesRequest,
 };
+
+async fn ensure_language_settings(state: &AppState) -> Result<(), StatusCode> {
+    sqlx::query(
+        r#"
+        INSERT INTO judge_language_settings (id, c_enabled, cpp_enabled)
+        VALUES (TRUE, FALSE, FALSE)
+        ON CONFLICT (id) DO NOTHING
+        "#,
+    )
+    .execute(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(())
+}
+
+fn build_supported_languages(c_enabled: bool, cpp_enabled: bool) -> Vec<SupportedLanguage> {
+    vec![
+        SupportedLanguage {
+            id: "python".to_string(),
+            name: "Python 3".to_string(),
+            extension: "py".to_string(),
+            enabled: true,
+            is_default: true,
+        },
+        SupportedLanguage {
+            id: "c".to_string(),
+            name: "C".to_string(),
+            extension: "c".to_string(),
+            enabled: c_enabled,
+            is_default: false,
+        },
+        SupportedLanguage {
+            id: "cpp".to_string(),
+            name: "C++".to_string(),
+            extension: "cpp".to_string(),
+            enabled: cpp_enabled,
+            is_default: false,
+        },
+    ]
+}
+
+pub async fn get_supported_languages(
+    State(state): State<AppState>,
+    AuthExtractor(_claims): AuthExtractor,
+) -> Result<Json<Vec<SupportedLanguage>>, StatusCode> {
+    ensure_language_settings(&state).await?;
+
+    let row = sqlx::query(
+        "SELECT c_enabled, cpp_enabled FROM judge_language_settings WHERE id = TRUE",
+    )
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(build_supported_languages(
+        row.get("c_enabled"),
+        row.get("cpp_enabled"),
+    )))
+}
+
+pub async fn update_supported_languages(
+    State(state): State<AppState>,
+    AuthExtractor(_claims): AuthExtractor,
+    Json(req): Json<UpdateSupportedLanguagesRequest>,
+) -> Result<Json<Vec<SupportedLanguage>>, StatusCode> {
+    ensure_language_settings(&state).await?;
+
+    let row = sqlx::query(
+        r#"
+        UPDATE judge_language_settings
+        SET c_enabled = $1, cpp_enabled = $2
+        WHERE id = TRUE
+        RETURNING c_enabled, cpp_enabled
+        "#,
+    )
+    .bind(req.c_enabled)
+    .bind(req.cpp_enabled)
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(build_supported_languages(
+        row.get("c_enabled"),
+        row.get("cpp_enabled"),
+    )))
+}
 
 fn normalize_visibility(visibility: &str, is_public: bool) -> Option<String> {
     let normalized = match visibility {

@@ -18,6 +18,19 @@ export function JudgeSettings() {
     enabled: !!problemId,
   })
 
+  const { data: languageSettings = [] } = useQuery({
+    queryKey: ['judge-language-settings'],
+    queryFn: () => judgeConfigService.getLanguageSettings(),
+  })
+
+  const updateLanguageMutation = useMutation({
+    mutationFn: (payload: { c_enabled: boolean; cpp_enabled: boolean }) =>
+      judgeConfigService.updateLanguageSettings(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['judge-language-settings'] })
+    },
+  })
+
   const createMutation = useMutation({
     mutationFn: () =>
       judgeConfigService.createTestCase(problemId, {
@@ -155,6 +168,32 @@ export function JudgeSettings() {
               >
                 加载
               </button>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="text-sm font-semibold text-slate-950">Language Permissions</div>
+            <p className="mt-1 text-sm leading-6 text-slate-600">Python 固定为默认语言，C / C++ 可在这里开启或关闭。</p>
+            <div className="mt-4 space-y-3">
+              {languageSettings.map((language) => (
+                <label key={language.id} className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                  <div>
+                    <div className="font-semibold text-slate-950">{language.name}</div>
+                    <div className="text-xs text-slate-500">{language.is_default ? 'default language' : 'optional language'}</div>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={language.enabled}
+                    disabled={language.id === 'python' || updateLanguageMutation.isPending}
+                    onChange={(e) =>
+                      updateLanguageMutation.mutate({
+                        c_enabled: language.id === 'c' ? e.target.checked : !!languageSettings.find((item) => item.id === 'c')?.enabled,
+                        cpp_enabled: language.id === 'cpp' ? e.target.checked : !!languageSettings.find((item) => item.id === 'cpp')?.enabled,
+                      })
+                    }
+                  />
+                </label>
+              ))}
             </div>
           </div>
 

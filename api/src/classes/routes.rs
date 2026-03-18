@@ -144,7 +144,7 @@ async fn enroll_with_code(
         .ok_or(StatusCode::BAD_REQUEST)?;
     let enrollment = service.enroll_with_code(&code, auth.sub)
         .await
-        .map_err(|_| StatusCode::NOT_IMPLEMENTED)?;
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
     Ok(Json(enrollment))
 }
 
@@ -243,7 +243,7 @@ async fn publish_assignment(
     let service = ClassService::new(state.db_pool);
     let assignment = service.publish_assignment(assignment_id)
         .await
-        .map_err(|_| StatusCode::NOT_IMPLEMENTED)?;
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(assignment))
 }
 
@@ -254,6 +254,6 @@ async fn get_assignment_submissions(
     let service = ClassService::new(state.db_pool);
     let submissions = service.get_assignment_submissions(assignment_id)
         .await
-        .map_err(|_| StatusCode::NOT_IMPLEMENTED)?;
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(submissions))
 }

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const { mockApi } = vi.hoisted(() => ({
   mockApi: {
     get: vi.fn(),
+    post: vi.fn(),
   },
 }))
 
@@ -49,5 +50,18 @@ describe('classesService mapping', () => {
       enrollment_code: 'ABC123',
       student_count: 42,
     })
+  })
+
+  it('exposes live write-path helpers for publish and submissions', async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { id: 9, published_at: '2026-03-17T00:00:00Z' } })
+    mockApi.get.mockResolvedValueOnce({ data: [{ id: 5, submission_id: 8, score: 100 }] })
+
+    const publishResult = await classesService.publishAssignment(9)
+    const submissions = await classesService.getAssignmentSubmissions(9)
+
+    expect(mockApi.post).toHaveBeenCalledWith('/classes/assignments/9/publish')
+    expect(mockApi.get).toHaveBeenCalledWith('/classes/assignments/9/submissions')
+    expect(publishResult.id).toBe(9)
+    expect(submissions[0].submission_id).toBe(8)
   })
 })

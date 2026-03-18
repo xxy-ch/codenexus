@@ -118,11 +118,12 @@ test.describe('delivery smoke', () => {
     await expect(page.locator('body')).toContainText(/Analysis Summary|判题分析摘要/)
 
     await page.goto(`${baseURL}/problems/1/solve`)
-    await expect(page.locator('body')).toContainText(/工作区摘要|IDE Summary/)
+    await expect(page.locator('body')).toContainText(/Standard Input \/ Output|标准输入\/输出/)
+    await expect(page.getByLabel(/language/i)).toHaveValue('python')
 
     await page.goto(`${baseURL}/teacher/classes`)
     await expect(page.getByRole('heading', { name: /班级管理/i })).toBeVisible()
-    await expect(page.locator('body')).toContainText(/Live Schema Flows|按邮箱加人|批量导入学生/i)
+    await expect(page.locator('body')).toContainText(/邀请码入班|按邮箱加人|批量导入学生|发布作业/i)
 
     await page.goto(`${baseURL}/messages`)
     await expect(page.getByRole('heading', { name: /私信中心/i })).toBeVisible()

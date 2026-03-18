@@ -36,6 +36,14 @@ export interface UpdateProblemContentPayload {
   author_note?: string
 }
 
+export interface JudgeLanguageSetting {
+  id: 'python' | 'c' | 'cpp'
+  name: string
+  extension: string
+  enabled: boolean
+  is_default: boolean
+}
+
 export const judgeConfigService = {
   async getTestCases(problemId: string): Promise<JudgeTestCase[]> {
     const response = await api.get<JudgeTestCase[]>(`/problems/${problemId}/test-cases`)
@@ -76,5 +84,18 @@ export const judgeConfigService = {
   async updateProblem(problemId: string, payload: UpdateProblemContentPayload): Promise<JudgeProblemDetail> {
     const response = await api.put<JudgeProblemDetail>(`/problems/${problemId}`, payload)
     return response.data
+  },
+
+  async getLanguageSettings(): Promise<JudgeLanguageSetting[]> {
+    const response = await api.get<JudgeLanguageSetting[]>('/problems/languages')
+    return response.data || []
+  },
+
+  async updateLanguageSettings(payload: {
+    c_enabled: boolean
+    cpp_enabled: boolean
+  }): Promise<JudgeLanguageSetting[]> {
+    const response = await api.put<JudgeLanguageSetting[]>('/problems/languages', payload)
+    return response.data || []
   },
 }

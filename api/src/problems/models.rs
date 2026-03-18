@@ -116,3 +116,18 @@ pub struct ListProblemsQuery {
     pub sort_by: Option<String>, // 'created_at', 'title', 'difficulty', 'submissions'
     pub sort_order: Option<String>, // 'asc', 'desc'
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupportedLanguage {
+    pub id: String,
+    pub name: String,
+    pub extension: String,
+    pub enabled: bool,
+    pub is_default: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct UpdateSupportedLanguagesRequest {
+    pub c_enabled: bool,
+    pub cpp_enabled: bool,
+}

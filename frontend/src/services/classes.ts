@@ -17,8 +17,30 @@ export interface AssignmentItem {
   problem_id: number
   deadline: string
   points: number
+  published_at?: string | null
   created_at: string
   updated_at: string
+}
+
+export interface AssignmentSubmissionItem {
+  id: number
+  assignment_id: number
+  user_id: string
+  submission_id: number
+  score: number
+  is_late: boolean
+  late_days: number
+  submitted_at: string
+}
+
+export interface ClassStudentItem {
+  student_id: string
+  username: string
+  email: string
+  total_assignments: number
+  completed_assignments: number
+  average_score: number
+  last_submission?: string | null
 }
 
 export interface ClassesListResponse {
@@ -92,8 +114,16 @@ export const classesService = {
     name: string
     semester?: string
   }) {
-    const response = await api.post<ClassItem>('/classes', payload)
-    return response.data
+    const response = await api.post<BackendClassItem & { code?: string }>('/classes', payload)
+    return {
+      id: response.data.id,
+      name: response.data.name,
+      description: response.data.description,
+      semester: response.data.semester,
+      teacher_id: response.data.teacher_id,
+      enrollment_code: response.data.code,
+      created_at: response.data.created_at,
+    } satisfies ClassItem
   },
 
   async addStudent(classId: number, student_email: string) {
@@ -111,6 +141,11 @@ export const classesService = {
     return response.data || []
   },
 
+  async getClassStudents(classId: number): Promise<ClassStudentItem[]> {
+    const response = await api.get<ClassStudentItem[]>(`/classes/${classId}/students`)
+    return response.data || []
+  },
+
   async createAssignment(classId: number, payload: {
     problem_id: number
     deadline: string
@@ -122,5 +157,20 @@ export const classesService = {
 
   async deleteAssignment(assignmentId: number) {
     await api.delete(`/classes/assignments/${assignmentId}`)
+  },
+
+  async publishAssignment(assignmentId: number): Promise<AssignmentItem> {
+    const response = await api.post<AssignmentItem>(`/classes/assignments/${assignmentId}/publish`)
+    return response.data
+  },
+
+  async getAssignmentSubmissions(assignmentId: number): Promise<AssignmentSubmissionItem[]> {
+    const response = await api.get<AssignmentSubmissionItem[]>(`/classes/assignments/${assignmentId}/submissions`)
+    return response.data || []
+  },
+
+  async enrollWithCode(code: string) {
+    const response = await api.post('/classes/enroll', { code })
+    return response.data
   },
 }

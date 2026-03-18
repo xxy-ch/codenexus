@@ -32,6 +32,10 @@ impl SubmissionService {
         let normalized_language = normalize_submission_language(&req.language)
             .ok_or_else(|| anyhow::anyhow!("Invalid language"))?;
 
+        if !self.is_language_enabled(normalized_language).await? {
+            return Err(anyhow::anyhow!("Selected language is disabled by judge settings"));
+        }
+
         // Validate problem exists
         let problem_exists = sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS(SELECT 1 FROM problems WHERE id = $1)"
@@ -81,6 +85,37 @@ impl SubmissionService {
         self.queue_for_judging(submission.id, req.problem_id, user_id, &req.code, normalized_language).await?;
 
         Ok(submission)
+    }
+
+    async fn is_language_enabled(&self, language: &str) -> Result<bool> {
+        let row = sqlx::query(
+            r#"
+            INSERT INTO judge_language_settings (id, c_enabled, cpp_enabled)
+            VALUES (TRUE, FALSE, FALSE)
+            ON CONFLICT (id) DO NOTHING
+            RETURNING c_enabled, cpp_enabled
+            "#,
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        let (c_enabled, cpp_enabled) = if let Some(row) = row {
+            (row.get::<bool, _>("c_enabled"), row.get::<bool, _>("cpp_enabled"))
+        } else {
+            let row = sqlx::query(
+                "SELECT c_enabled, cpp_enabled FROM judge_language_settings WHERE id = TRUE",
+            )
+            .fetch_one(&self.pool)
+            .await?;
+            (row.get::<bool, _>("c_enabled"), row.get::<bool, _>("cpp_enabled"))
+        };
+
+        Ok(match language {
+            "python3" => true,
+            "c" => c_enabled,
+            "cpp" => cpp_enabled,
+            _ => false,
+        })
     }
 
     pub async fn get_submission(&self, submission_id: i64, user_id: Uuid) -> Result<SubmissionResponse> {

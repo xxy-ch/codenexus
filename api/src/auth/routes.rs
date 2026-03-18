@@ -45,6 +45,10 @@ pub async fn refresh(
     Ok(Json(RefreshResponse { token: response.token }))
 }
 
+pub async fn logout() -> StatusCode {
+    StatusCode::OK
+}
+
 pub async fn register(
     State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
@@ -122,6 +126,7 @@ mod tests {
         Router::new()
             .route("/login", post(login))
             .route("/refresh", post(refresh))
+            .route("/logout", post(logout))
             .with_state(app_state)
     }
 
@@ -264,5 +269,11 @@ mod tests {
         let refresh_json: serde_json::Value = serde_json::from_slice(&refresh_body).unwrap();
 
         assert!(refresh_json["token"].is_string());
+    }
+
+    #[tokio::test]
+    async fn test_logout_returns_ok() {
+        let response = logout().await;
+        assert_eq!(response, StatusCode::OK);
     }
 }

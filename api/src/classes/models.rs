@@ -11,7 +11,7 @@ pub struct Class {
     pub name: String,
     pub description: Option<String>,
     pub teacher_id: Uuid,
-    pub code: Option<String>, // Enrollment code is not available in the current schema
+    pub code: String,
     pub is_active: bool,
     pub max_students: Option<i32>,
     pub semester: Option<String>,
@@ -57,6 +57,7 @@ pub struct Assignment {
     pub problem_id: i64,
     pub deadline: DateTime<Utc>,
     pub points: i32,
+    pub published_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
