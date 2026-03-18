@@ -145,6 +145,8 @@ The redesign introduces or normalizes the following reusable page-level primitiv
 
 The principle is to stop rebuilding these patterns inside individual pages with repeated Tailwind class strings.
 
+These primitives are presentational and compositional by default. They must not absorb route-specific business logic such as query param ownership, pagination state, sort state, mutation orchestration, validation rules, or data-fetch policy unless a later implementation step explicitly documents that move. Page containers remain responsible for state, routing, async flows, and API interaction so the rewrite does not quietly relocate business logic into shared UI.
+
 ## Page Templates
 
 ### Template A: List / Search / Management
@@ -215,6 +217,22 @@ Targets:
 - assignment report
 - admin dashboard
 
+### Template E: Focused Tool / Real-Time Workspace
+
+Structure:
+
+- task-oriented split layout or focused single-workspace layout
+- minimal surrounding chrome
+- persistent primary action area
+- supporting metadata in compact secondary regions only
+
+Targets:
+
+- problem IDE
+- enhanced problem IDE
+- direct messages
+- scoreboard and other highly interactive single-task views when Template B would add too much overhead
+
 ## Page Family Strategy
 
 ### Auth / Error / Search
@@ -227,11 +245,11 @@ Problem sets, submissions, contests, rankings, blog/discussion lists, and roadma
 
 ### User Detail and IDE Pages
 
-Problem detail, contest detail, submission detail, profile, and settings should reduce visual clutter and strengthen the reading or task flow. The IDE stays split-task oriented and should remain cleaner than a generic dashboard page.
+Problem detail, contest detail, submission detail, profile, and settings should reduce visual clutter and strengthen the reading or task flow. The IDE family is explicitly mapped to Template E so it is not forced into the same structure as standard detail pages.
 
 ### Community Pages
 
-Editing and content pages must stop feeling like a different app. Writing surfaces, meta sections, toolbars, and content containers should align with the main product tokens while keeping enough whitespace for reading.
+Editing and content pages must stop feeling like a different app. Writing surfaces, meta sections, toolbars, and content containers should align with the main product tokens while keeping enough whitespace for reading. Direct messages are explicitly treated as Template E rather than a generic detail page.
 
 ### Teacher Pages
 
@@ -261,27 +279,45 @@ Avoid relying on:
 - complex filter-driven visual effects
 - advanced CSS nesting assumptions beyond the current toolchain support
 
+### Accessibility
+
+The redesign must preserve or improve:
+
+- visible keyboard focus on all interactive controls
+- sufficient contrast for text, borders, and status states
+- keyboard navigation parity for major flows
+- reduced-motion friendly behavior for non-essential transitions
+- semantic headings, labels, and navigational landmarks where already present or expected
+
 ### Incremental Rewrite Safety
 
 The rewrite will land incrementally. Shared shell and primitives are introduced first, then page families migrate in groups. During migration:
 
 - existing routes must continue working
+- URL structure, deep links, and route params must remain stable
+- existing query-string semantics and filter entry points must remain stable unless a migration step explicitly includes a tested replacement
+- existing auth guards, error boundaries, loading states, and navigation hierarchy must remain intact
 - existing teacher live write paths must not regress
 - tests should move with the pages they cover
+
+### Styling Coexistence
+
+Because the rewrite is incremental, old and new styles will coexist temporarily. The implementation must explicitly prevent token drift and selector collisions by introducing new shared tokens first, migrating primitives before pages that consume them, and removing old one-off styles only after the replacement surfaces are live.
 
 ## Implementation Order
 
 1. design tokens, CSS variables, shell foundations, and shared primitives
-2. main layout and admin layout convergence
-3. auth, error, and search pages
-4. user list pages
-5. user detail pages and IDE-related pages
-6. community pages
-7. teacher pages
-8. admin pages
-9. final consistency sweep and regression pass
+2. migrate one low-risk contained family onto the new primitives first: auth, error, and search pages
+3. validate the new primitives and tokens through focused regression before broad shell convergence
+4. converge `MainLayout` and `AdminLayout` onto the new shell language
+5. user list pages
+6. user detail pages and IDE-related pages
+7. community pages
+8. teacher pages
+9. admin pages
+10. final consistency sweep and regression pass
 
-This order minimizes rework because pages migrate after the shell and base components are stable.
+This order minimizes rework because the new primitives are exercised on lower-risk pages before the shell blast radius expands across the application.
 
 ## Testing Strategy
 
@@ -344,3 +380,21 @@ Mitigation:
 - move whole page families together
 - prioritize high-traffic and shell-defining areas first
 
+### Mixed Old/New Style Collisions
+
+Because `index.css`, layouts, and shared UI primitives will change before every page is migrated, the app can end up with overlapping tokens, duplicated utility assumptions, or old/new component mixes on the same screen.
+
+Mitigation:
+
+- migrate primitives before page families that consume them
+- keep shared token names and surface rules centralized
+- remove superseded one-off page styling only after replacement patterns are adopted
+
+### Accessibility Drift
+
+Flat redesign work often weakens focus visibility, border contrast, and keyboard clarity if those constraints are not treated as first-class.
+
+Mitigation:
+
+- verify focus, contrast, and keyboard flows while migrating each page family
+- treat accessible interaction states as part of visual acceptance, not as optional cleanup
