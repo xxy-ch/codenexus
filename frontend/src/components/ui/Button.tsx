@@ -23,11 +23,16 @@ const sizeStyles: Record<ButtonSize, string> = {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: 'bg-primary text-white shadow-primary hover:bg-primary-hover focus:ring-primary/30',
-  secondary: 'bg-secondary text-white hover:bg-secondary/90 focus:ring-secondary/30',
-  outline: 'border border-border-light bg-surface-light text-slate-700 hover:bg-primary/5 hover:text-primary dark:border-border-dark dark:bg-surface-dark dark:text-slate-200 dark:hover:bg-primary/15',
-  ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white',
-  danger: 'bg-danger text-white hover:bg-red-600 focus:ring-red-500/30',
+  primary:
+    'border border-slate-900 bg-slate-900 text-white hover:bg-slate-800 focus-visible:ring-slate-300 dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 dark:focus-visible:ring-slate-700',
+  secondary:
+    'border border-slate-700 bg-slate-700 text-white hover:bg-slate-600 focus-visible:ring-slate-300 dark:border-slate-200 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-300 dark:focus-visible:ring-slate-700',
+  outline:
+    'border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950 focus-visible:ring-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-slate-700',
+  ghost:
+    'border border-transparent bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-slate-700',
+  danger:
+    'border border-rose-600 bg-rose-600 text-white hover:bg-rose-500 focus-visible:ring-rose-200 dark:border-rose-500 dark:bg-rose-500 dark:hover:bg-rose-400 dark:focus-visible:ring-rose-900/50',
 }
 
 export function Button({
@@ -42,7 +47,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const classes = cn(
-    'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-offset-slate-950',
     sizeStyles[size],
     variantStyles[variant],
     fullWidth && 'w-full',

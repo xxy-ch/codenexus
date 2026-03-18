@@ -6,22 +6,34 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 31, 41, 55;
-  --background-start-rgb: 245, 246, 248;
-  --background-end-rgb: 255, 255, 255;
+  --foreground-rgb: 15, 23, 42;
+  --page-bg-rgb: 241, 245, 249;
+  --surface-rgb: 255, 255, 255;
+  --surface-muted-rgb: 248, 250, 252;
+  --border-rgb: 226, 232, 240;
+  --accent-rgb: 51, 65, 85;
+  --accent-soft-rgb: 226, 232, 240;
+  --muted-rgb: 100, 116, 139;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 243, 244, 246;
-    --background-start-rgb: 16, 22, 34;
-    --background-end-rgb: 30, 36, 51;
+    --foreground-rgb: 241, 245, 249;
+    --page-bg-rgb: 2, 6, 23;
+    --surface-rgb: 15, 23, 42;
+    --surface-muted-rgb: 30, 41, 59;
+    --border-rgb: 51, 65, 85;
+    --accent-rgb: 226, 232, 240;
+    --accent-soft-rgb: 51, 65, 85;
+    --muted-rgb: 148, 163, 184;
   }
 }
 
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background-color: rgb(var(--page-bg-rgb));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -32,8 +44,17 @@ body {
   margin: 0;
 }
 
-.html {
+html {
   scroll-behavior: smooth;
+}
+
+body,
+#root {
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(var(--accent-rgb), 0.16);
 }
 
 /* Custom scrollbar */

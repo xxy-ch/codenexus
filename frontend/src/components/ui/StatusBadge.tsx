@@ -6,14 +6,14 @@ interface StatusBadgeProps {
 }
 
 const statusConfig = {
-  accepted: { label: 'Accepted', bgColor: 'bg-green-100 dark:bg-green-900/30', textColor: 'text-green-700 dark:text-green-400' },
-  wrong_answer: { label: 'Wrong Answer', bgColor: 'bg-red-100 dark:bg-red-900/30', textColor: 'text-red-700 dark:text-red-400' },
-  time_limit_exceeded: { label: 'Time Limit Exceeded', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', textColor: 'text-yellow-700 dark:text-yellow-400' },
-  memory_limit_exceeded: { label: 'Memory Limit Exceeded', bgColor: 'bg-orange-100 dark:bg-orange-900/30', textColor: 'text-orange-700 dark:text-orange-400' },
-  compilation_error: { label: 'Compilation Error', bgColor: 'bg-purple-100 dark:bg-purple-900/30', textColor: 'text-purple-700 dark:text-purple-400' },
-  runtime_error: { label: 'Runtime Error', bgColor: 'bg-pink-100 dark:bg-pink-900/30', textColor: 'text-pink-700 dark:text-pink-400' },
-  pending: { label: 'Pending', bgColor: 'bg-gray-100 dark:bg-gray-900/30', textColor: 'text-gray-700 dark:text-gray-400' },
-  running: { label: 'Running', bgColor: 'bg-blue-100 dark:bg-blue-900/30', textColor: 'text-blue-700 dark:text-blue-400' },
+  accepted: { label: 'Accepted', bgColor: 'bg-emerald-50 dark:bg-emerald-950/40', textColor: 'text-emerald-700 dark:text-emerald-300' },
+  wrong_answer: { label: 'Wrong Answer', bgColor: 'bg-rose-50 dark:bg-rose-950/40', textColor: 'text-rose-700 dark:text-rose-300' },
+  time_limit_exceeded: { label: 'Time Limit Exceeded', bgColor: 'bg-amber-50 dark:bg-amber-950/40', textColor: 'text-amber-700 dark:text-amber-300' },
+  memory_limit_exceeded: { label: 'Memory Limit Exceeded', bgColor: 'bg-orange-50 dark:bg-orange-950/40', textColor: 'text-orange-700 dark:text-orange-300' },
+  compilation_error: { label: 'Compilation Error', bgColor: 'bg-violet-50 dark:bg-violet-950/40', textColor: 'text-violet-700 dark:text-violet-300' },
+  runtime_error: { label: 'Runtime Error', bgColor: 'bg-fuchsia-50 dark:bg-fuchsia-950/40', textColor: 'text-fuchsia-700 dark:text-fuchsia-300' },
+  pending: { label: 'Pending', bgColor: 'bg-slate-100 dark:bg-slate-800', textColor: 'text-slate-700 dark:text-slate-300' },
+  running: { label: 'Running', bgColor: 'bg-sky-50 dark:bg-sky-950/40', textColor: 'text-sky-700 dark:text-sky-300' },
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
@@ -21,7 +21,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
 
   return (
     <span className={cn(
-      'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+      'inline-flex items-center rounded-full border border-current/10 px-2.5 py-0.5 text-xs font-medium',
       config.bgColor,
       config.textColor,
       className
