@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { FieldGroup } from '@/components/page/FieldGroup'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Loading } from '@/components/ui/Loading'
 
 interface LoginRequest {
@@ -21,7 +23,6 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 如果已经登录，重定向到仪表板
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard')
@@ -36,7 +37,7 @@ export function LoginPage() {
     try {
       const result = await login(formData)
       if (!result.success) {
-        setError(result.error || 'Login failed')
+        setError(result.error || 'Sign in failed')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred')
@@ -46,58 +47,44 @@ export function LoginPage() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }))
   }
 
   if (isLoading) {
-    return <Loading message="Loading..." />
+    return <Loading message="Loading sign-in..." />
   }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg shadow-primary/30 mb-4">
-            <span className="material-symbols-outlined text-white text-4xl">code</span>
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Welcome to AlgoMaster
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Sign in to continue your coding journey
-          </p>
-        </div>
+    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center justify-center">
+        <div className="grid w-full gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <PageHeader
+            eyebrow="Access"
+            title="Welcome back"
+            description="Use your username and password to enter the workspace."
+            className="border-slate-200 bg-slate-50"
+          />
 
-        {/* Login Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <SurfaceCard className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-slate-950">Sign in</h2>
+              <p className="text-sm leading-6 text-slate-600">
+                Focus on the next submission. Everything else stays out of the way.
+              </p>
+            </div>
+
+            {error ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {error}
+              </div>
+            ) : null}
+
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Error Message */}
-              {error && (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <div className="flex items-center">
-                    <span className="material-symbols-outlined text-red-600 dark:text-red-400 mr-2">
-                      error
-                    </span>
-                    <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Username Field */}
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Username
-                </label>
+              <FieldGroup label="Username" description="Use the account identifier assigned to you.">
                 <Input
-                  id="username"
                   name="username"
                   type="text"
                   autoComplete="username"
@@ -106,104 +93,43 @@ export function LoginPage() {
                   onChange={handleChange}
                   required
                   disabled={isSubmitting}
-                  fullWidth
                 />
-              </div>
+              </FieldGroup>
 
-              {/* Password Field */}
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Password
-                </label>
+              <FieldGroup label="Password">
                 <Input
-                  id="password"
                   name="password"
                   type="password"
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
                   required
                   disabled={isSubmitting}
-                  fullWidth
                 />
-              </div>
+              </FieldGroup>
 
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary dark:border-slate-700 dark:bg-slate-800"
-                  />
-                  <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">
-                    Remember me
-                  </span>
-                </label>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm font-medium text-primary hover:text-primary-hover"
-                >
+              <div className="flex items-center justify-between gap-4 text-sm text-slate-600">
+                <span>Standard account access only.</span>
+                <Link to="/forgot-password" className="font-medium text-slate-700 underline-offset-4 hover:text-slate-950 hover:underline">
                   Forgot password?
                 </Link>
               </div>
 
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                variant="primary"
-                fullWidth
-                disabled={isSubmitting}
-                className="py-3"
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center">
-                    <Loading size={20} />
-                    Signing in...
-                  </span>
-                ) : (
-                  'Sign In'
-                )}
+              <Button type="submit" fullWidth disabled={isSubmitting}>
+                {isSubmitting ? 'Signing in...' : 'Sign in'}
               </Button>
             </form>
 
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-800" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-slate-900 text-slate-500">
-                  Don't have an account?
-                </span>
-              </div>
-            </div>
-
-            {/* Register Link */}
-            <div className="text-center">
-              <Link
-                to="/register"
-                className="inline-flex items-center text-sm font-medium text-primary hover:text-primary-hover"
-              >
-                <span className="material-symbols-outlined text-base mr-1">person_add</span>
-                Create a new account
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              <span>Need a new account?</span>
+              <Link to="/register" className="font-medium text-slate-900 underline-offset-4 hover:underline">
+                Create account
               </Link>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Footer */}
-        <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-          By signing in, you agree to our{' '}
-          <Link to="/terms" className="text-primary hover:underline">
-            Terms of Service
-          </Link>{' '}
-          and{' '}
-          <Link to="/privacy" className="text-primary hover:underline">
-            Privacy Policy
-          </Link>
-        </p>
+          </SurfaceCard>
+        </div>
       </div>
-    </div>
+    </main>
   )
 }

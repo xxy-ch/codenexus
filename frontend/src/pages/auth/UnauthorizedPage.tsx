@@ -1,42 +1,48 @@
 import { Link } from 'react-router-dom'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 
 export function UnauthorizedPage() {
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full mb-4 mx-auto">
-              <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-4xl">
-                lock
-              </span>
+    <main className="min-h-screen bg-slate-100 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl items-center justify-center">
+        <div className="grid w-full gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <PageHeader
+            eyebrow="Access"
+            title="You do not have access"
+            description="The current account is authenticated, but it is not allowed to open this area."
+            className="border-slate-200 bg-slate-50"
+          />
+
+          <SurfaceCard className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-slate-950">What you can do</h2>
+              <p className="text-sm leading-6 text-slate-600">
+                Go back to the last safe page or return to the dashboard and switch context.
+              </p>
             </div>
-            <CardTitle>Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-slate-600 dark:text-slate-400">
-              You don't have permission to access this page. Please contact your administrator if you believe this is an error.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                variant="primary"
-                onClick={() => window.history.back()}
-              >
-                Go Back
+
+            <div className="grid gap-3 text-sm text-slate-600">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                Teacher and admin routes are guarded separately from general problem access.
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                If this account should have access, the role mapping still needs adjustment.
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button onClick={() => window.history.back()} className="sm:flex-1">
+                Go back
               </Button>
-              <Button
-                variant="outline"
-                as={Link}
-                to="/dashboard"
-              >
-                Dashboard
+              <Button as={Link} to="/dashboard" variant="outline" className="sm:flex-1">
+                Return to dashboard
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </SurfaceCard>
+        </div>
       </div>
-    </div>
+    </main>
   )
 }

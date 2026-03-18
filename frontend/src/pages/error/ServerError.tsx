@@ -1,60 +1,43 @@
 import { Link } from 'react-router-dom'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
 
 export function ServerError() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="text-center">
-        {/* 500 Number */}
-        <div className="relative mb-8">
-          <h1 className="text-[180px] font-bold text-slate-200 dark:text-slate-800 leading-none">
-            500
-          </h1>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="material-symbols-outlined text-8xl text-red-500">report_problem</span>
-          </div>
-        </div>
+    <main className="min-h-screen bg-slate-100 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl items-center justify-center">
+        <div className="grid w-full gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <PageHeader
+            eyebrow="500"
+            title="Server unavailable"
+            description="The request reached the platform, but the service did not complete it successfully."
+            className="border-slate-200 bg-slate-50"
+          />
 
-        {/* Message */}
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
-          服务器错误
-        </h2>
-        <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto">
-          抱歉，服务器遇到了一些问题。我们正在努力修复，请稍后再试。
-        </p>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            variant="primary"
-            onClick={() => window.location.reload()}
-          >
-            <span className="material-symbols-outlined mr-2">refresh</span>
-            刷新页面
-          </Button>
-          <Link to="/dashboard">
-            <Button variant="outline">
-              <span className="material-symbols-outlined mr-2">home</span>
-              返回首页
-            </Button>
-          </Link>
-        </div>
-
-        {/* Error Info */}
-        <div className="mt-12 p-6 bg-red-50 dark:bg-red-900/20 rounded-lg max-w-lg mx-auto border border-red-200 dark:border-red-800">
-          <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-red-500 text-xl">info</span>
-            <div className="text-left">
-              <p className="font-medium text-red-900 dark:text-red-400 mb-1">
-                如果问题持续存在
-              </p>
-              <p className="text-sm text-red-700 dark:text-red-300">
-                请尝试清除浏览器缓存，或者联系我们的技术支持团队。如果是首次遇到此问题，请稍后重试。
+          <SurfaceCard className="space-y-6">
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-slate-950">Immediate options</h2>
+              <p className="text-sm leading-6 text-slate-600">
+                Retry the request once. If it still fails, move back to a stable page and inspect the failing flow later.
               </p>
             </div>
-          </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+              Long-running requests, expired sessions, or backend deploy drift can all surface here.
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button onClick={() => window.location.reload()} className="sm:flex-1">
+                Refresh page
+              </Button>
+              <Button as={Link} to="/dashboard" variant="outline" className="sm:flex-1">
+                Go to dashboard
+              </Button>
+            </div>
+          </SurfaceCard>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

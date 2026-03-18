@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { searchApi } from '@/services/searchApi'
-import type { SearchResponse, SearchResultItem, SearchType, SearchSort } from '@/types/search'
-import { SearchBar } from '@/components/search/SearchBar'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { EmptyState } from '@/components/page/EmptyState'
+import { FilterBar } from '@/components/page/FilterBar'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
+import { searchApi } from '@/services/searchApi'
+import type { SearchResponse, SearchResultItem, SearchSort, SearchType } from '@/types/search'
 
 export function SearchResults() {
   const navigate = useNavigate()
@@ -12,13 +17,18 @@ export function SearchResults() {
   const [results, setResults] = useState<SearchResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [draftQuery, setDraftQuery] = useState('')
 
   const query = searchParams.get('q') || ''
   const type = (searchParams.get('type') as SearchType) || 'all'
   const category = searchParams.get('category') || undefined
   const tag = searchParams.get('tag') || undefined
   const sort = (searchParams.get('sort') as SearchSort) || 'relevance'
-  const page = parseInt(searchParams.get('page') || '1')
+  const page = parseInt(searchParams.get('page') || '1', 10)
+
+  useEffect(() => {
+    setDraftQuery(query)
+  }, [query])
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -53,6 +63,16 @@ export function SearchResults() {
     fetchResults()
   }, [query, type, category, tag, sort, page])
 
+  const hasActiveSearch = Boolean(query || category || tag)
+
+  const summaryText = useMemo(() => {
+    if (!results) {
+      return 'Use one search flow for problems, discussions, and article content.'
+    }
+
+    return `${results.total_count} results across ${results.problem_count} problems and ${results.discussion_count} discussions.`
+  }, [results])
+
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams)
     if (value) {
@@ -60,8 +80,17 @@ export function SearchResults() {
     } else {
       params.delete(key)
     }
-    params.delete('page') // Reset to page 1 when changing filters
+    params.delete('page')
     setSearchParams(params)
+  }
+
+  const clearFilters = () => {
+    setSearchParams(new URLSearchParams())
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    updateFilter('q', draftQuery.trim())
   }
 
   const formatDate = (dateString: string) => {
@@ -76,246 +105,208 @@ export function SearchResults() {
   const renderResultItem = (item: SearchResultItem) => {
     if (item.type === 'Problem') {
       return (
-        <article
+        <SurfaceCard
           key={`problem-${item.id}`}
-          onClick={() => navigate(`/problems/${item.problem_id}`)}
-          className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6 hover:shadow-md transition-shadow cursor-pointer"
+          className="cursor-pointer space-y-4 transition-colors hover:border-slate-300"
         >
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-semibold uppercase">
-              Problem
-            </span>
-            {item.difficulty && (
-              <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">
-                {item.difficulty}
-              </span>
-            )}
-          </div>
-
-          <h3
-            className="text-lg font-semibold text-gray-900 dark:text-white mb-2"
-            dangerouslySetInnerHTML={{ __html: item.highlighted_title || item.title }}
-          />
-
-          <div
-            className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2"
-            dangerouslySetInnerHTML={{ __html: item.highlighted_content || item.excerpt }}
-          />
-
-          <div className="flex items-center justify-between text-xs text-text-muted">
-            <div className="flex items-center gap-3">
-              <span className="font-medium">{item.author_username}</span>
-              <span>{formatDate(item.created_at)}</span>
+          <button
+            type="button"
+            onClick={() => navigate(`/problems/${item.problem_id}`)}
+            className="w-full text-left"
+          >
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1">Problem</span>
+              {item.difficulty ? (
+                <span className="rounded-full border border-slate-200 bg-white px-2 py-1 normal-case text-slate-600">
+                  {item.difficulty}
+                </span>
+              ) : null}
             </div>
-            <div className="font-medium text-primary">#{item.problem_id}</div>
-          </div>
-        </article>
+
+            <h2
+              className="text-lg font-semibold text-slate-950"
+              dangerouslySetInnerHTML={{ __html: item.highlighted_title || item.title }}
+            />
+
+            <div
+              className="mt-2 text-sm leading-6 text-slate-600"
+              dangerouslySetInnerHTML={{ __html: item.highlighted_content || item.excerpt }}
+            />
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+              <div className="flex flex-wrap items-center gap-3">
+                <span>{item.author_username}</span>
+                <span>{formatDate(item.created_at)}</span>
+              </div>
+              <span className="font-medium text-slate-700">#{item.problem_id}</span>
+            </div>
+          </button>
+        </SurfaceCard>
       )
     }
 
-    if (item.type === 'Discussion') {
-      return (
-        <article
-          key={`discussion-${item.id}`}
+    return (
+      <SurfaceCard
+        key={`discussion-${item.id}`}
+        className="cursor-pointer space-y-4 transition-colors hover:border-slate-300"
+      >
+        <button
+          type="button"
           onClick={() => navigate(`/discussions/${item.id}`)}
-          className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6 hover:shadow-md transition-shadow cursor-pointer"
+          className="w-full text-left"
         >
-          {/* Tags and badges */}
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
-            {item.is_pinned && (
-              <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-semibold uppercase">
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
+            {item.is_pinned ? (
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 uppercase tracking-wide">
                 Pinned
               </span>
-            )}
-            {item.is_solved && (
-              <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                <span className="material-icons text-[14px]">check_circle</span>
+            ) : null}
+            {item.is_solved ? (
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">
                 Solved
               </span>
-            )}
-            {item.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-              >
-                #{tag}
+            ) : null}
+            {item.tags.map((entry) => (
+              <span key={entry} className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600">
+                #{entry}
               </span>
             ))}
           </div>
 
-          {/* Title */}
-          <h3
-            className="text-lg font-semibold text-gray-900 dark:text-white mb-2"
+          <h2
+            className="text-lg font-semibold text-slate-950"
             dangerouslySetInnerHTML={{ __html: item.highlighted_title || item.title }}
           />
 
-          {/* Content preview */}
-          {item.highlighted_content && (
+          {item.highlighted_content ? (
             <div
-              className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2"
+              className="mt-2 text-sm leading-6 text-slate-600"
               dangerouslySetInnerHTML={{ __html: item.highlighted_content }}
             />
-          )}
+          ) : null}
 
-          {/* Metadata */}
-          <div className="flex items-center justify-between text-xs text-text-muted">
-            <div className="flex items-center gap-3">
-              <span className="font-medium">{item.author_username}</span>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+            <div className="flex flex-wrap items-center gap-3">
+              <span>{item.author_username}</span>
               <span>{formatDate(item.created_at)}</span>
-              {item.problem_id && (
-                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded">
-                  Problem #{item.problem_id}
-                </span>
-              )}
+              {item.problem_id ? <span className="text-slate-700">Problem #{item.problem_id}</span> : null}
             </div>
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <span className="material-icons text-base">visibility</span>
-                {item.view_count}
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="material-icons text-base">chat_bubble_outline</span>
-                {item.reply_count}
-              </span>
-              <span className="flex items-center gap-1">
-                <span className="material-icons text-base">thumb_up</span>
-                {item.like_count}
-              </span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span>{item.view_count} views</span>
+              <span>{item.reply_count} replies</span>
+              <span>{item.like_count} likes</span>
             </div>
           </div>
-        </article>
-      )
-    }
-
-    return null
+        </button>
+      </SurfaceCard>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Header */}
-      <header className="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shadow-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4 mb-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <span className="material-icons text-gray-600 dark:text-gray-400">arrow_back</span>
-            </button>
-            <div className="flex-1 max-w-2xl">
-              <SearchBar placeholder="Search..." className="w-full" />
-            </div>
+    <main className="min-h-screen bg-slate-100 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <PageHeader
+          eyebrow="Search"
+          title="Search the archive"
+          description={summaryText}
+          actions={
+            <Button variant="outline" onClick={() => navigate(-1)}>
+              Back
+            </Button>
+          }
+        />
+
+        <FilterBar>
+          <form onSubmit={handleSearchSubmit} className="flex min-w-0 flex-1 flex-col gap-3 md:flex-row">
+            <Input
+              aria-label="Search query"
+              value={draftQuery}
+              onChange={(e) => setDraftQuery(e.target.value)}
+              placeholder="Search by title, tag, or content"
+              className="md:flex-1"
+            />
+            <Button type="submit">Search</Button>
+          </form>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {(['all', 'problem', 'discussion'] as SearchType[]).map((typeOption) => (
+              <Button
+                key={typeOption}
+                type="button"
+                variant={type === typeOption ? 'primary' : 'outline'}
+                size="sm"
+                onClick={() => updateFilter('type', typeOption)}
+              >
+                {typeOption === 'all' ? 'All' : typeOption === 'problem' ? 'Problems' : 'Discussions'}
+              </Button>
+            ))}
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Type filter */}
-            <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-              {(['all', 'problem', 'discussion'] as SearchType[]).map((typeOption) => (
-                <button
-                  key={typeOption}
-                  onClick={() => updateFilter('type', typeOption)}
-                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-                    type === typeOption
-                      ? 'bg-white dark:bg-gray-700 text-primary shadow-sm'
-                      : 'text-text-muted hover:text-gray-900 dark:hover:text-white'
-                  }`}
-                >
-                  {typeOption === 'all'
-                    ? 'All'
-                    : typeOption === 'problem'
-                      ? 'Problems'
-                    : typeOption === 'discussion'
-                      ? 'Discussions'
-                      : 'Unknown'}
-                </button>
-              ))}
-            </div>
-
-            {/* Sort filter */}
+          <label className="flex items-center gap-2 text-sm text-slate-600">
+            <span>Sort</span>
             <select
               value={sort}
               onChange={(e) => updateFilter('sort', e.target.value)}
-              className="px-3 py-2 text-sm border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
             >
               <option value="relevance">Relevance</option>
               <option value="latest">Latest</option>
               <option value="popular">Popular</option>
             </select>
+          </label>
 
-            {/* Results count */}
-            {results && (
-              <div className="ml-auto text-sm text-text-muted">
-                {results.total_count} results
-                {results.total_count > 0 && (
-                  <span className="ml-2">
-                    ({results.problem_count} problems, {results.discussion_count} discussions)
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+          {hasActiveSearch ? (
+            <Button type="button" variant="ghost" onClick={clearFilters}>
+              Clear
+            </Button>
+          ) : null}
+        </FilterBar>
 
-      {/* Results */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
-          <Loading message="Searching..." />
+          <SurfaceCard>
+            <Loading message="Searching..." />
+          </SurfaceCard>
         ) : error ? (
-          <div className="text-center py-12">
-            <span className="material-icons text-6xl text-text-muted mb-4">error_outline</span>
-            <p className="text-text-muted">{error}</p>
-          </div>
-        ) : !query && !category && !tag ? (
-          <div className="text-center py-12">
-            <span className="material-icons text-6xl text-text-muted mb-4">search</span>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Enter a search query
-            </h2>
-            <p className="text-text-muted">
-              Search across problems and discussions
-            </p>
-          </div>
+          <EmptyState
+            title="Search is temporarily unavailable"
+            description={error}
+            action={
+              <Button type="button" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            }
+          />
+        ) : !hasActiveSearch ? (
+          <EmptyState
+            title="Start with a keyword"
+            description="Search problems discussions and articles from one place."
+          />
         ) : results && results.results.length === 0 ? (
-          <div className="text-center py-12">
-            <span className="material-icons text-6xl text-text-muted mb-4">search_off</span>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No results found
-            </h2>
-            <p className="text-text-muted mb-4">
-              Try different keywords or filters
-            </p>
-            <button
-              onClick={() => {
-                setSearchParams(new URLSearchParams())
-              }}
-              className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
-            >
-              Clear filters
-            </button>
-          </div>
+          <EmptyState
+            title="No results found"
+            description="Try another keyword, remove a filter, or search a broader topic."
+            action={
+              <Button type="button" variant="outline" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
         ) : (
           <>
-            <div className="space-y-4 mb-8">
+            <div className="grid gap-4">
               {results?.results.map((item) => renderResultItem(item))}
             </div>
 
-            {/* Pagination */}
-            {results && results.has_more && (
+            {results?.has_more ? (
               <div className="flex justify-center">
-                <button
-                  onClick={() => updateFilter('page', (page + 1).toString())}
-                  className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors flex items-center gap-2"
-                >
-                  Load More Results
-                  <span className="material-icons text-lg">expand_more</span>
-                </button>
+                <Button type="button" onClick={() => updateFilter('page', String(page + 1))}>
+                  Load more results
+                </Button>
               </div>
-            )}
+            ) : null}
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </main>
   )
 }
