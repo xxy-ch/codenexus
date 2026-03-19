@@ -1,7 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { classesService } from '@/services/classes'
+import { BookOpen, GraduationCap, Mail, Users } from 'lucide-react'
+import { ActionBar } from '@/components/page/ActionBar'
+import { EmptyState } from '@/components/page/EmptyState'
+import { FieldGroup } from '@/components/page/FieldGroup'
+import { FilterBar } from '@/components/page/FilterBar'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
+import { classesService } from '@/services/classes'
+import { cn, formatDateTime } from '@/lib/utils'
+
+function TableCell({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <td className={cn('px-4 py-3 text-sm text-slate-600', className)}>{children}</td>
+}
 
 export function ClassManagement() {
   const queryClient = useQueryClient()
@@ -30,7 +46,11 @@ export function ClassManagement() {
   const filteredClasses = useMemo(() => {
     const keyword = search.trim().toLowerCase()
     if (!keyword) return classes
-    return classes.filter((item) => [item.name, item.semester || '', item.enrollment_code || '', String(item.id)].some((value) => value.toLowerCase().includes(keyword)))
+    return classes.filter((item) =>
+      [item.name, item.semester || '', item.enrollment_code || '', String(item.id)].some((value) =>
+        value.toLowerCase().includes(keyword),
+      ),
+    )
   }, [classes, search])
 
   useEffect(() => {
@@ -39,7 +59,8 @@ export function ClassManagement() {
       return
     }
 
-    const nextSelectedClass = filteredClasses.find((item) => item.id === selectedClassId) ?? filteredClasses[0]
+    const nextSelectedClass =
+      filteredClasses.find((item) => item.id === selectedClassId) ?? filteredClasses[0]
     if (nextSelectedClass && nextSelectedClass.id !== selectedClassId) {
       setSelectedClassId(nextSelectedClass.id)
     }
@@ -68,13 +89,13 @@ export function ClassManagement() {
   })
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['classes'] })
+    void queryClient.invalidateQueries({ queryKey: ['classes'] })
     if (highlightedClass?.id) {
-      queryClient.invalidateQueries({ queryKey: ['classStudents', highlightedClass.id] })
-      queryClient.invalidateQueries({ queryKey: ['classAssignments', highlightedClass.id] })
+      void queryClient.invalidateQueries({ queryKey: ['classStudents', highlightedClass.id] })
+      void queryClient.invalidateQueries({ queryKey: ['classAssignments', highlightedClass.id] })
     }
     if (activeAssignmentId) {
-      queryClient.invalidateQueries({ queryKey: ['assignmentSubmissions', activeAssignmentId] })
+      void queryClient.invalidateQueries({ queryKey: ['assignmentSubmissions', activeAssignmentId] })
     }
   }
 
@@ -103,10 +124,14 @@ export function ClassManagement() {
   })
 
   const importStudentsMutation = useMutation({
-    mutationFn: () => classesService.batchImportStudents(
-      highlightedClass!.id,
-      studentImport.split('\n').map((item) => item.trim()).filter(Boolean),
-    ),
+    mutationFn: () =>
+      classesService.batchImportStudents(
+        highlightedClass!.id,
+        studentImport
+          .split('\n')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
     onSuccess: () => {
       setStudentImport('')
       invalidate()
@@ -114,11 +139,12 @@ export function ClassManagement() {
   })
 
   const createAssignmentMutation = useMutation({
-    mutationFn: () => classesService.createAssignment(highlightedClass!.id, {
-      problem_id: Number(assignmentProblemId),
-      deadline: assignmentDeadline,
-      points: Number(assignmentPoints),
-    }),
+    mutationFn: () =>
+      classesService.createAssignment(highlightedClass!.id, {
+        problem_id: Number(assignmentProblemId),
+        deadline: assignmentDeadline,
+        points: Number(assignmentPoints),
+      }),
     onSuccess: (created) => {
       setAssignmentProblemId('')
       setAssignmentDeadline('')
@@ -145,273 +171,414 @@ export function ClassManagement() {
   })
 
   if (isLoading) {
-    return <div className="flex min-h-[400px] items-center justify-center"><Loading message="加载班级中..." /></div>
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <Loading message="加载班级中..." />
+      </div>
+    )
   }
 
   if (error) {
     return (
-      <div className="py-16 text-center">
-        <p className="mb-4 text-slate-600">班级加载失败</p>
-        <button type="button" onClick={() => refetch()} className="rounded bg-primary px-4 py-2 text-white">重试</button>
-      </div>
+      <EmptyState
+        title="班级加载失败"
+        description="当前无法读取班级列表，写操作也不会展示假结果。"
+        action={
+          <Button type="button" onClick={() => refetch()}>
+            重试
+          </Button>
+        }
+      />
     )
   }
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-        <div className="relative px-6 py-7 md:px-8">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_58%,#eff6ff_100%)]" />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Teacher</span>
-                <span>/</span>
-                <span className="font-medium text-slate-900">Classes</span>
-              </div>
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">班级管理</h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  当前页面已接通真实写路径：建班、邀请码入班、按邮箱加人、批量导入、创建作业、发布作业，以及按作业查看提交记录。
-                </p>
-              </div>
-            </div>
-            <div className="rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Live write paths enabled</div>
+      <PageHeader
+        eyebrow="Teacher Workspace"
+        breadcrumb={['Classes', 'Class Management']}
+        title="班级管理"
+        description="保留真实写路径：建班、按邮箱添加学生、批量导入、创建作业、发布作业，以及按作业查看真实提交。所有写操作都绑定当前显式选中的班级。"
+        actions={
+          <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700">
+            Live write paths enabled
           </div>
-        </div>
+        }
+      />
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Classes" value={total} helper="当前教师可见班级总数" />
+        <StatCard
+          label="Current Focus"
+          value={highlightedClass?.name || '未选择'}
+          helper={highlightedClass?.semester || '未设置学期'}
+        />
+        <StatCard
+          label="Enrollment Code"
+          value={<span className="font-mono text-[1.65rem] text-sky-700">{highlightedClass?.enrollment_code || '—'}</span>}
+          helper="学生可通过真实邀请码入班"
+        />
+        <StatCard
+          label="Assignments"
+          value={assignments.length}
+          helper={`Students ${students.length}`}
+        />
       </section>
 
-      <section className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Classes</div>
-          <div className="mt-3 text-3xl font-semibold text-slate-950">{total}</div>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Current Focus</div>
-          <div className="mt-3 text-lg font-semibold text-slate-950">{highlightedClass?.name || '未选择'}</div>
-          <div className="mt-1 text-sm text-slate-500">{highlightedClass?.semester || '未设置学期'}</div>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Enrollment Code</div>
-          <div className="mt-3 font-mono text-2xl font-semibold text-blue-700">{highlightedClass?.enrollment_code || '—'}</div>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Assignments</div>
-          <div className="mt-3 text-3xl font-semibold text-slate-950">{assignments.length}</div>
-          <div className="mt-1 text-sm text-slate-500">Students {students.length}</div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="space-y-6">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-950">创建班级</h2>
-            <div className="mt-4 space-y-3">
-              <input value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="班级名称" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
-              <input value={newSemester} onChange={(e) => setNewSemester(e.target.value)} placeholder="学期，例如 2026 春" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
-              <button type="button" onClick={() => createClassMutation.mutate()} disabled={!newClassName || createClassMutation.isPending} className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">创建班级</button>
+      <div className="grid gap-6 xl:grid-cols-[minmax(320px,360px)_minmax(0,1fr)]">
+        <div className="space-y-6">
+          <SectionBlock
+            title="创建班级"
+            description="新班级创建后会回到当前列表，并继续使用真实邀请码和学生写路径。"
+          >
+            <div className="space-y-4">
+              <FieldGroup label="班级名称">
+                <Input value={newClassName} onChange={(e) => setNewClassName(e.target.value)} placeholder="班级名称" />
+              </FieldGroup>
+              <FieldGroup label="学期">
+                <Input value={newSemester} onChange={(e) => setNewSemester(e.target.value)} placeholder="学期，例如 2026 春" />
+              </FieldGroup>
+              <ActionBar className="border-0 bg-transparent p-0 shadow-none">
+                <Button
+                  type="button"
+                  fullWidth
+                  onClick={() => createClassMutation.mutate()}
+                  disabled={!newClassName || createClassMutation.isPending}
+                >
+                  {createClassMutation.isPending ? '创建中...' : '创建班级'}
+                </Button>
+              </ActionBar>
             </div>
-          </div>
+          </SectionBlock>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-950">班级成员管理</h2>
-            <p className="mt-1 text-sm text-slate-500">当前班级：{highlightedClass?.name || '先选择班级'}</p>
-            <div className="mt-4 space-y-4">
-              <div className="rounded-2xl border border-slate-200 p-4">
-                <div className="text-sm font-semibold text-slate-950">邀请码</div>
-                <div className="mt-2 rounded-2xl bg-slate-50 px-4 py-3 font-mono text-base text-slate-800">{highlightedClass?.enrollment_code || '—'}</div>
-                <p className="mt-2 text-xs text-slate-500">学生可通过真实邀请码入班接口加入该班级。</p>
+          <SectionBlock
+            title="班级成员管理"
+            description={`当前班级：${highlightedClass?.name || '先选择班级'}`}
+          >
+            <div className="space-y-5">
+              <SurfaceCard tone="muted" className="border-dashed p-4 shadow-none">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <GraduationCap className="h-4 w-4 text-sky-700" />
+                  邀请码
+                </div>
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-base text-slate-900">
+                  {highlightedClass?.enrollment_code || '—'}
+                </div>
+                <p className="mt-2 text-sm text-slate-500">学生可通过真实邀请码入班接口加入该班级。</p>
+              </SurfaceCard>
+
+              <div className="space-y-4">
+                <FieldGroup label="按邮箱添加学生">
+                  <Input value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} placeholder="学生邮箱" />
+                </FieldGroup>
+                <Button
+                  type="button"
+                  fullWidth
+                  variant="outline"
+                  onClick={() => addStudentMutation.mutate()}
+                  disabled={!highlightedClass || !studentEmail || addStudentMutation.isPending}
+                >
+                  {addStudentMutation.isPending ? '添加中...' : '按邮箱添加学生'}
+                </Button>
               </div>
-              <div>
-                <input value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} placeholder="学生邮箱" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
-                <button type="button" onClick={() => addStudentMutation.mutate()} disabled={!highlightedClass || !studentEmail || addStudentMutation.isPending} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50">按邮箱添加学生</button>
-              </div>
-              <div>
-                <textarea value={studentImport} onChange={(e) => setStudentImport(e.target.value)} placeholder="批量导入邮箱，每行一个" className="min-h-[120px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
-                <button type="button" onClick={() => importStudentsMutation.mutate()} disabled={!highlightedClass || !studentImport.trim() || importStudentsMutation.isPending} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50">批量导入学生</button>
+
+              <div className="space-y-4">
+                <FieldGroup label="批量导入学生" description="每行一个邮箱地址。">
+                  <textarea
+                    value={studentImport}
+                    onChange={(e) => setStudentImport(e.target.value)}
+                    placeholder="批量导入邮箱，每行一个"
+                    className="min-h-[132px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  />
+                </FieldGroup>
+                <Button
+                  type="button"
+                  fullWidth
+                  variant="outline"
+                  onClick={() => importStudentsMutation.mutate()}
+                  disabled={!highlightedClass || !studentImport.trim() || importStudentsMutation.isPending}
+                >
+                  {importStudentsMutation.isPending ? '导入中...' : '批量导入学生'}
+                </Button>
               </div>
             </div>
-          </div>
-        </aside>
+          </SectionBlock>
+        </div>
 
         <div className="space-y-6">
-          <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 px-6 py-5">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-950">班级列表</h2>
-                  <p className="mt-1 text-sm text-slate-500">显式选择班级后，成员与作业写操作都会绑定到该班级。</p>
-                </div>
-                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="搜索班级 / 学期 / 邀请码" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 lg:max-w-sm" />
-              </div>
+          <FilterBar>
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+              <Mail className="h-4 w-4 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="搜索班级 / 学期 / 邀请码"
+                className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              />
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Class</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Semester</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Invite Code</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Students</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Select</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredClasses.map((item) => (
-                    <tr
-                      key={item.id}
-                      className={highlightedClass?.id === item.id ? 'bg-blue-50/70' : 'cursor-pointer hover:bg-slate-50'}
-                      onClick={() => {
-                        setSelectedClassId(item.id)
-                        setSelectedAssignmentId(null)
-                      }}
-                    >
-                      <td className="px-6 py-4 text-sm font-medium text-slate-900">{item.name}</td>
-                      <td className="px-6 py-4 text-sm text-slate-600">{item.semester || '未设置'}</td>
-                      <td className="px-6 py-4 font-mono text-sm text-blue-700">{item.enrollment_code}</td>
-                      <td className="px-6 py-4 text-right text-sm text-slate-600">{item.student_count ?? 0}</td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setSelectedClassId(item.id)
-                            setSelectedAssignmentId(null)
-                          }}
-                          className={highlightedClass?.id === item.id
-                            ? 'rounded-xl bg-slate-950 px-3 py-2 text-sm font-medium text-white'
-                            : 'rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700'}
-                        >
-                          {highlightedClass?.id === item.id ? `已选中 ${item.name}` : `选择 ${item.name}`}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="text-sm text-slate-500">
+              {page} / {totalPages}
             </div>
-          </section>
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page <= 1}>
+                Prev
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} disabled={page >= totalPages}>
+                Next
+              </Button>
+            </div>
+          </FilterBar>
 
-          <section className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-950">创建作业</h2>
-              <div className="mt-4 space-y-3">
-                <input value={assignmentProblemId} onChange={(e) => setAssignmentProblemId(e.target.value)} placeholder="题目 ID" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
-                <label className="block text-sm text-slate-500">
-                  <span className="sr-only">assignment deadline</span>
-                  <input aria-label="assignment deadline" type="datetime-local" value={assignmentDeadline} onChange={(e) => setAssignmentDeadline(e.target.value)} className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
-                </label>
-                <input value={assignmentPoints} onChange={(e) => setAssignmentPoints(e.target.value)} placeholder="分值" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
-                <button type="button" onClick={() => createAssignmentMutation.mutate()} disabled={!highlightedClass || !assignmentProblemId || !assignmentDeadline || createAssignmentMutation.isPending} className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50">创建作业</button>
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 px-6 py-5">
-                <h2 className="text-lg font-semibold text-slate-950">班级学生</h2>
-                <p className="mt-1 text-sm text-slate-500">当前选中班级的真实学生清单与完成情况。</p>
-              </div>
-              <div className="overflow-x-auto border-b border-slate-200">
-                <table className="w-full">
-                  <thead className="bg-slate-50">
+          <SectionBlock
+            title="班级列表"
+            description="显式选择班级后，成员与作业写操作都会绑定到该班级。"
+          >
+            {filteredClasses.length === 0 ? (
+              <EmptyState
+                className="border-0 p-0 shadow-none"
+                title="没有匹配的班级"
+                description={classes.length === 0 ? '先创建一个班级以开始教学管理。' : '调整搜索条件后再试。'}
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Student</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Email</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Progress</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Average</th>
+                      <th className="px-4 py-3">Class</th>
+                      <th className="px-4 py-3">Semester</th>
+                      <th className="px-4 py-3">Invite Code</th>
+                      <th className="px-4 py-3 text-right">Students</th>
+                      <th className="px-4 py-3 text-right">Select</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {students.map((student) => (
-                      <tr key={student.student_id}>
-                        <td className="px-6 py-4 text-sm font-medium text-slate-900">{student.username}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{student.email}</td>
-                        <td className="px-6 py-4 text-right text-sm text-slate-600">{student.completed_assignments}/{student.total_assignments}</td>
-                        <td className="px-6 py-4 text-right text-sm text-slate-600">{student.average_score}</td>
+                    {filteredClasses.map((item) => (
+                      <tr
+                        key={item.id}
+                        className={cn(
+                          'cursor-pointer transition-colors hover:bg-slate-50',
+                          highlightedClass?.id === item.id && 'bg-sky-50/60',
+                        )}
+                        onClick={() => {
+                          setSelectedClassId(item.id)
+                          setSelectedAssignmentId(null)
+                        }}
+                      >
+                        <TableCell className="font-medium text-slate-900">{item.name}</TableCell>
+                        <TableCell>{item.semester || '未设置'}</TableCell>
+                        <TableCell className="font-mono text-sky-700">{item.enrollment_code}</TableCell>
+                        <TableCell className="text-right">{item.student_count ?? 0}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant={highlightedClass?.id === item.id ? 'primary' : 'outline'}
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setSelectedClassId(item.id)
+                              setSelectedAssignmentId(null)
+                            }}
+                          >
+                            {highlightedClass?.id === item.id ? `已选中 ${item.name}` : `选择 ${item.name}`}
+                          </Button>
+                        </TableCell>
                       </tr>
                     ))}
-                    {students.length === 0 && (
-                      <tr><td colSpan={4} className="px-6 py-12 text-center text-sm text-slate-500">当前班级暂无学生记录</td></tr>
-                    )}
                   </tbody>
                 </table>
               </div>
+            )}
+          </SectionBlock>
 
-              <div className="border-b border-slate-200 px-6 py-5">
-                <h2 className="text-lg font-semibold text-slate-950">作业与提交记录</h2>
-                <p className="mt-1 text-sm text-slate-500">发布作业后可直接查看当前班级该题目的真实提交记录。</p>
+          <div className="grid gap-6 xl:grid-cols-[minmax(280px,320px)_minmax(0,1fr)]">
+            <SectionBlock
+              title="创建作业"
+              description="新作业会写入当前选中班级，并自动切换到该作业的真实提交记录。"
+            >
+              <div className="space-y-4">
+                <FieldGroup label="题目 ID">
+                  <Input value={assignmentProblemId} onChange={(e) => setAssignmentProblemId(e.target.value)} placeholder="题目 ID" />
+                </FieldGroup>
+                <FieldGroup label="截止时间">
+                  <input
+                    aria-label="assignment deadline"
+                    type="datetime-local"
+                    value={assignmentDeadline}
+                    onChange={(e) => setAssignmentDeadline(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  />
+                </FieldGroup>
+                <FieldGroup label="分值">
+                  <Input value={assignmentPoints} onChange={(e) => setAssignmentPoints(e.target.value)} placeholder="分值" />
+                </FieldGroup>
+                <ActionBar className="border-0 bg-transparent p-0 shadow-none">
+                  <Button
+                    type="button"
+                    fullWidth
+                    onClick={() => createAssignmentMutation.mutate()}
+                    disabled={!highlightedClass || !assignmentProblemId || !assignmentDeadline || createAssignmentMutation.isPending}
+                  >
+                    {createAssignmentMutation.isPending ? '创建中...' : '创建作业'}
+                  </Button>
+                </ActionBar>
               </div>
-              <div className="overflow-x-auto border-b border-slate-200">
-                <table className="w-full">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Assignment</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Deadline</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Published</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {assignments.map((assignment) => (
-                      <tr key={assignment.id} className={activeAssignmentId === assignment.id ? 'bg-blue-50' : ''}>
-                        <td className="px-6 py-4 text-sm text-slate-900">Problem #{assignment.problem_id}</td>
-                        <td className="px-6 py-4 text-sm text-slate-600">{new Date(assignment.deadline).toLocaleString('zh-CN')}</td>
-                        <td className="px-6 py-4 text-center text-sm text-slate-600">{assignment.published_at ? 'Yes' : 'No'}</td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex justify-end gap-2">
-                            <button type="button" onClick={() => setSelectedAssignmentId(assignment.id)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700">查看提交</button>
-                            <button type="button" onClick={() => publishAssignmentMutation.mutate(assignment.id)} disabled={publishAssignmentMutation.isPending} className="rounded-xl border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 disabled:opacity-50">发布</button>
-                            <button type="button" onClick={() => deleteAssignmentMutation.mutate(assignment.id)} disabled={deleteAssignmentMutation.isPending} className="rounded-xl border border-rose-200 px-3 py-2 text-sm font-medium text-rose-600 disabled:opacity-50">删除</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {assignments.length === 0 && (
-                      <tr><td colSpan={4} className="px-6 py-12 text-center text-sm text-slate-500">当前班级暂无作业</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div className="px-6 py-5">
-                <div className="mb-3 text-sm font-semibold text-slate-950">Assignment Submissions</div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        <th className="px-2 py-3">Submission</th>
-                        <th className="px-2 py-3">User</th>
-                        <th className="px-2 py-3">Score</th>
-                        <th className="px-2 py-3">Late</th>
-                        <th className="px-2 py-3">Submitted At</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {assignmentSubmissions.map((submission) => (
-                        <tr key={submission.id} className="border-b border-slate-100 text-sm text-slate-700">
-                          <td className="px-2 py-3">#{submission.submission_id}</td>
-                          <td className="px-2 py-3 font-mono text-xs">{submission.user_id}</td>
-                          <td className="px-2 py-3">{submission.score}</td>
-                          <td className="px-2 py-3">{submission.is_late ? `Yes (${submission.late_days}d)` : 'No'}</td>
-                          <td className="px-2 py-3">{new Date(submission.submitted_at).toLocaleString('zh-CN')}</td>
+            </SectionBlock>
+
+            <div className="space-y-6">
+              <SectionBlock
+                title="班级学生"
+                description="当前选中班级的真实学生清单与完成情况。"
+              >
+                {students.length === 0 ? (
+                  <EmptyState
+                    className="border-0 p-0 shadow-none"
+                    title="当前班级暂无学生记录"
+                    description="可先通过邀请码、邮箱或批量导入添加学生。"
+                  />
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        <tr>
+                          <th className="px-4 py-3">Student</th>
+                          <th className="px-4 py-3">Email</th>
+                          <th className="px-4 py-3 text-right">Progress</th>
+                          <th className="px-4 py-3 text-right">Average</th>
                         </tr>
-                      ))}
-                      {assignmentSubmissions.length === 0 && (
-                        <tr><td colSpan={5} className="px-2 py-10 text-center text-sm text-slate-500">当前作业暂无提交记录</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </section>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {students.map((student) => (
+                          <tr key={student.student_id}>
+                            <TableCell className="font-medium text-slate-900">{student.username}</TableCell>
+                            <TableCell>{student.email}</TableCell>
+                            <TableCell className="text-right">
+                              {student.completed_assignments}/{student.total_assignments}
+                            </TableCell>
+                            <TableCell className="text-right">{student.average_score}</TableCell>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </SectionBlock>
 
-      <div className="flex items-center justify-end gap-2">
-        <button type="button" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page <= 1} className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50">Prev</button>
-        <span className="text-sm text-slate-600">{page} / {totalPages}</span>
-        <button type="button" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} disabled={page >= totalPages} className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50">Next</button>
+              <SectionBlock
+                title="作业与提交记录"
+                description="发布作业后可直接查看当前班级该题目的真实提交记录。"
+              >
+                <div className="space-y-5">
+                  {assignments.length === 0 ? (
+                    <EmptyState
+                      className="border-0 p-0 shadow-none"
+                      title="当前班级暂无作业"
+                      description="先为这个班级创建至少一个作业。"
+                    />
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full">
+                        <thead className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          <tr>
+                            <th className="px-4 py-3">Assignment</th>
+                            <th className="px-4 py-3">Deadline</th>
+                            <th className="px-4 py-3 text-center">Published</th>
+                            <th className="px-4 py-3 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {assignments.map((assignment) => (
+                            <tr key={assignment.id} className={cn(activeAssignmentId === assignment.id && 'bg-sky-50/60')}>
+                              <TableCell className="font-medium text-slate-900">Problem #{assignment.problem_id}</TableCell>
+                              <TableCell>{formatDateTime(assignment.deadline)}</TableCell>
+                              <TableCell className="text-center">{assignment.published_at ? 'Yes' : 'No'}</TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAssignmentId(assignment.id)}>
+                                    查看提交
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => publishAssignmentMutation.mutate(assignment.id)}
+                                    disabled={publishAssignmentMutation.isPending}
+                                  >
+                                    发布
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="danger"
+                                    onClick={() => deleteAssignmentMutation.mutate(assignment.id)}
+                                    disabled={deleteAssignmentMutation.isPending}
+                                  >
+                                    删除
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  <SurfaceCard tone="muted" className="p-0 shadow-none">
+                    <div className="border-b border-slate-200 px-5 py-4">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                        <BookOpen className="h-4 w-4 text-sky-700" />
+                        Assignment Submissions
+                      </div>
+                    </div>
+                    <div className="overflow-x-auto px-5 py-4">
+                      {assignmentSubmissions.length === 0 ? (
+                        <EmptyState
+                          className="border-0 p-0 shadow-none"
+                          title="当前作业暂无提交记录"
+                          description="学生提交后，这里会显示真实得分和逾期信息。"
+                        />
+                      ) : (
+                        <table className="min-w-full">
+                          <thead className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            <tr>
+                              <th className="px-2 py-3">Submission</th>
+                              <th className="px-2 py-3">User</th>
+                              <th className="px-2 py-3">Score</th>
+                              <th className="px-2 py-3">Late</th>
+                              <th className="px-2 py-3">Submitted At</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {assignmentSubmissions.map((submission) => (
+                              <tr key={submission.id}>
+                                <td className="px-2 py-3 text-sm text-slate-700">#{submission.submission_id}</td>
+                                <td className="px-2 py-3 font-mono text-xs text-slate-500">{submission.user_id}</td>
+                                <td className="px-2 py-3 text-sm text-slate-700">{submission.score}</td>
+                                <td className="px-2 py-3 text-sm text-slate-700">
+                                  {submission.is_late ? `Yes (${submission.late_days}d)` : 'No'}
+                                </td>
+                                <td className="px-2 py-3 text-sm text-slate-700">{formatDateTime(submission.submitted_at)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
+                  </SurfaceCard>
+                </div>
+              </SectionBlock>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <SurfaceCard tone="muted" className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-2 text-sm text-slate-600">
+          <Users className="h-4 w-4 text-sky-700" />
+          班级选择、作业写入和提交浏览都以当前高亮班级为准，不再使用首条列表作为隐式目标。
+        </div>
+        <div className="text-sm text-slate-500">Chrome 96+ safe layout</div>
+      </SurfaceCard>
     </div>
   )
 }

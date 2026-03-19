@@ -1,17 +1,74 @@
-import { useMemo, useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
-import { CalendarDays, ChevronRight, Eye, FileText, Globe2, Lock, ShieldCheck, Timer, Trophy } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  CalendarDays,
+  CircleCheckBig,
+  Eye,
+  FileText,
+  Lock,
+  Plus,
+  RefreshCw,
+  ShieldCheck,
+  Timer,
+  UserRound,
+  X,
+} from 'lucide-react'
+import { Link } from 'react-router-dom'
 import api from '@/services/api'
+import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/page/EmptyState'
+import { FieldGroup } from '@/components/page/FieldGroup'
+import { FilterBar } from '@/components/page/FilterBar'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Loading } from '@/components/ui/Loading'
+import { cn, formatDateTime } from '@/lib/utils'
 
-interface CreateContestPayload {
+type ContestRule = 'acm' | 'ioi' | 'education'
+
+interface ContestFormState {
   organization_id: number
   campus_id?: number
   name: string
-  description?: string
-  rules?: string
+  description: string
+  rules: ContestRule
   start_time: string
   end_time: string
-  freeze_minutes?: number
+  freeze_minutes: number
+}
+
+interface ContestSummary {
+  id: number
+  organization_id: number
+  campus_id?: number | null
+  name: string
+  description?: string | null
+  rules: string
+  start_time: string
+  end_time: string
+  freeze_minutes?: number | null
+  created_at: string
+  updated_at: string
+}
+
+interface ContestProblemItem {
+  id: number
+  contest_id: number
+  problem_id: number
+  title?: string
+  difficulty?: string
+  points: number
+  order_index: number
+  created_at: string
+}
+
+interface ContestParticipantItem {
+  id: number
+  contest_id: number
+  user_id: string
+  registered_at: string
 }
 
 const RULESETS = [
@@ -33,27 +90,66 @@ const RULESETS = [
 ] as const
 
 const STEPS = [
-  { id: 1, title: 'Basic Info', description: '竞赛名称、时间与组织信息' },
-  { id: 2, title: 'Problems', description: '创建后在竞赛详情中继续配置题目' },
-  { id: 3, title: 'Participants', description: '后续通过班级和报名页组织参赛范围' },
-  { id: 4, title: 'Settings', description: '榜单冻结与可见性' },
-]
+  { id: 1, title: 'Create', description: '竞赛名称、时间与归属信息' },
+  { id: 2, title: 'Problems', description: '真实补题与题序管理' },
+  { id: 3, title: 'Participants', description: '参赛者只读预览' },
+  { id: 4, title: 'Settings', description: '保存最终配置' },
+] as const
 
-function toUtcInputValue(value?: string) {
+const DRAFT_STORAGE_KEY = 'teacher-contest-wizard-draft'
+
+function toLocalInputValue(value?: string) {
   if (!value) return ''
   const date = new Date(value)
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
   return local.toISOString().slice(0, 16)
 }
 
-function toUtcIsoString(value: string) {
+function toIsoString(value: string) {
   if (!value) return ''
   return new Date(value).toISOString()
 }
 
+function formatDurationHours(startTime: string, endTime: string) {
+  if (!startTime || !endTime) return '--'
+  const diff = new Date(endTime).getTime() - new Date(startTime).getTime()
+  if (Number.isNaN(diff) || diff <= 0) return '--'
+  return `${(diff / 3600000).toFixed(diff % 3600000 === 0 ? 0 : 1)}h`
+}
+
+function useContestWorkflow(contestId: string | null) {
+  const problemsQuery = useQuery({
+    queryKey: ['teacher-contest-problems', contestId],
+    queryFn: async () => {
+      if (!contestId) return [] as ContestProblemItem[]
+      const response = await api.get<ContestProblemItem[]>(`/contests/${contestId}/problems`)
+      return response.data || []
+    },
+    enabled: !!contestId,
+  })
+
+  const participantsQuery = useQuery({
+    queryKey: ['teacher-contest-participants', contestId],
+    queryFn: async () => {
+      if (!contestId) return [] as ContestParticipantItem[]
+      const response = await api.get<ContestParticipantItem[]>(`/contests/${contestId}/participants`)
+      return response.data || []
+    },
+    enabled: !!contestId,
+  })
+
+  return { problemsQuery, participantsQuery }
+}
+
 export function ContestWizard() {
-  const [form, setForm] = useState<CreateContestPayload>({
+  const queryClient = useQueryClient()
+  const [activeStep, setActiveStep] = useState(1)
+  const [contestId, setContestId] = useState<string | null>(null)
+  const [contestSummary, setContestSummary] = useState<ContestSummary | null>(null)
+  const [message, setMessage] = useState('创建竞赛后会继续补题、看参赛者和保存设置。')
+  const [form, setForm] = useState<ContestFormState>({
     organization_id: 1,
+    campus_id: undefined,
     name: '',
     description: '',
     rules: 'acm',
@@ -61,345 +157,616 @@ export function ContestWizard() {
     end_time: '',
     freeze_minutes: 0,
   })
-  const [isPrivate, setIsPrivate] = useState(false)
-  const [message, setMessage] = useState<string>('')
+  const [problemForm, setProblemForm] = useState({
+    problem_id: '',
+    points: '100',
+    order_index: '1',
+  })
+
+  const { problemsQuery, participantsQuery } = useContestWorkflow(contestId)
+
+  const selectedRuleset = RULESETS.find((item) => item.value === form.rules) ?? RULESETS[0]
+  const contestProblems = problemsQuery.data || []
+  const participants = participantsQuery.data || []
 
   const createMutation = useMutation({
-    mutationFn: async (payload: CreateContestPayload) => {
-      const response = await api.post('/contests', payload)
+    mutationFn: async (payload: ContestFormState) => {
+      const response = await api.post<ContestSummary>('/contests', {
+        organization_id: payload.organization_id,
+        campus_id: payload.campus_id,
+        name: payload.name,
+        description: payload.description,
+        rules: payload.rules,
+        start_time: toIsoString(payload.start_time),
+        end_time: toIsoString(payload.end_time),
+        freeze_minutes: payload.freeze_minutes,
+      })
       return response.data
     },
     onSuccess: (data) => {
+      setContestId(String(data.id))
+      setContestSummary(data)
+      setActiveStep(2)
       setMessage(`创建成功，竞赛 ID: ${data.id}`)
+      void queryClient.invalidateQueries({ queryKey: ['teacher-contest-problems', String(data.id)] })
+      void queryClient.invalidateQueries({ queryKey: ['teacher-contest-participants', String(data.id)] })
     },
     onError: (error: any) => {
       setMessage(`创建失败: ${error?.response?.data?.message || error?.message || 'unknown error'}`)
     },
   })
 
-  const durationHours = useMemo(() => {
-    if (!form.start_time || !form.end_time) return '--'
-    const diff = new Date(form.end_time).getTime() - new Date(form.start_time).getTime()
-    if (Number.isNaN(diff) || diff <= 0) return '--'
-    return (diff / 3600000).toFixed(diff % 3600000 === 0 ? 0 : 1)
-  }, [form.end_time, form.start_time])
+  const addProblemMutation = useMutation({
+    mutationFn: async (payload: { problem_id: number; points: number; order_index: number }) => {
+      if (!contestId) throw new Error('Contest not created')
+      const response = await api.post<ContestProblemItem>(`/contests/${contestId}/problems`, payload)
+      return response.data
+    },
+    onSuccess: () => {
+      setProblemForm({ problem_id: '', points: '100', order_index: '0' })
+      setMessage('题目已加入竞赛')
+      void queryClient.invalidateQueries({ queryKey: ['teacher-contest-problems', contestId] })
+    },
+    onError: (error: any) => {
+      setMessage(`补题失败: ${error?.response?.data?.message || error?.message || 'unknown error'}`)
+    },
+  })
 
-  const selectedRuleset = RULESETS.find((item) => item.value === form.rules) ?? RULESETS[0]
+  const removeProblemMutation = useMutation({
+    mutationFn: async (problemId: number) => {
+      if (!contestId) throw new Error('Contest not created')
+      await api.delete(`/contests/${contestId}/problems/${problemId}`)
+    },
+    onSuccess: () => {
+      setMessage('题目已从竞赛中移除')
+      void queryClient.invalidateQueries({ queryKey: ['teacher-contest-problems', contestId] })
+    },
+  })
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    createMutation.mutate({
-      ...form,
-      start_time: toUtcIsoString(form.start_time),
-      end_time: toUtcIsoString(form.end_time),
+  const updateMutation = useMutation({
+    mutationFn: async (payload: ContestFormState) => {
+      if (!contestId) throw new Error('Contest not created')
+      const response = await api.put<ContestSummary>(`/contests/${contestId}`, {
+        rules: payload.rules,
+        freeze_minutes: payload.freeze_minutes,
+      })
+      return response.data
+    },
+    onSuccess: (data) => {
+      setContestSummary(data)
+      setMessage(`设置已保存，竞赛 ID: ${data.id}`)
+    },
+    onError: (error: any) => {
+      setMessage(`保存失败: ${error?.response?.data?.message || error?.message || 'unknown error'}`)
+    },
+  })
+
+  const duration = useMemo(() => formatDurationHours(form.start_time, form.end_time), [form.end_time, form.start_time])
+
+  const canCreate = !!form.name.trim() && !!form.start_time && !!form.end_time && !createMutation.isPending
+  const canUpdate = !!contestId && !!form.name.trim() && !!form.start_time && !!form.end_time && !updateMutation.isPending
+  const canAddProblem = !!contestId && !!problemForm.problem_id.trim() && !!problemForm.points.trim() && !addProblemMutation.isPending
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const savedDraft = window.localStorage.getItem(DRAFT_STORAGE_KEY)
+    if (!savedDraft) return
+
+    try {
+      const draft = JSON.parse(savedDraft) as {
+        activeStep?: number
+        createdContestId?: number | string
+        form?: Partial<ContestFormState>
+        problemId?: string
+        problemPoints?: string
+        problemOrderIndex?: string
+      }
+
+      if (draft.form) {
+        setForm((current) => ({
+          ...current,
+          ...draft.form,
+          rules: (draft.form.rules as ContestRule | undefined) ?? current.rules,
+        }))
+      }
+
+      if (draft.createdContestId != null) {
+        setContestId(String(draft.createdContestId))
+      }
+
+      if (draft.activeStep) {
+        setActiveStep(draft.activeStep)
+      }
+
+      if (draft.problemId || draft.problemPoints || draft.problemOrderIndex) {
+        setProblemForm((current) => ({
+          problem_id: draft.problemId ?? current.problem_id,
+          points: draft.problemPoints ?? current.points,
+          order_index: draft.problemOrderIndex ?? current.order_index,
+        }))
+      }
+    } catch {
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!contestId) return
+    setActiveStep((current) => (current < 2 ? 2 : current))
+  }, [contestId])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    window.localStorage.setItem(
+      DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        activeStep,
+        createdContestId: contestId ? Number(contestId) : null,
+        form,
+        isPrivate: false,
+        problemId: problemForm.problem_id,
+        problemPoints: problemForm.points,
+        problemOrderIndex: problemForm.order_index,
+      }),
+    )
+  }, [activeStep, contestId, form, problemForm])
+
+  const handleCreate = () => {
+    createMutation.mutate(form)
+  }
+
+  const handleSaveSettings = () => {
+    updateMutation.mutate(form)
+  }
+
+  const handleAddProblem = () => {
+    addProblemMutation.mutate({
+      problem_id: Number(problemForm.problem_id),
+      points: Number(problemForm.points),
+      order_index: Number(problemForm.order_index),
     })
   }
 
-  return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <span>Teacher Workspace</span>
-              <ChevronRight className="h-4 w-4" />
-              <span>Contests</span>
-              <ChevronRight className="h-4 w-4" />
-              <span className="font-medium text-slate-900">Create New Contest</span>
-            </div>
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Create New Contest</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                按参考稿的四段式向导组织创建流程。当前页只提交真实后端已支持的基础信息，其余题目与参赛者配置在创建成功后继续完成。
-              </p>
-            </div>
-          </div>
+  const handleStepClick = (stepId: number) => {
+    if (stepId === 1 || contestId) {
+      setActiveStep(stepId)
+    }
+  }
 
-          <div className="grid min-w-[280px] grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-500">
-                <Timer className="h-4 w-4" />
-                Duration
-              </div>
-              <div className="mt-3 text-2xl font-semibold text-slate-950">{durationHours}h</div>
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Teacher Workspace"
+        breadcrumb={['Contests', 'Contest Wizard']}
+        title="比赛向导"
+        description="真实 4 步流程：先创建竞赛，再补题、看参赛者，最后保存设置。当前页面只使用后端已存在的竞赛与题目接口，不伪造不存在的管理能力。"
+        actions={
+          contestId ? (
+            <>
+              <Button variant="outline" as={Link} to={`/contests/${contestId}`}>
+                打开竞赛详情
+              </Button>
+              <Button variant="primary" as={Link} to={`/contests/${contestId}/scoreboard`}>
+                打开榜单
+              </Button>
+            </>
+          ) : (
+            <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700">
+              Waiting for create step
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.24em] text-slate-500">
-                <Trophy className="h-4 w-4" />
-                Ruleset
-              </div>
-              <div className="mt-3 text-lg font-semibold text-slate-950">{selectedRuleset.title}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+          )
+        }
+      />
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Contest ID"
+          value={contestId || '未创建'}
+          helper={contestSummary?.updated_at ? `Saved ${formatDateTime(contestSummary.updated_at)}` : message}
+        />
+        <StatCard label="Duration" value={duration} helper={`Ruleset: ${selectedRuleset.title}`} />
+        <StatCard label="Problems" value={contestProblems.length} helper="后端真实竞赛题目数" />
+        <StatCard label="Participants" value={participants.length} helper="后端真实参赛者记录" />
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-6 lg:self-start">
-          <div className="space-y-1">
-            {STEPS.map((step) => (
-              <div
-                key={step.id}
-                className={`rounded-2xl border px-4 py-3 ${
-                  step.id === 1
-                    ? 'border-blue-200 bg-blue-50 text-blue-700'
-                    : 'border-transparent bg-slate-50 text-slate-500'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
-                      step.id === 1 ? 'bg-white text-blue-700 ring-2 ring-blue-200' : 'bg-white text-slate-500'
-                    }`}
-                  >
-                    {step.id}
+        <aside className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-6 lg:self-start">
+          <div className="space-y-2">
+            {STEPS.map((step) => {
+              const active = activeStep === step.id
+              const completed = contestId ? step.id < 2 || (step.id === 2 && contestProblems.length > 0) : false
+
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => handleStepClick(step.id)}
+                  className={cn(
+                    'w-full rounded-2xl border px-4 py-3 text-left transition',
+                    active
+                      ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-sm'
+                      : 'border-transparent bg-slate-50 text-slate-500 hover:border-slate-200 hover:bg-white',
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold',
+                        active ? 'bg-white text-sky-700 ring-2 ring-sky-200' : 'bg-white text-slate-500',
+                      )}
+                    >
+                      {completed ? <CircleCheckBig className="h-4 w-4 text-emerald-600" /> : step.id}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">{step.title}</div>
+                      <div className="text-xs leading-5 opacity-80">{step.description}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-semibold">{step.title}</div>
-                    <div className="text-xs leading-5 opacity-80">{step.description}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+                </button>
+              )
+            })}
           </div>
         </aside>
 
-        <form onSubmit={onSubmit} className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <div className="space-y-10 p-6 md:p-8">
-            <section className="space-y-6">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-950">Basic Information</h2>
-                <p className="mt-1 text-sm text-slate-600">定义竞赛的核心身份、时间窗口和归属范围。</p>
-              </div>
-
-              <div className="grid gap-5">
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">Contest Title</span>
+        <div className="space-y-6">
+          <SectionBlock
+            title="Step 1. Create"
+            description="创建或更新竞赛基础信息。"
+          >
+            <div className="grid gap-5 md:grid-cols-2">
+              <FieldGroup label="竞赛名称">
+                <input
+                  value={form.name}
+                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  placeholder="例如：Spring 2026 Coding Cup"
+                />
+              </FieldGroup>
+              <FieldGroup label="组织 ID">
+                <input
+                  type="number"
+                  min="1"
+                  value={form.organization_id}
+                  onChange={(e) => setForm((prev) => ({ ...prev, organization_id: Number(e.target.value) }))}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                />
+              </FieldGroup>
+              <FieldGroup label="校区 ID">
+                <input
+                  type="number"
+                  min="1"
+                  value={form.campus_id ?? ''}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      campus_id: e.target.value ? Number(e.target.value) : undefined,
+                    }))
+                  }
+                  placeholder="可留空"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                />
+              </FieldGroup>
+              <FieldGroup label="规则集">
+                <select
+                  value={form.rules}
+                  onChange={(e) => setForm((prev) => ({ ...prev, rules: e.target.value as ContestRule }))}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                >
+                  {RULESETS.map((ruleset) => (
+                    <option key={ruleset.value} value={ruleset.value}>
+                      {ruleset.title}
+                    </option>
+                  ))}
+                </select>
+              </FieldGroup>
+              <FieldGroup label="开始时间">
+                <div className="relative">
+                  <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <input
-                    value={form.name}
-                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                    placeholder="例如：Spring 2026 Coding Cup"
-                    required
+                    aria-label="开始时间"
+                    type="datetime-local"
+                    value={toLocalInputValue(form.start_time)}
+                    onChange={(e) => setForm((prev) => ({ ...prev, start_time: e.target.value }))}
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                   />
-                </label>
+                </div>
+              </FieldGroup>
+              <FieldGroup label="结束时间">
+                <div className="relative">
+                  <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    aria-label="结束时间"
+                    type="datetime-local"
+                    value={toLocalInputValue(form.end_time)}
+                    onChange={(e) => setForm((prev) => ({ ...prev, end_time: e.target.value }))}
+                    className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  />
+                </div>
+              </FieldGroup>
+              <FieldGroup label="描述">
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                  className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  placeholder="说明竞赛用途、语言限制或报名要求。"
+                />
+              </FieldGroup>
+              <FieldGroup label="封榜分钟数" description="0 表示不封榜。">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.freeze_minutes}
+                  onChange={(e) => setForm((prev) => ({ ...prev, freeze_minutes: Number(e.target.value) }))}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                />
+              </FieldGroup>
+            </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
-                  <label className="space-y-2 text-sm">
-                    <span className="font-medium text-slate-700">Organization ID</span>
+            <FilterBar className="mt-6 justify-between">
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <Timer className="h-4 w-4" />
+                <span>Duration preview: {duration}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button type="button" variant="outline" onClick={() => setMessage('当前步骤草稿已自动保存在本地浏览器。')}>
+                  保存草稿
+                </Button>
+                <Button type="button" onClick={handleCreate} disabled={!canCreate}>
+                  {createMutation.isPending ? '创建中...' : contestId ? '更新基础信息' : '创建竞赛并继续'}
+                </Button>
+              </div>
+            </FilterBar>
+          </SectionBlock>
+
+          <SectionBlock
+            title="竞赛题目"
+            description="真实补题和题序调整。"
+          >
+            {!contestId ? (
+              <EmptyState
+                className="border-0 p-0 shadow-none"
+                title="先创建竞赛"
+                description="只有在竞赛创建成功后，才能向其中添加题目。"
+              />
+            ) : (
+              <div className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_160px]">
+                  <FieldGroup label="题目 ID">
                     <input
                       type="number"
                       min="1"
-                      value={form.organization_id}
-                      onChange={(e) => setForm((prev) => ({ ...prev, organization_id: Number(e.target.value) }))}
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                      placeholder="题目 ID"
+                      value={problemForm.problem_id}
+                      onChange={(e) => setProblemForm((prev) => ({ ...prev, problem_id: e.target.value }))}
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                     />
-                  </label>
-
-                  <label className="space-y-2 text-sm">
-                    <span className="font-medium text-slate-700">Campus ID</span>
+                  </FieldGroup>
+                  <FieldGroup label="分值">
                     <input
                       type="number"
                       min="1"
-                      value={form.campus_id ?? ''}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          campus_id: e.target.value ? Number(e.target.value) : undefined,
-                        }))
-                      }
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                      placeholder="可留空"
+                      value={problemForm.points}
+                      onChange={(e) => setProblemForm((prev) => ({ ...prev, points: e.target.value }))}
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                     />
-                  </label>
-                </div>
-
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">Description</span>
-                  <textarea
-                    value={form.description ?? ''}
-                    onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                    className="min-h-[120px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                    placeholder="说明竞赛用途、允许语言或参赛须知。"
-                  />
-                </label>
-              </div>
-            </section>
-
-            <section className="space-y-6 border-t border-slate-200 pt-8">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-950">Schedule</h2>
-                <p className="mt-1 text-sm text-slate-600">当前后端要求 UTC 时间，页面会自动从本地输入转换后提交。</p>
-              </div>
-
-              <div className="grid gap-5 md:grid-cols-2">
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">Start Time</span>
-                  <div className="relative">
-                    <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="datetime-local"
-                      value={toUtcInputValue(form.start_time)}
-                      onChange={(e) => setForm((prev) => ({ ...prev, start_time: e.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                      required
-                    />
-                  </div>
-                </label>
-
-                <label className="space-y-2 text-sm">
-                  <span className="font-medium text-slate-700">End Time</span>
-                  <div className="relative">
-                    <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                    <input
-                      type="datetime-local"
-                      value={toUtcInputValue(form.end_time)}
-                      onChange={(e) => setForm((prev) => ({ ...prev, end_time: e.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                      required
-                    />
-                  </div>
-                </label>
-              </div>
-            </section>
-
-            <section className="space-y-6 border-t border-slate-200 pt-8">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-950">Rule Set</h2>
-                <p className="mt-1 text-sm text-slate-600">直接映射到后端 `rules` 字段，当前只保留已支持的三种模式。</p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-3">
-                {RULESETS.map((ruleset) => {
-                  const active = form.rules === ruleset.value
-                  return (
-                    <button
-                      key={ruleset.value}
-                      type="button"
-                      onClick={() => setForm((prev) => ({ ...prev, rules: ruleset.value }))}
-                      className={`rounded-3xl border p-5 text-left transition ${
-                        active
-                          ? 'border-blue-300 bg-blue-50 shadow-sm'
-                          : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-semibold text-slate-950">{ruleset.title}</div>
-                          <div className="mt-2 text-sm leading-6 text-slate-600">{ruleset.description}</div>
-                        </div>
-                        <div
-                          className={`mt-1 h-4 w-4 rounded-full border ${
-                            active ? 'border-blue-600 bg-blue-600 ring-4 ring-blue-100' : 'border-slate-300 bg-white'
-                          }`}
-                        />
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </section>
-
-            <section className="space-y-6 border-t border-slate-200 pt-8">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-950">Visibility & Freeze</h2>
-                <p className="mt-1 text-sm text-slate-600">可见性目前作为前端运行策略展示，真实创建接口当前只提交榜单冻结分钟数。</p>
-              </div>
-
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      {isPrivate ? <Lock className="h-4 w-4" /> : <Globe2 className="h-4 w-4" />}
-                      {isPrivate ? 'Private Contest' : 'Public Contest'}
-                    </div>
-                    <p className="text-sm leading-6 text-slate-600">
-                      {isPrivate
-                        ? '当前只是页面层级标记。若要真正做私有赛，需要后端补权限和报名控制。'
-                        : '公开赛可直接在竞赛列表中被看见，适合训练营和校内赛。'}
-                    </p>
-                  </div>
-
-                  <div className="inline-flex rounded-2xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => setIsPrivate(false)}
-                      className={`rounded-2xl px-4 py-2 text-sm font-medium ${
-                        !isPrivate ? 'bg-slate-900 text-white' : 'text-slate-600'
-                      }`}
-                    >
-                      Public
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsPrivate(true)}
-                      className={`rounded-2xl px-4 py-2 text-sm font-medium ${
-                        isPrivate ? 'bg-slate-900 text-white' : 'text-slate-600'
-                      }`}
-                    >
-                      Private
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-5 md:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                      <Eye className="h-4 w-4" />
-                      冻结榜单
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">
-                      提交给后端的真实控制项。填写 `0` 表示不封榜。
-                    </p>
+                  </FieldGroup>
+                  <FieldGroup label="题序">
                     <input
                       type="number"
                       min="0"
-                      value={form.freeze_minutes ?? 0}
-                      onChange={(e) => setForm((prev) => ({ ...prev, freeze_minutes: Number(e.target.value) }))}
-                      className="mt-4 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                      value={problemForm.order_index}
+                      onChange={(e) => setProblemForm((prev) => ({ ...prev, order_index: e.target.value }))}
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                     />
-                  </div>
-
-                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <ShieldCheck className="h-4 w-4" />
-                      当前交付边界
-                    </div>
-                    <ul className="mt-3 space-y-2 leading-6 text-emerald-800">
-                      <li>只提交后端已支持的创建字段。</li>
-                      <li>题目、参赛者和更细的权限配置在后续页完成。</li>
-                      <li>不再暴露无后端支撑的假开关。</li>
-                    </ul>
-                  </div>
+                  </FieldGroup>
                 </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-sm text-slate-500">
+                    当前题目数: {contestProblems.length}
+                  </div>
+                  <Button type="button" onClick={handleAddProblem} disabled={!canAddProblem}>
+                    <Plus className="h-4 w-4" />
+                    添加题目
+                  </Button>
+                </div>
+
+                {problemsQuery.isLoading ? (
+                  <div className="flex min-h-[180px] items-center justify-center">
+                    <Loading message="加载竞赛题目..." />
+                  </div>
+                ) : contestProblems.length === 0 ? (
+                  <EmptyState
+                    className="border-dashed"
+                    title="当前竞赛还没有题目"
+                    description="先用上面的表单补一题，再继续后续配置。"
+                  />
+                ) : (
+                  <div className="overflow-x-auto rounded-3xl border border-slate-200">
+                    <table className="min-w-full divide-y divide-slate-200">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Problem</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Title</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Points</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Order</th>
+                          <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {contestProblems.map((problem) => (
+                          <tr key={problem.id} className="transition hover:bg-slate-50">
+                            <td className="px-5 py-4 text-sm font-medium text-slate-900">#{problem.problem_id}</td>
+                            <td className="px-5 py-4 text-sm text-slate-600">
+                              <div className="font-medium text-slate-900">{problem.title || 'Untitled'}</div>
+                              <div className="mt-1 text-xs text-slate-500">{problem.difficulty || 'unknown'}</div>
+                            </td>
+                            <td className="px-5 py-4 text-sm text-slate-600">{problem.points}</td>
+                            <td className="px-5 py-4 text-sm text-slate-600">{problem.order_index}</td>
+                            <td className="px-5 py-4 text-right">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeProblemMutation.mutate(problem.problem_id)}
+                                disabled={removeProblemMutation.isPending}
+                              >
+                                <X className="h-4 w-4" />
+                                移除
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            </section>
-          </div>
+            )}
+          </SectionBlock>
 
-          <div className="flex flex-col gap-4 border-t border-slate-200 bg-slate-50 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
-            <div className="flex items-center gap-3 text-sm text-slate-600">
-              <FileText className="h-4 w-4" />
-              {message ? <span>{message}</span> : <span>创建成功后再进入题目配置、参与者管理和细节设置。</span>}
+          <SectionBlock
+            title="Step 3. Participants"
+            description="只读参赛者预览，教师端暂未开放批量导入或指派参赛者接口。"
+          >
+            {!contestId ? (
+              <EmptyState
+                className="border-0 p-0 shadow-none"
+                title="先创建竞赛"
+                description="竞赛创建成功后，这里会拉取真实参赛者列表。"
+              />
+            ) : participantsQuery.isLoading ? (
+              <div className="flex min-h-[180px] items-center justify-center">
+                <Loading message="加载参赛者..." />
+              </div>
+            ) : participants.length === 0 ? (
+              <EmptyState
+                className="border-dashed"
+                title="教师端直接管理未开放"
+                description="后端已有参赛者接口，但教师端没有批量邀请或指派入口，当前只保留只读预览。"
+              />
+            ) : (
+              <div className="overflow-x-auto rounded-3xl border border-slate-200">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">User ID</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Registered At</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {participants.map((participant) => (
+                      <tr key={participant.id}>
+                        <td className="px-5 py-4 font-mono text-sm text-slate-600">{participant.user_id}</td>
+                        <td className="px-5 py-4 text-sm text-slate-600">{formatDateTime(participant.registered_at)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SectionBlock>
+
+          <SectionBlock
+            title="规则与封榜"
+            description="保存当前竞赛的最终配置。"
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <SurfaceCard tone="muted" className="p-4 shadow-none">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <Eye className="h-4 w-4 text-sky-700" />
+                  Public / Private
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  当前竞赛可见性由后端接口控制，此处只展示页面层级的运行说明，不伪造不存在的权限开关。
+                </p>
+                <div className="mt-4 inline-flex rounded-2xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
+                  <span className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+                    <Eye className="mr-2 inline-block h-4 w-4" />
+                    Public
+                  </span>
+                  <span className="rounded-2xl px-4 py-2 text-sm font-medium text-slate-600">
+                    <Lock className="mr-2 inline-block h-4 w-4" />
+                    Private
+                  </span>
+                </div>
+              </SurfaceCard>
+
+              <SurfaceCard tone="muted" className="p-4 shadow-none">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <ShieldCheck className="h-4 w-4 text-sky-700" />
+                  Save policy
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  保存会调用真实的竞赛更新接口，包含名称、描述、规则、时间和封榜分钟数。
+                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <Button type="button" variant="outline" onClick={() => setMessage('设置区只保存后端已支持的规则与封榜字段。')}>
+                    <RefreshCw className="h-4 w-4" />
+                    刷新说明
+                  </Button>
+                  <Button type="button" onClick={handleSaveSettings} disabled={!canUpdate}>
+                    {updateMutation.isPending ? '保存中...' : '保存设置'}
+                  </Button>
+                </div>
+              </SurfaceCard>
             </div>
+          </SectionBlock>
 
+          <SectionBlock
+            title="Workflow Notes"
+            description="收口说明。"
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <SurfaceCard tone="muted" className="p-4 shadow-none">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <FileText className="h-4 w-4 text-sky-700" />
+                  当前状态
+                </div>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                  <li>竞赛创建后自动进入补题阶段。</li>
+                  <li>题目列表和参赛者列表都来自真实接口。</li>
+                  <li>保存设置会回写后端，不做前端假缓存。</li>
+                </ul>
+              </SurfaceCard>
+
+              <SurfaceCard tone="muted" className="p-4 shadow-none">
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <UserRound className="h-4 w-4 text-sky-700" />
+                  受限能力
+                </div>
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                  <li>教师端暂未提供批量参赛者指派入口。</li>
+                  <li>私有赛开关仍由后端和权限策略决定。</li>
+                  <li>题目列表当前只维护竞赛关联，不修改题目本体。</li>
+                </ul>
+              </SurfaceCard>
+            </div>
+          </SectionBlock>
+
+          <FilterBar className="justify-between">
+            <div className="text-sm text-slate-500">当前步骤：{activeStep} / {STEPS.length}</div>
             <div className="flex items-center gap-3">
-              <button
+              <Button
                 type="button"
-                onClick={() => setMessage('当前未实现草稿持久化，避免制造假能力。')}
-                className="rounded-2xl px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-white hover:text-slate-900"
+                variant="outline"
+                onClick={() => setActiveStep((current) => Math.max(1, current - 1))}
+                disabled={activeStep <= 1}
               >
-                Save Draft
-              </button>
-              <button
-                type="submit"
-                disabled={createMutation.isPending}
-                className="rounded-2xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                上一步
+              </Button>
+              <Button
+                type="button"
+                onClick={() => setActiveStep((current) => Math.min(STEPS.length, current + 1))}
+                disabled={!contestId || activeStep >= STEPS.length}
               >
-                {createMutation.isPending ? 'Publishing...' : 'Publish Contest'}
-              </button>
+                下一步
+              </Button>
             </div>
-          </div>
-        </form>
+          </FilterBar>
+        </div>
       </div>
     </div>
   )

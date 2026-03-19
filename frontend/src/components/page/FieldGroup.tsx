@@ -1,4 +1,4 @@
-import { Children, cloneElement, isValidElement, useId, type ReactNode } from 'react'
+import { Children, cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 interface FieldGroupProps {
@@ -14,11 +14,15 @@ export function FieldGroup({ label, description, children, className }: FieldGro
 
   const child = Children.only(children)
   const content = isValidElement(child)
-    ? cloneElement(child, {
-        id: child.props.id ?? fieldId,
-        'aria-describedby': description ? child.props['aria-describedby'] ?? descriptionId : child.props['aria-describedby'],
-        'aria-label': undefined,
-      })
+    ? (() => {
+        const element = child as ReactElement<Record<string, unknown>>
+        const props = element.props as Record<string, string | undefined>
+
+        return cloneElement(element, {
+          id: props.id ?? fieldId,
+          'aria-describedby': description ? props['aria-describedby'] ?? descriptionId : props['aria-describedby'],
+        })
+      })()
     : children
 
   return (

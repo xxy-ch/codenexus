@@ -1,7 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronRight, Database, EyeOff, FileArchive, Loader2, RefreshCw, Save, Settings2, Trash2 } from 'lucide-react'
+import { Database, EyeOff, Loader2, RefreshCw, Save, Settings2 } from 'lucide-react'
 import { judgeConfigService } from '@/services/judgeConfig'
+import { EmptyState } from '@/components/page/EmptyState'
+import { FieldGroup } from '@/components/page/FieldGroup'
+import { PageHeader } from '@/components/page/PageHeader'
+import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
 
 export function JudgeSettings() {
@@ -22,6 +29,9 @@ export function JudgeSettings() {
     queryKey: ['judge-language-settings'],
     queryFn: () => judgeConfigService.getLanguageSettings(),
   })
+
+  const cEnabled = languageSettings.find((language) => language.id === 'c')?.enabled ?? false
+  const cppEnabled = languageSettings.find((language) => language.id === 'cpp')?.enabled ?? false
 
   const updateLanguageMutation = useMutation({
     mutationFn: (payload: { c_enabled: boolean; cpp_enabled: boolean }) =>
@@ -55,7 +65,7 @@ export function JudgeSettings() {
     },
   })
 
-  const cases = useMemo(() => data || [], [data])
+  const cases = data || []
   const stats = useMemo(() => {
     const hidden = cases.filter((tc) => tc.is_hidden).length
     const totalScore = cases.reduce((sum, tc) => sum + Number(tc.score || 0), 0)
@@ -67,237 +77,259 @@ export function JudgeSettings() {
     }
   }, [cases])
 
-  return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-        <div className="relative px-6 py-7 md:px-8">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_58%,#eff6ff_100%)]" />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Admin</span>
-                <ChevronRight className="h-4 w-4" />
-                <span>Problems</span>
-                <ChevronRight className="h-4 w-4" />
-                <span className="font-medium text-slate-900">Judge Settings</span>
-              </div>
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Test Data & Judge Settings</h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  按 reference 的测试数据页重做，真实交付范围限定为测试用例维护，不扩展不存在的 special judge 和沙箱高级配置。
-                </p>
-              </div>
-            </div>
+  const saveLanguageSettings = (next: { c_enabled?: boolean; cpp_enabled?: boolean }) => {
+    updateLanguageMutation.mutate({
+      c_enabled: next.c_enabled ?? cEnabled,
+      cpp_enabled: next.cpp_enabled ?? cppEnabled,
+    })
+  }
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => refetch()}
-                disabled={!problemId}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </button>
-              <button
-                type="button"
-                onClick={() => createMutation.mutate()}
-                disabled={!problemId || !newInput || !newOutput || createMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save Case
-              </button>
-            </div>
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <Loading message="加载测试数据配置中..." />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Admin Workspace"
+        breadcrumb={['Problems', 'Judge Settings']}
+        title="判题设置"
+        description="只维护真实后端支持的测试用例和语言许可开关。Python 保持默认语言，C / C++ 可在这里按需启用或禁用。"
+        actions={
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => refetch()}
+              disabled={!problemId}
+            >
+              <RefreshCw className="h-4 w-4" />
+              刷新
+            </Button>
+            <Button
+              type="button"
+              onClick={() => createMutation.mutate()}
+              disabled={!problemId || !newInput || !newOutput || createMutation.isPending}
+            >
+              {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              保存测试点
+            </Button>
           </div>
-        </div>
-      </section>
+        }
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Test Cases</span>
-            <Database className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{stats.total}</div>
-          <p className="mt-2 text-sm text-slate-600">当前题目的测试用例总数。</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Visible</span>
-            <Settings2 className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-emerald-600">{stats.visible}</div>
-          <p className="mt-2 text-sm text-slate-600">普通测试点，可用于公开样例和基础评测。</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Hidden</span>
-            <EyeOff className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-amber-600">{stats.hidden}</div>
-          <p className="mt-2 text-sm text-slate-600">隐藏测试点用于真实判题覆盖。</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Total Score</span>
-            <FileArchive className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{stats.totalScore}</div>
-          <p className="mt-2 text-sm text-slate-600">当前测试点分值总和。</p>
-        </div>
+        <StatCard label="Test Cases" value={stats.total} helper="当前题目的测试用例总数" />
+        <StatCard label="Visible" value={stats.visible} helper="普通测试点，可用于公开样例和基础评测" />
+        <StatCard label="Hidden" value={stats.hidden} helper="隐藏测试点用于真实判题覆盖" />
+        <StatCard label="Total Score" value={stats.totalScore} helper="当前测试点分值总和" />
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
-        <aside className="space-y-6">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-950">Problem Selector</div>
-            <p className="mt-1 text-sm leading-6 text-slate-600">先输入题目 ID，再管理对应测试数据。</p>
-            <div className="mt-4 flex gap-3">
-              <input
-                value={problemId}
-                onChange={(e) => setProblemId(e.target.value.trim())}
-                placeholder="输入题目 ID"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-              />
-              <button
-                type="button"
-                onClick={() => refetch()}
-                disabled={!problemId}
-                className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                加载
-              </button>
-            </div>
+      <SurfaceCard className="border-blue-200 bg-blue-50">
+        <div className="flex items-start gap-3">
+          <Database className="mt-1 h-5 w-5 text-blue-700" />
+          <div>
+            <h2 className="text-base font-semibold text-slate-950">Test Data & Judge Settings</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-700">
+              真实交付范围限定为测试用例维护，不扩展不存在的 special judge 和沙箱高级配置。
+            </p>
           </div>
+        </div>
+      </SurfaceCard>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-950">Language Permissions</div>
-            <p className="mt-1 text-sm leading-6 text-slate-600">Python 固定为默认语言，C / C++ 可在这里开启或关闭。</p>
+      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="space-y-6">
+          <SurfaceCard>
+            <div className="space-y-4">
+              <FieldGroup label="题目 ID" description="先输入题目 ID，再管理对应测试数据。">
+                <Input
+                  value={problemId}
+                  onChange={(e) => setProblemId(e.target.value.trim())}
+                  placeholder="输入题目 ID"
+                />
+              </FieldGroup>
+              <Button type="button" onClick={() => refetch()} disabled={!problemId} fullWidth>
+                加载
+              </Button>
+            </div>
+          </SurfaceCard>
+
+          <SurfaceCard>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">Language Permissions</h2>
+                <p className="mt-1 text-sm text-slate-600">Python 固定为默认语言，C / C++ 可在这里开启或关闭。</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">default: python</span>
+            </div>
             <div className="mt-4 space-y-3">
               {languageSettings.map((language) => (
-                <label key={language.id} className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <label
+                  key={language.id}
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+                >
                   <div>
                     <div className="font-semibold text-slate-950">{language.name}</div>
-                    <div className="text-xs text-slate-500">{language.is_default ? 'default language' : 'optional language'}</div>
+                    <div className="text-xs text-slate-500">
+                      {language.is_default ? 'default language' : 'optional language'}
+                    </div>
                   </div>
                   <input
                     type="checkbox"
                     checked={language.enabled}
                     disabled={language.id === 'python' || updateLanguageMutation.isPending}
-                    onChange={(e) =>
-                      updateLanguageMutation.mutate({
-                        c_enabled: language.id === 'c' ? e.target.checked : !!languageSettings.find((item) => item.id === 'c')?.enabled,
-                        cpp_enabled: language.id === 'cpp' ? e.target.checked : !!languageSettings.find((item) => item.id === 'cpp')?.enabled,
-                      })
-                    }
+                    onChange={(e) => {
+                      if (language.id === 'c') {
+                        saveLanguageSettings({ c_enabled: e.target.checked })
+                      }
+                      if (language.id === 'cpp') {
+                        saveLanguageSettings({ cpp_enabled: e.target.checked })
+                      }
+                    }}
                   />
                 </label>
               ))}
             </div>
-          </div>
+          </SurfaceCard>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-950">Add Test Case</div>
-            <div className="mt-4 space-y-4">
-              <textarea
-                value={newInput}
-                onChange={(e) => setNewInput(e.target.value)}
-                placeholder="Input"
-                className="min-h-[120px] w-full rounded-2xl border border-slate-200 px-4 py-3 font-mono text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-              />
-              <textarea
-                value={newOutput}
-                onChange={(e) => setNewOutput(e.target.value)}
-                placeholder="Expected output"
-                className="min-h-[120px] w-full rounded-2xl border border-slate-200 px-4 py-3 font-mono text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-              />
-              <div className="grid grid-cols-2 gap-4">
-                <label className="text-sm">
-                  <span className="text-slate-600">Score</span>
-                  <input
-                    type="number"
-                    value={newScore}
-                    onChange={(e) => setNewScore(Number(e.target.value))}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                  />
-                </label>
-                <label className="flex items-end gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
-                  <input type="checkbox" checked={newHidden} onChange={(e) => setNewHidden(e.target.checked)} />
-                  Hidden case
-                </label>
+          <SurfaceCard className="border-slate-200 bg-slate-50">
+            <div className="flex items-start gap-3">
+              <Settings2 className="mt-1 h-5 w-5 text-slate-700" />
+              <div>
+                <h2 className="text-base font-semibold text-slate-950">交付边界</h2>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  当前页面只保留真实 test case 管理，不扩展额外 judge runtime 开关。
+                </p>
               </div>
             </div>
-          </div>
-        </aside>
+          </SurfaceCard>
+        </div>
 
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          {isLoading ? (
-            <div className="py-16 text-center">
-              <Loading message="加载测试用例中..." />
-            </div>
-          ) : error ? (
-            <div className="px-6 py-14 text-center text-sm text-rose-600">测试用例加载失败</div>
-          ) : (
+        <div className="space-y-6">
+          {problemId ? (
             <>
-              <div className="border-b border-slate-200 px-6 py-5">
-                <h2 className="text-lg font-semibold text-slate-950">Case Table</h2>
-                <p className="mt-1 text-sm text-slate-600">当前只交付真实 test case 管理，不扩展额外 judge runtime 开关。</p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Input</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Output</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Score</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Hidden</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
-                    {cases.map((tc) => (
-                      <tr key={tc.id} className="transition hover:bg-slate-50">
-                        <td className="px-6 py-4 text-sm text-slate-500">{tc.order}</td>
-                        <td className="px-6 py-4 whitespace-pre-wrap font-mono text-sm text-slate-800">{tc.input || '-'}</td>
-                        <td className="px-6 py-4 whitespace-pre-wrap font-mono text-sm text-slate-800">{tc.expected_output || '-'}</td>
-                        <td className="px-6 py-4 text-right text-sm font-medium text-slate-900">{tc.score}</td>
-                        <td className="px-6 py-4 text-center text-sm">{tc.is_hidden ? 'Yes' : 'No'}</td>
-                        <td className="px-6 py-4 text-right">
-                          <button
-                            type="button"
-                            onClick={() => deleteMutation.mutate(tc.id)}
-                            disabled={deleteMutation.isPending}
-                            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-sm font-medium text-rose-600 disabled:opacity-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            删除
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {problemId && cases.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="px-6 py-14 text-center text-sm text-slate-500">
-                          当前题目暂无测试用例
-                        </td>
-                      </tr>
-                    )}
-                    {!problemId && (
-                      <tr>
-                        <td colSpan={6} className="px-6 py-14 text-center text-sm text-slate-500">
-                          先输入题目 ID 再查看测试数据
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              {error ? (
+                <EmptyState
+                  title="测试用例加载失败"
+                  description="当前题目暂时无法读取测试数据。"
+                  action={<Button onClick={() => refetch()}>重试</Button>}
+                />
+              ) : (
+                <>
+                  <SurfaceCard>
+                    <div className="grid gap-4">
+                      <FieldGroup label="Input">
+                        <textarea
+                          value={newInput}
+                          onChange={(e) => setNewInput(e.target.value)}
+                          placeholder="Input"
+                          className="min-h-[120px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                        />
+                      </FieldGroup>
+                      <FieldGroup label="Expected output">
+                        <textarea
+                          value={newOutput}
+                          onChange={(e) => setNewOutput(e.target.value)}
+                          placeholder="Expected output"
+                          className="min-h-[120px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                        />
+                      </FieldGroup>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FieldGroup label="Score">
+                          <Input
+                            type="number"
+                            value={newScore}
+                            onChange={(e) => setNewScore(Number(e.target.value))}
+                          />
+                        </FieldGroup>
+                        <label className="flex items-end gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                          <input type="checkbox" checked={newHidden} onChange={(e) => setNewHidden(e.target.checked)} />
+                          Hidden case
+                        </label>
+                      </div>
+                    </div>
+                  </SurfaceCard>
+
+                  <SurfaceCard className="overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-950">Case Table</h2>
+                        <p className="mt-1 text-sm text-slate-600">当前只交付真实 test case 管理，不扩展额外 judge runtime 开关。</p>
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                        {stats.total} cases
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-slate-200">
+                        <thead className="bg-slate-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">#</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Input</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Output</th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Score</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hidden</th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                          {cases.map((tc) => (
+                            <tr key={tc.id} className="align-top transition hover:bg-slate-50">
+                              <td className="px-4 py-4 text-sm font-medium text-slate-700">{tc.id}</td>
+                              <td className="px-4 py-4">
+                                <pre className="max-w-[22rem] overflow-x-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-3 font-mono text-xs text-slate-700">
+                                  {tc.input}
+                                </pre>
+                              </td>
+                              <td className="px-4 py-4">
+                                <pre className="max-w-[22rem] overflow-x-auto whitespace-pre-wrap break-words rounded-xl bg-slate-50 p-3 font-mono text-xs text-slate-700">
+                                  {tc.expected_output}
+                                </pre>
+                              </td>
+                              <td className="px-4 py-4 text-right text-sm text-slate-700">{tc.score}</td>
+                              <td className="px-4 py-4 text-center text-sm text-slate-700">
+                                {tc.is_hidden ? <EyeOff className="mx-auto h-4 w-4 text-amber-600" /> : 'Visible'}
+                              </td>
+                              <td className="px-4 py-4 text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deleteMutation.mutate(tc.id)}
+                                  disabled={deleteMutation.isPending}
+                                >
+                                  删除
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {cases.length === 0 ? (
+                      <EmptyState
+                        className="border-0 bg-transparent shadow-none"
+                        title="暂无测试用例"
+                        description="当前题目还没有配置测试点。"
+                      />
+                    ) : null}
+                  </SurfaceCard>
+                </>
+              )}
             </>
+          ) : (
+            <EmptyState
+              title="先输入题目 ID"
+              description="判题设置页面需要先定位到某个题目，再读取和维护测试数据。"
+            />
           )}
-        </section>
-      </section>
+        </div>
+      </div>
     </div>
   )
 }

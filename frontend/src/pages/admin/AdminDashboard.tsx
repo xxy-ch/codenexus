@@ -1,159 +1,166 @@
 import { Link } from 'react-router-dom'
 import {
-  Activity,
   ArrowRight,
   BookCopy,
-  ChevronRight,
   FileSearch,
+  FileWarning,
   LayoutGrid,
+  Settings2,
   ShieldAlert,
   SlidersHorizontal,
   Sparkles,
+  Users,
 } from 'lucide-react'
-import { useAuthStore } from '@/store/authStore'
+import { EmptyState } from '@/components/page/EmptyState'
+import { PageHeader } from '@/components/page/PageHeader'
+import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Button } from '@/components/ui/Button'
 import { FEATURE_FLAGS } from '@/services/config'
+import { useAuthStore } from '@/store/authStore'
+import { cn } from '@/lib/utils'
+
+const MODULE_TONE = {
+  slate: 'border-slate-200 bg-slate-50 text-slate-700',
+  blue: 'border-blue-200 bg-blue-50 text-blue-700',
+  emerald: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  amber: 'border-amber-200 bg-amber-50 text-amber-700',
+  rose: 'border-rose-200 bg-rose-50 text-rose-700',
+} as const
 
 export function AdminDashboard() {
   const { user } = useAuthStore()
 
   if (user?.role !== 'admin') {
     return (
-      <div className="py-16 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-500">
-          <ShieldAlert className="h-7 w-7" />
-        </div>
-        <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">访问被拒绝</h2>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">当前账号不具备管理员权限。</p>
-      </div>
+      <EmptyState
+        title="访问被拒绝"
+        description="当前账号不具备管理员权限，无法进入后台工作区。"
+        action={
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600">
+            <ShieldAlert className="h-5 w-5" />
+          </div>
+        }
+      />
     )
   }
 
   const modules = [
     {
+      title: '用户管理',
+      description: '查看账号状态、角色分布和批量建号入口。',
+      href: '/admin/users',
+      icon: Users,
+      tone: 'blue' as const,
+    },
+    {
       title: '题目管理',
-      description: '查看题库状态、通过率和当前交付范围内的发布视图。',
+      description: '维护题库列表、创建新题和基础可见性。',
       href: '/admin/problems',
       icon: BookCopy,
-      tone: 'bg-blue-50 text-blue-700 border-blue-200',
+      tone: 'slate' as const,
     },
     {
       title: '判题设置',
-      description: '维护测试数据、时间空间限制与评测参数。',
+      description: '维护测试点与语言许可，Python 固定默认。',
       href: '/admin/judge-settings',
       icon: SlidersHorizontal,
-      tone: 'bg-amber-50 text-amber-700 border-amber-200',
+      tone: 'amber' as const,
     },
     {
       title: '题面配置',
-      description: '集中编辑题面内容、约束、可见性与说明。',
+      description: '集中编辑题面正文、时空限制、标签和可见性。',
       href: '/admin/problem-content',
       icon: LayoutGrid,
-      tone: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      tone: 'emerald' as const,
+    },
+    {
+      title: '举报管理',
+      description: '处理真实举报记录和内容审核状态流转。',
+      href: '/admin/reports',
+      icon: FileWarning,
+      tone: 'slate' as const,
     },
     ...(FEATURE_FLAGS.plagiarism
       ? [
           {
             title: '相似度配置',
-            description: '调整扫描阈值并发起新的代码相似度任务。',
+            description: '调整阈值、扫描语言并启动新的相似度任务。',
             href: '/admin/similarity-scan',
-            icon: Activity,
-            tone: 'bg-violet-50 text-violet-700 border-violet-200',
+            icon: Settings2,
+            tone: 'blue' as const,
           },
           {
             title: '抄袭报告',
-            description: '查看真实扫描报告、可疑对照和风险详情。',
+            description: '查看真实扫描报告、风险等级和可疑提交对。',
             href: '/admin/plagiarism-reports',
             icon: FileSearch,
-            tone: 'bg-rose-50 text-rose-700 border-rose-200',
+            tone: 'rose' as const,
           },
         ]
       : []),
   ]
 
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-        <div className="relative px-6 py-7 md:px-8">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(37,99,235,0.12),_transparent_38%),linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#eff6ff_100%)]" />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Admin</span>
-                <ChevronRight className="h-4 w-4" />
-                <span className="font-medium text-slate-900">Overview</span>
-              </div>
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">System Overview</h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  管理端当前只暴露已接入真实后端的能力。页面结构按 reference 收拢，但所有入口仍受真实接口边界约束。
-                </p>
-              </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Admin"
+        breadcrumb={['Workspace']}
+        title="管理工作台"
+        description="管理端统一切到当前整站的 flat cold gray-blue 模式。这里只保留真实后端已接通的运营入口，不再展示假模块。"
+        actions={
+          <>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">
+              {modules.length} 个在线模块
             </div>
+            <Button as={Link} to="/admin/problems" variant="primary">
+              进入题目管理
+            </Button>
+          </>
+        }
+      />
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur">
-                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Live Modules</div>
-                <div className="mt-3 text-3xl font-semibold text-slate-950">{modules.length}</div>
-                <div className="mt-1 text-sm text-slate-600">已接入真实后端的管理模块</div>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-950 p-4 text-white shadow-sm">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
-                  <Sparkles className="h-4 w-4" />
-                  Delivery Mode
-                </div>
-                <div className="mt-3 text-2xl font-semibold">Controlled Surface</div>
-                <div className="mt-1 text-sm text-slate-300">无后端支撑的入口已从本次交付面移除</div>
-              </div>
-            </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Modules" value={modules.length} helper="当前已接入真实 API 的管理模块数。" />
+        <StatCard label="Plagiarism" value={FEATURE_FLAGS.plagiarism ? 'Enabled' : 'Disabled'} helper="相似度扫描与报告入口按功能开关显示。" />
+        <StatCard label="Density" value="High" helper="表格、筛选和审核流统一成更紧凑的管理模式。" />
+        <StatCard label="Policy" value="Real API" helper="不改变接口路径、请求语义或响应消费方式。" className="border-blue-200 bg-blue-50" />
+      </div>
+
+      <SurfaceCard tone="muted" className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+            <Sparkles className="h-4 w-4" />
+            Controlled Admin Surface
           </div>
+          <p className="max-w-3xl text-sm leading-6 text-slate-600">
+            这次收口目标是把后台页面统一到新的共享组件体系里，同时保留已有运营能力。不存在真实后端支撑的行为不会被伪造出来。
+          </p>
         </div>
-      </section>
-
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Problem View</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">CRUD</div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">题目管理当前已接通创建、编辑、删除与测试数据维护。</p>
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+          用户、题库、评测、举报和相似度现在都在同一管理壳层中。
         </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Plagiarism</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{FEATURE_FLAGS.plagiarism ? 'Enabled' : 'Disabled'}</div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">相似度扫描和报告页都已经接入真实接口。</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Unsupported</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">2</div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">用户管理和举报管理已从主入口移除。</p>
-        </div>
-        <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Runtime Policy</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">Real API</div>
-          <p className="mt-2 text-sm leading-6 text-blue-900">不再为管理端页面提供用户可见的 mock fallback。</p>
-        </div>
-      </section>
-
-      <section className="rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900">
-        当前后台不是全功能运营平台，而是这次交付范围内的受控后台。不存在真实后端的模块不会继续以假入口形式暴露。
-      </section>
+      </SurfaceCard>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {modules.map((module) => {
           const Icon = module.icon
+
           return (
             <Link
               key={module.href}
               to={module.href}
-              className="group rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
             >
-              <div className={`inline-flex rounded-2xl border px-3 py-3 ${module.tone}`}>
+              <div className={cn('inline-flex rounded-2xl border p-3', MODULE_TONE[module.tone])}>
                 <Icon className="h-5 w-5" />
               </div>
               <div className="mt-5">
                 <h2 className="text-lg font-semibold text-slate-950">{module.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{module.description}</p>
               </div>
-              <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-slate-900 transition group-hover:text-blue-700">
-                Open module
+              <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition group-hover:text-slate-950">
+                打开模块
                 <ArrowRight className="h-4 w-4" />
               </div>
             </Link>

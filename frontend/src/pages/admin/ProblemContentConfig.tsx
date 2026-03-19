@@ -1,13 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { BookText, ChevronRight, Eye, Loader2, Save, Search, Timer, Waypoints } from 'lucide-react'
+import { BookText, Eye, Loader2, Save, Search, Timer, Waypoints } from 'lucide-react'
 import { judgeConfigService, type UpdateProblemContentPayload } from '@/services/judgeConfig'
+import { EmptyState } from '@/components/page/EmptyState'
+import { FieldGroup } from '@/components/page/FieldGroup'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
 
 export function ProblemContentConfig() {
   const [problemId, setProblemId] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string>('')
+  const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [form, setForm] = useState<UpdateProblemContentPayload>({
     title: '',
@@ -65,180 +71,152 @@ export function ProblemContentConfig() {
   const handleSave = () => {
     updateMutation.mutate({
       ...form,
-      tags: tagsText.split(',').map((tag) => tag.trim()).filter(Boolean),
+      tags: tagsText
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean),
     })
   }
 
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-        <div className="relative px-6 py-7 md:px-8">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_58%,#eff6ff_100%)]" />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Admin</span>
-                <ChevronRight className="h-4 w-4" />
-                <span>Problems</span>
-                <ChevronRight className="h-4 w-4" />
-                <span className="font-medium text-slate-900">Problem Content</span>
-              </div>
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Create / Edit Problem</h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  按 reference 的题面配置页重做。当前保持真实后端支持的字段范围: 标题、描述、难度、时空限制、标签与可见性。
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={!problemId || updateMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Admin Workspace"
+        breadcrumb={['Problems', 'Problem Content']}
+        title="题面配置"
+        description="维护真实后端支持的题面字段：标题、描述、难度、时空限制、标签与可见性。"
+        actions={
+          <Button type="button" onClick={handleSave} disabled={!problemId || updateMutation.isPending}>
+            {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            保存修改
+          </Button>
+        }
+      />
 
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-          <div className="relative max-w-lg flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={problemId}
-              onChange={(e) => setProblemId(e.target.value.trim())}
-              placeholder="输入题目 ID"
-              className="w-full rounded-2xl border border-slate-200 py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={loadProblem}
-            disabled={!problemId || loading}
-            className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
-          >
+      <SurfaceCard className="border-slate-200 bg-slate-50">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <FieldGroup label="题目 ID" description="输入题目 ID 后加载题面配置。">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
+                value={problemId}
+                onChange={(e) => setProblemId(e.target.value.trim())}
+                placeholder="输入题目 ID"
+                className="pl-11"
+              />
+            </div>
+          </FieldGroup>
+          <Button type="button" onClick={loadProblem} disabled={!problemId || loading}>
             加载题目
-          </button>
-          {(message || error) && (
-            <div className={`text-sm ${message ? 'text-emerald-600' : 'text-rose-600'}`}>{message || error}</div>
-          )}
+          </Button>
         </div>
-      </section>
+        {(message || error) && (
+          <div className={`mt-4 text-sm ${message ? 'text-emerald-600' : 'text-rose-600'}`}>{message || error}</div>
+        )}
+      </SurfaceCard>
 
       {loading ? (
         <div className="py-16 text-center">
           <Loading message="加载题目中..." />
         </div>
+      ) : !problemId ? (
+        <EmptyState
+          title="先输入题目 ID"
+          description="题面配置页需要先定位到某个题目，再读取和维护真实内容。"
+        />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_380px]">
-          <section className="space-y-6">
-            <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 px-6 py-5">
-                <div className="flex items-center gap-2 text-lg font-semibold text-slate-950">
-                  <BookText className="h-5 w-5 text-blue-600" />
-                  Basic Information
-                </div>
-              </div>
-              <div className="space-y-5 p-6">
-                <label className="block text-sm">
-                  <span className="font-medium text-slate-700">Problem Title</span>
-                  <input
-                    value={form.title || ''}
-                    onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                  />
-                </label>
-                <label className="block text-sm">
-                  <span className="font-medium text-slate-700">Description</span>
-                  <textarea
-                    value={form.description || ''}
-                    onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                    className="mt-2 min-h-[360px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                    placeholder="输入 Markdown 题面内容"
-                  />
-                </label>
-              </div>
+          <SurfaceCard>
+            <div className="flex items-center gap-2 text-lg font-semibold text-slate-950">
+              <BookText className="h-5 w-5 text-slate-700" />
+              基础信息
             </div>
-          </section>
+            <div className="mt-5 space-y-5">
+              <FieldGroup label="题目标题">
+                <Input
+                  value={form.title || ''}
+                  onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
+                />
+              </FieldGroup>
+              <FieldGroup label="题目描述">
+                <textarea
+                  value={form.description || ''}
+                  onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                  className="min-h-[360px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  placeholder="输入 Markdown 题面内容"
+                />
+              </FieldGroup>
+            </div>
+          </SurfaceCard>
 
-          <aside className="space-y-6">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="space-y-6">
+            <SurfaceCard>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Waypoints className="h-4 w-4 text-emerald-600" />
+                <Waypoints className="h-4 w-4 text-emerald-700" />
                 Metadata
               </div>
               <div className="mt-4 space-y-4">
-                <label className="block text-sm">
-                  <span className="text-slate-600">Difficulty</span>
+                <FieldGroup label="Difficulty">
                   <select
                     value={form.difficulty || 'easy'}
                     onChange={(e) => setForm((prev) => ({ ...prev, difficulty: e.target.value }))}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
                   >
                     <option value="easy">easy</option>
                     <option value="medium">medium</option>
                     <option value="hard">hard</option>
                   </select>
-                </label>
-                <label className="block text-sm">
-                  <span className="text-slate-600">Tags</span>
-                  <input
+                </FieldGroup>
+                <FieldGroup label="Tags">
+                  <Input
                     value={tagsText}
                     onChange={(e) => setTagsText(e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
                     placeholder="graph, shortest-path"
                   />
-                </label>
+                </FieldGroup>
               </div>
-            </div>
+            </SurfaceCard>
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <SurfaceCard>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Timer className="h-4 w-4 text-amber-600" />
+                <Timer className="h-4 w-4 text-amber-700" />
                 Resource Limits
               </div>
               <div className="mt-4 grid gap-4">
-                <label className="block text-sm">
-                  <span className="text-slate-600">Time Limit (ms)</span>
-                  <input
+                <FieldGroup label="Time Limit (ms)">
+                  <Input
                     type="number"
                     value={form.time_limit || 1000}
                     onChange={(e) => setForm((prev) => ({ ...prev, time_limit: Number(e.target.value) }))}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
                   />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-slate-600">Memory Limit (MB)</span>
-                  <input
+                </FieldGroup>
+                <FieldGroup label="Memory Limit (MB)">
+                  <Input
                     type="number"
                     value={form.memory_limit || 256}
                     onChange={(e) => setForm((prev) => ({ ...prev, memory_limit: Number(e.target.value) }))}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
                   />
-                </label>
+                </FieldGroup>
               </div>
-            </div>
+            </SurfaceCard>
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <SurfaceCard>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Eye className="h-4 w-4 text-violet-600" />
+                <Eye className="h-4 w-4 text-violet-700" />
                 Visibility
               </div>
               <div className="mt-4 space-y-4">
-                <select
-                  value={form.visibility || 'private'}
-                  onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value }))}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                >
-                  <option value="private">private</option>
-                  <option value="public">public</option>
-                </select>
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <FieldGroup label="Visibility">
+                  <select
+                    value={form.visibility || 'private'}
+                    onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value }))}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  >
+                    <option value="private">private</option>
+                    <option value="public">public</option>
+                  </select>
+                </FieldGroup>
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                   <input
                     type="checkbox"
                     checked={!!form.is_public}
@@ -247,8 +225,8 @@ export function ProblemContentConfig() {
                   公开题目
                 </label>
               </div>
-            </div>
-          </aside>
+            </SurfaceCard>
+          </div>
         </div>
       )}
     </div>

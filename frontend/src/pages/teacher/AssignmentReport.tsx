@@ -1,43 +1,253 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { AlertCircle, ArrowUpRight, BarChart3, BookOpen, ChevronRight, Download, FileSpreadsheet, GraduationCap, Search, Users } from 'lucide-react'
-import { classesService } from '@/services/classes'
+import {
+  ArrowDownToLine,
+  CalendarDays,
+  Filter,
+  RefreshCw,
+  School2,
+  Search,
+} from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/page/EmptyState'
+import { FieldGroup } from '@/components/page/FieldGroup'
+import { FilterBar } from '@/components/page/FilterBar'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Loading } from '@/components/ui/Loading'
+import { classesService, type AssignmentSubmissionItem, type ClassStudentItem } from '@/services/classes'
+import { cn, formatDateTime } from '@/lib/utils'
 
-function formatDate(value?: string) {
-  if (!value) return 'N/A'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'N/A'
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  })
+interface ReportRow {
+  student: ClassStudentItem
+  submissions: AssignmentSubmissionItem[]
+  bestSubmission: AssignmentSubmissionItem | null
+  latestSubmission: AssignmentSubmissionItem | null
+}
+
+const DEFAULT_LIMIT = 20
+
+function buildBestSubmission(submissions: AssignmentSubmissionItem[]) {
+  return submissions.reduce<AssignmentSubmissionItem | null>((best, candidate) => {
+    if (!best) return candidate
+    if (candidate.score > best.score) return candidate
+    if (candidate.score < best.score) return best
+
+    const candidateTime = new Date(candidate.submitted_at).getTime()
+    const bestTime = new Date(best.submitted_at).getTime()
+    return candidateTime >= bestTime ? candidate : best
+  }, null)
+}
+
+function buildLatestSubmission(submissions: AssignmentSubmissionItem[]) {
+  return submissions.reduce<AssignmentSubmissionItem | null>((latest, candidate) => {
+    if (!latest) return candidate
+    const latestTime = new Date(latest.submitted_at).getTime()
+    const candidateTime = new Date(candidate.submitted_at).getTime()
+    return candidateTime >= latestTime ? candidate : latest
+  }, null)
+}
+
+function getRowStatus(row: ReportRow, assignmentPoints: number) {
+  if (!row.bestSubmission) return '未提交'
+  if (row.bestSubmission.score >= assignmentPoints) return '高分通过'
+  if (row.bestSubmission.is_late) return '已逾期'
+  return '已提交'
+}
+
+function escapeCsvCell(value: unknown) {
+  const text = value == null ? '' : String(value)
+  if (/["\n,]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`
+  }
+  return text
+}
+
+function downloadCsv(filename: string, rows: string[][]) {
+  const csv = rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.style.display = 'none'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}
+
+function TableCell({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <td className={cn('px-4 py-3 text-sm text-slate-600', className)}>{children}</td>
 }
 
 export function AssignmentReport() {
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null)
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<number | null>(null)
+  const limit = DEFAULT_LIMIT
+
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['assignment-report-classes'],
-    queryFn: () => classesService.getClasses(1, 10),
+    queryKey: ['assignment-report-classes', page, limit],
+    queryFn: () => classesService.getClasses(page, limit),
   })
 
   const classes = data?.classes || []
+  const total = data?.total || 0
+  const totalPages = Math.max(1, Math.ceil(total / limit))
 
-  const summary = useMemo(() => {
-    const totalStudents = classes.reduce((sum, cls) => sum + Number(cls.student_count || 0), 0)
-    const averageClassSize = classes.length > 0 ? Math.round(totalStudents / classes.length) : 0
-    const mostRecentClass = [...classes].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )[0]
+  const filteredClasses = useMemo(() => {
+    const keyword = search.trim().toLowerCase()
+    if (!keyword) return classes
+    return classes.filter((item) =>
+      [item.name, item.semester || '', item.enrollment_code || '', String(item.id)].some((value) =>
+        value.toLowerCase().includes(keyword),
+      ),
+    )
+  }, [classes, search])
+
+  useEffect(() => {
+    if (filteredClasses.length === 0) {
+      setSelectedClassId(null)
+      return
+    }
+
+    const nextSelectedClass =
+      filteredClasses.find((item) => item.id === selectedClassId) ?? filteredClasses[0]
+    if (nextSelectedClass && nextSelectedClass.id !== selectedClassId) {
+      setSelectedClassId(nextSelectedClass.id)
+    }
+  }, [filteredClasses, selectedClassId])
+
+  const highlightedClass = filteredClasses.find((item) => item.id === selectedClassId) ?? null
+
+  const { data: students = [], isLoading: studentsLoading } = useQuery({
+    queryKey: ['assignment-report-students', highlightedClass?.id],
+    queryFn: () => classesService.getClassStudents(highlightedClass!.id),
+    enabled: !!highlightedClass?.id,
+  })
+
+  const { data: assignments = [], isLoading: assignmentsLoading } = useQuery({
+    queryKey: ['assignment-report-assignments', highlightedClass?.id],
+    queryFn: () => classesService.listAssignments(highlightedClass!.id),
+    enabled: !!highlightedClass?.id,
+  })
+
+  useEffect(() => {
+    if (assignments.length === 0) {
+      setSelectedAssignmentId(null)
+      return
+    }
+
+    if (!selectedAssignmentId || !assignments.some((assignment) => assignment.id === selectedAssignmentId)) {
+      setSelectedAssignmentId(assignments[0].id)
+    }
+  }, [assignments, selectedAssignmentId])
+
+  const activeAssignmentId = selectedAssignmentId ?? assignments[0]?.id ?? null
+
+  const { data: assignmentSubmissions = [], isLoading: submissionsLoading } = useQuery({
+    queryKey: ['assignment-report-submissions', activeAssignmentId],
+    queryFn: () => classesService.getAssignmentSubmissions(activeAssignmentId!),
+    enabled: !!activeAssignmentId,
+  })
+
+  const reportRows = useMemo<ReportRow[]>(() => {
+    const submissionMap = new Map<string, AssignmentSubmissionItem[]>()
+
+    assignmentSubmissions.forEach((submission) => {
+      const items = submissionMap.get(submission.user_id) ?? []
+      items.push(submission)
+      submissionMap.set(submission.user_id, items)
+    })
+
+    return students.map((student) => {
+      const submissions = (submissionMap.get(student.student_id) ?? []).slice().sort((a, b) => {
+        if (a.score !== b.score) return a.score - b.score
+        return new Date(a.submitted_at).getTime() - new Date(b.submitted_at).getTime()
+      })
+
+      return {
+        student,
+        submissions,
+        bestSubmission: buildBestSubmission(submissions),
+        latestSubmission: buildLatestSubmission(submissions),
+      }
+    })
+  }, [assignmentSubmissions, students])
+
+  const stats = useMemo(() => {
+    const bestSubmissions = reportRows
+      .map((row) => row.bestSubmission)
+      .filter(Boolean) as AssignmentSubmissionItem[]
+    const submittedStudents = reportRows.filter((row) => row.bestSubmission).length
+    const lateBestCount = bestSubmissions.filter((submission) => submission.is_late).length
+    const totalStudents = reportRows.length
+    const averageBestScore =
+      totalStudents > 0
+        ? Math.round(reportRows.reduce((sum, row) => sum + Number(row.bestSubmission?.score || 0), 0) / totalStudents)
+        : 0
+    const onTimeRate =
+      submittedStudents > 0 ? Math.round(((submittedStudents - lateBestCount) / submittedStudents) * 100) : 0
 
     return {
-      totalClasses: classes.length,
+      totalClasses: total,
       totalStudents,
-      averageClassSize,
-      mostRecentClass,
-      activeSemesters: Array.from(new Set(classes.map((cls) => cls.semester).filter(Boolean))).length,
+      submittedStudents,
+      completionRate: totalStudents > 0 ? Math.round((submittedStudents / totalStudents) * 100) : 0,
+      averageBestScore,
+      onTimeRate,
     }
-  }, [classes])
+  }, [reportRows, total])
+
+  const selectedAssignment = assignments.find((item) => item.id === activeAssignmentId) ?? null
+
+  const handleExport = () => {
+    if (!highlightedClass) return
+
+    const rows: string[][] = [
+      [
+        'class_id',
+        'class_name',
+        'assignment_id',
+        'problem_id',
+        'student_id',
+        'username',
+        'email',
+        'submission_count',
+        'best_score',
+        'latest_submission_time',
+        'overdue',
+        'status',
+      ],
+      ...reportRows.map((row) => {
+        const best = row.bestSubmission
+        const latest = row.latestSubmission
+        return [
+          highlightedClass.id,
+          highlightedClass.name,
+          selectedAssignment?.id ?? '',
+          selectedAssignment?.problem_id ?? '',
+          row.student.student_id,
+          row.student.username,
+          row.student.email,
+          row.submissions.length,
+          best?.score ?? '',
+          latest?.submitted_at ? formatDateTime(latest.submitted_at) : '',
+          best ? (best.is_late ? 'true' : 'false') : '',
+          getRowStatus(row, selectedAssignment?.points ?? 100),
+        ]
+      }),
+    ]
+
+    downloadCsv(
+      `assignment-report-class-${highlightedClass.id}-assignment-${selectedAssignment?.id ?? 'all'}.csv`,
+      rows,
+    )
+  }
 
   if (isLoading) {
     return (
@@ -49,182 +259,270 @@ export function AssignmentReport() {
 
   if (error) {
     return (
-      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-rose-600">
-          <AlertCircle className="h-5 w-5" />
-        </div>
-        <h2 className="mt-4 text-lg font-semibold text-slate-950">作业报告加载失败</h2>
-        <p className="mt-2 text-sm text-slate-600">当前无法读取班级数据，不能展示假的分析结果。</p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="mt-5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-        >
-          重试
-        </button>
-      </div>
+      <EmptyState
+        title="作业报告加载失败"
+        description="当前无法读取班级和作业数据，页面不会展示假统计。"
+        action={
+          <Button type="button" onClick={() => refetch()}>
+            重试
+          </Button>
+        }
+      />
     )
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <span>Teacher Workspace</span>
-              <ChevronRight className="h-4 w-4" />
-              <span>Classes</span>
-              <ChevronRight className="h-4 w-4" />
-              <span className="font-medium text-slate-900">Assignment Report</span>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Teacher Workspace"
+        breadcrumb={['Classes', 'Assignment Report']}
+        title="作业报告"
+        description="基于真实班级、作业、学生和提交数据生成的报表页。最佳成绩按最高分取，同分时采用更晚提交；CSV 导出会按当前筛选范围生成。"
+        actions={
+          <>
+            <Button variant="outline" onClick={() => refetch()}>
+              <RefreshCw className="h-4 w-4" />
+              刷新
+            </Button>
+            <Button variant="primary" onClick={handleExport} disabled={!highlightedClass}>
+              <ArrowDownToLine className="h-4 w-4" />
+              导出 CSV
+            </Button>
+          </>
+        }
+      />
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Classes" value={stats.totalClasses} helper="当前报告可见班级数" />
+        <StatCard label="Students" value={stats.totalStudents} helper="当前班级学生总数" />
+        <StatCard label="Submitted" value={stats.submittedStudents} helper="至少有一次提交的学生数" />
+        <StatCard
+          label="Completion"
+          value={`${stats.completionRate}%`}
+          helper={`Average Best ${stats.averageBestScore} · On-time ${stats.onTimeRate}%`}
+        />
+      </section>
+
+      <FilterBar>
+        <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1.3fr)_minmax(220px,0.7fr)_minmax(220px,0.7fr)]">
+          <div className="space-y-2 text-sm min-w-0">
+            <label className="block font-medium text-slate-700">搜索班级</label>
+            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+              <Search className="h-4 w-4 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="班级名称 / 学期 / 邀请码"
+                className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+              />
             </div>
+          </div>
+          <FieldGroup label="班级">
+            <select
+              aria-label="select class"
+              value={highlightedClass?.id ?? ''}
+              onChange={(e) => setSelectedClassId(Number(e.target.value))}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            >
+              <option value="" disabled>
+                请选择班级
+              </option>
+              {filteredClasses.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </FieldGroup>
+          <FieldGroup label="作业">
+            <select
+              aria-label="select assignment"
+              value={activeAssignmentId ?? ''}
+              onChange={(e) => setSelectedAssignmentId(Number(e.target.value))}
+              disabled={assignments.length === 0}
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100"
+            >
+              <option value="" disabled>
+                {assignments.length === 0 ? '暂无作业' : '请选择作业'}
+              </option>
+              {assignments.map((assignment) => (
+                <option key={assignment.id} value={assignment.id}>
+                  Problem #{assignment.problem_id} · {formatDateTime(assignment.deadline)}
+                </option>
+              ))}
+            </select>
+          </FieldGroup>
+        </div>
+
+        <div className="flex items-center gap-3 text-sm text-slate-500">
+          <Filter className="h-4 w-4" />
+          <span>
+            {page} / {totalPages}
+          </span>
+          <Button type="button" variant="outline" size="sm" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page <= 1}>
+            上一页
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} disabled={page >= totalPages}>
+            下一页
+          </Button>
+        </div>
+      </FilterBar>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Assignment Performance Report</h1>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                参考稿里的分析页结构已经落到真实数据上。当前报告只使用仓库中真实可用的班级与学生统计，不再渲染不存在的作业明细。
+              <h2 className="text-lg font-semibold text-slate-950">学生报表</h2>
+              <p className="mt-1 text-sm text-slate-600">
+                {highlightedClass ? `${highlightedClass.name} · ${selectedAssignment ? `Problem #${selectedAssignment.problem_id}` : '暂无作业'}` : '请选择班级'}
               </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-            >
-              <Search className="h-4 w-4" />
-              Refresh
-            </button>
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-            >
-              <Download className="h-4 w-4" />
-              Export Snapshot
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Classes</span>
-            <GraduationCap className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{summary.totalClasses}</div>
-          <p className="mt-2 text-sm text-slate-600">当前报告覆盖的教学班级数。</p>
-        </div>
-
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Students</span>
-            <Users className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{summary.totalStudents}</div>
-          <p className="mt-2 text-sm text-slate-600">按班级统计聚合得到的学生总数。</p>
-        </div>
-
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Average Size</span>
-            <BarChart3 className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{summary.averageClassSize}</div>
-          <p className="mt-2 text-sm text-slate-600">每个班级的平均学生规模。</p>
-        </div>
-
-        <div className="rounded-[28px] border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Semesters</span>
-            <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{summary.activeSemesters}</div>
-          <p className="mt-2 text-sm text-emerald-800">当前覆盖的学期分布。</p>
-        </div>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.8fr)]">
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-950">Class Coverage</h2>
-              <p className="mt-1 text-sm text-slate-600">用真实班级数据替代静态作业明细，先交付稳定可用的班级报告视图。</p>
             </div>
             <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-medium uppercase tracking-[0.22em] text-slate-500">
               Live Data
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Class</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Semester</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Students</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Created</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {classes.map((cls) => (
-                  <tr key={cls.id} className="transition hover:bg-slate-50">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-950">{cls.name}</div>
-                      <div className="mt-1 text-xs text-slate-500">Teacher ID: {cls.teacher_id}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{cls.semester || 'Unassigned'}</td>
-                    <td className="px-6 py-4">
-                      <div className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
-                        {cls.student_count ?? 0} students
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-600">{formatDate(cls.created_at)}</td>
-                    <td className="px-6 py-4 text-right">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                        <ArrowUpRight className="h-3.5 w-3.5" />
-                        Active
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-                {classes.length === 0 && (
+          {studentsLoading || assignmentsLoading || submissionsLoading ? (
+            <div className="flex min-h-[260px] items-center justify-center">
+              <Loading message="聚合教学数据..." />
+            </div>
+          ) : assignments.length === 0 ? (
+            <EmptyState
+              className="rounded-none border-0 shadow-none"
+              title="当前班级暂无作业"
+              description="先为这个班级创建并发布作业，再查看真实报表。"
+            />
+          ) : reportRows.length === 0 ? (
+            <EmptyState
+              className="rounded-none border-0 shadow-none"
+              title="当前班级暂无学生或提交"
+              description="添加学生并为该班级创建作业后，这里会显示真实的最佳成绩与逾期信息。"
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-slate-500">
-                      当前没有可用于生成报告的班级数据。
-                    </td>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Student</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Submissions</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Best Score</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Latest Submission</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Overdue</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {reportRows.map((row) => (
+                    <tr key={row.student.student_id} className="transition hover:bg-slate-50">
+                      <TableCell className="font-medium text-slate-900">
+                        <div>{row.student.username}</div>
+                        <div className="mt-1 text-xs text-slate-500">{row.student.student_id}</div>
+                      </TableCell>
+                      <TableCell>{row.student.email}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+                          {row.submissions.length}
+                        </span>
+                      </TableCell>
+                      <TableCell className="font-semibold text-slate-900">
+                        {row.bestSubmission ? row.bestSubmission.score : '—'}
+                      </TableCell>
+                      <TableCell>
+                        {row.latestSubmission ? formatDateTime(row.latestSubmission.submitted_at) : '—'}
+                      </TableCell>
+                      <TableCell>
+                        {row.bestSubmission ? (row.bestSubmission.is_late ? `Yes (${row.bestSubmission.late_days}d)` : 'No') : '—'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span
+                          className={cn(
+                            'inline-flex rounded-full px-3 py-1 text-xs font-semibold',
+                            getRowStatus(row, selectedAssignment?.points ?? 100) === '高分通过' && 'bg-emerald-50 text-emerald-700',
+                            getRowStatus(row, selectedAssignment?.points ?? 100) === '已逾期' && 'bg-amber-50 text-amber-700',
+                            getRowStatus(row, selectedAssignment?.points ?? 100) === '已提交' && 'bg-sky-50 text-sky-700',
+                            getRowStatus(row, selectedAssignment?.points ?? 100) === '未提交' && 'bg-slate-100 text-slate-600',
+                          )}
+                        >
+                          {getRowStatus(row, selectedAssignment?.points ?? 100)}
+                        </span>
+                      </TableCell>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </section>
 
         <aside className="space-y-6">
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-              <BookOpen className="h-4 w-4" />
-              Reporting Scope
-            </div>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-              <li>当前只展示已落库的班级和班级规模数据。</li>
-              <li>未落地的作业提交细粒度分析不再用假数据补齐。</li>
-              <li>后续若补齐 assignment submissions，再扩展此页的维度。</li>
-            </ul>
-          </section>
+          <SectionBlock
+            title="当前选择"
+            description="班级和作业切换都绑定真实数据，不再渲染静态分析面板。"
+          >
+            {highlightedClass ? (
+              <div className="space-y-4">
+                <SurfaceCard tone="muted" className="p-4 shadow-none">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                    <School2 className="h-4 w-4 text-sky-700" />
+                    班级信息
+                  </div>
+                  <dl className="mt-4 grid gap-3 text-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-slate-500">Name</dt>
+                      <dd className="font-medium text-slate-900">{highlightedClass.name}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-slate-500">Semester</dt>
+                      <dd className="font-medium text-slate-900">{highlightedClass.semester || '未设置'}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-slate-500">Invite Code</dt>
+                      <dd className="font-mono text-sky-700">{highlightedClass.enrollment_code || '—'}</dd>
+                    </div>
+                  </dl>
+                </SurfaceCard>
 
-          <section className="rounded-[28px] border border-slate-200 bg-slate-900 p-6 text-white shadow-sm">
-            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">Most Recent Class</div>
-            <div className="mt-4 text-2xl font-semibold">
-              {summary.mostRecentClass?.name || 'No class data'}
-            </div>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              {summary.mostRecentClass
-                ? `创建于 ${formatDate(summary.mostRecentClass.created_at)}，当前记录 ${summary.mostRecentClass.student_count ?? 0} 名学生。`
-                : '当前没有最近创建班级可供分析。'}
-            </p>
-          </section>
+                <SurfaceCard tone="muted" className="p-4 shadow-none">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                    <CalendarDays className="h-4 w-4 text-sky-700" />
+                    作业信息
+                  </div>
+                  <dl className="mt-4 grid gap-3 text-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-slate-500">Assignment</dt>
+                      <dd className="font-medium text-slate-900">{selectedAssignment ? `#${selectedAssignment.id}` : '—'}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-slate-500">Problem</dt>
+                      <dd className="font-medium text-slate-900">{selectedAssignment ? `#${selectedAssignment.problem_id}` : '—'}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-slate-500">Deadline</dt>
+                      <dd className="font-medium text-slate-900">{selectedAssignment ? formatDateTime(selectedAssignment.deadline) : '—'}</dd>
+                    </div>
+                  </dl>
+                </SurfaceCard>
+              </div>
+            ) : (
+              <EmptyState
+                className="border-0 p-0 shadow-none"
+                title="请选择班级"
+                description="先从左侧筛选一个班级，再查看该班级的学生和作业完成情况。"
+              />
+            )}
+          </SectionBlock>
+
+          <SectionBlock
+            title="导出说明"
+            description="导出的 CSV 按当前班级和作业筛选结果生成。"
+          >
+            <ul className="space-y-3 text-sm leading-6 text-slate-600">
+              <li>最佳成绩按分数最高优先，同分取更晚提交。</li>
+              <li>逾期判断取最佳成绩那次提交的逾期状态。</li>
+              <li>没有提交的学生仍会保留在表格中，便于定位未完成情况。</li>
+            </ul>
+          </SectionBlock>
         </aside>
       </div>
     </div>
