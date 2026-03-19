@@ -1,11 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, RefreshCw, Save, Send, Tags } from 'lucide-react'
-import { blogApi } from '@/services/communityApi'
-import type { UpdateArticleRequest } from '@/types/community'
+import { ArrowLeft, RefreshCw, Save, Send, Tag } from 'lucide-react'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
+import { ActionBar } from '@/components/page/ActionBar'
+import { FieldGroup } from '@/components/page/FieldGroup'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
 import { useAuth } from '@/hooks/useAuth'
+import { blogApi } from '@/services/communityApi'
+import type { UpdateArticleRequest } from '@/types/community'
 
 export function EditArticle() {
   const { slug } = useParams<{ slug: string }>()
@@ -47,7 +54,7 @@ export function EditArticle() {
     }
 
     fetchArticle()
-  }, [slug, user, navigate])
+  }, [slug, user?.id, navigate])
 
   const handleAddTag = () => {
     const tag = tagInput.trim()
@@ -93,177 +100,161 @@ export function EditArticle() {
 
   return (
     <div className="space-y-6">
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_32%),linear-gradient(135deg,#eff6ff_0%,#ecfeff_42%,#ffffff_100%)] px-6 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.22),_transparent_32%),linear-gradient(135deg,#0f172a_0%,#111827_48%,#020617_100%)]">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => navigate(slug ? `/blog/${slug}` : '/blog')}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                Back To Article
-              </button>
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Edit Article</h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                  在同一篇文章上继续迭代标题、标签和正文。当前交付仍基于真实博客更新接口，不额外引入草稿版本系统。
-                </p>
-              </div>
-            </div>
+      <PageHeader
+        eyebrow="Community"
+        breadcrumb={['Blog', slug || 'Article', 'Edit']}
+        title="Revise Article"
+        description="围绕同一篇文章继续修改标题、正文和发布状态。仍然只调用现有文章详情与更新接口，不引入额外版本流。"
+        actions={
+          <Button variant="outline" onClick={() => navigate(slug ? `/blog/${slug}` : '/blog')}>
+            <ArrowLeft className="h-4 w-4" />
+            Back To Article
+          </Button>
+        }
+      />
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Status</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{isPublished ? 'Published' : 'Draft'}</p>
-              </div>
-              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Tags</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{tags.length}</p>
-              </div>
-              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Title</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{title.length}/500</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <SurfaceCard className="space-y-2 p-5">
+          <p className="text-sm font-medium text-slate-500">Current State</p>
+          <p className="text-2xl font-semibold text-slate-950">{isPublished ? 'Published' : 'Draft'}</p>
+          <p className="text-sm text-slate-600">保存草稿时会覆盖回 `is_published: false`。</p>
+        </SurfaceCard>
+        <SurfaceCard className="space-y-2 p-5">
+          <p className="text-sm font-medium text-slate-500">Tags</p>
+          <p className="text-2xl font-semibold text-slate-950">{tags.length}</p>
+          <p className="text-sm text-slate-600">沿用原数组字段提交</p>
+        </SurfaceCard>
+        <SurfaceCard className="space-y-2 p-5">
+          <p className="text-sm font-medium text-slate-500">Title Length</p>
+          <p className="text-2xl font-semibold text-slate-950">{title.length}</p>
+          <p className="text-sm text-slate-600">更新时会保持标题 trim 逻辑</p>
+        </SurfaceCard>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-medium">标题</label>
-              <input
-                type="text"
+        <SectionBlock
+          title="Editing Workspace"
+          description="把编辑主任务压缩成标题与正文两块，减少边缘说明和视觉噪音。"
+        >
+          <div className="space-y-5">
+            <FieldGroup label="Article title" description="仍以当前 slug 对应文章为更新目标。">
+              <Input
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-xl border px-4 py-3 text-lg"
+                onChange={(event) => setTitle(event.target.value)}
                 maxLength={500}
               />
-            </div>
+            </FieldGroup>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">正文</label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-700">Article body</label>
               <EditorWithPreview
                 value={content}
                 onChange={setContent}
-                placeholder="Write your article in Markdown..."
+                placeholder="Revise the article body in Markdown."
               />
             </div>
           </div>
-        </div>
+        </SectionBlock>
 
-        <div className="space-y-4">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <div className="mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
-              <Tags className="h-4 w-4" />
-              <h2 className="text-lg font-semibold">Metadata</h2>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium">分类</label>
-                <input
-                  type="text"
+        <div className="space-y-6">
+          <SectionBlock
+            title="Metadata"
+            description="这些值仍按原样映射到更新 payload。"
+          >
+            <div className="space-y-5">
+              <FieldGroup label="Category" description="可留空，仍会回落成 undefined。">
+                <Input
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full rounded-xl border px-4 py-3"
+                  onChange={(event) => setCategory(event.target.value)}
                 />
-              </div>
+              </FieldGroup>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium">标签</label>
+              <FieldGroup label="Add tag" description="重复标签不会加入，点击已有标签可移除。">
                 <div className="flex gap-2">
-                  <input
-                    type="text"
+                  <Input
+                    aria-label="Add tag"
                     value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
+                    onChange={(event) => setTagInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
                         handleAddTag()
                       }
                     }}
-                    className="flex-1 rounded-xl border px-4 py-3"
+                    placeholder="editorial"
                   />
-                  <button
-                    type="button"
-                    onClick={handleAddTag}
-                    className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white dark:bg-white dark:text-slate-950"
-                  >
-                    Add
-                  </button>
+                  <Button variant="outline" onClick={handleAddTag} className="shrink-0">
+                    <Tag className="h-4 w-4" />
+                    Add Tag
+                  </Button>
                 </div>
-                {tags.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {tags.map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => handleRemoveTag(tag)}
-                        className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                      >
-                        #{tag}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              </FieldGroup>
 
-              <label className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-4 dark:bg-slate-900">
+              {tags.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+                    >
+                      <Tag className="h-3.5 w-3.5" />
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              <label className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                 <div>
-                  <p className="font-medium text-slate-900 dark:text-white">立即发布</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">关闭后保存为草稿状态</p>
+                  <p className="text-sm font-medium text-slate-950">Publish immediately</p>
+                  <p className="mt-1 text-sm text-slate-600">关闭后会按现有行为保存为草稿。</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={isPublished}
-                  onChange={(e) => setIsPublished(e.target.checked)}
-                  className="h-4 w-4"
+                  onChange={(event) => setIsPublished(event.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-slate-300"
                 />
               </label>
             </div>
-          </div>
+          </SectionBlock>
 
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/60">
-            <p className="text-sm font-medium text-slate-900 dark:text-white">交付边界</p>
-            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              当前编辑页支持标题、分类、标签和正文更新。不包含修订历史、多人协同和富媒体资源管理。
-            </p>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => navigate(slug ? `/blog/${slug}` : '/blog')}
-              className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium dark:border-slate-700"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSubmit(false)}
-              disabled={submitting || !title.trim() || !content.trim()}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium disabled:opacity-50"
-            >
-              {submitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {submitting ? 'Saving...' : 'Save Draft'}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleSubmit(true)}
-              disabled={submitting || !title.trim() || !content.trim()}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-slate-950"
-            >
-              <Send className="h-4 w-4" />
-              {submitting ? 'Publishing...' : 'Save & Publish'}
-            </button>
-          </div>
+          <SurfaceCard tone="muted" className="space-y-3 p-5">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-950">
+              <RefreshCw className="h-4 w-4 text-slate-500" />
+              Scope
+            </div>
+            <div className="space-y-2 text-sm leading-6 text-slate-600">
+              <p>保留原有鉴权判断和 slug 跳转。</p>
+              <p>不增加版本历史、评论预审或多作者协同。</p>
+            </div>
+          </SurfaceCard>
         </div>
       </div>
+
+      <ActionBar>
+        <Button variant="ghost" onClick={() => navigate(slug ? `/blog/${slug}` : '/blog')}>
+          Cancel
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => handleSubmit(false)}
+          disabled={submitting || !title.trim() || !content.trim()}
+          aria-label="Save article"
+        >
+          {submitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {submitting ? 'Saving...' : 'Save Article'}
+        </Button>
+        <Button
+          onClick={() => handleSubmit(true)}
+          disabled={submitting || !title.trim() || !content.trim()}
+        >
+          <Send className="h-4 w-4" />
+          {submitting ? 'Publishing...' : 'Publish Article'}
+        </Button>
+      </ActionBar>
     </div>
   )
 }
