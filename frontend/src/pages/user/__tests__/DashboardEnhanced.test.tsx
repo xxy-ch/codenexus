@@ -100,6 +100,15 @@ describe('DashboardEnhanced', () => {
     })
 
     vi.clearAllMocks()
+    vi.mocked(usersService.getUserActivity).mockResolvedValue([])
+    vi.mocked(usersService.getRecommendedProblems).mockResolvedValue([])
+    vi.mocked(problemsService.getProblems).mockResolvedValue({
+      problems: [],
+      total: 0,
+      page: 1,
+      limit: 20,
+      pages: 1,
+    })
   })
 
   const renderComponent = () => {
@@ -131,7 +140,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/7.*天|streak/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/7.*天|streak/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -175,7 +184,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/学习进度|activity|progress/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /学习节奏|最近 7 天|activity/i })).toBeInTheDocument()
       })
     })
 
@@ -185,7 +194,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/最近7天|last 7 days|past week/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/最近 7 天|last 7 days|past week/i).length).toBeGreaterThan(0)
       })
     })
   })
@@ -262,8 +271,8 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/提交|submission|accepted/i)).toBeInTheDocument()
-        expect(screen.getByText(/注册|registration|contest/i)).toBeInTheDocument()
+        expect(screen.getByText(/^提交 · Accepted$/)).toBeInTheDocument()
+        expect(screen.getByText(/^竞赛报名$/)).toBeInTheDocument()
       })
     })
 
@@ -274,7 +283,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/10:30|jan.*12/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/2024|01\/12|1\/12/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -318,7 +327,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/每日挑战|daily challenge/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /今日建议|daily challenge/i })).toBeInTheDocument()
       })
     })
   })
@@ -389,7 +398,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        const retryButton = screen.getByText(/重试|retry/i)
+        const retryButton = screen.getByRole('button', { name: /重试|retry/i })
         expect(retryButton).toBeInTheDocument()
       })
     })
@@ -428,7 +437,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/45.*题|solved/i)).toBeInTheDocument()
+        expect(screen.getByText(/45.*道题|solved/i)).toBeInTheDocument()
       })
     })
   })

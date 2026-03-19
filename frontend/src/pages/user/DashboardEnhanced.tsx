@@ -1,36 +1,167 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { problemsService } from '@/services/problems'
 import { usersService } from '@/services/users'
+import { PageHeader } from '@/components/page/PageHeader'
+import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { EmptyState } from '@/components/page/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
-import type { UserActivity } from '@/types/users'
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import type { RecommendedProblem, UserActivity } from '@/types/users'
+
+const DIFFICULTY_STYLES = {
+  easy: 'bg-emerald-100 text-emerald-700',
+  medium: 'bg-amber-100 text-amber-700',
+  hard: 'bg-rose-100 text-rose-700',
+} as const
+
+const DIFFICULTY_BARS = {
+  easy: 'bg-emerald-500',
+  medium: 'bg-amber-500',
+  hard: 'bg-rose-500',
+} as const
+
+const WEEKDAY_LABELS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+
+function formatActivityTime(value: string) {
+  return new Intl.DateTimeFormat('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
+function getActivityMeta(activity: UserActivity) {
+  switch (activity.type) {
+    case 'submission':
+      return {
+        label: activity.status === 'accepted' ? '提交 · Accepted' : '提交 · 未通过',
+        icon: activity.status === 'accepted' ? 'check_circle' : 'cancel',
+        tone:
+          activity.status === 'accepted'
+            ? 'bg-emerald-100 text-emerald-700'
+            : 'bg-rose-100 text-rose-700',
+      }
+    case 'contest_registration':
+      return {
+        label: '竞赛报名',
+        icon: 'emoji_events',
+        tone: 'bg-blue-100 text-blue-700',
+      }
+    case 'achievement':
+      return {
+        label: '成就解锁',
+        icon: 'military_tech',
+        tone: 'bg-amber-100 text-amber-700',
+      }
+    default:
+      return {
+        label: '动态',
+        icon: 'radio_button_checked',
+        tone: 'bg-slate-100 text-slate-700',
+      }
+  }
+}
 
 export function DashboardEnhanced() {
-  const queryClient = useQueryClient()
-
-  // 获取用户统计
-  const { data: userStats, isLoading: statsLoading, error: statsError } = useQuery({
+  const {
+    data: userStats,
+    isLoading: statsLoading,
+    error: statsError,
+    refetch: refetchStats,
+  } = useQuery({
     queryKey: ['userStats'],
     queryFn: () => usersService.getUserStats(),
   })
 
-  // 获取用户活动
-  const { data: recentActivity } = useQuery({
+  const {
+    data: recentActivity = [],
+    refetch: refetchActivity,
+  } = useQuery({
     queryKey: ['userActivity'],
-    queryFn: () => usersService.getUserActivity(10),
+    queryFn: async () => {
+      const activity = await usersService.getUserActivity(10)
+      return activity ?? []
+    },
   })
 
-  // 获取推荐题目
-  const { data: recommendedProblems } = useQuery({
+  const {
+    data: recommendedProblems = [],
+    refetch: refetchRecommendedProblems,
+  } = useQuery({
     queryKey: ['recommendedProblems'],
-    queryFn: () => usersService.getRecommendedProblems(5),
+    queryFn: async () => {
+      const problems = await usersService.getRecommendedProblems(5)
+      return problems ?? []
+    },
   })
+
+  const {
+    data: dailyChallenge,
+    refetch: refetchDailyChallenge,
+  } = useQuery({
+    queryKey: ['dashboardDailyChallenge'],
+    queryFn: async () => {
+      const response = await problemsService.getProblems({
+        page: 1,
+        limit: 1,
+        sort: 'recent',
+      })
+      return response.problems[0] ?? null
+    },
+  })
+
+  const weeklyActivity = useMemo(() => {
+    const submissions = recentActivity.filter((activity) => activity.type === 'submission')
+
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date()
+      date.setHours(0, 0, 0, 0)
+      date.setDate(date.getDate() - (6 - index))
+      const dateKey = date.toISOString().slice(0, 10)
+      const dayActivities = submissions.filter((activity) => activity.created_at.startsWith(dateKey))
+      const acceptedCount = dayActivities.filter((activity) => activity.status === 'accepted').length
+
+      return {
+        day: WEEKDAY_LABELS[date.getDay()],
+        submissions: dayActivities.length,
+        accepted: acceptedCount,
+      }
+    })
+  }, [recentActivity])
+
+  const totalWeeklySubmissions = weeklyActivity.reduce((sum, item) => sum + item.submissions, 0)
+  const totalWeeklyAccepted = weeklyActivity.reduce((sum, item) => sum + item.accepted, 0)
+  const weeklyPeak = Math.max(1, ...weeklyActivity.map((item) => item.submissions))
+
+  const difficultyRows = userStats
+    ? [
+        { label: '简单', value: userStats.easy_solved, difficulty: 'easy' as const },
+        { label: '中等', value: userStats.medium_solved, difficulty: 'medium' as const },
+        { label: '困难', value: userStats.hard_solved, difficulty: 'hard' as const },
+      ]
+    : []
+
+  const achievements = userStats?.achievements ?? []
+
+  const handleRefresh = async () => {
+    await Promise.all([
+      refetchStats(),
+      refetchActivity(),
+      refetchRecommendedProblems(),
+      refetchDailyChallenge(),
+    ])
+  }
 
   if (statsLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[420px] items-center justify-center">
         <Loading message="加载中..." />
       </div>
     )
@@ -38,546 +169,270 @@ export function DashboardEnhanced() {
 
   if (statsError || !userStats) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          加载失败
-        </h3>
-        <Button
-          variant="primary"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['userStats'] })}
-        >
-          重试
-        </Button>
+      <div className="flex min-h-[420px] items-center justify-center">
+        <EmptyState
+          title="加载失败"
+          description="无法加载学习总览，请稍后重试。"
+          action={
+            <Button variant="primary" onClick={() => refetchStats()}>
+              重试
+            </Button>
+          }
+          className="w-full max-w-xl"
+        />
       </div>
     )
-  }
-
-  const DIFFICULTY_COLORS = {
-    easy: '#10b981',
-    medium: '#f59e0b',
-    hard: '#ef4444',
-  }
-
-  const weekNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-  const submissionActivities = (recentActivity ?? []).filter(
-    (activity) => activity.type === 'submission'
-  )
-
-  const weeklyActivity = Array.from({ length: 7 }).map((_, index) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (6 - index))
-    const dateKey = date.toISOString().slice(0, 10)
-
-    const dailyActivities = submissionActivities.filter((activity) =>
-      activity.created_at.startsWith(dateKey)
-    )
-    const acceptedCount = dailyActivities.filter(
-      (activity) => activity.status === 'accepted'
-    ).length
-
-    return {
-      day: weekNames[date.getDay()],
-      提交: dailyActivities.length,
-      通过: acceptedCount,
-    }
-  })
-  const solvedThisWeek = weeklyActivity.reduce((sum, item) => sum + item['通过'], 0)
-  const totalWeeklySubmissions = weeklyActivity.reduce((sum, item) => sum + item['提交'], 0)
-
-  // 难度分布数据
-  const difficultyDistribution = [
-    { name: '简单', value: userStats.easy_solved, color: DIFFICULTY_COLORS.easy },
-    { name: '中等', value: userStats.medium_solved, color: DIFFICULTY_COLORS.medium },
-    { name: '困难', value: userStats.hard_solved, color: DIFFICULTY_COLORS.hard },
-  ]
-
-  const getActivityIcon = (activity: UserActivity) => {
-    switch (activity.type) {
-      case 'submission':
-        return activity.status === 'accepted' ? 'check_circle' : 'cancel'
-      case 'contest_registration':
-        return 'emoji_events'
-      case 'achievement':
-        return 'military_tech'
-      default:
-        return 'activity'
-    }
-  }
-
-  const getActivityColor = (activity: UserActivity) => {
-    switch (activity.type) {
-      case 'submission':
-        return activity.status === 'accepted' ? 'text-green-500' : 'text-red-500'
-      case 'contest_registration':
-        return 'text-yellow-500'
-      case 'achievement':
-        return 'text-purple-500'
-      default:
-        return 'text-slate-500'
-    }
   }
 
   return (
     <div className="space-y-6">
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-8 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div className="max-w-2xl space-y-4">
-              <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                Dashboard Overview
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  欢迎回来，继续把这周的通过数往上推。
-                </h1>
-                <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
-                  过去 7 天共提交 {totalWeeklySubmissions} 次，成功通过 {solvedThisWeek} 次。当前连续活跃 {userStats.current_streak} 天，保持今天的节奏就能继续拉高排名。
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-6">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Global Rank</p>
-                  <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">#{userStats.ranking}</p>
-                </div>
-                <div className="h-10 w-px bg-slate-200 dark:bg-slate-700" />
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Total Points</p>
-                  <p className="mt-1 text-2xl font-bold text-primary">{userStats.total_points}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex w-full max-w-52 items-end gap-2 self-stretch sm:w-52">
-              {weeklyActivity.map((item) => {
-                const height = Math.max(20, item['提交'] * 14)
-
-                return (
-                  <div key={item.day} className="flex flex-1 flex-col items-center justify-end gap-2">
-                    <div
-                      className="w-full rounded-sm bg-primary/15 transition-colors hover:bg-primary/30"
-                      style={{ height }}
-                    />
-                    <span className="text-[11px] font-medium text-slate-400">{item.day}</span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Current Streak</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{userStats.current_streak} 天</p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">最高纪录 {userStats.longest_streak} 天，今天再完成 1 道题就能继续保持。</p>
-            </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-orange-100 text-orange-500 dark:bg-orange-900/30 dark:text-orange-400">
-              <span className="material-symbols-outlined filled">local_fire_department</span>
-            </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-7 gap-2 text-center text-xs text-slate-500 dark:text-slate-400">
-            {weeklyActivity.map((item, index) => (
-              <div key={item.day} className="space-y-2">
-                <div>{item.day}</div>
-                <div className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-full border text-xs font-semibold',
-                  index === 6
-                    ? 'border-primary bg-primary text-white shadow-sm shadow-primary/30'
-                    : item['提交'] > 0
-                      ? 'border-primary/20 bg-primary/10 text-primary'
-                      : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800'
-                )}>
-                  {item['提交'] > 0 ? item['提交'] : '-'}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <div className="flex flex-wrap gap-3">
-          <Link to="/problems">
-            <Button variant="primary">
-              <span className="material-symbols-outlined mr-2">code</span>
+      <PageHeader
+        eyebrow="学习主页"
+        title="学习总览"
+        description={`过去 7 天共提交 ${totalWeeklySubmissions} 次，成功通过 ${totalWeeklyAccepted} 次。当前连续学习 ${userStats.current_streak} 天，继续保持就能稳步抬高排名。`}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void handleRefresh()
+              }}
+              aria-label="刷新面板"
+            >
+              <span className="material-symbols-outlined text-base">refresh</span>
+              刷新
+            </Button>
+            <Button as={Link} to="/problems" variant="primary">
+              <span className="material-symbols-outlined text-base">code</span>
               开始刷题
             </Button>
-          </Link>
-          <Link to="/contests">
-            <Button variant="outline">
-              <span className="material-symbols-outlined mr-2">emoji_events</span>
+            <Button as={Link} to="/contests" variant="outline">
+              <span className="material-symbols-outlined text-base">emoji_events</span>
               查看竞赛
             </Button>
-          </Link>
+          </>
+        }
+      />
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <StatCard label="已解决" value={`${userStats.unique_problems_solved} 道题`} helper="当前累计通过题目数" />
+        <StatCard label="总提交" value={`${userStats.total_submissions} 次提交`} helper={`${userStats.accepted_submissions} 次通过`} />
+        <StatCard label="准确率" value={`${userStats.accuracy_rate}%`} helper="基于当前提交历史计算" />
+        <StatCard label="连续学习" value={`${userStats.current_streak} 天`} helper={`最高 ${userStats.longest_streak} 天`} />
+        <StatCard label="当前排名" value={`#${userStats.ranking}`} helper="全站实时位置" />
+        <StatCard label="总积分" value={`${userStats.total_points} 分`} helper="完成题目与竞赛累积" />
       </div>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]">
+        <SurfaceCard>
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Weekly Focus</p>
-              <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">本周推进面板</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                这个区域按 reference 的 dashboard operations rail 收拢，把活跃天数、推荐题和最近提交放到同一层级里，减少来回跳页。
+              <h2 className="text-xl font-semibold text-slate-950">学习节奏</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                最近 7 天的提交与通过节奏。这里保留概览视角，不把列表页做成营销首页。
               </p>
             </div>
-            <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              live data
+            <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+              最近 7 天
             </div>
           </div>
 
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Accepted This Week</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{solvedThisWeek}</p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">来自最近 7 天的通过记录。</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Recommended Queue</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{recommendedProblems?.length ?? 0}</p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">当前实时推荐题目数量。</p>
-            </div>
-            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Recent Activity</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{recentActivity?.length ?? 0}</p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">最新活动流条目数。</p>
-            </div>
-          </div>
-        </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-7">
+            {weeklyActivity.map((item) => {
+              const height = Math.max(18, Math.round((item.submissions / weeklyPeak) * 112))
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Progress Snapshot</p>
-          <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">刷题进度快照</h2>
-          <div className="mt-5 space-y-4">
-            {[
-              { label: 'Easy', value: userStats.easy_solved, color: 'bg-emerald-500' },
-              { label: 'Medium', value: userStats.medium_solved, color: 'bg-amber-500' },
-              { label: 'Hard', value: userStats.hard_solved, color: 'bg-rose-500' },
-            ].map((item) => {
+              return (
+                <div key={item.day} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex h-32 items-end">
+                    <div className="w-full rounded-xl bg-slate-200 p-1">
+                      <div className="rounded-lg bg-slate-950/85" style={{ height }} />
+                    </div>
+                  </div>
+                  <div className="mt-3 space-y-1">
+                    <p className="text-sm font-semibold text-slate-900">{item.day}</p>
+                    <p className="text-xs text-slate-500">提交 {item.submissions}</p>
+                    <p className="text-xs text-slate-500">通过 {item.accepted}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </SurfaceCard>
+
+        <SurfaceCard tone="muted">
+          <h2 className="text-xl font-semibold text-slate-950">难度分布</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">当前已解决题目按难度拆分，保留真实进度口径。</p>
+          <div className="mt-6 space-y-4">
+            {difficultyRows.map((item) => {
               const totalSolved = Math.max(1, userStats.unique_problems_solved)
-              const width = Math.max(8, Math.round((item.value / totalSolved) * 100))
+              const width = Math.max(10, Math.round((item.value / totalSolved) * 100))
 
               return (
                 <div key={item.label}>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
-                    <span className="text-slate-500 dark:text-slate-400">{item.value}</span>
+                    <span className="font-medium text-slate-900">{`${item.value} ${item.label}`}</span>
+                    <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', DIFFICULTY_STYLES[item.difficulty])}>
+                      {item.label}
+                    </span>
                   </div>
-                  <div className="mt-2 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                    <div className={cn('h-2.5 rounded-full', item.color)} style={{ width: `${width}%` }} />
+                  <div className="mt-2 h-2.5 rounded-full bg-white">
+                    <div className={cn('h-2.5 rounded-full', DIFFICULTY_BARS[item.difficulty])} style={{ width: `${width}%` }} />
                   </div>
                 </div>
               )
             })}
           </div>
-          <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-            当前 dashboard 已覆盖真实统计、活动流和推荐题数据。剩余差距主要是 reference 中更激进的多面板编排，而不是数据缺口。
-          </div>
-        </div>
-      </section>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="material-symbols-outlined text-3xl text-green-500">
-              check_circle
-            </span>
-            <span className="text-xs text-slate-500">已解决</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {userStats.unique_problems_solved}
-          </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            道题目
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="material-symbols-outlined text-3xl text-blue-500">
-              upload
-            </span>
-            <span className="text-xs text-slate-500">总提交</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {userStats.total_submissions}
-          </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            次提交
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="material-symbols-outlined text-3xl text-purple-500">
-              precision_manufacturing
-            </span>
-            <span className="text-xs text-slate-500">准确率</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {userStats.accuracy_rate}%
-          </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            通过率
-          </p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <span className="material-symbols-outlined text-3xl text-orange-500">
-              local_fire_department
-            </span>
-            <span className="text-xs text-slate-500">连续天数</span>
-          </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
-            {userStats.current_streak}
-          </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            天 (最高 {userStats.longest_streak} 天)
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-            本周学习活动
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={weeklyActivity}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="day" className="text-slate-600 dark:text-slate-400" />
-              <YAxis className="text-slate-600 dark:text-slate-400" />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="提交" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="通过" fill="#10b981" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-            难度分布
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={difficultyDistribution}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {difficultyDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="flex justify-center gap-6 mt-4">
-            {difficultyDistribution.map((item) => (
-              <div key={item.name} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-sm text-slate-600 dark:text-slate-400">
-                  {item.name}: {item.value}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-              最近活动
-            </h3>
-            <Link to="/submissions" className="text-sm text-primary hover:underline">
-              查看全部
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {recentActivity && recentActivity.length > 0 ? (
-              recentActivity.slice(0, 5).map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <span className={cn('material-symbols-outlined text-xl', getActivityColor(activity))}>
-                    {getActivityIcon(activity)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    {activity.type === 'submission' && (
-                      <Link
-                        to={`/problems/${activity.problem_id}`}
-                        className="text-sm font-medium text-slate-900 dark:text-white hover:text-primary truncate block"
-                      >
-                        {activity.problem_title}
-                      </Link>
-                    )}
-                    {activity.type === 'contest_registration' && (
-                      <Link
-                        to={`/contests/${activity.contest_id}`}
-                        className="text-sm font-medium text-slate-900 dark:text-white hover:text-primary truncate block"
-                      >
-                        {activity.contest_name}
-                      </Link>
-                    )}
-                    {activity.type === 'achievement' && (
-                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                        解锁成就: {activity.achievement_name}
-                      </p>
-                    )}
-                    <p className="text-xs text-slate-500">
-                      {new Date(activity.created_at).toLocaleString('zh-CN')}
-                    </p>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="text-sm text-slate-500 dark:text-slate-400 py-6 text-center">
-                暂无最近活动
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-              排名与积分
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-yellow-500">
-                    trophy
-                  </span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">当前排名</span>
-                </div>
-                <span className="text-lg font-bold text-slate-900 dark:text-white">
-                  #{userStats.ranking}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">
-                    stars
-                  </span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">总积分</span>
-                </div>
-                <span className="text-lg font-bold text-slate-900 dark:text-white">
-                  {userStats.total_points}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {userStats.achievements && userStats.achievements.length > 0 && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                  最近成就
-                </h3>
-                <span className="text-xs text-slate-500">
-                  {userStats.unlocked_achievements}/{userStats.total_achievements}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {userStats.achievements.slice(0, 3).map((achievement) => (
-                  <div
-                    key={achievement.id}
-                    className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20"
-                  >
-                    <span className="material-symbols-outlined text-2xl text-yellow-500">
-                      {achievement.icon}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                        {achievement.name}
-                      </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
-                        {achievement.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {recommendedProblems && recommendedProblems.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-                推荐题目
-              </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                根据您的学习进度智能推荐
+          {(userStats.unlocked_achievements || userStats.total_achievements) && (
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-4">
+              <p className="text-sm font-medium text-slate-900">成就进度</p>
+              <p className="mt-1 text-sm text-slate-600">
+                {userStats.unlocked_achievements ?? 0}/{userStats.total_achievements ?? 0} achievements
               </p>
             </div>
-            <Link to="/problems" className="text-sm text-primary hover:underline">
-              浏览更多题目
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            {recommendedProblems.map((problem) => {
-              const difficultyColor = {
-                easy: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-                medium: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
-                hard: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-              }[problem.difficulty]
+          )}
+        </SurfaceCard>
+      </div>
 
-              const difficultyLabel = {
-                easy: '简单',
-                medium: '中等',
-                hard: '困难',
-              }[problem.difficulty]
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <SectionBlock
+          title="今日建议"
+          description="从真实题库抓取 1 道建议题，方便直接回到练习流。"
+        >
+          {dailyChallenge ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', DIFFICULTY_STYLES[dailyChallenge.difficulty])}>
+                  {dailyChallenge.difficulty}
+                </span>
+                {dailyChallenge.tags.slice(0, 3).map((tag) => (
+                  <span key={tag} className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+              <Link to={`/problems/${dailyChallenge.id}`} className="mt-4 block text-xl font-semibold text-slate-950 hover:text-primary">
+                {dailyChallenge.title}
+              </Link>
+              <p className="mt-2 text-sm text-slate-600">{dailyChallenge.description}</p>
+            </div>
+          ) : (
+            <EmptyState title="暂无建议题目" description="当前没有可展示的推荐题，请稍后再看。" className="border-slate-200 bg-slate-50 py-8" />
+          )}
+        </SectionBlock>
 
-              return (
+        <SectionBlock
+          title="推荐题目"
+          description="保留实时推荐结果，用列表视图收拢信息密度。"
+        >
+          {recommendedProblems.length > 0 ? (
+            <div className="space-y-3">
+              {recommendedProblems.map((problem: RecommendedProblem) => (
                 <Link
                   key={problem.id}
                   to={`/problems/${problem.id}`}
-                  className="block border border-slate-200 dark:border-slate-800 rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all"
+                  className="block rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white"
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-slate-900 dark:text-white text-sm line-clamp-2">
-                      {problem.title}
-                    </h4>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-base font-semibold text-slate-950">{problem.title}</p>
+                      <p className="mt-1 text-sm text-slate-600">{problem.reason}</p>
+                    </div>
+                    <div className="text-right text-sm text-slate-500">
+                      <p>{problem.points} pts</p>
+                      <p>{problem.acceptance_rate}% 通过率</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={cn('px-2 py-0.5 rounded text-xs font-medium', difficultyColor)}>
-                      {difficultyLabel}
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', DIFFICULTY_STYLES[problem.difficulty])}>
+                      {problem.difficulty}
                     </span>
-                    <span className="text-xs text-slate-500">
-                      {problem.points} 分
-                    </span>
+                    {problem.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>通过率 {problem.acceptance_rate}%</span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-2 line-clamp-1">
-                    {problem.reason}
-                  </p>
                 </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="暂无推荐题目" description="当前推荐队列为空，继续提交后会自动更新。" className="border-slate-200 bg-slate-50 py-8" />
+          )}
+        </SectionBlock>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        <SectionBlock
+          title="最近活动"
+          description="保留题目、竞赛和成就三类动态，方便从概览页回到对应页面。"
+        >
+          {recentActivity.length > 0 ? (
+            <div className="space-y-3">
+              {recentActivity.slice(0, 5).map((activity) => {
+                const meta = getActivityMeta(activity)
+
+                return (
+                  <div key={activity.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <span className={cn('inline-flex h-10 w-10 items-center justify-center rounded-2xl text-sm', meta.tone)}>
+                          <span className="material-symbols-outlined text-base">{meta.icon}</span>
+                        </span>
+                        <div>
+                          <p className="text-sm font-medium text-slate-900">{meta.label}</p>
+                          {activity.type === 'submission' && activity.problem_id ? (
+                            <Link to={`/problems/${activity.problem_id}`} className="mt-1 block text-sm text-slate-950 hover:text-primary">
+                              {activity.problem_title}
+                            </Link>
+                          ) : null}
+                          {activity.type === 'contest_registration' && activity.contest_id ? (
+                            <Link to={`/contests/${activity.contest_id}`} className="mt-1 block text-sm text-slate-950 hover:text-primary">
+                              {activity.contest_name}
+                            </Link>
+                          ) : null}
+                          {activity.type === 'achievement' ? (
+                            <p className="mt-1 text-sm text-slate-950">{activity.achievement_name}</p>
+                          ) : null}
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500">{formatActivityTime(activity.created_at)}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <EmptyState title="暂无最近活动" description="提交代码、报名竞赛或解锁成就后会出现在这里。" className="border-slate-200 bg-slate-50 py-8" />
+          )}
+        </SectionBlock>
+
+        <SurfaceCard tone="muted">
+          <h2 className="text-xl font-semibold text-slate-950">近期成就</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">成就和进度提示被压回右侧摘要，不干扰列表主体。</p>
+          {achievements.length > 0 ? (
+            <div className="mt-5 space-y-3">
+              {achievements.slice(0, 3).map((achievement) => (
+                <div key={achievement.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-100 text-amber-700">
+                      <span className="material-symbols-outlined text-base">{achievement.icon}</span>
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{achievement.name}</p>
+                      <p className="mt-1 text-sm text-slate-600">{achievement.description}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-white px-4 py-5 text-sm text-slate-600">
+              暂无最近成就，继续刷题后会自动展示。
+            </div>
+          )}
+        </SurfaceCard>
+      </div>
     </div>
   )
 }

@@ -1,6 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { usersService } from '@/services/users'
+import { EmptyState } from '@/components/page/EmptyState'
+import { PageHeader } from '@/components/page/PageHeader'
+import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Loading } from '@/components/ui/Loading'
+import { cn } from '@/lib/utils'
 
 const roadmapStages = [
   { id: 'basic', title: '基础算法', topics: ['数组', '字符串', '哈希表'] },
@@ -16,7 +21,7 @@ export function LearningRoadmap() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[320px]">
+      <div className="flex min-h-[320px] items-center justify-center">
         <Loading message="加载学习路线图..." />
       </div>
     )
@@ -24,67 +29,80 @@ export function LearningRoadmap() {
 
   if (error || !stats) {
     return (
-      <div className="text-center py-16">
-        <p className="text-slate-600 dark:text-slate-300 mb-4">学习路线图加载失败</p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="px-4 py-2 rounded bg-primary text-white"
-        >
-          重试
-        </button>
+      <div className="flex min-h-[320px] items-center justify-center">
+        <EmptyState
+          title="学习路线图加载失败"
+          description="请稍后再试。"
+          action={
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white"
+            >
+              重试
+            </button>
+          }
+          className="w-full max-w-xl"
+        />
       </div>
     )
   }
 
   const completion = Math.min(
     100,
-    Math.round((stats.unique_problems_solved / Math.max(1, stats.unique_problems_solved + 40)) * 100)
+    Math.round((stats.unique_problems_solved / Math.max(1, stats.unique_problems_solved + 40)) * 100),
   )
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">算法学习路线图</h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          根据你的做题进度动态建议下一阶段学习重点
-        </p>
+      <PageHeader
+        eyebrow="Learning Path"
+        title="算法学习路线图"
+        description="根据你的做题进度动态建议下一阶段学习重点。页面以进度和阶段列表为主，不再额外引入复杂展示层。"
+      />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <StatCard label="总体进度" value={`${completion}%`} helper="按已解决题目估算" />
+        <StatCard label="已解决题目" value={`${stats.unique_problems_solved} 道`} helper="学习路径推进基数" />
+        <StatCard label="当前连续学习" value={`${stats.current_streak} 天`} helper={`最高 ${stats.longest_streak} 天`} />
       </div>
 
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-slate-600 dark:text-slate-300">总体进度</span>
-          <span className="text-sm font-semibold text-slate-900 dark:text-white">{completion}%</span>
+      <SurfaceCard>
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-slate-700">总体进度</span>
+          <span className="text-sm font-semibold text-slate-950">{completion}%</span>
         </div>
-        <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-          <div className="h-full bg-primary" style={{ width: `${completion}%` }} />
+        <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-full rounded-full bg-slate-950" style={{ width: `${completion}%` }} />
         </div>
-      </div>
+      </SurfaceCard>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid gap-4 md:grid-cols-3">
         {roadmapStages.map((stage, index) => {
           const stageDone = completion >= (index + 1) * 30
+
           return (
-            <div
-              key={stage.id}
-              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4"
-            >
+            <SurfaceCard key={stage.id} tone={stageDone ? 'default' : 'muted'} className="p-5">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-slate-900 dark:text-white">{stage.title}</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${stageDone ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                <h3 className="text-lg font-semibold text-slate-950">{stage.title}</h3>
+                <span
+                  className={cn(
+                    'rounded-full px-2.5 py-1 text-xs font-medium',
+                    stageDone ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600',
+                  )}
+                >
                   {stageDone ? '已完成' : '进行中'}
                 </span>
               </div>
-              <ul className="mt-3 space-y-1 text-sm text-slate-600 dark:text-slate-300">
+              <ul className="mt-4 space-y-2 text-sm text-slate-600">
                 {stage.topics.map((topic) => (
-                  <li key={topic}>- {topic}</li>
+                  <li key={topic}>{topic}</li>
                 ))}
               </ul>
-            </div>
+            </SurfaceCard>
           )
         })}
       </div>
     </div>
   )
 }
-

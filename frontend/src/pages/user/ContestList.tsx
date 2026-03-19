@@ -1,7 +1,12 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { contestsService } from '@/services/contests'
+import { EmptyState } from '@/components/page/EmptyState'
+import { FilterBar } from '@/components/page/FilterBar'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { StatCard } from '@/components/page/StatCard'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
@@ -20,46 +25,63 @@ interface Contest {
   created_at: string
 }
 
-const STATUS_CONFIG = {
-  upcoming: {
-    label: '即将开始',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-    textColor: 'text-blue-700 dark:text-blue-400',
-    borderColor: 'border-blue-300 dark:border-blue-700',
-    icon: 'upcoming',
-  },
-  ongoing: {
-    label: '进行中',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-400',
-    borderColor: 'border-green-300 dark:border-green-700',
-    icon: 'play_circle',
-  },
-  completed: {
-    label: '已结束',
-    bgColor: 'bg-slate-100 dark:bg-slate-800',
-    textColor: 'text-slate-600 dark:text-slate-400',
-    borderColor: 'border-slate-300 dark:border-slate-700',
-    icon: 'check_circle',
-  },
+const STATUS_FILTER_OPTIONS = [
+  { value: 'all', label: '全部' },
+  { value: 'ongoing', label: '进行中' },
+  { value: 'upcoming', label: '即将开始' },
+  { value: 'completed', label: '已结束' },
+] as const
+
+const STATUS_BADGES = {
+  upcoming: '待开始',
+  ongoing: '比赛中',
+  completed: '已完赛',
+} as const
+
+const DIFFICULTY_BADGES = {
+  easy: 'bg-emerald-100 text-emerald-700',
+  medium: 'bg-amber-100 text-amber-700',
+  hard: 'bg-rose-100 text-rose-700',
+} as const
+
+const STATUS_STYLES = {
+  upcoming: 'bg-blue-100 text-blue-700',
+  ongoing: 'bg-emerald-100 text-emerald-700',
+  completed: 'bg-slate-100 text-slate-700',
+} as const
+
+function formatDuration(minutes: number) {
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    return remainingMinutes > 0 ? `${minutes} 分钟 · ${hours}h ${remainingMinutes}m` : `${minutes} 分钟 · ${hours}h`
+  }
+
+  return `${minutes} 分钟`
 }
 
-const DIFFICULTY_CONFIG = {
-  easy: {
-    label: '简单',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-400',
-  },
-  medium: {
-    label: '中等',
-    bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-    textColor: 'text-yellow-700 dark:text-yellow-400',
-  },
-  hard: {
-    label: '困难',
-    bgColor: 'bg-red-100 dark:bg-red-900/30',
-    textColor: 'text-red-700 dark:text-red-400',
-  },
+function getCountdown(startTime: string) {
+  const diff = new Date(startTime).getTime() - Date.now()
+
+  if (diff <= 0) return null
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+  if (days > 0) return `${days} 天 ${hours} 小时`
+  if (hours > 0) return `${hours} 小时 ${minutes} 分钟`
+  return `${minutes} 分钟`
+}
+
+function getRemainingTime(endTime: string) {
+  const diff = new Date(endTime).getTime() - Date.now()
+
+  if (diff <= 0) return '已结束'
+
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  return `剩余 ${hours}h ${minutes}m`
 }
 
 export function ContestList() {
@@ -71,64 +93,25 @@ export function ContestList() {
     queryKey: ['contests', statusFilter, difficultyFilter, searchQuery],
     queryFn: () =>
       contestsService.getContests({
-        status: statusFilter as any,
-        difficulty: difficultyFilter as any,
+        status: statusFilter as never,
+        difficulty: difficultyFilter as never,
         search: searchQuery || undefined,
       }),
   })
 
-  // 按状态分组竞赛
-  const groupedContests = useMemo(() => {
-    if (!data) return { ongoing: [], upcoming: [], completed: [] }
+  const summary = useMemo(() => {
+    const contests = data?.contests ?? []
 
     return {
-      ongoing: data.contests.filter(c => c.status === 'ongoing'),
-      upcoming: data.contests.filter(c => c.status === 'upcoming'),
-      completed: data.contests.filter(c => c.status === 'completed'),
+      ongoing: contests.filter((contest) => contest.status === 'ongoing').length,
+      upcoming: contests.filter((contest) => contest.status === 'upcoming').length,
+      completed: contests.filter((contest) => contest.status === 'completed').length,
     }
   }, [data])
 
-  const formatDuration = (minutes: number) => {
-    if (minutes >= 60) {
-      const hours = Math.floor(minutes / 60)
-      const mins = minutes % 60
-      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
-    }
-    return `${minutes}m`
-  }
-
-  const getCountdown = (startTime: string) => {
-    const now = new Date()
-    const start = new Date(startTime)
-    const diff = start.getTime() - now.getTime()
-
-    if (diff <= 0) return null
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-    if (days > 0) return `${days}天${hours}小时`
-    if (hours > 0) return `${hours}小时${minutes}分钟`
-    return `${minutes}分钟`
-  }
-
-  const getRemainingTime = (endTime: string) => {
-    const now = new Date()
-    const end = new Date(endTime)
-    const diff = end.getTime() - now.getTime()
-
-    if (diff <= 0) return '已结束'
-
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-    return `剩余 ${hours}h ${minutes}m`
-  }
-
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex min-h-[420px] items-center justify-center">
         <Loading message="加载中..." />
       </div>
     )
@@ -136,337 +119,182 @@ export function ContestList() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          加载失败
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-          无法加载竞赛列表，请稍后重试
-        </p>
-        <Button variant="primary" onClick={() => refetch()}>
-          重试
-        </Button>
+      <div className="flex min-h-[420px] items-center justify-center">
+        <EmptyState
+          title="加载失败"
+          description="无法加载竞赛列表，请稍后重试。"
+          action={
+            <Button variant="primary" onClick={() => refetch()}>
+              重试
+            </Button>
+          }
+          className="w-full max-w-xl"
+        />
       </div>
     )
   }
 
   if (!data || data.contests.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-slate-400 mb-4">
-          emoji_events
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          暂无竞赛
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-          当前没有符合条件的竞赛
-        </p>
+      <div className="flex min-h-[420px] items-center justify-center">
+        <EmptyState
+          title="暂无竞赛"
+          description="当前没有符合条件的竞赛。"
+          className="w-full max-w-xl"
+        />
       </div>
-    )
-  }
-
-  const renderContestCard = (contest: Contest) => {
-    const statusConfig = STATUS_CONFIG[contest.status]
-    const difficultyConfig = DIFFICULTY_CONFIG[contest.difficulty]
-    const countdown = contest.status === 'upcoming' ? getCountdown(contest.start_time) : null
-    const remaining = contest.status === 'ongoing' ? getRemainingTime(contest.end_time) : null
-
-    return (
-      <Link
-        key={contest.id}
-        to={`/contests/${contest.id}`}
-        className="block bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden hover:shadow-lg hover:border-primary/50 transition-all"
-      >
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {contest.name}
-                </h3>
-                <span className={cn(
-                  'px-2 py-1 rounded-lg text-xs font-medium',
-                  difficultyConfig.bgColor,
-                  difficultyConfig.textColor
-                )}>
-                  {difficultyConfig.label}
-                </span>
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
-                {contest.description}
-              </p>
-            </div>
-            <span className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border',
-              statusConfig.bgColor,
-              statusConfig.textColor,
-              statusConfig.borderColor
-            )}>
-              <span className="material-symbols-outlined text-sm">
-                {statusConfig.icon}
-              </span>
-              {statusConfig.label}
-            </span>
-          </div>
-
-          {/* Info Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            <div className="flex items-center gap-2 text-sm">
-              <span className="material-symbols-outlined text-slate-400">
-                schedule
-              </span>
-              <div>
-                <p className="text-slate-600 dark:text-slate-400">时长</p>
-                <p className="font-medium text-slate-900 dark:text-white">
-                  {formatDuration(contest.duration_minutes)}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="material-symbols-outlined text-slate-400">
-                code
-              </span>
-              <div>
-                <p className="text-slate-600 dark:text-slate-400">题目</p>
-                <p className="font-medium text-slate-900 dark:text-white">
-                  {contest.problems_count} 题
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="material-symbols-outlined text-slate-400">
-                people
-              </span>
-              <div>
-                <p className="text-slate-600 dark:text-slate-400">参与</p>
-                <p className="font-medium text-slate-900 dark:text-white">
-                  {contest.participants_count} 人
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <span className="material-symbols-outlined text-slate-400">
-                event
-              </span>
-              <div>
-                <p className="text-slate-600 dark:text-slate-400">开始时间</p>
-                <p className="font-medium text-slate-900 dark:text-white">
-                  {new Date(contest.start_time).toLocaleDateString('zh-CN')}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Countdown or Time */}
-          {(countdown || remaining) && (
-            <div className={cn(
-              'px-4 py-2 rounded-lg text-sm font-medium',
-              contest.status === 'upcoming'
-                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-            )}>
-              {countdown && `距开始还有 ${countdown}`}
-              {remaining && remaining}
-            </div>
-          )}
-
-          {/* Action Button */}
-          <div className="mt-4 flex items-center justify-between">
-            <div className="text-sm text-slate-500">
-              {new Date(contest.start_time).toLocaleString('zh-CN', {
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </div>
-            <Button
-              variant={contest.status === 'ongoing' ? 'primary' : 'outline'}
-              size="sm"
-            >
-              {contest.status === 'ongoing' && (
-                <>
-                  <span className="material-symbols-outlined mr-2">play_arrow</span>
-                  立即加入
-                </>
-              )}
-              {contest.status === 'upcoming' && (
-                <>
-                  <span className="material-symbols-outlined mr-2">how_to_reg</span>
-                  立即注册
-                </>
-              )}
-              {contest.status === 'completed' && (
-                <>
-                  <span className="material-symbols-outlined mr-2">leaderboard</span>
-                  查看结果
-                </>
-              )}
-            </Button>
-          </div>
-        </div>
-      </Link>
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-            竞赛
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            参加编程竞赛，提升编程技能
-          </p>
-        </div>
+      <PageHeader
+        eyebrow="Contest Directory"
+        title="竞赛目录"
+        description="统一浏览真实竞赛列表、过滤条件和倒计时信息。页面保留列表导向，不额外叠加装饰性分组。"
+      />
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="当前结果" value={`${data.total} 场`} helper="符合当前筛选条件的竞赛数" />
+        <StatCard label="进行中" value={`${summary.ongoing} 场`} helper="可直接进入的比赛" />
+        <StatCard label="即将开始" value={`${summary.upcoming} 场`} helper="临近开赛的比赛" />
+        <StatCard label="已结束" value={`${summary.completed} 场`} helper="可回看结果的比赛" />
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Search */}
-          <div className="flex-1 min-w-[200px]">
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                search
-              </span>
-              <input
-                type="text"
-                placeholder="搜索竞赛..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-          </div>
+      <FilterBar>
+        <label className="min-w-[240px] flex-1">
+          <span className="mb-2 block text-sm font-medium text-slate-700">搜索竞赛</span>
+          <input
+            type="text"
+            placeholder="搜索竞赛..."
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+          />
+        </label>
 
-          {/* Status Filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              状态:
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setStatusFilter('all')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
-                  statusFilter === 'all'
-                    ? 'bg-primary text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                )}
-              >
-                全部
-              </button>
-              <button
-                onClick={() => setStatusFilter('ongoing')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
-                  statusFilter === 'ongoing'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                )}
-              >
-                进行中
-              </button>
-              <button
-                onClick={() => setStatusFilter('upcoming')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
-                  statusFilter === 'upcoming'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                )}
-              >
-                即将开始
-              </button>
-              <button
-                onClick={() => setStatusFilter('completed')}
-                className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
-                  statusFilter === 'completed'
-                    ? 'bg-slate-500 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                )}
-              >
-                已结束
-              </button>
+        <div className="flex flex-wrap items-end gap-2">
+          <div>
+            <span className="mb-2 block text-sm font-medium text-slate-700">状态</span>
+            <div className="flex flex-wrap gap-2">
+              {STATUS_FILTER_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setStatusFilter(option.value)}
+                  className={cn(
+                    'rounded-xl px-3 py-2 text-xs font-medium transition-colors',
+                    statusFilter === option.value
+                      ? 'bg-slate-950 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
-          </div>
-
-          {/* Difficulty Filter */}
-          <div className="flex items-center gap-2">
-            <label htmlFor="difficulty-filter" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              难度:
-            </label>
-            <select
-              id="difficulty-filter"
-              value={difficultyFilter}
-              onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50"
-            >
-              <option value="all">全部难度</option>
-              <option value="easy">简单</option>
-              <option value="medium">中等</option>
-              <option value="hard">困难</option>
-            </select>
           </div>
         </div>
-      </div>
 
-      {/* Contest Sections */}
-      {statusFilter === 'all' ? (
-        <>
-          {/* Ongoing Contests */}
-          {groupedContests.ongoing.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-green-500">play_circle</span>
-                进行中 ({groupedContests.ongoing.length})
-              </h2>
-              <div className="grid grid-cols-1 gap-4">
-                {groupedContests.ongoing.map(renderContestCard)}
-              </div>
-            </div>
-          )}
+        <label htmlFor="difficulty-filter" className="flex items-end gap-2 text-sm font-medium text-slate-700">
+          <span className="mb-2 block">难度</span>
+          <select
+            id="difficulty-filter"
+            value={difficultyFilter}
+            onChange={(event) => setDifficultyFilter(event.target.value)}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+          >
+            <option value="all">全部难度</option>
+            <option value="easy">简单</option>
+            <option value="medium">中等</option>
+            <option value="hard">困难</option>
+          </select>
+        </label>
+      </FilterBar>
 
-          {/* Upcoming Contests */}
-          {groupedContests.upcoming.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-blue-500">upcoming</span>
-                即将开始 ({groupedContests.upcoming.length})
-              </h2>
-              <div className="grid grid-cols-1 gap-4">
-                {groupedContests.upcoming.map(renderContestCard)}
-              </div>
-            </div>
-          )}
+      <SectionBlock
+        title="竞赛目录"
+        description="列表保留必要信息：状态、时间、题量、人数和入口动作。"
+      >
+        <div className="grid gap-4">
+          {data.contests.map((contest: Contest) => {
+            const countdown = contest.status === 'upcoming' ? getCountdown(contest.start_time) : null
+            const remaining = contest.status === 'ongoing' ? getRemainingTime(contest.end_time) : null
 
-          {/* Completed Contests */}
-          {groupedContests.completed.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-slate-500">check_circle</span>
-                已结束 ({groupedContests.completed.length})
-              </h2>
-              <div className="grid grid-cols-1 gap-4">
-                {groupedContests.completed.map(renderContestCard)}
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {data.contests.map(renderContestCard)}
+            return (
+              <Link
+                key={contest.id}
+                to={`/contests/${contest.id}`}
+                className="block rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white"
+              >
+                <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', STATUS_STYLES[contest.status])}>
+                        {STATUS_BADGES[contest.status]}
+                      </span>
+                      <span className={cn('rounded-full px-2.5 py-1 text-xs font-medium', DIFFICULTY_BADGES[contest.difficulty])}>
+                        {contest.difficulty === 'easy' ? '简单' : contest.difficulty === 'medium' ? '中等' : '困难'}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-slate-950">{contest.name}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{contest.description}</p>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">时长</p>
+                        <p className="mt-1 font-medium text-slate-900">{formatDuration(contest.duration_minutes)}</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">题目</p>
+                        <p className="mt-1 font-medium text-slate-900">{contest.problems_count} 题</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">参与人数</p>
+                        <p className="mt-1 font-medium text-slate-900">{contest.participants_count} 人</p>
+                      </div>
+                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">开始时间</p>
+                        <p className="mt-1 font-medium text-slate-900">
+                          {new Date(contest.start_time).toLocaleString('zh-CN', {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full flex-col gap-3 xl:w-56">
+                    {countdown ? (
+                      <div className="rounded-2xl bg-blue-100 px-4 py-3 text-sm font-medium text-blue-700">
+                        距开始还有 {countdown}
+                      </div>
+                    ) : null}
+                    {remaining ? (
+                      <div className="rounded-2xl bg-emerald-100 px-4 py-3 text-sm font-medium text-emerald-700">
+                        {remaining}
+                      </div>
+                    ) : null}
+
+                    <Button
+                      variant={contest.status === 'ongoing' ? 'primary' : 'outline'}
+                      size="sm"
+                      className="w-full"
+                    >
+                      {contest.status === 'ongoing' ? '立即加入' : null}
+                      {contest.status === 'upcoming' ? '立即注册' : null}
+                      {contest.status === 'completed' ? '查看结果' : null}
+                    </Button>
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
         </div>
-      )}
+      </SectionBlock>
     </div>
   )
 }
