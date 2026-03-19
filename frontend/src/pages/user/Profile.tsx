@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, IdCard, Mail, PencilLine, ShieldCheck, Sparkles } from 'lucide-react'
+import { CalendarDays, IdCard, Mail, PencilLine, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { usersService } from '@/services/users'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
+import { EmptyState } from '@/components/page/EmptyState'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 
 export function Profile() {
   const { user: currentUser } = useAuthStore()
@@ -42,7 +48,8 @@ export function Profile() {
   }, [profile])
 
   const updateProfileMutation = useMutation({
-    mutationFn: (payload: { display_name?: string; email?: string }) => usersService.updateMyProfile(payload),
+    mutationFn: (payload: { display_name?: string; email?: string }) =>
+      usersService.updateMyProfile(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] })
       setIsEditing(false)
@@ -51,16 +58,25 @@ export function Profile() {
 
   const summaryCards = useMemo(
     () => [
-      { label: '已解决题目', value: stats?.unique_problems_solved ?? 0 },
-      { label: '提交次数', value: stats?.total_submissions ?? 0 },
-      { label: '通过率', value: `${Math.round((stats?.accuracy_rate ?? 0) * 100)}%` },
-      { label: '全站排名', value: stats?.ranking ?? '-' },
+      { label: '已解决题目', value: stats?.unique_problems_solved ?? 0, helper: '累计通过的独立题目数' },
+      { label: '提交次数', value: stats?.total_submissions ?? 0, helper: '包含全部历史提交' },
+      { label: '通过率', value: `${Math.round((stats?.accuracy_rate ?? 0) * 100)}%`, helper: '按当前统计接口计算' },
+      { label: '全站排名', value: stats?.ranking ?? '-', helper: '来自排行榜接口' },
     ],
-    [stats]
+    [stats],
   )
 
-  if (isLoading) return <Loading message="加载中..." />
-  if (!profile) return <div className="py-12 text-center">用户不存在</div>
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loading message="加载中..." />
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return <EmptyState title="用户不存在" description="当前账号信息无法读取。" />
+  }
 
   const getActivityLabel = (type: string) => {
     if (type === 'submission') return '提交'
@@ -72,131 +88,132 @@ export function Profile() {
 
   return (
     <div className="space-y-6">
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_32%),linear-gradient(135deg,#eff6ff_0%,#eef2ff_50%,#ffffff_100%)] px-6 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),_transparent_35%),linear-gradient(135deg,#0f172a_0%,#111827_48%,#020617_100%)]">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="flex items-start gap-5">
-              <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-slate-950 text-3xl font-semibold text-white shadow-lg dark:bg-white dark:text-slate-950">
-                {profile.username.charAt(0).toUpperCase()}
-              </div>
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Account Center
-                </div>
-                <div>
-                  <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
-                    {profile.display_name || profile.username}
-                  </h1>
-                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">@{profile.username}</p>
-                </div>
-                <div className="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-300">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 dark:bg-slate-900/70">
-                    <ShieldCheck className="h-4 w-4" />
-                    {profile.role}
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 dark:bg-slate-900/70">
-                    <IdCard className="h-4 w-4" />
-                    Org #{profile.organization_id}
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 dark:bg-slate-900/70">
-                    <CalendarDays className="h-4 w-4" />
-                    {new Date(profile.created_at).toLocaleDateString('zh-CN')}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {currentUser?.id === profile.id && (
-              <Button variant="outline" onClick={() => setIsEditing((prev) => !prev)}>
-                <PencilLine className="mr-2 h-4 w-4" />
-                {isEditing ? '取消编辑' : '编辑资料'}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Profile"
+        title={profile.display_name || profile.username}
+        description={`@${profile.username} 的账户概览与活动记录。`}
+        actions={
+          currentUser?.id === profile.id ? (
+            <Button variant="outline" onClick={() => setIsEditing((prev) => !prev)}>
+              <PencilLine className="h-4 w-4" />
+              {isEditing ? '取消编辑' : '编辑资料'}
+            </Button>
+          ) : null
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-4">
         {summaryCards.map((item) => (
-          <div key={item.label} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{item.label}</p>
-            <p className="mt-3 text-2xl font-semibold text-slate-950 dark:text-white">{item.value}</p>
-          </div>
+          <StatCard key={item.label} label={item.label} value={item.value} helper={item.helper} />
         ))}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Recent Activity</p>
-              <h2 className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">最近活动</h2>
-            </div>
-          </div>
-          <div className="mt-5 space-y-3">
-            {(activities || []).map((activity) => (
-              <div key={activity.id} className="rounded-2xl bg-slate-50 px-4 py-4 dark:bg-slate-900">
-                <div className="flex items-start justify-between gap-4">
+        <div className="space-y-6">
+          <SectionBlock title="账户概览" description="聚焦当前账号的身份信息和基础归属。">
+            <div className="grid gap-4 md:grid-cols-2">
+              <SurfaceCard tone="muted" className="p-5">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 text-slate-500" />
                   <div>
-                    <p className="text-sm font-semibold text-slate-950 dark:text-white">{getActivityLabel(activity.type)}</p>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                      {activity.problem_title || activity.contest_name || activity.achievement_name || '-'}
+                    <p className="text-sm font-semibold text-slate-950">角色</p>
+                    <p className="mt-1 text-sm text-slate-600">{profile.role}</p>
+                  </div>
+                </div>
+              </SurfaceCard>
+              <SurfaceCard tone="muted" className="p-5">
+                <div className="flex items-start gap-3">
+                  <IdCard className="mt-0.5 h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">组织</p>
+                    <p className="mt-1 text-sm text-slate-600">Org #{profile.organization_id}</p>
+                  </div>
+                </div>
+              </SurfaceCard>
+              <SurfaceCard tone="muted" className="p-5">
+                <div className="flex items-start gap-3">
+                  <Mail className="mt-0.5 h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">邮箱</p>
+                    <p className="mt-1 text-sm text-slate-600">{profile.email || '未设置'}</p>
+                  </div>
+                </div>
+              </SurfaceCard>
+              <SurfaceCard tone="muted" className="p-5">
+                <div className="flex items-start gap-3">
+                  <CalendarDays className="mt-0.5 h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">注册时间</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {new Date(profile.created_at).toLocaleDateString('zh-CN')}
                     </p>
                   </div>
-                  <span className="text-xs text-slate-400">{new Date(activity.created_at).toLocaleString('zh-CN')}</span>
                 </div>
-              </div>
-            ))}
-            {(activities || []).length === 0 && <p className="text-sm text-slate-500">暂无活动</p>}
-          </div>
+              </SurfaceCard>
+            </div>
+          </SectionBlock>
+
+          <SectionBlock title="最近活动" description="展示最近 10 条真实活动记录。">
+            <div className="space-y-3">
+              {(activities || []).map((activity) => (
+                <div key={activity.id} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">{getActivityLabel(activity.type)}</p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {activity.problem_title || activity.contest_name || activity.achievement_name || '-'}
+                      </p>
+                    </div>
+                    <span className="text-xs text-slate-400">
+                      {new Date(activity.created_at).toLocaleString('zh-CN')}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {(activities || []).length === 0 ? (
+                <p className="text-sm text-slate-500">暂无活动</p>
+              ) : null}
+            </div>
+          </SectionBlock>
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Identity</p>
-            <div className="mt-5 space-y-4">
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Username</p>
-                <p className="mt-1 font-semibold text-slate-950 dark:text-white">{profile.username}</p>
+        <div className="space-y-6">
+          <SectionBlock title="身份信息" description="当前系统已落库的账号字段。">
+            <div className="space-y-4 text-sm">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Username</p>
+                <p className="mt-1 font-semibold text-slate-950">{profile.username}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Email</p>
-                <p className="mt-1 font-semibold text-slate-950 dark:text-white">{profile.email || '未设置'}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Campus</p>
-                <p className="mt-1 font-semibold text-slate-950 dark:text-white">{profile.campus_id ? `Campus #${profile.campus_id}` : '未绑定'}</p>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Campus</p>
+                <p className="mt-1 font-semibold text-slate-950">
+                  {profile.campus_id ? `Campus #${profile.campus_id}` : '未绑定'}
+                </p>
               </div>
             </div>
-          </div>
+          </SectionBlock>
 
-          {isEditing && (
-            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-                <Mail className="h-4 w-4" />
-                <h2 className="text-lg font-semibold">编辑资料</h2>
-              </div>
-              <div className="mt-5 space-y-4">
+          {isEditing ? (
+            <SectionBlock title="编辑资料" description="仅保存当前后端已支持的显示名称和邮箱字段。">
+              <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-medium">显示名称</label>
-                  <input
-                    type="text"
+                  <label className="mb-2 block text-sm font-medium text-slate-700">显示名称</label>
+                  <Input
                     value={editForm.display_name}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, display_name: e.target.value }))}
-                    className="w-full rounded-xl border px-4 py-3"
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, display_name: e.target.value }))
+                    }
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium">邮箱</label>
-                  <input
+                  <label className="mb-2 block text-sm font-medium text-slate-700">邮箱</label>
+                  <Input
                     type="email"
                     value={editForm.email}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
-                    className="w-full rounded-xl border px-4 py-3"
                   />
                 </div>
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setIsEditing(false)}>
                     取消
                   </Button>
@@ -214,8 +231,8 @@ export function Profile() {
                   </Button>
                 </div>
               </div>
-            </div>
-          )}
+            </SectionBlock>
+          ) : null}
         </div>
       </div>
     </div>

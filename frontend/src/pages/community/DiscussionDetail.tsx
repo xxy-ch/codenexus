@@ -1,17 +1,23 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { discussionsApi } from '@/services/communityApi'
-import type { DiscussionDetail, DiscussionReply } from '@/types/community'
+import type { DiscussionDetail as DiscussionDetailData, DiscussionReply } from '@/types/community'
 import { Loading } from '@/components/ui/Loading'
+import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/page/EmptyState'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { useDiscussionUpdates } from '@/hooks/useCommunityUpdates'
 import { useAuth } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 
 export function DiscussionDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const [discussion, setDiscussion] = useState<DiscussionDetail | null>(null)
+  const [discussion, setDiscussion] = useState<DiscussionDetailData | null>(null)
   const [loading, setLoading] = useState(true)
   const [replyContent, setReplyContent] = useState('')
   const [parentReplyId, setParentReplyId] = useState<number | 'root' | null>(null)
@@ -19,8 +25,7 @@ export function DiscussionDetail() {
   const [liked, setLiked] = useState(false)
   const [likedReplies, setLikedReplies] = useState<Record<number, boolean>>({})
 
-  // WebSocket real-time updates
-  const { update } = useDiscussionUpdates(id ? parseInt(id) : undefined)
+  const { update } = useDiscussionUpdates(id ? parseInt(id, 10) : undefined)
 
   useEffect(() => {
     if (!id) return
@@ -28,7 +33,7 @@ export function DiscussionDetail() {
     const fetchDiscussion = async () => {
       setLoading(true)
       try {
-        const data = await discussionsApi.getDiscussion(parseInt(id))
+        const data = await discussionsApi.getDiscussion(parseInt(id, 10))
         setDiscussion(data)
       } catch (error) {
         console.error('Failed to fetch discussion:', error)
@@ -40,10 +45,8 @@ export function DiscussionDetail() {
     fetchDiscussion()
   }, [id])
 
-  // Handle real-time reply updates
   useEffect(() => {
     if (update && discussion) {
-      // Add new reply to the discussion
       const newReply: DiscussionReply = {
         id: update.reply_id,
         discussion_id: update.discussion_id,
@@ -64,7 +67,7 @@ export function DiscussionDetail() {
         }
       })
     }
-  }, [update])
+  }, [update, discussion])
 
   const handleSubmitReply = async () => {
     if (!replyContent.trim() || !discussion) return
@@ -76,13 +79,11 @@ export function DiscussionDetail() {
         parent_reply_id: typeof parentReplyId === 'number' ? parentReplyId : undefined,
       })
 
-      // Add reply to the discussion
       if (typeof parentReplyId === 'number') {
-        // Nested reply - add to parent's replies
         setDiscussion((prev) => {
           if (!prev) return null
-          const addNestedReply = (replies: DiscussionReply[]): DiscussionReply[] => {
-            return replies.map((r) => {
+          const addNestedReply = (replies: DiscussionReply[]): DiscussionReply[] =>
+            replies.map((r) => {
               if (r.id === parentReplyId) {
                 return {
                   ...r,
@@ -97,14 +98,12 @@ export function DiscussionDetail() {
               }
               return r
             })
-          }
           return {
             ...prev,
             replies: addNestedReply(prev.replies),
           }
         })
       } else {
-        // Top-level reply
         setDiscussion((prev) => {
           if (!prev) return null
           return {
@@ -131,9 +130,10 @@ export function DiscussionDetail() {
       setLiked(result.liked)
       setDiscussion((prev) => {
         if (!prev) return null
-        const nextLikeCount = result.like_count >= 0
-          ? result.like_count
-          : Math.max(0, prev.discussion.like_count + (result.liked ? 1 : -1))
+        const nextLikeCount =
+          result.like_count >= 0
+            ? result.like_count
+            : Math.max(0, prev.discussion.like_count + (result.liked ? 1 : -1))
         return {
           ...prev,
           discussion: {
@@ -164,9 +164,10 @@ export function DiscussionDetail() {
         const updateLikeCount = (replies: DiscussionReply[]): DiscussionReply[] =>
           replies.map((reply) => {
             if (reply.id === replyId) {
-              const nextLikeCount = result.like_count >= 0
-                ? result.like_count
-                : Math.max(0, reply.like_count + (result.liked ? 1 : -1))
+              const nextLikeCount =
+                result.like_count >= 0
+                  ? result.like_count
+                  : Math.max(0, reply.like_count + (result.liked ? 1 : -1))
               return {
                 ...reply,
                 like_count: nextLikeCount,
@@ -193,279 +194,220 @@ export function DiscussionDetail() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleString()
-  }
+  const formatDate = (dateString: string) => new Date(dateString).toLocaleString('zh-CN')
 
-  const renderReplies = (replies: DiscussionReply[], depth = 0) => {
-    return replies.map((reply) => (
+  const renderReplies = (replies: DiscussionReply[], depth = 0): JSX.Element[] =>
+    replies.map((reply) => (
       <div
         key={reply.id}
-        className={`${depth > 0 ? 'ml-8 mt-4' : 'mt-4'} bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4`}
+        className={cn(
+          'rounded-2xl border border-slate-200 bg-slate-50/80 p-4',
+          depth > 0 ? 'ml-6 mt-3' : '',
+        )}
       >
-        {/* Reply Header */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-semibold text-primary">
-                {reply.author_username.charAt(0).toUpperCase()}
-              </span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+              {reply.author_username.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {reply.author_username}
-            </span>
-            {reply.is_solution && (
-              <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                <span className="material-icons text-[14px]">check_circle</span>
+            <span className="text-sm font-medium text-slate-950">{reply.author_username}</span>
+            {reply.is_solution ? (
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                 Solution
               </span>
-            )}
+            ) : null}
           </div>
-          <span className="text-xs text-text-muted">{formatDate(reply.created_at)}</span>
+          <span className="text-xs text-slate-400">{formatDate(reply.created_at)}</span>
         </div>
 
-        {/* Reply Content */}
-        <div className="text-sm text-gray-700 dark:text-gray-300 mb-3 whitespace-pre-wrap">
-          {reply.content}
-        </div>
+        <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{reply.content}</div>
 
-        {/* Reply Actions */}
-        <div className="flex items-center gap-4 text-sm">
+        <div className="mt-3 flex items-center gap-4 text-sm">
           <button
+            type="button"
             onClick={() => setParentReplyId(reply.id)}
-            className="flex items-center gap-1 text-text-muted hover:text-primary transition-colors"
+            className="text-slate-500 transition hover:text-slate-900"
           >
-            <span className="material-icons text-base">reply</span>
             Reply
           </button>
           <button
+            type="button"
             onClick={() => handleReplyLike(reply.id)}
-            className={`flex items-center gap-1 transition-colors ${
-              likedReplies[reply.id]
-                ? 'text-primary'
-                : 'text-text-muted hover:text-primary'
-            }`}
+            className={cn(
+              'transition',
+              likedReplies[reply.id] ? 'text-slate-950' : 'text-slate-500 hover:text-slate-900',
+            )}
           >
-            <span className="material-icons text-base">
-              {likedReplies[reply.id] ? 'thumb_up' : 'thumb_up_off_alt'}
-            </span>
-            {reply.like_count}
+            {reply.like_count} 赞同
           </button>
         </div>
 
-        {/* Nested Replies */}
-        {reply.replies && reply.replies.length > 0 && renderReplies(reply.replies, depth + 1)}
+        {reply.replies && reply.replies.length > 0 ? renderReplies(reply.replies, depth + 1) : null}
       </div>
     ))
-  }
 
   if (loading) {
-    return <Loading message="Loading discussion..." />
-  }
-
-  if (!discussion) {
     return (
-      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
-        <div className="text-center">
-          <span className="material-icons text-6xl text-text-muted mb-4">error_outline</span>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Discussion not found
-          </h2>
-          <button
-            onClick={() => navigate('/discussions')}
-            className="mt-4 px-6 py-2 bg-primary text-white rounded-lg"
-          >
-            Back to Discussions
-          </button>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loading message="Loading discussion..." />
       </div>
     )
   }
 
+  if (!discussion) {
+    return (
+      <EmptyState
+        title="Discussion not found"
+        description="当前讨论无法读取。"
+        action={
+          <Button variant="primary" onClick={() => navigate('/discussions')}>
+            Back to Discussions
+          </Button>
+        }
+      />
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Header */}
-      <header className="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/discussions')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <span className="material-icons text-gray-600 dark:text-gray-400">arrow_back</span>
-            </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
-              Discussion
-            </h1>
-          </div>
-        </div>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Discussion"
+        breadcrumb={['Discussions', discussion.discussion.title]}
+        title={discussion.discussion.title}
+        description={discussion.problem ? `关联题目：${discussion.problem.title}` : '讨论详情页'}
+        actions={
+          <Button variant="outline" onClick={() => navigate('/discussions')}>
+            返回讨论区
+          </Button>
+        }
+      />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Discussion */}
-        <article className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden mb-6">
-          <div className="p-6">
-            {/* Tags */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              {discussion.discussion.is_pinned && (
-                <span className="bg-primary/10 text-primary text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase">
-                  Pinned
-                </span>
-              )}
-              {discussion.discussion.is_solved && (
-                <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
-                  <span className="material-icons text-[14px]">check_circle</span>
-                  Solved
-                </span>
-              )}
-              {discussion.discussion.is_locked && (
-                <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                  <span className="material-icons text-[14px]">lock</span>
-                  Locked
-                </span>
-              )}
-              {discussion.problem && (
-                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs px-2 py-0.5 rounded-full font-medium">
-                  {discussion.problem.title}
-                </span>
-              )}
-              {discussion.discussion.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
+      <div className="flex flex-wrap gap-2">
+        {discussion.discussion.is_pinned ? (
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-700">
+            Pinned
+          </span>
+        ) : null}
+        {discussion.discussion.is_solved ? (
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+            Solved
+          </span>
+        ) : null}
+        {discussion.discussion.is_locked ? (
+          <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            Locked
+          </span>
+        ) : null}
+        {discussion.problem ? (
+          <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+            {discussion.problem.title}
+          </span>
+        ) : null}
+        {discussion.discussion.tags.map((tag) => (
+          <span
+            key={tag}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600"
+          >
+            #{tag}
+          </span>
+        ))}
+      </div>
 
-            {/* Title */}
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              {discussion.discussion.title}
-            </h1>
-
-            {/* Author & Stats */}
-            <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-base font-semibold text-primary">
-                    {discussion.author.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {discussion.author.username}
-                  </div>
-                  <div className="text-xs text-text-muted">
-                    Posted on {formatDate(discussion.discussion.created_at)}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 text-text-muted text-sm">
-                <span className="flex items-center gap-1">
-                  <span className="material-icons text-base">visibility</span>
-                  {discussion.discussion.view_count}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="material-icons text-base">chat_bubble_outline</span>
-                  {discussion.discussion.reply_count}
-                </span>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-6">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+          <SectionBlock title="正文" description="保持阅读和回复路径清晰。">
+            <div className="whitespace-pre-wrap text-sm leading-8 text-slate-700">
               {discussion.discussion.content}
             </div>
+          </SectionBlock>
 
-            {/* Actions */}
-            <div className="flex items-center gap-3">
-              {user && user.id === discussion.author.id && (
-                <button
-                  onClick={() => navigate(`/discussions/${discussion.discussion.id}/edit`)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+          {parentReplyId !== null ? (
+            <SectionBlock
+              title={typeof parentReplyId === 'number' ? 'Reply to comment' : 'Write a reply'}
+              description="回复会直接落到当前讨论流中。"
+            >
+              <textarea
+                value={replyContent}
+                onChange={(e) => setReplyContent(e.target.value)}
+                placeholder="Write your reply..."
+                rows={4}
+                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              />
+              <div className="mt-4 flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setParentReplyId(null)
+                    setReplyContent('')
+                  }}
                 >
-                  <span className="material-icons text-lg">edit</span>
-                  Edit
-                </button>
-              )}
-              <button
-                onClick={handleLike}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  liked
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-              >
-                <span className="material-icons text-lg">thumb_up</span>
-                {discussion.discussion.like_count}
-              </button>
-              {!discussion.discussion.is_locked && (
-                <button
-                  onClick={() => setParentReplyId('root')}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
+                  取消
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleSubmitReply}
+                  disabled={!replyContent.trim() || submitting}
                 >
-                  <span className="material-icons text-lg">reply</span>
-                  Reply
-                </button>
-              )}
-            </div>
-          </div>
-        </article>
+                  {submitting ? 'Posting...' : 'Post Reply'}
+                </Button>
+              </div>
+            </SectionBlock>
+          ) : null}
 
-        {/* Reply Form */}
-        {parentReplyId !== null && (
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-4 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                {typeof parentReplyId === 'number' ? 'Reply to comment' : 'Write a reply'}
-              </h3>
-              <button
-                onClick={() => {
-                  setParentReplyId(null)
-                  setReplyContent('')
-                }}
-                className="text-text-muted hover:text-gray-900 dark:hover:text-white"
-              >
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-            <textarea
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              placeholder="Write your reply..."
-              rows={4}
-              className="w-full px-3 py-2 border border-border-light dark:border-border-dark rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
-            <div className="flex justify-end mt-3">
-              <button
-                onClick={handleSubmitReply}
-                disabled={!replyContent.trim() || submitting}
-                className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? 'Posting...' : 'Post Reply'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Replies Section */}
-        <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Replies ({discussion.replies.length})
-          </h2>
-
-          {discussion.replies.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="material-icons text-4xl text-text-muted mb-2">forum</span>
-              <p className="text-text-muted">No replies yet. Be the first to reply!</p>
-            </div>
-          ) : (
-            <div>{renderReplies(discussion.replies)}</div>
-          )}
+          <SectionBlock title={`Replies (${discussion.replies.length})`} description="支持嵌套回复和回复点赞。">
+            {discussion.replies.length === 0 ? (
+              <div className="py-10 text-center">
+                <p className="text-sm text-slate-500">No replies yet. Be the first to reply!</p>
+              </div>
+            ) : (
+              <div className="space-y-3">{renderReplies(discussion.replies)}</div>
+            )}
+          </SectionBlock>
         </div>
-      </main>
+
+        <div className="space-y-6">
+          <SurfaceCard className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+                {discussion.author.username.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-semibold text-slate-950">{discussion.author.username}</p>
+                <p className="text-sm text-slate-500">Posted on {formatDate(discussion.discussion.created_at)}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Views</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">{discussion.discussion.view_count}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Replies</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">{discussion.discussion.reply_count}</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {user && user.id === discussion.author.id ? (
+                <Button
+                  fullWidth
+                  variant="outline"
+                  onClick={() => navigate(`/discussions/${discussion.discussion.id}/edit`)}
+                >
+                  Edit
+                </Button>
+              ) : null}
+              <Button fullWidth variant={liked ? 'primary' : 'outline'} onClick={handleLike}>
+                {discussion.discussion.like_count}
+              </Button>
+              {!discussion.discussion.is_locked ? (
+                <Button fullWidth variant="primary" onClick={() => setParentReplyId('root')}>
+                  Reply
+                </Button>
+              ) : null}
+            </div>
+          </SurfaceCard>
+        </div>
+      </div>
     </div>
   )
 }

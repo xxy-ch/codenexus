@@ -1,10 +1,16 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { blogApi } from '@/services/communityApi'
-import type { ArticleDetail, ArticleComment } from '@/types/community'
+import type { ArticleComment, ArticleDetail } from '@/types/community'
 import { Loading } from '@/components/ui/Loading'
+import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/page/EmptyState'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { useArticleUpdates } from '@/hooks/useCommunityUpdates'
 import { useAuth } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 
 export function BlogDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -18,7 +24,6 @@ export function BlogDetail() {
   const [submitting, setSubmitting] = useState(false)
   const [liked, setLiked] = useState(false)
 
-  // WebSocket real-time updates
   const { update } = useArticleUpdates(slug)
 
   useEffect(() => {
@@ -39,7 +44,6 @@ export function BlogDetail() {
     fetchArticle()
   }, [slug])
 
-  // Handle real-time comment updates
   useEffect(() => {
     if (update && article) {
       const newComment: ArticleComment = {
@@ -61,7 +65,7 @@ export function BlogDetail() {
         }
       })
     }
-  }, [update])
+  }, [update, article])
 
   const handleSubmitComment = async () => {
     if (!commentContent.trim() || !article) return
@@ -73,13 +77,11 @@ export function BlogDetail() {
         parent_comment_id: typeof parentCommentId === 'number' ? parentCommentId : undefined,
       })
 
-      // Add comment to the article
       if (typeof parentCommentId === 'number') {
-        // Nested comment - add to parent's comments
         setArticle((prev) => {
           if (!prev) return null
-          const addNestedComment = (comments: ArticleComment[]): ArticleComment[] => {
-            return comments.map((c) => {
+          const addNestedComment = (comments: ArticleComment[]): ArticleComment[] =>
+            comments.map((c) => {
               if (c.id === parentCommentId) {
                 return {
                   ...c,
@@ -94,14 +96,12 @@ export function BlogDetail() {
               }
               return c
             })
-          }
           return {
             ...prev,
             comments: addNestedComment(prev.comments),
           }
         })
       } else {
-        // Top-level comment
         setArticle((prev) => {
           if (!prev) return null
           return {
@@ -128,9 +128,10 @@ export function BlogDetail() {
       setLiked(result.liked)
       setArticle((prev) => {
         if (!prev) return null
-        const nextLikeCount = result.like_count >= 0
-          ? result.like_count
-          : Math.max(0, prev.article.like_count + (result.liked ? 1 : -1))
+        const nextLikeCount =
+          result.like_count >= 0
+            ? result.like_count
+            : Math.max(0, prev.article.like_count + (result.liked ? 1 : -1))
         return {
           ...prev,
           article: {
@@ -144,265 +145,212 @@ export function BlogDetail() {
     }
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     })
-  }
 
-  const renderComments = (comments: ArticleComment[], depth = 0) => {
-    return comments.map((comment) => (
+  const renderComments = (comments: ArticleComment[], depth = 0): JSX.Element[] =>
+    comments.map((comment) => (
       <div
         key={comment.id}
-        className={`${depth > 0 ? 'ml-8 mt-4' : 'mt-6 pt-6 border-t border-gray-100 dark:border-gray-800'} bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4`}
+        className={cn(
+          'rounded-2xl border border-slate-200 bg-slate-50/80 p-4',
+          depth > 0 ? 'ml-6 mt-3' : '',
+        )}
       >
-        {/* Comment Header */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-semibold text-primary">
-                {comment.author_username.charAt(0).toUpperCase()}
-              </span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+              {comment.author_username.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
-              {comment.author_username}
-            </span>
+            <span className="text-sm font-medium text-slate-950">{comment.author_username}</span>
           </div>
-          <span className="text-xs text-text-muted">{formatDate(comment.created_at)}</span>
+          <span className="text-xs text-slate-400">{formatDate(comment.created_at)}</span>
         </div>
 
-        {/* Comment Content */}
-        <div className="text-sm text-gray-700 dark:text-gray-300 mb-3 whitespace-pre-wrap">
-          {comment.content}
-        </div>
+        <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{comment.content}</div>
 
-        {/* Comment Actions */}
-        <div className="flex items-center gap-4 text-sm">
+        <div className="mt-3 flex items-center gap-4 text-sm">
           <button
+            type="button"
             onClick={() => setParentCommentId(comment.id)}
-            className="flex items-center gap-1 text-text-muted hover:text-primary transition-colors"
+            className="text-slate-500 transition hover:text-slate-900"
           >
-            <span className="material-icons text-base">reply</span>
-            Reply
+            回复
           </button>
-          <button className="flex items-center gap-1 text-text-muted hover:text-primary transition-colors">
-            <span className="material-icons text-base">thumb_up</span>
-            {comment.like_count}
+          <button type="button" className="text-slate-500 transition hover:text-slate-900">
+            赞同 {comment.like_count}
           </button>
         </div>
 
-        {/* Nested Comments */}
-        {comment.replies && comment.replies.length > 0 && renderComments(comment.replies, depth + 1)}
+        {comment.replies && comment.replies.length > 0 ? renderComments(comment.replies, depth + 1) : null}
       </div>
     ))
-  }
 
   if (loading) {
-    return <Loading message="Loading article..." />
-  }
-
-  if (!article) {
     return (
-      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
-        <div className="text-center">
-          <span className="material-icons text-6xl text-text-muted mb-4">error_outline</span>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Article not found
-          </h2>
-          <button
-            onClick={() => navigate('/blog')}
-            className="mt-4 px-6 py-2 bg-primary text-white rounded-lg"
-          >
-            Back to Blog
-          </button>
-        </div>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loading message="Loading article..." />
       </div>
     )
   }
 
+  if (!article) {
+    return (
+      <EmptyState
+        title="Article not found"
+        description="当前文章无法读取。"
+        action={
+          <Button variant="primary" onClick={() => navigate('/blog')}>
+            Back to Blog
+          </Button>
+        }
+      />
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Header */}
-      <header className="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/blog')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Blog"
+        breadcrumb={['Blog', article.article.title]}
+        title={article.article.title}
+        description={article.article.excerpt || '文章详情页'}
+        actions={
+          <Button variant="outline" onClick={() => navigate('/blog')}>
+            返回博客
+          </Button>
+        }
+      />
+
+      <div className="flex flex-wrap gap-2">
+        {article.article.is_featured ? (
+          <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+            Featured
+          </span>
+        ) : null}
+        {article.article.category ? (
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+            {article.article.category}
+          </span>
+        ) : null}
+        {article.article.tags.map((tag) => (
+          <span
+            key={tag}
+            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600"
+          >
+            #{tag}
+          </span>
+        ))}
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-6">
+          <SectionBlock title="正文" description="正文和评论分离，阅读优先。">
+            <div className="whitespace-pre-wrap text-sm leading-8 text-slate-700">{article.article.content}</div>
+          </SectionBlock>
+
+          {parentCommentId !== null ? (
+            <SectionBlock
+              title={typeof parentCommentId === 'number' ? '回复评论' : '写评论'}
+              description="提交后会直接写入当前文章评论流。"
             >
-              <span className="material-icons text-gray-600 dark:text-gray-400">arrow_back</span>
-            </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Blog</h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Article */}
-        <article className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden mb-8">
-          {/* Article Header */}
-          <div className="p-8 pb-6 border-b border-gray-100 dark:border-gray-800">
-            {/* Tags & Category */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              {article.article.is_featured && (
-                <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase">
-                  Featured
-                </span>
-              )}
-              {article.article.category && (
-                <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">
-                  {article.article.category}
-                </span>
-              )}
-              {article.article.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+              <textarea
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
+                placeholder="Share your thoughts..."
+                rows={4}
+                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              />
+              <div className="mt-4 flex justify-end gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setParentCommentId(null)
+                    setCommentContent('')
+                  }}
                 >
-                  #{tag}
-                </span>
-              ))}
-            </div>
+                  取消
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleSubmitComment}
+                  disabled={!commentContent.trim() || submitting}
+                >
+                  {submitting ? 'Posting...' : 'Post Comment'}
+                </Button>
+              </div>
+            </SectionBlock>
+          ) : null}
 
-            {/* Title */}
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              {article.article.title}
-            </h1>
-
-            {/* Author & Stats */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-base font-semibold text-primary">
-                    {article.author.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {article.author.username}
-                  </div>
-                  <div className="text-xs text-text-muted">
-                    {article.article.published_at
-                      ? formatDate(article.article.published_at)
-                      : formatDate(article.article.created_at)}
-                  </div>
+          <SectionBlock title={`Comments (${article.comments.length})`} description="支持嵌套回复。">
+            {article.comments.length === 0 ? (
+              <div className="py-10 text-center">
+                <p className="text-sm text-slate-500">No comments yet. Be the first to comment!</p>
+                <div className="mt-4">
+                  <Button variant="primary" onClick={() => setParentCommentId('root')}>
+                    Write a Comment
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-4 text-text-muted text-sm">
-                <span className="flex items-center gap-1">
-                  <span className="material-icons text-base">visibility</span>
-                  {article.article.view_count}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="material-icons text-base">chat_bubble_outline</span>
-                  {article.article.comment_count}
-                </span>
+            ) : (
+              <div className="space-y-3">{renderComments(article.comments)}</div>
+            )}
+          </SectionBlock>
+        </div>
+
+        <div className="space-y-6">
+          <SurfaceCard className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+                {article.author.username.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-semibold text-slate-950">{article.author.username}</p>
+                <p className="text-sm text-slate-500">
+                  {article.article.published_at
+                    ? formatDate(article.article.published_at)
+                    : formatDate(article.article.created_at)}
+                </p>
               </div>
             </div>
-          </div>
-
-          {/* Article Content */}
-          <div className="p-8">
-            <div className="prose prose-lg dark:prose-invert max-w-none">
-              <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                {article.article.content}
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Views</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">{article.article.view_count}</p>
+              </div>
+              <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Comments</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">{article.article.comment_count}</p>
               </div>
             </div>
-
-            {/* Article Actions */}
-            <div className="flex items-center gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
-              {user && user.id === article.author.id && (
-                <button
+            <div className="space-y-3">
+              {user && user.id === article.author.id ? (
+                <Button
+                  fullWidth
+                  variant="outline"
                   onClick={() => navigate(`/blog/${article.article.slug}/edit`)}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <span className="material-icons text-lg">edit</span>
                   Edit
-                </button>
-              )}
-              <button
+                </Button>
+              ) : null}
+              <Button
+                fullWidth
+                variant={liked ? 'primary' : 'outline'}
                 onClick={handleLike}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors ${
-                  liked
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
               >
-                <span className="material-icons text-lg">thumb_up</span>
                 {article.article.like_count} Likes
-              </button>
-              <button
-                onClick={() => setParentCommentId('root')}
-                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
-              >
-                <span className="material-icons text-lg">comment</span>
+              </Button>
+              <Button fullWidth variant="primary" onClick={() => setParentCommentId('root')}>
                 Comment
-              </button>
+              </Button>
             </div>
-          </div>
-        </article>
-
-        {/* Comment Form */}
-        {parentCommentId !== null && (
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                {typeof parentCommentId === 'number' ? 'Reply to comment' : 'Write a comment'}
-              </h3>
-              <button
-                onClick={() => {
-                  setParentCommentId(null)
-                  setCommentContent('')
-                }}
-                className="text-text-muted hover:text-gray-900 dark:hover:text-white"
-              >
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-            <textarea
-              value={commentContent}
-              onChange={(e) => setCommentContent(e.target.value)}
-              placeholder="Share your thoughts..."
-              rows={4}
-              className="w-full px-4 py-3 border border-border-light dark:border-border-dark rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={handleSubmitComment}
-                disabled={!commentContent.trim() || submitting}
-                className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? 'Posting...' : 'Post Comment'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Comments Section */}
-        <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-            Comments ({article.comments.length})
-          </h2>
-
-          {article.comments.length === 0 ? (
-            <div className="text-center py-12">
-              <span className="material-icons text-5xl text-text-muted mb-3">chat_bubble_outline</span>
-              <p className="text-text-muted mb-4">No comments yet. Be the first to comment!</p>
-              <button
-                onClick={() => setParentCommentId('root')}
-                className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
-              >
-                Write a Comment
-              </button>
-            </div>
-          ) : (
-            <div>{renderComments(article.comments)}</div>
-          )}
+          </SurfaceCard>
         </div>
-      </main>
+      </div>
     </div>
   )
 }

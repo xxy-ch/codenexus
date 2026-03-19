@@ -1,242 +1,193 @@
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useMemo } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ArrowRight, Clock3, Database, Layers3, Tag } from 'lucide-react'
 import { useProblem } from '@/hooks/useProblems'
-import { Loading } from '@/components/ui/Loading'
 import { Button } from '@/components/ui/Button'
+import { Loading } from '@/components/ui/Loading'
+import { EmptyState } from '@/components/page/EmptyState'
+import { PageHeader } from '@/components/page/PageHeader'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { cn } from '@/lib/utils'
 
 const difficultyConfig = {
   easy: {
     label: 'Easy',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-400',
-    borderColor: 'border-green-200 dark:border-green-800',
+    className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   },
   medium: {
     label: 'Medium',
-    bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-    textColor: 'text-yellow-700 dark:text-yellow-400',
-    borderColor: 'border-yellow-200 dark:border-yellow-800',
+    className: 'border-amber-200 bg-amber-50 text-amber-700',
   },
   hard: {
     label: 'Hard',
-    bgColor: 'bg-red-100 dark:bg-red-900/30',
-    textColor: 'text-red-700 dark:text-red-400',
-    borderColor: 'border-red-200 dark:border-red-800',
+    className: 'border-rose-200 bg-rose-50 text-rose-700',
   },
-}
+} as const
 
 export function ProblemDetail() {
   const { problemId } = useParams<{ problemId: string }>()
   const navigate = useNavigate()
   const { data: problem, isLoading, error } = useProblem(problemId ?? '')
 
-  const handleSolve = () => {
-    navigate(`/problems/${problemId}/solve`)
-  }
+  const paragraphs = useMemo(
+    () =>
+      (problem?.description || '')
+        .split(/\n{2,}/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    [problem?.description],
+  )
 
   if (isLoading) {
-    return <Loading message="Loading problem..." />
-  }
-
-  if (error || !problem) {
     return (
-      <div className="text-center py-12">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          Problem Not Found
-        </h3>
-        <p className="text-slate-600 dark:text-slate-400 mb-4">
-          无法加载题目详情，请稍后重试。
-        </p>
-        <Link to="/problems">
-          <Button variant="primary">返回题库</Button>
-        </Link>
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loading message="加载题目详情..." />
       </div>
     )
   }
 
-  const config = difficultyConfig[problem.difficulty]
+  if (error || !problem) {
+    return (
+      <EmptyState
+        title="题目不存在"
+        description="无法加载题目详情，请返回题库重新选择。"
+        action={
+          <Link to="/problems">
+            <Button variant="primary">返回题库</Button>
+          </Link>
+        }
+      />
+    )
+  }
+
+  const difficulty = difficultyConfig[problem.difficulty]
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              {problem.title}
-            </h1>
+      <PageHeader
+        eyebrow="Problem Detail"
+        breadcrumb={['Problems', problem.title]}
+        title={problem.title}
+        description="题面阅读、约束信息和提交入口统一收在同一张 detail 画布里，减少无关装饰，保留实际判题所需信息。"
+        actions={
+          <>
+            <Button variant="outline" onClick={() => navigate('/problems')} aria-label="返回题库">
+              返回题库
+            </Button>
+            <Button variant="primary" onClick={() => navigate(`/problems/${problemId}/solve`)}>
+              开始作答
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </>
+        }
+      />
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Difficulty"
+          value={
             <span
               className={cn(
-                'px-3 py-1 rounded-full text-xs font-semibold border',
-                config.bgColor,
-                config.textColor,
-                config.borderColor
+                'inline-flex rounded-full border px-3 py-1 text-sm font-semibold',
+                difficulty.className,
               )}
             >
-              {config.label}
+              {difficulty.label}
             </span>
-          </div>
-
-          {/* Metadata */}
-          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-            <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-lg">schedule</span>
-              <span>{problem.time_limit}ms</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-lg">memory</span>
-              <span>{problem.memory_limit}MB</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="material-symbols-outlined text-lg">stars</span>
-              <span>{problem.points} points</span>
-            </div>
-          </div>
-        </div>
-
-        <Button variant="primary" size="lg" onClick={handleSolve}>
-          <span className="material-symbols-outlined mr-2">play_arrow</span>
-          Solve Now
-        </Button>
+          }
+          helper="根据题目配置读取"
+        />
+        <StatCard label="Time Limit" value={`${problem.time_limit} ms`} helper="单次运行上限" />
+        <StatCard
+          label="Memory Limit"
+          value={`${Math.round(problem.memory_limit / 1024)} MB`}
+          helper="按题目配置展示"
+        />
+        <StatCard label="Points" value={problem.points} helper="通过后可获得分值" />
       </div>
 
-      {/* Tags */}
-      <div className="flex flex-wrap gap-2">
-        {problem.tags.map((tag) => (
-          <span
-            key={tag}
-            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_360px]">
+        <div className="space-y-6">
+          <SectionBlock
+            title="题目描述"
+            description="正文只展示真实题面内容，不再混入伪样例、伪提示和占位说明。"
           >
-            {tag}
-          </span>
-        ))}
-      </div>
+            <div className="space-y-4 text-sm leading-7 text-slate-700">
+              {paragraphs.length > 0 ? (
+                paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)
+              ) : (
+                <p>暂无题面描述。</p>
+              )}
+            </div>
+          </SectionBlock>
 
-      {/* Problem Description */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="border-b border-slate-200 dark:border-slate-800 px-6 py-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Description
-          </h2>
+          <SectionBlock
+            title="提交说明"
+            description="进入工作区后按标准输入输出提交代码，使用题目配置中允许的语言进行判题。"
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <SurfaceCard tone="muted" className="p-5">
+                <div className="flex items-start gap-3">
+                  <Clock3 className="mt-0.5 h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">时间限制</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      单次运行最长 {problem.time_limit} ms。
+                    </p>
+                  </div>
+                </div>
+              </SurfaceCard>
+              <SurfaceCard tone="muted" className="p-5">
+                <div className="flex items-start gap-3">
+                  <Database className="mt-0.5 h-4 w-4 text-slate-500" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">内存限制</p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      运行时可使用 {Math.round(problem.memory_limit / 1024)} MB 内存。
+                    </p>
+                  </div>
+                </div>
+              </SurfaceCard>
+            </div>
+          </SectionBlock>
         </div>
-        <div className="px-6 py-4">
-          <div className="prose prose-sm dark:prose-invert max-w-none">
-            <p>{problem.description}</p>
-          </div>
-        </div>
-      </div>
 
-      {/* Examples */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="border-b border-slate-200 dark:border-slate-800 px-6 py-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Examples
-          </h2>
-        </div>
-        <div className="px-6 py-4 space-y-4">
-          {/* Example 1 */}
-          <div>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-              Example 1:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
-                  Input:
-                </p>
-                <code className="text-sm text-slate-800 dark:text-slate-200">
-                  nums = [2,7,11,15], target = 9
-                </code>
+        <div className="space-y-6">
+          <SectionBlock title="标签" description="题目关联的知识点和分类。">
+            {problem.tags.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {problem.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
+                  >
+                    <Tag className="h-3.5 w-3.5 text-slate-500" />
+                    {tag}
+                  </span>
+                ))}
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
-                  Output:
+            ) : (
+              <p className="text-sm text-slate-500">暂无标签。</p>
+            )}
+          </SectionBlock>
+
+          <SurfaceCard className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Layers3 className="mt-0.5 h-4 w-4 text-slate-500" />
+              <div>
+                <p className="text-sm font-semibold text-slate-950">解题入口</p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  工作区保留题目与编辑器双栏结构，不预置模板代码，直接以标准输入输出提交。
                 </p>
-                <code className="text-sm text-slate-800 dark:text-slate-200">
-                  [0,1]
-                </code>
               </div>
             </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-3">
-              Explanation: Because nums[0] + nums[1] == 9, we return [0, 1].
-            </p>
-          </div>
-
-          {/* Example 2 */}
-          <div>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-              Example 2:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
-                  Input:
-                </p>
-                <code className="text-sm text-slate-800 dark:text-slate-200">
-                  nums = [3,2,4], target = 6
-                </code>
-              </div>
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
-                  Output:
-                </p>
-                <code className="text-sm text-slate-800 dark:text-slate-200">
-                  [1,2]
-                </code>
-              </div>
-            </div>
-          </div>
+            <Button fullWidth variant="primary" onClick={() => navigate(`/problems/${problemId}/solve`)}>
+              进入 IDE
+            </Button>
+          </SurfaceCard>
         </div>
-      </div>
-
-      {/* Constraints */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="border-b border-slate-200 dark:border-slate-800 px-6 py-4">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Constraints
-          </h2>
-        </div>
-        <div className="px-6 py-4">
-          <ul className="list-disc list-inside space-y-2 text-sm text-slate-700 dark:text-slate-300">
-            <li>2 ≤ nums.length ≤ 10⁴</li>
-            <li>-10⁹ ≤ nums[i] ≤ 10⁹</li>
-            <li>-10⁹ ≤ target ≤ 10⁹</li>
-            <li>Only one valid answer exists.</li>
-          </ul>
-        </div>
-      </div>
-
-      {/* Hints */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800 overflow-hidden">
-        <div className="px-6 py-4">
-          <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-blue-600 dark:text-blue-400 text-xl mt-0.5">
-              lightbulb
-            </span>
-            <div>
-              <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
-                Hint
-              </h3>
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                Think about using a hash table to store the values you've seen so far.
-                For each number, check if the complement (target - number) exists in the hash table.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <div className="flex items-center justify-between pt-4">
-        <Link to="/problems">
-          <Button variant="outline">
-            <span className="material-symbols-outlined mr-2">arrow_back</span>
-            Back to Problems
-          </Button>
-        </Link>
       </div>
     </div>
   )

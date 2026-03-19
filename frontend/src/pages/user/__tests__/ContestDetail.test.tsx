@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { ContestDetail } from '../ContestDetail'
 
 // Mock the API service
@@ -71,7 +71,9 @@ describe('ContestDetail', () => {
     return render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={[`/contests/${contestId}`]}>
-          <ContestDetail />
+          <Routes>
+            <Route path="/contests/:contestId" element={<ContestDetail />} />
+          </Routes>
         </MemoryRouter>
       </QueryClientProvider>
     )
@@ -96,7 +98,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Weekly Contest 345')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Weekly Contest 345' })).toBeInTheDocument()
       })
     })
 
@@ -106,7 +108,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/weekly coding challenge/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/weekly coding challenge/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -116,8 +118,8 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/2024.*01.*15/i)).toBeInTheDocument()
-        expect(screen.getByText(/120.*分钟|2h/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/2024.*01.*15/i).length).toBeGreaterThan(0)
+        expect(screen.getByText(/120.*分钟|2小时/i)).toBeInTheDocument()
       })
     })
 
@@ -139,7 +141,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/规则|rules/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /竞赛规则|rules/i })).toBeInTheDocument()
         expect(screen.getByText(/no cheating/i)).toBeInTheDocument()
       })
     })
@@ -150,7 +152,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/奖励|prizes/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /奖励|prizes/i })).toBeInTheDocument()
         expect(screen.getByText(/\$100/i)).toBeInTheDocument()
       })
     })
@@ -175,7 +177,7 @@ describe('ContestDetail', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/简单|easy/i)).toBeInTheDocument()
-        expect(screen.getByText(/中等|medium/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/中等|medium/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -196,7 +198,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/120.*150|80.*%|pass rate/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/120 \/ 150|通过率 80%|pass rate/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -209,13 +211,7 @@ describe('ContestDetail', () => {
         expect(screen.getByText('Two Sum')).toBeInTheDocument()
       })
 
-      const problemCard = screen.getByText('Two Sum').closest('div')
-      if (problemCard) {
-        const user = userEvent.setup()
-        await user.click(problemCard)
-
-        expect(window.location.pathname).toContain('/problems/1')
-      }
+      expect(screen.getByRole('link', { name: /Two Sum/i })).toHaveAttribute('href', '/problems/1')
     })
   })
 
@@ -284,7 +280,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/进入竞赛|enter|start/i)).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /进入竞赛|enter/i })).toBeInTheDocument()
       })
     })
 
@@ -336,7 +332,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/剩余|remaining|time left/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/剩余|即将结束|remaining|time left/i).length).toBeGreaterThan(0)
       })
     })
   })
@@ -348,7 +344,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/45.*人|participants/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/45.*人|participants/i).length).toBeGreaterThan(0)
       })
     })
   })
@@ -362,7 +358,8 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/not found|不存在/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /not found|不存在/i })).toBeInTheDocument()
+        expect(screen.getByText(/Contest not found/i)).toBeInTheDocument()
       })
     })
 
@@ -374,7 +371,8 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/error|错误|failed/i)).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /error|错误|failed|加载失败/i })).toBeInTheDocument()
+        expect(screen.getByText(/Failed to fetch contest/i)).toBeInTheDocument()
       })
     })
   })
@@ -390,7 +388,7 @@ describe('ContestDetail', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/已结束|completed|ended/i)).toBeInTheDocument()
-        expect(screen.getByText(/查看结果|view results/i)).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /查看结果|view results/i })).toBeInTheDocument()
       })
     })
   })
@@ -402,7 +400,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        const shareButton = screen.getByLabelText(/share|分享/i)
+        const shareButton = screen.getByRole('button', { name: /share|分享/i })
         expect(shareButton).toBeInTheDocument()
       })
     })
@@ -415,7 +413,7 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        const backButton = screen.getByLabelText(/back|返回/i)
+        const backButton = screen.getByRole('button', { name: /back|返回/i })
         expect(backButton).toBeInTheDocument()
       })
     })

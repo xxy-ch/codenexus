@@ -98,7 +98,7 @@ describe('SubmissionDetail', () => {
       expect(screen.getAllByText('45ms').length).toBeGreaterThan(0)
       expect(screen.getAllByText('1MB').length).toBeGreaterThan(0)
       expect(screen.getAllByText('2/2').length).toBeGreaterThan(0)
-      expect(screen.getByText(/testuser/)).toBeInTheDocument()
+      expect(screen.getAllByText(/testuser/).length).toBeGreaterThan(0)
     })
   })
 
