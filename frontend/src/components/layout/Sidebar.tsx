@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
@@ -25,15 +26,81 @@ const navItems: NavItem[] = [
   { label: 'Reports', path: '/teacher/assignment-report', icon: 'insights' },
 ]
 
+const COLLAPSED_STORAGE_KEY = 'sidebar-collapsed'
+const AUTO_COLLAPSE_BREAKPOINT = 1024
+const EXPANDED_WIDTH = '16rem'
+const COLLAPSED_WIDTH = '5rem'
+
+function canUseWindow() {
+  return typeof window !== 'undefined'
+}
+
+function getAutoCollapsedState() {
+  return canUseWindow() ? window.innerWidth < AUTO_COLLAPSE_BREAKPOINT : false
+}
+
+function getStoredManualPreference() {
+  if (!canUseWindow()) {
+    return false
+  }
+
+  try {
+    return window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
 export function Sidebar() {
   const location = useLocation()
   const { user, logout } = useAuth()
+  const [isAutoCollapsed, setIsAutoCollapsed] = useState(() => getAutoCollapsedState())
+  const [manualCollapsed, setManualCollapsed] = useState(() => getStoredManualPreference())
+
+  const collapsed = isAutoCollapsed || manualCollapsed
+
+  useEffect(() => {
+    if (!canUseWindow()) {
+      return
+    }
+
+    const updateCollapsedState = () => {
+      setIsAutoCollapsed(window.innerWidth < AUTO_COLLAPSE_BREAKPOINT)
+    }
+
+    updateCollapsedState()
+    window.addEventListener('resize', updateCollapsedState)
+    return () => window.removeEventListener('resize', updateCollapsedState)
+  }, [])
+
+  useEffect(() => {
+    if (!canUseWindow()) {
+      return
+    }
+
+    document.documentElement.style.setProperty('--sidebar-shell-width', collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH)
+    return () => {
+      document.documentElement.style.setProperty('--sidebar-shell-width', EXPANDED_WIDTH)
+    }
+  }, [collapsed])
+
+  const toggleSidebar = () => {
+    const nextManualCollapsed = !manualCollapsed
+    setManualCollapsed(nextManualCollapsed)
+
+    if (canUseWindow()) {
+      try {
+        window.localStorage.setItem(COLLAPSED_STORAGE_KEY, nextManualCollapsed ? 'true' : 'false')
+      } catch {
+        // ignore storage failures
+      }
+    }
+  }
 
   const handleLogout = async () => {
     await logout()
   }
 
-  // Get user initials
   const getUserInitials = () => {
     if (user?.first_name && user?.last_name) {
       return `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
@@ -45,87 +112,121 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-shrink-0 flex flex-col justify-between">
+    <aside
+      aria-label="Global sidebar"
+      className={cn(
+        'flex shrink-0 flex-col justify-between border-r border-slate-200 bg-white/95 backdrop-blur-sm transition-all duration-200 dark:border-slate-800 dark:bg-slate-950/95',
+        collapsed ? 'w-20' : 'w-64',
+      )}
+      style={{ width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH }}
+    >
       <div>
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-center px-6 border-b border-slate-100 dark:border-slate-800/50">
-          <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/30">
-            <span className="material-symbols-outlined text-white text-xl">code</span>
-          </div>
-          <span className="ml-3 font-semibold text-lg tracking-tight text-slate-700 dark:text-white">
-            AlgoMaster
-          </span>
+        <div
+          className={cn(
+            'relative flex h-16 items-center border-b border-slate-200 px-4 dark:border-slate-800',
+            collapsed ? 'justify-center' : 'justify-between',
+          )}
+        >
+          <Link
+            to="/dashboard"
+            aria-label="AlgoMaster dashboard"
+            title="AlgoMaster dashboard"
+            className={cn('flex items-center text-slate-900 dark:text-slate-100', collapsed ? 'justify-center' : 'gap-3')}
+          >
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-900 text-white dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+              <span className="material-symbols-outlined text-xl" aria-hidden="true">
+                code
+              </span>
+            </span>
+            {!collapsed && <span className="text-lg font-semibold tracking-tight">AlgoMaster</span>}
+          </Link>
+
+          <button
+            type="button"
+            onClick={toggleSidebar}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="absolute right-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          >
+            <span className="material-symbols-outlined text-xl" aria-hidden="true">
+              {collapsed ? 'chevron_right' : 'chevron_left'}
+            </span>
+          </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="mt-6 px-2 space-y-1">
+        <nav className={cn('mt-4 space-y-1 px-2', collapsed && 'px-1')}>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path
+
             return (
               <Link
                 key={item.path}
                 to={item.path}
+                aria-label={item.label}
+                title={item.label}
                 className={cn(
-                  'group flex items-center px-4 py-3 rounded-lg relative transition-colors',
+                  'group relative flex items-center rounded-xl transition-colors',
+                  collapsed ? 'justify-center px-2 py-3' : 'px-4 py-3',
                   isActive
-                    ? 'text-primary bg-primary/10'
-                    : 'text-slate-500 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-400'
+                    ? 'bg-slate-100 text-slate-950 dark:bg-slate-800 dark:text-slate-50'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100',
                 )}
               >
-                <span className="material-symbols-outfilled mr-3 text-2xl">
+                <span className={cn('material-symbols-outlined text-2xl', collapsed ? '' : 'mr-3')} aria-hidden="true">
                   {item.icon}
                 </span>
-                <span className="font-medium">{item.label}</span>
-                {item.badge && (
-                  <span className="ml-auto bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full dark:bg-red-900/30 dark:text-red-400">
+                {collapsed ? <span className="sr-only">{item.label}</span> : <span className="font-medium">{item.label}</span>}
+                {item.badge && !collapsed && (
+                  <span className="ml-auto rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
                     {item.badge}
                   </span>
                 )}
-                {isActive && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full" />
-                )}
+                {isActive && <div className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-slate-900 dark:bg-slate-100" />}
               </Link>
             )
           })}
         </nav>
       </div>
 
-      {/* User Profile */}
-      <div className="p-4 border-t border-slate-100 dark:border-slate-800/50">
-        <div className="flex items-center gap-3">
+      <div className="border-t border-slate-200 p-4 dark:border-slate-800">
+        <div className={cn('flex items-center', collapsed ? 'justify-center gap-2' : 'gap-3')}>
           <Link
             to="/profile"
-            className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-white text-sm font-bold ring-2 ring-white dark:ring-slate-800 shadow-sm hover:ring-primary transition-all"
+            aria-label="Profile"
+            title="Profile"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white transition-colors hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
           >
             {getUserInitials()}
           </Link>
-          <div className="flex-1 overflow-hidden">
-            <Link
-              to="/profile"
-              className="text-sm font-semibold truncate text-slate-900 dark:text-white hover:text-primary transition-colors"
-            >
-              {user?.first_name && user?.last_name
-                ? `${user.first_name} ${user.last_name}`
-                : user?.username || 'User'}
-            </Link>
-            <p className="text-xs text-slate-500 truncate dark:text-slate-400 capitalize">
-              {user?.role || 'User'}
-            </p>
-          </div>
+          {!collapsed && (
+            <div className="min-w-0 flex-1">
+              <Link to="/profile" className="block truncate text-sm font-semibold text-slate-950 dark:text-slate-100">
+                {user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.username || 'User'}
+              </Link>
+              <p className="truncate text-xs capitalize text-slate-500 dark:text-slate-400">{user?.role || 'User'}</p>
+            </div>
+          )}
           <div className="flex items-center gap-1">
             <Link
               to="/settings"
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              aria-label="Settings"
               title="Settings"
+              className="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
             >
-              <span className="material-symbols-outlined text-xl">settings</span>
+              <span className="material-symbols-outlined text-xl" aria-hidden="true">
+                settings
+              </span>
             </Link>
             <button
+              type="button"
               onClick={handleLogout}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+              aria-label="Logout"
               title="Logout"
+              className="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
             >
-              <span className="material-symbols-outlined text-xl">logout</span>
+              <span className="material-symbols-outlined text-xl" aria-hidden="true">
+                logout
+              </span>
             </button>
           </div>
         </div>

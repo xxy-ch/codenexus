@@ -20,52 +20,77 @@ export function AdminLayout() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      {/* Admin Header */}
-      <header className="bg-white dark:bg-slate-900 border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-2xl text-primary">code</span>
-                <span className="font-bold text-lg">Online Judge</span>
+    <div className="flex min-h-screen bg-[rgb(var(--page-bg-rgb))] text-slate-900 dark:text-slate-100">
+      <aside className="hidden w-72 shrink-0 border-r border-slate-200 bg-white/95 px-4 py-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/95 lg:flex lg:flex-col">
+        <Link to="/admin" className="flex items-center gap-3 rounded-2xl px-3 py-3 text-slate-950 dark:text-slate-100">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-900 text-white dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+            <span className="material-symbols-outlined text-xl" aria-hidden="true">shield</span>
+          </span>
+          <div>
+            <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Operations</div>
+            <div className="text-base font-semibold">Control Center</div>
+          </div>
+        </Link>
+
+        <div className="mt-6 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+          Operations
+        </div>
+        <nav className="mt-3 space-y-1" aria-label="Admin navigation">
+          {navigation.map((item) => {
+            const isActive = location.pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                aria-label={
+                  item.href === '/admin/users'
+                    ? 'Users'
+                    : item.href === '/admin/problems'
+                      ? 'Problem Management'
+                      : item.name
+                }
+                className={cn(
+                  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors',
+                  isActive
+                    ? 'bg-slate-100 text-slate-950 dark:bg-slate-800 dark:text-slate-50'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100',
+                )}
+              >
+                <span className="material-symbols-outlined text-xl" aria-hidden="true">{item.icon}</span>
+                <span>{item.name}</span>
               </Link>
-              <nav className="hidden md:flex gap-1">
-                {navigation.map((item) => {
-                  const isActive = location.pathname === item.href
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      className={cn(
-                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                        isActive
-                          ? 'bg-primary text-white'
-                          : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-                      )}
-                    >
-                      <span className="material-symbols-outlined text-lg">{item.icon}</span>
-                      {item.name}
-                    </Link>
-                  )
-                })}
-              </nav>
+            )
+          })}
+        </nav>
+
+        <div className="mt-auto rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          Admin pages now share the same shell family as the main workspace, with denser navigation and flatter surfaces.
+        </div>
+      </aside>
+
+      <main className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/95 md:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            <div>
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Admin workspace</div>
+              <div className="text-lg font-semibold text-slate-950 dark:text-slate-100">Operations and moderation</div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <Link
                 to="/dashboard"
-                className="text-sm text-slate-600 hover:text-primary dark:text-slate-400"
+                aria-label="Return to user workspace"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
               >
-                返回用户界面
+                <span className="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+                <span className="hidden sm:inline">Return to user workspace</span>
               </Link>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Outlet />
+        <div className="flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-6 lg:px-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   )

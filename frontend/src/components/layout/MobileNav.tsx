@@ -19,7 +19,10 @@ export function MobileNav() {
   const location = useLocation()
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50">
+    <nav
+      aria-label="Mobile navigation"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-950/95 lg:hidden"
+    >
       <div className="flex items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/')
@@ -28,13 +31,13 @@ export function MobileNav() {
               key={item.path}
               to={item.path}
               className={cn(
-                'flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-0 flex-1',
+                'flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors',
                 isActive
-                  ? 'text-primary'
-                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+                  ? 'text-slate-950 dark:text-slate-50'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
               )}
             >
-              <span className="material-symbols-outlined text-xl filled">
+              <span className="material-symbols-outlined text-xl" aria-hidden="true">
                 {item.icon}
               </span>
               <span className="text-xs font-medium truncate">{item.label}</span>
