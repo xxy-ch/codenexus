@@ -248,7 +248,7 @@ CREATE INDEX IF NOT EXISTS idx_legacy_uoj_click_zans_user_id
 
 CREATE TABLE IF NOT EXISTS legacy_uoj_notifications (
     legacy_system_msg_id BIGINT PRIMARY KEY,
-    notification_id UUID UNIQUE REFERENCES notifications(id) ON DELETE SET NULL,
+    notification_id UUID UNIQUE,
     legacy_receiver VARCHAR(20) NOT NULL,
     user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     legacy_title VARCHAR(100) NOT NULL,
