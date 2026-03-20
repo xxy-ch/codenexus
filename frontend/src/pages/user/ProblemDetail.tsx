@@ -5,9 +5,9 @@ import { useProblem } from '@/hooks/useProblems'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { EmptyState } from '@/components/page/EmptyState'
+import { MetaStrip } from '@/components/page/MetaStrip'
 import { PageHeader } from '@/components/page/PageHeader'
 import { SectionBlock } from '@/components/page/SectionBlock'
-import { StatCard } from '@/components/page/StatCard'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { cn } from '@/lib/utils'
 
@@ -84,29 +84,39 @@ export function ProblemDetail() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Difficulty"
-          value={
-            <span
-              className={cn(
-                'inline-flex rounded-full border px-3 py-1 text-sm font-semibold',
-                difficulty.className,
-              )}
-            >
-              {difficulty.label}
-            </span>
-          }
-          helper="根据题目配置读取"
-        />
-        <StatCard label="Time Limit" value={`${problem.time_limit} ms`} helper="单次运行上限" />
-        <StatCard
-          label="Memory Limit"
-          value={`${Math.round(problem.memory_limit / 1024)} MB`}
-          helper="按题目配置展示"
-        />
-        <StatCard label="Points" value={problem.points} helper="通过后可获得分值" />
-      </div>
+      <MetaStrip
+        items={[
+          {
+            label: 'Difficulty',
+            value: difficulty.label,
+            helper: '根据题目配置读取',
+            icon: Layers3,
+            tone:
+              problem.difficulty === 'easy'
+                ? 'success'
+                : problem.difficulty === 'medium'
+                  ? 'warning'
+                  : 'danger',
+          },
+          {
+            label: 'Time Limit',
+            value: `${problem.time_limit} ms`,
+            helper: '单次运行上限',
+            icon: Clock3,
+          },
+          {
+            label: 'Memory Limit',
+            value: `${Math.round(problem.memory_limit / 1024)} MB`,
+            helper: '按题目配置展示',
+            icon: Database,
+          },
+          {
+            label: 'Points',
+            value: problem.points,
+            helper: '通过后可获得分值',
+          },
+        ]}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_360px]">
         <div className="space-y-6">
@@ -157,11 +167,11 @@ export function ProblemDetail() {
         <div className="space-y-6">
           <SectionBlock title="标签" description="题目关联的知识点和分类。">
             {problem.tags.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {problem.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
                   >
                     <Tag className="h-3.5 w-3.5 text-slate-500" />
                     {tag}

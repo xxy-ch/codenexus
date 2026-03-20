@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { ActionBar } from '@/components/page/ActionBar'
 import { EmptyState } from '@/components/page/EmptyState'
+import { MetaStrip } from '@/components/page/MetaStrip'
 import { PageHeader } from '@/components/page/PageHeader'
 import { SectionBlock } from '@/components/page/SectionBlock'
-import { StatCard } from '@/components/page/StatCard'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { cn } from '@/lib/utils'
 
@@ -264,12 +264,18 @@ export function ContestDetail() {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Start Time" value={formatDateTime(contest.start_time)} />
-        <StatCard label="Duration" value={formatDuration(contest.duration_minutes)} />
-        <StatCard label="Problems" value={`${contest.problems_count} 题`} />
-        <StatCard label="Participants" value={`${contest.participants_count} 人`} helper={statusConfig.summary} />
-      </div>
+      <MetaStrip
+        items={[
+          { label: 'Start Time', value: formatDateTime(contest.start_time) },
+          { label: 'Duration', value: formatDuration(contest.duration_minutes) },
+          { label: 'Problems', value: `${contest.problems_count} 题` },
+          {
+            label: 'Participants',
+            value: `${contest.participants_count} 人`,
+            helper: statusConfig.summary,
+          },
+        ]}
+      />
 
       {countdown && contest.status !== 'completed' ? (
         <SurfaceCard
@@ -363,17 +369,17 @@ export function ContestDetail() {
                         </span>
                         <div>
                           <h3 className="font-medium text-slate-950">{problem.title}</h3>
-                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                          <div className="mt-2 flex flex-nowrap items-center gap-2 overflow-x-auto text-xs text-slate-500 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             <span
                               className={cn(
-                                'rounded-full border px-2.5 py-1 font-semibold',
+                                'shrink-0 rounded-full border px-2.5 py-1 font-semibold',
                                 problemDifficultyConfig.className,
                               )}
                             >
                               {problemDifficultyConfig.label}
                             </span>
-                            <span>{problem.points} 分</span>
-                            <span>通过率 {passRate}</span>
+                            <span className="shrink-0">{problem.points} 分</span>
+                            <span className="shrink-0">通过率 {passRate}</span>
                           </div>
                         </div>
                       </div>
@@ -393,26 +399,9 @@ export function ContestDetail() {
 
         <div className="space-y-6">
           <SectionBlock title="竞赛统计" description="维持真实接口可提供的统计维度。">
-            <div className="space-y-4">
-              <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  参与人数
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">{contest.participants_count}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  题目总数
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">{contest.problems_count}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  总分值
-                </p>
-                <p className="mt-2 text-3xl font-semibold text-slate-950">{totalPoints}</p>
-              </div>
-            </div>
+            <p className="text-sm leading-6 text-slate-600">
+              关键统计已经收到顶部横向信息带，右栏保留给比赛时间、状态和后续操作，避免重复的大号统计卡把页面拉长。
+            </p>
           </SectionBlock>
 
           <SurfaceCard tone="muted" className="space-y-3">

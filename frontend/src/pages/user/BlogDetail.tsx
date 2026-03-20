@@ -83,9 +83,9 @@ export function BlogDetail() {
 
           {/* Tags */}
           {post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
+            <div className="mb-6 flex flex-nowrap gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {post.tags.map((tag: string) => (
-                <span key={tag} className="text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
+                <span key={tag} className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm dark:bg-slate-800">
                   #{tag}
                 </span>
               ))}
