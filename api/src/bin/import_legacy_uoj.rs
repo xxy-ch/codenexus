@@ -185,6 +185,26 @@ struct LegacyJudgerInfoRow {
     ip: String,
 }
 
+#[derive(Debug, Clone)]
+struct LegacySearchRequestRow {
+    search_request_id: i64,
+    created_at: DateTime<Utc>,
+    remote_addr: String,
+    request_type: String,
+    cache_id: i32,
+    query: String,
+    content: String,
+    result: String,
+}
+
+#[derive(Debug, Clone)]
+struct LegacyPasteRow {
+    paste_index: String,
+    creator: Option<String>,
+    created_at: Option<DateTime<Utc>>,
+    content: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ParsedLegacyTestCaseResult {
     verdict: String,
@@ -851,6 +871,57 @@ async fn import_archives(mysql_pool: &MySqlPool, pg_pool: &PgPool) -> Result<()>
         upsert_legacy_judger_info(pg_pool, &judger).await?;
     }
 
+    let search_request_rows = sqlx::query(
+        r#"
+        SELECT id, created_at, remote_addr, type, cache_id, q, content, result
+        FROM search_requests
+        ORDER BY id ASC
+        "#,
+    )
+    .fetch_all(mysql_pool)
+    .await?;
+
+    for row in search_request_rows {
+        let request = LegacySearchRequestRow {
+            search_request_id: row.try_get("id")?,
+            created_at: mysql_datetime_to_utc(row.try_get("created_at")?),
+            remote_addr: row.try_get("remote_addr")?,
+            request_type: row.try_get("type")?,
+            cache_id: row.try_get("cache_id")?,
+            query: row.try_get("q")?,
+            content: row.try_get("content")?,
+            result: row.try_get("result")?,
+        };
+        upsert_legacy_search_request(pg_pool, &request).await?;
+    }
+
+    let paste_rows = sqlx::query(
+        r#"
+        SELECT `index`, creator, created_at, content
+        FROM pastes
+        ORDER BY created_at ASC, `index` ASC
+        "#,
+    )
+    .fetch_all(mysql_pool)
+    .await?;
+
+    for row in paste_rows {
+        let raw_index = row.try_get::<Option<String>, _>("index")?.unwrap_or_default();
+        let Some(paste_index) = normalize_paste_index(&raw_index) else {
+            continue;
+        };
+
+        let paste = LegacyPasteRow {
+            paste_index,
+            creator: row.try_get("creator")?,
+            created_at: row
+                .try_get::<Option<NaiveDateTime>, _>("created_at")?
+                .map(mysql_datetime_to_utc),
+            content: row.try_get("content")?,
+        };
+        upsert_legacy_paste(pg_pool, &paste).await?;
+    }
+
     println!("Imported legacy archive-only entities");
     Ok(())
 }
@@ -1130,6 +1201,22 @@ fn parse_legacy_test_case_results(bytes: &[u8]) -> Vec<ParsedLegacyTestCaseResul
             memory_kb: None,
         })
         .collect()
+}
+
+fn normalize_search_request_type(raw: &str) -> &'static str {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "autocomplete" => "autocomplete",
+        _ => "search",
+    }
+}
+
+fn normalize_paste_index(raw: &str) -> Option<String> {
+    let normalized = raw.trim();
+    if normalized.is_empty() {
+        None
+    } else {
+        Some(normalized.to_string())
+    }
 }
 
 fn normalize_submission_language(language: &str) -> &'static str {
@@ -2409,6 +2496,75 @@ async fn upsert_legacy_judger_info(pg_pool: &PgPool, judger: &LegacyJudgerInfoRo
     Ok(())
 }
 
+async fn upsert_legacy_search_request(pg_pool: &PgPool, request: &LegacySearchRequestRow) -> Result<()> {
+    sqlx::query(
+        r#"
+        INSERT INTO legacy_uoj_search_requests (
+            legacy_search_request_id, legacy_created_at, legacy_remote_addr, legacy_type,
+            legacy_cache_id, legacy_query, legacy_content, legacy_result
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (legacy_search_request_id) DO UPDATE
+        SET
+            legacy_created_at = EXCLUDED.legacy_created_at,
+            legacy_remote_addr = EXCLUDED.legacy_remote_addr,
+            legacy_type = EXCLUDED.legacy_type,
+            legacy_cache_id = EXCLUDED.legacy_cache_id,
+            legacy_query = EXCLUDED.legacy_query,
+            legacy_content = EXCLUDED.legacy_content,
+            legacy_result = EXCLUDED.legacy_result
+        "#,
+    )
+    .bind(request.search_request_id)
+    .bind(request.created_at)
+    .bind(&request.remote_addr)
+    .bind(normalize_search_request_type(&request.request_type))
+    .bind(request.cache_id)
+    .bind(&request.query)
+    .bind(&request.content)
+    .bind(&request.result)
+    .execute(pg_pool)
+    .await?;
+
+    Ok(())
+}
+
+async fn upsert_legacy_paste(pg_pool: &PgPool, paste: &LegacyPasteRow) -> Result<()> {
+    let creator_id = match paste
+        .creator
+        .as_deref()
+        .map(str::trim)
+        .filter(|username| !username.is_empty())
+    {
+        Some(username) => resolve_optional_user_id_by_username(pg_pool, username).await?,
+        None => None,
+    };
+
+    sqlx::query(
+        r#"
+        INSERT INTO legacy_uoj_pastes (
+            legacy_paste_index, legacy_creator, creator_id, legacy_created_at, legacy_content
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (legacy_paste_index) DO UPDATE
+        SET
+            legacy_creator = EXCLUDED.legacy_creator,
+            creator_id = EXCLUDED.creator_id,
+            legacy_created_at = EXCLUDED.legacy_created_at,
+            legacy_content = EXCLUDED.legacy_content
+        "#,
+    )
+    .bind(&paste.paste_index)
+    .bind(&paste.creator)
+    .bind(creator_id)
+    .bind(paste.created_at)
+    .bind(&paste.content)
+    .execute(pg_pool)
+    .await?;
+
+    Ok(())
+}
+
 async fn resolve_user_id_by_username<'a, E>(executor: E, username: &str) -> Result<Uuid>
 where
     E: sqlx::Executor<'a, Database = sqlx::Postgres>,
@@ -2418,6 +2574,17 @@ where
         .fetch_optional(executor)
         .await?
         .with_context(|| format!("missing mapped user for legacy username `{}`", username))
+}
+
+async fn resolve_optional_user_id_by_username<'a, E>(executor: E, username: &str) -> Result<Option<Uuid>>
+where
+    E: sqlx::Executor<'a, Database = sqlx::Postgres>,
+{
+    sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE username = $1")
+        .bind(username)
+        .fetch_optional(executor)
+        .await
+        .map_err(Into::into)
 }
 
 #[cfg(test)]
@@ -2512,5 +2679,18 @@ mod tests {
             parsed.into_iter().map(|item| item.verdict).collect::<Vec<_>>(),
             vec!["ac".to_string(), "wa".to_string(), "rte".to_string()]
         );
+    }
+
+    #[test]
+    fn normalizes_legacy_search_request_type() {
+        assert_eq!(normalize_search_request_type("search"), "search");
+        assert_eq!(normalize_search_request_type("autocomplete"), "autocomplete");
+        assert_eq!(normalize_search_request_type("other"), "search");
+    }
+
+    #[test]
+    fn normalizes_legacy_paste_index() {
+        assert_eq!(normalize_paste_index(" abc123 "), Some("abc123".to_string()));
+        assert_eq!(normalize_paste_index("   "), None);
     }
 }

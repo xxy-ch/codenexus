@@ -81,6 +81,8 @@ does not expose equivalent runtime models:
 - `best_ac_submissions` -> `legacy_uoj_best_ac_submissions`
 - `custom_test_submissions` -> `legacy_uoj_custom_test_submissions`
 - `judger_info` -> `legacy_uoj_judger_info`
+- `search_requests` -> `legacy_uoj_search_requests`
+- `pastes` -> `legacy_uoj_pastes`
 
 ## Recommended Migration Flow
 
@@ -137,6 +139,8 @@ does not expose equivalent runtime models:
   - `legacy_uoj_best_ac_submissions`
   - `legacy_uoj_custom_test_submissions`
   - `legacy_uoj_judger_info`
+  - `legacy_uoj_search_requests`
+  - `legacy_uoj_pastes`
 - Required environment variables:
   - `DATABASE_URL`
   - `LEGACY_UOJ_DATABASE_URL`

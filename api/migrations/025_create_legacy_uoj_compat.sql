@@ -370,3 +370,36 @@ CREATE TABLE IF NOT EXISTS legacy_uoj_judger_info (
     legacy_ip VARCHAR(20) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS legacy_uoj_search_requests (
+    legacy_search_request_id BIGINT PRIMARY KEY,
+    legacy_created_at TIMESTAMPTZ NOT NULL,
+    legacy_remote_addr VARCHAR(50) NOT NULL,
+    legacy_type VARCHAR(20) NOT NULL,
+    legacy_cache_id INTEGER NOT NULL DEFAULT 0,
+    legacy_query VARCHAR(100) NOT NULL,
+    legacy_content TEXT NOT NULL,
+    legacy_result TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_legacy_uoj_search_requests_created_at
+    ON legacy_uoj_search_requests(legacy_created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_legacy_uoj_search_requests_remote_addr
+    ON legacy_uoj_search_requests(legacy_remote_addr);
+
+CREATE TABLE IF NOT EXISTS legacy_uoj_pastes (
+    legacy_paste_index VARCHAR(20) PRIMARY KEY,
+    legacy_creator VARCHAR(20),
+    creator_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    legacy_created_at TIMESTAMPTZ,
+    legacy_content TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_legacy_uoj_pastes_creator_id
+    ON legacy_uoj_pastes(creator_id);
+
+CREATE INDEX IF NOT EXISTS idx_legacy_uoj_pastes_created_at
+    ON legacy_uoj_pastes(legacy_created_at DESC);
