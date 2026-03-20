@@ -29,6 +29,8 @@ pub struct UserProfile {
     pub campus_id: Option<i64>,
     pub role: String,
     pub status: String,
+    pub ac_count: i64,
+    pub contest_rating: i32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -36,6 +38,7 @@ pub struct UserProfile {
 #[derive(Debug, Deserialize)]
 pub struct RegisterRequest {
     pub user_code: Option<String>,
+    #[serde(alias = "user_id")]
     pub username: String,
     pub password: String,
     pub email: Option<String>,
@@ -46,6 +49,7 @@ pub struct RegisterRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {
+    #[serde(alias = "user_id")]
     pub username: String,
     pub password: String,
 }

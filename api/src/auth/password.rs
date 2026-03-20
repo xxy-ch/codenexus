@@ -8,6 +8,12 @@ pub fn verify_password(password: &str, hash: &str) -> Result<bool, bcrypt::Bcryp
     verify(password, hash)
 }
 
+pub fn verify_legacy_md5_password(password: &str, legacy_hash: &str) -> bool {
+    let normalized = legacy_hash.trim().to_ascii_lowercase();
+    let computed = format!("{:x}", md5::compute(password.as_bytes()));
+    computed == normalized
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -25,5 +31,17 @@ mod tests {
         let password = "";
         let hash = hash_password(password).expect("Failed to hash empty password");
         assert!(verify_password(password, &hash).expect("Failed to verify"));
+    }
+
+    #[test]
+    fn test_verify_legacy_md5_password() {
+        assert!(verify_legacy_md5_password(
+            "password",
+            "5f4dcc3b5aa765d61d8327deb882cf99"
+        ));
+        assert!(!verify_legacy_md5_password(
+            "wrong_password",
+            "5f4dcc3b5aa765d61d8327deb882cf99"
+        ));
     }
 }

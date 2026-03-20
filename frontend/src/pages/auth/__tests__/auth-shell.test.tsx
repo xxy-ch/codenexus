@@ -47,7 +47,7 @@ describe('auth and utility shells', () => {
     renderWithProviders(<LoginPage />)
 
     expect(screen.getByRole('heading', { name: /welcome back/i })).toBeInTheDocument()
-    expect(screen.getByText(/use your username and password to enter the workspace/i)).toBeInTheDocument()
+    expect(screen.getByText(/use your account identifier and password to enter the workspace/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /create account/i })).toBeInTheDocument()
   })

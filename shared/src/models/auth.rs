@@ -26,6 +26,7 @@ pub struct Claims {
 /// Login request
 #[derive(Debug, Deserialize)]
 pub struct LoginRequest {
+    #[serde(alias = "user_id")]
     pub username: String,
     pub password: String,
 }
@@ -52,4 +53,20 @@ pub struct RefreshRequest {
 pub struct RefreshResponse {
     /// New access token
     pub token: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::LoginRequest;
+
+    #[test]
+    fn login_request_accepts_user_id_alias() {
+        let payload = serde_json::json!({
+            "user_id": "1001",
+            "password": "secret"
+        });
+
+        let request: LoginRequest = serde_json::from_value(payload).expect("payload should deserialize");
+        assert_eq!(request.username, "1001");
+    }
 }

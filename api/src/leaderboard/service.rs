@@ -59,13 +59,21 @@ impl LeaderboardService {
                     u.username,
                     u.organization_id,
                     u.campus_id,
-                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
+                    GREATEST(
+                        COALESCE(ucs.ac_count, 0),
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')
+                    ) as problems_solved,
                     COUNT(s.id) as submissions,
                     COALESCE(ROUND(
                         COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
                     ), 0)::FLOAT8 as acceptance_rate,
+                    COALESCE(ucs.contest_rating, 1500) as contest_rating,
+                    GREATEST(
+                        COALESCE(ucs.ac_count, 0),
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')
+                    ) as ac_count,
                     COALESCE(SUM(
                         CASE
                             WHEN s.verdict = 'ac' THEN
@@ -82,6 +90,7 @@ impl LeaderboardService {
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id {}
                 LEFT JOIN problems p ON p.id = s.problem_id
+                LEFT JOIN user_competitive_stats ucs ON ucs.user_id = u.id
                 GROUP BY u.id, u.username, u.organization_id, u.campus_id
                 HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
             )
@@ -90,6 +99,8 @@ impl LeaderboardService {
                 user_id,
                 username,
                 score,
+                contest_rating,
+                ac_count,
                 problems_solved,
                 submissions,
                 acceptance_rate,
@@ -160,13 +171,21 @@ impl LeaderboardService {
                     u.username,
                     u.organization_id,
                     u.campus_id,
-                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
+                    GREATEST(
+                        COALESCE(ucs.ac_count, 0),
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')
+                    ) as problems_solved,
                     COUNT(s.id) as submissions,
                     COALESCE(ROUND(
                         COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
                     ), 0)::FLOAT8 as acceptance_rate,
+                    COALESCE(ucs.contest_rating, 1500) as contest_rating,
+                    GREATEST(
+                        COALESCE(ucs.ac_count, 0),
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')
+                    ) as ac_count,
                     COALESCE(SUM(
                         CASE
                             WHEN s.verdict = 'ac' THEN
@@ -183,6 +202,7 @@ impl LeaderboardService {
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id
                 LEFT JOIN problems p ON p.id = s.problem_id
+                LEFT JOIN user_competitive_stats ucs ON ucs.user_id = u.id
                 WHERE u.organization_id = $1
                 GROUP BY u.id, u.username, u.organization_id, u.campus_id
             )
@@ -191,6 +211,8 @@ impl LeaderboardService {
                 user_id,
                 username,
                 score,
+                contest_rating,
+                ac_count,
                 problems_solved,
                 submissions,
                 acceptance_rate,
@@ -233,13 +255,21 @@ impl LeaderboardService {
                     u.username,
                     u.organization_id,
                     u.campus_id,
-                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
+                    GREATEST(
+                        COALESCE(ucs.ac_count, 0),
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')
+                    ) as problems_solved,
                     COUNT(s.id) as submissions,
                     COALESCE(ROUND(
                         COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
                     ), 0)::FLOAT8 as acceptance_rate,
+                    COALESCE(ucs.contest_rating, 1500) as contest_rating,
+                    GREATEST(
+                        COALESCE(ucs.ac_count, 0),
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')
+                    ) as ac_count,
                     COALESCE(SUM(
                         CASE
                             WHEN s.verdict = 'ac' THEN
@@ -256,6 +286,7 @@ impl LeaderboardService {
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id
                 LEFT JOIN problems p ON p.id = s.problem_id
+                LEFT JOIN user_competitive_stats ucs ON ucs.user_id = u.id
                 WHERE u.campus_id = $1
                 GROUP BY u.id, u.username, u.organization_id, u.campus_id
             )
@@ -264,6 +295,8 @@ impl LeaderboardService {
                 user_id,
                 username,
                 score,
+                contest_rating,
+                ac_count,
                 problems_solved,
                 submissions,
                 acceptance_rate,
@@ -306,13 +339,21 @@ impl LeaderboardService {
                     u.username,
                     u.organization_id,
                     u.campus_id,
-                    COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
+                    GREATEST(
+                        COALESCE(ucs.ac_count, 0),
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')
+                    ) as problems_solved,
                     COUNT(s.id) as submissions,
                     COALESCE(ROUND(
                         COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')::NUMERIC /
                         NULLIF(COUNT(DISTINCT s.problem_id), 0) * 100,
                         2
                     ), 0)::FLOAT8 as acceptance_rate,
+                    COALESCE(ucs.contest_rating, 1500) as contest_rating,
+                    GREATEST(
+                        COALESCE(ucs.ac_count, 0),
+                        COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac')
+                    ) as ac_count,
                     COALESCE(SUM(
                         CASE
                             WHEN s.verdict = 'ac' THEN
@@ -330,6 +371,7 @@ impl LeaderboardService {
                 JOIN class_enrollments ce ON ce.student_id = u.id
                 LEFT JOIN submissions s ON s.user_id = u.id
                 LEFT JOIN problems p ON p.id = s.problem_id
+                LEFT JOIN user_competitive_stats ucs ON ucs.user_id = u.id
                 WHERE ce.class_id = $1 AND ce.status = 'active'
                 GROUP BY u.id, u.username, u.organization_id, u.campus_id
             )
@@ -338,6 +380,8 @@ impl LeaderboardService {
                 user_id,
                 username,
                 score,
+                contest_rating,
+                ac_count,
                 problems_solved,
                 submissions,
                 acceptance_rate,
@@ -366,8 +410,17 @@ impl LeaderboardService {
     /// Get user statistics
     pub async fn get_user_stats(&self, user_id: Uuid) -> Result<UserStats> {
         // Get basic user info
-        let user: (String, DateTime<Utc>) = sqlx::query_as(
-            "SELECT username, created_at FROM users WHERE id = $1"
+        let user: (String, DateTime<Utc>, i64, i32) = sqlx::query_as(
+            r#"
+            SELECT
+                u.username,
+                u.created_at,
+                COALESCE(ucs.ac_count, 0) as ac_count,
+                COALESCE(ucs.contest_rating, 1500) as contest_rating
+            FROM users u
+            LEFT JOIN user_competitive_stats ucs ON ucs.user_id = u.id
+            WHERE u.id = $1
+            "#
         )
         .bind(user_id)
         .fetch_one(&self.pool)
@@ -423,6 +476,8 @@ impl LeaderboardService {
         Ok(UserStats {
             user_id,
             username: user.0,
+            ac_count: user.2.max(stats.0),
+            contest_rating: user.3,
             total_problems_solved: stats.0,
             total_submissions: stats.1,
             acceptance_rate,

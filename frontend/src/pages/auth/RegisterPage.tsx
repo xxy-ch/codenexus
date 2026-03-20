@@ -43,8 +43,8 @@ export function RegisterPage() {
 
     if (!formData.username) {
       errors.username = 'Username is required'
-    } else if (!/^[0-9]+$/.test(formData.username)) {
-      errors.username = 'Username must be numeric only'
+    } else if (formData.username.trim().length < 3) {
+      errors.username = 'Username must be at least 3 characters'
     }
 
     if (!formData.password) {
@@ -157,12 +157,12 @@ export function RegisterPage() {
                 />
               </FieldGroup>
 
-              <FieldGroup label="Username">
+              <FieldGroup label="Username" description="Letters digits underscores and existing legacy identifiers are all supported.">
                 <Input
                   name="username"
                   type="text"
                   autoComplete="username"
-                  placeholder="2001"
+                  placeholder="alice01"
                   value={formData.username}
                   onChange={handleChange}
                   required

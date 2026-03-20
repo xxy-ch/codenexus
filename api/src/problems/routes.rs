@@ -131,12 +131,15 @@ pub async fn create_problem(
             description,
             difficulty,
             visibility,
+            tags,
+            source_url,
+            author_note,
             time_limit_ms,
             memory_limit_kb,
             created_at,
             updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
         RETURNING
             id,
             title,
@@ -148,9 +151,9 @@ pub async fn create_problem(
             organization_id,
             (visibility = 'public') AS is_public,
             visibility,
-            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
-            NULL::TEXT AS source_url,
-            NULL::TEXT AS author_note,
+            tags,
+            source_url,
+            author_note,
             created_at,
             updated_at
         "#
@@ -161,6 +164,9 @@ pub async fn create_problem(
     .bind(&req.description)
     .bind(&req.difficulty)
     .bind(visibility)
+    .bind(&req.tags)
+    .bind(&req.source_url)
+    .bind(&req.author_note)
     .bind(req.time_limit)
     .bind(req.memory_limit)
     .fetch_one(&state.db_pool)
@@ -215,9 +221,9 @@ pub async fn list_problems(
             p.organization_id,
             (p.visibility = 'public') AS is_public,
             p.visibility,
-            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
-            NULL::TEXT AS source_url,
-            NULL::TEXT AS author_note,
+            p.tags,
+            p.source_url,
+            p.author_note,
             p.created_at,
             p.updated_at
         FROM problems p
@@ -266,9 +272,9 @@ pub async fn get_problem(
             organization_id,
             (visibility = 'public') AS is_public,
             visibility,
-            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
-            NULL::TEXT AS source_url,
-            NULL::TEXT AS author_note,
+            tags,
+            source_url,
+            author_note,
             created_at,
             updated_at
         FROM problems
@@ -346,8 +352,11 @@ pub async fn update_problem(
             time_limit_ms = COALESCE($4, time_limit_ms),
             memory_limit_kb = COALESCE($5, memory_limit_kb),
             visibility = COALESCE($6, visibility),
+            tags = COALESCE($7, tags),
+            source_url = COALESCE($8, source_url),
+            author_note = COALESCE($9, author_note),
             updated_at = NOW()
-        WHERE id = $7
+        WHERE id = $10
         RETURNING
             id,
             title,
@@ -359,9 +368,9 @@ pub async fn update_problem(
             organization_id,
             (visibility = 'public') AS is_public,
             visibility,
-            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
-            NULL::TEXT AS source_url,
-            NULL::TEXT AS author_note,
+            tags,
+            source_url,
+            author_note,
             created_at,
             updated_at
         "#
@@ -372,6 +381,9 @@ pub async fn update_problem(
     .bind(req.time_limit)
     .bind(req.memory_limit)
     .bind(visibility)
+    .bind(req.tags)
+    .bind(req.source_url)
+    .bind(req.author_note)
     .bind(id)
     .fetch_optional(&state.db_pool)
     .await

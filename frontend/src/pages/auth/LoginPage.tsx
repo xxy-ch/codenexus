@@ -64,7 +64,7 @@ export function LoginPage() {
           <PageHeader
             eyebrow="Access"
             title="Welcome back"
-            description="Use your username and password to enter the workspace."
+            description="Use your account identifier and password to enter the workspace."
             className="border-slate-200 bg-slate-50"
           />
 
@@ -83,12 +83,12 @@ export function LoginPage() {
             ) : null}
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <FieldGroup label="Username" description="Use the account identifier assigned to you.">
+              <FieldGroup label="Username" description="Use the username or legacy account ID assigned to you.">
                 <Input
                   name="username"
                   type="text"
                   autoComplete="username"
-                  placeholder="1001"
+                  placeholder="alice01"
                   value={formData.username}
                   onChange={handleChange}
                   required

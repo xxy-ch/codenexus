@@ -67,7 +67,10 @@ impl SubmissionService {
                 code,
                 language,
                 status,
-                NULL::INTEGER as score,
+                score,
+                result_error,
+                status_details,
+                is_hidden,
                 time_ms as runtime_ms,
                 memory_kb,
                 created_at,
@@ -142,7 +145,10 @@ impl SubmissionService {
                     END,
                     s.status
                 ) as status,
-                NULL::INTEGER as score,
+                s.score,
+                s.result_error,
+                s.status_details,
+                s.is_hidden,
                 s.time_ms as runtime_ms,
                 s.memory_kb,
                 s.created_at,
@@ -210,6 +216,9 @@ impl SubmissionService {
             language: submission.get("language"),
             status: submission.get("status"),
             score: submission.get("score"),
+            result_error: submission.get("result_error"),
+            status_details: submission.get("status_details"),
+            is_hidden: submission.get("is_hidden"),
             runtime_ms: submission.get("runtime_ms"),
             memory_kb: submission.get("memory_kb"),
             test_cases: test_case_results,
@@ -236,7 +245,10 @@ impl SubmissionService {
                 code,
                 language,
                 status,
-                NULL::INTEGER as score,
+                score,
+                result_error,
+                status_details,
+                is_hidden,
                 time_ms as runtime_ms,
                 memory_kb,
                 created_at,
@@ -416,11 +428,12 @@ impl SubmissionService {
     ) -> Result<()> {
         sqlx::query(
             "UPDATE submissions
-             SET status = $1, verdict = $2, time_ms = $3, memory_kb = $4, updated_at = NOW()
-             WHERE id = $5"
+             SET status = $1, verdict = $2, score = $3, time_ms = $4, memory_kb = $5, updated_at = NOW()
+             WHERE id = $6"
         )
         .bind(if status == "accepted" || status == "wrong_answer" || status == "runtime_error" || status == "time_limit_exceeded" || status == "memory_limit_exceeded" || status == "compile_error" { "judged" } else if status == "failed" { "failed" } else { status })
         .bind(map_verdict(status))
+        .bind(score)
         .bind(runtime_ms)
         .bind(memory_kb)
         .bind(submission_id)

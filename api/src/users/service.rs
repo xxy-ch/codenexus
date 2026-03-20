@@ -1,7 +1,8 @@
 use super::models::*;
+use crate::auth::password::{hash_password, verify_legacy_md5_password};
 use crate::auth::JwtService;
 use anyhow::Result;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
 pub struct UserService {
@@ -15,9 +16,9 @@ impl UserService {
     }
 
     pub async fn register(&self, req: RegisterRequest) -> Result<UserProfile> {
-        // Validate username format (numeric only)
-        if !req.username.chars().all(|c| c.is_numeric()) {
-            return Err(anyhow::anyhow!("Username must be numeric only"));
+        let normalized_username = req.username.trim();
+        if normalized_username.is_empty() {
+            return Err(anyhow::anyhow!("Username is required"));
         }
 
         if let Some(user_code) = &req.user_code {
@@ -28,7 +29,7 @@ impl UserService {
         let existing_user = sqlx::query_scalar::<_, Uuid>(
             "SELECT id FROM users WHERE username = $1"
         )
-        .bind(&req.username)
+        .bind(normalized_username)
         .fetch_optional(&self.pool)
         .await?;
 
@@ -66,7 +67,7 @@ impl UserService {
         }
 
         // Hash password
-        let password_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)?;
+        let password_hash = hash_password(&req.password)?;
 
         // Create display_name from username if not provided
         let display_name = req.display_name.clone().unwrap_or_else(|| req.username.clone());
@@ -80,7 +81,7 @@ impl UserService {
             "#
         )
         .bind(&req.user_code)
-        .bind(&req.username)
+        .bind(normalized_username)
         .bind(&req.email)
         .bind(&password_hash)
         .bind(&display_name)
@@ -99,13 +100,20 @@ impl UserService {
         .execute(&self.pool)
         .await?;
 
+        sqlx::query(
+            "INSERT INTO user_competitive_stats (user_id, ac_count, contest_rating) VALUES ($1, 0, 1500) ON CONFLICT (user_id) DO NOTHING"
+        )
+        .bind(user_id)
+        .execute(&self.pool)
+        .await?;
+
         self.get_user_profile(user_id).await
     }
 
     pub async fn login(&self, req: LoginRequest) -> Result<AuthResponse> {
         // Get user by username
         let user = sqlx::query_as::<_, User>(
-            "SELECT * FROM users WHERE username = $1"
+            "SELECT * FROM users WHERE username = $1 OR user_code = $1 ORDER BY CASE WHEN username = $1 THEN 0 ELSE 1 END LIMIT 1"
         )
         .bind(&req.username)
         .fetch_optional(&self.pool)
@@ -113,10 +121,16 @@ impl UserService {
 
         let user = user.ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
 
-        // Verify password
-        bcrypt::verify(&req.password, &user.password_hash)?
-            .then_some(())
-            .ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
+        // Verify password. Imported legacy users may still rely on a preserved MD5
+        // hash in legacy_uoj_users until their first successful sign-in.
+        let verified = match bcrypt::verify(&req.password, &user.password_hash) {
+            Ok(is_valid) => is_valid,
+            Err(_) => false,
+        };
+
+        if !verified && !self.try_upgrade_legacy_password(&user, &req.password).await? {
+            return Err(anyhow::anyhow!("Invalid credentials"));
+        }
 
         // Get user role
         let role = sqlx::query_scalar::<_, String>(
@@ -137,6 +151,8 @@ impl UserService {
         .fetch_one(&self.pool)
         .await?;
 
+        let (ac_count, contest_rating) = self.get_user_competitive_stats(user.id).await?;
+
         // Create user profile
         let user_profile = UserProfile {
             id: user.id,
@@ -148,6 +164,8 @@ impl UserService {
             campus_id: user.campus_id,
             role: role.clone(),
             status: user.status.clone(),
+            ac_count,
+            contest_rating,
             created_at: user.created_at,
             updated_at: user.updated_at,
         };
@@ -171,6 +189,39 @@ impl UserService {
             refresh_token,
             user: user_profile,
         })
+    }
+
+    async fn try_upgrade_legacy_password(&self, user: &User, password: &str) -> Result<bool> {
+        let legacy_hash = sqlx::query_scalar::<_, String>(
+            r#"
+            SELECT legacy_password_md5
+            FROM legacy_uoj_users
+            WHERE user_id = $1 OR legacy_username = $2
+            ORDER BY CASE WHEN user_id = $1 THEN 0 ELSE 1 END
+            LIMIT 1
+            "#
+        )
+        .bind(user.id)
+        .bind(&user.username)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        let Some(legacy_hash) = legacy_hash else {
+            return Ok(false);
+        };
+
+        if !verify_legacy_md5_password(password, &legacy_hash) {
+            return Ok(false);
+        }
+
+        let upgraded_hash = hash_password(password)?;
+        sqlx::query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2")
+            .bind(upgraded_hash)
+            .bind(user.id)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(true)
     }
 
     pub async fn refresh_token(&self, req: RefreshTokenRequest) -> Result<AuthResponse> {
@@ -206,6 +257,8 @@ impl UserService {
         .fetch_one(&self.pool)
         .await?;
 
+        let (ac_count, contest_rating) = self.get_user_competitive_stats(user.id).await?;
+
         // Create user profile
         let user_profile = UserProfile {
             id: user.id,
@@ -217,6 +270,8 @@ impl UserService {
             campus_id: user.campus_id,
             role: role.clone(),
             status: user.status.clone(),
+            ac_count,
+            contest_rating,
             created_at: user.created_at,
             updated_at: user.updated_at,
         };
@@ -250,6 +305,8 @@ impl UserService {
         .fetch_one(&self.pool)
         .await?;
 
+        let (ac_count, contest_rating) = self.get_user_competitive_stats(user_id).await?;
+
         // Get user role
         let role = sqlx::query_scalar::<_, String>(
             r#"
@@ -279,9 +336,27 @@ impl UserService {
             campus_id: user.campus_id,
             role,
             status: user.status,
+            ac_count,
+            contest_rating,
             created_at: user.created_at,
             updated_at: user.updated_at,
         })
+    }
+
+    async fn get_user_competitive_stats(&self, user_id: Uuid) -> Result<(i64, i32)> {
+        let row = sqlx::query(
+            r#"
+            INSERT INTO user_competitive_stats (user_id, ac_count, contest_rating)
+            VALUES ($1, 0, 1500)
+            ON CONFLICT (user_id) DO UPDATE SET user_id = EXCLUDED.user_id
+            RETURNING ac_count, contest_rating
+            "#
+        )
+        .bind(user_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok((row.get("ac_count"), row.get("contest_rating")))
     }
 
     pub async fn update_user_profile(&self, user_id: Uuid, updates: UserProfileUpdate) -> Result<UserProfile> {

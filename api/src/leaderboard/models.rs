@@ -9,6 +9,8 @@ pub struct LeaderboardEntry {
     pub user_id: Uuid,
     pub username: String,
     pub score: f64,
+    pub contest_rating: i32,
+    pub ac_count: i64,
     pub problems_solved: i64,
     pub submissions: i64,
     pub acceptance_rate: f64,
@@ -21,6 +23,8 @@ pub struct LeaderboardEntry {
 pub struct UserStats {
     pub user_id: Uuid,
     pub username: String,
+    pub ac_count: i64,
+    pub contest_rating: i32,
     pub total_problems_solved: i64,
     pub total_submissions: i64,
     pub acceptance_rate: f64,
