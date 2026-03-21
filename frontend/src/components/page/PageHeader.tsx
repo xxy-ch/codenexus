@@ -20,12 +20,17 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <section className={cn('rounded-3xl border border-slate-200 bg-white p-6 shadow-sm', className)}>
+    <section
+      className={cn(
+        'rounded-[32px] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(246,249,253,0.92))] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-sm',
+        className,
+      )}
+    >
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-3">
           {(eyebrow || breadcrumb.length > 0) && (
             <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-              {eyebrow ? <span>{eyebrow}</span> : null}
+              {eyebrow ? <span className="rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">{eyebrow}</span> : null}
               {eyebrow && breadcrumb.length > 0 ? <ChevronRight className="h-4 w-4" /> : null}
               {breadcrumb.map((item, index) => (
                 <span key={`${item}-${index}`} className="inline-flex items-center gap-2">
@@ -36,11 +41,11 @@ export function PageHeader({
             </div>
           )}
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-950">{title}</h1>
-            {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">{description}</p> : null}
+            <h1 className="text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.1rem]">{title}</h1>
+            {description ? <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 md:text-[15px]">{description}</p> : null}
           </div>
         </div>
-        {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap items-center gap-3 self-start lg:justify-end">{actions}</div> : null}
       </div>
     </section>
   )

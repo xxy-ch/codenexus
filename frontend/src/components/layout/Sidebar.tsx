@@ -115,7 +115,7 @@ export function Sidebar() {
     <aside
       aria-label="Global sidebar"
       className={cn(
-        'flex shrink-0 flex-col justify-between border-r border-slate-200 bg-white/95 backdrop-blur-sm transition-all duration-200 dark:border-slate-800 dark:bg-slate-950/95',
+        'flex shrink-0 flex-col justify-between border-r border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(243,247,252,0.96))] backdrop-blur-xl transition-all duration-200 dark:border-slate-800 dark:bg-slate-950/95',
         collapsed ? 'w-20' : 'w-64',
       )}
       style={{ width: collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH }}
@@ -133,12 +133,17 @@ export function Sidebar() {
             title="AlgoMaster dashboard"
             className={cn('flex items-center text-slate-900 dark:text-slate-100', collapsed ? 'justify-center' : 'gap-3')}
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-900 text-white dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+            <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-blue-100 bg-blue-800 text-white shadow-[0_12px_28px_rgba(30,64,175,0.24)] dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
               <span className="material-symbols-outlined text-xl" aria-hidden="true">
                 code
               </span>
             </span>
-            {!collapsed && <span className="text-lg font-semibold tracking-tight">AlgoMaster</span>}
+            {!collapsed && (
+              <div>
+                <span className="block text-lg font-semibold tracking-tight">AlgoMaster</span>
+                <span className="block text-[11px] uppercase tracking-[0.24em] text-slate-500">Workspace</span>
+              </div>
+            )}
           </Link>
 
           <button
@@ -146,7 +151,7 @@ export function Sidebar() {
             onClick={toggleSidebar}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="absolute right-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            className="absolute right-4 inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition-all duration-200 hover:border-blue-200 hover:bg-blue-50/80 hover:text-blue-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100"
           >
             <span className="material-symbols-outlined text-xl" aria-hidden="true">
               {collapsed ? 'chevron_right' : 'chevron_left'}
@@ -165,11 +170,11 @@ export function Sidebar() {
                 aria-label={item.label}
                 title={item.label}
                 className={cn(
-                  'group relative flex items-center rounded-xl transition-colors',
+                  'group relative flex cursor-pointer items-center rounded-2xl transition-all duration-200',
                   collapsed ? 'justify-center px-2 py-3' : 'px-4 py-3',
                   isActive
-                    ? 'bg-slate-100 text-slate-950 dark:bg-slate-800 dark:text-slate-50'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100',
+                    ? 'bg-[linear-gradient(180deg,rgba(219,234,254,0.95),rgba(239,246,255,0.95))] text-slate-950 shadow-[0_12px_24px_rgba(30,64,175,0.12)] dark:bg-slate-800 dark:text-slate-50'
+                    : 'text-slate-500 hover:bg-[rgba(255,255,255,0.88)] hover:text-slate-950 hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)] dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-slate-100',
                 )}
               >
                 <span className={cn('material-symbols-outlined text-2xl', collapsed ? '' : 'mr-3')} aria-hidden="true">
@@ -177,24 +182,24 @@ export function Sidebar() {
                 </span>
                 {collapsed ? <span className="sr-only">{item.label}</span> : <span className="font-medium">{item.label}</span>}
                 {item.badge && !collapsed && (
-                  <span className="ml-auto rounded-full bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                  <span className="ml-auto rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:bg-rose-950/40 dark:text-rose-300">
                     {item.badge}
                   </span>
                 )}
-                {isActive && <div className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-slate-900 dark:bg-slate-100" />}
+                {isActive && <div className="absolute left-0 top-1/2 h-8 w-1 -translate-y-1/2 rounded-r-full bg-blue-800 dark:bg-slate-100" />}
               </Link>
             )
           })}
         </nav>
       </div>
 
-      <div className="border-t border-slate-200 p-4 dark:border-slate-800">
+      <div className="border-t border-slate-200/80 p-4 dark:border-slate-800">
         <div className={cn('flex items-center', collapsed ? 'justify-center gap-2' : 'gap-3')}>
           <Link
             to="/profile"
             aria-label="Profile"
             title="Profile"
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white transition-colors hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-800 text-sm font-bold text-white shadow-[0_12px_24px_rgba(30,64,175,0.18)] transition-colors hover:bg-blue-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
           >
             {getUserInitials()}
           </Link>
@@ -203,7 +208,7 @@ export function Sidebar() {
               <Link to="/profile" className="block truncate text-sm font-semibold text-slate-950 dark:text-slate-100">
                 {user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.username || 'User'}
               </Link>
-              <p className="truncate text-xs capitalize text-slate-500 dark:text-slate-400">{user?.role || 'User'}</p>
+              <p className="truncate text-xs uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">{user?.role || 'User'}</p>
             </div>
           )}
           <div className="flex items-center gap-1">
@@ -211,7 +216,7 @@ export function Sidebar() {
               to="/settings"
               aria-label="Settings"
               title="Settings"
-              className="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+              className="rounded-xl p-1.5 text-slate-500 transition-colors hover:bg-[rgba(255,255,255,0.9)] hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
             >
               <span className="material-symbols-outlined text-xl" aria-hidden="true">
                 settings
@@ -222,7 +227,7 @@ export function Sidebar() {
               onClick={handleLogout}
               aria-label="Logout"
               title="Logout"
-              className="rounded-lg p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+              className="rounded-xl p-1.5 text-slate-500 transition-colors hover:bg-[rgba(255,255,255,0.9)] hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
             >
               <span className="material-symbols-outlined text-xl" aria-hidden="true">
                 logout

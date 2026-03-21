@@ -307,7 +307,7 @@ export function AssignmentReport() {
         <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1.3fr)_minmax(220px,0.7fr)_minmax(220px,0.7fr)]">
           <div className="space-y-2 text-sm min-w-0">
             <label className="block font-medium text-slate-700">搜索班级</label>
-            <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div className="flex items-center gap-2 rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)] backdrop-blur-sm">
               <Search className="h-4 w-4 text-slate-400" />
               <input
                 value={search}
@@ -322,7 +322,7 @@ export function AssignmentReport() {
               aria-label="select class"
               value={highlightedClass?.id ?? ''}
               onChange={(e) => setSelectedClassId(Number(e.target.value))}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+              className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
             >
               <option value="" disabled>
                 请选择班级
@@ -340,7 +340,7 @@ export function AssignmentReport() {
               value={activeAssignmentId ?? ''}
               onChange={(e) => setSelectedAssignmentId(Number(e.target.value))}
               disabled={assignments.length === 0}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
             >
               <option value="" disabled>
                 {assignments.length === 0 ? '暂无作业' : '请选择作业'}
@@ -369,15 +369,15 @@ export function AssignmentReport() {
       </FilterBar>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-5 md:flex-row md:items-center md:justify-between">
+        <section className="overflow-hidden rounded-[30px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+          <div className="flex flex-col gap-3 border-b border-slate-200/80 px-6 py-5 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-slate-950">学生报表</h2>
               <p className="mt-1 text-sm text-slate-600">
                 {highlightedClass ? `${highlightedClass.name} · ${selectedAssignment ? `Problem #${selectedAssignment.problem_id}` : '暂无作业'}` : '请选择班级'}
               </p>
             </div>
-            <div className="rounded-2xl bg-slate-100 px-3 py-2 text-xs font-medium uppercase tracking-[0.22em] text-slate-500">
+            <div className="rounded-2xl bg-blue-50 px-3 py-2 text-xs font-medium uppercase tracking-[0.22em] text-blue-700">
               Live Data
             </div>
           </div>
@@ -401,7 +401,7 @@ export function AssignmentReport() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+                <thead className="bg-[rgba(246,249,253,0.92)]">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Student</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Email</th>
@@ -412,9 +412,9 @@ export function AssignmentReport() {
                     <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-slate-100 bg-[rgba(255,255,255,0.78)]">
                   {reportRows.map((row) => (
-                    <tr key={row.student.student_id} className="transition hover:bg-slate-50">
+                    <tr key={row.student.student_id} className="transition hover:bg-blue-50/50">
                       <TableCell className="font-medium text-slate-900">
                         <div>{row.student.username}</div>
                         <div className="mt-1 text-xs text-slate-500">{row.student.student_id}</div>

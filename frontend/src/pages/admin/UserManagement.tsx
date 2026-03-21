@@ -144,7 +144,7 @@ export function UserManagement() {
         description="账号后台切到更高密度的管理视图。查询、角色切换、状态开关和批量建号仍走现有真实接口，不改 payload 和查询语义。"
         actions={
           <>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">
+            <div className="rounded-2xl border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-4 py-2 text-sm font-medium text-slate-600 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
               共 {total} 名用户
             </div>
             <Button variant="outline" onClick={() => refetch()}>
@@ -164,7 +164,7 @@ export function UserManagement() {
 
       <SurfaceCard tone="muted" className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="flex gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-200 bg-white text-amber-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-amber-200 bg-[rgba(255,255,255,0.9)] text-amber-600 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
             <KeyRound className="h-5 w-5" />
           </div>
           <div>
@@ -174,7 +174,7 @@ export function UserManagement() {
             </p>
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+        <div className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.9)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
           UUID + 12-digit user_code
         </div>
       </SurfaceCard>
@@ -193,7 +193,7 @@ export function UserManagement() {
                     setSearch(e.target.value)
                     setPage(1)
                   }}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
               <select
@@ -203,7 +203,7 @@ export function UserManagement() {
                   setRole(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="h-11 min-w-[140px] rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
               >
                 <option value="all">所有角色</option>
                 <option value="admin">管理员</option>
@@ -217,7 +217,7 @@ export function UserManagement() {
                   setStatus(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="h-11 min-w-[140px] rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
               >
                 <option value="all">所有状态</option>
                 <option value="active">活跃</option>
@@ -237,7 +237,7 @@ export function UserManagement() {
                     onClick={() => setSortBy(option.value as SortType)}
                     className={cn(
                       'rounded-full px-4 py-2 text-sm font-medium transition',
-                      sortBy === option.value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
+                      sortBy === option.value ? 'bg-blue-800 text-white shadow-[0_12px_24px_rgba(30,64,175,0.16)]' : 'bg-[rgba(255,255,255,0.88)] text-slate-600 hover:bg-blue-50/80',
                     )}
                   >
                     {option.label}
@@ -246,9 +246,9 @@ export function UserManagement() {
               </div>
             </FilterBar>
 
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 bg-white">
-                <thead className="bg-slate-50">
+            <div className="overflow-x-auto rounded-[28px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-[rgba(246,249,253,0.92)]">
                   <tr>
                     <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Identity</th>
                     <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Role</th>
@@ -260,10 +260,10 @@ export function UserManagement() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {users.map((user) => (
-                    <tr key={user.id} className="align-top transition hover:bg-slate-50">
+                    <tr key={user.id} className="align-top transition hover:bg-blue-50/50">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-sm font-semibold text-white">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-800 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(30,64,175,0.14)]">
                             {(user.display_name || user.username).charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -283,7 +283,7 @@ export function UserManagement() {
                             value={user.role}
                             onChange={(e) => updateRoleMutation.mutate({ userId: user.id, role: e.target.value as RoleType })}
                             disabled={updateRoleMutation.isPending}
-                            className="block rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                            className="block rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-3 py-2 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
                           >
                             <option value="user">学生</option>
                             <option value="teacher">教师</option>
@@ -321,7 +321,7 @@ export function UserManagement() {
               />
             ) : null}
 
-            <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex flex-col gap-4 rounded-[28px] border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-4 py-4 md:flex-row md:items-center md:justify-between">
               <div className="text-sm text-slate-500">
                 当前页 {page} / {totalPages}
               </div>
@@ -345,7 +345,7 @@ export function UserManagement() {
                 onChange={(e) => setBulkInput(e.target.value)}
                 rows={10}
                 placeholder={'240101070014,张三,zhangsan@example.com,user\n240101070015,李四,,teacher'}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 font-mono text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
               />
             </FieldGroup>
 
@@ -353,7 +353,7 @@ export function UserManagement() {
               <input
                 value={defaultPassword}
                 onChange={(e) => setDefaultPassword(e.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="h-11 w-full rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-3 text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
               />
             </FieldGroup>
 

@@ -169,7 +169,7 @@ export function ContestList() {
             placeholder="搜索竞赛..."
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className="w-full rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-2.5 text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
           />
         </label>
 
@@ -184,8 +184,8 @@ export function ContestList() {
                   className={cn(
                     'rounded-xl px-3 py-2 text-xs font-medium transition-colors',
                     statusFilter === option.value
-                      ? 'bg-slate-950 text-white'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      ? 'bg-blue-800 text-white shadow-[0_12px_24px_rgba(30,64,175,0.16)]'
+                      : 'bg-[rgba(255,255,255,0.88)] text-slate-700 hover:bg-blue-50/80'
                   )}
                 >
                   {option.label}
@@ -201,7 +201,7 @@ export function ContestList() {
             id="difficulty-filter"
             value={difficultyFilter}
             onChange={(event) => setDifficultyFilter(event.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-3 py-2.5 text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
           >
             <option value="all">全部难度</option>
             <option value="easy">简单</option>
@@ -224,7 +224,7 @@ export function ContestList() {
               <Link
                 key={contest.id}
                 to={`/contests/${contest.id}`}
-                className="block rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white"
+                className="block rounded-[30px] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(246,249,253,0.92))] p-5 shadow-[0_14px_30px_rgba(15,23,42,0.06)] transition-all duration-200 hover:border-blue-200 hover:shadow-[0_20px_38px_rgba(30,64,175,0.1)]"
               >
                 <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
                   <div className="space-y-4">
@@ -241,19 +241,19 @@ export function ContestList() {
                       <p className="mt-2 text-sm leading-6 text-slate-600">{contest.description}</p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                      <div className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-500">时长</p>
                         <p className="mt-1 font-medium text-slate-900">{formatDuration(contest.duration_minutes)}</p>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                      <div className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-500">题目</p>
                         <p className="mt-1 font-medium text-slate-900">{contest.problems_count} 题</p>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                      <div className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-500">参与人数</p>
                         <p className="mt-1 font-medium text-slate-900">{contest.participants_count} 人</p>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                      <div className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
                         <p className="text-xs uppercase tracking-[0.18em] text-slate-500">开始时间</p>
                         <p className="mt-1 font-medium text-slate-900">
                           {new Date(contest.start_time).toLocaleString('zh-CN', {

@@ -11,8 +11,10 @@ export function SurfaceCard({ children, className, tone = 'default' }: SurfaceCa
   return (
     <section
       className={cn(
-        'rounded-3xl border p-6 shadow-sm',
-        tone === 'muted' ? 'border-slate-200 bg-slate-50' : 'border-slate-200 bg-white',
+        'rounded-[28px] border p-6 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur-sm',
+        tone === 'muted'
+          ? 'border-slate-200/90 bg-[rgba(246,249,253,0.92)]'
+          : 'border-slate-200/90 bg-[rgba(255,255,255,0.92)]',
         className,
       )}
     >

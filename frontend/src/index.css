@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Bodoni:wght@500;600;700&family=Public+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @tailwind base;
@@ -7,13 +7,16 @@
 
 :root {
   --foreground-rgb: 15, 23, 42;
-  --page-bg-rgb: 241, 245, 249;
+  --page-bg-rgb: 243, 247, 252;
   --surface-rgb: 255, 255, 255;
-  --surface-muted-rgb: 248, 250, 252;
-  --border-rgb: 226, 232, 240;
-  --accent-rgb: 51, 65, 85;
-  --accent-soft-rgb: 226, 232, 240;
+  --surface-muted-rgb: 246, 249, 253;
+  --surface-strong-rgb: 234, 241, 250;
+  --border-rgb: 208, 221, 237;
+  --accent-rgb: 30, 64, 175;
+  --accent-soft-rgb: 219, 234, 254;
   --muted-rgb: 100, 116, 139;
+  --panel-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  --panel-shadow-soft: 0 10px 24px rgba(30, 64, 175, 0.08);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,20 +25,28 @@
     --page-bg-rgb: 2, 6, 23;
     --surface-rgb: 15, 23, 42;
     --surface-muted-rgb: 30, 41, 59;
+    --surface-strong-rgb: 30, 52, 88;
     --border-rgb: 51, 65, 85;
-    --accent-rgb: 226, 232, 240;
-    --accent-soft-rgb: 51, 65, 85;
+    --accent-rgb: 96, 165, 250;
+    --accent-soft-rgb: 30, 41, 59;
     --muted-rgb: 148, 163, 184;
+    --panel-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+    --panel-shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.35);
   }
 }
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Public Sans', sans-serif;
   color: rgb(var(--foreground-rgb));
-  background-color: rgb(var(--page-bg-rgb));
+  background:
+    radial-gradient(circle at top left, rgba(var(--accent-rgb), 0.12), transparent 28%),
+    radial-gradient(circle at top right, rgba(148, 163, 184, 0.14), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(243, 247, 252, 0.98)),
+    rgb(var(--page-bg-rgb));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
 }
 
 * {
@@ -53,8 +64,38 @@ body,
   min-height: 100vh;
 }
 
+#root {
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.64), transparent 38%),
+    radial-gradient(circle at 20% 20%, rgba(var(--accent-rgb), 0.07), transparent 24%);
+}
+
 ::selection {
   background: rgba(var(--accent-rgb), 0.16);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Libre Bodoni', serif;
+  letter-spacing: -0.02em;
+}
+
+code,
+pre,
+.font-mono {
+  font-family: 'Fira Code', monospace;
 }
 
 /* Custom scrollbar */
@@ -68,12 +109,12 @@ body,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #bfd0e6;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #8ea6c6;
 }
 
 .dark ::-webkit-scrollbar-thumb {
@@ -82,6 +123,25 @@ body,
 
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #6b7280;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Material Symbols */

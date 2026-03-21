@@ -353,7 +353,7 @@ export function ContestWizard() {
               </Button>
             </>
           ) : (
-            <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700">
+            <div className="rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
               Waiting for create step
             </div>
           )
@@ -372,7 +372,7 @@ export function ContestWizard() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm lg:sticky lg:top-6 lg:self-start">
+        <aside className="rounded-[30px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] p-4 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:sticky lg:top-6 lg:self-start">
           <div className="space-y-2">
             {STEPS.map((step) => {
               const active = activeStep === step.id
@@ -387,14 +387,14 @@ export function ContestWizard() {
                     'w-full rounded-2xl border px-4 py-3 text-left transition',
                     active
                       ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-sm'
-                      : 'border-transparent bg-slate-50 text-slate-500 hover:border-slate-200 hover:bg-white',
+                      : 'border-transparent bg-[rgba(246,249,253,0.92)] text-slate-500 hover:border-slate-200 hover:bg-[rgba(255,255,255,0.92)]',
                   )}
                 >
                   <div className="flex items-center gap-3">
                     <div
                       className={cn(
                         'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold',
-                        active ? 'bg-white text-sky-700 ring-2 ring-sky-200' : 'bg-white text-slate-500',
+                        active ? 'bg-white text-sky-700 ring-2 ring-sky-200' : 'bg-[rgba(255,255,255,0.92)] text-slate-500',
                       )}
                     >
                       {completed ? <CircleCheckBig className="h-4 w-4 text-emerald-600" /> : step.id}
@@ -420,7 +420,7 @@ export function ContestWizard() {
                 <input
                   value={form.name}
                   onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                   placeholder="例如：Spring 2026 Coding Cup"
                 />
               </FieldGroup>
@@ -430,7 +430,7 @@ export function ContestWizard() {
                   min="1"
                   value={form.organization_id}
                   onChange={(e) => setForm((prev) => ({ ...prev, organization_id: Number(e.target.value) }))}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                 />
               </FieldGroup>
               <FieldGroup label="校区 ID">
@@ -445,14 +445,14 @@ export function ContestWizard() {
                     }))
                   }
                   placeholder="可留空"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                 />
               </FieldGroup>
               <FieldGroup label="规则集">
                 <select
                   value={form.rules}
                   onChange={(e) => setForm((prev) => ({ ...prev, rules: e.target.value as ContestRule }))}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                 >
                   {RULESETS.map((ruleset) => (
                     <option key={ruleset.value} value={ruleset.value}>
@@ -469,7 +469,7 @@ export function ContestWizard() {
                     type="datetime-local"
                     value={toLocalInputValue(form.start_time)}
                     onChange={(e) => setForm((prev) => ({ ...prev, start_time: e.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] py-3 pl-11 pr-4 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </FieldGroup>
@@ -481,7 +481,7 @@ export function ContestWizard() {
                     type="datetime-local"
                     value={toLocalInputValue(form.end_time)}
                     onChange={(e) => setForm((prev) => ({ ...prev, end_time: e.target.value }))}
-                    className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] py-3 pl-11 pr-4 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                   />
                 </div>
               </FieldGroup>
@@ -489,7 +489,7 @@ export function ContestWizard() {
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  className="min-h-[120px] w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                   placeholder="说明竞赛用途、语言限制或报名要求。"
                 />
               </FieldGroup>
@@ -499,7 +499,7 @@ export function ContestWizard() {
                   min="0"
                   value={form.freeze_minutes}
                   onChange={(e) => setForm((prev) => ({ ...prev, freeze_minutes: Number(e.target.value) }))}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                 />
               </FieldGroup>
             </div>
@@ -540,7 +540,7 @@ export function ContestWizard() {
                       placeholder="题目 ID"
                       value={problemForm.problem_id}
                       onChange={(e) => setProblemForm((prev) => ({ ...prev, problem_id: e.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                      className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                     />
                   </FieldGroup>
                   <FieldGroup label="分值">
@@ -549,7 +549,7 @@ export function ContestWizard() {
                       min="1"
                       value={problemForm.points}
                       onChange={(e) => setProblemForm((prev) => ({ ...prev, points: e.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                      className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                     />
                   </FieldGroup>
                   <FieldGroup label="题序">
@@ -558,7 +558,7 @@ export function ContestWizard() {
                       min="0"
                       value={problemForm.order_index}
                       onChange={(e) => setProblemForm((prev) => ({ ...prev, order_index: e.target.value }))}
-                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                      className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                     />
                   </FieldGroup>
                 </div>
@@ -584,7 +584,7 @@ export function ContestWizard() {
                     description="先用上面的表单补一题，再继续后续配置。"
                   />
                 ) : (
-                  <div className="overflow-x-auto rounded-3xl border border-slate-200">
+                  <div className="overflow-x-auto rounded-[28px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
                     <table className="min-w-full divide-y divide-slate-200">
                       <thead className="bg-slate-50">
                         <tr>
@@ -595,9 +595,9 @@ export function ContestWizard() {
                           <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 bg-white">
+                      <tbody className="divide-y divide-slate-100 bg-[rgba(255,255,255,0.78)]">
                         {contestProblems.map((problem) => (
-                          <tr key={problem.id} className="transition hover:bg-slate-50">
+                          <tr key={problem.id} className="transition hover:bg-blue-50/50">
                             <td className="px-5 py-4 text-sm font-medium text-slate-900">#{problem.problem_id}</td>
                             <td className="px-5 py-4 text-sm text-slate-600">
                               <div className="font-medium text-slate-900">{problem.title || 'Untitled'}</div>
@@ -648,7 +648,7 @@ export function ContestWizard() {
                 description="后端已有参赛者接口，但教师端没有批量邀请或指派入口，当前只保留只读预览。"
               />
             ) : (
-              <div className="overflow-x-auto rounded-3xl border border-slate-200">
+              <div className="overflow-x-auto rounded-[28px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr>
@@ -656,7 +656,7 @@ export function ContestWizard() {
                       <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Registered At</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
+                  <tbody className="divide-y divide-slate-100 bg-[rgba(255,255,255,0.78)]">
                     {participants.map((participant) => (
                       <tr key={participant.id}>
                         <td className="px-5 py-4 font-mono text-sm text-slate-600">{participant.user_id}</td>
@@ -682,8 +682,8 @@ export function ContestWizard() {
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   当前竞赛可见性由后端接口控制，此处只展示页面层级的运行说明，不伪造不存在的权限开关。
                 </p>
-                <div className="mt-4 inline-flex rounded-2xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
-                  <span className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-medium text-white">
+                <div className="mt-4 inline-flex rounded-2xl bg-[rgba(255,255,255,0.92)] p-1 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/90">
+                  <span className="rounded-2xl bg-blue-800 px-4 py-2 text-sm font-medium text-white">
                     <Eye className="mr-2 inline-block h-4 w-4" />
                     Public
                   </span>

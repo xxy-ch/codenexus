@@ -16,7 +16,7 @@ interface MetaStripProps {
 }
 
 const toneClasses = {
-  default: 'border-slate-200 bg-white text-slate-700',
+  default: 'border-slate-200/90 bg-[rgba(255,255,255,0.92)] text-slate-700',
   success: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   warning: 'border-amber-200 bg-amber-50 text-amber-700',
   danger: 'border-rose-200 bg-rose-50 text-rose-700',
@@ -39,7 +39,7 @@ export function MetaStrip({ items, className }: MetaStripProps) {
           <section
             key={`${item.label}-${String(item.value)}`}
             className={cn(
-              'inline-flex min-w-fit items-center gap-3 rounded-2xl border px-4 py-3 shadow-sm',
+              'inline-flex min-w-fit items-center gap-3 rounded-2xl border px-4 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur-sm',
               toneClasses[tone],
             )}
           >

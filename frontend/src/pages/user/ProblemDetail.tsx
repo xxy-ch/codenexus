@@ -171,7 +171,7 @@ export function ProblemDetail() {
                 {problem.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-sm text-slate-700"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-3 py-1 text-sm text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
                   >
                     <Tag className="h-3.5 w-3.5 text-slate-500" />
                     {tag}
