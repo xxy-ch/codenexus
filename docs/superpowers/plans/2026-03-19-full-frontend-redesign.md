@@ -1,6 +1,6 @@
 # Full Frontend Redesign Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Rewrite all routed frontend pages into one flat, modern, cold gray-blue design system while preserving current real behaviors and Chrome 96+ compatibility.
 
@@ -21,11 +21,11 @@
 - Modify: `frontend/src/components/ui/StatusBadge.tsx`
 - Test: `frontend/src/components/ui/__tests__/primitives.test.tsx`
 
-- [ ] **Step 1: Update or add failing primitive tests for the new flat visual and API expectations**
-- [ ] **Step 2: Run `cd frontend && npm test -- --run src/components/ui/__tests__/primitives.test.tsx` and confirm failure where behavior changed**
-- [ ] **Step 3: Introduce cold gray-blue tokens, shared surface styles, focus styles, and presentational-only primitive APIs**
-- [ ] **Step 4: Re-run `cd frontend && npm test -- --run src/components/ui/__tests__/primitives.test.tsx` and confirm pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Update or add failing primitive tests for the new flat visual and API expectations**
+- [x] **Step 2: Run `cd frontend && npm test -- --run src/components/ui/__tests__/primitives.test.tsx` and confirm failure where behavior changed**
+- [x] **Step 3: Introduce cold gray-blue tokens, shared surface styles, focus styles, and presentational-only primitive APIs**
+- [x] **Step 4: Re-run `cd frontend && npm test -- --run src/components/ui/__tests__/primitives.test.tsx` and confirm pass**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/index.css frontend/src/components/ui/Button.tsx frontend/src/components/ui/Input.tsx frontend/src/components/ui/Card.tsx frontend/src/components/ui/Loading.tsx frontend/src/components/ui/StatusBadge.tsx frontend/src/components/ui/__tests__/primitives.test.tsx
@@ -45,11 +45,11 @@ git commit -m "feat: add flat design system primitives"
 - Create: `frontend/src/components/page/FieldGroup.tsx`
 - Test: `frontend/src/components/page/__tests__/page-primitives.test.tsx`
 
-- [ ] **Step 1: Write failing tests that prove the page-level primitives render accessible structure without owning route logic**
-- [ ] **Step 2: Run `cd frontend && npm test -- --run src/components/page/__tests__/page-primitives.test.tsx` and confirm failure**
-- [ ] **Step 3: Implement the new presentational page primitives**
-- [ ] **Step 4: Run `cd frontend && npm test -- --run src/components/page/__tests__/page-primitives.test.tsx` and confirm pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write failing tests that prove the page-level primitives render accessible structure without owning route logic**
+- [x] **Step 2: Run `cd frontend && npm test -- --run src/components/page/__tests__/page-primitives.test.tsx` and confirm failure**
+- [x] **Step 3: Implement the new presentational page primitives**
+- [x] **Step 4: Run `cd frontend && npm test -- --run src/components/page/__tests__/page-primitives.test.tsx` and confirm pass**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/components/page frontend/src/components/page/__tests__/page-primitives.test.tsx
@@ -67,11 +67,11 @@ git commit -m "feat: add shared page composition components"
 - Modify: `frontend/src/pages/search/SearchResults.tsx`
 - Test: existing focused tests if present, otherwise add `frontend/src/pages/auth/__tests__/auth-shell.test.tsx`
 
-- [ ] **Step 1: Add failing tests for any changed auth/error/search structure that needs regression protection**
-- [ ] **Step 2: Run the focused auth/error/search test command and confirm failure**
-- [ ] **Step 3: Rebuild auth, error, and search pages with the new sparse flat templates**
-- [ ] **Step 4: Re-run the focused auth/error/search test command and confirm pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Add failing tests for any changed auth/error/search structure that needs regression protection**
+- [x] **Step 2: Run the focused auth/error/search test command and confirm failure**
+- [x] **Step 3: Rebuild auth, error, and search pages with the new sparse flat templates**
+- [x] **Step 4: Re-run the focused auth/error/search test command and confirm pass**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/pages/auth frontend/src/pages/error frontend/src/pages/search
@@ -89,11 +89,11 @@ git commit -m "feat: redesign auth error and search pages"
 - Test: `frontend/src/components/layout/__tests__/Sidebar.test.tsx`
 - Test: add `frontend/src/layouts/__tests__/shell-layouts.test.tsx`
 
-- [ ] **Step 1: Add failing layout tests for shell convergence, sidebar persistence, and admin navigation integration**
-- [ ] **Step 2: Run `cd frontend && npm test -- --run src/components/layout/__tests__/Sidebar.test.tsx src/layouts/__tests__/shell-layouts.test.tsx` and confirm failure**
-- [ ] **Step 3: Implement the unified shell language while preserving route structure and sidebar behavior**
-- [ ] **Step 4: Re-run `cd frontend && npm test -- --run src/components/layout/__tests__/Sidebar.test.tsx src/layouts/__tests__/shell-layouts.test.tsx` and confirm pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Add failing layout tests for shell convergence, sidebar persistence, and admin navigation integration**
+- [x] **Step 2: Run `cd frontend && npm test -- --run src/components/layout/__tests__/Sidebar.test.tsx src/layouts/__tests__/shell-layouts.test.tsx` and confirm failure**
+- [x] **Step 3: Implement the unified shell language while preserving route structure and sidebar behavior**
+- [x] **Step 4: Re-run `cd frontend && npm test -- --run src/components/layout/__tests__/Sidebar.test.tsx src/layouts/__tests__/shell-layouts.test.tsx` and confirm pass**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/layouts frontend/src/components/layout frontend/src/layouts/__tests__/shell-layouts.test.tsx
@@ -116,11 +116,11 @@ git commit -m "feat: unify application shells"
   - `frontend/src/pages/user/__tests__/SubmissionHistory.test.tsx`
   - `frontend/src/pages/user/__tests__/ContestList.test.tsx`
 
-- [ ] **Step 1: Update focused tests where the list-page structure or accessible labels change**
-- [ ] **Step 2: Run the focused user-list regression suite and confirm any intentional failures**
-- [ ] **Step 3: Rewrite the user list pages onto `PageHeader`, `FilterBar`, `StatCard`, and unified table/list patterns**
-- [ ] **Step 4: Re-run the focused user-list regression suite and confirm pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Update focused tests where the list-page structure or accessible labels change**
+- [x] **Step 2: Run the focused user-list regression suite and confirm any intentional failures**
+- [x] **Step 3: Rewrite the user list pages onto `PageHeader`, `FilterBar`, `StatCard`, and unified table/list patterns**
+- [x] **Step 4: Re-run the focused user-list regression suite and confirm pass**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/pages/user/DashboardEnhanced.tsx frontend/src/pages/user/ProblemSet.tsx frontend/src/pages/user/SubmissionHistory.tsx frontend/src/pages/user/ContestList.tsx frontend/src/pages/user/Ranking.tsx frontend/src/pages/user/LearningRoadmap.tsx frontend/src/pages/community/BlogList.tsx frontend/src/pages/community/DiscussionList.tsx frontend/src/pages/user/__tests__/DashboardEnhanced.test.tsx frontend/src/pages/user/__tests__/SubmissionHistory.test.tsx frontend/src/pages/user/__tests__/ContestList.test.tsx
@@ -144,11 +144,11 @@ git commit -m "feat: redesign user list pages"
   - `frontend/src/pages/user/__tests__/SubmissionDetail.test.tsx`
   - `frontend/src/pages/user/__tests__/ContestDetail.test.tsx`
 
-- [ ] **Step 1: Update focused detail/workspace tests for the new structure where needed**
-- [ ] **Step 2: Run the focused detail/workspace regression suite and confirm failure if expectations changed**
-- [ ] **Step 3: Rewrite detail and focused tool pages using the detail and focused-workspace templates**
-- [ ] **Step 4: Re-run the focused detail/workspace regression suite and confirm pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Update focused detail/workspace tests for the new structure where needed**
+- [x] **Step 2: Run the focused detail/workspace regression suite and confirm failure if expectations changed**
+- [x] **Step 3: Rewrite detail and focused tool pages using the detail and focused-workspace templates**
+- [x] **Step 4: Re-run the focused detail/workspace regression suite and confirm pass**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/pages/user/ProblemDetail.tsx frontend/src/pages/user/ProblemIDEEnhanced.tsx frontend/src/pages/user/SubmissionDetail.tsx frontend/src/pages/user/ContestDetail.tsx frontend/src/pages/contest/ContestScoreboard.tsx frontend/src/pages/user/Profile.tsx frontend/src/pages/user/Settings.tsx frontend/src/pages/community/BlogDetail.tsx frontend/src/pages/community/DiscussionDetail.tsx frontend/src/pages/user/__tests__/ProblemIDEEnhanced.test.tsx frontend/src/pages/user/__tests__/SubmissionDetail.test.tsx frontend/src/pages/user/__tests__/ContestDetail.test.tsx
@@ -163,11 +163,11 @@ git commit -m "feat: redesign user detail and workspace pages"
 - Modify: `frontend/src/pages/community/CreateDiscussion.tsx`
 - Modify: `frontend/src/pages/community/DirectMessages.tsx`
 
-- [ ] **Step 1: Add or update focused tests for community editing or messaging interactions if required**
-- [ ] **Step 2: Run the focused community-page tests and confirm failure if expectations changed**
-- [ ] **Step 3: Rewrite creation/editor pages on the new form/wizard template and direct messages on the focused workspace template**
-- [ ] **Step 4: Re-run the focused community-page tests and confirm pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Add or update focused tests for community editing or messaging interactions if required**
+- [x] **Step 2: Run the focused community-page tests and confirm failure if expectations changed**
+- [x] **Step 3: Rewrite creation/editor pages on the new form/wizard template and direct messages on the focused workspace template**
+- [x] **Step 4: Re-run the focused community-page tests and confirm pass**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/pages/community/CreateArticle.tsx frontend/src/pages/community/EditArticle.tsx frontend/src/pages/community/CreateDiscussion.tsx frontend/src/pages/community/DirectMessages.tsx
@@ -185,11 +185,11 @@ git commit -m "feat: redesign community authoring pages"
   - `frontend/src/pages/teacher/__tests__/AssignmentReport.test.tsx`
   - `frontend/src/pages/teacher/__tests__/ContestWizard.test.tsx`
 
-- [ ] **Step 1: Update focused teacher tests if accessible names or page-level structure needs new assertions**
-- [ ] **Step 2: Run `cd frontend && npm test -- --run src/pages/teacher/__tests__/ClassManagement.test.tsx src/pages/teacher/__tests__/AssignmentReport.test.tsx src/pages/teacher/__tests__/ContestWizard.test.tsx` and confirm failure if expectations changed**
-- [ ] **Step 3: Rewrite teacher pages onto the new system without regressing live write paths, joins, export, or honest unsupported-path messaging**
-- [ ] **Step 4: Re-run `cd frontend && npm test -- --run src/pages/teacher/__tests__/ClassManagement.test.tsx src/pages/teacher/__tests__/AssignmentReport.test.tsx src/pages/teacher/__tests__/ContestWizard.test.tsx` and confirm pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Update focused teacher tests if accessible names or page-level structure needs new assertions**
+- [x] **Step 2: Run `cd frontend && npm test -- --run src/pages/teacher/__tests__/ClassManagement.test.tsx src/pages/teacher/__tests__/AssignmentReport.test.tsx src/pages/teacher/__tests__/ContestWizard.test.tsx` and confirm failure if expectations changed**
+- [x] **Step 3: Rewrite teacher pages onto the new system without regressing live write paths, joins, export, or honest unsupported-path messaging**
+- [x] **Step 4: Re-run `cd frontend && npm test -- --run src/pages/teacher/__tests__/ClassManagement.test.tsx src/pages/teacher/__tests__/AssignmentReport.test.tsx src/pages/teacher/__tests__/ContestWizard.test.tsx` and confirm pass**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/pages/teacher frontend/src/pages/teacher/__tests__
@@ -209,11 +209,11 @@ git commit -m "feat: redesign teacher workspace pages"
 - Modify: `frontend/src/pages/admin/PlagiarismReportDetail.tsx`
 - Modify: `frontend/src/pages/admin/ReportManagement.tsx`
 
-- [ ] **Step 1: Add or update focused admin tests around shared table/filter patterns where needed**
-- [ ] **Step 2: Run the focused admin regression suite and confirm failure if expectations changed**
-- [ ] **Step 3: Rewrite admin pages with the denser shared management template while preserving existing controls**
-- [ ] **Step 4: Re-run the focused admin regression suite and confirm pass**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Add or update focused admin tests around shared table/filter patterns where needed**
+- [x] **Step 2: Run the focused admin regression suite and confirm failure if expectations changed**
+- [x] **Step 3: Rewrite admin pages with the denser shared management template while preserving existing controls**
+- [x] **Step 4: Re-run the focused admin regression suite and confirm pass**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/src/pages/admin
@@ -226,11 +226,11 @@ git commit -m "feat: redesign admin workspace pages"
 - Review all touched frontend routes and shared files
 - Update any missed tests or minor inconsistencies discovered during the final pass
 
-- [ ] **Step 1: Run the combined focused regression suite for shared shell, user, teacher, and admin flows**
-- [ ] **Step 2: Run `cd frontend && npm run typecheck`**
-- [ ] **Step 3: Run `cd frontend && npm run build`**
-- [ ] **Step 4: Manually review visual consistency across auth, user, community, teacher, and admin page families**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Run the combined focused regression suite for shared shell, user, teacher, and admin flows**
+- [x] **Step 2: Run `cd frontend && npm run typecheck`**
+- [x] **Step 3: Run `cd frontend && npm run build`**
+- [x] **Step 4: Manually review visual consistency across auth, user, community, teacher, and admin page families**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend
