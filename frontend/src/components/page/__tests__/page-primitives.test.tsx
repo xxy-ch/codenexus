@@ -39,7 +39,7 @@ describe('page primitives', () => {
       </div>,
     )
 
-    expect(screen.getByText('Surface Body').closest('section')).toHaveClass('rounded-xl')
+    expect(screen.getByText('Surface Body').closest('section')).toHaveClass('rounded-[10px]')
     expect(screen.getByText('Students')).toBeInTheDocument()
     expect(screen.getByText('42')).toBeInTheDocument()
     expect(screen.getByText('Current class roster')).toBeInTheDocument()

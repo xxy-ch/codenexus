@@ -1,310 +1,212 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { discussionsApi } from '@/services/communityApi'
-import { EmptyState } from '@/components/page/EmptyState'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { MessageSquareMore, RefreshCcw } from 'lucide-react'
 import { FilterBar } from '@/components/page/FilterBar'
 import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
-import { StatCard } from '@/components/page/StatCard'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
+import { discussionsService } from '@/services/discussions'
 import { cn } from '@/lib/utils'
-import type { Discussion, DiscussionFilters } from '@/types/community'
 
-const DEFAULT_TAGS = ['dynamic-programming', 'graphs', 'arrays', 'contest', 'help']
+const categoryOptions = [
+  { value: 'all', label: '全部' },
+  { value: 'question', label: '提问' },
+  { value: 'solution', label: '题解' },
+  { value: 'general', label: '交流' },
+  { value: 'bug_report', label: '反馈' },
+]
+
+function categoryTone(category: string) {
+  if (category === 'solution') return 'bg-[#d8f8e3] text-[#006847]'
+  if (category === 'bug_report') return 'bg-[#ffe7e1] text-[#93000a]'
+  if (category === 'question') return 'bg-[#dae2ff] text-[#244171]'
+  return 'bg-[rgba(226,231,255,0.88)] text-[#43516b]'
+}
+
+function categoryLabel(category: string) {
+  if (category === 'question') return '提问'
+  if (category === 'solution') return '题解'
+  if (category === 'bug_report') return '反馈'
+  return '交流'
+}
 
 export function DiscussionList() {
-  const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('all')
+  const [sort, setSort] = useState<'recent' | 'popular' | 'most_liked'>('recent')
 
-  const [discussions, setDiscussions] = useState<Discussion[]>([])
-  const [loading, setLoading] = useState(true)
-  const [hasMore, setHasMore] = useState(false)
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['discussions', category, search, sort],
+    queryFn: () =>
+      discussionsService.getDiscussions({
+        category: category === 'all' ? undefined : category,
+        search: search || undefined,
+        sort,
+        page: 1,
+        limit: 20,
+      }),
+  })
 
-  const page = parseInt(searchParams.get('page') || '1')
-  const sort = (searchParams.get('sort') as DiscussionFilters['sort']) || 'latest'
-  const status = (searchParams.get('status') as DiscussionFilters['status']) || 'all'
-  const tag = searchParams.get('tag') || undefined
-  const problemId = searchParams.get('problem_id') ? parseInt(searchParams.get('problem_id')!, 10) : undefined
+  const discussions = data?.discussions ?? []
 
-  useEffect(() => {
-    const fetchDiscussions = async () => {
-      setLoading(true)
-
-      try {
-        const filters: DiscussionFilters = {
-          page,
-          limit: 20,
-          sort,
-          status,
-          tag,
-          problem_id: problemId,
-        }
-        const response = await discussionsApi.getDiscussions(filters)
-        setDiscussions(response.discussions)
-        setHasMore(response.has_more)
-      } catch (fetchError) {
-        console.error('Failed to fetch discussions:', fetchError)
-      } finally {
-        setLoading(false)
-      }
+  const stats = useMemo(() => {
+    return {
+      total: data?.total ?? discussions.length,
+      solved: discussions.filter((item) => item.category === 'solution').length,
+      unanswered: discussions.filter((item) => item.replies_count === 0).length,
     }
+  }, [data?.total, discussions])
 
-    void fetchDiscussions()
-  }, [page, sort, status, tag, problemId])
-
-  const updateFilter = (key: string, value: string) => {
-    const params = new URLSearchParams(searchParams)
-    if (value) {
-      params.set(key, value)
-    } else {
-      params.delete(key)
-    }
-    params.delete('page')
-    setSearchParams(params)
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <SurfaceCard className="text-sm text-[#6b7ca7]">讨论区加载中...</SurfaceCard>
+      </div>
+    )
   }
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-8">
+        <SurfaceCard className="space-y-4 bg-[rgba(255,247,247,0.95)]">
+          <div>
+            <h1 className="font-['Manrope'] text-[1.8rem] font-extrabold tracking-[-0.04em] text-[#7b1e2b]">讨论区加载失败</h1>
+            <p className="mt-2 text-sm text-[#7d5260]">当前无法读取真实讨论列表。</p>
+          </div>
+          <Button onClick={() => refetch()}>
+            <RefreshCcw className="h-4 w-4" />
+            重试
+          </Button>
+        </SurfaceCard>
+      </div>
+    )
   }
-
-  const getSortLabel = (sortValue: string) => {
-    switch (sortValue) {
-      case 'latest':
-        return 'Newest'
-      case 'popular':
-        return 'Top Rated'
-      case 'unanswered':
-        return 'Unanswered'
-      default:
-        return 'Newest'
-    }
-  }
-
-  const suggestedTags = useMemo(() => {
-    return Array.from(new Set([...DEFAULT_TAGS, ...discussions.flatMap((discussion) => discussion.tags)])).slice(0, 8)
-  }, [discussions])
-
-  const solvedCount = discussions.filter((discussion) => discussion.is_solved).length
-  const pinnedCount = discussions.filter((discussion) => discussion.is_pinned).length
-  const linkedProblems = discussions.filter((discussion) => discussion.problem_id).length
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Community Discussions"
-        title="Discussions"
-        description="讨论区保留真实筛选、排序和分页行为，布局统一为筛选条 + 主题列表 + 侧向摘要。"
-        actions={
-          <Button onClick={() => navigate('/discussions/new')} variant="primary">
-            <span className="material-symbols-outlined text-base">add</span>
-            New Discussion
-          </Button>
-        }
-      />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="当前页主题" value={`${discussions.length} 条`} helper={status === 'all' ? '全部状态' : status} />
-        <StatCard label="已解决" value={`${solvedCount} 条`} helper="当前页已标记已解决" />
-        <StatCard label="题目关联" value={`${linkedProblems} 条`} helper={`${pinnedCount} 条置顶`} />
-      </div>
-
-      <FilterBar className="items-start">
-        <div>
-          <span className="mb-2 block text-sm font-medium text-slate-700">Status</span>
-          <div className="flex flex-wrap gap-2">
-            {(['all', 'solved', 'unsolved'] as const).map((value) => (
-              <button
-                key={value}
-                onClick={() => updateFilter('status', value === 'all' ? 'all' : value)}
-                className={cn(
-                  'rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                  status === value ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                )}
-              >
-                {value === 'all' ? 'All Discussions' : value === 'solved' ? 'Solved' : 'Unsolved'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <span className="mb-2 block text-sm font-medium text-slate-700">Sort</span>
-          <div className="flex flex-wrap gap-2">
-            {(['latest', 'popular', 'unanswered'] as const).map((value) => (
-              <button
-                key={value}
-                onClick={() => updateFilter('sort', value)}
-                className={cn(
-                  'rounded-xl px-3 py-2 text-sm font-medium transition-colors',
-                  sort === value ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                )}
-              >
-                {getSortLabel(value)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <span className="mb-2 block text-sm font-medium text-slate-700">Trending Tags</span>
-          <div className="flex flex-wrap gap-2">
-            {suggestedTags.map((item) => (
-              <button
-                key={item}
-                onClick={() => updateFilter('tag', tag === item ? '' : item)}
-                className={cn(
-                  'rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
-                  tag === item ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                )}
-              >
-                #{item}
-              </button>
-            ))}
-          </div>
-        </div>
-      </FilterBar>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="space-y-6">
-          {loading && page === 1 ? (
-            <Loading message="Loading discussions..." />
-          ) : (
-            <SectionBlock
-              title={`${status === 'solved' ? 'Solved' : status === 'unsolved' ? 'Unsolved' : 'All'} Discussions`}
-              description={tag ? `当前标签：#${tag}` : '按当前状态和排序展示真实讨论主题。'}
-            >
-              {discussions.length > 0 ? (
-                <div className="space-y-4">
-                  {discussions.map((discussion) => (
-                    <article
-                      key={discussion.id}
-                      onClick={() => navigate(`/discussions/${discussion.id}`)}
-                      className="group cursor-pointer rounded-3xl border border-slate-200 bg-slate-50 p-5 transition hover:border-slate-300 hover:bg-white"
-                    >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="flex flex-wrap gap-2">
-                          {discussion.is_pinned ? (
-                            <span className="rounded-full bg-slate-950 px-2.5 py-1 text-xs font-medium text-white">Pinned</span>
-                          ) : null}
-                          {discussion.is_solved ? (
-                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">Solved</span>
-                          ) : null}
-                          {discussion.is_locked ? (
-                            <span className="rounded-full bg-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700">Locked</span>
-                          ) : null}
-                          {discussion.problem_id ? (
-                            <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-700">
-                              {discussion.problem_title || `Problem ${discussion.problem_id}`}
-                            </span>
-                          ) : null}
-                        </div>
-                        <span className="text-xs text-slate-500">{formatDate(discussion.created_at)}</span>
-                      </div>
-
-                      <h3 className="mt-4 text-xl font-semibold leading-tight text-slate-950">{discussion.title}</h3>
-                      <p className="mt-3 text-sm leading-6 text-slate-600">{discussion.content}</p>
-
-                      {discussion.tags.length > 0 ? (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {discussion.tags.map((item) => (
-                            <span key={item} className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
-                              #{item}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-4">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white">
-                            {discussion.author_username.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="text-xs font-medium text-slate-700">{discussion.author_username}</span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-slate-500">
-                          <span>{discussion.view_count}</span>
-                          <span>{discussion.reply_count}</span>
-                          <span>{discussion.like_count}</span>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  title="No discussions found"
-                  description="Be the first to start a discussion."
-                  action={
-                    <Button onClick={() => navigate('/discussions/new')} variant="primary">
-                      Create Discussion
-                    </Button>
-                  }
-                  className="border-slate-200 bg-slate-50 py-12"
-                />
-              )}
-
-              {discussions.length > 0 ? (
-                <div className="mt-5 flex justify-center gap-2 border-t border-slate-200 pt-5">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updateFilter('page', Math.max(1, page - 1).toString())}
-                    disabled={page === 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">
-                    Page {page}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updateFilter('page', (page + 1).toString())}
-                    disabled={!hasMore}
-                  >
-                    Next
-                  </Button>
-                </div>
-              ) : null}
-            </SectionBlock>
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Community"
+          title="讨论区"
+          description="让问答、题解和问题反馈像一套紧凑的知识索引，而不是营销式论坛封面。"
+          actions={(
+            <>
+              <Button variant="outline" onClick={() => refetch()}>
+                <RefreshCcw className="h-4 w-4" />
+                刷新
+              </Button>
+              <Button as={Link} to="/discussions/new">
+                <MessageSquareMore className="h-4 w-4" />
+                发布讨论
+              </Button>
+            </>
           )}
+        />
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {[
+            ['主题总数', stats.total, '当前筛选范围内的讨论主题'],
+            ['题解帖子', stats.solved, 'solution 类主题数量'],
+            ['待回复', stats.unanswered, '还没有收到回复的问题'],
+          ].map(([label, value, helper]) => (
+            <SurfaceCard key={label}>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6b7ca7]">{label}</p>
+              <div className="mt-4 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">{value}</div>
+              <p className="mt-2 text-sm text-[#65748d]">{helper}</p>
+            </SurfaceCard>
+          ))}
         </div>
 
-        <div className="space-y-4">
-          <SurfaceCard tone="muted">
-            <h2 className="text-lg font-semibold text-slate-950">当前筛选</h2>
-            <div className="mt-4 space-y-3 text-sm text-slate-600">
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                <p className="font-medium text-slate-900">Status</p>
-                <p className="mt-1">{status}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                <p className="font-medium text-slate-900">Sort</p>
-                <p className="mt-1">{sort}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                <p className="font-medium text-slate-900">Tag</p>
-                <p className="mt-1">{tag || 'none'}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                <p className="font-medium text-slate-900">Problem</p>
-                <p className="mt-1">{problemId ?? 'all'}</p>
-              </div>
+        <SurfaceCard tone="muted" className="space-y-4">
+          <FilterBar>
+            <input
+              aria-label="搜索讨论"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="搜索标题、内容或作者"
+              className="h-11 min-w-[240px] flex-1 rounded-[8px] bg-white/92 px-4 text-sm text-[#17305e] shadow-[0_10px_24px_rgba(19,27,46,0.04)] outline-none ring-0 placeholder:text-[#93a0bb]"
+            />
+            <select
+              aria-label="分类筛选"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              className="h-11 min-w-[140px] rounded-[8px] bg-white/92 px-4 text-sm text-[#17305e] shadow-[0_10px_24px_rgba(19,27,46,0.04)] outline-none"
+            >
+              {categoryOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                ['recent', '最新'],
+                ['popular', '热门'],
+                ['most_liked', '最多点赞'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSort(value as 'recent' | 'popular' | 'most_liked')}
+                  className={cn(
+                    'rounded-full px-4 py-2 text-sm font-medium transition',
+                    sort === value ? 'bg-[#003d9b] text-white' : 'bg-white/92 text-[#586988] hover:bg-white',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
-          </SurfaceCard>
+          </FilterBar>
+        </SurfaceCard>
+
+        <div className="space-y-3">
+          {discussions.length === 0 ? (
+            <SurfaceCard className="text-sm text-[#65748d]">当前筛选条件下没有讨论主题。</SurfaceCard>
+          ) : (
+            discussions.map((discussion) => (
+              <Link key={discussion.id} to={`/discussions/${discussion.id}`}>
+                <SurfaceCard className="transition-colors hover:bg-[rgba(255,255,255,0.98)]">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={cn('rounded-full px-2.5 py-1 text-xs font-semibold', categoryTone(discussion.category))}>
+                          {categoryLabel(discussion.category)}
+                        </span>
+                        {discussion.tags.slice(0, 4).map((tag) => (
+                          <span key={tag} className="rounded-full bg-[rgba(226,231,255,0.88)] px-2.5 py-1 text-xs font-medium text-[#43516b]">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      <h2 className="mt-4 text-[1.1rem] font-semibold text-[#131b2e]">{discussion.title}</h2>
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-[#5f6d87]">{discussion.content}</p>
+                      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#6b7ca7]">
+                        <span>{discussion.author_username}</span>
+                        <span>{new Date(discussion.created_at).toLocaleDateString()}</span>
+                        {discussion.problem_title ? <span>关联 {discussion.problem_title}</span> : null}
+                      </div>
+                    </div>
+
+                    <div className="grid min-w-[180px] grid-cols-3 gap-3 text-center lg:grid-cols-1 lg:text-right">
+                      <div>
+                        <p className="font-['Manrope'] text-[1.2rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">{discussion.replies_count}</p>
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-[#6b7ca7]">Replies</p>
+                      </div>
+                      <div>
+                        <p className="font-['Manrope'] text-[1.2rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">{discussion.views_count}</p>
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-[#6b7ca7]">Views</p>
+                      </div>
+                      <div>
+                        <p className="font-['Manrope'] text-[1.2rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">{discussion.likes_count}</p>
+                        <p className="text-[11px] uppercase tracking-[0.16em] text-[#6b7ca7]">Likes</p>
+                      </div>
+                    </div>
+                  </div>
+                </SurfaceCard>
+              </Link>
+            ))
+          )}
         </div>
       </div>
     </div>

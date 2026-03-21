@@ -1,290 +1,186 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { ChevronRight, Clock3, Database } from 'lucide-react'
-import { MonacoEditor } from '@/components/ide/MonacoEditor'
 import { problemsService } from '@/services/problems'
+import { MonacoEditor } from '@/components/ide/MonacoEditor'
 import type { Problem, TestCase } from '@/types/problems'
 
-interface SupportedLanguageOption {
-  id: string
-  name: string
-  extension: string
-  enabled: boolean
-  is_default: boolean
-}
-
-function difficultyBadge(difficulty: string) {
-  if (difficulty === 'easy') return 'border-emerald-200 bg-emerald-50 text-emerald-700'
-  if (difficulty === 'medium') return 'border-amber-200 bg-amber-50 text-amber-700'
-  return 'border-rose-200 bg-rose-50 text-rose-700'
+function difficultyTone(difficulty?: string) {
+  if (difficulty === 'hard') return 'bg-[#ffdad6] text-[#93000a]'
+  if (difficulty === 'medium') return 'bg-[#d5e3fc] text-[#244171]'
+  return 'bg-[#e4f7ee] text-[#006847]'
 }
 
 export function ProblemIDEEnhanced() {
-  const { problemId } = useParams<{ problemId: string }>()
+  const { problemId = '' } = useParams()
   const navigate = useNavigate()
   const [problem, setProblem] = useState<Problem | null>(null)
-  const [examples, setExamples] = useState<TestCase[]>([])
-  const [languages, setLanguages] = useState<SupportedLanguageOption[]>([])
-  const [selectedLanguage, setSelectedLanguage] = useState('python')
-  const [code, setCode] = useState('')
+  const [testCases, setTestCases] = useState<TestCase[]>([])
+  const [languages, setLanguages] = useState<Array<{ id: string; name: string; extension: string; enabled: boolean; is_default: boolean }>>([])
   const [loading, setLoading] = useState(true)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [language, setLanguage] = useState('python')
+  const [code, setCode] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
-    let active = true
+    let cancelled = false
 
     async function load() {
-      if (!problemId) return
-      setLoading(true)
       try {
-        const [problemData, testCases, supportedLanguages] = await Promise.all([
+        setLoading(true)
+        const [problemData, cases, languageData] = await Promise.all([
           problemsService.getProblem(problemId),
           problemsService.getTestCases(problemId),
           problemsService.getSupportedLanguages(),
         ])
 
-        if (!active) return
-
-        const enabledLanguages = supportedLanguages.filter((item) => item.enabled)
-        const defaultLanguage =
-          enabledLanguages.find((item) => item.is_default)?.id || enabledLanguages[0]?.id || 'python'
+        if (cancelled) {
+          return
+        }
 
         setProblem(problemData)
-        setExamples(testCases.filter((item) => !item.is_hidden).slice(0, 3))
-        setLanguages(enabledLanguages)
-        setSelectedLanguage(defaultLanguage)
-        setCode('')
-      } catch (error) {
-        console.error('Failed to load IDE workspace:', error)
-        toast.error('IDE 工作区加载失败')
+        setTestCases(cases)
+        setLanguages(languageData)
+        const defaultLanguage = languageData.find((item) => item.enabled && item.is_default) || languageData.find((item) => item.enabled)
+        setLanguage(defaultLanguage?.id || 'python')
       } finally {
-        if (active) setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
 
-    load()
+    void load()
 
     return () => {
-      active = false
+      cancelled = true
     }
   }, [problemId])
 
-  const paragraphs = useMemo(
-    () =>
-      (problem?.description || '')
-        .split(/\n{2,}/)
-        .map((item) => item.trim())
-        .filter(Boolean),
-    [problem?.description],
+  const visibleExample = useMemo(
+    () => testCases.find((item) => !item.is_hidden),
+    [testCases],
   )
 
-  const handleJudge = async () => {
-    if (!problem) return
+  const handleSubmit = async () => {
     if (!code.trim()) {
-      toast.error('代码不能为空')
       return
     }
 
-    setIsSubmitting(true)
     try {
-      const submission = await problemsService.submitCode({
-        problemId: String(problem.id),
-        code,
-        language: selectedLanguage,
-      })
-      toast.success('提交成功，正在跳转到判题详情')
+      setSubmitting(true)
+      const submission = await problemsService.submitCode({ problemId, code, language })
+      toast.success('Judge 已提交')
       navigate(`/submissions/${submission.id}`)
-    } catch (error) {
-      const message = error instanceof Error ? error.message : '提交失败'
-      toast.error(message)
+    } catch {
+      toast.error('提交失败，请稍后重试')
     } finally {
-      setIsSubmitting(false)
+      setSubmitting(false)
     }
   }
 
-  if (loading) {
+  if (loading || !problem) {
     return (
-      <div className="flex min-h-[70vh] items-center justify-center rounded-[32px] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(246,249,253,0.92))] shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
-          <p className="mt-4 text-sm text-slate-500">加载 IDE 工作区...</p>
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <div className="rounded-[10px] bg-white/92 px-6 py-8 text-sm text-[#6b7ca7] shadow-[0_18px_42px_rgba(19,27,46,0.05)]">
+          页面加载中...
         </div>
       </div>
     )
   }
 
-  if (!problem) {
-    return (
-      <div className="rounded-[32px] border border-rose-200 bg-[rgba(255,255,255,0.94)] px-8 py-16 text-center shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
-        <h2 className="text-2xl font-semibold text-slate-950">题目不存在</h2>
-        <p className="mt-2 text-sm text-slate-600">当前题目无法加载，返回题库重新选择。</p>
-        <Link
-          to="/problems"
-          className="mt-6 inline-flex items-center rounded-2xl bg-blue-800 px-4 py-2 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(30,64,175,0.18)]"
-        >
-          返回题库
-        </Link>
-      </div>
-    )
-  }
-
   return (
-    <div className="-m-8 overflow-hidden bg-[rgb(var(--page-bg-rgb))]">
-      <div className="grid min-h-[calc(100vh-4rem)] grid-cols-1 xl:grid-cols-[minmax(0,1.02fr)_minmax(0,0.98fr)]">
-        <section className="border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(246,249,253,0.92))] xl:border-b-0 xl:border-r">
-          <div className="flex h-full flex-col">
-            <div className="border-b border-slate-200/80 px-8 py-7">
-              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                <span>Problems</span>
-                <ChevronRight className="h-4 w-4" />
-                <span className="truncate font-medium text-slate-900">{problem.title}</span>
+    <div className="mx-auto h-[calc(100vh-96px)] max-w-[1440px] px-4 py-6 md:px-8">
+      <div className="grid h-full gap-4 overflow-hidden rounded-[10px] bg-white/94 shadow-[0_24px_60px_rgba(19,27,46,0.06)] xl:grid-cols-[0.78fr_1.12fr]">
+        <section className="flex min-h-0 flex-col bg-[rgba(242,243,255,0.72)] px-6 py-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] ${difficultyTone(problem.difficulty)}`}>
+              {problem.difficulty}
+            </span>
+            <span className="text-xs font-mono text-[#6b7ca7]">ID: {problem.id}</span>
+          </div>
+          <h1 className="mt-5 font-['Manrope'] text-[2.25rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">{problem.title}</h1>
+          <div className="mt-5 flex flex-nowrap gap-3 overflow-x-auto pb-1">
+            {[
+              { label: 'Time Limit', value: `${problem.time_limit} ms` },
+              { label: 'Memory Limit', value: `${Math.round(problem.memory_limit / 1024)} MB` },
+              { label: 'Difficulty Points', value: String(problem.points) },
+            ].map((item) => (
+              <div key={item.label} className="min-w-fit rounded-[8px] bg-white px-4 py-3 shadow-[0_8px_18px_rgba(19,27,46,0.04)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">{item.label}</p>
+                <p className="mt-1 text-sm font-semibold text-[#131b2e]">{item.value}</p>
               </div>
-              <div className="mt-4 flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <h1 className="truncate text-[30px] font-semibold tracking-tight text-slate-950">
-                    {problem.title}
-                  </h1>
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                    <span
-                      className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${difficultyBadge(problem.difficulty)}`}
-                    >
-                      {problem.difficulty}
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Clock3 className="h-3.5 w-3.5" />
-                      {problem.time_limit} ms
-                    </span>
-                    <span className="inline-flex items-center gap-1">
-                      <Database className="h-3.5 w-3.5" />
-                      {Math.round(problem.memory_limit / 1024)} MB
-                    </span>
+            ))}
+          </div>
+          <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
+            <div className="space-y-6 text-[15px] leading-8 text-[#4f5f7b]">
+              <section>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">Description</h2>
+                <div className="mt-3 whitespace-pre-wrap">{problem.description}</div>
+              </section>
+              {visibleExample ? (
+                <section>
+                  <h2 className="text-sm font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">Example Test Case</h2>
+                  <div className="mt-3 rounded-[8px] bg-white px-4 py-4 shadow-[0_8px_18px_rgba(19,27,46,0.04)]">
+                    <p className="text-sm font-semibold text-[#003d9b]">Input:</p>
+                    <pre className="mt-2 whitespace-pre-wrap text-sm text-[#131b2e]">{visibleExample.input}</pre>
+                    <p className="mt-4 text-sm font-semibold text-[#006847]">Output:</p>
+                    <pre className="mt-2 whitespace-pre-wrap text-sm text-[#131b2e]">{visibleExample.expected_output}</pre>
                   </div>
-                </div>
-                <Link
-                  to={`/problems/${problem.id}`}
-                  className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.86)] px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.05)] transition hover:border-blue-200 hover:bg-blue-50/80"
-                >
-                  返回题面
-                </Link>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-8 py-8">
-              <div className="space-y-8">
-                <article className="space-y-4">
-                  <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Description
-                  </h2>
-                  <div className="space-y-4 text-sm leading-7 text-slate-700">
-                    {paragraphs.length > 0 ? (
-                      paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)
-                    ) : (
-                      <p>暂无题面描述。</p>
-                    )}
-                  </div>
-                </article>
-
-                <section className="space-y-4">
-                  <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-                    Examples
-                  </h2>
-                  {examples.length > 0 ? (
-                    <div className="space-y-4">
-                      {examples.map((example, index) => (
-                        <div
-                          key={example.id}
-                          className="rounded-[28px] border border-slate-200/90 bg-[rgba(246,249,253,0.92)] p-5 shadow-[0_12px_28px_rgba(15,23,42,0.05)]"
-                        >
-                          <div className="text-sm font-semibold text-slate-950">
-                            Sample #{index + 1}
-                          </div>
-                          <div className="mt-4 grid gap-4 md:grid-cols-2">
-                            <div>
-                              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                Input
-                              </div>
-                              <pre className="mt-2 whitespace-pre-wrap rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] p-4 text-sm text-slate-700 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
-                                {example.input}
-                              </pre>
-                            </div>
-                            <div>
-                              <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                Output
-                              </div>
-                              <pre className="mt-2 whitespace-pre-wrap rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] p-4 text-sm text-slate-700 shadow-[0_8px_20px_rgba(15,23,42,0.04)]">
-                                {example.expected_output}
-                              </pre>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-[28px] border border-dashed border-slate-300 bg-[rgba(246,249,253,0.9)] p-6 text-sm text-slate-500">
-                      暂无公开样例。
-                    </div>
-                  )}
                 </section>
-              </div>
+              ) : null}
             </div>
           </div>
         </section>
 
-        <section className="bg-[linear-gradient(180deg,#0f172a,#111c33)] text-slate-100">
-          <div className="flex h-full flex-col">
-            <div className="flex items-center justify-between gap-4 border-b border-slate-800 px-6 py-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Code
-                </p>
-                <p className="mt-1 text-sm text-slate-300">直接编写并提交，无模板预填。</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <label className="sr-only" htmlFor="ide-language-select">
-                  Language
-                </label>
-                <select
-                  id="ide-language-select"
-                  aria-label="language"
-                  value={selectedLanguage}
-                  onChange={(e) => setSelectedLanguage(e.target.value)}
-                  className="rounded-2xl border border-slate-700 bg-slate-900/90 px-4 py-2 text-sm text-slate-100 outline-none transition focus:border-blue-300"
-                >
-                  {languages.map((language) => (
-                    <option key={language.id} value={language.id}>
-                      {language.name}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={handleJudge}
-                  disabled={isSubmitting}
-                  className="rounded-2xl bg-blue-200 px-4 py-2 text-sm font-semibold text-slate-950 shadow-[0_12px_24px_rgba(148,163,184,0.12)] transition hover:bg-white disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Judging...' : 'Judge'}
-                </button>
-              </div>
+        <section className="flex min-h-0 flex-col bg-white">
+          <div className="flex items-center justify-between gap-3 border-b border-[rgba(195,198,214,0.22)] px-4 py-3">
+            <div className="flex items-center gap-3">
+              <label className="sr-only" htmlFor="ide-language">Language</label>
+              <select
+                id="ide-language"
+                aria-label="language"
+                value={language}
+                onChange={(event) => setLanguage(event.target.value)}
+                className="rounded-[8px] bg-[rgba(242,243,255,0.88)] px-3 py-2 text-sm font-semibold text-[#17305e] outline-none"
+              >
+                {languages.filter((item) => item.enabled).map((item) => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </select>
             </div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#8b97b0]">Judge Flow</div>
+          </div>
 
-            <div className="flex-1">
-              <MonacoEditor
-                language={selectedLanguage}
-                value={code}
-                onChange={setCode}
-                height="100%"
-                theme="vs-dark"
-                readOnly={isSubmitting}
-                fontSize={15}
-                minimap={true}
-                wordWrap="off"
-                lineHeight={22}
-              />
-            </div>
+          <div className="min-h-0 flex-1">
+            <MonacoEditor
+              language={language}
+              value={code}
+              onChange={setCode}
+              height="100%"
+              theme="light"
+              minimap={false}
+              lineHeight={23}
+              fontSize={14}
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3 border-t border-[rgba(195,198,214,0.22)] bg-[rgba(242,243,255,0.56)] px-4 py-3">
+            <div className="text-sm text-[#65748d]">IDE 界面只保留题面和代码区，提交按标准输入输出走。</div>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!code.trim() || submitting}
+              className="inline-flex items-center gap-2 rounded-[8px] bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(0,61,155,0.18)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">gavel</span>
+              <span>Judge</span>
+            </button>
           </div>
         </section>
       </div>
     </div>
   )
 }
+
+export default ProblemIDEEnhanced

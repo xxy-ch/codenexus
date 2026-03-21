@@ -14,25 +14,25 @@ interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'cla
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 text-xs',
-  small: 'h-8 px-3 text-xs',
-  md: 'h-9 px-4 text-sm',
-  medium: 'h-9 px-4 text-sm',
-  lg: 'h-10 px-6 text-base',
-  large: 'h-10 px-6 text-base',
+  sm: 'h-9 px-3.5 text-sm',
+  small: 'h-9 px-3.5 text-sm',
+  md: 'h-11 px-4.5 text-sm',
+  medium: 'h-11 px-4.5 text-sm',
+  lg: 'h-12 px-5.5 text-base',
+  large: 'h-12 px-5.5 text-base',
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-slate-900 text-white shadow-sm hover:bg-slate-800 focus-visible:ring-slate-900 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-200 dark:focus-visible:ring-slate-50 border border-transparent',
+    'bg-[linear-gradient(135deg,#003d9b,#0052cc)] text-white shadow-[0_16px_32px_rgba(0,61,155,0.18)] hover:brightness-[1.03] focus-visible:ring-[#dae2ff]',
   secondary:
-    'bg-slate-100 text-slate-900 hover:bg-slate-200 focus-visible:ring-slate-500 dark:bg-slate-800 dark:text-slate-50 dark:hover:bg-slate-700 border border-transparent',
+    'bg-[rgba(226,231,255,0.88)] text-[#244171] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] hover:bg-[rgba(218,226,253,0.96)] focus-visible:ring-[#dae2ff]',
   outline:
-    'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 focus-visible:ring-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:bg-slate-800',
+    'bg-white/92 text-[#445472] shadow-[0_10px_24px_rgba(19,27,46,0.05)] hover:bg-[#eef2ff] hover:text-[#17305e] focus-visible:ring-[#dae2ff]',
   ghost:
-    'border border-transparent bg-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-slate-500 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-50',
+    'bg-transparent text-[#586988] hover:bg-white/70 hover:text-[#17305e] focus-visible:ring-[#dae2ff]',
   danger:
-    'bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-600 dark:bg-rose-600 dark:hover:bg-rose-700 border border-transparent',
+    'bg-[#ba1a1a] text-white shadow-[0_14px_30px_rgba(186,26,26,0.18)] hover:brightness-[1.04] focus-visible:ring-[#ffdad6]',
 }
 
 export function Button({
@@ -47,7 +47,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const classes = cn(
-    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-offset-slate-950',
+    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-[8px] font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--page-bg-rgb))] disabled:cursor-not-allowed disabled:opacity-50',
     sizeStyles[size],
     variantStyles[variant],
     fullWidth && 'w-full',
@@ -73,4 +73,3 @@ export function Button({
     </button>
   )
 }
-

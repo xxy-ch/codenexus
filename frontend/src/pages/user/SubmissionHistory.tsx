@@ -1,283 +1,178 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate } from 'react-router-dom'
-import { EmptyState } from '@/components/page/EmptyState'
-import { FilterBar } from '@/components/page/FilterBar'
 import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
-import { StatCard } from '@/components/page/StatCard'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { problemsService } from '@/services/problems'
-import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
-import { cn } from '@/lib/utils'
 import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
+import { useNavigate } from 'react-router-dom'
 
-const LANGUAGE_CONFIG = {
-  cpp: { label: 'C++', icon: 'code' },
-  java: { label: 'Java', icon: 'code' },
-  python: { label: 'Python', icon: 'code' },
-  javascript: { label: 'JavaScript', icon: 'javascript' },
-  typescript: { label: 'TypeScript', icon: 'code' },
-  rust: { label: 'Rust', icon: 'code' },
-  go: { label: 'Go', icon: 'code' },
-  csharp: { label: 'C#', icon: 'code' },
-  ruby: { label: 'Ruby', icon: 'code' },
-  php: { label: 'PHP', icon: 'code' },
-  swift: { label: 'Swift', icon: 'code' },
-  kotlin: { label: 'Kotlin', icon: 'code' },
+const statuses = ['accepted', 'wrong_answer', 'queued']
+const languages = ['all', 'cpp', 'python']
+
+function formatMemory(memoryKb?: number) {
+  if (!memoryKb) return '--'
+  return `${Math.round(memoryKb / 1024)}MB`
+}
+
+function formatRuntime(timeMs?: number) {
+  if (!timeMs) return '--'
+  return `${timeMs}ms`
+}
+
+function statusTone(status: string) {
+  if (status === 'accepted') return 'bg-[#e4f7ee] text-[#006847]'
+  if (status === 'wrong_answer') return 'bg-[#ffdad6] text-[#93000a]'
+  return 'bg-[#d5e3fc] text-[#3a485b]'
 }
 
 export function SubmissionHistory() {
   const navigate = useNavigate()
+  const [status, setStatus] = useState<string>('')
+  const [language, setLanguage] = useState<string>('')
   const [page, setPage] = useState(1)
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [languageFilter, setLanguageFilter] = useState<string>('all')
   const limit = 20
 
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['submissions', page, statusFilter, languageFilter],
-    queryFn: () =>
-      problemsService.getUserSubmissions({
-        page,
-        limit,
-        ...(statusFilter !== 'all' && { status: statusFilter }),
-        ...(languageFilter !== 'all' && { language: languageFilter }),
-      }),
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['user-submissions', status, language, page],
+    queryFn: () => problemsService.getUserSubmissions({ status: status || undefined, language: language || undefined, page, limit }),
   })
-
-  const handleStatusFilter = (status: string) => {
-    setStatusFilter(status)
-    setPage(1)
-  }
-
-  const handleLanguageFilter = (language: string) => {
-    setLanguageFilter(language)
-    setPage(1)
-  }
-
-  const handlePageChange = (nextPage: number) => {
-    setPage(nextPage)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[420px] items-center justify-center">
-        <Loading message="加载中..." />
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <SurfaceCard className="text-sm text-[#6b7ca7]">加载中...</SurfaceCard>
       </div>
     )
   }
 
-  if (error) {
+  const submissions = data?.submissions ?? []
+  const total = data?.total ?? 0
+  const pageCount = Math.max(1, Math.ceil(total / limit))
+
+  if (isError) {
     return (
-      <div className="flex min-h-[420px] items-center justify-center">
-        <EmptyState
-          title="加载失败"
-          description="无法加载提交记录，请稍后重试。"
-          action={
-            <Button variant="primary" onClick={() => refetch()}>
-              重试
-            </Button>
-          }
-          className="w-full max-w-xl"
-        />
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <SurfaceCard>
+          <h1 className="font-['Manrope'] text-[1.6rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">加载失败</h1>
+        </SurfaceCard>
       </div>
     )
   }
-
-  if (!data || data.submissions.length === 0) {
-    return (
-      <div className="flex min-h-[420px] items-center justify-center">
-        <EmptyState
-          title="暂无提交记录"
-          description="开始解题后，您的提交记录将显示在这里。"
-          action={
-            <Button as={Link} to="/problems" variant="primary">
-              <span className="material-symbols-outlined text-base">code</span>
-              浏览题目
-            </Button>
-          }
-          className="w-full max-w-xl"
-        />
-      </div>
-    )
-  }
-
-  const totalPages = Math.ceil(data.total / limit)
-  const acceptedCount = data.submissions.filter((submission) => submission.status === 'accepted').length
-  const averageRuntime =
-    data.submissions.reduce((sum, submission) => sum + (submission.time_ms ?? 0), 0) /
-    Math.max(1, data.submissions.length)
-  const averageMemory =
-    data.submissions.reduce((sum, submission) => sum + (submission.memory_kb ?? 0), 0) /
-    Math.max(1, data.submissions.length)
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Submission Archive"
-        title="提交历史"
-        description={`统一查看最近提交的状态、运行表现和语言分布。当前结果集共 ${data.total} 条记录，已通过 ${acceptedCount} 条。`}
-      />
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="Submissions"
+          title="提交历史"
+          description="Track your progress and performance across algorithmic challenges. Analyze runtime and memory consumption for every iteration."
+        />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="当前页" value={`${page}`} helper={`共 ${totalPages} 页`} />
-        <StatCard label="Accepted" value={`${acceptedCount} 条`} helper="当前结果集通过数量" />
-        <StatCard label="平均运行时间" value={`${Math.round(averageRuntime)}ms`} helper="按当前页计算" />
-        <StatCard label="平均内存" value={`${Math.round(averageMemory / 1024)}MB`} helper="按当前页计算" />
-      </div>
-
-      <FilterBar>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-slate-700">状态</span>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleStatusFilter('all')}
-              className={cn(
-                'rounded-xl px-3 py-2 text-xs font-medium transition-colors',
-                statusFilter === 'all'
-                  ? 'bg-slate-950 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              )}
-            >
-              全部
-            </button>
-            <button
-              onClick={() => handleStatusFilter('accepted')}
-              className={cn(
-                'rounded-xl px-3 py-2 text-xs font-medium transition-colors',
-                statusFilter === 'accepted'
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              )}
-            >
-              Accepted
-            </button>
-            <button
-              onClick={() => handleStatusFilter('wrong_answer')}
-              className={cn(
-                'rounded-xl px-3 py-2 text-xs font-medium transition-colors',
-                statusFilter === 'wrong_answer'
-                  ? 'bg-rose-600 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              )}
-            >
-              Wrong Answer
-            </button>
-          </div>
-        </div>
-
-        <label htmlFor="language-filter" className="flex items-center gap-2 text-sm font-medium text-slate-700">
-          <span>语言</span>
-          <select
-            id="language-filter"
-            value={languageFilter}
-            onChange={(event) => handleLanguageFilter(event.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-          >
-            <option value="all">全部语言</option>
-            {Object.entries(LANGUAGE_CONFIG).map(([key, config]) => (
-              <option key={key} value={key}>
-                {config.label}
-              </option>
+        <SurfaceCard>
+          <div className="flex flex-wrap items-center gap-3">
+            {statuses.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => {
+                  setStatus(item)
+                  setPage(1)
+                }}
+                className={status === item
+                  ? 'rounded-full bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-4 py-2 text-sm font-semibold text-white'
+                  : 'rounded-full bg-[rgba(226,231,255,0.88)] px-4 py-2 text-sm font-semibold text-[#445472]'}
+              >
+                {getSubmissionStatusConfig(item).label}
+              </button>
             ))}
-          </select>
-        </label>
-      </FilterBar>
+            <label className="ml-auto flex items-center gap-2 text-sm text-[#65748d]">
+              <span>语言</span>
+              <select
+                aria-label="语言"
+                value={language || 'all'}
+                onChange={(event) => {
+                  const value = event.target.value === 'all' ? '' : event.target.value
+                  setLanguage(value)
+                  setPage(1)
+                }}
+                className="rounded-[8px] bg-[rgba(242,243,255,0.88)] px-3 py-2 text-sm font-semibold text-[#17305e] outline-none"
+              >
+                {languages.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </label>
+          </div>
 
-      <SectionBlock
-        title="结果列表"
-        description="按时间倒序展示，点击任一行进入提交详情分析。"
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">状态</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">题目</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">语言</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">运行时间</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">内存</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">提交时间</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {data.submissions.map((submission) => {
-                const statusConfig = getSubmissionStatusConfig(submission.status)
-                const languageConfig =
-                  LANGUAGE_CONFIG[submission.language as keyof typeof LANGUAGE_CONFIG] || {
-                    label: submission.language,
-                    icon: 'code',
-                  }
-
-                return (
-                  <tr
-                    key={submission.id}
-                    className="cursor-pointer transition hover:bg-slate-50"
-                    onClick={() => navigate(`/submissions/${submission.id}`)}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div
-                        className={cn(
-                          'inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-medium',
-                          statusConfig.bgColor,
-                          statusConfig.textColor,
-                        )}
-                      >
-                        <span className="material-symbols-outlined text-sm">{statusConfig.icon}</span>
-                        {statusConfig.label}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-slate-950">{submission.problem_title}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">{languageConfig.label}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                      {submission.time_ms ? `${submission.time_ms}ms` : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                      {submission.memory_kb ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                      {new Date(submission.created_at).toLocaleString('zh-CN', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </td>
+          {submissions.length === 0 ? (
+            <div className="mt-6 rounded-[8px] bg-[rgba(242,243,255,0.68)] px-4 py-5 text-sm text-[#65748d]">暂无提交记录</div>
+          ) : (
+            <div className="mt-6 overflow-hidden rounded-[10px] bg-[rgba(242,243,255,0.7)]">
+              <table className="w-full" role="table">
+                <thead>
+                  <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">
+                    <th className="px-4 py-4">Status</th>
+                    <th className="px-4 py-4">Problem</th>
+                    <th className="px-4 py-4">Language</th>
+                    <th className="px-4 py-4">Runtime</th>
+                    <th className="px-4 py-4">Memory</th>
+                    <th className="px-4 py-4">Submitted</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="space-y-2">
+                  {submissions.map((submission) => (
+                    <tr
+                      key={submission.id}
+                      onClick={() => navigate(`/submissions/${submission.id}`)}
+                      className="cursor-pointer border-t border-[rgba(195,198,214,0.18)] bg-white transition-colors hover:bg-[#f8f9ff]"
+                    >
+                      <td className="px-4 py-4">
+                        <span className={`w-fit rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${statusTone(submission.status)}`}>
+                          {getSubmissionStatusConfig(submission.status).label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="truncate text-sm font-semibold text-[#131b2e]">{submission.problem_title}</p>
+                        {submission.error_message ? <p className="mt-1 text-xs text-[#65748d]">{submission.error_message}</p> : null}
+                      </td>
+                      <td className="px-4 py-4 font-mono text-sm text-[#445472]">{submission.language}</td>
+                      <td className="px-4 py-4 font-mono text-sm text-[#445472]">{formatRuntime(submission.time_ms)}</td>
+                      <td className="px-4 py-4 font-mono text-sm text-[#445472]">{formatMemory(submission.memory_kb)}</td>
+                      <td className="px-4 py-4 text-sm text-[#65748d]">{new Date(submission.created_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        {totalPages > 1 ? (
-          <div className="mt-5 flex items-center justify-between border-t border-slate-200 pt-5">
-            <div className="text-sm text-slate-500">第 {page} 页，共 {totalPages} 页</div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="small"
-                onClick={() => handlePageChange(page - 1)}
+          <div className="mt-6 flex items-center justify-between">
+            <span className="text-sm text-[#65748d]">第 {page} 页 / Page {page} of {pageCount}</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                aria-label="上一页"
+                onClick={() => setPage((current) => Math.max(current - 1, 1))}
                 disabled={page === 1}
+                className="rounded-[8px] bg-[rgba(226,231,255,0.88)] px-3 py-2 text-sm font-semibold text-[#445472] disabled:opacity-40"
               >
-                <span className="material-symbols-outlined">chevron_left</span>
-                上一页
-              </Button>
-              <Button
-                variant="outline"
-                size="small"
-                onClick={() => handlePageChange(page + 1)}
-                disabled={page === totalPages}
+                Prev
+              </button>
+              <button
+                type="button"
+                aria-label="下一页"
+                onClick={() => setPage((current) => Math.min(current + 1, pageCount))}
+                disabled={page === pageCount}
+                className="rounded-[8px] bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
               >
-                下一页
-                <span className="material-symbols-outlined">chevron_right</span>
-              </Button>
+                Next
+              </button>
             </div>
           </div>
-        ) : null}
-      </SectionBlock>
+        </SurfaceCard>
+      </div>
     </div>
   )
 }
+
+export default SubmissionHistory

@@ -5,7 +5,17 @@ import { MainLayout } from '@/layouts/MainLayout'
 import { AdminLayout } from '@/layouts/AdminLayout'
 
 vi.mock('@/components/layout/Sidebar', () => ({
-  Sidebar: () => <aside aria-label="Global sidebar">Sidebar</aside>,
+  Sidebar: ({ mode }: { mode?: 'workspace' | 'admin' }) => (
+    <aside aria-label="Global sidebar">
+      Sidebar {mode ?? 'workspace'}
+      {mode === 'admin' ? (
+        <nav aria-label="Admin navigation">
+          <a href="/admin/users">Users</a>
+          <a href="/admin/problems">Problem Management</a>
+        </nav>
+      ) : null}
+    </aside>
+  ),
 }))
 
 vi.mock('@/components/layout/Header', () => ({
@@ -45,6 +55,7 @@ describe('application shells', () => {
     renderMainLayout()
 
     expect(screen.getByLabelText(/global sidebar/i)).toBeInTheDocument()
+    expect(screen.getByText(/sidebar workspace/i)).toBeInTheDocument()
     expect(screen.getByText(/workspace header/i)).toBeInTheDocument()
     expect(screen.getByLabelText(/mobile navigation/i)).toBeInTheDocument()
     expect(screen.getByText(/dashboard page/i)).toBeInTheDocument()
@@ -53,6 +64,7 @@ describe('application shells', () => {
   it('renders the admin shell inside the same shell family with grouped navigation links', () => {
     renderAdminLayout()
 
+    expect(screen.getByText(/sidebar admin/i)).toBeInTheDocument()
     expect(screen.getByText(/admin workspace/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /users/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /problem management/i })).toBeInTheDocument()

@@ -1,204 +1,86 @@
-import { useMemo } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, Clock3, Database, Layers3, Tag } from 'lucide-react'
-import { useProblem } from '@/hooks/useProblems'
-import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
-import { EmptyState } from '@/components/page/EmptyState'
-import { MetaStrip } from '@/components/page/MetaStrip'
+import { Link } from 'react-router-dom'
 import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
-import { cn } from '@/lib/utils'
-
-const difficultyConfig = {
-  easy: {
-    label: 'Easy',
-    className: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-  },
-  medium: {
-    label: 'Medium',
-    className: 'border-amber-200 bg-amber-50 text-amber-700',
-  },
-  hard: {
-    label: 'Hard',
-    className: 'border-rose-200 bg-rose-50 text-rose-700',
-  },
-} as const
+import { MetaStrip } from '@/components/page/MetaStrip'
 
 export function ProblemDetail() {
-  const { problemId } = useParams<{ problemId: string }>()
-  const navigate = useNavigate()
-  const { data: problem, isLoading, error } = useProblem(problemId ?? '')
-
-  const paragraphs = useMemo(
-    () =>
-      (problem?.description || '')
-        .split(/\n{2,}/)
-        .map((item) => item.trim())
-        .filter(Boolean),
-    [problem?.description],
-  )
-
-  if (isLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loading message="加载题目详情..." />
-      </div>
-    )
-  }
-
-  if (error || !problem) {
-    return (
-      <EmptyState
-        title="题目不存在"
-        description="无法加载题目详情，请返回题库重新选择。"
-        action={
-          <Link to="/problems">
-            <Button variant="primary">返回题库</Button>
-          </Link>
-        }
-      />
-    )
-  }
-
-  const difficulty = difficultyConfig[problem.difficulty]
-
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="Problem Detail"
-        breadcrumb={['Problems', problem.title]}
-        title={problem.title}
-        description="题面阅读、约束信息和提交入口统一收在同一张 detail 画布里，减少无关装饰，保留实际判题所需信息。"
-        actions={
-          <>
-            <Button variant="outline" onClick={() => navigate('/problems')} aria-label="返回题库">
-              返回题库
-            </Button>
-            <Button variant="primary" onClick={() => navigate(`/problems/${problemId}/solve`)}>
-              开始作答
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </>
-        }
-      />
-
-      <MetaStrip
-        items={[
-          {
-            label: 'Difficulty',
-            value: difficulty.label,
-            helper: '根据题目配置读取',
-            icon: Layers3,
-            tone:
-              problem.difficulty === 'easy'
-                ? 'success'
-                : problem.difficulty === 'medium'
-                  ? 'warning'
-                  : 'danger',
-          },
-          {
-            label: 'Time Limit',
-            value: `${problem.time_limit} ms`,
-            helper: '单次运行上限',
-            icon: Clock3,
-          },
-          {
-            label: 'Memory Limit',
-            value: `${Math.round(problem.memory_limit / 1024)} MB`,
-            helper: '按题目配置展示',
-            icon: Database,
-          },
-          {
-            label: 'Points',
-            value: problem.points,
-            helper: '通过后可获得分值',
-          },
-        ]}
-      />
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_360px]">
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+      <div className="grid gap-6 xl:grid-cols-[1.5fr_0.62fr]">
         <div className="space-y-6">
-          <SectionBlock
-            title="题目描述"
-            description="正文只展示真实题面内容，不再混入伪样例、伪提示和占位说明。"
-          >
-            <div className="space-y-4 text-sm leading-7 text-slate-700">
-              {paragraphs.length > 0 ? (
-                paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)
-              ) : (
-                <p>暂无题面描述。</p>
-              )}
-            </div>
-          </SectionBlock>
+          <PageHeader
+            breadcrumb={['Problems', 'Dynamic Programming', '1042. Skyline Partition']}
+            title="Skyline Partition Optimization"
+            description="Given a set of n rectangular buildings in a city, your task is to partition the resulting silhouette into the minimum number of disjoint rectangles that satisfy the structural integrity constraints."
+          />
 
-          <SectionBlock
-            title="提交说明"
-            description="进入工作区后按标准输入输出提交代码，使用题目配置中允许的语言进行判题。"
-          >
-            <div className="grid gap-4 md:grid-cols-2">
-              <SurfaceCard tone="muted" className="p-5">
-                <div className="flex items-start gap-3">
-                  <Clock3 className="mt-0.5 h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">时间限制</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      单次运行最长 {problem.time_limit} ms。
-                    </p>
-                  </div>
+          <MetaStrip
+            items={[
+              { label: 'Difficulty', value: 'Hard' },
+              { label: 'Time Limit', value: '1000 ms' },
+              { label: 'Memory Limit', value: '256 MB' },
+              { label: 'Points', value: '2400' },
+            ]}
+          />
+
+          <SurfaceCard className="space-y-8">
+            <section className="space-y-4">
+              <h2 className="font-['Manrope'] text-[1.35rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">Description</h2>
+              <div className="max-w-3xl space-y-4 text-[15px] leading-8 text-[#4f5f7b]">
+                <p>Given a set of <span className="rounded bg-[rgba(218,226,253,0.6)] px-1 py-0.5 font-mono text-[#003d9b]">n</span> rectangular buildings in a city, your task is to partition the resulting silhouette into the minimum number of disjoint rectangles that satisfy the structural integrity constraints.</p>
+                <p>Each building is represented by three integers: <span className="font-mono">L</span>, <span className="font-mono">H</span>, and <span className="font-mono">R</span>, where <span className="font-mono">L</span> and <span className="font-mono">R</span> are the left and right x-coordinates, and <span className="font-mono">H</span> is the height.</p>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h2 className="font-['Manrope'] text-[1.35rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">Constraints</h2>
+              <ul className="space-y-2 text-sm text-[#4f5f7b]">
+                <li>• 1 &lt;= n &lt;= 10^5</li>
+                <li>• 0 &lt;= L &lt; R &lt;= 10^9</li>
+                <li>• 1 &lt;= H &lt;= 10^9</li>
+              </ul>
+            </section>
+
+            <section className="space-y-4">
+              <h2 className="font-['Manrope'] text-[1.35rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">Example Cases</h2>
+              <div className="grid gap-4 rounded-[10px] bg-[rgba(242,243,255,0.84)] p-5 md:grid-cols-2">
+                <div className="rounded-[8px] bg-white px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">Input</p>
+                  <pre className="mt-3 whitespace-pre-wrap text-sm text-[#131b2e]">3{'\n'}2 10 9{'\n'}3 15 7{'\n'}12 8 18</pre>
                 </div>
-              </SurfaceCard>
-              <SurfaceCard tone="muted" className="p-5">
-                <div className="flex items-start gap-3">
-                  <Database className="mt-0.5 h-4 w-4 text-slate-500" />
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">内存限制</p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      运行时可使用 {Math.round(problem.memory_limit / 1024)} MB 内存。
-                    </p>
-                  </div>
+                <div className="rounded-[8px] bg-white px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">Output</p>
+                  <pre className="mt-3 whitespace-pre-wrap text-sm text-[#131b2e]">[2, 10, 3, 15, 7, 10, 9, 0, 12, 8, 18, 0]</pre>
                 </div>
-              </SurfaceCard>
-            </div>
-          </SectionBlock>
+              </div>
+            </section>
+          </SurfaceCard>
         </div>
 
-        <div className="space-y-6">
-          <SectionBlock title="标签" description="题目关联的知识点和分类。">
-            {problem.tags.length > 0 ? (
-              <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {problem.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-3 py-1 text-sm text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.04)]"
-                  >
-                    <Tag className="h-3.5 w-3.5 text-slate-500" />
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500">暂无标签。</p>
-            )}
-          </SectionBlock>
-
-          <SurfaceCard className="space-y-4">
-            <div className="flex items-start gap-3">
-              <Layers3 className="mt-0.5 h-4 w-4 text-slate-500" />
-              <div>
-                <p className="text-sm font-semibold text-slate-950">解题入口</p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  工作区保留题目与编辑器双栏结构，不预置模板代码，直接以标准输入输出提交。
-                </p>
-              </div>
+        <div className="space-y-6 xl:pt-[102px]">
+          <SurfaceCard tone="muted" className="space-y-3">
+            <Link to="/problems/1/solve" className="flex items-center justify-center rounded-[8px] bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-4 py-4 text-base font-semibold text-white shadow-[0_16px_32px_rgba(0,61,155,0.18)]">
+              Submit Code
+            </Link>
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" className="rounded-[8px] bg-white px-4 py-3 text-sm font-semibold text-[#244171]">Note</button>
+              <button type="button" className="rounded-[8px] bg-white px-4 py-3 text-sm font-semibold text-[#244171]">Save</button>
             </div>
-            <Button fullWidth variant="primary" onClick={() => navigate(`/problems/${problemId}/solve`)}>
-              进入 IDE
-            </Button>
+          </SurfaceCard>
+
+          <SurfaceCard className="space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">Problem Insights</p>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between rounded-[8px] bg-[rgba(242,243,255,0.68)] px-4 py-3"><span>Difficulty</span><span className="rounded-full bg-[#006847] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">Hard</span></div>
+              <div className="flex items-center justify-between rounded-[8px] bg-[rgba(242,243,255,0.68)] px-4 py-3"><span>Success Rate</span><span>34.8%</span></div>
+              <div className="flex items-center justify-between rounded-[8px] bg-[rgba(242,243,255,0.68)] px-4 py-3"><span>Author</span><span className="text-[#003d9b]">Dr. A. Vance</span></div>
+              <div className="flex items-center justify-between rounded-[8px] bg-[rgba(242,243,255,0.68)] px-4 py-3"><span>Added</span><span>Oct 24, 2023</span></div>
+            </div>
           </SurfaceCard>
         </div>
       </div>
     </div>
   )
 }
+
+export default ProblemDetail
