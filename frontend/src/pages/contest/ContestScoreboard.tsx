@@ -66,7 +66,7 @@ export function ContestScoreboard() {
         <p className="mt-1 text-sm text-slate-600">榜单源自真实排名接口，适合直接查看名次、罚时和解题情况。</p>
       </SurfaceCard>
 
-      <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-[30px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] shadow-[0_16px_36px_rgba(15,23,42,0.07)] backdrop-blur-sm">
         <ScoreboardTable entries={data} />
       </section>
     </div>

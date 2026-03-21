@@ -110,7 +110,7 @@ export function AdminDashboard() {
         description="管理端统一切到当前整站的 flat cold gray-blue 模式。这里只保留真实后端已接通的运营入口，不再展示假模块。"
         actions={
           <>
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">
+            <div className="rounded-2xl border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-4 py-2 text-sm font-medium text-slate-600 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
               {modules.length} 个在线模块
             </div>
             <Button as={Link} to="/admin/problems" variant="primary">
@@ -137,7 +137,7 @@ export function AdminDashboard() {
             这次收口目标是把后台页面统一到新的共享组件体系里，同时保留已有运营能力。不存在真实后端支撑的行为不会被伪造出来。
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+        <div className="rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm leading-6 text-slate-600 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
           用户、题库、评测、举报和相似度现在都在同一管理壳层中。
         </div>
       </SurfaceCard>
@@ -150,7 +150,7 @@ export function AdminDashboard() {
             <Link
               key={module.href}
               to={module.href}
-              className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+              className="group rounded-[30px] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(245,248,252,0.92))] p-6 shadow-[0_16px_36px_rgba(15,23,42,0.06)] transition-all duration-200 hover:border-blue-200 hover:shadow-[0_18px_40px_rgba(30,64,175,0.1)]"
             >
               <div className={cn('inline-flex rounded-2xl border p-3', MODULE_TONE[module.tone])}>
                 <Icon className="h-5 w-5" />
@@ -159,7 +159,7 @@ export function AdminDashboard() {
                 <h2 className="text-lg font-semibold text-slate-950">{module.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">{module.description}</p>
               </div>
-              <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition group-hover:text-slate-950">
+              <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-slate-700 transition group-hover:text-blue-900">
                 打开模块
                 <ArrowRight className="h-4 w-4" />
               </div>

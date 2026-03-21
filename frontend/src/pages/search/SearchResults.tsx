@@ -107,7 +107,7 @@ export function SearchResults() {
       return (
         <SurfaceCard
           key={`problem-${item.id}`}
-          className="cursor-pointer space-y-4 transition-colors hover:border-slate-300"
+          className="cursor-pointer space-y-4 transition-all duration-200 hover:border-blue-200 hover:shadow-[0_18px_36px_rgba(30,64,175,0.08)]"
         >
           <button
             type="button"
@@ -115,9 +115,9 @@ export function SearchResults() {
             className="w-full text-left"
           >
             <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1">Problem</span>
+              <span className="rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-2 py-1">Problem</span>
               {item.difficulty ? (
-                <span className="rounded-full border border-slate-200 bg-white px-2 py-1 normal-case text-slate-600">
+                <span className="rounded-full border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-2 py-1 normal-case text-slate-600">
                   {item.difficulty}
                 </span>
               ) : null}
@@ -146,10 +146,10 @@ export function SearchResults() {
     }
 
     return (
-      <SurfaceCard
-        key={`discussion-${item.id}`}
-        className="cursor-pointer space-y-4 transition-colors hover:border-slate-300"
-      >
+        <SurfaceCard
+          key={`discussion-${item.id}`}
+          className="cursor-pointer space-y-4 transition-all duration-200 hover:border-blue-200 hover:shadow-[0_18px_36px_rgba(30,64,175,0.08)]"
+        >
         <button
           type="button"
           onClick={() => navigate(`/discussions/${item.id}`)}
@@ -157,7 +157,7 @@ export function SearchResults() {
         >
           <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
             {item.is_pinned ? (
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 uppercase tracking-wide">
+              <span className="rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-2 py-1 uppercase tracking-wide">
                 Pinned
               </span>
             ) : null}
@@ -167,7 +167,7 @@ export function SearchResults() {
               </span>
             ) : null}
             {item.tags.map((entry) => (
-              <span key={entry} className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600">
+              <span key={entry} className="rounded-full border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-2 py-1 text-slate-600">
                 #{entry}
               </span>
             ))}
@@ -203,7 +203,7 @@ export function SearchResults() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-transparent px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-6">
         <PageHeader
           eyebrow="Search"
@@ -247,7 +247,7 @@ export function SearchResults() {
             <select
               value={sort}
               onChange={(e) => updateFilter('sort', e.target.value)}
-              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
+              className="h-11 rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-3 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
             >
               <option value="relevance">Relevance</option>
               <option value="latest">Latest</option>

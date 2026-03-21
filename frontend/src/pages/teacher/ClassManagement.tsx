@@ -200,7 +200,7 @@ export function ClassManagement() {
         title="班级管理"
         description="保留真实写路径：建班、按邮箱添加学生、批量导入、创建作业、发布作业，以及按作业查看真实提交。所有写操作都绑定当前显式选中的班级。"
         actions={
-          <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700">
+          <div className="rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
             Live write paths enabled
           </div>
         }
@@ -261,7 +261,7 @@ export function ClassManagement() {
                   <GraduationCap className="h-4 w-4 text-sky-700" />
                   邀请码
                 </div>
-                <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 font-mono text-base text-slate-900">
+                <div className="mt-3 rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 font-mono text-base text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                   {highlightedClass?.enrollment_code || '—'}
                 </div>
                 <p className="mt-2 text-sm text-slate-500">学生可通过真实邀请码入班接口加入该班级。</p>
@@ -288,7 +288,7 @@ export function ClassManagement() {
                     value={studentImport}
                     onChange={(e) => setStudentImport(e.target.value)}
                     placeholder="批量导入邮箱，每行一个"
-                    className="min-h-[132px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    className="min-h-[132px] w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition-colors focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                   />
                 </FieldGroup>
                 <Button
@@ -307,7 +307,7 @@ export function ClassManagement() {
 
         <div className="space-y-6">
           <FilterBar>
-            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[24px] border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-3 py-2 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
               <Mail className="h-4 w-4 text-slate-400" />
               <input
                 value={search}
@@ -405,7 +405,7 @@ export function ClassManagement() {
                     type="datetime-local"
                     value={assignmentDeadline}
                     onChange={(e) => setAssignmentDeadline(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition-colors focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                   />
                 </FieldGroup>
                 <FieldGroup label="分值">

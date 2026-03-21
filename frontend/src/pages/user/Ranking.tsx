@@ -124,8 +124,8 @@ export function Ranking() {
               setPage(1)
             }}
             className={cn(
-              'rounded-xl px-4 py-2 text-sm font-medium transition-colors',
-              activeTab === 'global' ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+              'rounded-2xl px-4 py-2 text-sm font-medium transition-all duration-200',
+              activeTab === 'global' ? 'bg-blue-800 text-white shadow-[0_12px_24px_rgba(30,64,175,0.16)]' : 'bg-[rgba(255,255,255,0.88)] text-slate-700 hover:bg-blue-50/80',
             )}
           >
             全局榜
@@ -136,10 +136,10 @@ export function Ranking() {
               setPage(1)
             }}
             className={cn(
-              'rounded-xl px-4 py-2 text-sm font-medium transition-colors',
+              'rounded-2xl px-4 py-2 text-sm font-medium transition-all duration-200',
               activeTab === 'organization'
-                ? 'bg-slate-950 text-white'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+                ? 'bg-blue-800 text-white shadow-[0_12px_24px_rgba(30,64,175,0.16)]'
+                : 'bg-[rgba(255,255,255,0.88)] text-slate-700 hover:bg-blue-50/80',
             )}
           >
             组织榜
@@ -155,7 +155,7 @@ export function Ranking() {
               setPage(1)
             }}
             placeholder="搜索用户"
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className="w-full rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-2.5 text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
           />
         </label>
 
@@ -167,7 +167,7 @@ export function Ranking() {
               setTimePeriod(event.target.value)
               setPage(1)
             }}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+            className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-3 py-2.5 text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
           >
             <option value="all">全部时间</option>
             <option value="week">本周</option>
@@ -183,7 +183,7 @@ export function Ranking() {
             {topThree.map((entry, index) => (
               <SurfaceCard key={entry.id} tone={index === 0 ? 'default' : 'muted'} className="p-5">
                 <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-slate-950 px-3 py-1 text-sm font-semibold text-white">#{entry.ranking}</span>
+                  <span className="rounded-full bg-blue-800 px-3 py-1 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(30,64,175,0.14)]">#{entry.ranking}</span>
                   <span className="text-xs uppercase tracking-[0.18em] text-slate-500">
                     {index === 0 ? 'Leader' : `Top ${index + 1}`}
                   </span>
@@ -193,11 +193,11 @@ export function Ranking() {
                   {entry.first_name} {entry.last_name}
                 </p>
                 <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                  <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
+                  <div className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-3 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Points</p>
                     <p className="mt-1 font-semibold text-slate-950">{entry.points}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
+                  <div className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-3 py-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Solved</p>
                     <p className="mt-1 font-semibold text-slate-950">{entry.problems_solved}</p>
                   </div>
@@ -216,7 +216,7 @@ export function Ranking() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="border-b border-slate-200 bg-slate-50">
+                <thead className="border-b border-slate-200 bg-[rgba(246,249,253,0.92)]">
                     <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                       <th className="px-6 py-3">Rank</th>
                       <th className="px-6 py-3">User</th>
@@ -231,11 +231,11 @@ export function Ranking() {
                       const isCurrentUser = currentUser?.id === entry.id
 
                       return (
-                        <tr key={entry.id} className={cn('transition hover:bg-slate-50', isCurrentUser && 'bg-blue-50')}>
+                        <tr key={entry.id} className={cn('transition hover:bg-blue-50/50', isCurrentUser && 'bg-blue-50')}>
                           <td className="px-6 py-4 text-sm font-semibold text-slate-950">#{entry.ranking}</td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100 text-sm font-semibold text-slate-700">
+                              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[rgba(246,249,253,0.92)] text-sm font-semibold text-slate-700">
                                 {entry.username.slice(0, 2).toUpperCase()}
                               </div>
                               <div>
@@ -286,16 +286,16 @@ export function Ranking() {
             <h2 className="text-lg font-semibold text-slate-950">当前用户位置</h2>
             {currentUserEntry ? (
               <div className="mt-4 space-y-3">
-                <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                <div className="rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Rank</p>
                   <p className="mt-1 text-2xl font-semibold text-slate-950">#{currentUserEntry.ranking}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                  <div className="rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Points</p>
                     <p className="mt-1 font-semibold text-slate-950">{currentUserEntry.points}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                  <div className="rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                     <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Solved</p>
                     <p className="mt-1 font-semibold text-slate-950">{currentUserEntry.problems_solved}</p>
                   </div>

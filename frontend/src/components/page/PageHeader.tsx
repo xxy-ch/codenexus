@@ -22,7 +22,7 @@ export function PageHeader({
   return (
     <section
       className={cn(
-        'rounded-[32px] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(246,249,253,0.92))] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.08)] backdrop-blur-sm',
+        'rounded-[32px] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(245,248,252,0.92))] p-6 shadow-[0_18px_40px_rgba(15,23,42,0.07)] backdrop-blur-sm',
         className,
       )}
     >
@@ -41,7 +41,7 @@ export function PageHeader({
             </div>
           )}
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.1rem]">{title}</h1>
+            <h1 className="text-[2rem] font-semibold tracking-tight text-slate-950 md:text-[2.25rem]">{title}</h1>
             {description ? <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 md:text-[15px]">{description}</p> : null}
           </div>
         </div>
