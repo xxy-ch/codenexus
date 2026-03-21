@@ -10,9 +10,9 @@ describe('ui primitives', () => {
     render(<Button variant="primary">Sign In</Button>)
 
     const button = screen.getByRole('button', { name: 'Sign In' })
-    expect(button).toHaveClass('bg-blue-800')
+    expect(button).toHaveClass('bg-slate-900')
     expect(button).toHaveClass('text-white')
-    expect(button).toHaveClass('rounded-2xl')
+    expect(button).toHaveClass('rounded-md')
     expect(button.className).toContain('focus-visible:ring-2')
   })
 
@@ -20,10 +20,10 @@ describe('ui primitives', () => {
     render(<Input aria-label="Username" placeholder="1001" />)
 
     const input = screen.getByRole('textbox', { name: 'Username' })
-    expect(input.className).toContain('bg-[rgba(255,255,255,0.88)]')
-    expect(input.className).toContain('border-slate-200/90')
-    expect(input).toHaveClass('rounded-2xl')
-    expect(input.className).toContain('focus-visible:border-blue-300')
+    expect(input.className).toContain('bg-white')
+    expect(input.className).toContain('border-slate-200')
+    expect(input).toHaveClass('rounded-md')
+    expect(input.className).toContain('focus-visible:ring-slate-950')
   })
 
   it('renders loading spinner without progressbar semantics and with flat neutral styling', () => {

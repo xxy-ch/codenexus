@@ -4,41 +4,41 @@
 @import "tailwindcss";
 
 :root {
-  --foreground-rgb: 15, 23, 42;
-  --page-bg-rgb: 243, 247, 252;
+  --foreground-rgb: 9, 9, 11;
+  --page-bg-rgb: 250, 250, 250;
   --surface-rgb: 255, 255, 255;
-  --surface-muted-rgb: 246, 249, 253;
-  --surface-strong-rgb: 234, 241, 250;
-  --border-rgb: 208, 221, 237;
-  --accent-rgb: 30, 64, 175;
+  --surface-muted-rgb: 244, 244, 245;
+  --surface-strong-rgb: 228, 228, 231;
+  --border-rgb: 228, 228, 231;
+  --accent-rgb: 37, 99, 235;
   --accent-soft-rgb: 219, 234, 254;
-  --muted-rgb: 100, 116, 139;
-  --panel-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
-  --panel-shadow-soft: 0 10px 24px rgba(30, 64, 175, 0.08);
+  --muted-rgb: 113, 113, 122;
+  --panel-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --panel-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 241, 245, 249;
-    --page-bg-rgb: 2, 6, 23;
-    --surface-rgb: 15, 23, 42;
-    --surface-muted-rgb: 30, 41, 59;
-    --surface-strong-rgb: 30, 52, 88;
-    --border-rgb: 51, 65, 85;
-    --accent-rgb: 96, 165, 250;
-    --accent-soft-rgb: 30, 41, 59;
-    --muted-rgb: 148, 163, 184;
-    --panel-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
-    --panel-shadow-soft: 0 10px 24px rgba(15, 23, 42, 0.35);
+    --foreground-rgb: 250, 250, 250;
+    --page-bg-rgb: 9, 9, 11;
+    --surface-rgb: 24, 24, 27;
+    --surface-muted-rgb: 39, 39, 42;
+    --surface-strong-rgb: 63, 63, 70;
+    --border-rgb: 39, 39, 42;
+    --accent-rgb: 59, 130, 246;
+    --accent-soft-rgb: 30, 58, 138;
+    --muted-rgb: 161, 161, 170;
+    --panel-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --panel-shadow-soft: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
   }
 }
 
 body {
   margin: 0;
   font-family: 'Public Sans', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(243, 247, 252, 0.98)), rgb(var(--page-bg-rgb));
+  background-color: rgb(var(--page-bg-rgb));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
@@ -61,16 +61,6 @@ body,
 
 #root {
   position: relative;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 38%),
-    radial-gradient(circle at 12% 10%, rgba(var(--accent-rgb), 0.07), transparent 24%);
 }
 
 ::selection {

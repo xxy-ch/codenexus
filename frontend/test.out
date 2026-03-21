@@ -1,0 +1,47 @@
+
+> frontend@0.0.0 test
+> vitest --run
+
+
+ RUN  v1.6.1 /Users/xiexingyu/Documents/项目/Online_Judge/frontend
+
+ ✓ src/pages/teacher/__tests__/AssignmentReport.test.tsx  (1 test) 348ms
+ ✓ src/pages/user/__tests__/SubmissionDetail.test.tsx  (8 tests) 322ms
+ ✓ src/pages/community/__tests__/community-authoring-pages.test.tsx  (4 tests) 351ms
+ ✓ src/pages/user/__tests__/SubmissionHistory.test.tsx  (11 tests) 436ms
+ ✓ src/pages/user/__tests__/ContestList.test.tsx  (19 tests) 478ms
+ ✓ src/pages/user/__tests__/DashboardEnhanced.test.tsx  (25 tests) 591ms
+ ✓ src/pages/user/__tests__/ContestDetail.test.tsx  (25 tests) 773ms
+ ✓ src/services/__tests__/smokeCoreFlows.test.ts  (6 tests) 3ms
+ ✓ src/services/__tests__/contests.test.ts  (2 tests) 3ms
+ ✓ src/pages/user/__tests__/ProblemIDEEnhanced.test.tsx  (2 tests) 169ms
+ ✓ src/components/page/__tests__/page-primitives.test.tsx  (4 tests) 155ms
+ ✓ src/pages/teacher/__tests__/ClassManagement.test.tsx  (2 tests) 460ms
+ ✓ src/services/__tests__/communityApi.test.ts  (4 tests) 4ms
+ ✓ src/pages/teacher/__tests__/ContestWizard.test.tsx  (3 tests) 589ms
+ ✓ src/components/layout/__tests__/Sidebar.test.tsx  (4 tests) 214ms
+ ✓ src/pages/auth/__tests__/auth-shell.test.tsx  (4 tests) 208ms
+ ❯ src/components/ui/__tests__/primitives.test.tsx  (5 tests | 2 failed) 96ms
+   ❯ src/components/ui/__tests__/primitives.test.tsx > ui primitives > renders primary button with flat design system classes and visible focus treatment
+     → expect(element).toHaveClass("bg-blue-800")
+
+Expected the element to have class:
+  bg-blue-800
+Received:
+  inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus-visible:ring-offset-slate-950 h-9 px-4 text-sm bg-slate-900 text-white shadow-sm hover:bg-slate-800 focus-visible:ring-slate-900 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-200 dark:focus-visible:ring-slate-50 border border-transparent
+   ❯ src/components/ui/__tests__/primitives.test.tsx > ui primitives > renders input with flat surface classes and focus-visible border treatment
+     → expected 'flex h-9 w-full rounded-md border bor…' to contain 'bg-[rgba(255,255,255,0.88)]'
+ ✓ src/services/__tests__/ranking.test.ts  (2 tests) 3ms
+ ✓ src/services/__tests__/classes.test.ts  (2 tests) 7ms
+ ✓ src/services/__tests__/judgeConfig.test.ts  (2 tests) 3ms
+ ✓ src/layouts/__tests__/shell-layouts.test.tsx  (2 tests) 145ms
+ ✓ src/services/__tests__/messages.test.ts  (2 tests) 3ms
+ ✓ src/services/__tests__/searchApi.test.ts  (2 tests) 4ms
+ ✓ src/services/__tests__/plagiarism.test.ts  (2 tests) 3ms
+ ✓ src/components/page/__tests__/MetaStrip.test.tsx  (1 test) 25ms
+
+ Test Files  1 failed | 24 passed (25)
+      Tests  2 failed | 142 passed (144)
+   Start at  14:05:29
+   Duration  3.79s (transform 1.09s, setup 1.57s, collect 3.98s, tests 5.39s, environment 8.26s, prepare 1.61s)
+
