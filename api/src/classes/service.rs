@@ -411,11 +411,11 @@ impl ClassService {
             r#"
             SELECT
                 ce.student_id,
-                u.username,
-                u.email,
-                0 AS total_assignments,
-                0 AS completed_assignments,
-                0.0 AS average_score,
+                COALESCE(u.username, u.user_code, ce.student_id::TEXT) AS username,
+                COALESCE(u.email, '') AS email,
+                0::INTEGER AS total_assignments,
+                0::INTEGER AS completed_assignments,
+                0::DOUBLE PRECISION AS average_score,
                 NULL::TIMESTAMPTZ AS last_submission
             FROM class_enrollments ce
             JOIN users u ON u.id = ce.student_id
@@ -600,5 +600,37 @@ impl ClassService {
         .await?;
 
         Ok(submissions)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::postgres::PgPoolOptions;
+
+    #[tokio::test]
+    async fn get_class_students_returns_seeded_students() {
+        dotenvy::dotenv().ok();
+
+        let database_url = match std::env::var("DATABASE_URL") {
+            Ok(url) => url,
+            Err(_) => return,
+        };
+
+        let pool = PgPoolOptions::new()
+            .max_connections(1)
+            .connect(&database_url)
+            .await
+            .expect("connect test database");
+
+        let service = ClassService::new(pool);
+        let students = service
+            .get_class_students(1)
+            .await
+            .expect("load seeded class students");
+
+        assert!(!students.is_empty(), "expected seeded class to expose students");
+        assert!(students.iter().all(|student| !student.username.is_empty()));
+        assert!(students.iter().all(|student| !student.email.is_empty()));
     }
 }

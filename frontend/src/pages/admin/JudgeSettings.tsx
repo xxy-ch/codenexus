@@ -10,6 +10,54 @@ import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
+import { cn } from '@/lib/utils'
+
+const textareaClassName =
+  'min-h-[120px] w-full rounded-[18px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-[18px] py-3 font-mono text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 placeholder:text-[#93a0bb] focus-visible:border-[rgba(12,86,208,0.28)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.09)]'
+
+function ToggleButton({
+  checked,
+  disabled,
+  label,
+  helper,
+  onToggle,
+}: {
+  checked: boolean
+  disabled?: boolean
+  label: string
+  helper: string
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onToggle}
+      className={cn(
+        'flex w-full items-center justify-between rounded-[18px] border px-4 py-3 text-left text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.12)] disabled:cursor-not-allowed disabled:opacity-50',
+        checked
+          ? 'border-[#b2c5ff] bg-white text-[#17305e] shadow-[0_12px_24px_rgba(0,61,155,0.08)]'
+          : 'border-slate-200 bg-slate-50 text-slate-700'
+      )}
+    >
+      <div>
+        <div className="font-semibold text-slate-950">{label}</div>
+        <div className="text-xs text-slate-500">{helper}</div>
+      </div>
+      <span
+        className={cn(
+          'rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em]',
+          checked ? 'bg-[#dae2ff] text-[#003d9b]' : 'bg-slate-100 text-slate-500'
+        )}
+      >
+        {checked ? '已启用' : '已停用'}
+      </span>
+    </button>
+  )
+}
 
 export function JudgeSettings() {
   const queryClient = useQueryClient()
@@ -65,7 +113,7 @@ export function JudgeSettings() {
     },
   })
 
-  const cases = data || []
+  const cases = useMemo(() => data ?? [], [data])
   const stats = useMemo(() => {
     const hidden = cases.filter((tc) => tc.is_hidden).length
     const totalScore = cases.reduce((sum, tc) => sum + Number(tc.score || 0), 0)
@@ -87,7 +135,7 @@ export function JudgeSettings() {
   if (isLoading) {
     return (
       <div className="flex min-h-[320px] items-center justify-center">
-        <Loading message="加载测试数据配置中..." />
+        <Loading message="加载判题配置中..." />
       </div>
     )
   }
@@ -95,10 +143,10 @@ export function JudgeSettings() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin Workspace"
-        breadcrumb={['Problems', 'Judge Settings']}
+        eyebrow="管理台"
+        breadcrumb={['题库管理', '判题设置']}
         title="判题设置"
-        description="只维护真实后端支持的测试用例和语言许可开关。Python 保持默认语言，C / C++ 可在这里按需启用或禁用。"
+        description="只维护真实后端支持的测试点和语言许可开关。Python 保持默认语言，C / C++ 可在这里按需启用或禁用。"
         actions={
           <div className="flex items-center gap-3">
             <Button
@@ -123,19 +171,19 @@ export function JudgeSettings() {
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Test Cases" value={stats.total} helper="当前题目的测试用例总数" />
-        <StatCard label="Visible" value={stats.visible} helper="普通测试点，可用于公开样例和基础评测" />
-        <StatCard label="Hidden" value={stats.hidden} helper="隐藏测试点用于真实判题覆盖" />
-        <StatCard label="Total Score" value={stats.totalScore} helper="当前测试点分值总和" />
+        <StatCard label="测试点" value={stats.total} helper="当前题目的测试用例总数" />
+        <StatCard label="可见" value={stats.visible} helper="普通测试点，可用于公开样例和基础评测" />
+        <StatCard label="隐藏" value={stats.hidden} helper="隐藏测试点用于真实判题覆盖" />
+        <StatCard label="总分" value={stats.totalScore} helper="当前测试点分值总和" />
       </section>
 
       <SurfaceCard className="border-blue-200 bg-blue-50">
         <div className="flex items-start gap-3">
           <Database className="mt-1 h-5 w-5 text-blue-700" />
           <div>
-            <h2 className="text-base font-semibold text-slate-950">Test Data & Judge Settings</h2>
+            <h2 className="text-base font-semibold text-slate-950">测试数据与判题设置</h2>
             <p className="mt-1 text-sm leading-6 text-slate-700">
-              真实交付范围限定为测试用例维护，不扩展不存在的 special judge 和沙箱高级配置。
+              真实交付范围限定为测试点维护，不扩展不存在的特殊判题和沙箱高级配置。
             </p>
           </div>
         </div>
@@ -161,37 +209,28 @@ export function JudgeSettings() {
           <SurfaceCard>
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-base font-semibold text-slate-950">Language Permissions</h2>
+                <h2 className="text-base font-semibold text-slate-950">语言权限</h2>
                 <p className="mt-1 text-sm text-slate-600">Python 固定为默认语言，C / C++ 可在这里开启或关闭。</p>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">default: python</span>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">默认：Python</span>
             </div>
             <div className="mt-4 space-y-3">
               {languageSettings.map((language) => (
-                <label
+                <ToggleButton
                   key={language.id}
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
-                >
-                  <div>
-                    <div className="font-semibold text-slate-950">{language.name}</div>
-                    <div className="text-xs text-slate-500">
-                      {language.is_default ? 'default language' : 'optional language'}
-                    </div>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={language.enabled}
-                    disabled={language.id === 'python' || updateLanguageMutation.isPending}
-                    onChange={(e) => {
-                      if (language.id === 'c') {
-                        saveLanguageSettings({ c_enabled: e.target.checked })
-                      }
-                      if (language.id === 'cpp') {
-                        saveLanguageSettings({ cpp_enabled: e.target.checked })
-                      }
-                    }}
-                  />
-                </label>
+                  checked={language.enabled}
+                  label={language.name}
+                  helper={language.is_default ? '默认语言' : '可选语言'}
+                  disabled={language.id === 'python' || updateLanguageMutation.isPending}
+                  onToggle={() => {
+                    if (language.id === 'c') {
+                      saveLanguageSettings({ c_enabled: !language.enabled })
+                    }
+                    if (language.id === 'cpp') {
+                      saveLanguageSettings({ cpp_enabled: !language.enabled })
+                    }
+                  }}
+                />
               ))}
             </div>
           </SurfaceCard>
@@ -202,7 +241,7 @@ export function JudgeSettings() {
               <div>
                 <h2 className="text-base font-semibold text-slate-950">交付边界</h2>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  当前页面只保留真实 test case 管理，不扩展额外 judge runtime 开关。
+                  当前页面只保留真实测试点管理，不扩展额外判题运行时开关。
                 </p>
               </div>
             </div>
@@ -215,54 +254,54 @@ export function JudgeSettings() {
               {error ? (
                 <EmptyState
                   title="测试用例加载失败"
-                  description="当前题目暂时无法读取测试数据。"
+                  description="当前题目暂时无法读取测试点数据。"
                   action={<Button onClick={() => refetch()}>重试</Button>}
                 />
               ) : (
                 <>
                   <SurfaceCard>
                     <div className="grid gap-4">
-                      <FieldGroup label="Input">
+                      <FieldGroup label="输入">
                         <textarea
                           value={newInput}
                           onChange={(e) => setNewInput(e.target.value)}
-                          placeholder="Input"
-                          className="min-h-[120px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                          placeholder="输入内容"
+                          className={textareaClassName}
                         />
                       </FieldGroup>
-                      <FieldGroup label="Expected output">
+                      <FieldGroup label="预期输出">
                         <textarea
                           value={newOutput}
                           onChange={(e) => setNewOutput(e.target.value)}
-                          placeholder="Expected output"
-                          className="min-h-[120px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                          placeholder="预期输出"
+                          className={textareaClassName}
                         />
                       </FieldGroup>
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <FieldGroup label="Score">
+                        <FieldGroup label="分值">
                           <Input
                             type="number"
                             value={newScore}
                             onChange={(e) => setNewScore(Number(e.target.value))}
                           />
                         </FieldGroup>
-                        <label className="flex items-end gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                          <input type="checkbox" checked={newHidden} onChange={(e) => setNewHidden(e.target.checked)} />
-                          Hidden case
-                        </label>
+                        <ToggleButton
+                          checked={newHidden}
+                          label="隐藏测试点"
+                          helper="隐藏测试点用于真实判题覆盖"
+                          onToggle={() => setNewHidden((prev) => !prev)}
+                        />
                       </div>
                     </div>
                   </SurfaceCard>
 
                   <SurfaceCard className="overflow-hidden">
-                    <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                       <div>
-                        <h2 className="text-lg font-semibold text-slate-950">Case Table</h2>
-                        <p className="mt-1 text-sm text-slate-600">当前只交付真实 test case 管理，不扩展额外 judge runtime 开关。</p>
+                        <h2 className="text-lg font-semibold text-slate-950">测试点列表</h2>
+                        <p className="mt-1 text-sm text-slate-600">当前只交付真实测试点管理，不扩展额外判题运行时开关。</p>
                       </div>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                        {stats.total} cases
-                      </span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">{stats.total} 条</span>
                     </div>
 
                     <div className="overflow-x-auto">
@@ -270,11 +309,11 @@ export function JudgeSettings() {
                         <thead className="bg-slate-50">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">#</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Input</th>
-                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Output</th>
-                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Score</th>
-                            <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Hidden</th>
-                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Action</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">输入</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">输出</th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">分值</th>
+                            <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">可见</th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">操作</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 bg-white">
@@ -293,7 +332,7 @@ export function JudgeSettings() {
                               </td>
                               <td className="px-4 py-4 text-right text-sm text-slate-700">{tc.score}</td>
                               <td className="px-4 py-4 text-center text-sm text-slate-700">
-                                {tc.is_hidden ? <EyeOff className="mx-auto h-4 w-4 text-amber-600" /> : 'Visible'}
+                                {tc.is_hidden ? <EyeOff className="mx-auto h-4 w-4 text-amber-600" /> : '可见'}
                               </td>
                               <td className="px-4 py-4 text-right">
                                 <Button
@@ -314,7 +353,7 @@ export function JudgeSettings() {
                     {cases.length === 0 ? (
                       <EmptyState
                         className="border-0 bg-transparent shadow-none"
-                        title="暂无测试用例"
+                        title="暂无测试点"
                         description="当前题目还没有配置测试点。"
                       />
                     ) : null}

@@ -5,6 +5,7 @@ import { FilterBar } from '@/components/page/FilterBar'
 import { PageHeader } from '@/components/page/PageHeader'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { rankingService } from '@/services/ranking'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +36,7 @@ export function Ranking() {
 
   const podium = filteredUsers.slice(0, 3)
   const rest = filteredUsers.slice(3)
+  const topUser = filteredUsers[0]
 
   if (isLoading) {
     return (
@@ -65,9 +67,9 @@ export function Ranking() {
     <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
       <div className="space-y-6">
         <PageHeader
-          eyebrow="Leaderboard"
-          title="排行榜"
-          description="把排名做成清晰、可扫描、可对比的密集信息页，不再是单纯堆卡片。"
+          eyebrow="全站排名"
+          title="全站排名"
+          description="按参考稿收成全球榜单工作台，保留榜首三席、焦点摘要和全局榜单池，不再只是通用表格。"
           actions={(
             <Button variant="outline" onClick={() => refetch()}>
               <RefreshCcw className="h-4 w-4" />
@@ -76,15 +78,58 @@ export function Ranking() {
           )}
         />
 
+        <div className="grid gap-5 xl:grid-cols-[1.45fr_0.95fr]">
+          <SurfaceCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(7,43,117,0.98)_0%,rgba(13,82,186,0.96)_52%,rgba(140,198,255,0.9)_100%)] px-6 py-6 text-white shadow-[0_22px_48px_rgba(8,50,132,0.22)]">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/72">本期焦点</p>
+                <h2 className="mt-3 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.05em] text-white md:text-[2.5rem]">榜首三席</h2>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-white/80">
+                  把顶尖选手、积分走势和全站容量压到同一屏，形成参考稿那种榜单主舞台。
+                </p>
+              </div>
+              <div className="rounded-[28px] border border-white/16 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">榜首用户</p>
+                <p className="mt-2 text-xl font-semibold text-white">{topUser?.username ?? '暂无数据'}</p>
+                <p className="mt-2 text-sm text-white/74">
+                  {topUser ? `已完成 ${topUser.problems_solved} 题，积分 ${topUser.points}` : '等待榜单返回数据'}
+                </p>
+              </div>
+            </div>
+          </SurfaceCard>
+
+          <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-1">
+            <SurfaceCard className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,247,255,0.94)_100%)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4f6ea8]">总榜席位</p>
+              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">{filteredUsers.length}</p>
+              <p className="mt-2 text-sm text-[#5f6d87]">当前筛选后可见用户数</p>
+            </SurfaceCard>
+            <SurfaceCard className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,247,255,0.94)_100%)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4f6ea8]">榜首积分</p>
+              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">{topUser?.points ?? 0}</p>
+              <p className="mt-2 text-sm text-[#5f6d87]">最高分用户当前积分</p>
+            </SurfaceCard>
+            <SurfaceCard className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,247,255,0.94)_100%)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4f6ea8]">平均通过率</p>
+              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">
+                {filteredUsers.length > 0
+                  ? `${Math.round(filteredUsers.reduce((sum, user) => sum + user.accuracy, 0) / filteredUsers.length)}%`
+                  : '0%'}
+              </p>
+              <p className="mt-2 text-sm text-[#5f6d87]">筛选范围内的整体表现</p>
+            </SurfaceCard>
+          </div>
+        </div>
+
         <SurfaceCard tone="muted">
           <FilterBar>
-            <input
+            <Input
               type="search"
               aria-label="搜索用户名"
-              placeholder="搜索用户名"
+              placeholder="搜索用户名、组织或排名席位"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              className="h-11 min-w-[240px] flex-1 rounded-[8px] bg-white/92 px-4 text-sm text-[#17305e] shadow-[0_10px_24px_rgba(19,27,46,0.04)] outline-none placeholder:text-[#93a0bb]"
+              className="min-w-[260px] flex-1"
             />
             <div className="flex flex-wrap items-center gap-2">
               {[
@@ -109,16 +154,24 @@ export function Ranking() {
           </FilterBar>
         </SurfaceCard>
 
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#4f6ea8]">榜首三席</p>
+              <h2 className="mt-2 font-['Manrope'] text-[1.6rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">榜首三席</h2>
+            </div>
+          </div>
+
         <div className="grid gap-4 lg:grid-cols-3">
           {podium.map((user) => (
             <SurfaceCard key={user.id} className={cn('bg-gradient-to-br', podiumTone(user.ranking))}>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-70">Rank #{user.ranking}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-70">席位 #{user.ranking}</p>
                   <h2 className="mt-3 font-['Manrope'] text-[1.8rem] font-extrabold tracking-[-0.05em]">{user.username}</h2>
                   <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
                     {user.school_name ? <span className="rounded-full bg-white/18 px-2.5 py-1">{user.school_name}</span> : null}
-                    <span className="rounded-full bg-white/18 px-2.5 py-1">{user.problems_solved} solved</span>
+                    <span className="rounded-full bg-white/18 px-2.5 py-1">完成 {user.problems_solved} 题</span>
                   </div>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20">
@@ -127,23 +180,28 @@ export function Ranking() {
               </div>
               <div className="mt-8 grid grid-cols-3 gap-3 text-sm">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-65">Points</p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-65">积分</p>
                   <p className="mt-1 font-semibold">{user.points}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-65">AC</p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-65">通过题数</p>
                   <p className="mt-1 font-semibold">{user.problems_solved}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-65">Accuracy</p>
+                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-65">通过率</p>
                   <p className="mt-1 font-semibold">{user.accuracy}%</p>
                 </div>
               </div>
             </SurfaceCard>
           ))}
         </div>
+        </section>
 
         <SurfaceCard className="overflow-hidden">
+          <div className="border-b border-[rgba(218,226,253,0.36)] px-4 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#4f6ea8]">全局榜单池</p>
+            <h2 className="mt-2 font-['Manrope'] text-[1.35rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">全局榜单池</h2>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>

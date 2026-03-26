@@ -29,7 +29,7 @@ function Pill({ className, children }: { className: string; children: React.Reac
 }
 
 const detailLinkClass =
-  'inline-flex h-9 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950'
+  'inline-flex h-10 items-center justify-center gap-2 rounded-[16px] border border-[rgba(193,201,224,0.36)] bg-white/92 px-4 text-sm font-semibold text-[#445472] shadow-[0_10px_24px_rgba(19,27,46,0.05)] transition-all duration-200 hover:bg-[#eef2ff] hover:text-[#17305e] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#dae2ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--page-bg-rgb))]'
 
 export function PlagiarismReportList() {
   const [page, setPage] = useState(1)
@@ -40,7 +40,7 @@ export function PlagiarismReportList() {
     queryFn: () => plagiarismService.getReports(page, limit),
   })
 
-  const reports = data?.reports || []
+  const reports = useMemo(() => data?.reports ?? [], [data])
   const total = data?.total || 0
   const totalPages = Math.max(1, Math.ceil(total / limit))
 
@@ -51,6 +51,19 @@ export function PlagiarismReportList() {
     const totalPairs = reports.reduce((sum, report) => sum + report.suspicious_pairs, 0)
     return { pending, highRisk, completed, totalPairs }
   }, [reports])
+
+  const riskLabels: Record<string, string> = {
+    low: '低风险',
+    medium: '中风险',
+    high: '高风险',
+  }
+
+  const statusLabels: Record<string, string> = {
+    pending: '待处理',
+    processing: '处理中',
+    completed: '已完成',
+    failed: '失败',
+  }
 
   if (isLoading) {
     return (
@@ -73,8 +86,8 @@ export function PlagiarismReportList() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin Workspace"
-        breadcrumb={['Plagiarism', 'Reports']}
+        eyebrow="管理台"
+        breadcrumb={['抄袭检测', '报告列表']}
         title="抄袭检测报告"
         description="查看扫描任务结果、风险等级和可疑提交对。"
         actions={
@@ -85,10 +98,10 @@ export function PlagiarismReportList() {
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Reports" value={total} helper="当前页对应的报告总数" />
-        <StatCard label="Pending" value={stats.pending} helper="待处理报告数量" />
-        <StatCard label="High Risk" value={stats.highRisk} helper="高风险报告数量" />
-        <StatCard label="Suspicious Pairs" value={stats.totalPairs} helper="当前页可疑对总数" />
+        <StatCard label="报告数" value={total} helper="当前页对应的报告总数" />
+        <StatCard label="待处理" value={stats.pending} helper="待处理报告数量" />
+        <StatCard label="高风险" value={stats.highRisk} helper="高风险报告数量" />
+        <StatCard label="可疑对" value={stats.totalPairs} helper="当前页可疑对总数" />
       </section>
 
       <SurfaceCard className="border-slate-200 bg-slate-50">
@@ -106,14 +119,14 @@ export function PlagiarismReportList() {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Report ID</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Object</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Submissions</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Pairs</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Risk</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Created</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Action</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">报告 ID</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">对象</th>
+                <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">提交数</th>
+                <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">可疑对</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">风险</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">状态</th>
+                <th className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">创建时间</th>
+                <th className="px-4 py-3 text-right text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -121,18 +134,18 @@ export function PlagiarismReportList() {
                 <tr key={report.id} className="transition hover:bg-slate-50">
                   <td className="px-4 py-4 font-mono text-xs text-slate-700">{report.id}</td>
                   <td className="px-4 py-4 text-sm text-slate-700">
-                    {report.contest_id ? `contest:${report.contest_id}` : report.assignment_id ? `assignment:${report.assignment_id}` : '-'}
+                    {report.contest_id ? `比赛：${report.contest_id}` : report.assignment_id ? `作业：${report.assignment_id}` : '-'}
                   </td>
                   <td className="px-4 py-4 text-right text-sm text-slate-700">{report.total_submissions}</td>
                   <td className="px-4 py-4 text-right text-sm text-slate-700">{report.suspicious_pairs}</td>
                   <td className="px-4 py-4">
                     <Pill className={RISK_COLOR[report.overall_risk] || RISK_COLOR.low}>
-                      {report.overall_risk}
+                      {riskLabels[report.overall_risk] || report.overall_risk}
                     </Pill>
                   </td>
                   <td className="px-4 py-4">
                     <Pill className={STATUS_COLOR[report.status] || STATUS_COLOR.pending}>
-                      {report.status}
+                      {statusLabels[report.status] || report.status}
                     </Pill>
                   </td>
                   <td className="px-4 py-4 text-sm text-slate-600">

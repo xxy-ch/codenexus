@@ -95,14 +95,14 @@ describe('ContestWizard', () => {
   it('creates a contest from step 1 and advances into the real problem step', async () => {
     renderComponent()
 
-    fireEvent.change(screen.getByPlaceholderText('例如：Spring 2026 Coding Cup'), {
+    fireEvent.change(screen.getByPlaceholderText('例如：2026 春季算法联赛'), {
       target: { value: 'Spring Cup' },
     })
 
     fireEvent.change(screen.getByLabelText('开始时间'), { target: { value: '2026-03-20T10:00' } })
     fireEvent.change(screen.getByLabelText('结束时间'), { target: { value: '2026-03-20T12:00' } })
 
-    fireEvent.click(screen.getByRole('button', { name: /创建竞赛并继续/i }))
+    fireEvent.click(screen.getByRole('button', { name: /创建竞赛并进入编排/i }))
 
     await waitFor(() => {
       expect(mockApi.post).toHaveBeenCalledWith('/contests', {
@@ -117,7 +117,7 @@ describe('ContestWizard', () => {
       })
     })
 
-    await waitFor(() => expect(screen.getByText('竞赛题目')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: '题目编排' })).toBeInTheDocument())
     expect(screen.getByText('创建成功，竞赛 ID: 42')).toBeInTheDocument()
   })
 
@@ -145,7 +145,7 @@ describe('ContestWizard', () => {
 
     renderComponent()
 
-    await waitFor(() => expect(screen.getByText('竞赛题目')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: '题目编排' })).toBeInTheDocument())
     fireEvent.change(screen.getByPlaceholderText('题目 ID'), { target: { value: '1001' } })
     fireEvent.click(screen.getByRole('button', { name: /添加题目/i }))
 
@@ -185,7 +185,7 @@ describe('ContestWizard', () => {
     await waitFor(() => expect(screen.getByText('教师端直接管理未开放')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: '下一步' }))
 
-    await waitFor(() => expect(screen.getByText('规则与封榜')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: '规则与发布' })).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: /保存设置/i }))
 
     await waitFor(() => {

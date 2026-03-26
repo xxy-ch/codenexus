@@ -128,10 +128,21 @@ export const problemsService = {
     page = 1,
     limit = 20
   ): Promise<{ submissions: ProblemSubmission[]; total: number }> {
+    const safePage = Math.max(page, 1)
+    const safeLimit = Math.max(limit, 1)
+    const offset = (safePage - 1) * safeLimit
     const response = await api.get(
-      `/problems/${problemId}/submissions?page=${page}&limit=${limit}`
+      `/submissions?problem_id=${problemId}&limit=${safeLimit}&offset=${offset}`
     )
-    return response.data
+
+    const rawSubmissions = Array.isArray(response.data?.submissions)
+      ? response.data.submissions
+      : []
+
+    return {
+      submissions: rawSubmissions.map(normalizeSubmission),
+      total: Number(response.data?.total ?? rawSubmissions.length),
+    }
   },
 
   /**

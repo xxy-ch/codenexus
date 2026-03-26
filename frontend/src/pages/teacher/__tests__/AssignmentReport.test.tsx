@@ -196,15 +196,15 @@ describe('AssignmentReport', () => {
     renderComponent()
 
     await waitFor(() => expect(screen.getByText('alice@example.com')).toBeInTheDocument())
-    expect(screen.getByText('Yes (1d)')).toBeInTheDocument()
+    expect(screen.getByText('是 (1 天)')).toBeInTheDocument()
     expect(screen.getByText('80')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText(/select class/i), { target: { value: '2' } })
+    fireEvent.change(screen.getByLabelText('班级选择'), { target: { value: '2' } })
 
     await waitFor(() => expect(screen.getByText('charlie@example.com')).toBeInTheDocument())
     expect(mocks.getClassStudents).toHaveBeenCalledWith(2)
 
-    fireEvent.click(screen.getByRole('button', { name: /导出 csv/i }))
+    fireEvent.click(screen.getByRole('button', { name: '导出表格' }))
 
     await waitFor(() => expect(createObjectURLMock).toHaveBeenCalled())
     const blob = createObjectURLMock.mock.calls[0][0] as Blob

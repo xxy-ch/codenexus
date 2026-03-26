@@ -40,6 +40,25 @@ interface SubmissionDetailData {
   updated_at: string
 }
 
+function localizedStatusLabel(status: string) {
+  const labels: Record<string, string> = {
+    accepted: '已通过',
+    wrong_answer: '答案错误',
+    pending: '等待中',
+    queued: '排队中',
+    running: '运行中',
+    compilation_error: '编译错误',
+    runtime_error: '运行错误',
+    time_limit_exceeded: '超出时间限制',
+    memory_limit_exceeded: '超出内存限制',
+    system_error: '系统错误',
+    failed: '失败',
+    judged: '已判题',
+  }
+
+  return labels[status] ?? getSubmissionStatusConfig(status).label
+}
+
 export function SubmissionDetail() {
   const { submissionId } = useParams<{ submissionId: string }>()
   const navigate = useNavigate()
@@ -116,15 +135,15 @@ export function SubmissionDetail() {
   const statusConfig = getSubmissionStatusConfig(submission.status)
   const passedTestCases = submission.test_cases?.filter((tc) => tc.status === 'passed').length || 0
   const totalTestCases = submission.test_cases?.length || 0
-  const statusLabel = statusConfig.label
+  const statusLabel = localizedStatusLabel(submission.status)
 
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Submission Detail"
-        breadcrumb={['Problems', submission.problem_title, `Submission #${submission.id}`]}
-        title={`Submission #${submission.id}`}
-        description={`${submission.problem_title} 的完整判题分析，包含状态摘要、性能数据和测试用例详情。`}
+        eyebrow="判题诊断台"
+        breadcrumb={['题目中心', submission.problem_title, `提交 #${submission.id}`]}
+        title="提交详情"
+        description={`${submission.problem_title} 的完整判题诊断，包含状态摘要、性能数据、测试点池和提交代码。`}
         actions={
           <>
             <Button variant="ghost" onClick={() => navigate(-1)} aria-label="返回">
@@ -137,17 +156,36 @@ export function SubmissionDetail() {
         }
       />
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Verdict" value={statusLabel} />
+      <div className="grid gap-5 xl:grid-cols-[1.3fr_0.9fr]">
+        <SurfaceCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(7,43,117,0.98)_0%,rgba(13,82,186,0.96)_54%,rgba(140,198,255,0.9)_100%)] px-6 py-6 text-white shadow-[0_22px_48px_rgba(8,50,132,0.22)]">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/72">当前诊断</p>
+              <h2 className="mt-3 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.05em] text-white md:text-[2.5rem]">判题诊断台</h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-white/80">
+                在同一屏里读取结果状态、性能指标和测试点反馈，阅读顺序贴近真实排错路径。
+              </p>
+            </div>
+            <div className="rounded-[28px] border border-white/16 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">当前状态</p>
+              <p className="mt-2 text-3xl font-semibold text-white">{statusLabel}</p>
+              <p className="mt-2 text-sm text-white/74">{submission.problem_title}</p>
+            </div>
+          </div>
+        </SurfaceCard>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-2">
+        <StatCard label="判题状态" value={statusLabel} />
         <StatCard
-          label="Runtime"
+          label="运行时间"
           value={submission.time_ms !== undefined ? `${submission.time_ms}ms` : '-'}
         />
         <StatCard
-          label="Memory"
+          label="内存占用"
           value={submission.memory_kb !== undefined ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}
         />
-        <StatCard label="Tests" value={`${passedTestCases}/${totalTestCases}`} />
+        <StatCard label="测试点通过" value={`${passedTestCases}/${totalTestCases}`} />
+        </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_360px]">
@@ -200,10 +238,7 @@ export function SubmissionDetail() {
           </SectionBlock>
 
           {submission.test_cases && submission.test_cases.length > 0 && (
-            <SectionBlock
-              title="测试用例详情"
-              description="展开测试点可查看输入、期望输出与实际输出。"
-            >
+            <SectionBlock title="测试点池" description="展开测试点可查看输入、期望输出与实际输出。">
               <div className="space-y-3">
                 {submission.test_cases.map((testCase, index) => {
                   const isExpanded = expandedTestCases.has(index)
@@ -246,7 +281,7 @@ export function SubmissionDetail() {
                             isPassed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700',
                           )}
                         >
-                          {isPassed ? 'Passed' : 'Failed'}
+                          {isPassed ? '通过' : '失败'}
                         </span>
                       </button>
 
@@ -314,7 +349,7 @@ export function SubmissionDetail() {
         <div className="space-y-6">
           <SurfaceCard className="space-y-4">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Analysis Sidebar
+              诊断侧栏
             </p>
             <div className="space-y-3 text-sm">
               <div>

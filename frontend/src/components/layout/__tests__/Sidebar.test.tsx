@@ -3,13 +3,19 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Sidebar } from '@/components/layout/Sidebar'
 
+const { authState } = vi.hoisted(() => ({
+  authState: {
+    role: 'teacher' as 'user' | 'teacher' | 'admin',
+  },
+}))
+
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     user: {
       first_name: 'Ada',
       last_name: 'Lovelace',
       username: 'adal',
-      role: 'teacher',
+      role: authState.role,
     },
     logout: vi.fn(),
   }),
@@ -46,6 +52,7 @@ function createLocalStorageMock() {
 
 beforeEach(() => {
   vi.restoreAllMocks()
+  authState.role = 'teacher'
   const localStorageMock = createLocalStorageMock()
   vi.stubGlobal('localStorage', localStorageMock)
   Object.defineProperty(window, 'localStorage', {
@@ -62,13 +69,15 @@ describe('Sidebar', () => {
   it('toggles between expanded and collapsed states', async () => {
     renderSidebar()
 
-    expect(screen.getByText('AlgoMaster')).toBeInTheDocument()
+    expect(screen.getByText('建筑算法学社')).toBeInTheDocument()
+    expect(document.documentElement.style.getPropertyValue('--sidebar-shell-width')).toBe('288px')
 
-    fireEvent.click(screen.getByRole('button', { name: /collapse sidebar/i }))
+    fireEvent.click(screen.getByRole('button', { name: /收起侧栏/i }))
 
     await waitFor(() => {
-      expect(screen.queryByText('AlgoMaster')).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument()
+      expect(screen.queryByText('建筑算法学社')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /展开侧栏/i })).toBeInTheDocument()
+      expect(document.documentElement.style.getPropertyValue('--sidebar-shell-width')).toBe('96px')
     })
   })
 
@@ -77,8 +86,9 @@ describe('Sidebar', () => {
 
     renderSidebar()
 
-    expect(screen.queryByText('AlgoMaster')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument()
+    expect(screen.queryByText('建筑算法学社')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /展开侧栏/i })).toBeInTheDocument()
+    expect(document.documentElement.style.getPropertyValue('--sidebar-shell-width')).toBe('96px')
   })
 
   it('keeps nav links accessible when collapsed', () => {
@@ -87,8 +97,19 @@ describe('Sidebar', () => {
     renderSidebar()
 
     const navigation = screen.getByRole('navigation')
-    expect(within(navigation).getByRole('link', { name: /dashboard/i })).toBeInTheDocument()
-    expect(within(navigation).getByRole('link', { name: /problems/i })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: /首页/i })).toBeInTheDocument()
+    expect(within(navigation).getByRole('link', { name: /题库/i })).toBeInTheDocument()
+  })
+
+  it('does not expose teacher navigation items to student users', () => {
+    authState.role = 'user'
+
+    renderSidebar()
+
+    const navigation = screen.getByRole('navigation')
+    expect(within(navigation).queryByRole('link', { name: /班级/i })).not.toBeInTheDocument()
+    expect(within(navigation).queryByRole('link', { name: /竞赛编排/i })).not.toBeInTheDocument()
+    expect(within(navigation).queryByRole('link', { name: /报告/i })).not.toBeInTheDocument()
   })
 
   it('auto-collapses below the responsive breakpoint', async () => {
@@ -101,8 +122,8 @@ describe('Sidebar', () => {
     fireEvent(window, new Event('resize'))
 
     await waitFor(() => {
-      expect(screen.queryByText('AlgoMaster')).not.toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /expand sidebar/i })).toBeInTheDocument()
+      expect(screen.queryByText('建筑算法学社')).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /展开侧栏/i })).toBeInTheDocument()
     })
   })
 })

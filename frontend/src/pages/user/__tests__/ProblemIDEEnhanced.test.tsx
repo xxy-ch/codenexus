@@ -109,7 +109,7 @@ describe('ProblemIDEEnhanced', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('code editor'), { target: { value: 'print(1)' } })
-    fireEvent.click(screen.getByRole('button', { name: /judge/i }))
+    fireEvent.click(screen.getByRole('button', { name: '提交代码' }))
 
     await waitFor(() => {
       expect(mocks.submitCode).toHaveBeenCalledWith({

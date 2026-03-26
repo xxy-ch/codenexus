@@ -16,6 +16,7 @@ import {
 import { Link } from 'react-router-dom'
 import api from '@/services/api'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { EmptyState } from '@/components/page/EmptyState'
 import { FieldGroup } from '@/components/page/FieldGroup'
 import { FilterBar } from '@/components/page/FilterBar'
@@ -75,28 +76,32 @@ const RULESETS = [
   {
     value: 'acm',
     title: 'ACM / ICPC',
-    description: '按解题数和罚时排名，适合公开赛和训练赛。',
+    description: '按解题数和罚时排名，适合公开赛与训练营冲榜。',
   },
   {
     value: 'ioi',
     title: 'IOI',
-    description: '支持部分分，适合作业和多测试点评分场景。',
+    description: '支持部分分，更适合作业评测和多测试点得分场景。',
   },
   {
     value: 'education',
-    title: 'Classic OI',
-    description: '更适合教学和阶段性考核，强调标准评测流程。',
+    title: '教学赛制',
+    description: '偏向课堂考核与阶段训练，强调教学过程中的标准评测。',
   },
 ] as const
 
 const STEPS = [
-  { id: 1, title: 'Create', description: '竞赛名称、时间与归属信息' },
-  { id: 2, title: 'Problems', description: '真实补题与题序管理' },
-  { id: 3, title: 'Participants', description: '参赛者只读预览' },
-  { id: 4, title: 'Settings', description: '保存最终配置' },
+  { id: 1, title: '基础赛程', description: '名称、时间、归属与赛制基线' },
+  { id: 2, title: '题目编排', description: '真实补题、题序与分值编排' },
+  { id: 3, title: '参赛者预览', description: '读取已报名名单与参赛记录' },
+  { id: 4, title: '规则与发布', description: '保存最终规则、封榜和发布说明' },
 ] as const
 
 const DRAFT_STORAGE_KEY = 'teacher-contest-wizard-draft'
+const formSelectClassName =
+  'w-full appearance-none rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)]'
+const formTextAreaClassName =
+  'min-h-[132px] w-full rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 placeholder:text-[#93a0bb] focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)]'
 
 function toLocalInputValue(value?: string) {
   if (!value) return ''
@@ -335,13 +340,15 @@ export function ContestWizard() {
     }
   }
 
+  const orchestrationStatus = contestId ? '已创建主赛程' : '等待编排启动'
+
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Teacher Workspace"
-        breadcrumb={['Contests', 'Contest Wizard']}
-        title="比赛向导"
-        description="真实 4 步流程：先创建竞赛，再补题、看参赛者，最后保存设置。当前页面只使用后端已存在的竞赛与题目接口，不伪造不存在的管理能力。"
+        eyebrow="教师工作台"
+        breadcrumb={['竞赛中心', '竞赛编排台']}
+        title="竞赛编排台"
+        description="这页对齐内部编排工作台：先落赛程，再编排题目、读取真实参赛者记录，最后保存规则与发布说明。页面只调用后端已存在的竞赛、题目与参赛者接口，不伪造教师端尚未开放的能力。"
         actions={
           contestId ? (
             <>
@@ -354,7 +361,7 @@ export function ContestWizard() {
             </>
           ) : (
             <div className="rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
-              Waiting for create step
+              等待创建竞赛
             </div>
           )
         }
@@ -362,18 +369,34 @@ export function ContestWizard() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Contest ID"
-          value={contestId || '未创建'}
-          helper={contestSummary?.updated_at ? `Saved ${formatDateTime(contestSummary.updated_at)}` : message}
+          label="编排状态"
+          value={orchestrationStatus}
+          helper={contestSummary?.updated_at ? `最近保存于 ${formatDateTime(contestSummary.updated_at)}` : message}
         />
-        <StatCard label="Duration" value={duration} helper={`Ruleset: ${selectedRuleset.title}`} />
-        <StatCard label="Problems" value={contestProblems.length} helper="后端真实竞赛题目数" />
-        <StatCard label="Participants" value={participants.length} helper="后端真实参赛者记录" />
+        <StatCard label="赛程时长" value={duration} helper={`当前赛制：${selectedRuleset.title}`} />
+        <StatCard label="已编排题目" value={contestProblems.length} helper="来自后端真实竞赛题目数" />
+        <StatCard label="参赛者记录" value={participants.length} helper="来自后端真实参赛者记录" />
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
         <aside className="rounded-[30px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] p-4 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:sticky lg:top-6 lg:self-start">
-          <div className="space-y-2">
+          <SurfaceCard className="border-0 bg-[linear-gradient(135deg,#1e40af_0%,#2563eb_58%,#60a5fa_100%)] p-5 text-white shadow-[0_24px_48px_rgba(30,64,175,0.28)]">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-blue-100/80">本场主控台</div>
+            <div className="mt-3 text-2xl font-semibold tracking-[-0.03em]">{form.name.trim() || '尚未命名的竞赛'}</div>
+            <p className="mt-3 text-sm leading-6 text-blue-50/86">
+              参考内部编排台的工作方式，先锁定赛程，再推进题目、名单和规则发布。
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
+              <span className="rounded-full bg-white/16 px-3 py-1.5 text-white/92">{selectedRuleset.title}</span>
+              <span className="rounded-full bg-white/16 px-3 py-1.5 text-white/92">{contestId ? `竞赛 #${contestId}` : '未生成竞赛编号'}</span>
+            </div>
+          </SurfaceCard>
+
+          <div className="mt-4 space-y-2">
+            <div className="px-2 pb-2">
+              <div className="text-sm font-semibold text-slate-900">编排进度</div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">统一按赛程、题目、名单、发布四段收口。</p>
+            </div>
             {STEPS.map((step) => {
               const active = activeStep === step.id
               const completed = contestId ? step.id < 2 || (step.id === 2 && contestProblems.length > 0) : false
@@ -411,30 +434,65 @@ export function ContestWizard() {
         </aside>
 
         <div className="space-y-6">
+          <SurfaceCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(244,247,255,0.98)_0%,rgba(231,238,255,0.96)_48%,rgba(255,248,237,0.94)_100%)] p-0">
+            <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.4fr)_320px]">
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#3f5f9c]">竞赛编排流</div>
+                <h2 className="mt-3 font-['Manrope'] text-[1.9rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">从赛程到发布，一次收口</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-[#52627f]">
+                  主工作区对齐参考稿的编排台语言：左侧是进度与当前主赛，右侧是四段式编排内容。教师端当前只开放真实竞赛接口，因此名单管理保持只读预览。
+                </p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <div className="rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-medium text-[#17305e] shadow-[0_10px_24px_rgba(19,27,46,0.05)]">
+                    当前阶段：{STEPS[activeStep - 1]?.title}
+                  </div>
+                  <div className="rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-medium text-[#17305e] shadow-[0_10px_24px_rgba(19,27,46,0.05)]">
+                    封榜：{form.freeze_minutes > 0 ? `${form.freeze_minutes} 分钟` : '不封榜'}
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-[0_18px_34px_rgba(15,23,42,0.08)]">
+                <div className="text-sm font-semibold text-slate-950">编排摘要</div>
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between rounded-[22px] bg-[#f4f7ff] px-4 py-3">
+                    <span className="text-sm text-slate-500">赛程编号</span>
+                    <span className="font-semibold text-slate-900">{contestId || '待生成'}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-[22px] bg-[#f4f7ff] px-4 py-3">
+                    <span className="text-sm text-slate-500">计划时长</span>
+                    <span className="font-semibold text-slate-900">{duration}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-[22px] bg-[#f4f7ff] px-4 py-3">
+                    <span className="text-sm text-slate-500">当前赛制</span>
+                    <span className="font-semibold text-slate-900">{selectedRuleset.title}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </SurfaceCard>
+
           <SectionBlock
-            title="Step 1. Create"
-            description="创建或更新竞赛基础信息。"
+            title="基础赛程"
+            description="先录入竞赛基础信息，锁定归属、时间和赛制。"
           >
             <div className="grid gap-5 md:grid-cols-2">
               <FieldGroup label="竞赛名称">
-                <input
+                <Input
                   value={form.name}
                   onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
-                  placeholder="例如：Spring 2026 Coding Cup"
+                  placeholder="例如：2026 春季算法联赛"
                 />
               </FieldGroup>
               <FieldGroup label="组织 ID">
-                <input
+                <Input
                   type="number"
                   min="1"
                   value={form.organization_id}
                   onChange={(e) => setForm((prev) => ({ ...prev, organization_id: Number(e.target.value) }))}
-                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                 />
               </FieldGroup>
               <FieldGroup label="校区 ID">
-                <input
+                <Input
                   type="number"
                   min="1"
                   value={form.campus_id ?? ''}
@@ -445,14 +503,13 @@ export function ContestWizard() {
                     }))
                   }
                   placeholder="可留空"
-                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                 />
               </FieldGroup>
               <FieldGroup label="规则集">
                 <select
                   value={form.rules}
                   onChange={(e) => setForm((prev) => ({ ...prev, rules: e.target.value as ContestRule }))}
-                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                  className={formSelectClassName}
                 >
                   {RULESETS.map((ruleset) => (
                     <option key={ruleset.value} value={ruleset.value}>
@@ -464,24 +521,24 @@ export function ContestWizard() {
               <FieldGroup label="开始时间">
                 <div className="relative">
                   <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
+                  <Input
                     aria-label="开始时间"
                     type="datetime-local"
                     value={toLocalInputValue(form.start_time)}
                     onChange={(e) => setForm((prev) => ({ ...prev, start_time: e.target.value }))}
-                    className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] py-3 pl-11 pr-4 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                    className="py-3.5 pl-11 pr-4"
                   />
                 </div>
               </FieldGroup>
               <FieldGroup label="结束时间">
                 <div className="relative">
                   <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                  <input
+                  <Input
                     aria-label="结束时间"
                     type="datetime-local"
                     value={toLocalInputValue(form.end_time)}
                     onChange={(e) => setForm((prev) => ({ ...prev, end_time: e.target.value }))}
-                    className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] py-3 pl-11 pr-4 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                    className="py-3.5 pl-11 pr-4"
                   />
                 </div>
               </FieldGroup>
@@ -489,17 +546,16 @@ export function ContestWizard() {
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className="min-h-[120px] w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
-                  placeholder="说明竞赛用途、语言限制或报名要求。"
+                  className={formTextAreaClassName}
+                  placeholder="说明竞赛用途、可用语言、报名要求或课堂说明。"
                 />
               </FieldGroup>
               <FieldGroup label="封榜分钟数" description="0 表示不封榜。">
-                <input
+                <Input
                   type="number"
                   min="0"
                   value={form.freeze_minutes}
                   onChange={(e) => setForm((prev) => ({ ...prev, freeze_minutes: Number(e.target.value) }))}
-                  className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                 />
               </FieldGroup>
             </div>
@@ -507,22 +563,22 @@ export function ContestWizard() {
             <FilterBar className="mt-6 justify-between">
               <div className="flex items-center gap-2 text-sm text-slate-500">
                 <Timer className="h-4 w-4" />
-                <span>Duration preview: {duration}</span>
+                <span>赛程预览：{duration}</span>
               </div>
               <div className="flex items-center gap-3">
                 <Button type="button" variant="outline" onClick={() => setMessage('当前步骤草稿已自动保存在本地浏览器。')}>
                   保存草稿
                 </Button>
                 <Button type="button" onClick={handleCreate} disabled={!canCreate}>
-                  {createMutation.isPending ? '创建中...' : contestId ? '更新基础信息' : '创建竞赛并继续'}
+                  {createMutation.isPending ? '创建中...' : contestId ? '更新基础赛程' : '创建竞赛并进入编排'}
                 </Button>
               </div>
             </FilterBar>
           </SectionBlock>
 
           <SectionBlock
-            title="竞赛题目"
-            description="真实补题和题序调整。"
+            title="题目编排"
+            description="只对真实竞赛做补题和题序调整，不在前端伪造题目实体。"
           >
             {!contestId ? (
               <EmptyState
@@ -534,31 +590,28 @@ export function ContestWizard() {
               <div className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_160px]">
                   <FieldGroup label="题目 ID">
-                    <input
+                    <Input
                       type="number"
                       min="1"
                       placeholder="题目 ID"
                       value={problemForm.problem_id}
                       onChange={(e) => setProblemForm((prev) => ({ ...prev, problem_id: e.target.value }))}
-                      className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                     />
                   </FieldGroup>
                   <FieldGroup label="分值">
-                    <input
+                    <Input
                       type="number"
                       min="1"
                       value={problemForm.points}
                       onChange={(e) => setProblemForm((prev) => ({ ...prev, points: e.target.value }))}
-                      className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                     />
                   </FieldGroup>
                   <FieldGroup label="题序">
-                    <input
+                    <Input
                       type="number"
                       min="0"
                       value={problemForm.order_index}
                       onChange={(e) => setProblemForm((prev) => ({ ...prev, order_index: e.target.value }))}
-                      className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
                     />
                   </FieldGroup>
                 </div>
@@ -588,11 +641,11 @@ export function ContestWizard() {
                     <table className="min-w-full divide-y divide-slate-200">
                       <thead className="bg-slate-50">
                         <tr>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Problem</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Title</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Points</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Order</th>
-                          <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Action</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">题目</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">标题</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">分值</th>
+                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">题序</th>
+                          <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">操作</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 bg-[rgba(255,255,255,0.78)]">
@@ -600,8 +653,8 @@ export function ContestWizard() {
                           <tr key={problem.id} className="transition hover:bg-blue-50/50">
                             <td className="px-5 py-4 text-sm font-medium text-slate-900">#{problem.problem_id}</td>
                             <td className="px-5 py-4 text-sm text-slate-600">
-                              <div className="font-medium text-slate-900">{problem.title || 'Untitled'}</div>
-                              <div className="mt-1 text-xs text-slate-500">{problem.difficulty || 'unknown'}</div>
+                              <div className="font-medium text-slate-900">{problem.title || '未命名题目'}</div>
+                              <div className="mt-1 text-xs text-slate-500">{problem.difficulty || '暂未标注难度'}</div>
                             </td>
                             <td className="px-5 py-4 text-sm text-slate-600">{problem.points}</td>
                             <td className="px-5 py-4 text-sm text-slate-600">{problem.order_index}</td>
@@ -628,8 +681,8 @@ export function ContestWizard() {
           </SectionBlock>
 
           <SectionBlock
-            title="Step 3. Participants"
-            description="只读参赛者预览，教师端暂未开放批量导入或指派参赛者接口。"
+            title="参赛者预览"
+            description="这里只做只读预览，教师端暂未开放批量导入或指派参赛者接口。"
           >
             {!contestId ? (
               <EmptyState
@@ -652,8 +705,8 @@ export function ContestWizard() {
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr>
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">User ID</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Registered At</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">用户 ID</th>
+                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">报名时间</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-[rgba(255,255,255,0.78)]">
@@ -670,14 +723,14 @@ export function ContestWizard() {
           </SectionBlock>
 
           <SectionBlock
-            title="规则与封榜"
-            description="保存当前竞赛的最终配置。"
+            title="规则与发布"
+            description="保存当前竞赛规则、封榜和发布层面的说明。"
           >
             <div className="grid gap-4 md:grid-cols-2">
               <SurfaceCard tone="muted" className="p-4 shadow-none">
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <Eye className="h-4 w-4 text-sky-700" />
-                  Public / Private
+                  可见性说明
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   当前竞赛可见性由后端接口控制，此处只展示页面层级的运行说明，不伪造不存在的权限开关。
@@ -685,11 +738,11 @@ export function ContestWizard() {
                 <div className="mt-4 inline-flex rounded-2xl bg-[rgba(255,255,255,0.92)] p-1 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/90">
                   <span className="rounded-2xl bg-blue-800 px-4 py-2 text-sm font-medium text-white">
                     <Eye className="mr-2 inline-block h-4 w-4" />
-                    Public
+                    公开赛
                   </span>
                   <span className="rounded-2xl px-4 py-2 text-sm font-medium text-slate-600">
                     <Lock className="mr-2 inline-block h-4 w-4" />
-                    Private
+                    私有赛
                   </span>
                 </div>
               </SurfaceCard>
@@ -697,7 +750,7 @@ export function ContestWizard() {
               <SurfaceCard tone="muted" className="p-4 shadow-none">
                 <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <ShieldCheck className="h-4 w-4 text-sky-700" />
-                  Save policy
+                  发布策略
                 </div>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   保存会调用真实的竞赛更新接口，包含名称、描述、规则、时间和封榜分钟数。
@@ -716,8 +769,8 @@ export function ContestWizard() {
           </SectionBlock>
 
           <SectionBlock
-            title="Workflow Notes"
-            description="收口说明。"
+            title="编排说明"
+            description="当前编排台的真实能力边界。"
           >
             <div className="grid gap-4 md:grid-cols-2">
               <SurfaceCard tone="muted" className="p-4 shadow-none">

@@ -40,18 +40,4 @@ export const authService = {
     const response = await api.get<User>('/users/me')
     return response.data
   },
-
-  /**
-   * 请求密码重置
-   */
-  async requestPasswordReset(email: string): Promise<void> {
-    await api.post('/auth/forgot-password', { email })
-  },
-
-  /**
-   * 重置密码
-   */
-  async resetPassword(token: string, newPassword: string): Promise<void> {
-    await api.post('/auth/reset-password', { token, password: newPassword })
-  },
 }

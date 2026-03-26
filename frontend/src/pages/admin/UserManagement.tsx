@@ -10,6 +10,7 @@ import { StatCard } from '@/components/page/StatCard'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { adminService } from '@/services/admin'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 import type { BatchCreateAdminUser } from '@/types/admin'
@@ -138,8 +139,8 @@ export function UserManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin"
-        breadcrumb={['Identity']}
+        eyebrow="管理台"
+        breadcrumb={['身份管理']}
         title="用户管理"
         description="账号后台切到更高密度的管理视图。查询、角色切换、状态开关和批量建号仍走现有真实接口，不改 payload 和查询语义。"
         actions={
@@ -156,10 +157,10 @@ export function UserManagement() {
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Active Users" value={overview.activeCount} helper="当前筛选结果中的活跃账号。" />
-        <StatCard label="Admins" value={<span className="text-rose-600">{overview.adminCount}</span>} helper="具备后台权限的账号数。" />
-        <StatCard label="Teachers" value={<span className="text-blue-600">{overview.teacherCount}</span>} helper="教师角色账号数量。" />
-        <StatCard label="User Codes" value={<span className="text-emerald-600">{overview.codedCount}</span>} helper="已分配业务号的账号数。" />
+        <StatCard label="活跃用户" value={overview.activeCount} helper="当前筛选结果中的活跃账号。" />
+        <StatCard label="管理员" value={<span className="text-rose-600">{overview.adminCount}</span>} helper="具备后台权限的账号数。" />
+        <StatCard label="教师" value={<span className="text-blue-600">{overview.teacherCount}</span>} helper="教师角色账号数量。" />
+        <StatCard label="学号" value={<span className="text-emerald-600">{overview.codedCount}</span>} helper="已分配业务号的账号数。" />
       </div>
 
       <SurfaceCard tone="muted" className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -175,7 +176,7 @@ export function UserManagement() {
           </div>
         </div>
         <div className="rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.9)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
-          UUID + 12-digit user_code
+          UUID + 12 位学号
         </div>
       </SurfaceCard>
 
@@ -184,7 +185,7 @@ export function UserManagement() {
           <div className="space-y-5">
             <FilterBar>
               <div className="min-w-[260px] flex-1">
-                <input
+                <Input
                   aria-label="搜索用户"
                   type="search"
                   placeholder="搜索 user_code、用户名、邮箱..."
@@ -193,7 +194,7 @@ export function UserManagement() {
                     setSearch(e.target.value)
                     setPage(1)
                   }}
-                  className="h-11 w-full rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="h-11"
                 />
               </div>
               <select
@@ -203,7 +204,7 @@ export function UserManagement() {
                   setRole(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="h-11 min-w-[140px] appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
               >
                 <option value="all">所有角色</option>
                 <option value="admin">管理员</option>
@@ -217,7 +218,7 @@ export function UserManagement() {
                   setStatus(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="h-11 min-w-[140px] appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
               >
                 <option value="all">所有状态</option>
                 <option value="active">活跃</option>
@@ -231,17 +232,16 @@ export function UserManagement() {
                   { value: 'submissions', label: '提交数' },
                   { value: 'rating', label: '评分' },
                 ].map((option) => (
-                  <button
+                  <Button
                     key={option.value}
                     type="button"
+                    size="sm"
+                    variant={sortBy === option.value ? 'primary' : 'secondary'}
                     onClick={() => setSortBy(option.value as SortType)}
-                    className={cn(
-                      'rounded-full px-4 py-2 text-sm font-medium transition',
-                      sortBy === option.value ? 'bg-blue-800 text-white shadow-[0_12px_24px_rgba(30,64,175,0.16)]' : 'bg-[rgba(255,255,255,0.88)] text-slate-600 hover:bg-blue-50/80',
-                    )}
+                    className={cn('rounded-full px-4', sortBy === option.value ? 'shadow-[0_12px_24px_rgba(30,64,175,0.16)]' : '')}
                   >
                     {option.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </FilterBar>
@@ -250,12 +250,12 @@ export function UserManagement() {
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-[rgba(246,249,253,0.92)]">
                   <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Identity</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Role</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Activity</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Created</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Actions</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">身份</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">角色</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">状态</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">活跃度</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">创建时间</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">操作</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -270,7 +270,7 @@ export function UserManagement() {
                             <p className="font-medium text-slate-950">{user.display_name || user.username}</p>
                             <p className="mt-1 text-xs text-slate-500">@{user.username}</p>
                             <p className="mt-1 text-sm text-slate-500">
-                              {user.user_code || 'No user_code'} · {user.email || 'No email'}
+                              {user.user_code || '暂无学号'} · {user.email || '暂无邮箱'}
                             </p>
                           </div>
                         </div>
@@ -283,7 +283,7 @@ export function UserManagement() {
                             value={user.role}
                             onChange={(e) => updateRoleMutation.mutate({ userId: user.id, role: e.target.value as RoleType })}
                             disabled={updateRoleMutation.isPending}
-                            className="block rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-3 py-2 text-sm text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                            className="block h-10 appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-3 pr-8 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
                           >
                             <option value="user">学生</option>
                             <option value="teacher">教师</option>
@@ -293,8 +293,8 @@ export function UserManagement() {
                       </td>
                       <td className="px-5 py-4">{getStatusBadge(user.status)}</td>
                       <td className="px-5 py-4 text-sm text-slate-700">
-                        <div>{user.submissions_count} submissions</div>
-                        <div className="mt-1 text-slate-500">{user.problems_solved} solved</div>
+                        <div>{user.submissions_count} 次提交</div>
+                        <div className="mt-1 text-slate-500">{user.problems_solved} 题已通过</div>
                       </td>
                       <td className="px-5 py-4 text-sm text-slate-500">{new Date(user.created_at).toLocaleDateString('zh-CN')}</td>
                       <td className="px-5 py-4">
@@ -316,7 +316,7 @@ export function UserManagement() {
             {users.length === 0 ? (
               <EmptyState
                 title="未找到用户"
-                description="尝试调整搜索条件，或者确认当前环境是否已导入演示账号。"
+                description="尝试调整搜索条件，或者确认当前环境是否已导入基础账号数据。"
                 className="shadow-none"
               />
             ) : null}
@@ -350,20 +350,20 @@ export function UserManagement() {
             </FieldGroup>
 
             <FieldGroup label="默认密码">
-              <input
+              <Input
                 value={defaultPassword}
                 onChange={(e) => setDefaultPassword(e.target.value)}
-                className="h-11 w-full rounded-2xl border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-3 text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="h-11"
               />
             </FieldGroup>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <SurfaceCard className="rounded-2xl p-4 shadow-none">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Pending</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">待导入</div>
                 <div className="mt-2 text-2xl font-semibold text-slate-950">{parsedBulkUsers.length}</div>
               </SurfaceCard>
               <SurfaceCard className="rounded-2xl p-4 shadow-none">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Skipped</div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">已跳过</div>
                 <div className="mt-2 text-2xl font-semibold text-slate-950">{batchCreateMutation.data?.skipped?.length ?? 0}</div>
               </SurfaceCard>
             </div>

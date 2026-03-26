@@ -47,7 +47,7 @@ export function DirectMessages() {
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <Loading message="加载私信中..." />
+        <Loading message="正在加载私信..." />
       </div>
     )
   }
@@ -70,32 +70,32 @@ export function DirectMessages() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Community"
-        breadcrumb={['Messages']}
-        title="Direct Messages"
-        description="把会话目录和当前线程压缩成一个专注工作区。查询 key、发送参数和真实消息接口保持不变。"
+        eyebrow="社区"
+        breadcrumb={['私信']}
+        title="私信中心"
+        description="把会话目录和当前线程压缩成一个专注工作区，查询 key 和发送参数保持不变。"
         actions={
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4" />
-            Refresh
+            刷新
           </Button>
         }
       />
 
       <div className="grid gap-4 md:grid-cols-3">
         <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">Conversations</p>
+          <p className="text-sm font-medium text-slate-500">会话数</p>
           <p className="text-2xl font-semibold text-slate-950">{conversations?.length || 0}</p>
           <p className="text-sm text-slate-600">读取自真实会话列表</p>
         </SurfaceCard>
         <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">Unread</p>
+          <p className="text-sm font-medium text-slate-500">未读</p>
           <p className="text-2xl font-semibold text-slate-950">{totalUnread}</p>
           <p className="text-sm text-slate-600">按现有 unread_count 聚合</p>
         </SurfaceCard>
         <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">Active Thread</p>
-          <p className="text-2xl font-semibold text-slate-950">{activeConversation?.peer_username || 'None'}</p>
+          <p className="text-sm font-medium text-slate-500">当前会话</p>
+          <p className="text-2xl font-semibold text-slate-950">{activeConversation?.peer_username || '无'}</p>
           <p className="text-sm text-slate-600">未选中时不会请求消息列表</p>
         </SurfaceCard>
       </div>
@@ -104,7 +104,7 @@ export function DirectMessages() {
         <SurfaceCard className="space-y-4 p-5">
           <div className="flex items-center gap-2">
             <MessageCircle className="h-4 w-4 text-slate-500" />
-            <h2 className="text-lg font-semibold text-slate-950">Conversation List</h2>
+            <h2 className="text-lg font-semibold text-slate-950">会话侧栏</h2>
           </div>
 
           <div className="space-y-2">
@@ -116,6 +116,7 @@ export function DirectMessages() {
                   key={conversation.id}
                   type="button"
                   onClick={() => setActiveConversationId(conversation.id)}
+                  aria-label={conversation.peer_username}
                   className={`w-full rounded-2xl border px-4 py-3 text-left transition ${
                     isActive
                       ? 'border-slate-900 bg-slate-900 text-white'
@@ -150,16 +151,21 @@ export function DirectMessages() {
         </SurfaceCard>
 
         <SurfaceCard className="space-y-4 p-5">
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-4">
+            <UserRound className="h-4 w-4 text-slate-500" />
+            <h2 className="text-lg font-semibold text-slate-950">消息工作区</h2>
+          </div>
+
           {activeConversation ? (
             <>
               <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">Active Conversation</p>
+                  <p className="text-sm font-medium text-slate-500">当前会话</p>
                   <h2 className="mt-1 text-xl font-semibold text-slate-950">{activeConversation.peer_username}</h2>
                 </div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-600">
                   <UserRound className="h-4 w-4" />
-                  {(messages || []).length} messages
+                  {(messages || []).length} 条消息
                 </div>
               </div>
 
@@ -194,8 +200,8 @@ export function DirectMessages() {
                   <Input
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
-                    placeholder="Write a message"
-                    aria-label="Message draft"
+                    placeholder="输入消息"
+                    aria-label="消息内容"
                   />
                   <Button
                     onClick={() => {
@@ -206,10 +212,10 @@ export function DirectMessages() {
                       })
                     }}
                     disabled={!draft.trim() || sendMutation.isPending}
-                    aria-label="Send message"
+                    aria-label="发送消息"
                   >
                     <Send className="h-4 w-4" />
-                    {sendMutation.isPending ? 'Sending...' : 'Send Message'}
+                    {sendMutation.isPending ? '发送中...' : '发送消息'}
                   </Button>
                 </div>
               </div>
@@ -217,7 +223,7 @@ export function DirectMessages() {
           ) : (
             <div className="flex min-h-[520px] items-center justify-center">
               <EmptyState
-                title="Select A Conversation"
+                title="请选择会话"
                 description="先从左侧选择一个会话，再继续查看历史消息或发送新内容。"
                 className="w-full shadow-none"
               />

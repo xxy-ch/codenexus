@@ -105,9 +105,9 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Weekly Contest 345')).toBeInTheDocument()
-        expect(screen.getByText('Algorithm Marathon')).toBeInTheDocument()
-        expect(screen.getByText('Beginner Friendly Contest')).toBeInTheDocument()
+        expect(screen.getAllByText('Weekly Contest 345').length).toBeGreaterThan(0)
+        expect(screen.getAllByText('Algorithm Marathon').length).toBeGreaterThan(0)
+        expect(screen.getAllByText('Beginner Friendly Contest').length).toBeGreaterThan(0)
       })
     })
 
@@ -135,9 +135,9 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/120.*分钟|2h/i)).toBeInTheDocument()
-        expect(screen.getByText(/240.*分钟|4h/i)).toBeInTheDocument()
-        expect(screen.getByText(/90.*分钟|1.5h/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/120.*分钟|2h/i).length).toBeGreaterThan(0)
+        expect(screen.getAllByText(/240.*分钟|4h/i).length).toBeGreaterThan(0)
+        expect(screen.getAllByText(/90.*分钟|1.5h/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -150,9 +150,9 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/45.*人|participants/i)).toBeInTheDocument()
-        expect(screen.getByText(/128.*人|participants/i)).toBeInTheDocument()
-        expect(screen.getByText(/256.*人|participants/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/45.*人|participants/i).length).toBeGreaterThan(0)
+        expect(screen.getAllByText(/128.*人|participants/i).length).toBeGreaterThan(0)
+        expect(screen.getAllByText(/256.*人|participants/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -165,9 +165,9 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/4.*题|problems/i)).toBeInTheDocument()
-        expect(screen.getByText(/6.*题|problems/i)).toBeInTheDocument()
-        expect(screen.getByText(/3.*题|problems/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/4.*题|problems/i).length).toBeGreaterThan(0)
+        expect(screen.getAllByText(/6.*题|problems/i).length).toBeGreaterThan(0)
+        expect(screen.getAllByText(/3.*题|problems/i).length).toBeGreaterThan(0)
       })
     })
   })
@@ -184,7 +184,7 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Weekly Contest 345')).toBeInTheDocument()
+        expect(screen.getAllByText('Weekly Contest 345').length).toBeGreaterThan(0)
       })
 
       // 点击"即将开始"过滤器
@@ -211,7 +211,7 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Beginner Friendly Contest')).toBeInTheDocument()
+        expect(screen.getAllByText('Beginner Friendly Contest').length).toBeGreaterThan(0)
       })
 
       const difficultySelect = screen.getByLabelText(/难度|difficulty/i)
@@ -269,7 +269,7 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Weekly Contest 345')).toBeInTheDocument()
+        expect(screen.getAllByText('Weekly Contest 345').length).toBeGreaterThan(0)
       })
 
       const contestLink = screen.getByText('Weekly Contest 345').closest('a')
@@ -285,7 +285,7 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/立即加入|join now|enter/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/立即加入|join now|enter/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -298,7 +298,7 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/立即注册|register now|sign up/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/立即注册|register now|sign up/i).length).toBeGreaterThan(0)
       })
     })
 
@@ -311,7 +311,7 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/查看结果|view results/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/查看结果|view results/i).length).toBeGreaterThan(0)
       })
     })
   })
@@ -370,7 +370,7 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Weekly Contest 345')).toBeInTheDocument()
+        expect(screen.getAllByText('Weekly Contest 345').length).toBeGreaterThan(0)
       })
 
       const searchInput = screen.getByLabelText(/搜索竞赛|search/i)
@@ -396,7 +396,7 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getAllByRole('heading', { name: /竞赛目录|contest/i }).length).toBeGreaterThan(0)
+        expect(screen.getAllByRole('heading', { name: /竞赛总览|全部赛程池|contest/i }).length).toBeGreaterThan(0)
       })
     })
   })

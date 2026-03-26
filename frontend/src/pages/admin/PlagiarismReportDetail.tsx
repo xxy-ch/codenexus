@@ -11,6 +11,15 @@ import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 
+const RISK_LABELS: Record<string, string> = {
+  low: '低风险',
+  medium: '中风险',
+  high: '高风险',
+}
+
+const detailBlockClass = 'rounded-[20px] border border-slate-200 bg-slate-50 p-4'
+const insetBlockClass = 'rounded-[20px] bg-slate-50 px-4 py-3'
+
 export function PlagiarismReportDetail() {
   const { reportId } = useParams<{ reportId: string }>()
   const navigate = useNavigate()
@@ -30,10 +39,10 @@ export function PlagiarismReportDetail() {
 
   const variantTone = useMemo(() => {
     if (!data) return '标准报告'
-    if ((data.top_pairs?.length || 0) === 0) return '清白结论页'
-    if ((data.top_pairs?.length || 0) === 1) return '单对高风险页'
-    if ((data.top_pairs?.length || 0) >= 3) return '多对比对页'
-    return '摘要比对页'
+    if ((data.top_pairs?.length || 0) === 0) return '暂无可疑对'
+    if ((data.top_pairs?.length || 0) === 1) return '单对重点复核'
+    if ((data.top_pairs?.length || 0) >= 3) return '多对重点复核'
+    return '摘要复核'
   }, [data])
 
   if (isLoading) {
@@ -64,8 +73,8 @@ export function PlagiarismReportDetail() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin Workspace"
-        breadcrumb={['Plagiarism', 'Report Detail']}
+        eyebrow="管理台"
+        breadcrumb={['抄袭检测', '报告详情']}
         title="抄袭检测报告"
         description={`报告 ${data.id} · ${variantTone}`}
         actions={
@@ -75,32 +84,34 @@ export function PlagiarismReportDetail() {
               返回列表
             </Button>
             <span className={cn('rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em]', riskTone)}>
-              {data.overall_risk} risk
+              {RISK_LABELS[data.overall_risk?.toLowerCase()] ?? data.overall_risk}
             </span>
           </div>
         }
       />
 
       <section className="grid gap-4 lg:grid-cols-3">
-        <StatCard label="Status" value={data.status} helper="报告处理状态" />
-        <StatCard label="Pairs" value={data.suspicious_pairs} helper="可疑提交对数量" />
-        <StatCard label="Submissions" value={data.total_submissions} helper="扫描覆盖的提交总数" />
+        <StatCard label="状态" value={data.status} helper="报告处理状态" />
+        <StatCard label="可疑对" value={data.suspicious_pairs} helper="可疑提交对数量" />
+        <StatCard label="提交数" value={data.total_submissions} helper="扫描覆盖的提交总数" />
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
           <SurfaceCard>
             <div className="grid gap-4 lg:grid-cols-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Overall Risk</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">{data.overall_risk}</p>
+              <div className={detailBlockClass}>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">整体风险</p>
+                <p className="mt-2 text-lg font-semibold text-slate-950">
+                  {RISK_LABELS[data.overall_risk?.toLowerCase()] ?? data.overall_risk}
+                </p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Contest / Assignment</p>
+              <div className={detailBlockClass}>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">比赛 / 作业</p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">{data.contest_id || data.assignment_id || '独立扫描'}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Finished At</p>
+              <div className={detailBlockClass}>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">完成时间</p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">
                   {data.finished_at ? new Date(data.finished_at).toLocaleString('zh-CN') : '未完成'}
                 </p>
@@ -109,8 +120,8 @@ export function PlagiarismReportDetail() {
           </SurfaceCard>
 
           <SurfaceCard className="overflow-hidden">
-            <div className="border-b border-slate-200 pb-4">
-              <h2 className="text-lg font-semibold text-slate-950">可疑提交对</h2>
+              <div className="border-b border-slate-200 pb-4">
+                <h2 className="text-lg font-semibold text-slate-950">可疑提交对</h2>
               <p className="mt-1 text-sm text-slate-600">按相似度和匹配行数展示当前报告中的主要证据。</p>
             </div>
             <div className="divide-y divide-slate-200">
@@ -138,23 +149,23 @@ export function PlagiarismReportDetail() {
                         </div>
                       </div>
                       <div className="grid gap-3 md:grid-cols-2">
-                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Left</p>
+                        <div className={insetBlockClass}>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">左侧</p>
                           <p className="mt-1 font-mono text-xs text-slate-700">{pair.left_submission_id}</p>
                         </div>
-                        <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Right</p>
+                        <div className={insetBlockClass}>
+                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">右侧</p>
                           <p className="mt-1 font-mono text-xs text-slate-700">{pair.right_submission_id}</p>
                         </div>
                       </div>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                      <div className="rounded-2xl border border-slate-200 px-4 py-3">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Similarity</p>
+                      <div className={detailBlockClass}>
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">相似度</p>
                         <p className="mt-1 text-lg font-semibold text-slate-950">{(pair.similarity * 100).toFixed(1)}%</p>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 px-4 py-3">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Matched Lines</p>
+                      <div className={detailBlockClass}>
+                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">匹配行数</p>
                         <p className="mt-1 text-lg font-semibold text-slate-950">{pair.matched_lines}</p>
                       </div>
                     </div>
@@ -167,14 +178,14 @@ export function PlagiarismReportDetail() {
 
         <div className="space-y-6">
           <SurfaceCard>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Report Timeline</div>
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">报告时间线</div>
             <div className="mt-4 space-y-3">
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Created</p>
+              <div className={insetBlockClass}>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">创建时间</p>
                 <p className="mt-1 text-sm font-semibold text-slate-950">{new Date(data.created_at).toLocaleString('zh-CN')}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Finished</p>
+              <div className={insetBlockClass}>
+                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">完成时间</p>
                 <p className="mt-1 text-sm font-semibold text-slate-950">
                   {data.finished_at ? new Date(data.finished_at).toLocaleString('zh-CN') : '未完成'}
                 </p>

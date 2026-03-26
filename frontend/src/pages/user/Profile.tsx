@@ -58,10 +58,10 @@ export function Profile() {
 
   const summaryCards = useMemo(
     () => [
-      { label: '已解决题目', value: stats?.unique_problems_solved ?? 0, helper: '累计通过的独立题目数' },
-      { label: '提交次数', value: stats?.total_submissions ?? 0, helper: '包含全部历史提交' },
+      { label: '已解题目', value: stats?.unique_problems_solved ?? 0, helper: '累计通过的独立题目数' },
+      { label: '提交总数', value: stats?.total_submissions ?? 0, helper: '包含全部历史提交' },
       { label: '通过率', value: `${Math.round((stats?.accuracy_rate ?? 0) * 100)}%`, helper: '按当前统计接口计算' },
-      { label: '全站排名', value: stats?.ranking ?? '-', helper: '来自排行榜接口' },
+      { label: '当前名次', value: stats?.ranking ?? '-', helper: '来自排行榜数据' },
     ],
     [stats],
   )
@@ -69,13 +69,13 @@ export function Profile() {
   if (isLoading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loading message="加载中..." />
+        <Loading message="加载个人工作台..." />
       </div>
     )
   }
 
   if (!profile) {
-    return <EmptyState title="用户不存在" description="当前账号信息无法读取。" />
+    return <EmptyState title="个人档案缺失" description="当前账号信息暂时无法读取。" />
   }
 
   const getActivityLabel = (type: string) => {
@@ -86,21 +86,30 @@ export function Profile() {
     return '活动'
   }
 
+  const getRoleLabel = (role: string) => {
+    if (role === 'student') return '学生'
+    if (role === 'teacher') return '教师'
+    if (role === 'admin') return '管理员'
+    return role
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Profile"
-        title={profile.display_name || profile.username}
-        description={`@${profile.username} 的账户概览与活动记录。`}
+        eyebrow="个人工作台"
+        title="个人工作台"
+        description="当前登录账号的身份信息、统计概览与最近活动。"
         actions={
           currentUser?.id === profile.id ? (
             <Button variant="outline" onClick={() => setIsEditing((prev) => !prev)}>
               <PencilLine className="h-4 w-4" />
-              {isEditing ? '取消编辑' : '编辑资料'}
+              {isEditing ? '收起编辑' : '编辑档案'}
             </Button>
           ) : null
         }
       />
+
+      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">个人档案</div>
 
       <div className="grid gap-4 md:grid-cols-4">
         {summaryCards.map((item) => (
@@ -110,14 +119,14 @@ export function Profile() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
-          <SectionBlock title="账户概览" description="聚焦当前账号的身份信息和基础归属。">
+          <SectionBlock title="身份台账" description="聚焦当前账号的身份信息和基础归属。">
             <div className="grid gap-4 md:grid-cols-2">
               <SurfaceCard tone="muted" className="p-5">
                 <div className="flex items-start gap-3">
                   <ShieldCheck className="mt-0.5 h-4 w-4 text-slate-500" />
                   <div>
                     <p className="text-sm font-semibold text-slate-950">角色</p>
-                    <p className="mt-1 text-sm text-slate-600">{profile.role}</p>
+                    <p className="mt-1 text-sm text-slate-600">{getRoleLabel(profile.role)}</p>
                   </div>
                 </div>
               </SurfaceCard>
@@ -126,7 +135,7 @@ export function Profile() {
                   <IdCard className="mt-0.5 h-4 w-4 text-slate-500" />
                   <div>
                     <p className="text-sm font-semibold text-slate-950">组织</p>
-                    <p className="mt-1 text-sm text-slate-600">Org #{profile.organization_id}</p>
+                    <p className="mt-1 text-sm text-slate-600">组织 #{profile.organization_id}</p>
                   </div>
                 </div>
               </SurfaceCard>
@@ -171,30 +180,30 @@ export function Profile() {
                 </div>
               ))}
               {(activities || []).length === 0 ? (
-                <p className="text-sm text-slate-500">暂无活动</p>
+                <p className="text-sm text-slate-500">最近暂无活动记录。</p>
               ) : null}
             </div>
           </SectionBlock>
         </div>
 
         <div className="space-y-6">
-          <SectionBlock title="身份信息" description="当前系统已落库的账号字段。">
+          <SectionBlock title="账号信息" description="当前系统已落库的账号字段。">
             <div className="space-y-4 text-sm">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Username</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">用户名</p>
                 <p className="mt-1 font-semibold text-slate-950">{profile.username}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Campus</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">校区</p>
                 <p className="mt-1 font-semibold text-slate-950">
-                  {profile.campus_id ? `Campus #${profile.campus_id}` : '未绑定'}
+                  {profile.campus_id ? `校区 #${profile.campus_id}` : '未绑定'}
                 </p>
               </div>
             </div>
           </SectionBlock>
 
           {isEditing ? (
-            <SectionBlock title="编辑资料" description="仅保存当前后端已支持的显示名称和邮箱字段。">
+            <SectionBlock title="档案编辑" description="仅保存当前后端已支持的显示名称和邮箱字段。">
               <div className="space-y-4">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">显示名称</label>
@@ -227,7 +236,7 @@ export function Profile() {
                     }
                     disabled={updateProfileMutation.isPending}
                   >
-                    {updateProfileMutation.isPending ? '保存中...' : '保存更改'}
+                    {updateProfileMutation.isPending ? '保存中...' : '保存档案'}
                   </Button>
                 </div>
               </div>

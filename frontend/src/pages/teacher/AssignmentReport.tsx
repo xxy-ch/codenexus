@@ -274,10 +274,10 @@ export function AssignmentReport() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Teacher Workspace"
-        breadcrumb={['Classes', 'Assignment Report']}
+        eyebrow="教师工作台"
+        breadcrumb={['班级', '作业报告']}
         title="作业报告"
-        description="基于真实班级、作业、学生和提交数据生成的报表页。最佳成绩按最高分取，同分时采用更晚提交；CSV 导出会按当前筛选范围生成。"
+        description="基于真实班级、作业、学生和提交数据生成的报表页。最佳成绩按最高分取，同分时采用更晚提交；导出会按当前筛选范围生成。"
         actions={
           <>
             <Button variant="outline" onClick={() => refetch()}>
@@ -286,20 +286,20 @@ export function AssignmentReport() {
             </Button>
             <Button variant="primary" onClick={handleExport} disabled={!highlightedClass}>
               <ArrowDownToLine className="h-4 w-4" />
-              导出 CSV
+              导出表格
             </Button>
           </>
         }
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Classes" value={stats.totalClasses} helper="当前报告可见班级数" />
-        <StatCard label="Students" value={stats.totalStudents} helper="当前班级学生总数" />
-        <StatCard label="Submitted" value={stats.submittedStudents} helper="至少有一次提交的学生数" />
+        <StatCard label="班级总数" value={stats.totalClasses} helper="当前报告可见班级数" />
+        <StatCard label="学生总数" value={stats.totalStudents} helper="当前班级学生总数" />
+        <StatCard label="已提交人数" value={stats.submittedStudents} helper="至少有一次提交的学生数" />
         <StatCard
-          label="Completion"
+          label="完成率"
           value={`${stats.completionRate}%`}
-          helper={`Average Best ${stats.averageBestScore} · On-time ${stats.onTimeRate}%`}
+          helper={`平均最高分 ${stats.averageBestScore} · 准时率 ${stats.onTimeRate}%`}
         />
       </section>
 
@@ -319,10 +319,10 @@ export function AssignmentReport() {
           </div>
           <FieldGroup label="班级">
             <select
-              aria-label="select class"
+              aria-label="班级选择"
               value={highlightedClass?.id ?? ''}
               onChange={(e) => setSelectedClassId(Number(e.target.value))}
-              className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+              className="w-full rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)]"
             >
               <option value="" disabled>
                 请选择班级
@@ -336,18 +336,18 @@ export function AssignmentReport() {
           </FieldGroup>
           <FieldGroup label="作业">
             <select
-              aria-label="select assignment"
+              aria-label="作业选择"
               value={activeAssignmentId ?? ''}
               onChange={(e) => setSelectedAssignmentId(Number(e.target.value))}
               disabled={assignments.length === 0}
-              className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="w-full rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100/80 disabled:text-slate-500"
             >
               <option value="" disabled>
                 {assignments.length === 0 ? '暂无作业' : '请选择作业'}
               </option>
               {assignments.map((assignment) => (
                 <option key={assignment.id} value={assignment.id}>
-                  Problem #{assignment.problem_id} · {formatDateTime(assignment.deadline)}
+                  题目 #{assignment.problem_id} · {formatDateTime(assignment.deadline)}
                 </option>
               ))}
             </select>
@@ -374,11 +374,11 @@ export function AssignmentReport() {
             <div>
               <h2 className="text-lg font-semibold text-slate-950">学生报表</h2>
               <p className="mt-1 text-sm text-slate-600">
-                {highlightedClass ? `${highlightedClass.name} · ${selectedAssignment ? `Problem #${selectedAssignment.problem_id}` : '暂无作业'}` : '请选择班级'}
+                {highlightedClass ? `${highlightedClass.name} · ${selectedAssignment ? `题目 #${selectedAssignment.problem_id}` : '暂无作业'}` : '请选择班级'}
               </p>
             </div>
             <div className="rounded-2xl bg-blue-50 px-3 py-2 text-xs font-medium uppercase tracking-[0.22em] text-blue-700">
-              Live Data
+              真实数据
             </div>
           </div>
 
@@ -403,13 +403,13 @@ export function AssignmentReport() {
               <table className="min-w-full divide-y divide-slate-200">
                 <thead className="bg-[rgba(246,249,253,0.92)]">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Student</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Submissions</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Best Score</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Latest Submission</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Overdue</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">学生</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">邮箱</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">提交次数</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">最佳分数</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">最近提交</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">逾期</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">状态</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-[rgba(255,255,255,0.78)]">
@@ -432,7 +432,7 @@ export function AssignmentReport() {
                         {row.latestSubmission ? formatDateTime(row.latestSubmission.submitted_at) : '—'}
                       </TableCell>
                       <TableCell>
-                        {row.bestSubmission ? (row.bestSubmission.is_late ? `Yes (${row.bestSubmission.late_days}d)` : 'No') : '—'}
+                        {row.bestSubmission ? (row.bestSubmission.is_late ? `是 (${row.bestSubmission.late_days} 天)` : '否') : '—'}
                       </TableCell>
                       <TableCell className="text-right">
                         <span
@@ -469,15 +469,15 @@ export function AssignmentReport() {
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Name</dt>
+                      <dt className="text-slate-500">班级名称</dt>
                       <dd className="font-medium text-slate-900">{highlightedClass.name}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Semester</dt>
+                      <dt className="text-slate-500">学期</dt>
                       <dd className="font-medium text-slate-900">{highlightedClass.semester || '未设置'}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Invite Code</dt>
+                      <dt className="text-slate-500">邀请码</dt>
                       <dd className="font-mono text-sky-700">{highlightedClass.enrollment_code || '—'}</dd>
                     </div>
                   </dl>
@@ -490,15 +490,15 @@ export function AssignmentReport() {
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Assignment</dt>
+                      <dt className="text-slate-500">作业编号</dt>
                       <dd className="font-medium text-slate-900">{selectedAssignment ? `#${selectedAssignment.id}` : '—'}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Problem</dt>
+                      <dt className="text-slate-500">题目编号</dt>
                       <dd className="font-medium text-slate-900">{selectedAssignment ? `#${selectedAssignment.problem_id}` : '—'}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">Deadline</dt>
+                      <dt className="text-slate-500">截止时间</dt>
                       <dd className="font-medium text-slate-900">{selectedAssignment ? formatDateTime(selectedAssignment.deadline) : '—'}</dd>
                     </div>
                   </dl>
@@ -515,7 +515,7 @@ export function AssignmentReport() {
 
           <SectionBlock
             title="导出说明"
-            description="导出的 CSV 按当前班级和作业筛选结果生成。"
+            description="导出的表格按当前班级和作业筛选结果生成。"
           >
             <ul className="space-y-3 text-sm leading-6 text-slate-600">
               <li>最佳成绩按分数最高优先，同分取更晚提交。</li>

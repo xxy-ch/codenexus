@@ -60,8 +60,8 @@ INSERT INTO plagiarism_scan_configs (
 VALUES (1, TRUE, 'all', 0.85, 5, 30, TRUE, TRUE, 100)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO classes (id, organization_id, campus_id, name, teacher_id, semester)
-VALUES (1, 1, 1, '示范班级', '44444444-4444-4444-4444-444444444444', '2026 Spring')
+INSERT INTO classes (id, organization_id, campus_id, name, code, teacher_id, semester)
+VALUES (1, 1, 1, '示范班级', 'CLS000001', '44444444-4444-4444-4444-444444444444', '2026 Spring')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO class_enrollments (class_id, student_id)

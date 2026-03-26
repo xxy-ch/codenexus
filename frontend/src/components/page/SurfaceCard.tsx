@@ -11,10 +11,10 @@ export function SurfaceCard({ children, className, tone = 'default' }: SurfaceCa
   return (
     <section
       className={cn(
-        'rounded-[10px] p-6 shadow-[0_18px_42px_rgba(19,27,46,0.05)]',
+        'rounded-[24px] border border-slate-200/80 p-6 shadow-[0_14px_34px_rgba(15,23,42,0.06)] backdrop-blur-sm',
         tone === 'muted'
-          ? 'bg-[rgba(242,243,255,0.86)]'
-          : 'bg-[rgba(255,255,255,0.94)]',
+          ? 'bg-[linear-gradient(180deg,rgba(244,247,255,0.98)_0%,rgba(235,241,255,0.95)_100%)]'
+          : 'bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(247,250,255,0.94)_100%)]',
         className,
       )}
     >

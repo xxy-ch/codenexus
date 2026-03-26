@@ -92,9 +92,9 @@ describe('SubmissionDetail', () => {
     renderComponent()
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Submission #1' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: '提交详情' })).toBeInTheDocument()
       expect(screen.getByText(/判题分析摘要/)).toBeInTheDocument()
-      expect(screen.getByText('Two Sum 的完整判题分析，包含状态摘要、性能数据和测试用例详情。')).toBeInTheDocument()
+      expect(screen.getByText('Two Sum 的完整判题诊断，包含状态摘要、性能数据、测试点池和提交代码。')).toBeInTheDocument()
       expect(screen.getAllByText('45ms').length).toBeGreaterThan(0)
       expect(screen.getAllByText('1MB').length).toBeGreaterThan(0)
       expect(screen.getAllByText('2/2').length).toBeGreaterThan(0)

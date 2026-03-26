@@ -170,9 +170,13 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/20.*简单|easy/i)).toBeInTheDocument()
-        expect(screen.getByText(/18.*中等|medium/i)).toBeInTheDocument()
-        expect(screen.getByText(/7.*困难|hard/i)).toBeInTheDocument()
+        expect(screen.getByText('难度分布')).toBeInTheDocument()
+        expect(screen.getByText('简单')).toBeInTheDocument()
+        expect(screen.getByText('20 道题')).toBeInTheDocument()
+        expect(screen.getByText('中等')).toBeInTheDocument()
+        expect(screen.getByText('18 道题')).toBeInTheDocument()
+        expect(screen.getByText('困难')).toBeInTheDocument()
+        expect(screen.getByText('7 道题')).toBeInTheDocument()
       })
     })
   })
@@ -271,8 +275,8 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/^提交 · Accepted$/)).toBeInTheDocument()
-        expect(screen.getByText(/^竞赛报名$/)).toBeInTheDocument()
+        expect(screen.getAllByText('提交 · 已通过').length).toBeGreaterThan(0)
+        expect(screen.getAllByText('竞赛报名').length).toBeGreaterThan(0)
       })
     })
 

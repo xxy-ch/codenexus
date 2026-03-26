@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Loading } from '@/components/ui/Loading'
 import { StatusBadge } from '@/components/ui/StatusBadge'
+import { SectionBlock } from '@/components/page/SectionBlock'
+import { SurfaceCard } from '@/components/page/SurfaceCard'
 
 describe('ui primitives', () => {
   it('renders primary button with flat design system classes and visible focus treatment', () => {
@@ -12,7 +14,9 @@ describe('ui primitives', () => {
     const button = screen.getByRole('button', { name: 'Sign In' })
     expect(button.className).toContain('bg-[linear-gradient(135deg,#003d9b,#0052cc)]')
     expect(button).toHaveClass('text-white')
-    expect(button).toHaveClass('rounded-[8px]')
+    expect(button).toHaveClass('rounded-[16px]')
+    expect(button).toHaveClass('h-12')
+    expect(button).toHaveClass('px-5')
     expect(button.className).toContain('focus-visible:ring-2')
   })
 
@@ -20,10 +24,31 @@ describe('ui primitives', () => {
     render(<Input aria-label="Username" placeholder="1001" />)
 
     const input = screen.getByRole('textbox', { name: 'Username' })
-    expect(input.className).toContain('bg-[rgba(242,243,255,0.88)]')
-    expect(input).toHaveClass('rounded-[8px]')
+    expect(input.className).toContain('bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)]')
+    expect(input).toHaveClass('h-[52px]')
+    expect(input).toHaveClass('rounded-[18px]')
     expect(input.className).toContain('focus-visible:bg-white')
-    expect(input.className).toContain('focus-visible:ring-2')
+    expect(input.className).toContain('focus-visible:ring-4')
+  })
+
+  it('renders section blocks with elevated dashboard surfaces', () => {
+    render(
+      <SectionBlock title="概览" description="统一页块">
+        Body
+      </SectionBlock>,
+    )
+
+    const block = screen.getByRole('heading', { name: '概览' }).closest('section')
+    expect(block).toHaveClass('rounded-[32px]')
+    expect(block?.className || '').toContain('bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(245,248,253,0.92)_100%)]')
+  })
+
+  it('renders surface cards with stitched muted tones', () => {
+    render(<SurfaceCard tone="muted">Body</SurfaceCard>)
+
+    const card = screen.getByText('Body').closest('section')
+    expect(card).toHaveClass('rounded-[24px]')
+    expect(card?.className || '').toContain('bg-[linear-gradient(180deg,rgba(244,247,255,0.98)_0%,rgba(235,241,255,0.95)_100%)]')
   })
 
   it('renders loading spinner without progressbar semantics and with flat neutral styling', () => {

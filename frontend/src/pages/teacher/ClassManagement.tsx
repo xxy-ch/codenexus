@@ -195,33 +195,33 @@ export function ClassManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Teacher Workspace"
-        breadcrumb={['Classes', 'Class Management']}
+        eyebrow="教师工作台"
+        breadcrumb={['班级', '班级管理']}
         title="班级管理"
         description="保留真实写路径：建班、按邮箱添加学生、批量导入、创建作业、发布作业，以及按作业查看真实提交。所有写操作都绑定当前显式选中的班级。"
         actions={
           <div className="rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
-            Live write paths enabled
+            真实写路径已接通
           </div>
         }
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Classes" value={total} helper="当前教师可见班级总数" />
+        <StatCard label="班级总数" value={total} helper="当前教师可见班级总数" />
         <StatCard
-          label="Current Focus"
+          label="当前焦点"
           value={highlightedClass?.name || '未选择'}
           helper={highlightedClass?.semester || '未设置学期'}
         />
         <StatCard
-          label="Enrollment Code"
+          label="邀请码"
           value={<span className="font-mono text-[1.65rem] text-sky-700">{highlightedClass?.enrollment_code || '—'}</span>}
           helper="学生可通过真实邀请码入班"
         />
         <StatCard
-          label="Assignments"
+          label="作业数量"
           value={assignments.length}
-          helper={`Students ${students.length}`}
+          helper={`学生 ${students.length} 人`}
         />
       </section>
 
@@ -321,10 +321,10 @@ export function ClassManagement() {
             </div>
             <div className="flex items-center gap-2">
               <Button type="button" variant="outline" size="sm" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page <= 1}>
-                Prev
+                上一页
               </Button>
               <Button type="button" variant="outline" size="sm" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} disabled={page >= totalPages}>
-                Next
+                下一页
               </Button>
             </div>
           </FilterBar>
@@ -344,11 +344,11 @@ export function ClassManagement() {
                 <table className="min-w-full">
                   <thead className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                     <tr>
-                      <th className="px-4 py-3">Class</th>
-                      <th className="px-4 py-3">Semester</th>
-                      <th className="px-4 py-3">Invite Code</th>
-                      <th className="px-4 py-3 text-right">Students</th>
-                      <th className="px-4 py-3 text-right">Select</th>
+                      <th className="px-4 py-3">班级</th>
+                      <th className="px-4 py-3">学期</th>
+                      <th className="px-4 py-3">邀请码</th>
+                      <th className="px-4 py-3 text-right">学生数</th>
+                      <th className="px-4 py-3 text-right">选择</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -401,11 +401,11 @@ export function ClassManagement() {
                 </FieldGroup>
                 <FieldGroup label="截止时间">
                   <input
-                    aria-label="assignment deadline"
+                    aria-label="作业截止时间"
                     type="datetime-local"
                     value={assignmentDeadline}
                     onChange={(e) => setAssignmentDeadline(e.target.value)}
-                    className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition-colors focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                    className="w-full rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)]"
                   />
                 </FieldGroup>
                 <FieldGroup label="分值">
@@ -440,10 +440,10 @@ export function ClassManagement() {
                     <table className="min-w-full">
                       <thead className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                         <tr>
-                          <th className="px-4 py-3">Student</th>
-                          <th className="px-4 py-3">Email</th>
-                          <th className="px-4 py-3 text-right">Progress</th>
-                          <th className="px-4 py-3 text-right">Average</th>
+                          <th className="px-4 py-3">学生</th>
+                          <th className="px-4 py-3">邮箱</th>
+                          <th className="px-4 py-3 text-right">进度</th>
+                          <th className="px-4 py-3 text-right">平均分</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
@@ -479,18 +479,18 @@ export function ClassManagement() {
                       <table className="min-w-full">
                         <thead className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                           <tr>
-                            <th className="px-4 py-3">Assignment</th>
-                            <th className="px-4 py-3">Deadline</th>
-                            <th className="px-4 py-3 text-center">Published</th>
-                            <th className="px-4 py-3 text-right">Action</th>
+                            <th className="px-4 py-3">作业</th>
+                            <th className="px-4 py-3">截止时间</th>
+                            <th className="px-4 py-3 text-center">已发布</th>
+                            <th className="px-4 py-3 text-right">操作</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {assignments.map((assignment) => (
                             <tr key={assignment.id} className={cn(activeAssignmentId === assignment.id && 'bg-sky-50/60')}>
-                              <TableCell className="font-medium text-slate-900">Problem #{assignment.problem_id}</TableCell>
+                              <TableCell className="font-medium text-slate-900">题目 #{assignment.problem_id}</TableCell>
                               <TableCell>{formatDateTime(assignment.deadline)}</TableCell>
-                              <TableCell className="text-center">{assignment.published_at ? 'Yes' : 'No'}</TableCell>
+                              <TableCell className="text-center">{assignment.published_at ? '是' : '否'}</TableCell>
                               <TableCell className="text-right">
                                 <div className="flex justify-end gap-2">
                                   <Button type="button" size="sm" variant="outline" onClick={() => setSelectedAssignmentId(assignment.id)}>
@@ -527,7 +527,7 @@ export function ClassManagement() {
                     <div className="border-b border-slate-200 px-5 py-4">
                       <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
                         <BookOpen className="h-4 w-4 text-sky-700" />
-                        Assignment Submissions
+                        作业提交记录
                       </div>
                     </div>
                     <div className="overflow-x-auto px-5 py-4">
@@ -541,11 +541,11 @@ export function ClassManagement() {
                         <table className="min-w-full">
                           <thead className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                             <tr>
-                              <th className="px-2 py-3">Submission</th>
-                              <th className="px-2 py-3">User</th>
-                              <th className="px-2 py-3">Score</th>
-                              <th className="px-2 py-3">Late</th>
-                              <th className="px-2 py-3">Submitted At</th>
+                              <th className="px-2 py-3">提交号</th>
+                              <th className="px-2 py-3">用户</th>
+                              <th className="px-2 py-3">分数</th>
+                              <th className="px-2 py-3">逾期</th>
+                              <th className="px-2 py-3">提交时间</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100">
@@ -555,7 +555,7 @@ export function ClassManagement() {
                                 <td className="px-2 py-3 font-mono text-xs text-slate-500">{submission.user_id}</td>
                                 <td className="px-2 py-3 text-sm text-slate-700">{submission.score}</td>
                                 <td className="px-2 py-3 text-sm text-slate-700">
-                                  {submission.is_late ? `Yes (${submission.late_days}d)` : 'No'}
+                                  {submission.is_late ? `是 (${submission.late_days}天)` : '否'}
                                 </td>
                                 <td className="px-2 py-3 text-sm text-slate-700">{formatDateTime(submission.submitted_at)}</td>
                               </tr>
@@ -577,7 +577,7 @@ export function ClassManagement() {
           <Users className="h-4 w-4 text-sky-700" />
           班级选择、作业写入和提交浏览都以当前高亮班级为准，不再使用首条列表作为隐式目标。
         </div>
-        <div className="text-sm text-slate-500">Chrome 96+ safe layout</div>
+        <div className="text-sm text-slate-500">统一教师工作台布局</div>
       </SurfaceCard>
     </div>
   )

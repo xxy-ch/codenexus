@@ -100,14 +100,20 @@ describe('community authoring pages', () => {
 
     renderWithProviders(<CreateArticle />)
 
-    expect(screen.getByRole('heading', { name: /article draft/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '撰写文章' })).toBeInTheDocument()
+    expect(screen.getByText('编辑工作台')).toBeInTheDocument()
+    expect(screen.getByText('发布信息')).toBeInTheDocument()
+    expect(screen.getByText('写作提示')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText(/article title/i), { target: { value: 'Flat Redesign' } })
-    fireEvent.change(screen.getByLabelText(/category/i), { target: { value: 'Editorial' } })
-    fireEvent.change(screen.getByLabelText(/add tag/i), { target: { value: 'ui' } })
-    fireEvent.click(screen.getByRole('button', { name: /add tag/i }))
-    fireEvent.change(screen.getByLabelText(/content editor/i), { target: { value: 'Updated body' } })
-    fireEvent.click(screen.getByRole('button', { name: /publish article/i }))
+    fireEvent.change(screen.getByLabelText('文章标题'), { target: { value: 'Flat Redesign' } })
+    fireEvent.change(screen.getByLabelText('分类'), { target: { value: 'Editorial' } })
+    fireEvent.change(screen.getByLabelText('添加标签'), { target: { value: 'ui' } })
+    fireEvent.click(screen.getByRole('button', { name: '添加标签' }))
+    fireEvent.change(
+      screen.getByPlaceholderText('用 Markdown 写正文，首段尽量先把结论说清楚。'),
+      { target: { value: 'Updated body' } },
+    )
+    fireEvent.click(screen.getByRole('button', { name: '发布文章' }))
 
     await waitFor(() => {
       expect(mocks.createArticle).toHaveBeenCalledWith({
@@ -144,11 +150,17 @@ describe('community authoring pages', () => {
       ['/blog/old-title/edit'],
     )
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: /revise article/i })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: '编辑文章' })).toBeInTheDocument())
+    expect(screen.getByText('编辑工作台')).toBeInTheDocument()
+    expect(screen.getByText('发布信息')).toBeInTheDocument()
+    expect(screen.getByText('修改说明')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText(/article title/i), { target: { value: 'New Title' } })
-    fireEvent.change(screen.getByLabelText(/content editor/i), { target: { value: 'New body' } })
-    fireEvent.click(screen.getByRole('button', { name: /save article/i }))
+    fireEvent.change(screen.getByLabelText('文章标题'), { target: { value: 'New Title' } })
+    fireEvent.change(
+      screen.getByPlaceholderText('用 Markdown 继续修改正文。'),
+      { target: { value: 'New body' } },
+    )
+    fireEvent.click(screen.getByRole('button', { name: '保存文章' }))
 
     await waitFor(() => {
       expect(mocks.updateArticle).toHaveBeenCalledWith('old-title', {
@@ -172,13 +184,19 @@ describe('community authoring pages', () => {
       ['/problems/12/discussions/new'],
     )
 
-    expect(screen.getByRole('heading', { name: /new discussion/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '发起讨论' })).toBeInTheDocument()
+    expect(screen.getByText('讨论工作台')).toBeInTheDocument()
+    expect(screen.getByText('标签面板')).toBeInTheDocument()
+    expect(screen.getByText('提问提示')).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText(/discussion title/i), { target: { value: 'Need help' } })
-    fireEvent.change(screen.getByLabelText(/add tag/i), { target: { value: 'dp' } })
-    fireEvent.click(screen.getByRole('button', { name: /add tag/i }))
-    fireEvent.change(screen.getByLabelText(/content editor/i), { target: { value: 'My attempt fails.' } })
-    fireEvent.click(screen.getByRole('button', { name: /post discussion/i }))
+    fireEvent.change(screen.getByLabelText('讨论标题'), { target: { value: 'Need help' } })
+    fireEvent.change(screen.getByLabelText('添加标签'), { target: { value: 'dp' } })
+    fireEvent.click(screen.getByRole('button', { name: '添加标签' }))
+    fireEvent.change(
+      screen.getByPlaceholderText('说明背景、你已经尝试过的思路，以及具体卡住的点。'),
+      { target: { value: 'My attempt fails.' } },
+    )
+    fireEvent.click(screen.getByRole('button', { name: '发布讨论' }))
 
     await waitFor(() => {
       expect(mocks.createDiscussion).toHaveBeenCalledWith({
@@ -223,11 +241,13 @@ describe('community authoring pages', () => {
 
     renderWithProviders(<DirectMessages />)
 
-    expect(await screen.findByRole('heading', { name: /direct messages/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '私信中心' })).toBeInTheDocument()
+    expect(screen.getByText('会话侧栏')).toBeInTheDocument()
+    expect(screen.getByText('消息工作区')).toBeInTheDocument()
 
-    fireEvent.click(await screen.findByRole('button', { name: /alice/i }))
-    fireEvent.change(screen.getByPlaceholderText(/write a message/i), { target: { value: 'ping' } })
-    fireEvent.click(screen.getByRole('button', { name: /send message/i }))
+    fireEvent.click(await screen.findByRole('button', { name: 'alice' }))
+    fireEvent.change(screen.getByPlaceholderText('输入消息'), { target: { value: 'ping' } })
+    fireEvent.click(screen.getByRole('button', { name: '发送消息' }))
 
     await waitFor(() => {
       expect(mocks.getMessages).toHaveBeenCalledWith('c1')

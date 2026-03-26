@@ -71,22 +71,6 @@ export function Settings() {
     },
   })
 
-  const updatePreferencesMutation = useMutation({
-    mutationFn: async (_data: typeof preferences) => ({ success: true }),
-    onSuccess: () => {
-      setMessage({ type: 'success', text: '偏好设置更新成功' })
-      setTimeout(() => setMessage(null), 3000)
-    },
-  })
-
-  const updateNotificationsMutation = useMutation({
-    mutationFn: async (_data: typeof notifications) => ({ success: true }),
-    onSuccess: () => {
-      setMessage({ type: 'success', text: '通知设置更新成功' })
-      setTimeout(() => setMessage(null), 3000)
-    },
-  })
-
   const tabs = [
     { id: 'account' as TabType, label: '账户', icon: UserRoundCog },
     { id: 'preferences' as TabType, label: '偏好', icon: Palette },
@@ -97,16 +81,16 @@ export function Settings() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Settings"
+        eyebrow="设置"
         title="设置中心"
         description="账户、偏好、通知和安全提示统一收口到一套简化设置工作区。"
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Theme" value={preferences.theme} helper="当前仅保存本地偏好" />
-        <StatCard label="Language" value={preferences.language} helper="用于界面显示语言" />
+        <StatCard label="主题" value={preferences.theme === 'light' ? '浅色' : preferences.theme === 'dark' ? '深色' : '跟随系统'} helper="当前仅保存本地偏好" />
+        <StatCard label="语言" value={preferences.language === 'zh-CN' ? '简体中文' : preferences.language} helper="用于界面显示语言" />
         <StatCard
-          label="Notifications"
+          label="通知"
           value={Object.values(notifications).filter(Boolean).length}
           helper="已开启的通知项目"
         />
@@ -254,13 +238,11 @@ export function Settings() {
                 ))}
               </div>
 
+              <p className="mt-4 text-sm text-slate-600">本地偏好立即生效；后端暂不支持偏好同步。</p>
+
               <div className="mt-6 flex justify-end">
-                <Button
-                  variant="primary"
-                  onClick={() => updatePreferencesMutation.mutate(preferences)}
-                  disabled={updatePreferencesMutation.isPending}
-                >
-                  {updatePreferencesMutation.isPending ? '保存中...' : '保存偏好'}
+                <Button variant="primary" disabled>
+                  保存偏好
                 </Button>
               </div>
             </SectionBlock>
@@ -305,13 +287,13 @@ export function Settings() {
                 ))}
               </div>
 
+              <p className="mt-4 text-sm text-slate-600">
+                通知开关仅保存在当前浏览器；后端暂不支持通知同步。
+              </p>
+
               <div className="mt-6 flex justify-end">
-                <Button
-                  variant="primary"
-                  onClick={() => updateNotificationsMutation.mutate(notifications)}
-                  disabled={updateNotificationsMutation.isPending}
-                >
-                  {updateNotificationsMutation.isPending ? '保存中...' : '保存通知设置'}
+                <Button variant="primary" disabled>
+                  保存通知设置
                 </Button>
               </div>
             </SectionBlock>

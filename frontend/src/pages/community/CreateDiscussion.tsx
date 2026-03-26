@@ -24,7 +24,7 @@ export function CreateDiscussion() {
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
-      alert('Please fill in title and content')
+      alert('请先填写讨论标题和正文')
       return
     }
 
@@ -41,7 +41,7 @@ export function CreateDiscussion() {
       navigate(`/discussions/${discussion.id}`)
     } catch (error: any) {
       console.error('Failed to create discussion:', error)
-      alert(error.response?.data?.message || 'Failed to create discussion')
+      alert(error.response?.data?.message || '发布讨论失败')
     } finally {
       setSubmitting(false)
     }
@@ -62,61 +62,61 @@ export function CreateDiscussion() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Community"
-        breadcrumb={problemId ? ['Problems', problemId, 'Discussion'] : ['Discussions', 'New']}
-        title="New Discussion"
+        eyebrow="社区"
+        breadcrumb={problemId ? ['题目', problemId, '讨论'] : ['讨论', '新建']}
+        title="发起讨论"
         description={
           problemId
-            ? '围绕当前题目发起讨论或提问。提交时仍使用原有 `problem_id` 语义，不更改请求结构。'
-            : '发起一个新的社区讨论。页面只保留标题、标签和正文三块核心输入。'
+            ? '围绕当前题目发起讨论或提问，提交时仍使用原有 `problem_id` 语义。'
+            : '发起一个新的社区讨论，页面只保留标题、标签和正文三块核心输入。'
         }
         actions={
           <Button variant="outline" onClick={() => navigate('/discussions')}>
             <ArrowLeft className="h-4 w-4" />
-            Back To Discussions
+            返回讨论列表
           </Button>
         }
       />
 
       <div className="grid gap-4 md:grid-cols-3">
         <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">Question Length</p>
+          <p className="text-sm font-medium text-slate-500">标题长度</p>
           <p className="text-2xl font-semibold text-slate-950">{title.length}</p>
           <p className="text-sm text-slate-600">建议标题先给出问题核心</p>
         </SurfaceCard>
         <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">Tags</p>
+          <p className="text-sm font-medium text-slate-500">标签数</p>
           <p className="text-2xl font-semibold text-slate-950">{tags.length}</p>
           <p className="text-sm text-slate-600">会继续按数组发给后端</p>
         </SurfaceCard>
         <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">Problem Link</p>
-          <p className="text-2xl font-semibold text-slate-950">{problemId || 'None'}</p>
+          <p className="text-sm font-medium text-slate-500">关联题目</p>
+          <p className="text-2xl font-semibold text-slate-950">{problemId || '无'}</p>
           <p className="text-sm text-slate-600">有题号时才会带上 `problem_id`</p>
         </SurfaceCard>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <SectionBlock
-          title="Discussion Workspace"
+          title="讨论工作台"
           description="让提问和展开背景都在同一工作区完成，减少额外装饰。"
         >
           <div className="space-y-5">
-            <FieldGroup label="Discussion title" description="标题越具体，后续回复质量通常越高。">
+            <FieldGroup label="讨论标题" description="标题越具体，后续回复质量通常越高。">
               <Input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="What exactly is blocked?"
+                placeholder="你具体卡在什么地方？"
                 maxLength={500}
               />
             </FieldGroup>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Discussion body</label>
+              <label className="block text-sm font-medium text-slate-700">讨论正文</label>
               <EditorWithPreview
                 value={content}
                 onChange={setContent}
-                placeholder="Describe the context, the attempt you already made, and the exact point where it breaks."
+                placeholder="说明背景、你已经尝试过的思路，以及具体卡住的点。"
               />
             </div>
           </div>
@@ -124,14 +124,14 @@ export function CreateDiscussion() {
 
         <div className="space-y-6">
           <SectionBlock
-            title="Tags"
+            title="标签面板"
             description="标签是可选的；不填时仍保持原来的 undefined 行为。"
           >
             <div className="space-y-5">
-              <FieldGroup label="Add tag" description="回车或点击按钮添加标签。">
+              <FieldGroup label="添加标签" description="回车或点击按钮添加标签。">
                 <div className="flex gap-2">
                   <Input
-                    aria-label="Add tag"
+                    aria-label="添加标签"
                     value={tagInput}
                     onChange={(event) => setTagInput(event.target.value)}
                     onKeyDown={(event) => {
@@ -140,11 +140,11 @@ export function CreateDiscussion() {
                         handleAddTag()
                       }
                     }}
-                    placeholder="dp"
+                    placeholder="动态规划"
                   />
                   <Button variant="outline" onClick={handleAddTag} className="shrink-0">
                     <Tag className="h-4 w-4" />
-                    Add Tag
+                    添加标签
                   </Button>
                 </div>
               </FieldGroup>
@@ -170,7 +170,7 @@ export function CreateDiscussion() {
           <SurfaceCard tone="muted" className="space-y-3 p-5">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-950">
               <Sparkles className="h-4 w-4 text-slate-500" />
-              Writing Prompt
+              提问提示
             </div>
             <div className="space-y-2 text-sm leading-6 text-slate-600">
               <p>交代输入、预期输出和你已经尝试过的思路。</p>
@@ -183,11 +183,11 @@ export function CreateDiscussion() {
 
       <ActionBar>
         <Button variant="ghost" onClick={() => navigate(-1)}>
-          Cancel
+          取消
         </Button>
         <Button onClick={handleSubmit} disabled={submitting || !title.trim() || !content.trim()}>
           {submitting ? <HelpCircle className="h-4 w-4 animate-pulse" /> : <Send className="h-4 w-4" />}
-          {submitting ? 'Posting...' : 'Post Discussion'}
+          {submitting ? '发布中...' : '发布讨论'}
         </Button>
       </ActionBar>
     </div>

@@ -10,6 +10,7 @@
     "lint": "eslint src/services src/components/messages src/pages/community/DirectMessages.tsx src/pages/admin/SimilarityScanConfig.tsx src/pages/admin/PlagiarismReportList.tsx src/pages/admin/PlagiarismReportDetail.tsx src/pages/admin/JudgeSettings.tsx src/pages/admin/ProblemContentConfig.tsx",
     "preview": "vite preview",
     "test": "vitest",
+    "test:contest-alignment": "vitest --run src/pages/user/__tests__/ContestList.alignment.test.tsx src/pages/user/__tests__/ContestDetail.alignment.test.tsx src/pages/user/__tests__/ContestList.test.tsx src/pages/user/__tests__/ContestDetail.test.tsx",
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",
     "test:e2e:playwright": "playwright test"

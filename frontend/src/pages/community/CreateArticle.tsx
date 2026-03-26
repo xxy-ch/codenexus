@@ -25,7 +25,7 @@ export function CreateArticle() {
 
   const handleSubmit = async (forcePublish?: boolean) => {
     if (!title.trim() || !content.trim()) {
-      alert('Please fill in title and content')
+      alert('请先填写文章标题和正文')
       return
     }
 
@@ -43,7 +43,7 @@ export function CreateArticle() {
       navigate(`/blog/${article.slug}`)
     } catch (error: any) {
       console.error('Failed to create article:', error)
-      alert(error.response?.data?.message || 'Failed to create article')
+      alert(error.response?.data?.message || '创建文章失败')
     } finally {
       setSubmitting(false)
     }
@@ -70,60 +70,57 @@ export function CreateArticle() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Community"
-        breadcrumb={['Blog', 'Authoring']}
-        title="Article Draft"
-        description="把标题、标签、分类和正文压缩在一张编辑画布里。当前仍走真实博客创建接口，不新增任何中间保存协议。"
+        eyebrow="社区"
+        breadcrumb={['博客', '撰写']}
+        title="撰写文章"
+        description="把标题、正文、分类和标签收进同一张编辑画布，保持写作流程简洁直接。"
         actions={
           <Button variant="outline" onClick={() => navigate('/blog')}>
             <ArrowLeft className="h-4 w-4" />
-            Back To Blog
+            返回博客
           </Button>
         }
       />
 
       <div className="grid gap-4 md:grid-cols-3">
         <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">Title Length</p>
+          <p className="text-sm font-medium text-slate-500">标题长度</p>
           <p className="text-2xl font-semibold text-slate-950">{title.length}</p>
           <p className="text-sm text-slate-600">上限 500 个字符</p>
         </SurfaceCard>
         <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">Tags</p>
+          <p className="text-sm font-medium text-slate-500">标签数</p>
           <p className="text-2xl font-semibold text-slate-950">{tags.length}</p>
           <p className="text-sm text-slate-600">用于归档和检索</p>
         </SurfaceCard>
         <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">Publish State</p>
-          <p className="text-2xl font-semibold text-slate-950">{isPublished ? 'Live' : 'Draft'}</p>
+          <p className="text-sm font-medium text-slate-500">发布状态</p>
+          <p className="text-2xl font-semibold text-slate-950">{isPublished ? '已发布' : '草稿'}</p>
           <p className="text-sm text-slate-600">提交时仍沿用原有发布字段</p>
         </SurfaceCard>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <SectionBlock
-          title="Writing Workspace"
-          description="保持单一写作任务流，只保留标题与正文输入，不叠加额外营销式说明。"
+          title="编辑工作台"
+          description="把标题、正文、分类和标签放在同一工作台内，减少来回切换。"
         >
           <div className="space-y-5">
-            <FieldGroup
-              label="Article title"
-              description={suggestedSlug ? `/blog/${suggestedSlug}` : 'slug 将按标题自动推导'}
-            >
+            <FieldGroup label="文章标题" description={suggestedSlug ? `/blog/${suggestedSlug}` : 'slug 将按标题自动推导'}>
               <Input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="Summarize the result or the main angle first"
+                placeholder="先写清文章的核心结论"
                 maxLength={500}
               />
             </FieldGroup>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">Article body</label>
+              <label className="block text-sm font-medium text-slate-700">文章正文</label>
               <EditorWithPreview
                 value={content}
                 onChange={setContent}
-                placeholder="Write the article in Markdown. Keep the first paragraph useful even without scrolling."
+                placeholder="用 Markdown 写正文，首段尽量先把结论说清楚。"
               />
             </div>
           </div>
@@ -131,22 +128,22 @@ export function CreateArticle() {
 
         <div className="space-y-6">
           <SectionBlock
-            title="Publishing Details"
+            title="发布信息"
             description="这些字段直接映射到现有创建文章接口，不改 payload 形状。"
           >
             <div className="space-y-5">
-              <FieldGroup label="Category" description="可留空，后端仍按原逻辑处理 undefined。">
+              <FieldGroup label="分类" description="可留空，后端仍按原逻辑处理 undefined。">
                 <Input
                   value={category}
                   onChange={(event) => setCategory(event.target.value)}
-                  placeholder="Editorial, Tutorial, News"
+                  placeholder="题解、教程、公告"
                 />
               </FieldGroup>
 
-              <FieldGroup label="Add tag" description="回车或点击按钮添加，重复标签会被忽略。">
+              <FieldGroup label="添加标签" description="回车或点击按钮添加，重复标签会被忽略。">
                 <div className="flex gap-2">
                   <Input
-                    aria-label="Add tag"
+                    aria-label="添加标签"
                     value={tagInput}
                     onChange={(event) => setTagInput(event.target.value)}
                     onKeyDown={(event) => {
@@ -155,11 +152,11 @@ export function CreateArticle() {
                         handleAddTag()
                       }
                     }}
-                    placeholder="algorithm"
+                    placeholder="网络流"
                   />
                   <Button variant="outline" onClick={handleAddTag} className="shrink-0">
                     <Tag className="h-4 w-4" />
-                    Add Tag
+                    添加标签
                   </Button>
                 </div>
               </FieldGroup>
@@ -182,7 +179,7 @@ export function CreateArticle() {
 
               <label className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                 <div>
-                  <p className="text-sm font-medium text-slate-950">Publish immediately</p>
+                  <p className="text-sm font-medium text-slate-950">立即发布</p>
                   <p className="mt-1 text-sm text-slate-600">关闭时默认作为草稿保留，仍由 `is_published` 控制。</p>
                 </div>
                 <input
@@ -198,7 +195,7 @@ export function CreateArticle() {
           <SurfaceCard tone="muted" className="space-y-3 p-5">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-950">
               <FileText className="h-4 w-4 text-slate-500" />
-              Authoring Notes
+              写作提示
             </div>
             <div className="space-y-2 text-sm leading-6 text-slate-600">
               <p>先写结论，再补推导过程或背景。</p>
@@ -211,7 +208,7 @@ export function CreateArticle() {
 
       <ActionBar>
         <Button variant="ghost" onClick={() => navigate('/blog')}>
-          Cancel
+          取消
         </Button>
         <Button
           variant="outline"
@@ -219,15 +216,15 @@ export function CreateArticle() {
           disabled={submitting || !title.trim() || !content.trim()}
         >
           <PencilLine className="h-4 w-4" />
-          {submitting ? 'Saving...' : 'Save Draft'}
+          {submitting ? '正在保存...' : '保存草稿'}
         </Button>
         <Button
           onClick={() => handleSubmit(true)}
           disabled={submitting || !title.trim() || !content.trim()}
-          aria-label="Publish article"
+          aria-label="发布文章"
         >
           {submitting ? <Upload className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          {submitting ? 'Publishing...' : 'Publish Article'}
+          {submitting ? '发布中...' : '发布文章'}
         </Button>
       </ActionBar>
     </div>

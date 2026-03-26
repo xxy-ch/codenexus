@@ -6,6 +6,7 @@ import { MainLayout } from './layouts/MainLayout'
 import { AdminLayout } from './layouts/AdminLayout'
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
+import { TeacherRoute } from './components/auth/TeacherRoute'
 import { Loading } from './components/ui/Loading'
 import { FEATURE_FLAGS } from './services/config'
 
@@ -16,9 +17,12 @@ const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
   })
 
 const LoginPage = lazyNamed(() => import('./pages/auth/LoginPage'), 'LoginPage')
+const AccountRecoveryPage = lazyNamed(() => import('./pages/auth/AccountRecoveryPage'), 'AccountRecoveryPage')
 const RegisterPage = lazyNamed(() => import('./pages/auth/RegisterPage'), 'RegisterPage')
 const UnauthorizedPage = lazyNamed(() => import('./pages/auth/UnauthorizedPage'), 'UnauthorizedPage')
 const NotFound = lazyNamed(() => import('./pages/error/NotFound'), 'NotFound')
+const TermsOfServicePage = lazyNamed(() => import('./pages/legal/TermsOfServicePage'), 'TermsOfServicePage')
+const PrivacyPolicyPage = lazyNamed(() => import('./pages/legal/PrivacyPolicyPage'), 'PrivacyPolicyPage')
 const ServerError = lazyNamed(() => import('./pages/error/ServerError'), 'ServerError')
 const DashboardEnhanced = lazyNamed(() => import('./pages/user/DashboardEnhanced'), 'DashboardEnhanced')
 const ProblemSet = lazyNamed(() => import('./pages/user/ProblemSet'), 'ProblemSet')
@@ -102,6 +106,9 @@ function App() {
               </PublicRoute>
             }
           />
+          <Route path="/account-recovery" element={renderLazy(AccountRecoveryPage)} />
+          <Route path="/terms" element={renderLazy(TermsOfServicePage)} />
+          <Route path="/privacy" element={renderLazy(PrivacyPolicyPage)} />
 
           {/* Protected Routes */}
           <Route
@@ -138,9 +145,18 @@ function App() {
             <Route path="search" element={renderLazy(SearchResults)} />
             <Route path="profile" element={renderLazy(Profile)} />
             <Route path="settings" element={renderLazy(Settings)} />
-            <Route path="teacher/classes" element={renderLazy(ClassManagement)} />
-            <Route path="teacher/assignment-report" element={renderLazy(AssignmentReport)} />
-            <Route path="teacher/contest-wizard" element={renderLazy(ContestWizard)} />
+            <Route
+              path="teacher/classes"
+              element={<TeacherRoute>{renderLazy(ClassManagement)}</TeacherRoute>}
+            />
+            <Route
+              path="teacher/assignment-report"
+              element={<TeacherRoute>{renderLazy(AssignmentReport)}</TeacherRoute>}
+            />
+            <Route
+              path="teacher/contest-wizard"
+              element={<TeacherRoute>{renderLazy(ContestWizard)}</TeacherRoute>}
+            />
             {/* Add more protected routes here */}
           </Route>
 

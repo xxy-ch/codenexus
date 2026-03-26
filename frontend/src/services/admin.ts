@@ -1,20 +1,35 @@
 import api from './api'
-import { USE_MOCK_DATA } from './config'
 import type {
   AdminStats,
   UserManagement,
   ProblemManagement,
-  SystemHealth,
-  Report,
   BatchCreateAdminUser,
 } from '@/types/admin'
 
 export const adminService = {
   async getStats(): Promise<AdminStats> {
-    if (USE_MOCK_DATA) return getMockStats()
+    const [allUsers, activeUsers, problems, submissions, contests, reports, systemStatus] = await Promise.all([
+      api.get('/users/admin?page=1&limit=1'),
+      api.get('/users/admin?status=active&page=1&limit=1'),
+      api.get('/problems?page=1&limit=1'),
+      api.get('/submissions?limit=1&offset=0'),
+      api.get('/contests?page=1&limit=1'),
+      api.get('/admin/plagiarism/reports?page=1&limit=1'),
+      api.get('/status'),
+    ])
 
-    const response = await api.get<AdminStats>('/admin/stats')
-    return response.data
+    const health = String(systemStatus.data?.status ?? '').toLowerCase()
+
+    return {
+      total_users: Number(allUsers.data?.total ?? 0),
+      total_problems: Number(problems.data?.total ?? 0),
+      total_submissions: Number(submissions.data?.total ?? 0),
+      total_contests: Number(contests.data?.total ?? 0),
+      active_users_today: Number(activeUsers.data?.total ?? 0),
+      submissions_today: Number(submissions.data?.total ?? 0),
+      pending_reports: Number(reports.data?.total ?? 0),
+      system_health: health === 'healthy' ? 'healthy' : health === 'warning' ? 'warning' : 'error',
+    }
   },
 
   async getUsers(params?: {
@@ -25,8 +40,6 @@ export const adminService = {
     page?: number
     limit?: number
   }) {
-    if (USE_MOCK_DATA) return getMockUsers(params?.page, params?.limit, params?.role, params?.search)
-
     const queryParams = new URLSearchParams()
     if (params?.search) queryParams.append('search', params.search)
     if (params?.role) queryParams.append('role', params.role)
@@ -40,15 +53,11 @@ export const adminService = {
   },
 
   async updateUserRole(userId: string, role: string) {
-    if (USE_MOCK_DATA) return { success: true }
-
     const response = await api.patch(`/users/admin/${userId}/role`, { role })
     return response.data
   },
 
   async toggleUserStatus(userId: string) {
-    if (USE_MOCK_DATA) return { success: true }
-
     const response = await api.patch(`/users/admin/${userId}/status`)
     return response.data
   },
@@ -59,25 +68,6 @@ export const adminService = {
     organization_id: number
     campus_id?: number | null
   }) {
-    if (USE_MOCK_DATA) {
-      return {
-        created: payload.users.map((user, index) => ({
-          id: `mock-${index}`,
-          user_code: user.user_code,
-          username: user.user_code,
-          email: user.email ?? null,
-          display_name: user.display_name ?? user.user_code,
-          organization_id: payload.organization_id,
-          campus_id: user.campus_id ?? payload.campus_id ?? null,
-          role: user.role ?? 'user',
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })),
-        skipped: [],
-      }
-    }
-
     const response = await api.post('/users/admin/batch-create', payload)
     return response.data
   },
@@ -90,8 +80,6 @@ export const adminService = {
     page?: number
     limit?: number
   }) {
-    if (USE_MOCK_DATA) return getMockProblems(params?.page, params?.limit, params?.status)
-
     const queryParams = new URLSearchParams()
     if (params?.search) queryParams.append('search', params.search)
     if (params?.difficulty) queryParams.append('difficulty', params.difficulty)
@@ -135,13 +123,6 @@ export const adminService = {
     visibility: 'public' | 'campus' | 'class' | 'private'
     organization_id: number
   }) {
-    if (USE_MOCK_DATA) {
-      return {
-        id: `mock-${Date.now()}`,
-        ...payload,
-      }
-    }
-
     const response = await api.post('/problems', {
       ...payload,
       is_public: payload.visibility === 'public',
@@ -158,8 +139,6 @@ export const adminService = {
     memory_limit?: number
     visibility?: 'public' | 'campus' | 'class' | 'private'
   }) {
-    if (USE_MOCK_DATA) return { success: true }
-
     const response = await api.put(`/problems/${problemId}`, {
       ...payload,
       is_public: payload.visibility ? payload.visibility === 'public' : undefined,
@@ -168,49 +147,8 @@ export const adminService = {
   },
 
   async deleteProblem(problemId: string) {
-    if (USE_MOCK_DATA) return { success: true }
-
     await api.delete(`/problems/${problemId}`)
     return { success: true }
-  },
-
-  async getSystemHealth(): Promise<SystemHealth> {
-    if (USE_MOCK_DATA) return getMockSystemHealth()
-
-    const response = await api.get<SystemHealth>('/admin/system/health')
-    return response.data
-  },
-
-  async getReports(params?: {
-    type?: string
-    status?: string
-    page?: number
-    limit?: number
-  }) {
-    if (USE_MOCK_DATA) return getMockReports(params)
-
-    const queryParams = new URLSearchParams()
-    if (params?.type) queryParams.append('type', params.type)
-    if (params?.status) queryParams.append('status', params.status)
-    if (params?.page) queryParams.append('page', String(params.page))
-    if (params?.limit) queryParams.append('limit', String(params.limit))
-
-    const response = await api.get(`/admin/reports?${queryParams}`)
-    return response.data
-  },
-
-  async updateReportStatus(
-    reportId: string,
-    status: 'reviewing' | 'resolved' | 'dismissed',
-    resolutionNotes?: string
-  ) {
-    if (USE_MOCK_DATA) return { success: true }
-
-    const response = await api.patch(`/admin/reports/${reportId}`, {
-      status,
-      resolution_notes: resolutionNotes,
-    })
-    return response.data
   },
 }
 

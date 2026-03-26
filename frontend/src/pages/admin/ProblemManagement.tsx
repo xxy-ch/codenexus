@@ -10,6 +10,7 @@ import { StatCard } from '@/components/page/StatCard'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { adminService } from '@/services/admin'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 
@@ -150,8 +151,8 @@ export function ProblemManagement() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin"
-        breadcrumb={['Problems']}
+        eyebrow="管理台"
+        breadcrumb={['题库管理']}
         title="题目管理"
         description="题库后台切到统一的管理模式。创建、编辑、删除、筛选和可见性维护继续使用当前 `/problems` 读写链路，不改接口行为。"
         actions={
@@ -160,28 +161,28 @@ export function ProblemManagement() {
               <RotateCcw className="h-4 w-4" />
               刷新
             </Button>
-            <div className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">CRUD Live</div>
+            <div className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">增删改查在线</div>
           </>
         }
       />
 
-      <SurfaceCard tone="muted" className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <SurfaceCard tone="muted" className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-1">
           <h2 className="text-base font-semibold text-slate-950">最小可交付题目后台</h2>
           <p className="max-w-3xl text-sm leading-6 text-slate-600">
-            本页负责题目创建、基础编辑、删除和列表筛选。更细粒度题面与测试点仍分别在 `Problem Content` 和 `Judge Settings` 页面维护。
+            本页负责题目创建、基础编辑、删除和列表筛选。更细粒度题面与判题数据仍分别在“题面配置”和“判题设置”页面维护。
           </p>
         </div>
         <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-          create / edit / delete enabled
+          创建 / 编辑 / 删除已启用
         </div>
       </SurfaceCard>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Problems" value={total} helper="当前分页条件下的总题目量。" />
-        <StatCard label="Published" value={<span className="text-emerald-600">{stats.publishedCount}</span>} helper="当前列表中的公开题目数量。" />
-        <StatCard label="Draft / Hidden" value={<span className="text-amber-600">{stats.draftCount}</span>} helper="按真实可见性映射出的非公开条目。" />
-        <StatCard label="Low Acceptance" value={<span className="text-rose-600">{stats.lowCoverageCount}</span>} helper="通过率低于 30% 或暂无提交的题目。" />
+        <StatCard label="题目总数" value={total} helper="当前分页条件下的总题目量。" />
+        <StatCard label="已发布" value={<span className="text-emerald-600">{stats.publishedCount}</span>} helper="当前列表中的公开题目数量。" />
+        <StatCard label="草稿 / 隐藏" value={<span className="text-amber-600">{stats.draftCount}</span>} helper="按真实可见性映射出的非公开条目。" />
+        <StatCard label="低通过率" value={<span className="text-rose-600">{stats.lowCoverageCount}</span>} helper="通过率低于 30% 或暂无提交的题目。" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
@@ -196,11 +197,11 @@ export function ProblemManagement() {
             ) : null}
 
             <FieldGroup label="题目标题">
-              <input
+              <Input
                 value={form.title}
                 onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                 placeholder="题目标题"
-                className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="h-11"
               />
             </FieldGroup>
 
@@ -209,7 +210,7 @@ export function ProblemManagement() {
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="题目描述"
-                className="min-h-[180px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="min-h-[180px] w-full rounded-[20px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 py-3 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
               />
             </FieldGroup>
 
@@ -218,7 +219,7 @@ export function ProblemManagement() {
                 <select
                   value={form.difficulty}
                   onChange={(e) => setForm((prev) => ({ ...prev, difficulty: e.target.value as DifficultyType }))}
-                  className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
                 >
                   <option value="easy">简单</option>
                   <option value="medium">中等</option>
@@ -229,31 +230,31 @@ export function ProblemManagement() {
                 <select
                   value={form.visibility}
                   onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value as typeof form.visibility }))}
-                  className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
                 >
-                  <option value="private">private</option>
-                  <option value="public">public</option>
-                  <option value="campus">campus</option>
-                  <option value="class">class</option>
+                  <option value="private">仅自己可见</option>
+                  <option value="public">公开</option>
+                  <option value="campus">校区可见</option>
+                  <option value="class">班级可见</option>
                 </select>
               </FieldGroup>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <FieldGroup label="Time Limit">
-                <input
+              <FieldGroup label="时间限制">
+                <Input
                   type="number"
                   value={form.time_limit}
                   onChange={(e) => setForm((prev) => ({ ...prev, time_limit: Number(e.target.value) }))}
-                  className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="h-11"
                 />
               </FieldGroup>
-              <FieldGroup label="Memory Limit">
-                <input
+              <FieldGroup label="内存限制">
+                <Input
                   type="number"
                   value={form.memory_limit}
                   onChange={(e) => setForm((prev) => ({ ...prev, memory_limit: Number(e.target.value) }))}
-                  className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="h-11"
                 />
               </FieldGroup>
             </div>
@@ -273,7 +274,7 @@ export function ProblemManagement() {
           <div className="space-y-5">
             <FilterBar>
               <div className="min-w-[260px] flex-1">
-                <input
+                <Input
                   aria-label="搜索题目"
                   type="search"
                   placeholder="搜索题目标题、ID 或标签..."
@@ -282,7 +283,7 @@ export function ProblemManagement() {
                     setSearch(e.target.value)
                     setPage(1)
                   }}
-                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="h-11"
                 />
               </div>
               <select
@@ -292,7 +293,7 @@ export function ProblemManagement() {
                   setDifficulty(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="h-11 min-w-[140px] appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
               >
                 <option value="all">所有难度</option>
                 <option value="easy">简单</option>
@@ -306,18 +307,18 @@ export function ProblemManagement() {
                   setStatus(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="h-11 min-w-[140px] appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
               >
                 <option value="all">所有状态</option>
                 <option value="published">已发布</option>
                 <option value="draft">草稿</option>
                 <option value="archived">已归档</option>
               </select>
-              <div className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                <SlidersHorizontal className="h-4 w-4" />
-                Avg {stats.averageAcceptance}%
-              </div>
-            </FilterBar>
+                <div className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  平均 {stats.averageAcceptance}%
+                </div>
+              </FilterBar>
 
             <div className="flex flex-wrap items-center gap-2">
               {[
@@ -326,17 +327,16 @@ export function ProblemManagement() {
                 { value: 'submissions', label: '提交数' },
                 { value: 'acceptance', label: '通过率' },
               ].map((option) => (
-                <button
+                <Button
                   key={option.value}
                   type="button"
+                  size="sm"
+                  variant={sortBy === option.value ? 'primary' : 'secondary'}
                   onClick={() => setSortBy(option.value as SortType)}
-                  className={cn(
-                    'rounded-full px-4 py-2 text-sm font-medium transition',
-                    sortBy === option.value ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200',
-                  )}
+                  className={cn(sortBy === option.value ? 'shadow-[0_10px_20px_rgba(15,23,42,0.12)]' : '')}
                 >
                   {option.label}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -344,12 +344,12 @@ export function ProblemManagement() {
               <table className="min-w-full divide-y divide-slate-200 bg-white">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">ID / Title</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Difficulty</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Status</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tags</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Stats</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Actions</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">编号 / 标题</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">难度</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">状态</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">标签</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">统计</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">操作</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -363,7 +363,7 @@ export function ProblemManagement() {
                           <div className="font-medium text-slate-950">
                             #{problem.id} {problem.title}
                           </div>
-                          <div className="mt-1 text-xs text-slate-500">Author: {problem.author_username || 'system'}</div>
+                          <div className="mt-1 text-xs text-slate-500">作者：{problem.author_username || '系统'}</div>
                         </td>
                         <td className="px-5 py-4">
                           <span className={cn('rounded-full px-3 py-1 text-xs font-medium', DIFFICULTY_CONFIG[problem.difficulty as DifficultyType]?.color)}>
@@ -391,14 +391,14 @@ export function ProblemManagement() {
                                 </span>
                               ))
                             ) : (
-                              <span className="text-sm text-slate-400">No tags</span>
+                              <span className="text-sm text-slate-400">暂无标签</span>
                             )}
                           </div>
                         </td>
                         <td className="px-5 py-4 text-sm text-slate-700">
-                          <div>{problem.submissions_count} submissions</div>
+                          <div>{problem.submissions_count} 次提交</div>
                           <div className="mt-1 text-slate-500">
-                            {problem.accepted_count} accepted · {acceptanceRate}%
+                            {problem.accepted_count} 次通过 · {acceptanceRate}%
                           </div>
                         </td>
                         <td className="px-5 py-4">
@@ -430,7 +430,7 @@ export function ProblemManagement() {
             </div>
 
             {problems.length === 0 ? (
-              <EmptyState title="未找到题目" description="尝试调整筛选条件，或者确认当前环境是否已导入演示题目。" className="shadow-none" />
+              <EmptyState title="未找到题目" description="尝试调整筛选条件，或者确认当前环境是否已导入基础题库数据。" className="shadow-none" />
             ) : null}
 
             <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 md:flex-row md:items-center md:justify-between">

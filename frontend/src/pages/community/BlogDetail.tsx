@@ -193,7 +193,7 @@ export function BlogDetail() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loading message="Loading article..." />
+        <Loading message="正在加载文章..." />
       </div>
     )
   }
@@ -201,11 +201,11 @@ export function BlogDetail() {
   if (!article) {
     return (
       <EmptyState
-        title="Article not found"
-        description="当前文章无法读取。"
+        title="文章未找到"
+        description="当前文章无法读取，请返回博客列表后重试。"
         action={
           <Button variant="primary" onClick={() => navigate('/blog')}>
-            Back to Blog
+            返回博客
           </Button>
         }
       />
@@ -215,8 +215,8 @@ export function BlogDetail() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Blog"
-        breadcrumb={['Blog', article.article.title]}
+        eyebrow="社区"
+        breadcrumb={['博客', article.article.title]}
         title={article.article.title}
         description={article.article.excerpt || '文章详情页'}
         actions={
@@ -229,7 +229,7 @@ export function BlogDetail() {
       <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {article.article.is_featured ? (
           <span className="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
-            Featured
+            精选文章
           </span>
         ) : null}
         {article.article.category ? (
@@ -249,7 +249,7 @@ export function BlogDetail() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
-          <SectionBlock title="正文" description="正文和评论分离，阅读优先。">
+          <SectionBlock title="文章正文" description="正文和评论分开呈现，阅读优先。">
             <div className="whitespace-pre-wrap text-sm leading-8 text-slate-700">{article.article.content}</div>
           </SectionBlock>
 
@@ -261,7 +261,7 @@ export function BlogDetail() {
               <textarea
                 value={commentContent}
                 onChange={(e) => setCommentContent(e.target.value)}
-                placeholder="Share your thoughts..."
+                placeholder="写下你对这篇文章的补充、修正或追问。"
                 rows={4}
                 className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
               />
@@ -280,19 +280,19 @@ export function BlogDetail() {
                   onClick={handleSubmitComment}
                   disabled={!commentContent.trim() || submitting}
                 >
-                  {submitting ? 'Posting...' : 'Post Comment'}
+                  {submitting ? '发布中...' : '发布评论'}
                 </Button>
               </div>
             </SectionBlock>
           ) : null}
 
-          <SectionBlock title={`Comments (${article.comments.length})`} description="支持嵌套回复。">
+          <SectionBlock title={`评论池（${article.comments.length}）`} description="支持嵌套回复和逐条追问。">
             {article.comments.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-sm text-slate-500">No comments yet. Be the first to comment!</p>
+                <p className="text-sm text-slate-500">暂时还没有评论，先写下第一条观点吧。</p>
                 <div className="mt-4">
                   <Button variant="primary" onClick={() => setParentCommentId('root')}>
-                    Write a Comment
+                    写评论
                   </Button>
                 </div>
               </div>
@@ -309,7 +309,8 @@ export function BlogDetail() {
                 {article.author.username.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="font-semibold text-slate-950">{article.author.username}</p>
+                <p className="font-semibold text-slate-950">文章侧栏</p>
+                <p className="text-sm text-slate-500">{article.author.username}</p>
                 <p className="text-sm text-slate-500">
                   {article.article.published_at
                     ? formatDate(article.article.published_at)
@@ -319,11 +320,11 @@ export function BlogDetail() {
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Views</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">浏览量</p>
                 <p className="mt-2 text-lg font-semibold text-slate-950">{article.article.view_count}</p>
               </div>
               <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Comments</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">评论数</p>
                 <p className="mt-2 text-lg font-semibold text-slate-950">{article.article.comment_count}</p>
               </div>
             </div>
@@ -334,7 +335,7 @@ export function BlogDetail() {
                   variant="outline"
                   onClick={() => navigate(`/blog/${article.article.slug}/edit`)}
                 >
-                  Edit
+                  编辑文章
                 </Button>
               ) : null}
               <Button
@@ -342,10 +343,10 @@ export function BlogDetail() {
                 variant={liked ? 'primary' : 'outline'}
                 onClick={handleLike}
               >
-                {article.article.like_count} Likes
+                赞同 {article.article.like_count}
               </Button>
               <Button fullWidth variant="primary" onClick={() => setParentCommentId('root')}>
-                Comment
+                写评论
               </Button>
             </div>
           </SurfaceCard>

@@ -229,8 +229,8 @@ export function ContestDetail() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Contest Detail"
-        breadcrumb={['Contests', contest.name]}
+        eyebrow="竞赛主控台"
+        breadcrumb={['竞赛中心', contest.name]}
         title={contest.name}
         description={contest.description}
         actions={
@@ -266,32 +266,89 @@ export function ContestDetail() {
 
       <MetaStrip
         items={[
-          { label: 'Start Time', value: formatDateTime(contest.start_time) },
-          { label: 'Duration', value: formatDuration(contest.duration_minutes) },
-          { label: 'Problems', value: `${contest.problems_count} 题` },
+          { label: '开始时间', value: formatDateTime(contest.start_time) },
+          { label: '赛程时长', value: formatDuration(contest.duration_minutes) },
+          { label: '题目数量', value: `${contest.problems_count} 题` },
           {
-            label: 'Participants',
+            label: '参赛人数',
             value: `${contest.participants_count} 人`,
             helper: statusConfig.summary,
           },
         ]}
       />
 
-      {countdown && contest.status !== 'completed' ? (
-        <SurfaceCard
-          className={cn(
-            'p-5',
-            contest.status === 'upcoming'
-              ? 'border-blue-200 bg-blue-50'
-              : 'border-emerald-200 bg-emerald-50',
-          )}
-        >
-          <p className="text-sm font-medium text-slate-600">
-            {contest.status === 'upcoming' ? '距离竞赛开始还有' : '竞赛剩余时间'}
-          </p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">{countdown}</p>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_320px]">
+        <SurfaceCard className="overflow-hidden border-0 bg-[linear-gradient(135deg,#1e40af_0%,#2563eb_58%,#60a5fa_100%)] p-0 text-white shadow-[0_26px_54px_rgba(30,64,175,0.26)]">
+          <div className="flex h-full flex-col justify-between gap-6 px-6 py-6 md:px-8">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-white/16 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-50">
+                  赛程快照
+                </span>
+                <span
+                  className={cn(
+                    'rounded-full border px-3 py-1 text-sm font-semibold',
+                    contest.status === 'completed'
+                      ? 'border-white/18 bg-white/12 text-white'
+                      : contest.status === 'ongoing'
+                        ? 'border-emerald-200/40 bg-emerald-400/18 text-emerald-50'
+                        : 'border-blue-100/35 bg-white/12 text-blue-50',
+                  )}
+                >
+                  {statusConfig.label}
+                </span>
+              </div>
+              <h2 className="mt-4 font-['Manrope'] text-[1.85rem] font-extrabold tracking-[-0.04em] text-white">竞赛主控台</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-blue-50/86">
+                当前页按主控台视角组织信息，优先展示赛程状态、时间与可执行动作，再向下钻取到题目、规则与参赛说明。
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-6 border-t border-white/12 pt-5">
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-100/72">开始时间</div>
+                <div className="mt-1 text-lg font-semibold">{formatDateTime(contest.start_time)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-100/72">赛程时长</div>
+                <div className="mt-1 text-lg font-semibold">{formatDuration(contest.duration_minutes)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-100/72">参赛人数</div>
+                <div className="mt-1 text-lg font-semibold">{contest.participants_count} 人</div>
+              </div>
+            </div>
+          </div>
         </SurfaceCard>
-      ) : null}
+
+        <div className="space-y-4">
+          {countdown && contest.status !== 'completed' ? (
+            <SurfaceCard
+              className={cn(
+                'p-5',
+                contest.status === 'upcoming'
+                  ? 'border-blue-200 bg-blue-50'
+                  : 'border-emerald-200 bg-emerald-50',
+              )}
+            >
+              <p className="text-sm font-medium text-slate-600">倒计时提示</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{countdown}</p>
+              <p className="mt-2 text-sm text-slate-600">
+                {contest.status === 'upcoming' ? '距离竞赛开始还有' : '竞赛剩余时间'}
+              </p>
+            </SurfaceCard>
+          ) : null}
+
+          <SurfaceCard className="space-y-3">
+            <p className="text-sm font-semibold text-slate-950">参赛指引</p>
+            <div className="space-y-3 text-sm text-slate-600">
+              <p>赛程状态：{statusConfig.summary}</p>
+              <p>题目数量：{contest.problems_count} 题</p>
+              <p>难度层级：{difficultyConfig.label}</p>
+              <p>可进入榜单：{scoreboardLabel}</p>
+            </div>
+          </SurfaceCard>
+        </div>
+      </div>
 
       <ActionBar className="justify-start">
         {contest.status === 'upcoming' && !contest.is_registered ? (
@@ -323,7 +380,7 @@ export function ContestDetail() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_360px]">
         <div className="space-y-6">
-          <SectionBlock title="竞赛概览" description="介绍、规则和奖励统一收纳在同一阅读区域。">
+          <SectionBlock title="赛程说明" description="介绍、规则和奖励统一收纳在同一阅读区域。">
             <div className="space-y-5">
               <div>
                 <h3 className="text-sm font-semibold text-slate-950">竞赛介绍</h3>
@@ -350,7 +407,7 @@ export function ContestDetail() {
             </div>
           </SectionBlock>
 
-          <SectionBlock title="竞赛题目" description="题目卡片直接链接到对应题面。">
+          <SectionBlock title="题目编排" description="题目卡片直接链接到对应题面。">
             <div className="space-y-3">
               {contest.problems.map((problem, index) => {
                 const problemDifficultyConfig = DIFFICULTY_CONFIG[problem.difficulty]
@@ -398,16 +455,14 @@ export function ContestDetail() {
         </div>
 
         <div className="space-y-6">
-          <SectionBlock title="竞赛统计" description="维持真实接口可提供的统计维度。">
+          <SectionBlock title="参赛指引" description="维持真实接口可提供的统计维度。">
             <p className="text-sm leading-6 text-slate-600">
               关键统计已经收到顶部横向信息带，右栏保留给比赛时间、状态和后续操作，避免重复的大号统计卡把页面拉长。
             </p>
           </SectionBlock>
 
           <SurfaceCard tone="muted" className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Contest Timing
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">赛程时间轴</p>
             <div className="text-sm text-slate-600">
               <p>开始时间 {formatDateTime(contest.start_time)}</p>
               <p className="mt-2">结束时间 {formatDateTime(contest.end_time)}</p>

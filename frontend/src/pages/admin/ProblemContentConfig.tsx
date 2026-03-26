@@ -9,6 +9,52 @@ import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
+import { cn } from '@/lib/utils'
+
+const textAreaClassName =
+  'min-h-[360px] w-full rounded-[18px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-[18px] py-4 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 placeholder:text-[#93a0bb] focus-visible:border-[rgba(12,86,208,0.28)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.09)]'
+
+const selectClassName =
+  'h-[52px] w-full appearance-none rounded-[18px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-[18px] pr-12 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus-visible:border-[rgba(12,86,208,0.28)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.09)]'
+
+function ToggleButton({
+  checked,
+  label,
+  onToggle,
+}: {
+  checked: boolean
+  label: string
+  onToggle: () => void
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onToggle}
+      className={cn(
+        'flex items-center justify-between gap-3 rounded-[18px] border px-4 py-3 text-left text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.12)]',
+        checked
+          ? 'border-[#b2c5ff] bg-white text-[#17305e] shadow-[0_12px_24px_rgba(0,61,155,0.08)]'
+          : 'border-slate-200 bg-slate-50 text-slate-700'
+      )}
+    >
+      <div>
+        <div className="font-semibold text-slate-950">{label}</div>
+        <div className="text-xs text-slate-500">{checked ? '已公开' : '仅自己可见'}</div>
+      </div>
+      <span
+        className={cn(
+          'rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em]',
+          checked ? 'bg-[#dae2ff] text-[#003d9b]' : 'bg-slate-100 text-slate-500'
+        )}
+      >
+        {checked ? '已开启' : '已关闭'}
+      </span>
+    </button>
+  )
+}
 
 export function ProblemContentConfig() {
   const [problemId, setProblemId] = useState('')
@@ -81,8 +127,8 @@ export function ProblemContentConfig() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Admin Workspace"
-        breadcrumb={['Problems', 'Problem Content']}
+        eyebrow="管理台"
+        breadcrumb={['题库管理', '题面配置']}
         title="题面配置"
         description="维护真实后端支持的题面字段：标题、描述、难度、时空限制、标签与可见性。"
         actions={
@@ -142,7 +188,7 @@ export function ProblemContentConfig() {
                 <textarea
                   value={form.description || ''}
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className="min-h-[360px] w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                  className={textAreaClassName}
                   placeholder="输入 Markdown 题面内容"
                 />
               </FieldGroup>
@@ -153,25 +199,25 @@ export function ProblemContentConfig() {
             <SurfaceCard>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
                 <Waypoints className="h-4 w-4 text-emerald-700" />
-                Metadata
+                元数据
               </div>
               <div className="mt-4 space-y-4">
-                <FieldGroup label="Difficulty">
+                <FieldGroup label="难度">
                   <select
                     value={form.difficulty || 'easy'}
                     onChange={(e) => setForm((prev) => ({ ...prev, difficulty: e.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    className={selectClassName}
                   >
-                    <option value="easy">easy</option>
-                    <option value="medium">medium</option>
-                    <option value="hard">hard</option>
+                    <option value="easy">简单</option>
+                    <option value="medium">中等</option>
+                    <option value="hard">困难</option>
                   </select>
                 </FieldGroup>
-                <FieldGroup label="Tags">
+                <FieldGroup label="标签">
                   <Input
                     value={tagsText}
                     onChange={(e) => setTagsText(e.target.value)}
-                    placeholder="graph, shortest-path"
+                    placeholder="图论, 最短路"
                   />
                 </FieldGroup>
               </div>
@@ -180,17 +226,17 @@ export function ProblemContentConfig() {
             <SurfaceCard>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
                 <Timer className="h-4 w-4 text-amber-700" />
-                Resource Limits
+                资源限制
               </div>
               <div className="mt-4 grid gap-4">
-                <FieldGroup label="Time Limit (ms)">
+                <FieldGroup label="时间限制（ms）">
                   <Input
                     type="number"
                     value={form.time_limit || 1000}
                     onChange={(e) => setForm((prev) => ({ ...prev, time_limit: Number(e.target.value) }))}
                   />
                 </FieldGroup>
-                <FieldGroup label="Memory Limit (MB)">
+                <FieldGroup label="内存限制（MB）">
                   <Input
                     type="number"
                     value={form.memory_limit || 256}
@@ -203,27 +249,36 @@ export function ProblemContentConfig() {
             <SurfaceCard>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
                 <Eye className="h-4 w-4 text-violet-700" />
-                Visibility
+                可见性
               </div>
               <div className="mt-4 space-y-4">
-                <FieldGroup label="Visibility">
+                <FieldGroup label="可见性">
                   <select
                     value={form.visibility || 'private'}
-                    onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value }))}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        visibility: e.target.value,
+                        is_public: e.target.value === 'public',
+                      }))
+                    }
+                    className={selectClassName}
                   >
-                    <option value="private">private</option>
-                    <option value="public">public</option>
+                    <option value="private">仅自己可见</option>
+                    <option value="public">公开</option>
                   </select>
                 </FieldGroup>
-                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={!!form.is_public}
-                    onChange={(e) => setForm((prev) => ({ ...prev, is_public: e.target.checked }))}
-                  />
-                  公开题目
-                </label>
+                <ToggleButton
+                  checked={!!form.is_public}
+                  label="公开题目"
+                  onToggle={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      is_public: !prev.is_public,
+                      visibility: !prev.is_public ? 'public' : 'private',
+                    }))
+                  }
+                />
               </div>
             </SurfaceCard>
           </div>

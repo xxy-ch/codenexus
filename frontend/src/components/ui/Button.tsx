@@ -14,12 +14,12 @@ interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'cla
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'h-9 px-3.5 text-sm',
-  small: 'h-9 px-3.5 text-sm',
-  md: 'h-11 px-4.5 text-sm',
-  medium: 'h-11 px-4.5 text-sm',
-  lg: 'h-12 px-5.5 text-base',
-  large: 'h-12 px-5.5 text-base',
+  sm: 'h-10 px-4 text-sm',
+  small: 'h-10 px-4 text-sm',
+  md: 'h-12 px-5 text-sm',
+  medium: 'h-12 px-5 text-sm',
+  lg: 'h-13 px-6 text-base',
+  large: 'h-13 px-6 text-base',
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
@@ -47,7 +47,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const classes = cn(
-    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-[8px] font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--page-bg-rgb))] disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-[16px] font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--page-bg-rgb))] disabled:cursor-not-allowed disabled:opacity-50',
     sizeStyles[size],
     variantStyles[variant],
     fullWidth && 'w-full',

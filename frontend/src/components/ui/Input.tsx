@@ -12,8 +12,8 @@ export function Input({ className, error, fullWidth = true, disabled, ...props }
     <div className={cn(fullWidth ? 'w-full' : 'w-fit')}>
       <input
         className={cn(
-          'w-full rounded-[8px] bg-[rgba(242,243,255,0.88)] px-4 py-3 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 placeholder:text-[#93a0bb] focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)] disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500',
-          error ? 'bg-[#ffdad6] text-[#93000a] focus-visible:ring-[rgba(186,26,26,0.16)]' : '',
+          'h-[52px] w-full rounded-[18px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-[18px] text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 placeholder:text-[#93a0bb] focus-visible:border-[rgba(12,86,208,0.28)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.09)] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-500',
+          error ? 'border-[rgba(186,26,26,0.22)] bg-[linear-gradient(180deg,rgba(255,244,243,0.98)_0%,rgba(255,234,232,0.96)_100%)] text-[#93000a] focus-visible:ring-[rgba(186,26,26,0.12)]' : '',
           className
         )}
         disabled={disabled}

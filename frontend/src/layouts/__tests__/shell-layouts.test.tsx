@@ -23,7 +23,9 @@ vi.mock('@/components/layout/Header', () => ({
 }))
 
 vi.mock('@/components/layout/MobileNav', () => ({
-  MobileNav: () => <nav aria-label="Mobile navigation">Mobile nav</nav>,
+  MobileNav: ({ mode }: { mode?: 'workspace' | 'admin' }) => (
+    <nav aria-label="Mobile navigation">Mobile nav {mode ?? 'workspace'}</nav>
+  ),
 }))
 
 function renderMainLayout() {
@@ -61,14 +63,31 @@ describe('application shells', () => {
     expect(screen.getByText(/dashboard page/i)).toBeInTheDocument()
   })
 
+  it('uses the shared sidebar width variable for workspace content offset', () => {
+    renderMainLayout()
+
+    expect(screen.getByRole('main')).toHaveStyle({
+      paddingLeft: 'var(--sidebar-shell-width, 96px)',
+    })
+  })
+
   it('renders the admin shell inside the same shell family with grouped navigation links', () => {
     renderAdminLayout()
 
     expect(screen.getByText(/sidebar admin/i)).toBeInTheDocument()
-    expect(screen.getByText(/admin workspace/i)).toBeInTheDocument()
+    expect(screen.getByText(/管理台/i)).toBeInTheDocument()
+    expect(screen.getByText(/mobile nav admin/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /users/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /problem management/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /return to user workspace/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /返回用户工作台/i })).toBeInTheDocument()
     expect(screen.getByText(/users page/i)).toBeInTheDocument()
+  })
+
+  it('uses the same shared sidebar width variable for admin content offset', () => {
+    renderAdminLayout()
+
+    expect(screen.getByRole('main')).toHaveStyle({
+      paddingLeft: 'var(--sidebar-shell-width, 96px)',
+    })
   })
 })
