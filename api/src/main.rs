@@ -20,6 +20,7 @@ mod plagiarism;
 use axum::{
     routing::{get, post},
     Router,
+    Extension,
     extract::State,
     response::Json,
     http::{header, Method, StatusCode},
@@ -137,7 +138,8 @@ fn create_router(state: AppState) -> Router {
         .nest("/admin/plagiarism", plagiarism::plagiarism_router())
         // Apply auth/tenant middleware only to protected routes
         .route_layer(axum::middleware::from_fn(middleware::tenant::tenant_middleware))
-        .route_layer(axum::middleware::from_fn(middleware::auth::auth_middleware));
+        .route_layer(axum::middleware::from_fn(middleware::auth::auth_middleware))
+        .layer(Extension(state.jwt_service.clone()));
 
     public_router
         .merge(protected_router)

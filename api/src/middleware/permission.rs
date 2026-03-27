@@ -16,13 +16,15 @@ use std::str::FromStr;
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```rust,no_run
+/// use api::middleware::permission::require_permission;
 /// use axum::{routing::get, Router};
-/// use crate::middleware::permission::require_permission;
 /// use shared::models::permission::Permission;
 ///
-/// let app = Router::new()
-///     .route("/admin", get(handler)
+/// async fn handler() {}
+///
+/// let _app: Router<()> = Router::new()
+///     .route("/admin", get(handler))
 ///     .route_layer(axum::middleware::from_fn(
 ///         require_permission(Permission::ManageUsers)
 ///     ));
@@ -62,12 +64,14 @@ pub fn require_permission(
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```rust,no_run
+/// use api::middleware::permission::require_any_permission;
 /// use axum::{routing::get, Router};
-/// use crate::middleware::permission::require_any_permission;
 /// use shared::models::permission::Permission;
 ///
-/// let app = Router::new()
+/// async fn handler() {}
+///
+/// let _app: Router<()> = Router::new()
 ///     .route("/manage", get(handler))
 ///     .route_layer(axum::middleware::from_fn(
 ///         require_any_permission(&[
@@ -108,12 +112,14 @@ pub fn require_any_permission(
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```rust,no_run
+/// use api::middleware::permission::require_all_permissions;
 /// use axum::{routing::get, Router};
-/// use crate::middleware::permission::require_all_permissions;
 /// use shared::models::permission::Permission;
 ///
-/// let app = Router::new()
+/// async fn handler() {}
+///
+/// let _app: Router<()> = Router::new()
 ///     .route("/admin", get(handler))
 ///     .route_layer(axum::middleware::from_fn(
 ///         require_all_permissions(&[
@@ -155,12 +161,14 @@ pub fn require_all_permissions(
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```rust,no_run
+/// use api::middleware::permission::require_min_role;
 /// use axum::{routing::get, Router};
-/// use crate::middleware::permission::require_min_role;
 /// use shared::models::role::Role;
 ///
-/// let app = Router::new()
+/// async fn handler() {}
+///
+/// let _app: Router<()> = Router::new()
 ///     .route("/admin", get(handler))
 ///     .route_layer(axum::middleware::from_fn(
 ///         require_min_role(Role::Teacher)

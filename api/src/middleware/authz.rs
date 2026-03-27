@@ -12,16 +12,18 @@ use shared::models::{permission::Permission, Claims};
 /// as it relies on `Claims` being available in request extensions.
 ///
 /// # Example
-/// ```ignore
-/// use crate::middleware::authz::require_permission;
+/// ```rust,no_run
+/// use api::middleware::authz::require_permission;
+/// use axum::{routing::get, Router};
 /// use shared::models::permission::Permission;
 ///
-/// let app = Router::new()
+/// async fn handler() {}
+///
+/// let _app: Router<()> = Router::new()
 ///     .route("/admin/users", get(handler))
-///     .route_layer(axum::middleware::from_fn_with_state(
-///         Permission::ManageUsers,
-///         |permission, req, next| require_permission(permission, req, next)
-///     ));
+///     .route_layer(axum::middleware::from_fn(|req, next| {
+///         require_permission(Permission::ManageUsers, req, next)
+///     }));
 /// ```
 pub async fn require_permission(
     permission: Permission,
