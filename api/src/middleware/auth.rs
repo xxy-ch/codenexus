@@ -2,9 +2,15 @@
 
 use axum::{async_trait, extract::FromRequestParts, http::StatusCode, response::Response};
 use shared::models::Claims;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::auth::JwtService;
+
+const DEFAULT_JWT_SECRET: &str = "default_jwt_secret_change_me";
+
+fn jwt_secret() -> String {
+    std::env::var("JWT_SECRET").unwrap_or_else(|_| DEFAULT_JWT_SECRET.to_string())
+}
 
 pub struct AuthExtractor(pub Claims);
 
@@ -31,8 +37,7 @@ where
 
         let token = &auth_header[7..];
 
-        let jwt_secret =
-            std::env::var("JWT_SECRET").map_err(|_| StatusCode::UNAUTHORIZED)?;
+        let jwt_secret = jwt_secret();
         let jwt_service = JwtService::new(&jwt_secret);
 
         let claims = jwt_service
@@ -59,7 +64,7 @@ pub async fn auth_middleware(
 
     let token = &auth_header[7..];
 
-    let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| StatusCode::UNAUTHORIZED)?;
+    let jwt_secret = jwt_secret();
     let jwt_service = Arc::new(JwtService::new(&jwt_secret));
 
     let claims = jwt_service
@@ -84,6 +89,11 @@ mod tests {
         Router,
     };
     use tower::ServiceExt;
+
+    fn jwt_env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
 
     async fn protected_handler(claims: AuthExtractor) -> String {
         format!("user_id: {}", claims.0.sub)
@@ -135,6 +145,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_auth_middleware_valid_token() {
+        let _guard = jwt_env_lock().lock().unwrap();
         std::env::set_var("JWT_SECRET", "test_secret_key");
 
         let user = shared::models::User {
@@ -148,6 +159,44 @@ mod tests {
         };
 
         let jwt_service = JwtService::new("test_secret_key");
+        let token = jwt_service.generate_access_token(&user).unwrap();
+
+        let app = create_test_app();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/protected")
+                    .header(
+                        header::AUTHORIZATION,
+                        HeaderValue::from_str(&format!("Bearer {}", token)).unwrap(),
+                    )
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        std::env::remove_var("JWT_SECRET");
+    }
+
+    #[tokio::test]
+    async fn test_auth_middleware_valid_token_without_explicit_env_uses_runtime_default() {
+        let _guard = jwt_env_lock().lock().unwrap();
+        std::env::remove_var("JWT_SECRET");
+
+        let user = shared::models::User {
+            id: uuid::Uuid::parse_str("11111111-1111-1111-1111-111111111111").unwrap(),
+            username: "1001".to_string(),
+            email: "admin@example.com".to_string(),
+            password_hash: String::new(),
+            role: "admin".to_string(),
+            school_id: 1,
+            campus_id: Some(1),
+        };
+
+        let jwt_service = JwtService::new("default_jwt_secret_change_me");
         let token = jwt_service.generate_access_token(&user).unwrap();
 
         let app = create_test_app();

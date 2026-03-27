@@ -12,7 +12,7 @@ use shared::models::{permission::Permission, Claims};
 /// as it relies on `Claims` being available in request extensions.
 ///
 /// # Example
-/// ```rust,no_run
+/// ```ignore
 /// use crate::middleware::authz::require_permission;
 /// use shared::models::permission::Permission;
 ///

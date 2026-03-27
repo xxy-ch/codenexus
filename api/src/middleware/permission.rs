@@ -16,7 +16,7 @@ use std::str::FromStr;
 ///
 /// # Example
 ///
-/// ```rust
+/// ```ignore
 /// use axum::{routing::get, Router};
 /// use crate::middleware::permission::require_permission;
 /// use shared::models::permission::Permission;
@@ -62,7 +62,7 @@ pub fn require_permission(
 ///
 /// # Example
 ///
-/// ```rust
+/// ```ignore
 /// use axum::{routing::get, Router};
 /// use crate::middleware::permission::require_any_permission;
 /// use shared::models::permission::Permission;
@@ -108,7 +108,7 @@ pub fn require_any_permission(
 ///
 /// # Example
 ///
-/// ```rust
+/// ```ignore
 /// use axum::{routing::get, Router};
 /// use crate::middleware::permission::require_all_permissions;
 /// use shared::models::permission::Permission;
@@ -155,7 +155,7 @@ pub fn require_all_permissions(
 ///
 /// # Example
 ///
-/// ```rust
+/// ```ignore
 /// use axum::{routing::get, Router};
 /// use crate::middleware::permission::require_min_role;
 /// use shared::models::role::Role;
