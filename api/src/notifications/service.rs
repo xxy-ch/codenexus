@@ -1,8 +1,8 @@
 use super::models::*;
+use anyhow::Result;
 use sqlx::PgPool;
 use sqlx::Row;
 use uuid::Uuid;
-use anyhow::Result;
 
 pub struct NotificationService {
     db: PgPool,
@@ -22,9 +22,9 @@ impl NotificationService {
         content: &str,
         link: Option<String>,
         actor_id: Option<Uuid>,
-        discussion_id: Option<Uuid>,
-        article_id: Option<Uuid>,
-        comment_id: Option<Uuid>,
+        discussion_id: Option<i64>,
+        article_id: Option<i64>,
+        comment_id: Option<i64>,
     ) -> Result<Notification> {
         let notification = sqlx::query_as::<_, Notification>(
             r#"
@@ -33,7 +33,8 @@ impl NotificationService {
                 actor_id, discussion_id, article_id, comment_id
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING *
+            RETURNING id, user_id, type AS notification_type, title, content, link,
+                      is_read, created_at, actor_id, discussion_id, article_id, comment_id, metadata
             "#
         )
         .bind(user_id)
@@ -61,7 +62,9 @@ impl NotificationService {
         let offset = query.offset.unwrap_or(0);
 
         // Build dynamic query
-        let mut base_query = "SELECT * FROM notifications WHERE user_id = $1".to_string();
+        let mut base_query = String::from(
+            "SELECT id, user_id, type AS notification_type, title, content, link, is_read, created_at, actor_id, discussion_id, article_id, comment_id, metadata FROM notifications WHERE user_id = $1",
+        );
         let mut count_query = "SELECT COUNT(*) FROM notifications WHERE user_id = $1".to_string();
         let mut conditions = vec![];
         let mut param_count = 1;
@@ -208,7 +211,7 @@ impl NotificationService {
     /// Get user notification settings
     pub async fn get_settings(&self, user_id: Uuid) -> Result<Option<NotificationSettings>> {
         let settings = sqlx::query_as::<_, NotificationSettings>(
-            "SELECT * FROM notification_settings WHERE user_id = $1"
+            "SELECT user_id, email_notifications, reply_notifications, comment_notifications, like_notifications, mention_notifications, system_notifications, digest_mode FROM notification_settings WHERE user_id = $1"
         )
         .bind(user_id)
         .fetch_optional(&self.db)
@@ -239,7 +242,7 @@ impl NotificationService {
                 mention_notifications = EXCLUDED.mention_notifications,
                 system_notifications = EXCLUDED.system_notifications,
                 digest_mode = EXCLUDED.digest_mode
-            RETURNING *
+            RETURNING user_id, email_notifications, reply_notifications, comment_notifications, like_notifications, mention_notifications, system_notifications, digest_mode
             "#
         )
         .bind(user_id)

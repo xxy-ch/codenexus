@@ -16,9 +16,9 @@ pub struct Notification {
 
     // Optional foreign keys
     pub actor_id: Option<Uuid>,
-    pub discussion_id: Option<Uuid>,
-    pub article_id: Option<Uuid>,
-    pub comment_id: Option<Uuid>,
+    pub discussion_id: Option<i64>,
+    pub article_id: Option<i64>,
+    pub comment_id: Option<i64>,
 
     pub metadata: serde_json::Value,
 }
