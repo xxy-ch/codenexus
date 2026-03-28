@@ -12,6 +12,7 @@
 | Area | Status | What is already green |
 |---|---|---|
 | Focused frontend suites | verified | `npm test -- --run ...` passed for auth/service suites, teacher/admin alignment suites, user truthfulness suites, contest/scoreboard alignment suites, community alignment/detail/authoring suites, and `src/components/ui/__tests__/primitives.test.tsx` in the current repo state |
+| Final frontend acceptance sweep | verified | one consolidated frontend sweep passed: 29 files, 71 tests, covering auth, services, shared primitives, admin, teacher, user, contest, scoreboard, community, and authoring flows |
 | Frontend typecheck | verified | `cd frontend && npm run typecheck` is green |
 | Frontend build | verified | `cd frontend && npm run build` is green |
 | Backend cargo test | verified | `cd api && cargo test` is green |
@@ -53,10 +54,18 @@
 
 | Area | Status | Notes |
 |---|---|---|
-| Final acceptance smoke for all named route families | partially verified | focused route-family suites are green; one final consolidated sweep is still desirable |
-| Explicit residual-risk register | missing | needs a short bounded list after the verification sweep |
+| Final acceptance smoke for all named route families | verified | a consolidated frontend acceptance sweep has passed alongside backend and helper verification |
+| Explicit residual-risk register | verified | bounded residual risks are listed below |
 | Any intentionally excluded route surface | verified | no intentionally excluded routed surface is recorded at this stage |
 | Backend runtime assumptions tied to external services | partially verified | helper tests exist, but service-backed proof still needs the gated environment |
+
+## Residual Risk Register
+
+| Risk | Scope | Current status |
+|---|---|---|
+| PostgreSQL-gated integration paths remain unproven locally | backend auth/db integration and migration-backed paths that require `DATABASE_URL` | environment-gated, not a local failure |
+| Redis-gated stream/cache paths remain unproven locally | Redis-backed queue/stream behavior requiring `REDIS_URL` | environment-gated, not a local failure |
+| Frontend bundle still emits large-chunk warnings during build | production asset shaping, especially Monaco/editor chunks | build passes; optimization remains desirable but is not a release blocker for correctness |
 
 ## Inventory Note
 
