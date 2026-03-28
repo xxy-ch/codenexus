@@ -29,7 +29,9 @@ export const problemsService = {
       params.append('difficulty', filters.difficulty)
     }
     if (filters.tags && filters.tags.length > 0) {
-      params.append('tags', filters.tags.join(','))
+      filters.tags.forEach((tag) => {
+        params.append('tags', tag)
+      })
     }
     if (filters.search) {
       params.append('search', filters.search)
@@ -40,9 +42,7 @@ export const problemsService = {
     if (filters.limit) {
       params.append('limit', filters.limit.toString())
     }
-    if (filters.sort) {
-      params.append('sort', filters.sort)
-    }
+    // Backend ignores problem list sorting for now; do not emit fake sort params.
 
     const response = await api.get(`/problems?${params}`)
     const payload = response.data

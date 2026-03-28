@@ -1,8 +1,23 @@
 import axios, { AxiosError } from 'axios'
 import type { InternalAxiosRequestConfig } from 'axios'
 import { API_CONFIG, STORAGE_KEYS } from './config'
+import type { RefreshResponse } from '@/types/auth'
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean }
+
+export function persistRefreshedAuthTokens(
+  response: RefreshResponse,
+  fallbackRefreshToken?: string
+) {
+  localStorage.setItem(STORAGE_KEYS.TOKEN, response.token)
+  localStorage.setItem('token', response.token)
+
+  const refreshToken = response.refresh_token ?? fallbackRefreshToken
+  if (refreshToken) {
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
+    localStorage.setItem('refresh_token', refreshToken)
+  }
+}
 
 const api = axios.create({
   baseURL: API_CONFIG.baseURL,
@@ -47,13 +62,9 @@ api.interceptors.response.use(
             refresh_token: refreshToken,
           })
 
-          const { token, refresh_token } = response.data
-          localStorage.setItem(STORAGE_KEYS.TOKEN, token)
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token)
-          localStorage.setItem('token', token)
-          localStorage.setItem('refresh_token', refresh_token)
+          persistRefreshedAuthTokens(response.data, refreshToken)
 
-          originalRequest.headers.Authorization = `Bearer ${token}`
+          originalRequest.headers.Authorization = `Bearer ${response.data.token}`
           return api(originalRequest)
         }
       } catch (refreshError) {

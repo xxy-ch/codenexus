@@ -1,12 +1,12 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { User, AuthResponse } from '@/types/auth'
+import type { User, LoginResponse, RegisterResponse, SessionUser } from '@/types/auth'
 import { API_CONFIG } from '@/services/config'
 import { STORAGE_KEYS } from '@/services/config'
 
 const buildApiUrl = (path: string) => `${API_CONFIG.baseURL}${path}`
 
-function persistAuthSession(data: { token?: string | null; refreshToken?: string | null; user?: User | null }) {
+function persistAuthSession(data: { token?: string | null; refreshToken?: string | null; user?: SessionUser | null }) {
   if (data.token) {
     localStorage.setItem(STORAGE_KEYS.TOKEN, data.token)
     localStorage.setItem('token', data.token)
@@ -31,7 +31,7 @@ function clearPersistedAuthSession() {
 }
 
 interface AuthState {
-  user: User | null
+  user: SessionUser | null
   token: string | null
   isAuthenticated: boolean
   isLoading: boolean
@@ -48,7 +48,7 @@ interface AuthState {
   }) => Promise<void>
   logout: () => void
   clearError: () => void
-  checkAuth: () => Promise<void>
+  checkAuth: () => Promise<boolean>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -73,14 +73,15 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Login failed')
           }
 
-          const data: AuthResponse = await response.json()
+          const data: LoginResponse = await response.json()
+          const sessionUser = normalizeLoginUser(data.user)
           persistAuthSession({
             token: data.token,
             refreshToken: data.refresh_token,
-            user: data.user,
+            user: sessionUser,
           })
           set({
-            user: data.user,
+            user: sessionUser,
             token: data.token,
             isAuthenticated: true,
             isLoading: false,
@@ -108,14 +109,15 @@ export const useAuthStore = create<AuthState>()(
             throw new Error('Registration failed')
           }
 
-          const authData: AuthResponse = await response.json()
+          const authData: RegisterResponse = await response.json()
+          const sessionUser = normalizeRegisterUser(authData.user)
           persistAuthSession({
             token: authData.token,
             refreshToken: authData.refresh_token,
-            user: authData.user,
+            user: sessionUser,
           })
           set({
-            user: authData.user,
+            user: sessionUser,
             token: authData.token,
             isAuthenticated: true,
             isLoading: false,
@@ -146,7 +148,7 @@ export const useAuthStore = create<AuthState>()(
         const { token } = get()
         if (!token) {
           set({ isAuthenticated: false, user: null })
-          return
+          return false
         }
 
         set({ isLoading: true })
@@ -163,10 +165,11 @@ export const useAuthStore = create<AuthState>()(
 
           const user: User = await response.json()
           set({
-            user,
+            user: normalizeCurrentUser(user),
             isAuthenticated: true,
             isLoading: false,
           })
+          return true
         } catch (error) {
           clearPersistedAuthSession()
           set({
@@ -175,6 +178,7 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
             isLoading: false,
           })
+          return false
         }
       },
     }),
@@ -188,3 +192,50 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 )
+
+function normalizeLoginUser(user: LoginResponse['user']): SessionUser {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    organization_id: user.school_id,
+    campus_id: user.campus_id ?? null,
+  }
+}
+
+function normalizeRegisterUser(user: RegisterResponse['user']): SessionUser {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email ?? null,
+    display_name: user.display_name ?? null,
+    organization_id: user.organization_id,
+    campus_id: user.campus_id ?? null,
+    role: user.role,
+    user_code: user.user_code ?? null,
+    status: user.status,
+    ac_count: user.ac_count,
+    contest_rating: user.contest_rating,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+  }
+}
+
+function normalizeCurrentUser(user: User): SessionUser {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email ?? null,
+    display_name: user.display_name ?? null,
+    organization_id: user.organization_id,
+    campus_id: user.campus_id ?? null,
+    role: user.role,
+    user_code: user.user_code ?? null,
+    status: user.status,
+    ac_count: user.ac_count,
+    contest_rating: user.contest_rating,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+  }
+}

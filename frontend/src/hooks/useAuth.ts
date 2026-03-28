@@ -16,6 +16,7 @@ export function useAuth() {
     register: storeRegister,
     logout,
     clearError,
+    checkAuth,
   } = useAuthStore()
 
   /**
@@ -75,40 +76,6 @@ export function useAuth() {
   /**
    * 检查认证状态
    */
-  const checkAuthentication = useCallback(async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      useAuthStore.setState({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-      })
-      return false
-    }
-
-    try {
-      const user = await authService.getCurrentUser()
-      useAuthStore.setState({
-        user,
-        token,
-        isAuthenticated: true,
-        isLoading: false,
-      })
-      return true
-    } catch (error) {
-      useAuthStore.setState({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-      })
-      localStorage.removeItem('token')
-      localStorage.removeItem('refresh_token')
-      return false
-    }
-  }, [])
-
   return {
     user,
     token,
@@ -118,7 +85,7 @@ export function useAuth() {
     login: handleLogin,
     register: handleRegister,
     logout: handleLogout,
-    checkAuth: checkAuthentication,
+    checkAuth,
     clearError,
   }
 }

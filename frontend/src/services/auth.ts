@@ -1,28 +1,37 @@
 import api from './api'
-import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth'
+import type {
+  User,
+  LoginRequest,
+  RegisterRequest,
+  LoginResponse,
+  RegisterResponse,
+  RefreshResponse,
+} from '@/types/auth'
 
 export const authService = {
   /**
    * 用户登录
    */
-  async login(credentials: LoginRequest): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/login', credentials)
+  async login(credentials: LoginRequest): Promise<LoginResponse> {
+    const response = await api.post<LoginResponse>('/auth/login', credentials)
     return response.data
   },
 
   /**
    * 用户注册
    */
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/register', data)
+  async register(data: RegisterRequest): Promise<RegisterResponse> {
+    const response = await api.post<RegisterResponse>('/auth/register', data)
     return response.data
   },
 
   /**
    * 刷新令牌
    */
-  async refreshToken(): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>('/auth/refresh')
+  async refreshToken(refreshToken: string): Promise<RefreshResponse> {
+    const response = await api.post<RefreshResponse>('/auth/refresh', {
+      refresh_token: refreshToken,
+    })
     return response.data
   },
 

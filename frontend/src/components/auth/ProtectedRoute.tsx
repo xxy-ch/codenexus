@@ -6,7 +6,7 @@ import { Loading } from '@/components/ui/Loading'
 interface ProtectedRouteProps {
   children: React.ReactNode
   requireAuth?: boolean
-  allowedRoles?: Array<'user' | 'teacher' | 'admin'>
+  allowedRoles?: string[]
 }
 
 export function ProtectedRoute({
