@@ -11,6 +11,8 @@ import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { adminService } from '@/services/admin'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 
@@ -201,42 +203,39 @@ export function ProblemManagement() {
                 value={form.title}
                 onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                 placeholder="题目标题"
-                className="h-11"
               />
             </FieldGroup>
 
             <FieldGroup label="题目描述">
-              <textarea
+              <Textarea
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="题目描述"
-                className="min-h-[180px] w-full rounded-[20px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 py-3 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
+                className="min-h-[180px]"
               />
             </FieldGroup>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <FieldGroup label="难度">
-                <select
+                <Select
                   value={form.difficulty}
                   onChange={(e) => setForm((prev) => ({ ...prev, difficulty: e.target.value as DifficultyType }))}
-                  className="h-11 w-full appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
                 >
                   <option value="easy">简单</option>
                   <option value="medium">中等</option>
                   <option value="hard">困难</option>
-                </select>
+                </Select>
               </FieldGroup>
               <FieldGroup label="可见性">
-                <select
+                <Select
                   value={form.visibility}
                   onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value as typeof form.visibility }))}
-                  className="h-11 w-full appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
                 >
                   <option value="private">仅自己可见</option>
                   <option value="public">公开</option>
                   <option value="campus">校区可见</option>
                   <option value="class">班级可见</option>
-                </select>
+                </Select>
               </FieldGroup>
             </div>
 
@@ -246,7 +245,6 @@ export function ProblemManagement() {
                   type="number"
                   value={form.time_limit}
                   onChange={(e) => setForm((prev) => ({ ...prev, time_limit: Number(e.target.value) }))}
-                  className="h-11"
                 />
               </FieldGroup>
               <FieldGroup label="内存限制">
@@ -254,7 +252,6 @@ export function ProblemManagement() {
                   type="number"
                   value={form.memory_limit}
                   onChange={(e) => setForm((prev) => ({ ...prev, memory_limit: Number(e.target.value) }))}
-                  className="h-11"
                 />
               </FieldGroup>
             </div>
@@ -283,42 +280,39 @@ export function ProblemManagement() {
                     setSearch(e.target.value)
                     setPage(1)
                   }}
-                  className="h-11"
                 />
               </div>
-              <select
+              <Select
                 aria-label="难度筛选"
                 value={difficulty}
                 onChange={(e) => {
                   setDifficulty(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
               >
                 <option value="all">所有难度</option>
                 <option value="easy">简单</option>
                 <option value="medium">中等</option>
                 <option value="hard">困难</option>
-              </select>
-              <select
+              </Select>
+              <Select
                 aria-label="状态筛选"
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
               >
                 <option value="all">所有状态</option>
                 <option value="published">已发布</option>
                 <option value="draft">草稿</option>
                 <option value="archived">已归档</option>
-              </select>
-                <div className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  平均 {stats.averageAcceptance}%
-                </div>
-              </FilterBar>
+              </Select>
+              <div className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <SlidersHorizontal className="h-4 w-4" />
+                平均 {stats.averageAcceptance}%
+              </div>
+            </FilterBar>
 
             <div className="flex flex-wrap items-center gap-2">
               {[

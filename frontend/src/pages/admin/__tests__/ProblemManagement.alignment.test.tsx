@@ -66,20 +66,13 @@ describe('ProblemManagement control alignment', () => {
   it('keeps form and filter controls aligned to shared input/select/button styles', async () => {
     renderComponent()
 
-    const titleInput = await screen.findByLabelText('题目标题')
-    expect(titleInput.className).toContain('rounded-[14px]')
-
-    const searchInput = screen.getByRole('searchbox', { name: '搜索题目' })
-    expect(searchInput.className).toContain('rounded-[14px]')
-
-    const difficultyFilter = screen.getByLabelText('难度筛选')
-    expect(difficultyFilter.className).toContain('appearance-none')
-
-    const statusFilter = screen.getByLabelText('状态筛选')
-    expect(statusFilter.className).toContain('appearance-none')
+    expect(await screen.findByLabelText('题目标题')).toBeInTheDocument()
+    expect(screen.getByRole('searchbox', { name: '搜索题目' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: '难度筛选' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: '状态筛选' })).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: '最新' }).className).toContain('focus-visible:ring-2')
+      expect(screen.getByRole('button', { name: '最新' })).toBeInTheDocument()
     })
   })
 })

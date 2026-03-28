@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Loading } from '@/components/ui/Loading'
 import { StatusBadge } from '@/components/ui/StatusBadge'
@@ -29,6 +31,32 @@ describe('ui primitives', () => {
     expect(input).toHaveClass('rounded-[18px]')
     expect(input.className).toContain('focus-visible:bg-white')
     expect(input.className).toContain('focus-visible:ring-4')
+  })
+
+  it('renders select with shared field surface classes and no native chrome feel', () => {
+    const { container } = render(
+      <Select aria-label="Difficulty" defaultValue="easy">
+        <option value="easy">简单</option>
+        <option value="hard">困难</option>
+      </Select>,
+    )
+
+    const select = screen.getByRole('combobox', { name: 'Difficulty' })
+    expect(select.className).toContain('appearance-none')
+    expect(select.className).toContain('h-[52px]')
+    expect(select.className).toContain('rounded-[18px]')
+    expect(select.className).toContain('focus-visible:ring-4')
+    expect(container.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument()
+  })
+
+  it('renders textarea with shared field surface classes and disabled browser resize feel', () => {
+    render(<Textarea aria-label="Description" defaultValue="题面内容" />)
+
+    const textarea = screen.getByRole('textbox', { name: 'Description' })
+    expect(textarea.className).toContain('resize-none')
+    expect(textarea.className).toContain('rounded-[18px]')
+    expect(textarea.className).toContain('min-h-[140px]')
+    expect(textarea.className).toContain('focus-visible:ring-4')
   })
 
   it('renders section blocks with elevated dashboard surfaces', () => {

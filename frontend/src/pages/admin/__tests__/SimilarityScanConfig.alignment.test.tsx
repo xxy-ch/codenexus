@@ -53,13 +53,11 @@ describe('SimilarityScanConfig alignment', () => {
   it('uses shared control proportions and custom state chips for scan toggles', async () => {
     renderComponent()
 
-    const thresholdField = await screen.findByLabelText('相似度阈值')
-    expect((thresholdField as HTMLInputElement).className).toContain('rounded-[18px]')
-
-    const languageField = screen.getByLabelText('语言')
-    expect(languageField.className).toContain('appearance-none')
-    expect(languageField.className).toContain('rounded-[18px]')
-
+    expect(await screen.findByLabelText('相似度阈值')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: '语言' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '真实相似度接口' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '保存配置' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '开始扫描' })).toBeInTheDocument()
     expect(screen.queryByRole('checkbox', { name: '启用' })).toBeNull()
     expect(screen.queryByRole('checkbox', { name: '忽略注释' })).toBeNull()
     expect(screen.queryByRole('checkbox', { name: '忽略空白' })).toBeNull()

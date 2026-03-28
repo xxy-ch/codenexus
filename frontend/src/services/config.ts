@@ -36,11 +36,11 @@ export const API_CONFIG = {
     blogDetail: (id: string) => `/blog/${id}`,
 
     // Admin
-    adminStats: '/admin/stats',
-    adminUsers: '/admin/users',
-    adminProblems: '/admin/problems',
-    adminReports: '/admin/reports',
-    adminSystemHealth: '/admin/system/health',
+    adminStats: '/status',
+    adminUsers: '/users/admin',
+    adminProblems: '/problems',
+    adminReports: '/admin/plagiarism/reports',
+    adminSystemHealth: '/status',
     adminPlagiarismConfig: '/admin/plagiarism/config',
     adminPlagiarismScan: '/admin/plagiarism/scan',
     adminPlagiarismReports: '/admin/plagiarism/reports',

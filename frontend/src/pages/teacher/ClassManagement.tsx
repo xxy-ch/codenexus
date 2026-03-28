@@ -11,6 +11,7 @@ import { StatCard } from '@/components/page/StatCard'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
 import { Loading } from '@/components/ui/Loading'
 import { classesService } from '@/services/classes'
 import { cn, formatDateTime } from '@/lib/utils'
@@ -284,11 +285,11 @@ export function ClassManagement() {
 
               <div className="space-y-4">
                 <FieldGroup label="批量导入学生" description="每行一个邮箱地址。">
-                  <textarea
+                  <Textarea
                     value={studentImport}
                     onChange={(e) => setStudentImport(e.target.value)}
                     placeholder="批量导入邮箱，每行一个"
-                    className="min-h-[132px] w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 text-sm text-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.05)] outline-none transition-colors focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                    className="min-h-[132px]"
                   />
                 </FieldGroup>
                 <Button
@@ -307,13 +308,13 @@ export function ClassManagement() {
 
         <div className="space-y-6">
           <FilterBar>
-            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[24px] border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-3 py-2 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
-              <Mail className="h-4 w-4 text-slate-400" />
-              <input
+            <div className="relative min-w-0 flex-1">
+              <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="搜索班级 / 学期 / 邀请码"
-                className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                className="pl-11"
               />
             </div>
             <div className="text-sm text-slate-500">
@@ -400,12 +401,11 @@ export function ClassManagement() {
                   <Input value={assignmentProblemId} onChange={(e) => setAssignmentProblemId(e.target.value)} placeholder="题目 ID" />
                 </FieldGroup>
                 <FieldGroup label="截止时间">
-                  <input
+                  <Input
                     aria-label="作业截止时间"
                     type="datetime-local"
                     value={assignmentDeadline}
                     onChange={(e) => setAssignmentDeadline(e.target.value)}
-                    className="w-full rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)]"
                   />
                 </FieldGroup>
                 <FieldGroup label="分值">

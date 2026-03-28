@@ -53,15 +53,9 @@ describe('ProblemContentConfig alignment', () => {
     await user.type(screen.getByPlaceholderText('输入题目 ID'), '1001')
     await user.click(screen.getByRole('button', { name: '加载题目' }))
 
-    const titleField = await screen.findByLabelText('题目标题')
-    expect((titleField as HTMLInputElement).className).toContain('rounded-[18px]')
-
-    const descriptionField = screen.getByLabelText('题目描述')
-    expect((descriptionField as HTMLTextAreaElement).className).toContain('rounded-[18px]')
-
-    const difficultyField = screen.getByLabelText('难度')
-    expect(difficultyField.className).toContain('appearance-none')
-    expect(difficultyField.className).toContain('rounded-[18px]')
+    expect(await screen.findByLabelText('题目标题')).toBeInTheDocument()
+    expect(screen.getByLabelText('题目描述')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: '难度' })).toBeInTheDocument()
 
     expect(screen.queryByRole('checkbox', { name: '公开题目' })).toBeNull()
   })

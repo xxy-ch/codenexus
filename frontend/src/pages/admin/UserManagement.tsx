@@ -11,6 +11,8 @@ import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { adminService } from '@/services/admin'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 import type { BatchCreateAdminUser } from '@/types/admin'
@@ -194,37 +196,34 @@ export function UserManagement() {
                     setSearch(e.target.value)
                     setPage(1)
                   }}
-                  className="h-11"
                 />
               </div>
-              <select
+              <Select
                 aria-label="角色筛选"
                 value={role}
                 onChange={(e) => {
                   setRole(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
               >
                 <option value="all">所有角色</option>
                 <option value="admin">管理员</option>
                 <option value="teacher">教师</option>
                 <option value="user">学生</option>
-              </select>
-              <select
+              </Select>
+              <Select
                 aria-label="状态筛选"
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value)
                   setPage(1)
                 }}
-                className="h-11 min-w-[140px] appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-4 pr-10 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
               >
                 <option value="all">所有状态</option>
                 <option value="active">活跃</option>
                 <option value="inactive">停用</option>
                 <option value="banned">封禁</option>
-              </select>
+              </Select>
               <div className="flex flex-wrap items-center gap-2">
                 {[
                   { value: 'recent', label: '最新' },
@@ -238,7 +237,7 @@ export function UserManagement() {
                     size="sm"
                     variant={sortBy === option.value ? 'primary' : 'secondary'}
                     onClick={() => setSortBy(option.value as SortType)}
-                    className={cn('rounded-full px-4', sortBy === option.value ? 'shadow-[0_12px_24px_rgba(30,64,175,0.16)]' : '')}
+                    className={cn(sortBy === option.value ? 'shadow-[0_12px_24px_rgba(30,64,175,0.16)]' : '')}
                   >
                     {option.label}
                   </Button>
@@ -278,17 +277,16 @@ export function UserManagement() {
                       <td className="px-5 py-4">
                         <div className="space-y-2">
                           {getRoleBadge(user.role)}
-                          <select
+                          <Select
                             aria-label={`更新 ${user.username} 角色`}
                             value={user.role}
                             onChange={(e) => updateRoleMutation.mutate({ userId: user.id, role: e.target.value as RoleType })}
                             disabled={updateRoleMutation.isPending}
-                            className="block h-10 appearance-none rounded-[8px] border border-transparent bg-[rgba(242,243,255,0.88)] px-3 pr-8 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none transition-all duration-200 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-[rgba(12,86,208,0.2)]"
                           >
                             <option value="user">学生</option>
                             <option value="teacher">教师</option>
                             <option value="admin">管理员</option>
-                          </select>
+                          </Select>
                         </div>
                       </td>
                       <td className="px-5 py-4">{getStatusBadge(user.status)}</td>
@@ -340,12 +338,12 @@ export function UserManagement() {
         <SectionBlock title="批量创建账户" description="格式保持 `user_code,display_name,email,role`，继续走现有批量建号接口。">
           <div className="space-y-4">
             <FieldGroup label="批量输入" description="每行一条，user_code 必填。">
-              <textarea
+              <Textarea
                 value={bulkInput}
                 onChange={(e) => setBulkInput(e.target.value)}
                 rows={10}
                 placeholder={'240101070014,张三,zhangsan@example.com,user\n240101070015,李四,,teacher'}
-                className="w-full rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 font-mono text-sm text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.7),0_10px_24px_rgba(15,23,42,0.05)] outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="min-h-[180px] font-mono"
               />
             </FieldGroup>
 
@@ -353,7 +351,6 @@ export function UserManagement() {
               <Input
                 value={defaultPassword}
                 onChange={(e) => setDefaultPassword(e.target.value)}
-                className="h-11"
               />
             </FieldGroup>
 

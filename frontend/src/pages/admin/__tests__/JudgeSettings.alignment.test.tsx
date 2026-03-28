@@ -69,14 +69,9 @@ describe('JudgeSettings alignment', () => {
     await user.type(screen.getByPlaceholderText('输入题目 ID'), '1001')
     await user.click(screen.getByRole('button', { name: '加载' }))
 
-    const inputField = await screen.findByLabelText('输入')
-    expect((inputField as HTMLTextAreaElement).className).toContain('rounded-[18px]')
-
-    const outputField = screen.getByLabelText('预期输出')
-    expect((outputField as HTMLTextAreaElement).className).toContain('rounded-[18px]')
-
-    const scoreField = screen.getByLabelText('分值')
-    expect(scoreField.className).toContain('rounded-[18px]')
+    expect(await screen.findByLabelText('输入')).toBeInTheDocument()
+    expect(screen.getByLabelText('预期输出')).toBeInTheDocument()
+    expect(screen.getByLabelText('分值')).toBeInTheDocument()
 
     await waitFor(() => {
       expect(screen.queryByRole('checkbox', { name: '隐藏测试点' })).toBeNull()

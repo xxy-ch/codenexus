@@ -9,11 +9,9 @@ import { StatCard } from '@/components/page/StatCard'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
-
-const textareaClassName =
-  'min-h-[120px] w-full rounded-[18px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-[18px] py-3 font-mono text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 placeholder:text-[#93a0bb] focus-visible:border-[rgba(12,86,208,0.28)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.09)]'
 
 function ToggleButton({
   checked,
@@ -262,19 +260,19 @@ export function JudgeSettings() {
                   <SurfaceCard>
                     <div className="grid gap-4">
                       <FieldGroup label="输入">
-                        <textarea
+                        <Textarea
                           value={newInput}
                           onChange={(e) => setNewInput(e.target.value)}
                           placeholder="输入内容"
-                          className={textareaClassName}
+                          className="min-h-[120px] font-mono"
                         />
                       </FieldGroup>
                       <FieldGroup label="预期输出">
-                        <textarea
+                        <Textarea
                           value={newOutput}
                           onChange={(e) => setNewOutput(e.target.value)}
                           placeholder="预期输出"
-                          className={textareaClassName}
+                          className="min-h-[120px] font-mono"
                         />
                       </FieldGroup>
                       <div className="grid gap-4 sm:grid-cols-2">

@@ -9,11 +9,9 @@ import { StatCard } from '@/components/page/StatCard'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
-
-const selectClassName =
-  'h-[52px] w-full appearance-none rounded-[18px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-[18px] pr-12 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus-visible:border-[rgba(12,86,208,0.28)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.09)]'
 
 function ToggleTile({
   label,
@@ -123,7 +121,7 @@ export function SimilarityScanConfig() {
         eyebrow="管理台"
         breadcrumb={['工具箱', '代码相似度']}
         title="相似度扫描配置"
-        description="扫描配置页已按 reference 收拢。当前功能范围保持真实接口：配置阈值、语言范围、忽略策略，并触发新的扫描任务。"
+        description="扫描配置页已收敛为统一表单布局。当前功能范围保持真实接口：配置阈值、语言范围、忽略策略，并触发新的扫描任务。"
         actions={
           <div className="flex items-center gap-3">
             <Button
@@ -180,17 +178,16 @@ export function SimilarityScanConfig() {
               onToggle={() => patchForm((prev) => ({ ...prev, enabled: !prev.enabled }))}
             />
             <FieldGroup label="语言">
-              <select
+              <Select
                 value={effectiveForm.language}
                 onChange={(e) => patchForm((prev) => ({ ...prev, language: e.target.value as SimilarityScanConfig['language'] }))}
-                className={selectClassName}
               >
                 <option value="all">全部</option>
                 <option value="cpp">C++</option>
                 <option value="c">C</option>
                 <option value="java">Java</option>
                 <option value="python">Python</option>
-              </select>
+              </Select>
             </FieldGroup>
             <FieldGroup label="相似度阈值">
               <Input

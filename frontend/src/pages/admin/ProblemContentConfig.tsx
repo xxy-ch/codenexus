@@ -8,14 +8,10 @@ import { PageHeader } from '@/components/page/PageHeader'
 import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
-
-const textAreaClassName =
-  'min-h-[360px] w-full rounded-[18px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-[18px] py-4 text-sm text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 placeholder:text-[#93a0bb] focus-visible:border-[rgba(12,86,208,0.28)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.09)]'
-
-const selectClassName =
-  'h-[52px] w-full appearance-none rounded-[18px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-[18px] pr-12 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus-visible:border-[rgba(12,86,208,0.28)] focus-visible:bg-white focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.09)]'
 
 function ToggleButton({
   checked,
@@ -185,10 +181,10 @@ export function ProblemContentConfig() {
                 />
               </FieldGroup>
               <FieldGroup label="题目描述">
-                <textarea
+                <Textarea
                   value={form.description || ''}
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className={textAreaClassName}
+                  className="min-h-[360px]"
                   placeholder="输入 Markdown 题面内容"
                 />
               </FieldGroup>
@@ -203,15 +199,14 @@ export function ProblemContentConfig() {
               </div>
               <div className="mt-4 space-y-4">
                 <FieldGroup label="难度">
-                  <select
+                  <Select
                     value={form.difficulty || 'easy'}
                     onChange={(e) => setForm((prev) => ({ ...prev, difficulty: e.target.value }))}
-                    className={selectClassName}
                   >
                     <option value="easy">简单</option>
                     <option value="medium">中等</option>
                     <option value="hard">困难</option>
-                  </select>
+                  </Select>
                 </FieldGroup>
                 <FieldGroup label="标签">
                   <Input
@@ -253,7 +248,7 @@ export function ProblemContentConfig() {
               </div>
               <div className="mt-4 space-y-4">
                 <FieldGroup label="可见性">
-                  <select
+                  <Select
                     value={form.visibility || 'private'}
                     onChange={(e) =>
                       setForm((prev) => ({
@@ -262,11 +257,10 @@ export function ProblemContentConfig() {
                         is_public: e.target.value === 'public',
                       }))
                     }
-                    className={selectClassName}
                   >
                     <option value="private">仅自己可见</option>
                     <option value="public">公开</option>
-                  </select>
+                  </Select>
                 </FieldGroup>
                 <ToggleButton
                   checked={!!form.is_public}

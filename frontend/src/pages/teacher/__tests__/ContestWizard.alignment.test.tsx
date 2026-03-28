@@ -67,6 +67,8 @@ describe('ContestWizard alignment', () => {
       expect(screen.getByRole('heading', { name: '编排说明' })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: '创建竞赛并进入编排' })).toBeInTheDocument()
       expect(screen.getByPlaceholderText('例如：2026 春季算法联赛')).toBeInTheDocument()
+      expect(screen.getByLabelText('规则集')).toBeInTheDocument()
+      expect(screen.getByLabelText('描述')).toBeInTheDocument()
     })
   })
 })

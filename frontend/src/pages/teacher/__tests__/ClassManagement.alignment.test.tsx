@@ -74,13 +74,15 @@ describe('ClassManagement alignment', () => {
       </QueryClientProvider>,
     )
 
-  await waitFor(() => {
-    expect(screen.getByRole('heading', { name: '班级管理' })).toBeInTheDocument()
-    expect(screen.getByText('班级总数')).toBeInTheDocument()
-    expect(screen.getByText('班级列表')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: '创建作业' })).toBeInTheDocument()
-    expect(screen.getByText('作业与提交记录')).toBeInTheDocument()
-    expect(screen.getByLabelText('作业截止时间')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: '班级管理' })).toBeInTheDocument()
+      expect(screen.getByText('班级总数')).toBeInTheDocument()
+      expect(screen.getByText('班级列表')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: '创建作业' })).toBeInTheDocument()
+      expect(screen.getByText('作业与提交记录')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('搜索班级 / 学期 / 邀请码')).toBeInTheDocument()
+      expect(screen.getByLabelText('批量导入学生')).toBeInTheDocument()
+      expect(screen.getByLabelText('作业截止时间')).toBeInTheDocument()
+    })
   })
-})
 })

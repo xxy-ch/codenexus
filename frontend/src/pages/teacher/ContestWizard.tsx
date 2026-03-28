@@ -17,6 +17,8 @@ import { Link } from 'react-router-dom'
 import api from '@/services/api'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { EmptyState } from '@/components/page/EmptyState'
 import { FieldGroup } from '@/components/page/FieldGroup'
 import { FilterBar } from '@/components/page/FilterBar'
@@ -98,10 +100,6 @@ const STEPS = [
 ] as const
 
 const DRAFT_STORAGE_KEY = 'teacher-contest-wizard-draft'
-const formSelectClassName =
-  'w-full appearance-none rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)]'
-const formTextAreaClassName =
-  'min-h-[132px] w-full rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 placeholder:text-[#93a0bb] focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)]'
 
 function toLocalInputValue(value?: string) {
   if (!value) return ''
@@ -506,17 +504,16 @@ export function ContestWizard() {
                 />
               </FieldGroup>
               <FieldGroup label="规则集">
-                <select
+                <Select
                   value={form.rules}
                   onChange={(e) => setForm((prev) => ({ ...prev, rules: e.target.value as ContestRule }))}
-                  className={formSelectClassName}
                 >
                   {RULESETS.map((ruleset) => (
                     <option key={ruleset.value} value={ruleset.value}>
                       {ruleset.title}
                     </option>
                   ))}
-                </select>
+                </Select>
               </FieldGroup>
               <FieldGroup label="开始时间">
                 <div className="relative">
@@ -543,10 +540,10 @@ export function ContestWizard() {
                 </div>
               </FieldGroup>
               <FieldGroup label="描述">
-                <textarea
+                <Textarea
                   value={form.description}
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className={formTextAreaClassName}
+                  className="min-h-[132px]"
                   placeholder="说明竞赛用途、可用语言、报名要求或课堂说明。"
                 />
               </FieldGroup>

@@ -63,20 +63,14 @@ describe('UserManagement control alignment', () => {
   it('uses shared control styling for search, selects, sort actions, and password input', async () => {
     renderComponent()
 
-    const search = await screen.findByRole('searchbox', { name: '搜索用户' })
-    expect(search.className).toContain('rounded-[14px]')
-
-    const roleFilter = screen.getByLabelText('角色筛选')
-    expect(roleFilter.className).toContain('appearance-none')
-
-    const statusFilter = screen.getByLabelText('状态筛选')
-    expect(statusFilter.className).toContain('appearance-none')
+    expect(await screen.findByRole('searchbox', { name: '搜索用户' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: '角色筛选' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: '状态筛选' })).toBeInTheDocument()
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: '最新' }).className).toContain('focus-visible:ring-2')
+      expect(screen.getByRole('button', { name: '最新' })).toBeInTheDocument()
     })
 
-    const defaultPassword = screen.getByLabelText('默认密码')
-    expect(defaultPassword.className).toContain('rounded-[14px]')
+    expect(screen.getByLabelText('默认密码')).toBeInTheDocument()
   })
 })

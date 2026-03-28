@@ -9,6 +9,8 @@ import {
   Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import { EmptyState } from '@/components/page/EmptyState'
 import { FieldGroup } from '@/components/page/FieldGroup'
 import { FilterBar } from '@/components/page/FilterBar'
@@ -307,22 +309,21 @@ export function AssignmentReport() {
         <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1.3fr)_minmax(220px,0.7fr)_minmax(220px,0.7fr)]">
           <div className="space-y-2 text-sm min-w-0">
             <label className="block font-medium text-slate-700">搜索班级</label>
-            <div className="flex items-center gap-2 rounded-[24px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)] backdrop-blur-sm">
-              <Search className="h-4 w-4 text-slate-400" />
-              <input
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="班级名称 / 学期 / 邀请码"
-                className="w-full bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400"
+                className="pl-11"
               />
             </div>
           </div>
           <FieldGroup label="班级">
-            <select
+            <Select
               aria-label="班级选择"
               value={highlightedClass?.id ?? ''}
               onChange={(e) => setSelectedClassId(Number(e.target.value))}
-              className="w-full rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)]"
             >
               <option value="" disabled>
                 请选择班级
@@ -332,15 +333,14 @@ export function AssignmentReport() {
                   {item.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </FieldGroup>
           <FieldGroup label="作业">
-            <select
+            <Select
               aria-label="作业选择"
               value={activeAssignmentId ?? ''}
               onChange={(e) => setSelectedAssignmentId(Number(e.target.value))}
               disabled={assignments.length === 0}
-              className="w-full rounded-[24px] border border-[rgba(193,201,224,0.36)] bg-[linear-gradient(180deg,rgba(248,250,255,0.98)_0%,rgba(237,242,255,0.96)_100%)] px-4 py-3.5 text-sm font-medium text-[#17305e] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_12px_28px_rgba(19,27,46,0.05)] outline-none transition-all duration-200 focus:border-[rgba(12,86,208,0.28)] focus:bg-white focus:ring-4 focus:ring-[rgba(12,86,208,0.09)] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100/80 disabled:text-slate-500"
             >
               <option value="" disabled>
                 {assignments.length === 0 ? '暂无作业' : '请选择作业'}
@@ -350,7 +350,7 @@ export function AssignmentReport() {
                   题目 #{assignment.problem_id} · {formatDateTime(assignment.deadline)}
                 </option>
               ))}
-            </select>
+            </Select>
           </FieldGroup>
         </div>
 
