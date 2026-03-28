@@ -11,7 +11,7 @@
 
 | Area | Status | What is already green |
 |---|---|---|
-| Focused frontend suites | verified | `npm test -- --run ...` passed for auth/service suites, teacher/admin alignment suites, and `src/components/ui/__tests__/primitives.test.tsx` in the current repo state |
+| Focused frontend suites | verified | `npm test -- --run ...` passed for auth/service suites, teacher/admin alignment suites, user truthfulness suites, contest/scoreboard alignment suites, community alignment/detail/authoring suites, and `src/components/ui/__tests__/primitives.test.tsx` in the current repo state |
 | Frontend typecheck | verified | `cd frontend && npm run typecheck` is green |
 | Frontend build | verified | `cd frontend && npm run build` is green |
 | Backend cargo test | verified | `cd api && cargo test` is green |
@@ -21,25 +21,25 @@
 
 | Surface | Status | What is proved today | What is still missing |
 |---|---|---|---|
-| Auth | partially verified | `src/services/__tests__/auth.current-user-alignment.test.ts`, `src/services/__tests__/auth.refresh-alignment.test.ts`, `src/services/__tests__/auth.payloads.test.ts`, and `src/components/auth/__tests__/ProtectedRoute.test.tsx` have passed | explicit final acceptance proof for `/login` redirects and session truthfulness |
-| User | partially verified | `src/pages/user/__tests__/ProblemSet.test.tsx`, `src/services/__tests__/problems.query-alignment.test.ts`, and existing submission/problem alignment tests are present in the repo | one consolidated acceptance proof for `/problems`, `/problems/:id`, `/problems/:id/solve`, `/submissions`, and `/submissions/:id` |
-| Settings | missing | no dedicated acceptance-proof test artifact is recorded yet | explicit proof that displayed persistence scope matches storage reality |
-| Contest scoreboard | partially verified | `src/pages/contest/__tests__/ContestScoreboard.alignment.test.tsx` exists in the repo | final acceptance proof for `/contests/:contestId/scoreboard` with real score behavior and smoke coverage |
-| Teacher | partially verified | `src/pages/teacher/__tests__/AssignmentReport.alignment.test.tsx`, `ClassManagement.alignment.test.tsx`, and `ContestWizard.alignment.test.tsx` have passed | final proof for explicit unsupported-action messaging across `/teacher/classes`, `/teacher/assignment-report`, and `/teacher/contest-wizard` |
-| Admin | partially verified | `src/pages/admin/__tests__/JudgeSettings.alignment.test.tsx`, `ProblemContentConfig.alignment.test.tsx`, `ProblemManagement.alignment.test.tsx`, `SimilarityScanConfig.alignment.test.tsx`, and `UserManagement.alignment.test.tsx` have passed | final proof that `/admin/*` surfaces no longer depend on runtime mock fallback or fake success paths |
-| Community | partially verified | `src/pages/community/__tests__/DiscussionList.alignment.test.tsx`, `DiscussionDetail.alignment.test.tsx`, `BlogList.alignment.test.tsx`, and `BlogDetail.alignment.test.tsx` exist in the repo | explicit proof for authoring flows and direct messages, including unsupported-boundary messaging |
-| Backend runtime | partially verified | `cd api && cargo test` and `python3 -m unittest scripts.tests.test_check_alignment scripts.tests.test_apply_runtime_migrations` have passed | explicit acceptance proof for supplemental migration handling and service-backed runtime assumptions |
+| Auth | verified | `src/services/__tests__/auth.current-user-alignment.test.ts`, `src/services/__tests__/auth.refresh-alignment.test.ts`, `src/services/__tests__/auth.payloads.test.ts`, `src/services/__tests__/api.refresh-response.test.ts`, `src/components/auth/__tests__/ProtectedRoute.test.tsx`, and backend auth middleware tests have passed | none in the local non-gated environment |
+| User | verified | `src/pages/user/__tests__/ProblemSet.test.tsx`, `src/pages/user/__tests__/DashboardEnhanced.test.tsx`, `src/pages/user/__tests__/auxiliary-shells.alignment.test.tsx`, and the problem/submission alignment suites have passed | none in the local non-gated environment |
+| Settings | verified | `src/pages/user/__tests__/Settings.truthfulness.test.tsx` proves that local-only preference and notification messaging matches actual browser storage | none in the local non-gated environment |
+| Contest scoreboard | verified | `src/pages/contest/__tests__/ContestScoreboard.alignment.test.tsx`, `src/pages/user/__tests__/ContestList.alignment.test.tsx`, and `src/pages/user/__tests__/ContestDetail.alignment.test.tsx` have passed | none in the local non-gated environment |
+| Teacher | verified | `src/pages/teacher/__tests__/AssignmentReport.alignment.test.tsx`, `ClassManagement.alignment.test.tsx`, and `ContestWizard.alignment.test.tsx` have passed | none in the local non-gated environment |
+| Admin | verified | `src/pages/admin/__tests__/JudgeSettings.alignment.test.tsx`, `ProblemContentConfig.alignment.test.tsx`, `ProblemManagement.alignment.test.tsx`, `SimilarityScanConfig.alignment.test.tsx`, `UserManagement.alignment.test.tsx`, and admin service contract suites have passed | none in the local non-gated environment |
+| Community | verified | `src/pages/community/__tests__/DiscussionList.alignment.test.tsx`, `DiscussionDetail.alignment.test.tsx`, `BlogList.alignment.test.tsx`, `BlogDetail.alignment.test.tsx`, and `community-authoring-pages.test.tsx` have passed, including authoring and direct-message flows | none in the local non-gated environment |
+| Backend runtime | verified | `cd api && cargo test`, `cd api && cargo test --doc`, `cd api && cargo test middleware::auth::tests::`, `cd api && cargo test notifications::`, and `python3 -m unittest scripts.tests.test_check_alignment scripts.tests.test_apply_runtime_migrations` have passed | PostgreSQL/Redis-backed integration paths remain environment-gated |
 
 ## Route Families Already Partially Verified
 
-- Auth: current-user and refresh alignment checks exist.
-- User: problem and submission alignment coverage exists for `/problems`, `/problems/:id`, `/problems/:id/solve`, `/submissions`, and `/submissions/:id`.
-- Settings: no acceptance-proof artifact is recorded yet; this remains missing.
-- Contest scoreboard: `/contests/:contestId/scoreboard` is routed and has an alignment test file in the repo.
-- Teacher: class management, assignment report, and contest wizard alignment coverage exists.
-- Admin: user management, problem management, and config pages have alignment coverage.
-- Community: discussion and blog surfaces have alignment coverage; direct messages are not yet explicitly evidenced.
-- Backend runtime: alignment helper and backend test coverage exists.
+- Auth: current-user, refresh, token persistence, and protected-route alignment checks have passed.
+- User: problem, settings, dashboard, submission, and auxiliary-shell coverage exists for `/problems`, `/problems/:id`, `/problems/:id/solve`, `/submissions`, and `/submissions/:id`.
+- Settings: dedicated truthfulness coverage exists and has passed.
+- Contest scoreboard: `/contests/:contestId/scoreboard`, contest list, and contest detail alignment coverage has passed.
+- Teacher: class management, assignment report, and contest wizard alignment coverage has passed.
+- Admin: user management, problem management, config pages, and admin service contract coverage has passed.
+- Community: discussion, blog, authoring, and direct-message coverage has passed.
+- Backend runtime: alignment helper and backend test coverage has passed in the local non-gated environment.
 
 ## Environment-Gated Backend Evidence
 
@@ -53,9 +53,9 @@
 
 | Area | Status | Notes |
 |---|---|---|
-| Final acceptance smoke for all named route families | missing | not yet consolidated into one closure pass |
+| Final acceptance smoke for all named route families | partially verified | focused route-family suites are green; one final consolidated sweep is still desirable |
 | Explicit residual-risk register | missing | needs a short bounded list after the verification sweep |
-| Any intentionally excluded route surface | missing | must be named if the closeout does not cover it |
+| Any intentionally excluded route surface | verified | no intentionally excluded routed surface is recorded at this stage |
 | Backend runtime assumptions tied to external services | partially verified | helper tests exist, but service-backed proof still needs the gated environment |
 
 ## Inventory Note
