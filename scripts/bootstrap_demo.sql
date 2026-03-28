@@ -133,14 +133,36 @@ VALUES
   (1, '33333333-3333-3333-3333-333333333333')
 ON CONFLICT (contest_id, user_id) DO NOTHING;
 
-INSERT INTO discussions (id, problem_id, user_id, content, is_pinned)
+INSERT INTO discussions (
+  id,
+  title,
+  content,
+  author_id,
+  problem_id,
+  contest_id,
+  tags,
+  is_pinned,
+  is_solved,
+  is_locked,
+  view_count,
+  reply_count,
+  like_count
+)
 VALUES
   (
     1,
-    1,
-    '22222222-2222-2222-2222-222222222222',
+    'Two Sum 题解思路',
     'Two Sum 这题可以先用哈希表记录已经出现过的数字，再在一次遍历里找补数。',
-    TRUE
+    '22222222-2222-2222-2222-222222222222',
+    1,
+    NULL,
+    ARRAY['solution', 'two-sum'],
+    TRUE,
+    FALSE,
+    FALSE,
+    16,
+    2,
+    5
   )
 ON CONFLICT (id) DO NOTHING;
 
