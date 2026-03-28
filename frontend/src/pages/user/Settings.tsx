@@ -13,6 +13,26 @@ import { SurfaceCard } from '@/components/page/SurfaceCard'
 
 type TabType = 'account' | 'preferences' | 'notifications' | 'security'
 
+const PREFERENCES_STORAGE_KEY = 'oj-settings-preferences'
+const NOTIFICATIONS_STORAGE_KEY = 'oj-settings-notifications'
+
+const defaultPreferences = {
+  theme: 'light' as 'light' | 'dark' | 'system',
+  language: 'zh-CN',
+  fontSize: 'medium' as 'small' | 'medium' | 'large',
+  autoSave: true,
+  showLineNumbers: true,
+  wordWrap: false,
+}
+
+const defaultNotifications = {
+  emailNotifications: true,
+  contestReminders: true,
+  newProblems: false,
+  replyComments: true,
+  weeklyReport: true,
+}
+
 export function Settings() {
   const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState<TabType>('account')
@@ -38,22 +58,21 @@ export function Settings() {
     })
   }, [profile])
 
-  const [preferences, setPreferences] = useState({
-    theme: 'light' as 'light' | 'dark' | 'system',
-    language: 'zh-CN',
-    fontSize: 'medium' as 'small' | 'medium' | 'large',
-    autoSave: true,
-    showLineNumbers: true,
-    wordWrap: false,
-  })
+  const [preferences, setPreferences] = useState(() =>
+    loadStoredSettings(PREFERENCES_STORAGE_KEY, defaultPreferences),
+  )
 
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    contestReminders: true,
-    newProblems: false,
-    replyComments: true,
-    weeklyReport: true,
-  })
+  const [notifications, setNotifications] = useState(() =>
+    loadStoredSettings(NOTIFICATIONS_STORAGE_KEY, defaultNotifications),
+  )
+
+  useEffect(() => {
+    localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences))
+  }, [preferences])
+
+  useEffect(() => {
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications))
+  }, [notifications])
 
   const updateAccountMutation = useMutation({
     mutationFn: async (data: typeof accountForm) =>
@@ -321,4 +340,15 @@ export function Settings() {
       </div>
     </div>
   )
+}
+
+function loadStoredSettings<T extends Record<string, unknown>>(storageKey: string, defaults: T): T {
+  const rawValue = localStorage.getItem(storageKey)
+  if (!rawValue) return defaults
+
+  try {
+    return { ...defaults, ...JSON.parse(rawValue) }
+  } catch {
+    return defaults
+  }
 }

@@ -56,6 +56,8 @@ export function ProblemSet() {
       .slice(0, 3)
   }, [problems])
 
+  const hasMultiplePages = pages > 1
+
   const renderTableBody = () => {
     if (isLoading) {
       return (
@@ -189,35 +191,23 @@ export function ProblemSet() {
           >
             全部方向
           </button>
-          <button
-            type="button"
-            className="inline-flex h-12 items-center rounded-full bg-[rgba(226,231,255,0.88)] px-5 text-sm font-semibold text-[#445472]"
-          >
-            动态规划
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-12 items-center rounded-full bg-[rgba(226,231,255,0.88)] px-5 text-sm font-semibold text-[#445472]"
-          >
-            图论
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-12 items-center rounded-full bg-[rgba(226,231,255,0.88)] px-5 text-sm font-semibold text-[#445472]"
-          >
-            数学
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-12 items-center rounded-full bg-[rgba(226,231,255,0.88)] px-5 text-sm font-semibold text-[#445472]"
-          >
-            字符串
-          </button>
+          {tagCounts.map(([tag, count]) => (
+            <button
+              key={tag}
+              type="button"
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-[rgba(226,231,255,0.88)] px-5 text-sm font-semibold text-[#445472]"
+            >
+              {tag}
+              <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-bold text-[#6b7ca7]">
+                {count}
+              </span>
+            </button>
+          ))}
           <button
             type="button"
             className="ml-auto inline-flex h-12 items-center gap-1 rounded-full px-4 text-sm font-semibold text-[#003d9b] transition-colors hover:bg-[rgba(226,231,255,0.58)]"
           >
-            展开筛选
+            查看真实筛选能力
             <span className="material-symbols-outlined text-sm" aria-hidden="true">keyboard_arrow_down</span>
           </button>
         </section>
@@ -244,13 +234,29 @@ export function ProblemSet() {
               <span>
                 共 {total} 题，当前显示 {problems.length} 题
               </span>
-              <div className="flex items-center gap-2">
-                <button type="button" className="h-8 w-8 rounded border border-[#c3c6d6] text-[#6b7ca7]">‹</button>
-                <button type="button" className="h-8 w-8 rounded bg-[#003d9b] text-white">1</button>
-                <button type="button" className="h-8 w-8 rounded border border-[#c3c6d6] text-[#445472]">2</button>
-                <button type="button" className="h-8 w-8 rounded border border-[#c3c6d6] text-[#445472]">3</button>
-                <button type="button" className="h-8 w-8 rounded border border-[#c3c6d6] text-[#6b7ca7]">›</button>
-              </div>
+              {hasMultiplePages ? (
+                <div className="flex items-center gap-2">
+                  <button type="button" className="h-8 w-8 rounded border border-[#c3c6d6] text-[#6b7ca7]">‹</button>
+                  {Array.from({ length: pages }, (_, index) => {
+                    const pageNumber = index + 1
+                    return (
+                      <button
+                        key={pageNumber}
+                        type="button"
+                        className={cn(
+                          'h-8 w-8 rounded border border-[#c3c6d6]',
+                          pageNumber === page ? 'bg-[#003d9b] text-white' : 'text-[#445472]',
+                        )}
+                      >
+                        {pageNumber}
+                      </button>
+                    )
+                  })}
+                  <button type="button" className="h-8 w-8 rounded border border-[#c3c6d6] text-[#6b7ca7]">›</button>
+                </div>
+              ) : (
+                <span>当前结果仅 1 页，无额外分页。</span>
+              )}
             </div>
           </SurfaceCard>
 
