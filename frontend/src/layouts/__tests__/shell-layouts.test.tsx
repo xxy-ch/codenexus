@@ -63,12 +63,10 @@ describe('application shells', () => {
     expect(screen.getByText(/dashboard page/i)).toBeInTheDocument()
   })
 
-  it('uses the shared sidebar width variable for workspace content offset', () => {
+  it('uses fixed margin for workspace content offset', () => {
     renderMainLayout()
 
-    expect(screen.getByRole('main')).toHaveStyle({
-      paddingLeft: 'var(--sidebar-shell-width, 96px)',
-    })
+    expect(screen.getByRole('main')).toHaveClass('ml-64')
   })
 
   it('renders the admin shell inside the same shell family with grouped navigation links', () => {
@@ -83,11 +81,9 @@ describe('application shells', () => {
     expect(screen.getByText(/users page/i)).toBeInTheDocument()
   })
 
-  it('uses the same shared sidebar width variable for admin content offset', () => {
+  it('uses the same fixed margin for admin content offset', () => {
     renderAdminLayout()
 
-    expect(screen.getByRole('main')).toHaveStyle({
-      paddingLeft: 'var(--sidebar-shell-width, 96px)',
-    })
+    expect(screen.getByRole('main')).toHaveClass('ml-64')
   })
 })

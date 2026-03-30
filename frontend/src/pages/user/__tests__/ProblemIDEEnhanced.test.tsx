@@ -120,4 +120,32 @@ describe('ProblemIDEEnhanced', () => {
       expect(mocks.navigate).toHaveBeenCalledWith('/submissions/42')
     })
   })
+
+  it('runs code through the real submission path and keeps the user in the workspace', async () => {
+    mocks.submitCode.mockResolvedValue({ id: '77', status: 'queued' })
+
+    render(
+      <MemoryRouter initialEntries={['/problems/1/solve']}>
+        <Routes>
+          <Route path="/problems/:problemId/solve" element={<ProblemIDEEnhanced />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText('code editor'), { target: { value: 'print(1)' } })
+    fireEvent.click(screen.getByRole('button', { name: '运行代码' }))
+
+    await waitFor(() => {
+      expect(mocks.submitCode).toHaveBeenCalledWith({
+        problemId: '1',
+        code: 'print(1)',
+        language: 'python',
+      })
+      expect(mocks.navigate).not.toHaveBeenCalled()
+      expect(screen.getByText('[运行]')).toBeInTheDocument()
+      expect(screen.getByText(/已创建运行任务 #77/)).toBeInTheDocument()
+    })
+  })
 })

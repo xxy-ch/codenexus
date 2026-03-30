@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { BellRing, LockKeyhole, MonitorCog, Palette, Settings2, UserRoundCog } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { cn } from '@/lib/utils'
+import { Card } from '@/components/ui/Card'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { usersService } from '@/services/users'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
-import { StatCard } from '@/components/page/StatCard'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { cn } from '@/lib/utils'
 
 type TabType = 'account' | 'preferences' | 'notifications' | 'security'
 
@@ -33,6 +31,31 @@ const defaultNotifications = {
   weeklyReport: true,
 }
 
+interface ToggleProps {
+  checked: boolean
+  label: string
+  description?: string
+  onToggle: () => void
+}
+
+function Toggle({ checked, label, description, onToggle }: ToggleProps) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex items-center justify-between rounded-2xl border border-outline-variant bg-surface-container-low px-4 py-4 text-left transition hover:bg-surface-container"
+    >
+      <div>
+        <p className="font-medium text-on-surface">{label}</p>
+        {description ? <p className="text-sm text-on-surface-variant">{description}</p> : null}
+      </div>
+      <div className={cn('h-6 w-12 rounded-full transition', checked ? 'bg-primary' : 'bg-surface-container-high')}>
+        <div className={cn('mt-1 h-4 w-4 rounded-full bg-white transition', checked ? 'ml-7' : 'ml-1')} />
+      </div>
+    </button>
+  )
+}
+
 export function Settings() {
   const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState<TabType>('account')
@@ -43,7 +66,7 @@ export function Settings() {
     display_name: '',
   })
 
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading } = useQuery({
     queryKey: ['settings-profile'],
     queryFn: () => usersService.getMyProfile(),
     enabled: !!user?.id,
@@ -91,86 +114,125 @@ export function Settings() {
   })
 
   const tabs = [
-    { id: 'account' as TabType, label: '账户', icon: UserRoundCog },
-    { id: 'preferences' as TabType, label: '偏好', icon: Palette },
-    { id: 'notifications' as TabType, label: '通知', icon: BellRing },
-    { id: 'security' as TabType, label: '安全', icon: LockKeyhole },
+    { id: 'account' as TabType, label: '账户', icon: 'person' },
+    { id: 'preferences' as TabType, label: '偏好', icon: 'palette' },
+    { id: 'notifications' as TabType, label: '通知', icon: 'notifications' },
+    { id: 'security' as TabType, label: '安全', icon: 'lock' },
   ]
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="设置"
-        title="设置中心"
-        description="账户、偏好、通知和安全提示统一收口到一套简化设置工作区。"
-      />
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[400px] items-center justify-center">
+        <LoadingState message="加载设置中..." />
+      </div>
+    )
+  }
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="主题" value={preferences.theme === 'light' ? '浅色' : preferences.theme === 'dark' ? '深色' : '跟随系统'} helper="当前仅保存本地偏好" />
-        <StatCard label="语言" value={preferences.language === 'zh-CN' ? '简体中文' : preferences.language} helper="用于界面显示语言" />
-        <StatCard
-          label="通知"
-          value={Object.values(notifications).filter(Boolean).length}
-          helper="已开启的通知项目"
-        />
+  if (!profile && user?.id) {
+    return (
+      <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-8">
+        <EmptyState title="无法加载个人资料" description="当前账号信息暂时无法读取。" />
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="max-w-3xl space-y-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+          个人 / 设置
+        </p>
+        <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+          设置中心
+        </h1>
+        <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
+          账户、偏好、通知和安全提示统一收口到一套简化设置工作区。
+        </p>
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card variant="surface" className="p-5">
+          <p className="text-sm font-medium text-on-surface-variant">主题</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-on-surface">
+            {preferences.theme === 'light' ? '浅色' : preferences.theme === 'dark' ? '深色' : '跟随系统'}
+          </p>
+          <p className="mt-2 text-sm text-on-surface-variant">当前仅保存本地偏好</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-sm font-medium text-on-surface-variant">语言</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-on-surface">
+            {preferences.language === 'zh-CN' ? '简体中文' : preferences.language}
+          </p>
+          <p className="mt-2 text-sm text-on-surface-variant">用于界面显示语言</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-sm font-medium text-on-surface-variant">通知</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-primary">
+            {Object.values(notifications).filter(Boolean).length}
+          </p>
+          <p className="mt-2 text-sm text-on-surface-variant">已开启的通知项目</p>
+        </Card>
+      </div>
+
+      {/* Message Banner */}
       {message ? (
-        <SurfaceCard
+        <Card
+          variant={message.type === 'success' ? 'surface' : 'outlined'}
           className={cn(
             'p-4',
-            message.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50'
-              : 'border-rose-200 bg-rose-50',
+            message.type === 'success' ? 'bg-primary-container/30 text-on-primary-container' : 'bg-error-container text-on-error-container'
           )}
         >
-          <p className="text-sm font-medium text-slate-900">{message.text}</p>
-        </SurfaceCard>
+          <p className="text-sm font-medium">{message.text}</p>
+        </Card>
       ) : null}
 
       <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
-        <SurfaceCard className="p-4">
+        {/* Sidebar Navigation */}
+        <Card variant="surface" className="p-4">
           <nav className="space-y-2">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setActiveTab(tab.id)}
-                  className={cn(
-                    'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition',
-                    activeTab === tab.id
-                      ? 'bg-slate-950 text-white'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950',
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
-                </button>
-              )
-            })}
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  'flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition',
+                  activeTab === tab.id
+                    ? 'bg-primary text-on-primary'
+                    : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'
+                )}
+              >
+                <span className="material-symbols-outlined text-base">{tab.icon}</span>
+                {tab.label}
+              </button>
+            ))}
           </nav>
-        </SurfaceCard>
+        </Card>
 
+        {/* Main Content */}
         <div className="space-y-6">
           {activeTab === 'account' ? (
-            <SectionBlock title="账户信息" description="只编辑当前后端已支持的个人资料字段。">
-              <div className="grid gap-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">用户名</label>
+            <Card variant="default" className="p-6">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">账户信息</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">只编辑当前后端已支持的个人资料字段。</p>
+              <div className="mt-5 grid gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">用户名</label>
                   <Input type="text" value={accountForm.username} readOnly />
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">显示名称</label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">显示名称</label>
                   <Input
                     type="text"
                     value={accountForm.display_name}
                     onChange={(e) => setAccountForm({ ...accountForm, display_name: e.target.value })}
                   />
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">邮箱地址</label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">邮箱地址</label>
                   <Input
                     type="email"
                     value={accountForm.email}
@@ -180,37 +242,41 @@ export function Settings() {
               </div>
               <div className="mt-6 flex justify-end">
                 <Button
-                  variant="primary"
                   onClick={() => updateAccountMutation.mutate(accountForm)}
                   disabled={updateAccountMutation.isPending}
                 >
+                  <span className="material-symbols-outlined text-base">
+                    {updateAccountMutation.isPending ? 'hourglass_empty' : 'save'}
+                  </span>
                   {updateAccountMutation.isPending ? '保存中...' : '保存更改'}
                 </Button>
               </div>
-            </SectionBlock>
+            </Card>
           ) : null}
 
           {activeTab === 'preferences' ? (
-            <SectionBlock title="界面与编辑器偏好" description="当前为受控本地偏好，不影响后端数据。">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">主题</label>
+            <Card variant="default" className="p-6">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">界面与编辑器偏好</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">当前为受控本地偏好，不影响后端数据。</p>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">主题</label>
                   <select
                     value={preferences.theme}
                     onChange={(e) => setPreferences({ ...preferences, theme: e.target.value as never })}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    className="w-full rounded-xl border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="light">浅色</option>
                     <option value="dark">深色</option>
                     <option value="system">跟随系统</option>
                   </select>
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">字体大小</label>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">字体大小</label>
                   <select
                     value={preferences.fontSize}
                     onChange={(e) => setPreferences({ ...preferences, fontSize: e.target.value as never })}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                    className="w-full rounded-xl border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="small">小</option>
                     <option value="medium">中</option>
@@ -219,122 +285,108 @@ export function Settings() {
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-3">
-                {[
-                  { key: 'autoSave', label: '自动保存', desc: '自动保存代码草稿' },
-                  { key: 'showLineNumbers', label: '显示行号', desc: '在编辑器中显示行号' },
-                  { key: 'wordWrap', label: '自动换行', desc: '编辑器内容自动换行' },
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() =>
-                      setPreferences((prev) => ({
-                        ...prev,
-                        [item.key]: !prev[item.key as keyof typeof prev],
-                      }))
-                    }
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left"
-                  >
-                    <div>
-                      <p className="font-medium text-slate-950">{item.label}</p>
-                      <p className="text-sm text-slate-500">{item.desc}</p>
-                    </div>
-                    <div
-                      className={cn(
-                        'h-6 w-12 rounded-full transition',
-                        preferences[item.key as keyof typeof preferences] ? 'bg-emerald-500' : 'bg-slate-300',
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'mt-1 h-4 w-4 rounded-full bg-white transition',
-                          preferences[item.key as keyof typeof preferences] ? 'ml-7' : 'ml-1',
-                        )}
-                      />
-                    </div>
-                  </button>
-                ))}
+              <div className="mt-6 space-y-3">
+                <Toggle
+                  checked={preferences.autoSave}
+                  label="自动保存"
+                  description="自动保存代码草稿"
+                  onToggle={() => setPreferences((prev) => ({ ...prev, autoSave: !prev.autoSave }))}
+                />
+                <Toggle
+                  checked={preferences.showLineNumbers}
+                  label="显示行号"
+                  description="在编辑器中显示行号"
+                  onToggle={() => setPreferences((prev) => ({ ...prev, showLineNumbers: !prev.showLineNumbers }))}
+                />
+                <Toggle
+                  checked={preferences.wordWrap}
+                  label="自动换行"
+                  description="编辑器内容自动换行"
+                  onToggle={() => setPreferences((prev) => ({ ...prev, wordWrap: !prev.wordWrap }))}
+                />
               </div>
 
-              <p className="mt-4 text-sm text-slate-600">本地偏好立即生效；后端暂不支持偏好同步。</p>
-
-              <div className="mt-6 flex justify-end">
-                <Button variant="primary" disabled>
-                  保存偏好
-                </Button>
-              </div>
-            </SectionBlock>
+              <p className="mt-6 text-sm text-on-surface-variant">本地偏好立即生效；后端暂不支持偏好同步。</p>
+            </Card>
           ) : null}
 
           {activeTab === 'notifications' ? (
-            <SectionBlock title="通知偏好" description="只管理当前界面暴露的通知开关。">
-              <div className="grid gap-3">
-                {[
-                  { key: 'emailNotifications', label: '邮件通知' },
-                  { key: 'contestReminders', label: '竞赛提醒' },
-                  { key: 'newProblems', label: '新题提醒' },
-                  { key: 'replyComments', label: '回复提醒' },
-                  { key: 'weeklyReport', label: '每周报告' },
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() =>
-                      setNotifications((prev) => ({
-                        ...prev,
-                        [item.key]: !prev[item.key as keyof typeof prev],
-                      }))
-                    }
-                    className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left"
-                  >
-                    <p className="font-medium text-slate-950">{item.label}</p>
-                    <div
-                      className={cn(
-                        'h-6 w-12 rounded-full transition',
-                        notifications[item.key as keyof typeof notifications] ? 'bg-emerald-500' : 'bg-slate-300',
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'mt-1 h-4 w-4 rounded-full bg-white transition',
-                          notifications[item.key as keyof typeof notifications] ? 'ml-7' : 'ml-1',
-                        )}
-                      />
-                    </div>
-                  </button>
-                ))}
+            <Card variant="default" className="p-6">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">通知偏好</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">只管理当前界面暴露的通知开关。</p>
+              <div className="mt-5 space-y-3">
+                <Toggle
+                  checked={notifications.emailNotifications}
+                  label="邮件通知"
+                  onToggle={() =>
+                    setNotifications((prev) => ({ ...prev, emailNotifications: !prev.emailNotifications }))
+                  }
+                />
+                <Toggle
+                  checked={notifications.contestReminders}
+                  label="竞赛提醒"
+                  onToggle={() =>
+                    setNotifications((prev) => ({ ...prev, contestReminders: !prev.contestReminders }))
+                  }
+                />
+                <Toggle
+                  checked={notifications.newProblems}
+                  label="新题提醒"
+                  onToggle={() => setNotifications((prev) => ({ ...prev, newProblems: !prev.newProblems }))}
+                />
+                <Toggle
+                  checked={notifications.replyComments}
+                  label="回复提醒"
+                  onToggle={() =>
+                    setNotifications((prev) => ({ ...prev, replyComments: !prev.replyComments }))
+                  }
+                />
+                <Toggle
+                  checked={notifications.weeklyReport}
+                  label="每周报告"
+                  onToggle={() =>
+                    setNotifications((prev) => ({ ...prev, weeklyReport: !prev.weeklyReport }))
+                  }
+                />
               </div>
 
-              <p className="mt-4 text-sm text-slate-600">
+              <p className="mt-6 text-sm text-on-surface-variant">
                 通知开关仅保存在当前浏览器；后端暂不支持通知同步。
               </p>
-
-              <div className="mt-6 flex justify-end">
-                <Button variant="primary" disabled>
-                  保存通知设置
-                </Button>
-              </div>
-            </SectionBlock>
+            </Card>
           ) : null}
 
           {activeTab === 'security' ? (
-            <SectionBlock title="安全与受控能力" description="诚实展示当前版本已开放和未开放的安全能力。">
-              <div className="grid gap-4 md:grid-cols-2">
-                <SurfaceCard tone="muted" className="p-5">
-                  <p className="text-sm font-medium text-slate-950">密码与会话</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    当前交付未开放独立密码重置与会话管理界面，安全能力仍以登录和刷新 token 为主。
-                  </p>
-                </SurfaceCard>
-                <SurfaceCard tone="muted" className="p-5">
-                  <p className="text-sm font-medium text-slate-950">危险操作</p>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    删除账户、双因素认证和设备审计尚未交付，不在当前生产范围内暴露。
-                  </p>
-                </SurfaceCard>
-              </div>
-            </SectionBlock>
+            <>
+              <Card variant="default" className="p-6">
+                <h2 className="font-headline text-xl font-extrabold text-on-surface">安全与受控能力</h2>
+                <p className="mt-1 text-sm text-on-surface-variant">诚实展示当前版本已开放和未开放的安全能力。</p>
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  <Card variant="surface" className="p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="material-symbols-outlined text-2xl text-primary">password</span>
+                      <div>
+                        <p className="text-sm font-medium text-on-surface">密码与会话</p>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                          当前交付未开放独立密码重置与会话管理界面，安全能力仍以登录和刷新 token 为主。
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card variant="surface" className="p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="material-symbols-outlined text-2xl text-error">warning</span>
+                      <div>
+                        <p className="text-sm font-medium text-on-surface">危险操作</p>
+                        <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+                          删除账户、双因素认证和设备审计尚未交付，不在当前生产范围内暴露。
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+              </Card>
+            </>
           ) : null}
         </div>
       </div>

@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
-import { EmptyState } from '@/components/page/EmptyState'
-import { FilterBar } from '@/components/page/FilterBar'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Loading } from '@/components/ui/Loading'
+import { Card } from '@/components/ui/Card'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { searchApi } from '@/services/searchApi'
 import type { SearchResponse, SearchResultItem, SearchSort, SearchType } from '@/types/search'
 
@@ -105,91 +103,93 @@ export function SearchResults() {
   const renderResultItem = (item: SearchResultItem) => {
     if (item.type === 'Problem') {
       return (
-        <SurfaceCard
+        <Card
           key={`problem-${item.id}`}
-          className="cursor-pointer space-y-4 transition-all duration-200 hover:border-blue-200 hover:shadow-[0_18px_36px_rgba(30,64,175,0.08)]"
+          variant="surface"
+          className="cursor-pointer transition-all duration-200 hover:border-primary/30"
         >
           <button
             type="button"
             onClick={() => navigate(`/problems/${item.problem_id}`)}
             className="w-full text-left"
           >
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-500">
-              <span className="rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-2 py-1">题目</span>
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium uppercase tracking-wide text-on-surface-variant">
+              <span className="rounded-full border border-outline-variant bg-surface-container-low px-2 py-1">题目</span>
               {item.difficulty ? (
-                <span className="rounded-full border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-2 py-1 normal-case text-slate-600">
+                <span className="rounded-full border border-outline-variant bg-surface px-2 py-1 normal-case text-on-surface">
                   {item.difficulty}
                 </span>
               ) : null}
             </div>
 
             <h2
-              className="text-lg font-semibold text-slate-950"
+              className="text-lg font-semibold text-on-surface"
               dangerouslySetInnerHTML={{ __html: item.highlighted_title || item.title }}
             />
 
             <div
-              className="mt-2 text-sm leading-6 text-slate-600"
+              className="mt-2 text-sm leading-6 text-on-surface-variant"
               dangerouslySetInnerHTML={{ __html: item.highlighted_content || item.excerpt }}
             />
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-on-surface-variant">
               <div className="flex flex-wrap items-center gap-3">
                 <span>{item.author_username}</span>
                 <span>{formatDate(item.created_at)}</span>
               </div>
-              <span className="font-medium text-slate-700">题号 #{item.problem_id}</span>
+              <span className="font-medium text-on-surface">题号 #{item.problem_id}</span>
             </div>
           </button>
-        </SurfaceCard>
+        </Card>
       )
     }
 
     return (
-        <SurfaceCard
-          key={`discussion-${item.id}`}
-          className="cursor-pointer space-y-4 transition-all duration-200 hover:border-blue-200 hover:shadow-[0_18px_36px_rgba(30,64,175,0.08)]"
-        >
+      <Card
+        key={`discussion-${item.id}`}
+        variant="surface"
+        className="cursor-pointer transition-all duration-200 hover:border-primary/30"
+      >
         <button
           type="button"
           onClick={() => navigate(`/discussions/${item.id}`)}
           className="w-full text-left"
         >
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500">
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-xs font-medium text-on-surface-variant">
             {item.is_pinned ? (
-              <span className="rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-2 py-1 uppercase tracking-wide">
+              <span className="rounded-full border border-outline-variant bg-surface-container-low px-2 py-1 uppercase tracking-wide">
                 置顶
               </span>
             ) : null}
             {item.is_solved ? (
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-emerald-700">
+              <span className="rounded-full border border-tertiary bg-tertiary-container/30 px-2 py-1 text-on-tertiary-container">
                 已解决
               </span>
             ) : null}
             {item.tags.map((entry) => (
-              <span key={entry} className="rounded-full border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-2 py-1 text-slate-600">
+              <span key={entry} className="rounded-full border border-outline-variant bg-surface px-2 py-1 text-on-surface">
                 #{entry}
               </span>
             ))}
           </div>
 
           <h2
-            className="text-lg font-semibold text-slate-950"
+            className="text-lg font-semibold text-on-surface"
             dangerouslySetInnerHTML={{ __html: item.highlighted_title || item.title }}
           />
 
           {item.highlighted_content ? (
             <div
-              className="mt-2 text-sm leading-6 text-slate-600"
+              className="mt-2 text-sm leading-6 text-on-surface-variant"
               dangerouslySetInnerHTML={{ __html: item.highlighted_content }}
             />
           ) : null}
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs text-on-surface-variant">
             <div className="flex flex-wrap items-center gap-3">
               <span>{item.author_username}</span>
               <span>{formatDate(item.created_at)}</span>
-              {item.problem_id ? <span className="text-slate-700">关联题目 #{item.problem_id}</span> : null}
+              {item.problem_id ? <span className="text-on-surface">关联题目 #{item.problem_id}</span> : null}
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <span>{item.view_count} 次浏览</span>
@@ -198,87 +198,95 @@ export function SearchResults() {
             </div>
           </div>
         </button>
-      </SurfaceCard>
+      </Card>
     )
   }
 
   return (
-    <main className="min-h-screen bg-transparent px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <PageHeader
-          eyebrow="搜索工作台"
-          title="搜索内容库"
-          description={summaryText}
-          actions={
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              返回
-            </Button>
-          }
-        />
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+            搜索工作台
+          </p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+            搜索内容库
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">{summaryText}</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          返回
+        </Button>
+      </div>
 
-        <div className="grid gap-5 xl:grid-cols-[1.3fr_0.9fr]">
-          <SurfaceCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(7,43,117,0.98)_0%,rgba(13,82,186,0.96)_54%,rgba(140,198,255,0.9)_100%)] px-6 py-6 text-white shadow-[0_22px_48px_rgba(8,50,132,0.22)]">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/72">结果概览</p>
-                <h2 className="mt-3 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.05em] text-white md:text-[2.5rem]">搜索工作台</h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-white/80">
-                  把搜索词、结果分布和结果池放在同一工作区里，避免回到零散卡片流。
-                </p>
-              </div>
-              <div className="rounded-[28px] border border-white/16 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">当前关键词</p>
-                <p className="mt-2 text-2xl font-semibold text-white">{query || '未输入关键词'}</p>
-                <p className="mt-2 text-sm text-white/74">共 {results?.total_count ?? 0} 条结果</p>
-              </div>
+      <div className="grid gap-5 xl:grid-cols-[1.3fr_0.9fr]">
+        {/* Hero Card */}
+        <Card variant="default" className="overflow-hidden bg-gradient-to-br from-primary to-primary-container px-6 py-6 text-on-primary">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-primary/70">结果概览</p>
+              <h2 className="mt-3 font-headline text-3xl font-extrabold text-on-primary md:text-4xl">搜索工作台</h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-on-primary/80">
+                把搜索词、结果分布和结果池放在同一工作区里，避免回到零散卡片流。
+              </p>
             </div>
-          </SurfaceCard>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-2">
-            <SurfaceCard className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,247,255,0.94)_100%)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4f6ea8]">题目结果</p>
-              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">{results?.problem_count ?? 0}</p>
-            </SurfaceCard>
-            <SurfaceCard className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,247,255,0.94)_100%)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4f6ea8]">讨论结果</p>
-              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">{results?.discussion_count ?? 0}</p>
-            </SurfaceCard>
+            <div className="rounded-2xl border border-on-primary/20 bg-on-primary/10 p-4 backdrop-blur-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-primary/60">当前关键词</p>
+              <p className="mt-2 text-2xl font-semibold text-on-primary">{query || '未输入关键词'}</p>
+              <p className="mt-2 text-sm text-on-primary/70">共 {results?.total_count ?? 0} 条结果</p>
+            </div>
           </div>
+        </Card>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-2">
+          <Card variant="surface" className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">题目结果</p>
+            <p className="mt-4 font-headline text-2xl font-extrabold text-on-surface">{results?.problem_count ?? 0}</p>
+          </Card>
+          <Card variant="surface" className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">讨论结果</p>
+            <p className="mt-4 font-headline text-2xl font-extrabold text-on-surface">{results?.discussion_count ?? 0}</p>
+          </Card>
+        </div>
+      </div>
+
+      {/* Filter Bar */}
+      <Card variant="surface" className="p-4">
+        <form onSubmit={handleSearchSubmit} className="flex flex-col gap-4 md:flex-row md:items-center">
+          <Input
+            aria-label="搜索关键词"
+            value={draftQuery}
+            onChange={(e) => setDraftQuery(e.target.value)}
+            placeholder="按标题、标签或正文搜索"
+            className="md:flex-1"
+          />
+          <Button type="submit">搜索</Button>
+        </form>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {(['all', 'problem', 'discussion'] as SearchType[]).map((typeOption) => (
+            <Button
+              key={typeOption}
+              type="button"
+              variant={type === typeOption ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => updateFilter('type', typeOption)}
+            >
+              {typeOption === 'all' ? '全部结果' : typeOption === 'problem' ? '题目' : '讨论'}
+            </Button>
+          ))}
         </div>
 
-        <FilterBar>
-          <form onSubmit={handleSearchSubmit} className="flex min-w-0 flex-1 flex-col gap-3 md:flex-row">
-            <Input
-              aria-label="搜索关键词"
-              value={draftQuery}
-              onChange={(e) => setDraftQuery(e.target.value)}
-              placeholder="按标题、标签或正文搜索"
-              className="md:flex-1"
-            />
-            <Button type="submit">搜索</Button>
-          </form>
-
-          <div className="flex flex-wrap items-center gap-2">
-            {(['all', 'problem', 'discussion'] as SearchType[]).map((typeOption) => (
-              <Button
-                key={typeOption}
-                type="button"
-                variant={type === typeOption ? 'primary' : 'outline'}
-                size="md"
-                onClick={() => updateFilter('type', typeOption)}
-              >
-                {typeOption === 'all' ? '全部结果' : typeOption === 'problem' ? '题目' : '讨论'}
-              </Button>
-            ))}
-          </div>
-
-          <label className="flex items-center gap-2 text-sm text-slate-600">
+        <div className="mt-4 flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-on-surface-variant">
             <span>排序</span>
             <select
               aria-label="排序"
               value={sort}
               onChange={(e) => updateFilter('sort', e.target.value)}
-              className="h-12 rounded-[16px] border border-slate-200/90 bg-[rgba(255,255,255,0.88)] px-4 text-sm font-semibold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] outline-none focus-visible:ring-4 focus-visible:ring-blue-100"
+              className="h-10 rounded-xl border border-outline-variant bg-surface px-4 text-sm font-semibold text-on-surface outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
             >
               <option value="relevance">相关度</option>
               <option value="latest">最新</option>
@@ -291,60 +299,51 @@ export function SearchResults() {
               清空筛选
             </Button>
           ) : null}
-        </FilterBar>
+        </div>
+      </Card>
 
-        {loading ? (
-          <SurfaceCard>
-            <Loading message="正在搜索..." />
-          </SurfaceCard>
-        ) : error ? (
-          <EmptyState
-            title="搜索暂时不可用"
-            description={error}
-            action={
-              <Button type="button" onClick={() => window.location.reload()}>
-                重试
-              </Button>
-            }
-          />
-        ) : !hasActiveSearch ? (
-          <EmptyState
-            title="先输入一个关键词"
-            description="从同一个入口搜索题目、讨论和文章。"
-          />
-        ) : results && results.results.length === 0 ? (
-          <EmptyState
-            title="没有找到匹配结果"
-            description="可以更换关键词、减少筛选条件，或尝试更宽泛的主题。"
-            action={
-              <Button type="button" variant="outline" onClick={clearFilters}>
-                清空筛选
-              </Button>
-            }
-          />
-        ) : (
-          <>
-            <div className="space-y-4">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#4f6ea8]">结果池</p>
-                <h2 className="mt-2 font-['Manrope'] text-[1.45rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">结果池</h2>
-              </div>
-
-              <div className="grid gap-4">
-              {results?.results.map((item) => renderResultItem(item))}
-              </div>
+      {/* Results */}
+      {loading ? (
+        <div className="flex min-h-[320px] items-center justify-center">
+          <LoadingState message="正在搜索..." />
+        </div>
+      ) : error ? (
+        <EmptyState
+          title="搜索暂时不可用"
+          description={error}
+          action={{ label: '重试', onClick: () => window.location.reload() }}
+        />
+      ) : !hasActiveSearch ? (
+        <EmptyState
+          title="先输入一个关键词"
+          description="从同一个入口搜索题目、讨论和文章。"
+        />
+      ) : results && results.results.length === 0 ? (
+        <EmptyState
+          title="没有找到匹配结果"
+          description="可以更换关键词、减少筛选条件，或尝试更宽泛的主题。"
+          action={{ label: '清空筛选', onClick: clearFilters }}
+        />
+      ) : (
+        <>
+          <div className="space-y-4">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">结果池</p>
+              <h2 className="mt-2 font-headline text-2xl font-extrabold text-on-surface">结果池</h2>
             </div>
 
-            {results?.has_more ? (
-              <div className="flex justify-center">
-                <Button type="button" onClick={() => updateFilter('page', String(page + 1))}>
-                  加载更多
-                </Button>
-              </div>
-            ) : null}
-          </>
-        )}
-      </div>
-    </main>
+            <div className="grid gap-4">{results?.results.map((item) => renderResultItem(item))}</div>
+          </div>
+
+          {results?.has_more ? (
+            <div className="flex justify-center">
+              <Button type="button" onClick={() => updateFilter('page', String(page + 1))}>
+                加载更多
+              </Button>
+            </div>
+          ) : null}
+        </>
+      )}
+    </div>
   )
 }

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ElementType, ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'gradient'
 type ButtonSize = 'sm' | 'small' | 'md' | 'medium' | 'lg' | 'large'
 
 interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'className'> {
@@ -10,29 +10,33 @@ interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'cla
   className?: string
   fullWidth?: boolean
   as?: ElementType
+  leftIcon?: ReactNode
+  rightIcon?: ReactNode
   children: ReactNode
 }
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'h-10 px-4 text-sm',
-  small: 'h-10 px-4 text-sm',
-  md: 'h-12 px-5 text-sm',
-  medium: 'h-12 px-5 text-sm',
-  lg: 'h-13 px-6 text-base',
-  large: 'h-13 px-6 text-base',
+  sm: 'h-9 px-4 text-xs',
+  small: 'h-9 px-4 text-xs',
+  md: 'h-11 px-5 text-sm',
+  medium: 'h-11 px-5 text-sm',
+  lg: 'h-12 px-6 text-sm font-bold',
+  large: 'h-12 px-6 text-sm font-bold',
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-[linear-gradient(135deg,#003d9b,#0052cc)] text-white shadow-[0_16px_32px_rgba(0,61,155,0.18)] hover:brightness-[1.03] focus-visible:ring-[#dae2ff]',
+    'bg-primary text-on-primary shadow-[0_16px_30px_rgba(0,61,155,0.18)] hover:brightness-110 active:scale-95 focus-visible:ring-primary-fixed',
   secondary:
-    'bg-[rgba(226,231,255,0.88)] text-[#244171] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] hover:bg-[rgba(218,226,253,0.96)] focus-visible:ring-[#dae2ff]',
+    'bg-surface-container-low text-on-surface shadow-sm hover:bg-surface-container focus-visible:ring-primary-fixed',
   outline:
-    'bg-white/92 text-[#445472] shadow-[0_10px_24px_rgba(19,27,46,0.05)] hover:bg-[#eef2ff] hover:text-[#17305e] focus-visible:ring-[#dae2ff]',
+    'bg-white/94 text-on-surface shadow-[0_8px_18px_rgba(19,27,46,0.04)] hover:bg-surface-container-low hover:text-primary focus-visible:ring-primary-fixed',
   ghost:
-    'bg-transparent text-[#586988] hover:bg-white/70 hover:text-[#17305e] focus-visible:ring-[#dae2ff]',
+    'bg-transparent text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface focus-visible:ring-primary-fixed',
   danger:
-    'bg-[#ba1a1a] text-white shadow-[0_14px_30px_rgba(186,26,26,0.18)] hover:brightness-[1.04] focus-visible:ring-[#ffdad6]',
+    'bg-error text-on-error shadow-[0_14px_30px_rgba(186,26,26,0.18)] hover:brightness-110 focus-visible:ring-error-container',
+  gradient:
+    'bg-gradient-to-br from-primary to-primary-container text-on-primary shadow-button hover:brightness-110 active:scale-95 focus-visible:ring-primary-fixed',
 }
 
 export function Button({
@@ -43,11 +47,13 @@ export function Button({
   as,
   type,
   disabled,
+  leftIcon,
+  rightIcon,
   children,
   ...props
 }: ButtonProps) {
   const classes = cn(
-    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-[16px] font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[rgb(var(--page-bg-rgb))] disabled:cursor-not-allowed disabled:opacity-50',
+    'inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
     sizeStyles[size],
     variantStyles[variant],
     fullWidth && 'w-full',
@@ -62,14 +68,18 @@ export function Button({
         aria-disabled={disabled ? 'true' : undefined}
         {...props}
       >
+        {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
         {children}
+        {rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
       </Component>
     )
   }
 
   return (
     <button type={type ?? 'button'} className={classes} disabled={disabled} {...props}>
+      {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
       {children}
+      {rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
     </button>
   )
 }

@@ -1,12 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, HelpCircle, Send, Sparkles, Tag } from 'lucide-react'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
-import { ActionBar } from '@/components/page/ActionBar'
-import { FieldGroup } from '@/components/page/FieldGroup'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { discussionsApi } from '@/services/communityApi'
@@ -60,59 +55,66 @@ export function CreateDiscussion() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="社区"
-        breadcrumb={problemId ? ['题目', problemId, '讨论'] : ['讨论', '新建']}
-        title="发起讨论"
-        description={
-          problemId
-            ? '围绕当前题目发起讨论或提问，提交时仍使用原有 `problem_id` 语义。'
-            : '发起一个新的社区讨论，页面只保留标题、标签和正文三块核心输入。'
-        }
-        actions={
-          <Button variant="outline" onClick={() => navigate('/discussions')}>
-            <ArrowLeft className="h-4 w-4" />
-            返回讨论列表
-          </Button>
-        }
-      />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">标题长度</p>
-          <p className="text-2xl font-semibold text-slate-950">{title.length}</p>
-          <p className="text-sm text-slate-600">建议标题先给出问题核心</p>
-        </SurfaceCard>
-        <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">标签数</p>
-          <p className="text-2xl font-semibold text-slate-950">{tags.length}</p>
-          <p className="text-sm text-slate-600">会继续按数组发给后端</p>
-        </SurfaceCard>
-        <SurfaceCard className="space-y-2 p-5">
-          <p className="text-sm font-medium text-slate-500">关联题目</p>
-          <p className="text-2xl font-semibold text-slate-950">{problemId || '无'}</p>
-          <p className="text-sm text-slate-600">有题号时才会带上 `problem_id`</p>
-        </SurfaceCard>
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+            社区 / {problemId ? `题目 / ${problemId} / 讨论` : '讨论 / 新建'}
+          </p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+            发起讨论
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
+            {problemId
+              ? '围绕当前题目发起讨论或提问，提交时仍使用原有 `problem_id` 语义。'
+              : '发起一个新的社区讨论，页面只保留标题、标签和正文三块核心输入。'}
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/discussions')}>
+          <span className="material-symbols-outlined text-base">arrow_back</span>
+          返回讨论列表
+        </Button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <SectionBlock
-          title="讨论工作台"
-          description="让提问和展开背景都在同一工作区完成，减少额外装饰。"
-        >
-          <div className="space-y-5">
-            <FieldGroup label="讨论标题" description="标题越具体，后续回复质量通常越高。">
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card variant="surface" className="p-5">
+          <p className="text-sm font-medium text-on-surface-variant">标题长度</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-on-surface">{title.length}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">建议标题先给出问题核心</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-sm font-medium text-on-surface-variant">标签数</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-primary">{tags.length}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">会继续按数组发给后端</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-sm font-medium text-on-surface-variant">关联题目</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-secondary">{problemId || '无'}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">有题号时才会带上 `problem_id`</p>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        {/* Main Content */}
+        <Card variant="default" className="p-6">
+          <h2 className="font-headline text-xl font-extrabold text-on-surface">讨论工作台</h2>
+          <p className="mt-1 text-sm text-on-surface-variant">让提问和展开背景都在同一工作区完成，减少额外装饰。</p>
+          <div className="mt-5 space-y-5">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-on-surface">讨论标题</label>
+              <p className="text-xs text-on-surface-variant">标题越具体，后续回复质量通常越高。</p>
               <Input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="你具体卡在什么地方？"
                 maxLength={500}
               />
-            </FieldGroup>
+            </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-700">讨论正文</label>
+              <label className="text-sm font-medium text-on-surface">讨论正文</label>
               <EditorWithPreview
                 value={content}
                 onChange={setContent}
@@ -120,18 +122,19 @@ export function CreateDiscussion() {
               />
             </div>
           </div>
-        </SectionBlock>
+        </Card>
 
+        {/* Sidebar */}
         <div className="space-y-6">
-          <SectionBlock
-            title="标签面板"
-            description="标签是可选的；不填时仍保持原来的 undefined 行为。"
-          >
-            <div className="space-y-5">
-              <FieldGroup label="添加标签" description="回车或点击按钮添加标签。">
+          <Card variant="surface" className="p-5">
+            <h2 className="font-headline text-lg font-extrabold text-on-surface">标签面板</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">标签是可选的；不填时仍保持原来的 undefined 行为。</p>
+            <div className="mt-5 space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">添加标签</label>
+                <p className="text-xs text-on-surface-variant">回车或点击按钮添加标签。</p>
                 <div className="flex gap-2">
                   <Input
-                    aria-label="添加标签"
                     value={tagInput}
                     onChange={(event) => setTagInput(event.target.value)}
                     onKeyDown={(event) => {
@@ -143,11 +146,11 @@ export function CreateDiscussion() {
                     placeholder="动态规划"
                   />
                   <Button variant="outline" onClick={handleAddTag} className="shrink-0">
-                    <Tag className="h-4 w-4" />
-                    添加标签
+                    <span className="material-symbols-outlined text-base">add</span>
+                    添加
                   </Button>
                 </div>
-              </FieldGroup>
+              </div>
 
               {tags.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
@@ -156,40 +159,41 @@ export function CreateDiscussion() {
                       key={tag}
                       type="button"
                       onClick={() => handleRemoveTag(tag)}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+                      className="inline-flex items-center gap-2 rounded-full border border-outline-variant bg-surface-container-high px-3 py-1.5 text-sm text-on-surface transition hover:bg-surface-container"
                     >
-                      <Tag className="h-3.5 w-3.5" />
+                      <span className="material-symbols-outlined text-base">label</span>
                       {tag}
                     </button>
                   ))}
                 </div>
               ) : null}
             </div>
-          </SectionBlock>
+          </Card>
 
-          <SurfaceCard tone="muted" className="space-y-3 p-5">
-            <div className="flex items-center gap-2 text-sm font-medium text-slate-950">
-              <Sparkles className="h-4 w-4 text-slate-500" />
+          <Card variant="surface" className="p-5">
+            <div className="flex items-center gap-2 text-sm font-medium text-on-surface">
+              <span className="material-symbols-outlined text-lg text-tertiary">lightbulb</span>
               提问提示
             </div>
-            <div className="space-y-2 text-sm leading-6 text-slate-600">
-              <p>交代输入、预期输出和你已经尝试过的思路。</p>
-              <p>如果是代码问题，正文里直接贴最小可复现片段。</p>
-              <p>页面不新增草稿箱、提问模板库或私有讨论流。</p>
-            </div>
-          </SurfaceCard>
+            <ul className="mt-4 space-y-2 text-sm leading-6 text-on-surface-variant">
+              <li>交代输入、预期输出和你已经尝试过的思路。</li>
+              <li>如果是代码问题，正文里直接贴最小可复现片段。</li>
+              <li>页面不新增草稿箱、提问模板库或私有讨论流。</li>
+            </ul>
+          </Card>
         </div>
       </div>
 
-      <ActionBar>
+      {/* Action Bar */}
+      <div className="flex items-center justify-end gap-3 border-t border-outline-variant/10 pt-4">
         <Button variant="ghost" onClick={() => navigate(-1)}>
           取消
         </Button>
         <Button onClick={handleSubmit} disabled={submitting || !title.trim() || !content.trim()}>
-          {submitting ? <HelpCircle className="h-4 w-4 animate-pulse" /> : <Send className="h-4 w-4" />}
+          <span className="material-symbols-outlined text-base">{submitting ? 'hourglass_empty' : 'send'}</span>
           {submitting ? '发布中...' : '发布讨论'}
         </Button>
-      </ActionBar>
+      </div>
     </div>
   )
 }

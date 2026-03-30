@@ -26,7 +26,14 @@ impl LeaderboardService {
         let offset = query.offset.unwrap_or(0);
 
         // Try to get from Redis cache first
-        let cache_key = format!("leaderboard:global:{}:{}", limit, offset);
+        let timeframe = query.timeframe.clone().unwrap_or_else(|| "all".to_string());
+        let cache_key = format!(
+            "leaderboard:global:{}:{}:{}:{}",
+            timeframe,
+            query.min_problems.unwrap_or(0),
+            limit,
+            offset
+        );
         if let Ok(mut conn) = self.redis_client.get_multiplexed_async_connection().await {
             let cached: Result<String, _> = conn.get(&cache_key).await;
             if let Ok(cached) = cached {
@@ -36,7 +43,7 @@ impl LeaderboardService {
                         entries,
                         limit,
                         offset,
-                        timeframe: query.timeframe.unwrap_or_else(|| "all".to_string()),
+                        timeframe: timeframe.clone(),
                     });
                 }
             }
@@ -91,7 +98,13 @@ impl LeaderboardService {
                 LEFT JOIN submissions s ON s.user_id = u.id {}
                 LEFT JOIN problems p ON p.id = s.problem_id
                 LEFT JOIN user_competitive_stats ucs ON ucs.user_id = u.id
-                GROUP BY u.id, u.username, u.organization_id, u.campus_id
+                GROUP BY
+                    u.id,
+                    u.username,
+                    u.organization_id,
+                    u.campus_id,
+                    ucs.ac_count,
+                    ucs.contest_rating
                 HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
             )
             SELECT
@@ -150,7 +163,7 @@ impl LeaderboardService {
             entries,
             limit,
             offset,
-            timeframe: query.timeframe.unwrap_or_else(|| "all".to_string()),
+            timeframe,
         })
     }
 

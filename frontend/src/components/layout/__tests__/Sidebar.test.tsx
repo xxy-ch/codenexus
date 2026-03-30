@@ -70,14 +70,14 @@ describe('Sidebar', () => {
     renderSidebar()
 
     expect(screen.getByText('建筑算法学社')).toBeInTheDocument()
-    expect(document.documentElement.style.getPropertyValue('--sidebar-shell-width')).toBe('288px')
+    expect(document.documentElement.dataset.sidebarCollapsed).toBe('false')
 
     fireEvent.click(screen.getByRole('button', { name: /收起侧栏/i }))
 
     await waitFor(() => {
       expect(screen.queryByText('建筑算法学社')).not.toBeInTheDocument()
       expect(screen.getByRole('button', { name: /展开侧栏/i })).toBeInTheDocument()
-      expect(document.documentElement.style.getPropertyValue('--sidebar-shell-width')).toBe('96px')
+      expect(document.documentElement.dataset.sidebarCollapsed).toBe('true')
     })
   })
 
@@ -88,7 +88,7 @@ describe('Sidebar', () => {
 
     expect(screen.queryByText('建筑算法学社')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /展开侧栏/i })).toBeInTheDocument()
-    expect(document.documentElement.style.getPropertyValue('--sidebar-shell-width')).toBe('96px')
+    expect(document.documentElement.dataset.sidebarCollapsed).toBe('true')
   })
 
   it('keeps nav links accessible when collapsed', () => {

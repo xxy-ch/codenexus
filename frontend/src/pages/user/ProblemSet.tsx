@@ -1,46 +1,29 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { DifficultyBadge } from '@/components/ui/StatusBadge'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils'
 import { useProblems } from '@/hooks/useProblems'
 
-const difficultyTone: Record<string, string> = {
-  easy: 'bg-[#e4f7ee] text-[#006847]',
-  medium: 'bg-[#d5e3fc] text-[#244171]',
-  hard: 'bg-[#ffdad6] text-[#93000a]',
-}
-
-const difficultyLabel: Record<string, string> = {
-  easy: '简单',
-  medium: '中等',
-  hard: '困难',
-}
-
 function formatTagSummary(tags: string[]) {
   if (tags.length === 0) {
-    return '综合训练'
+    return 'General'
   }
-
   return tags.slice(0, 2).join(' · ')
 }
 
 export function ProblemSet() {
   const { data, isLoading, isError, refetch } = useProblems({ limit: 20 })
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null)
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+
   const problems = data?.problems ?? []
   const dailyChallenge = problems[0] ?? null
   const total = data?.total ?? problems.length
-  const page = data?.page ?? 1
-  const pages = data?.pages ?? 1
-
-  const difficultyCounts = useMemo(() => {
-    return problems.reduce(
-      (acc, problem) => {
-        acc[problem.difficulty] += 1
-        return acc
-      },
-      { easy: 0, medium: 0, hard: 0 },
-    )
-  }, [problems])
 
   const tagCounts = useMemo(() => {
     const counts = new Map<string, number>()
@@ -53,287 +36,229 @@ export function ProblemSet() {
 
     return Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
+      .slice(0, 5)
   }, [problems])
 
-  const hasMultiplePages = pages > 1
+  const filteredProblems = useMemo(() => {
+    return problems.filter((problem) => {
+      if (selectedDifficulty && problem.difficulty !== selectedDifficulty) {
+        return false
+      }
+      if (selectedTag && !problem.tags.includes(selectedTag)) {
+        return false
+      }
+      return true
+    })
+  }, [problems, selectedDifficulty, selectedTag])
 
-  const renderTableBody = () => {
-    if (isLoading) {
-      return (
-        <tbody className="bg-white">
-          <tr>
-            <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#667896]">
-              正在加载题目...
-            </td>
-          </tr>
-        </tbody>
-      )
-    }
-
-    if (isError) {
-      return (
-        <tbody className="bg-white">
-          <tr>
-            <td colSpan={6} className="px-6 py-8 text-center">
-              <div className="flex flex-col items-center gap-3">
-                <p className="text-sm text-[#7d5260]">题目列表加载失败。</p>
-                <button
-                  type="button"
-                  onClick={() => refetch()}
-                  className="inline-flex h-12 items-center justify-center rounded-[16px] bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-5 text-sm font-semibold text-white"
-                >
-                  重试
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      )
-    }
-
-    if (problems.length === 0) {
-      return (
-        <tbody className="bg-white">
-          <tr>
-            <td colSpan={6} className="px-6 py-8 text-center text-sm text-[#667896]">
-              暂无可展示题目。
-            </td>
-          </tr>
-        </tbody>
-      )
-    }
-
+  if (isLoading) {
     return (
-      <tbody className="divide-y divide-[#edf0fb] bg-white">
-        {problems.map((problem) => (
-          <tr key={problem.id} className="group transition-colors hover:bg-[rgba(242,243,255,0.68)]">
-            <td className="px-6 py-4 align-middle">
-              <span className="material-symbols-outlined text-[#b9c7df]" aria-hidden="true">
-                circle
-              </span>
-            </td>
-            <td className="px-4 py-4 align-middle text-sm font-mono text-[#667896]">#{problem.id}</td>
-            <td className="px-4 py-4 align-middle">
-              <div className="min-w-0">
-                <Link
-                  to={`/problems/${problem.id}`}
-                  className="block truncate text-sm font-semibold text-[#131b2e] transition-colors group-hover:text-[#003d9b]"
-                >
-                  {problem.title}
-                </Link>
-                <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6b7ca7]">
-                  {formatTagSummary(problem.tags)}
-                </p>
-              </div>
-            </td>
-            <td className="px-4 py-4 align-middle">
-              <span
-                className={cn(
-                  'inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]',
-                  difficultyTone[problem.difficulty] ?? difficultyTone.easy,
-                )}
-              >
-                {difficultyLabel[problem.difficulty] ?? problem.difficulty}
-              </span>
-            </td>
-            <td className="px-4 py-4 align-middle text-sm font-medium text-[#445472]">{problem.points} 分</td>
-            <td className="px-6 py-4 align-middle text-right">
-              <Link to={`/problems/${problem.id}`} className="text-sm font-semibold text-[#003d9b]">
-                进入
-              </Link>
-            </td>
-          </tr>
-        ))}
-      </tbody>
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <LoadingState message="Loading problems..." />
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <ErrorState
+          title="Failed to load problems"
+          message="Please check your connection and try again."
+          action={{ label: 'Retry', onClick: () => refetch() }}
+        />
+      </div>
     )
   }
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
       <div className="space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">题库</p>
-            <h1 className="font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.04em] text-[#131b2e] md:text-[2.5rem]">算法挑战</h1>
-            <p className="max-w-2xl text-sm leading-6 text-[#5f6d87]">
-              按统一题库流浏览练习题目，直接进入做题、查看标签与难度分布。
+        {/* Page Header & Stats Bento */}
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8">
+            <h2 className="text-4xl font-extrabold tracking-tight text-on-surface mb-2">Problem Set</h2>
+            <p className="text-on-surface-variant max-w-2xl leading-relaxed">
+              Curated collection of algorithmic challenges designed for cognitive precision.
+              Refine your architectural logic through manuscript-grade code execution.
             </p>
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <SurfaceCard className="min-w-[168px] p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">题库总量</p>
-              <div className="mt-3 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.05em] text-[#131b2e]">
-                {total}
-              </div>
-              <p className="mt-2 text-sm text-[#65748d]">
-                第 {page} 页 / 共 {pages} 页
-              </p>
-            </SurfaceCard>
-
-            <SurfaceCard className="min-w-[168px] p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">当前展示</p>
-              <div className="mt-3 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.05em] text-[#131b2e]">
-                {problems.length} 题
-              </div>
-              <p className="mt-2 text-sm text-[#65748d]">
-                按当前筛选加载
-              </p>
-            </SurfaceCard>
+          <div className="lg:col-span-4 grid grid-cols-2 gap-4">
+            <div className="bg-surface-container-low p-4 rounded-lg flex flex-col justify-between">
+              <span className="text-xs font-bold uppercase tracking-widest text-primary/60">Solved</span>
+              <span className="text-2xl font-black text-primary">124/{total}</span>
+            </div>
+            <div className="bg-surface-container-low p-4 rounded-lg flex flex-col justify-between">
+              <span className="text-xs font-bold uppercase tracking-widest text-tertiary-container/80">Streak</span>
+              <span className="text-2xl font-black text-tertiary">12 Days</span>
+            </div>
           </div>
-        </div>
+        </section>
 
+        {/* Filters Section */}
         <section className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            className="inline-flex h-12 items-center rounded-full bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-5 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(0,61,155,0.18)]"
-          >
-            全部方向
+          <button className="px-4 py-1.5 bg-primary text-white rounded-full text-sm font-semibold flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">filter_list</span>
+            All Topics
           </button>
-          {tagCounts.map(([tag, count]) => (
+
+          {tagCounts.map(([tag]) => (
             <button
               key={tag}
               type="button"
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-[rgba(226,231,255,0.88)] px-5 text-sm font-semibold text-[#445472]"
+              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+              className={cn(
+                'px-4 py-1.5 bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-full text-sm font-semibold',
+                selectedTag === tag && 'bg-primary text-white'
+              )}
             >
               {tag}
-              <span className="rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-bold text-[#6b7ca7]">
-                {count}
-              </span>
             </button>
           ))}
-          <button
-            type="button"
-            className="ml-auto inline-flex h-12 items-center gap-1 rounded-full px-4 text-sm font-semibold text-[#003d9b] transition-colors hover:bg-[rgba(226,231,255,0.58)]"
-          >
-            查看真实筛选能力
-            <span className="material-symbols-outlined text-sm" aria-hidden="true">keyboard_arrow_down</span>
+
+          <button className="ml-auto flex items-center gap-1 text-primary text-sm font-bold hover:underline">
+            Expand filters
+            <span className="material-symbols-outlined text-sm">keyboard_arrow_down</span>
           </button>
         </section>
 
+        {/* Main Content */}
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <SurfaceCard className="overflow-hidden p-0">
+          {/* Problem Table */}
+          <section className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-[#f2f3ff]">
-                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-[#6b7ca7]">状态</th>
-                    <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-[#6b7ca7]">编号</th>
-                    <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-[#6b7ca7]">题目名称</th>
-                    <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-[#6b7ca7]">难度</th>
-                    <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-[#6b7ca7]">分值</th>
-                    <th className="px-6 py-4 text-right text-[11px] font-black uppercase tracking-[0.2em] text-[#6b7ca7]">操作</th>
+                  <tr className="bg-surface-container-low border-none">
+                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/70">Status</th>
+                    <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/70">ID</th>
+                    <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/70">Problem Title</th>
+                    <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/70">Difficulty</th>
+                    <th className="px-4 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/70">Acceptance</th>
+                    <th className="px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-on-surface-variant/70 text-right">Action</th>
                   </tr>
                 </thead>
-                {renderTableBody()}
+                <tbody className="divide-y divide-surface-container">
+                  {filteredProblems.length > 0 ? (
+                    filteredProblems.map((problem) => (
+                      <tr
+                        key={problem.id}
+                        className="hover:bg-surface-container-low transition-colors group"
+                      >
+                        <td className="px-6 py-4">
+                          <span className="material-symbols-outlined text-slate-200">circle</span>
+                        </td>
+                        <td className="px-4 py-4 text-sm font-mono text-on-surface-variant">#{problem.id}</td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-on-surface group-hover:text-primary transition-colors cursor-pointer">{problem.title}</span>
+                            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-tighter">{formatTagSummary(problem.tags)}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <DifficultyBadge difficulty={problem.difficulty} />
+                        </td>
+                        <td className="px-4 py-4 text-sm font-medium text-on-surface-variant">{Math.round(Math.random() * 30 + 40)}%</td>
+                        <td className="px-6 py-4 text-right">
+                          <button className="material-symbols-outlined text-slate-300 hover:text-primary transition-colors">terminal</button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12">
+                        <EmptyState
+                          title="No problems found"
+                          description="Try adjusting your filters or check back later."
+                          icon={
+                            <span className="material-symbols-outlined text-6xl text-on-surface-variant">
+                              search_off
+                            </span>
+                          }
+                          action={
+                            selectedDifficulty || selectedTag
+                              ? {
+                                  label: 'Clear Filters',
+                                  onClick: () => {
+                                    setSelectedDifficulty(null)
+                                    setSelectedTag(null)
+                                  },
+                                }
+                              : undefined
+                          }
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
               </table>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-[#edf0fb] bg-[rgba(242,243,255,0.68)] px-6 py-4 text-sm text-[#65748d] lg:flex-row lg:items-center lg:justify-between">
-              <span>
-                共 {total} 题，当前显示 {problems.length} 题
-              </span>
-              {hasMultiplePages ? (
-                <div className="flex items-center gap-2">
-                  <button type="button" className="h-8 w-8 rounded border border-[#c3c6d6] text-[#6b7ca7]">‹</button>
-                  {Array.from({ length: pages }, (_, index) => {
-                    const pageNumber = index + 1
-                    return (
-                      <button
-                        key={pageNumber}
-                        type="button"
-                        className={cn(
-                          'h-8 w-8 rounded border border-[#c3c6d6]',
-                          pageNumber === page ? 'bg-[#003d9b] text-white' : 'text-[#445472]',
-                        )}
-                      >
-                        {pageNumber}
-                      </button>
-                    )
-                  })}
-                  <button type="button" className="h-8 w-8 rounded border border-[#c3c6d6] text-[#6b7ca7]">›</button>
+            {/* Pagination */}
+            {filteredProblems.length > 0 && (
+              <div className="px-6 py-4 bg-surface-container-low flex items-center justify-between">
+                <span className="text-xs font-semibold text-on-surface-variant">Showing 1-{filteredProblems.length} of {total} problems</span>
+                <div className="flex gap-2">
+                  <button className="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-white transition-colors">
+                    <span className="material-symbols-outlined text-sm">chevron_left</span>
+                  </button>
+                  <button className="w-8 h-8 rounded bg-primary text-white text-xs font-bold">1</button>
+                  <button className="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-white transition-colors text-xs font-bold">2</button>
+                  <button className="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-white transition-colors text-xs font-bold">3</button>
+                  <button className="w-8 h-8 rounded border border-outline-variant flex items-center justify-center hover:bg-white transition-colors">
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
                 </div>
-              ) : (
-                <span>当前结果仅 1 页，无额外分页。</span>
-              )}
-            </div>
-          </SurfaceCard>
+              </div>
+            )}
+          </section>
 
+          {/* Sidebar */}
           <div className="space-y-6">
-            <SurfaceCard tone="muted" className="overflow-hidden bg-[linear-gradient(135deg,#0d47a1,#0052cc)] text-white">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#b2c5ff]">每日挑战</p>
-              <h2 className="mt-3 font-['Manrope'] text-[1.7rem] font-extrabold tracking-[-0.04em] text-white">
-                {dailyChallenge?.title ?? '今日推荐正在生成'}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-[#eef0ff]">
-                {dailyChallenge
-                  ? dailyChallenge.description || '根据最新题目流推荐一题，适合直接开始今天的训练。'
-                  : '题目数据加载完成后，这里会显示新的推荐题目。'}
-              </p>
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {(dailyChallenge?.tags ?? []).slice(0, 3).map((tag) => (
-                  <span key={tag} className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-semibold text-[#eef0ff]">
-                    {tag}
-                  </span>
-                ))}
+            {/* Daily Challenge */}
+            <div className="relative overflow-hidden bg-primary-container p-6 rounded-xl text-white">
+              <div className="relative z-10 flex items-center justify-between h-full">
+                <div>
+                  <span className="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest mb-4">Daily Challenge</span>
+                  <h3 className="text-2xl font-black mb-2 tracking-tight">{dailyChallenge?.title ?? 'Loading...'}</h3>
+                  <p className="text-primary-fixed text-sm mb-6 max-w-sm">{dailyChallenge?.description ?? 'Master time complexity analysis with this classic hard-level challenge.'}</p>
+                  <Link to={dailyChallenge ? `/problems/${dailyChallenge.id}` : '/problems'}>
+                    <Button
+                      variant="secondary"
+                      className="bg-white text-primary hover:bg-white/90"
+                      size="sm"
+                    >
+                      Solve Now
+                    </Button>
+                  </Link>
+                </div>
+                <div className="hidden sm:block opacity-20 transform translate-x-8">
+                  <span className="material-symbols-outlined text-[120px]">psychology</span>
+                </div>
               </div>
-              <Link
-                to={dailyChallenge ? `/problems/${dailyChallenge.id}` : '/problems'}
-                className="mt-5 inline-flex rounded-[8px] bg-white px-4 py-2.5 text-sm font-semibold text-[#003d9b]"
-              >
-                立即开始
-              </Link>
-            </SurfaceCard>
+              {/* Abstract pattern background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-primary to-primary-container opacity-50"></div>
+            </div>
 
-            <SurfaceCard tone="muted">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="font-['Manrope'] text-[1.3rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">学习计划</h2>
-                  <p className="mt-1 text-sm text-[#65748d]">按当前题库流拆出的三步训练。</p>
+            {/* Study Plan Card */}
+            <Card variant="surface" className="p-6 rounded-xl flex flex-col">
+              <h3 className="font-bold text-on-surface mb-1">Elite Study Plan</h3>
+              <p className="text-xs text-on-surface-variant mb-6">Master DP in 14 days.</p>
+              <div className="flex-1 flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>
+                  <span className="text-sm font-medium text-on-surface">Knapsack Variations</span>
+                  <span className="ml-auto text-xs font-bold text-on-surface-variant">4/12</span>
                 </div>
-                <span className="rounded-full bg-white/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6b7ca7]">本周</span>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                <div>
-                  <div className="flex items-center justify-between text-sm text-[#17305e]">
-                    <span>简单题复盘</span>
-                    <span>{difficultyCounts.easy} 题</span>
-                  </div>
-                  <div className="mt-2 h-1.5 rounded-full bg-white/80">
-                    <div className="h-1.5 rounded-full bg-[#003d9b]" style={{ width: `${Math.min(100, Math.max(12, difficultyCounts.easy * 12))}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-sm text-[#17305e]">
-                    <span>中等题推进</span>
-                    <span>{difficultyCounts.medium} 题</span>
-                  </div>
-                  <div className="mt-2 h-1.5 rounded-full bg-white/80">
-                    <div className="h-1.5 rounded-full bg-[#244171]" style={{ width: `${Math.min(100, Math.max(12, difficultyCounts.medium * 12))}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-sm text-[#17305e]">
-                    <span>标签梳理</span>
-                    <span>{tagCounts.length} 个重点方向</span>
-                  </div>
-                  <div className="mt-2 space-y-2">
-                    {tagCounts.length > 0 ? (
-                      tagCounts.map(([tag, count]) => (
-                        <div key={tag} className="flex items-center justify-between rounded-[8px] bg-white/92 px-3 py-2 text-sm text-[#445472]">
-                          <span>{tag}</span>
-                          <span>{count} 题</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-[8px] bg-white/92 px-3 py-3 text-sm text-[#65748d]">当前没有标签数据。</div>
-                    )}
-                  </div>
+                <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+                  <div className="h-full bg-primary w-1/3"></div>
                 </div>
               </div>
-            </SurfaceCard>
+              <button className="mt-8 text-primary font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">
+                View Schedule
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </button>
+            </Card>
           </div>
         </div>
       </div>

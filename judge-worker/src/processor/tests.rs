@@ -187,6 +187,33 @@ int main() {
     }
 
     #[test]
+    fn test_test_case_schema_mapping() {
+        let test_case = crate::db::TestCase::from_schema_row(
+            1,
+            "1 2\n".to_string(),
+            "3\n".to_string(),
+            true,
+            5,
+        );
+
+        assert_eq!(test_case.id, 1);
+        assert_eq!(test_case.input, "1 2\n");
+        assert_eq!(test_case.expected_output, "3\n");
+        assert!(test_case.is_hidden);
+        assert_eq!(test_case.score, 5);
+    }
+
+    #[test]
+    fn test_missing_test_cases_result_uses_system_error() {
+        let result = crate::processor::service::build_missing_test_cases_result(9);
+
+        assert_eq!(result.submission_id, 9);
+        assert_eq!(result.status, "system_error");
+        assert_eq!(result.score, Some(0));
+        assert!(result.test_case_results.is_empty());
+    }
+
+    #[test]
     fn test_timeout_result() {
         let result = crate::queue::JudgeResult {
             submission_id: 1,

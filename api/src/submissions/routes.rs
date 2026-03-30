@@ -15,6 +15,10 @@ pub fn submissions_router() -> axum::Router<AppState> {
         .route("/", axum::routing::get(list_submissions))
         .route("/stats", axum::routing::get(get_submission_stats))
         .route("/:id", axum::routing::get(get_submission))
+}
+
+pub fn submissions_callback_router() -> axum::Router<AppState> {
+    axum::Router::new()
         .route("/:id/results", axum::routing::post(update_judge_result))
 }
 

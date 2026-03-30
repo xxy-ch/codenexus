@@ -1,27 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { BookText, Eye, Loader2, Save, Search, Timer, Waypoints } from 'lucide-react'
-import { judgeConfigService, type UpdateProblemContentPayload } from '@/services/judgeConfig'
-import { EmptyState } from '@/components/page/EmptyState'
-import { FieldGroup } from '@/components/page/FieldGroup'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
-import { Textarea } from '@/components/ui/Textarea'
-import { Loading } from '@/components/ui/Loading'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { judgeConfigService, type UpdateProblemContentPayload } from '@/services/judgeConfig'
 import { cn } from '@/lib/utils'
 
-function ToggleButton({
-  checked,
-  label,
-  onToggle,
-}: {
+interface ToggleButtonProps {
   checked: boolean
   label: string
   onToggle: () => void
-}) {
+}
+
+function ToggleButton({ checked, label, onToggle }: ToggleButtonProps) {
   return (
     <button
       type="button"
@@ -30,20 +23,20 @@ function ToggleButton({
       aria-label={label}
       onClick={onToggle}
       className={cn(
-        'flex items-center justify-between gap-3 rounded-[18px] border px-4 py-3 text-left text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[rgba(12,86,208,0.12)]',
+        'flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
         checked
-          ? 'border-[#b2c5ff] bg-white text-[#17305e] shadow-[0_12px_24px_rgba(0,61,155,0.08)]'
-          : 'border-slate-200 bg-slate-50 text-slate-700'
+          ? 'border-primary-container bg-primary-container/30 text-on-primary-container'
+          : 'border-outline-variant bg-surface-container-low text-on-surface-variant'
       )}
     >
       <div>
-        <div className="font-semibold text-slate-950">{label}</div>
-        <div className="text-xs text-slate-500">{checked ? '已公开' : '仅自己可见'}</div>
+        <div className="font-semibold text-on-surface">{label}</div>
+        <div className="text-xs text-on-surface-variant">{checked ? '已公开' : '仅自己可见'}</div>
       </div>
       <span
         className={cn(
-          'rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em]',
-          checked ? 'bg-[#dae2ff] text-[#003d9b]' : 'bg-slate-100 text-slate-500'
+          'rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider',
+          checked ? 'bg-primary text-on-primary' : 'bg-surface-container-high text-on-surface-variant'
         )}
       >
         {checked ? '已开启' : '已关闭'}
@@ -121,134 +114,160 @@ export function ProblemContentConfig() {
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="管理台"
-        breadcrumb={['题库管理', '题面配置']}
-        title="题面配置"
-        description="维护真实后端支持的题面字段：标题、描述、难度、时空限制、标签与可见性。"
-        actions={
-          <Button type="button" onClick={handleSave} disabled={!problemId || updateMutation.isPending}>
-            {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            保存修改
-          </Button>
-        }
-      />
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+            管理台 / 题库管理 / 题面配置
+          </p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+            题面配置
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
+            维护真实后端支持的题面字段：标题、描述、难度、时空限制、标签与可见性。
+          </p>
+        </div>
+        <Button onClick={handleSave} disabled={!problemId || updateMutation.isPending}>
+          <span className="material-symbols-outlined text-base">{updateMutation.isPending ? 'hourglass_empty' : 'save'}</span>
+          保存修改
+        </Button>
+      </div>
 
-      <SurfaceCard className="border-slate-200 bg-slate-50">
+      {/* Problem ID Search */}
+      <Card variant="surface" className="p-5">
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-          <FieldGroup label="题目 ID" description="输入题目 ID 后加载题面配置。">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-on-surface">题目 ID</label>
+            <p className="text-xs text-on-surface-variant">输入题目 ID 后加载题面配置</p>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant">search</span>
               <Input
                 value={problemId}
                 onChange={(e) => setProblemId(e.target.value.trim())}
                 placeholder="输入题目 ID"
-                className="pl-11"
+                className="pl-12"
               />
             </div>
-          </FieldGroup>
-          <Button type="button" onClick={loadProblem} disabled={!problemId || loading}>
+          </div>
+          <Button onClick={loadProblem} disabled={!problemId || loading}>
             加载题目
           </Button>
         </div>
         {(message || error) && (
-          <div className={`mt-4 text-sm ${message ? 'text-emerald-600' : 'text-rose-600'}`}>{message || error}</div>
+          <div className={cn('mt-4 text-sm', message ? 'text-tertiary' : 'text-error')}>
+            {message || error}
+          </div>
         )}
-      </SurfaceCard>
+      </Card>
 
       {loading ? (
-        <div className="py-16 text-center">
-          <Loading message="加载题目中..." />
+        <div className="flex min-h-[320px] items-center justify-center">
+          <LoadingState message="加载题目中..." />
         </div>
       ) : !problemId ? (
         <EmptyState
           title="先输入题目 ID"
-          description="题面配置页需要先定位到某个题目，再读取和维护真实内容。"
+          description="题面配置页需要先定位到某个题目，再读取和维护真实内容"
+          icon={<span className="material-symbols-outlined text-6xl text-on-surface-variant">search</span>}
         />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_380px]">
-          <SurfaceCard>
-            <div className="flex items-center gap-2 text-lg font-semibold text-slate-950">
-              <BookText className="h-5 w-5 text-slate-700" />
+          {/* Basic Info */}
+          <Card variant="default" className="p-6">
+            <div className="flex items-center gap-3 text-lg font-semibold text-on-surface">
+              <span className="material-symbols-outlined text-2xl text-primary">description</span>
               基础信息
             </div>
             <div className="mt-5 space-y-5">
-              <FieldGroup label="题目标题">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">题目标题</label>
                 <Input
                   value={form.title || ''}
                   onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                 />
-              </FieldGroup>
-              <FieldGroup label="题目描述">
-                <Textarea
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">题目描述</label>
+                <textarea
                   value={form.description || ''}
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className="min-h-[360px]"
+                  rows={15}
                   placeholder="输入 Markdown 题面内容"
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
                 />
-              </FieldGroup>
+              </div>
             </div>
-          </SurfaceCard>
+          </Card>
 
+          {/* Sidebar */}
           <div className="space-y-6">
-            <SurfaceCard>
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Waypoints className="h-4 w-4 text-emerald-700" />
+            {/* Metadata */}
+            <Card variant="default" className="p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                <span className="material-symbols-outlined text-lg text-tertiary">schema</span>
                 元数据
               </div>
               <div className="mt-4 space-y-4">
-                <FieldGroup label="难度">
-                  <Select
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">难度</label>
+                  <select
                     value={form.difficulty || 'easy'}
                     onChange={(e) => setForm((prev) => ({ ...prev, difficulty: e.target.value }))}
+                    className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="easy">简单</option>
                     <option value="medium">中等</option>
                     <option value="hard">困难</option>
-                  </Select>
-                </FieldGroup>
-                <FieldGroup label="标签">
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">标签</label>
                   <Input
                     value={tagsText}
                     onChange={(e) => setTagsText(e.target.value)}
                     placeholder="图论, 最短路"
                   />
-                </FieldGroup>
+                </div>
               </div>
-            </SurfaceCard>
+            </Card>
 
-            <SurfaceCard>
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Timer className="h-4 w-4 text-amber-700" />
+            {/* Resource Limits */}
+            <Card variant="default" className="p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                <span className="material-symbols-outlined text-lg text-secondary">timer</span>
                 资源限制
               </div>
               <div className="mt-4 grid gap-4">
-                <FieldGroup label="时间限制（ms）">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">时间限制（ms）</label>
                   <Input
                     type="number"
                     value={form.time_limit || 1000}
                     onChange={(e) => setForm((prev) => ({ ...prev, time_limit: Number(e.target.value) }))}
                   />
-                </FieldGroup>
-                <FieldGroup label="内存限制（MB）">
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">内存限制（MB）</label>
                   <Input
                     type="number"
                     value={form.memory_limit || 256}
                     onChange={(e) => setForm((prev) => ({ ...prev, memory_limit: Number(e.target.value) }))}
                   />
-                </FieldGroup>
+                </div>
               </div>
-            </SurfaceCard>
+            </Card>
 
-            <SurfaceCard>
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Eye className="h-4 w-4 text-violet-700" />
+            {/* Visibility */}
+            <Card variant="default" className="p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                <span className="material-symbols-outlined text-lg text-tertiary">visibility</span>
                 可见性
               </div>
               <div className="mt-4 space-y-4">
-                <FieldGroup label="可见性">
-                  <Select
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">可见性</label>
+                  <select
                     value={form.visibility || 'private'}
                     onChange={(e) =>
                       setForm((prev) => ({
@@ -257,11 +276,12 @@ export function ProblemContentConfig() {
                         is_public: e.target.value === 'public',
                       }))
                     }
+                    className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
                   >
                     <option value="private">仅自己可见</option>
                     <option value="public">公开</option>
-                  </Select>
-                </FieldGroup>
+                  </select>
+                </div>
                 <ToggleButton
                   checked={!!form.is_public}
                   label="公开题目"
@@ -274,10 +294,12 @@ export function ProblemContentConfig() {
                   }
                 />
               </div>
-            </SurfaceCard>
+            </Card>
           </div>
         </div>
       )}
     </div>
   )
 }
+
+export default ProblemContentConfig

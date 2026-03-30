@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Community Hub | Architectural Scholar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed-variant": "#005137",
+              "on-secondary-fixed-variant": "#3a485b",
+              "surface-container-high": "#e2e7ff",
+              "primary": "#003d9b",
+              "error": "#ba1a1a",
+              "surface-tint": "#0c56d0",
+              "secondary-fixed-dim": "#b9c7df",
+              "on-background": "#131b2e",
+              "surface-bright": "#faf8ff",
+              "inverse-on-surface": "#eef0ff",
+              "primary-container": "#0052cc",
+              "primary-fixed": "#dae2ff",
+              "on-error": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "outline": "#737685",
+              "inverse-surface": "#283044",
+              "tertiary-fixed": "#85f8c4",
+              "surface-container-highest": "#dae2fd",
+              "secondary-container": "#d5e3fc",
+              "tertiary": "#004e34",
+              "surface-container-low": "#f2f3ff",
+              "on-tertiary-fixed": "#002114",
+              "on-tertiary-container": "#75e8b5",
+              "inverse-primary": "#b2c5ff",
+              "surface-container": "#eaedff",
+              "on-primary": "#ffffff",
+              "tertiary-container": "#006847",
+              "on-secondary-fixed": "#0d1c2e",
+              "primary-fixed-dim": "#b2c5ff",
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed-variant": "#0040a2",
+              "on-primary-container": "#c4d2ff",
+              "error-container": "#ffdad6",
+              "tertiary-fixed-dim": "#68dba9",
+              "surface": "#faf8ff",
+              "secondary": "#515f74",
+              "on-error-container": "#93000a",
+              "on-surface-variant": "#434654",
+              "on-primary-fixed": "#001848",
+              "surface-variant": "#dae2fd",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#d5e3fc",
+              "on-secondary-container": "#57657a",
+              "outline-variant": "#c3c6d6",
+              "on-surface": "#131b2e",
+              "background": "#faf8ff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50 dark:bg-slate-950 font-manrope antialiased tracking-tight">
+<nav class="flex items-center justify-between px-6 py-3 w-full max-w-screen-2xl mx-auto bg-slate-100 dark:bg-slate-900">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-blue-900 dark:text-blue-100">Architectural Scholar</span>
+<div class="hidden md:flex gap-6">
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors" href="#">Problems</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors" href="#">Contests</a>
+<a class="text-blue-700 dark:text-blue-400 font-semibold border-b-2 border-blue-700 dark:border-blue-400 pb-1" href="#">Community</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors" href="#">Rankings</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/15">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 font-body" placeholder="Search articles..." type="text"/>
+</div>
+<button class="p-2 text-blue-800 dark:text-blue-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-blue-800 dark:text-blue-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border border-primary/10" data-alt="Professional user profile avatar headshot" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA3snCBHNVNlXCdkcRBvmLDK8Zi-wfiK3_VwGjopWWZPRr40_aGlAVnClE-0gQCDfSR8EYRfda44gLkv5NxGQtNZCA4RQ_JqkXHpNsED1f8t4Qlu2jOguJcH6WlCPIbOhvlwoLkPwmkmGwsHA_0gemgGc8IRrZOB13THwD5f57NkDu_IAbGUjE7fotAfqwlWBkJTwebRWpGJtf8f6nvLOqSSPvcFKmxuvWe_uLMI20tgCla8NTBpNTQ1Eid6O6DjR5QvkuakZ9ntHrk"/>
+</div>
+</nav>
+</header>
+<div class="flex pt-16 min-h-screen">
+<!-- Sidebar Navigation -->
+<aside class="hidden lg:flex flex-col h-[calc(100vh-4rem)] w-64 p-4 space-y-2 fixed left-0 bg-slate-50 dark:bg-slate-950 font-manrope text-sm font-medium border-r-0 sticky top-16">
+<div class="px-3 py-4 mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+</div>
+<div>
+<h3 class="font-bold text-on-background leading-tight">Community</h3>
+<p class="text-xs text-on-surface-variant opacity-70">Knowledge Exchange</p>
+</div>
+</div>
+</div>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 bg-blue-100/50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-lg px-3 py-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="forum">forum</span>
+<span>All Posts</span>
+</a>
+<a class="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg px-3 py-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="menu_book">menu_book</span>
+<span>Editorials</span>
+</a>
+<a class="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg px-3 py-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="campaign">campaign</span>
+<span>Announcements</span>
+</a>
+<a class="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg px-3 py-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="groups">groups</span>
+<span>Discussion</span>
+</a>
+<a class="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg px-3 py-2 transition-colors border-b-0" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="history">history</span>
+<span>My Activity</span>
+</a>
+</nav>
+<div class="pt-6">
+<button class="w-full bg-primary hover:bg-primary-container text-white py-2.5 rounded-lg font-bold transition-all shadow-sm active:opacity-80">
+                    New Post
+                </button>
+</div>
+<div class="mt-auto pt-4 space-y-1">
+<a class="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg px-3 py-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="help_outline">help_outline</span>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg px-3 py-2 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="rate_review">rate_review</span>
+<span>Feedback</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 px-8 py-12 lg:pl-12 max-w-7xl mx-auto">
+<!-- Hero Editorial (Asymmetric Focus) -->
+<section class="mb-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+<div class="lg:col-span-7">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-tertiary-container text-on-tertiary-fixed text-[10px] font-bold tracking-widest uppercase mb-4">
+                        Featured Editorial
+                    </div>
+<h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter text-on-surface mb-6 leading-[1.1]">
+                        Optimizing Network Flow: <br/><span class="text-primary">The Dinic’s Algorithm Deep Dive.</span>
+</h1>
+<p class="text-on-surface-variant text-lg leading-relaxed mb-8 max-w-xl">
+                        A rigorous mathematical analysis of layered networks and the implementation nuances that separate a TLE from an Accepted submission in high-stakes contests.
+                    </p>
+<div class="flex items-center gap-4">
+<img alt="Author" class="w-12 h-12 rounded-lg object-cover" data-alt="Author portrait of a senior developer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP-9d6iGSDi7ygZ6lC7vSjWFlY84acuLw01zQeU8oFAa7HRI1pfuZnkhitUg9_awHVFIfb01Q-kEbU1HERlgc-UF3sCALYeZ58c-TvfZb22KEC_XgntSRcJLQWxlwTmqceCO1YOPFxTCWIvsQQ2-x0I7qFGAcnWPDP9G23Ys6cQ7md8f0nOQ8mKoN74c2OTo9BS2IesZtAb7AhH8WjD4c3gLtaDEC_7GWVXy8JKNy022wJ0FmLN2ZZLejBprydn8dxXE8mAtWqYClC"/>
+<div>
+<p class="text-sm font-bold text-on-surface">Dr. Aris Thorne</p>
+<p class="text-xs text-on-surface-variant">Grandmaster • 14 min read</p>
+</div>
+<a class="ml-auto lg:ml-8 inline-flex items-center gap-2 text-primary font-bold hover:gap-4 transition-all" href="#">
+                            Read Manuscript <span class="material-symbols-outlined">arrow_forward</span>
+</a>
+</div>
+</div>
+<div class="lg:col-span-5 h-[400px] bg-surface-container-high rounded-xl overflow-hidden relative group">
+<img alt="Article Cover" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Abstract geometric architectural patterns blue" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrd53xuReBIzsjhdw3alMaJwiMzxPhUbB4WP69mdNAYkIdLs0_E4kpxAefht10l3OdQJc84XlTka7eAcaM3p9v7zD1c1CYS4Fq_K72eaxKkpB_5iQKDBGBiHpB4OB3jKK7gnNkq7zGsS5A8k9zdZvt4g-xv2HEM2HK-a5_VNPGbzKackdJNvO5JzOd231DWh21ARD1pEWRt-7LsZ4Zx-jymEBEWE_OuHcscHnCbjLtaRZb8Y5tOHUPsodlUenHl6DVyiMDZ4cMgP4B"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/40 to-transparent"></div>
+</div>
+</section>
+<!-- Compact Editorial Grid (The Scholar's Desk) -->
+<div class="flex items-baseline justify-between mb-8 border-b-0">
+<h2 class="text-2xl font-bold tracking-tight">Recent Publications</h2>
+<div class="flex gap-4">
+<button class="text-sm font-semibold text-primary">Latest</button>
+<button class="text-sm font-medium text-on-surface-variant opacity-60">Trending</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<article class="bg-surface-container-lowest rounded-lg overflow-hidden flex flex-col hover:bg-surface-container-medium transition-colors cursor-pointer group">
+<div class="h-48 bg-surface-container overflow-hidden">
+<img alt="Article visual" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" data-alt="Python code on a computer screen dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH6PP3EwBP9encP3ci40Z_7sic1lJnq4voAT8iyBgDGkqss3MPdZoYYny4dbWJiiH9P2mrh2KjLmcU1i-0Jol3ivxLzEVkuU0txjKb9LUgMUsxDHOIs8cp8OB1OgUaImnX7ae46yYPWv4-ZroegXr0YMPErx3Qywa4uM4yL8azXsrs_YeNPyjRF9GKB7DN0VUeJLKOoyqbwXkrzuSnvI1-tmLwQqMvOnbXx-nR2sMU8msiM34Dr3YEJm5EKtwCwLNUznlN3GwpF8Uj"/>
+</div>
+<div class="p-6 flex-1">
+<div class="flex items-center justify-between mb-3">
+<span class="text-[10px] font-bold text-primary tracking-widest uppercase">Technique</span>
+<span class="text-[10px] text-on-surface-variant opacity-60">2 hours ago</span>
+</div>
+<h3 class="text-xl font-bold mb-3 leading-snug group-hover:text-primary transition-colors">Modern Competitive Python: Memory Tricks</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed mb-6 line-clamp-2">How to leverage __slots__ and local variable caching to shave off crucial milliseconds in Python 3.12 environments.</p>
+<div class="mt-auto flex items-center gap-2">
+<div class="w-6 h-6 rounded bg-blue-100 flex items-center justify-center text-[10px] font-bold text-blue-800">JS</div>
+<span class="text-xs font-medium text-on-surface">J. Sterling</span>
+</div>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="bg-surface-container-lowest rounded-lg overflow-hidden flex flex-col hover:bg-surface-container-medium transition-colors cursor-pointer group">
+<div class="p-6 flex-1 flex flex-col">
+<div class="flex items-center justify-between mb-3">
+<span class="text-[10px] font-bold text-error tracking-widest uppercase">Announcement</span>
+<span class="text-[10px] text-on-surface-variant opacity-60">Yesterday</span>
+</div>
+<h3 class="text-xl font-bold mb-3 leading-snug group-hover:text-primary transition-colors">Global Round #42: Official Results</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed mb-6 line-clamp-3">A summary of the most challenging problems from last night's contest, featuring a 0.2% solve rate on Problem G.</p>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-800">AD</div>
+<span class="text-xs font-medium text-on-surface">Admin</span>
+</div>
+<span class="text-[10px] bg-surface-container-high px-2 py-0.5 rounded font-bold">142 Comments</span>
+</div>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="bg-surface-container-lowest rounded-lg overflow-hidden flex flex-col hover:bg-surface-container-medium transition-colors cursor-pointer group">
+<div class="h-48 bg-surface-container overflow-hidden">
+<img alt="Article visual" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" data-alt="Complex mathematical formula on a chalkboard" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvI94kM-A09tB-2gZCEfC4BbfXdbX6AlMPuHEs-0rYczgo7DkVKBECZ2pfVIdzAbdr69ooZym35QECD2jgm8C1moTVYSdQAXDTLq3dZ7SvraIo_p9xqoOi8Tm9Uqz9IzTSdhSzG53khKK7o-utqQPC1xLF6vAJpk9ZMSm-urBQC_7ZmZVEVvYUi0VeqY0B4fUdr_pJWvkNEHTSu3P8-IqpMTJiPwjmBrXaQecydfD1MtktD_t2GWvQzP0ILdRaXEpdUxiohNlexmUC"/>
+</div>
+<div class="p-6 flex-1">
+<div class="flex items-center justify-between mb-3">
+<span class="text-[10px] font-bold text-tertiary tracking-widest uppercase">Mathematics</span>
+<span class="text-[10px] text-on-surface-variant opacity-60">3 days ago</span>
+</div>
+<h3 class="text-xl font-bold mb-3 leading-snug group-hover:text-primary transition-colors">Number Theory: From Euclid to RSA</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed mb-6 line-clamp-2">A foundational guide to modular arithmetic and its application in modern cryptography problems.</p>
+<div class="mt-auto flex items-center gap-2">
+<div class="w-6 h-6 rounded bg-green-100 flex items-center justify-center text-[10px] font-bold text-green-800">ML</div>
+<span class="text-xs font-medium text-on-surface">M. Lagrange</span>
+</div>
+</div>
+</article>
+<!-- Card 4 (Horizontal / Wide style) -->
+<article class="md:col-span-2 bg-surface-container-lowest rounded-lg overflow-hidden flex flex-col md:flex-row hover:bg-surface-container-medium transition-colors cursor-pointer group">
+<div class="md:w-1/3 h-48 md:h-full bg-surface-container">
+<img alt="Editorial Visual" class="w-full h-full object-cover" data-alt="Code editor showing syntax highlighted code" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2YnR9LJA3TlJrgM4eWZNRwGiHtBsP5xgU19Z4wCO1VRnfnNwNSsr9PS4AHU2zbGTylRC7zRiEztnKO0Gl5P_b5KGW_1IeoAfatlv4SCvPfav_xKIdwp8o4ZD6d8M7-bh5F7EshXPFANmh-bQkEl8CLVYq_Gfensh85K63mnHTdZ6gzYxKlqyjlUUKqDjk3vuDgSLq4tiz_IuAVNjJIl0cK6MBBz39dA3RBMnXlfLd3qyANzQNWByhAihVvfSiOKr1-hMSvzCTquJd"/>
+</div>
+<div class="p-6 md:w-2/3 flex flex-col">
+<div class="flex items-center justify-between mb-3">
+<span class="text-[10px] font-bold text-primary tracking-widest uppercase">Editorial</span>
+<span class="text-[10px] text-on-surface-variant opacity-60">5 days ago</span>
+</div>
+<h3 class="text-xl font-bold mb-2 group-hover:text-primary transition-colors">Solving "The Celestial Cartographer"</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed mb-4">Walkthrough of the segment tree approach with lazy propagation required for the peak efficiency solution to contest 882's hardest problem.</p>
+<div class="mt-auto flex items-center justify-between">
+<div class="flex items-center gap-2">
+<img alt="Avatar" class="w-6 h-6 rounded-full" data-alt="Small author avatar icon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKzmBgqsJukbecBQ-Hd9imOpLIAydaxoXUTzOg53sP8X_86q881cmffeCH2sr33QnFSzmxyV5EVSvFQiWaosi2n2T74u0RoB_IBy-LmHj3Cj8fDpMcjBmGOfGwqaw8wcIX4wUxL74w96yDEScWAkdAKN_LH3qwH1NAwv5qDo_2Si63QlIKptYXeDh7VCDmyv1eQKQMCA6_P8yVHcEW6dXKNahjFgDkc05jhCrjQJAKDAgcVh3OMBLjc0u4OLhvd56oJpw5nKVrKekp"/>
+<span class="text-xs font-medium text-on-surface">CodeWizard_99</span>
+</div>
+<button class="text-xs font-bold text-primary uppercase tracking-tighter">Read Discussion</button>
+</div>
+</div>
+</article>
+<!-- Card 5 (Text Only Scholar Card) -->
+<article class="bg-primary text-white p-6 rounded-lg flex flex-col justify-between hover:scale-[1.02] transition-transform shadow-xl shadow-primary/10">
+<div>
+<span class="material-symbols-outlined text-4xl mb-4 opacity-50" data-icon="auto_awesome">auto_awesome</span>
+<h3 class="text-xl font-bold leading-tight mb-2">Join the Architectural Scholar Review Board</h3>
+<p class="text-sm text-primary-fixed opacity-90 leading-relaxed">We are looking for expert problem setters to review next season's editorial content.</p>
+</div>
+<button class="mt-8 bg-white text-primary py-2 rounded font-bold text-xs uppercase tracking-widest">Apply Now</button>
+</article>
+</div>
+<!-- Pagination -->
+<div class="mt-12 flex justify-center items-center gap-2">
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant/30 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg bg-primary text-white font-bold">1</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors font-medium">2</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors font-medium">3</button>
+<span class="px-2 opacity-50">...</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-surface-container-high transition-colors font-medium">12</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-lg border border-outline-variant/30 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="w-full border-t-0 bg-slate-50 dark:bg-slate-950">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 py-6 w-full max-w-screen-2xl mx-auto mt-12 bg-slate-100 dark:bg-slate-900 font-inter text-xs tracking-wide text-slate-500 dark:text-slate-400">
+<p>© 2024 Architectural Scholar Online Judge. All rights reserved.</p>
+<div class="flex gap-8 mt-4 md:mt-0">
+<a class="no-underline hover:text-blue-600 dark:hover:text-blue-400" href="#">Privacy Policy</a>
+<a class="no-underline hover:text-blue-600 dark:hover:text-blue-400" href="#">Terms of Service</a>
+<a class="no-underline hover:text-blue-600 dark:hover:text-blue-400" href="#">API Docs</a>
+<a class="no-underline hover:text-blue-600 dark:hover:text-blue-400" href="#">Status</a>
+</div>
+</div>
+</footer>
+</body></html>

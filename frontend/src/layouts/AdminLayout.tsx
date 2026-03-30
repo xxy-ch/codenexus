@@ -5,13 +5,14 @@ import { Sidebar } from '@/components/layout/Sidebar'
 export function AdminLayout() {
   return (
     <div className="min-h-screen bg-[rgb(var(--page-bg-rgb))] text-[rgb(var(--foreground-rgb))]">
+      {/* SideNavBar - fixed, full height, z-50 */}
       <Sidebar mode="admin" />
-      <main
-        className="min-h-screen transition-[padding] duration-200"
-        style={{ paddingLeft: 'var(--sidebar-shell-width, 96px)' }}
-      >
-        <header className="sticky top-0 z-20 bg-[rgba(250,248,255,0.82)] px-4 py-4 backdrop-blur-xl md:px-8">
-          <div className="flex items-center justify-between">
+
+      {/* Main content area with left margin */}
+      <main className="ml-64 min-h-screen flex flex-col">
+        {/* TopAppBar - sticky, z-40, full width */}
+        <header className="sticky top-0 z-40 w-full bg-[rgba(250,248,255,0.82)] backdrop-blur-xl">
+          <div className="flex items-center justify-between px-8 py-3 w-full max-w-[1440px] mx-auto">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#7a89a7]">管理台</div>
               <div className="font-['Manrope'] text-xl font-extrabold tracking-[-0.03em] text-[#17305e]">运营与审核中心</div>
@@ -27,10 +28,13 @@ export function AdminLayout() {
           </div>
         </header>
 
-        <div className="flex-1 px-4 py-4 pb-24 md:px-8 md:py-6 md:pb-6">
-          <Outlet />
+        {/* Content area */}
+        <div className="flex-1">
+          <div className="px-4 py-4 pb-24 md:px-8 md:py-6 md:pb-6">
+            <Outlet />
+          </div>
+          <MobileNav mode="admin" />
         </div>
-        <MobileNav mode="admin" />
       </main>
     </div>
   )

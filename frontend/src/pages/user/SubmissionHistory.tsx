@@ -1,74 +1,101 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Link } from 'react-router-dom'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { StatusBadge } from '@/components/ui/StatusBadge'
+import { Pagination } from '@/components/ui/Pagination'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { problemsService } from '@/services/problems'
 import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
-import { useNavigate } from 'react-router-dom'
+import { cn } from '@/lib/utils'
 
-const statuses = ['accepted', 'wrong_answer', 'queued']
-const languages = ['all', 'cpp', 'python']
 const statusLabels: Record<string, string> = {
-  accepted: '已通过',
-  wrong_answer: '答案错误',
-  queued: '排队中',
+  accepted: 'Accepted',
+  wrong_answer: 'Wrong Answer',
+  time_limit_exceeded: 'Time Limit',
+  memory_limit_exceeded: 'Memory Limit',
+  compilation_error: 'Compile Error',
+  runtime_error: 'Runtime Error',
+  pending: 'Pending',
+  running: 'Running',
+  queued: 'Queued',
+  system_error: 'System Error',
 }
+
 const languageLabels: Record<string, string> = {
-  all: '全部语言',
+  all: 'All Languages',
   cpp: 'C++',
   python: 'Python',
+  java: 'Java',
+  javascript: 'JavaScript',
+  go: 'Go',
+  rust: 'Rust',
 }
 
 function formatMemory(memoryKb?: number) {
   if (!memoryKb) return '--'
-  return `${Math.round(memoryKb / 1024)}MB`
+  return `${Math.round(memoryKb / 1024)} MB`
 }
 
 function formatRuntime(timeMs?: number) {
   if (!timeMs) return '--'
-  return `${timeMs}ms`
+  return `${timeMs} ms`
 }
 
-function statusTone(status: string) {
-  if (status === 'accepted') return 'bg-[#e4f7ee] text-[#006847]'
-  if (status === 'wrong_answer') return 'bg-[#ffdad6] text-[#93000a]'
-  return 'bg-[#d5e3fc] text-[#3a485b]'
+function formatDateTime(dateString: string) {
+  return new Date(dateString).toLocaleString()
 }
 
 export function SubmissionHistory() {
-  const navigate = useNavigate()
   const [status, setStatus] = useState<string>('')
   const [language, setLanguage] = useState<string>('')
   const [page, setPage] = useState(1)
   const limit = 20
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['user-submissions', status, language, page],
-    queryFn: () => problemsService.getUserSubmissions({ status: status || undefined, language: language || undefined, page, limit }),
+    queryFn: () =>
+      problemsService.getUserSubmissions({
+        status: (status || undefined) as any,
+        language: (language || undefined) as any,
+        page,
+        limit,
+      }),
   })
-
-  if (isLoading) {
-    return (
-      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
-        <SurfaceCard className="text-sm text-[#6b7ca7]">加载中...</SurfaceCard>
-      </div>
-    )
-  }
 
   const submissions = data?.submissions ?? []
   const total = data?.total ?? 0
   const pageCount = Math.max(1, Math.ceil(total / limit))
+
   const acceptedCount = submissions.filter((submission) => submission.status === 'accepted').length
   const wrongAnswerCount = submissions.filter((submission) => submission.status === 'wrong_answer').length
   const otherCount = submissions.length - acceptedCount - wrongAnswerCount
   const accuracy = submissions.length > 0 ? `${Math.round((acceptedCount / submissions.length) * 100)}%` : '0%'
 
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <LoadingState message="Loading submissions..." />
+      </div>
+    )
+  }
+
   if (isError) {
     return (
       <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
-        <SurfaceCard>
-          <h1 className="font-['Manrope'] text-[1.6rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">加载失败</h1>
-        </SurfaceCard>
+        <ErrorState
+          title="Failed to load submissions"
+          message="Please check your connection and try again."
+          action={{ label: 'Retry', onClick: () => refetch() }}
+        />
       </div>
     )
   }
@@ -76,162 +103,237 @@ export function SubmissionHistory() {
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
       <div className="space-y-6">
-        <PageHeader
-          eyebrow="提交工作台"
-          title="提交历史"
-          description="把提交记录收成工作台式信息页，顶部先给概览和通过率，再进入提交记录池查看语言、性能和时间轴。"
-        />
-
-        <div className="grid gap-5 xl:grid-cols-[1.3fr_0.9fr]">
-          <SurfaceCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(7,43,117,0.98)_0%,rgba(13,82,186,0.96)_54%,rgba(140,198,255,0.9)_100%)] px-6 py-6 text-white shadow-[0_22px_48px_rgba(8,50,132,0.22)]">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/72">当前概览</p>
-                <h2 className="mt-3 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.05em] text-white md:text-[2.5rem]">提交工作台</h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-white/80">
-                  在一屏里读取提交总量、通过率和最近迭代节奏，不再退回普通列表页。
-                </p>
-              </div>
-              <div className="rounded-[28px] border border-white/16 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">当前通过率</p>
-                <p className="mt-2 text-3xl font-semibold text-white">{accuracy}</p>
-                <p className="mt-2 text-sm text-white/74">基于当前筛选范围内的提交记录计算</p>
-              </div>
-            </div>
-          </SurfaceCard>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
-            <SurfaceCard className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,247,255,0.94)_100%)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4f6ea8]">总提交数</p>
-              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">{total}</p>
-            </SurfaceCard>
-            <SurfaceCard className="border-l-4 border-[#006847] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(230,247,238,0.92)_100%)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#006847]">已通过</p>
-              <p className="mt-3 text-3xl font-semibold text-[#006847]">{acceptedCount}</p>
-            </SurfaceCard>
-            <SurfaceCard className="border-l-4 border-[#93000a] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(255,240,238,0.92)_100%)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#93000a]">答案错误</p>
-              <p className="mt-3 text-3xl font-semibold text-[#93000a]">{wrongAnswerCount}</p>
-            </SurfaceCard>
-            <SurfaceCard className="border-l-4 border-[#445472] bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(240,244,252,0.92)_100%)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#445472]">待处理与其他</p>
-              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">{Math.max(otherCount, 0)}</p>
-            </SurfaceCard>
+        {/* Page Header */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+              Submissions
+            </p>
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface">
+              Submission History
+            </h1>
+            <p className="max-w-xl text-sm leading-6 text-on-surface-variant">
+              Track your coding progress, view results, and analyze your performance over time.
+            </p>
           </div>
         </div>
 
-        <SurfaceCard>
+        {/* Overview Cards */}
+        <div className="grid gap-6 xl:grid-cols-[1.3fr_0.9fr]">
+          {/* Main Overview Card */}
+          <Card className="overflow-hidden bg-gradient-to-br from-primary to-primary-container px-6 py-6 text-white shadow-lg">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-fixed/72">
+                  Overview
+                </p>
+                <h2 className="mt-3 font-headline text-3xl font-extrabold tracking-tight">
+                  Submission Dashboard
+                </h2>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-primary-fixed/90">
+                  View your submission statistics, acceptance rate, and recent activity all in one place.
+                </p>
+              </div>
+              <div className="rounded-xl border border-white/16 bg-white/10 p-4 backdrop-blur-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-white/60">
+                  Acceptance Rate
+                </p>
+                <p className="mt-2 text-3xl font-semibold text-white">{accuracy}</p>
+                <p className="mt-2 text-sm text-white/74">Based on current filters</p>
+              </div>
+            </div>
+          </Card>
+
+          {/* Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card variant="surface" className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                Total Submissions
+              </p>
+              <p className="mt-3 text-3xl font-semibold text-on-surface">{total}</p>
+            </Card>
+
+            <Card variant="surface" className="p-5 border-l-4 border-tertiary">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-tertiary">
+                Accepted
+              </p>
+              <p className="mt-3 text-3xl font-semibold text-tertiary">{acceptedCount}</p>
+            </Card>
+
+            <Card variant="surface" className="p-5 border-l-4 border-error">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-error-container">
+                Wrong Answer
+              </p>
+              <p className="mt-3 text-3xl font-semibold text-on-error-container">{wrongAnswerCount}</p>
+            </Card>
+
+            <Card variant="surface" className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                Other
+              </p>
+              <p className="mt-3 text-3xl font-semibold text-on-surface">{Math.max(otherCount, 0)}</p>
+            </Card>
+          </div>
+        </div>
+
+        {/* Filters and Table */}
+        <Card className="p-6">
           <div className="flex flex-col gap-6">
+            {/* Filters */}
             <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#4f6ea8]">提交记录池</p>
-                <h2 className="mt-2 font-['Manrope'] text-[1.45rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">提交记录池</h2>
-              </div>
-              <div className="flex flex-col gap-3 xl:items-end">
-                <div className="flex flex-wrap items-center gap-3">
-                  {statuses.map((item) => (
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant mb-3">
+                  Filter by Status
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: '', label: 'All' },
+                    { value: 'accepted', label: 'Accepted' },
+                    { value: 'wrong_answer', label: 'Wrong Answer' },
+                    { value: 'queued', label: 'Queued' },
+                  ].map((item) => (
                     <button
-                      key={item}
-                      type="button"
+                      key={item.value}
                       onClick={() => {
-                        setStatus(item)
+                        setStatus(item.value)
                         setPage(1)
                       }}
-                      className={status === item
-                        ? 'inline-flex h-12 items-center rounded-full bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-5 text-sm font-semibold text-white'
-                        : 'inline-flex h-12 items-center rounded-full bg-[rgba(226,231,255,0.88)] px-5 text-sm font-semibold text-[#445472]'}
+                      className={cn(
+                        'inline-flex h-10 items-center rounded-full px-5 text-sm font-semibold transition-colors',
+                        status === item.value
+                          ? 'bg-primary text-on-primary shadow-md'
+                          : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                      )}
                     >
-                      {statusLabels[item]}
+                      {item.label}
                     </button>
                   ))}
                 </div>
-                <label className="flex items-center gap-2 text-sm text-[#65748d]">
-                  <span>语言筛选</span>
+              </div>
+
+              <div className="flex flex-col gap-3 xl:items-end">
+                <label className="flex items-center gap-2 text-sm text-on-surface-variant">
+                  <span>Language</span>
                   <select
-                    aria-label="语言"
+                    aria-label="language"
                     value={language || 'all'}
                     onChange={(event) => {
                       const value = event.target.value === 'all' ? '' : event.target.value
                       setLanguage(value)
                       setPage(1)
                     }}
-                    className="h-12 rounded-[16px] bg-[rgba(242,243,255,0.88)] px-4 text-sm font-semibold text-[#17305e] outline-none shadow-[0_10px_24px_rgba(19,27,46,0.04)]"
+                    className="rounded-lg bg-surface-container-low px-4 py-2.5 text-sm font-semibold text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
                   >
-                    {languages.map((item) => (
-                      <option key={item} value={item}>{languageLabels[item]}</option>
+                    {[
+                      { value: 'all', label: 'All Languages' },
+                      { value: 'cpp', label: 'C++' },
+                      { value: 'python', label: 'Python' },
+                      { value: 'java', label: 'Java' },
+                      { value: 'javascript', label: 'JavaScript' },
+                      { value: 'go', label: 'Go' },
+                    ].map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label}
+                      </option>
                     ))}
                   </select>
                 </label>
               </div>
             </div>
 
+            {/* Table */}
             {submissions.length === 0 ? (
-              <div className="rounded-[8px] bg-[rgba(242,243,255,0.68)] px-4 py-5 text-sm text-[#65748d]">暂无提交记录</div>
+              <EmptyState
+                title="No submissions found"
+                description="Try adjusting your filters or submit some code to see results here."
+                icon={
+                  <span className="material-symbols-outlined text-6xl text-on-surface-variant">
+                    history
+                  </span>
+                }
+              />
             ) : (
-              <div className="overflow-hidden rounded-[18px] bg-[rgba(242,243,255,0.7)]">
-                <table className="w-full" role="table">
-                <thead>
-                  <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">
-                    <th className="px-4 py-4">状态</th>
-                    <th className="px-4 py-4">题目</th>
-                    <th className="px-4 py-4">语言</th>
-                    <th className="px-4 py-4">运行时间</th>
-                    <th className="px-4 py-4">内存</th>
-                    <th className="px-4 py-4">提交时间</th>
-                  </tr>
-                </thead>
-                <tbody className="space-y-2">
-                  {submissions.map((submission) => (
-                    <tr
-                      key={submission.id}
-                      onClick={() => navigate(`/submissions/${submission.id}`)}
-                      className="cursor-pointer border-t border-[rgba(195,198,214,0.18)] bg-white transition-colors hover:bg-[#f8f9ff]"
-                    >
-                      <td className="px-4 py-4">
-                        <span className={`w-fit rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${statusTone(submission.status)}`}>
-                          {getSubmissionStatusConfig(submission.status).label}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4">
-                        <p className="truncate text-sm font-semibold text-[#131b2e]">{submission.problem_title}</p>
-                        {submission.error_message ? <p className="mt-1 text-xs text-[#65748d]">{submission.error_message}</p> : null}
-                      </td>
-                      <td className="px-4 py-4 font-mono text-sm text-[#445472]">{submission.language}</td>
-                      <td className="px-4 py-4 font-mono text-sm text-[#445472]">{formatRuntime(submission.time_ms)}</td>
-                      <td className="px-4 py-4 font-mono text-sm text-[#445472]">{formatMemory(submission.memory_kb)}</td>
-                      <td className="px-4 py-4 text-sm text-[#65748d]">{new Date(submission.created_at).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            )}
+              <>
+                <div className="overflow-hidden rounded-xl bg-surface-container-low/50">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                        <th className="px-4 py-4">Status</th>
+                        <th className="px-4 py-4">Problem</th>
+                        <th className="px-4 py-4">Language</th>
+                        <th className="px-4 py-4">Runtime</th>
+                        <th className="px-4 py-4">Memory</th>
+                        <th className="px-4 py-4">Submitted</th>
+                        <th className="px-4 py-4"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/10">
+                      {submissions.map((submission) => (
+                        <tr
+                          key={submission.id}
+                          className="group border-t border-outline-variant/10 bg-white transition-colors hover:bg-surface-container-low/50"
+                        >
+                          <td className="px-4 py-4">
+                            <StatusBadge
+                              status={submission.status as any}
+                            />
+                          </td>
+                          <td className="px-4 py-4">
+                            <Link
+                              to={`/submissions/${submission.id}`}
+                              className="block"
+                            >
+                              <p className="truncate text-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
+                                {submission.problem_title || `Problem ${submission.problem_id}`}
+                              </p>
+                              {submission.error_message ? (
+                                <p className="mt-1 text-xs text-on-surface-variant">{submission.error_message}</p>
+                              ) : null}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-4 font-mono text-sm text-on-surface-variant">
+                            {submission.language}
+                          </td>
+                          <td className="px-4 py-4 font-mono text-sm text-on-surface-variant">
+                            {formatRuntime(submission.time_ms)}
+                          </td>
+                          <td className="px-4 py-4 font-mono text-sm text-on-surface-variant">
+                            {formatMemory(submission.memory_kb)}
+                          </td>
+                          <td className="px-4 py-4 text-sm text-on-surface-variant">
+                            {formatDateTime(submission.created_at)}
+                          </td>
+                          <td className="px-4 py-4 text-right">
+                            <Button
+                              as={Link}
+                              to={`/submissions/${submission.id}`}
+                              variant="ghost"
+                              size="sm"
+                            >
+                              <span className="material-symbols-outlined text-sm">visibility</span>
+                              View
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-[#65748d]">第 {page} 页，共 {pageCount} 页</span>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  aria-label="上一页"
-                  onClick={() => setPage((current) => Math.max(current - 1, 1))}
-                  disabled={page === 1}
-                  className="inline-flex h-12 items-center rounded-[16px] bg-[rgba(226,231,255,0.88)] px-4 text-sm font-semibold text-[#445472] disabled:opacity-40"
-                >
-                  上一页
-                </button>
-                <button
-                  type="button"
-                  aria-label="下一页"
-                  onClick={() => setPage((current) => Math.min(current + 1, pageCount))}
-                  disabled={page === pageCount}
-                  className="inline-flex h-12 items-center rounded-[16px] bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-4 text-sm font-semibold text-white disabled:opacity-40"
-                >
-                  下一页
-                </button>
-              </div>
-            </div>
+                {/* Pagination */}
+                {pageCount > 1 && (
+                  <div className="mt-6">
+                    <Pagination
+                      currentPage={page}
+                      totalPages={pageCount}
+                      onPageChange={handlePageChange}
+                    />
+                  </div>
+                )}
+              </>
+            )}
           </div>
-        </SurfaceCard>
+        </Card>
       </div>
     </div>
   )

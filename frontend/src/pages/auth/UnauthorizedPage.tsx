@@ -1,56 +1,50 @@
 import { Link } from 'react-router-dom'
-import { ArrowLeft, LayoutDashboard, ShieldAlert } from 'lucide-react'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
 import { Button } from '@/components/ui/Button'
+import { Card, CardContent } from '@/components/ui/Card'
 
 export function UnauthorizedPage() {
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#faf8ff_0%,#eef3ff_100%)] px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-5xl items-center justify-center">
-        <div className="grid w-full gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-          <PageHeader
-            eyebrow="受限访问"
-            title="访问受限"
-            description="当前账号已登录，但没有进入这个工作区的权限。"
-            className="border-slate-200/80 bg-white/80"
-          />
-
-          <SurfaceCard className="space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[#ffdad6] text-[#93000a]">
-                <ShieldAlert className="h-7 w-7" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">受限能力</p>
-                <h2 className="text-xl font-semibold text-slate-950">先回到工作台，再继续当前任务。</h2>
-                <p className="text-sm leading-6 text-slate-600">
-                  这类页面通常只向特定角色开放。若你本应看到它，说明权限映射还没有同步。
-                </p>
-              </div>
+    <main className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="w-full max-w-2xl">
+        <Card className="p-8 md:p-12">
+          <div className="flex flex-col items-center text-center">
+            {/* Icon */}
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-error-container text-on-error-container">
+              <span className="material-symbols-outlined text-5xl">lock</span>
             </div>
 
-            <div className="grid gap-3 text-sm text-slate-600">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                先返回工作台，继续刷题、看竞赛或查看提交记录。
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                如果这门课或这个竞赛应该可见，请联系老师或管理员核对角色映射。
-              </div>
-            </div>
+            {/* Title */}
+            <h1 className="font-headline text-3xl font-bold text-on-surface mb-2">
+              Access Denied
+            </h1>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button onClick={() => window.history.back()} className="sm:flex-1">
-                <ArrowLeft className="h-4 w-4" />
-                返回上一步
+            {/* Description */}
+            <p className="text-on-surface-variant mb-8 max-w-md">
+              You don't have permission to access this page. Please contact your administrator if you believe this is an error.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <Button
+                onClick={() => window.history.back()}
+                variant="outline"
+              >
+                <span className="material-symbols-outlined text-lg">arrow_back</span>
+                Go Back
               </Button>
-              <Button as={Link} to="/dashboard" variant="outline" className="sm:flex-1">
-                <LayoutDashboard className="h-4 w-4" />
-                回到工作台
+              <Button as={Link} to="/dashboard" variant="primary">
+                <span className="material-symbols-outlined text-lg">dashboard</span>
+                Go to Dashboard
               </Button>
             </div>
-          </SurfaceCard>
-        </div>
+
+            {/* Additional Info */}
+            <div className="mt-8 rounded-lg bg-surface-container-low/50 p-4 text-sm text-on-surface-variant">
+              <p className="font-semibold mb-2">Need help?</p>
+              <p>Contact your administrator or check your account permissions.</p>
+            </div>
+          </div>
+        </Card>
       </div>
     </main>
   )

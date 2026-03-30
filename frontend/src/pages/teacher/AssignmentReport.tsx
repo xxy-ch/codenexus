@@ -1,24 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  ArrowDownToLine,
-  CalendarDays,
-  Filter,
-  RefreshCw,
-  School2,
-  Search,
-} from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
-import { EmptyState } from '@/components/page/EmptyState'
-import { FieldGroup } from '@/components/page/FieldGroup'
-import { FilterBar } from '@/components/page/FilterBar'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
-import { StatCard } from '@/components/page/StatCard'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
-import { Loading } from '@/components/ui/Loading'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { classesService, type AssignmentSubmissionItem, type ClassStudentItem } from '@/services/classes'
 import { cn, formatDateTime } from '@/lib/utils'
 
@@ -254,255 +241,277 @@ export function AssignmentReport() {
   if (isLoading) {
     return (
       <div className="flex min-h-[360px] items-center justify-center">
-        <Loading message="加载教学报告..." />
+        <LoadingState message="加载教学报告..." />
       </div>
     )
   }
 
   if (error) {
     return (
-      <EmptyState
-        title="作业报告加载失败"
-        description="当前无法读取班级和作业数据，页面不会展示假统计。"
-        action={
-          <Button type="button" onClick={() => refetch()}>
-            重试
-          </Button>
-        }
-      />
+      <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-8">
+        <EmptyState
+          title="作业报告加载失败"
+          description="当前无法读取班级和作业数据，页面不会展示假统计。"
+          action={{ label: '重试', onClick: () => refetch() }}
+        />
+      </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="教师工作台"
-        breadcrumb={['班级', '作业报告']}
-        title="作业报告"
-        description="基于真实班级、作业、学生和提交数据生成的报表页。最佳成绩按最高分取，同分时采用更晚提交；导出会按当前筛选范围生成。"
-        actions={
-          <>
-            <Button variant="outline" onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4" />
-              刷新
-            </Button>
-            <Button variant="primary" onClick={handleExport} disabled={!highlightedClass}>
-              <ArrowDownToLine className="h-4 w-4" />
-              导出表格
-            </Button>
-          </>
-        }
-      />
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+            教师工作台 / 班级 / 作业报告
+          </p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+            作业报告
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
+            基于真实班级、作业、学生和提交数据生成的报表页。最佳成绩按最高分取，同分时采用更晚提交；导出会按当前筛选范围生成。
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => refetch()}>
+            <span className="material-symbols-outlined text-base">refresh</span>
+            刷新
+          </Button>
+          <Button onClick={handleExport} disabled={!highlightedClass}>
+            <span className="material-symbols-outlined text-base">download</span>
+            导出表格
+          </Button>
+        </div>
+      </div>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="班级总数" value={stats.totalClasses} helper="当前报告可见班级数" />
-        <StatCard label="学生总数" value={stats.totalStudents} helper="当前班级学生总数" />
-        <StatCard label="已提交人数" value={stats.submittedStudents} helper="至少有一次提交的学生数" />
-        <StatCard
-          label="完成率"
-          value={`${stats.completionRate}%`}
-          helper={`平均最高分 ${stats.averageBestScore} · 准时率 ${stats.onTimeRate}%`}
-        />
-      </section>
+      {/* Stats Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card variant="default" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">班级总数</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-on-surface">{stats.totalClasses}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">当前报告可见班级数</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">学生总数</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-primary">{stats.totalStudents}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">当前班级学生总数</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">已提交人数</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-secondary">{stats.submittedStudents}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">至少有一次提交的学生数</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">完成率</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-tertiary">{stats.completionRate}%</p>
+          <p className="mt-2 text-sm text-on-surface-variant">平均最高分 {stats.averageBestScore} · 准时率 {stats.onTimeRate}%</p>
+        </Card>
+      </div>
 
-      <FilterBar>
-        <div className="grid flex-1 gap-3 md:grid-cols-[minmax(0,1.3fr)_minmax(220px,0.7fr)_minmax(220px,0.7fr)]">
-          <div className="space-y-2 text-sm min-w-0">
-            <label className="block font-medium text-slate-700">搜索班级</label>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="班级名称 / 学期 / 邀请码"
-                className="pl-11"
-              />
+      {/* Filter Bar */}
+      <Card variant="surface" className="p-4">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1.3fr)_minmax(200px,0.7fr)_minmax(200px,0.7fr)]">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-on-surface">搜索班级</label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-base text-on-surface-variant">search</span>
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="班级名称 / 学期 / 邀请码"
+                  className="pl-11"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-on-surface">班级</label>
+              <Select
+                value={highlightedClass?.id ?? ''}
+                onChange={(e) => setSelectedClassId(Number(e.target.value))}
+              >
+                <option value="" disabled>请选择班级</option>
+                {filteredClasses.map((item) => (
+                  <option key={item.id} value={item.id}>{item.name}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-on-surface">作业</label>
+              <Select
+                value={activeAssignmentId ?? ''}
+                onChange={(e) => setSelectedAssignmentId(Number(e.target.value))}
+                disabled={assignments.length === 0}
+              >
+                <option value="" disabled>{assignments.length === 0 ? '暂无作业' : '请选择作业'}</option>
+                {assignments.map((assignment) => (
+                  <option key={assignment.id} value={assignment.id}>
+                    题目 #{assignment.problem_id} · {formatDateTime(assignment.deadline)}
+                  </option>
+                ))}
+              </Select>
             </div>
           </div>
-          <FieldGroup label="班级">
-            <Select
-              aria-label="班级选择"
-              value={highlightedClass?.id ?? ''}
-              onChange={(e) => setSelectedClassId(Number(e.target.value))}
+          <div className="flex items-center gap-3 text-sm text-on-surface-variant">
+            <span className="material-symbols-outlined text-base">filter_alt</span>
+            <span>{page} / {totalPages}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={page <= 1}
             >
-              <option value="" disabled>
-                请选择班级
-              </option>
-              {filteredClasses.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </Select>
-          </FieldGroup>
-          <FieldGroup label="作业">
-            <Select
-              aria-label="作业选择"
-              value={activeAssignmentId ?? ''}
-              onChange={(e) => setSelectedAssignmentId(Number(e.target.value))}
-              disabled={assignments.length === 0}
+              上一页
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={page >= totalPages}
             >
-              <option value="" disabled>
-                {assignments.length === 0 ? '暂无作业' : '请选择作业'}
-              </option>
-              {assignments.map((assignment) => (
-                <option key={assignment.id} value={assignment.id}>
-                  题目 #{assignment.problem_id} · {formatDateTime(assignment.deadline)}
-                </option>
-              ))}
-            </Select>
-          </FieldGroup>
+              下一页
+            </Button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-3 text-sm text-slate-500">
-          <Filter className="h-4 w-4" />
-          <span>
-            {page} / {totalPages}
-          </span>
-          <Button type="button" variant="outline" size="sm" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={page <= 1}>
-            上一页
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} disabled={page >= totalPages}>
-            下一页
-          </Button>
-        </div>
-      </FilterBar>
+      </Card>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,0.85fr)]">
-        <section className="overflow-hidden rounded-[30px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur-sm">
-          <div className="flex flex-col gap-3 border-b border-slate-200/80 px-6 py-5 md:flex-row md:items-center md:justify-between">
+        {/* Main Content */}
+        <Card variant="default" className="overflow-hidden p-0">
+          <div className="flex flex-col gap-3 border-b border-outline-variant/10 px-6 py-5 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-950">学生报表</h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">学生报表</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">
                 {highlightedClass ? `${highlightedClass.name} · ${selectedAssignment ? `题目 #${selectedAssignment.problem_id}` : '暂无作业'}` : '请选择班级'}
               </p>
             </div>
-            <div className="rounded-2xl bg-blue-50 px-3 py-2 text-xs font-medium uppercase tracking-[0.22em] text-blue-700">
+            <span className="rounded-full bg-primary-container px-3 py-2 text-xs font-semibold uppercase tracking-wider text-on-primary-container">
               真实数据
-            </div>
+            </span>
           </div>
 
           {studentsLoading || assignmentsLoading || submissionsLoading ? (
             <div className="flex min-h-[260px] items-center justify-center">
-              <Loading message="聚合教学数据..." />
+              <LoadingState message="聚合教学数据..." />
             </div>
           ) : assignments.length === 0 ? (
             <EmptyState
-              className="rounded-none border-0 shadow-none"
+              className="border-0 shadow-none"
               title="当前班级暂无作业"
               description="先为这个班级创建并发布作业，再查看真实报表。"
             />
           ) : reportRows.length === 0 ? (
             <EmptyState
-              className="rounded-none border-0 shadow-none"
+              className="border-0 shadow-none"
               title="当前班级暂无学生或提交"
               description="添加学生并为该班级创建作业后，这里会显示真实的最佳成绩与逾期信息。"
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-[rgba(246,249,253,0.92)]">
+              <table className="min-w-full divide-y divide-outline-variant/10">
+                <thead className="bg-surface-container-low/50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">学生</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">邮箱</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">提交次数</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">最佳分数</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">最近提交</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">逾期</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">状态</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">学生</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">邮箱</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">提交次数</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">最佳分数</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">最近提交</th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">逾期</th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-on-surface-variant">状态</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-[rgba(255,255,255,0.78)]">
+                <tbody className="divide-y divide-outline-variant/10">
                   {reportRows.map((row) => (
-                    <tr key={row.student.student_id} className="transition hover:bg-blue-50/50">
-                      <TableCell className="font-medium text-slate-900">
-                        <div>{row.student.username}</div>
-                        <div className="mt-1 text-xs text-slate-500">{row.student.student_id}</div>
-                      </TableCell>
-                      <TableCell>{row.student.email}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+                    <tr key={row.student.student_id} className="transition-colors hover:bg-surface-container-low/30">
+                      <td className="px-6 py-4 text-sm font-medium text-on-surface">
+                        <p>{row.student.username}</p>
+                        <p className="mt-1 text-xs text-on-surface-variant">{row.student.student_id}</p>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-on-surface">{row.student.email}</td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex rounded-full bg-surface-container-high px-3 py-1 text-sm font-medium text-on-surface">
                           {row.submissions.length}
                         </span>
-                      </TableCell>
-                      <TableCell className="font-semibold text-slate-900">
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-on-surface">
                         {row.bestSubmission ? row.bestSubmission.score : '—'}
-                      </TableCell>
-                      <TableCell>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-on-surface">
                         {row.latestSubmission ? formatDateTime(row.latestSubmission.submitted_at) : '—'}
-                      </TableCell>
-                      <TableCell>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-on-surface">
                         {row.bestSubmission ? (row.bestSubmission.is_late ? `是 (${row.bestSubmission.late_days} 天)` : '否') : '—'}
-                      </TableCell>
-                      <TableCell className="text-right">
+                      </td>
+                      <td className="px-6 py-4 text-right">
                         <span
                           className={cn(
                             'inline-flex rounded-full px-3 py-1 text-xs font-semibold',
-                            getRowStatus(row, selectedAssignment?.points ?? 100) === '高分通过' && 'bg-emerald-50 text-emerald-700',
-                            getRowStatus(row, selectedAssignment?.points ?? 100) === '已逾期' && 'bg-amber-50 text-amber-700',
-                            getRowStatus(row, selectedAssignment?.points ?? 100) === '已提交' && 'bg-sky-50 text-sky-700',
-                            getRowStatus(row, selectedAssignment?.points ?? 100) === '未提交' && 'bg-slate-100 text-slate-600',
+                            getRowStatus(row, selectedAssignment?.points ?? 100) === '高分通过' && 'bg-tertiary-container text-on-tertiary-container',
+                            getRowStatus(row, selectedAssignment?.points ?? 100) === '已逾期' && 'bg-secondary-container text-on-secondary-container',
+                            getRowStatus(row, selectedAssignment?.points ?? 100) === '已提交' && 'bg-primary-container text-on-primary-container',
+                            getRowStatus(row, selectedAssignment?.points ?? 100) === '未提交' && 'bg-surface-container-high text-on-surface-variant',
                           )}
                         >
                           {getRowStatus(row, selectedAssignment?.points ?? 100)}
                         </span>
-                      </TableCell>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
-        </section>
+        </Card>
 
+        {/* Sidebar */}
         <aside className="space-y-6">
-          <SectionBlock
-            title="当前选择"
-            description="班级和作业切换都绑定真实数据，不再渲染静态分析面板。"
-          >
+          <Card variant="default" className="p-5">
+            <h2 className="font-headline text-lg font-extrabold text-on-surface">当前选择</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">班级和作业切换都绑定真实数据，不再渲染静态分析面板。</p>
             {highlightedClass ? (
               <div className="space-y-4">
-                <SurfaceCard tone="muted" className="p-4 shadow-none">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                    <School2 className="h-4 w-4 text-sky-700" />
+                <Card variant="surface" className="p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                    <span className="material-symbols-outlined text-lg text-primary">school</span>
                     班级信息
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">班级名称</dt>
-                      <dd className="font-medium text-slate-900">{highlightedClass.name}</dd>
+                      <dt className="text-on-surface-variant">班级名称</dt>
+                      <dd className="font-medium text-on-surface">{highlightedClass.name}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">学期</dt>
-                      <dd className="font-medium text-slate-900">{highlightedClass.semester || '未设置'}</dd>
+                      <dt className="text-on-surface-variant">学期</dt>
+                      <dd className="font-medium text-on-surface">{highlightedClass.semester || '未设置'}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">邀请码</dt>
-                      <dd className="font-mono text-sky-700">{highlightedClass.enrollment_code || '—'}</dd>
+                      <dt className="text-on-surface-variant">邀请码</dt>
+                      <dd className="font-mono text-primary">{highlightedClass.enrollment_code || '—'}</dd>
                     </div>
                   </dl>
-                </SurfaceCard>
+                </Card>
 
-                <SurfaceCard tone="muted" className="p-4 shadow-none">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                    <CalendarDays className="h-4 w-4 text-sky-700" />
+                <Card variant="surface" className="p-4">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                    <span className="material-symbols-outlined text-lg text-primary">calendar_today</span>
                     作业信息
                   </div>
                   <dl className="mt-4 grid gap-3 text-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">作业编号</dt>
-                      <dd className="font-medium text-slate-900">{selectedAssignment ? `#${selectedAssignment.id}` : '—'}</dd>
+                      <dt className="text-on-surface-variant">作业编号</dt>
+                      <dd className="font-medium text-on-surface">{selectedAssignment ? `#${selectedAssignment.id}` : '—'}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">题目编号</dt>
-                      <dd className="font-medium text-slate-900">{selectedAssignment ? `#${selectedAssignment.problem_id}` : '—'}</dd>
+                      <dt className="text-on-surface-variant">题目编号</dt>
+                      <dd className="font-medium text-on-surface">{selectedAssignment ? `#${selectedAssignment.problem_id}` : '—'}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <dt className="text-slate-500">截止时间</dt>
-                      <dd className="font-medium text-slate-900">{selectedAssignment ? formatDateTime(selectedAssignment.deadline) : '—'}</dd>
+                      <dt className="text-on-surface-variant">截止时间</dt>
+                      <dd className="font-medium text-on-surface">{selectedAssignment ? formatDateTime(selectedAssignment.deadline) : '—'}</dd>
                     </div>
                   </dl>
-                </SurfaceCard>
+                </Card>
               </div>
             ) : (
               <EmptyState
@@ -511,18 +520,17 @@ export function AssignmentReport() {
                 description="先从左侧筛选一个班级，再查看该班级的学生和作业完成情况。"
               />
             )}
-          </SectionBlock>
+          </Card>
 
-          <SectionBlock
-            title="导出说明"
-            description="导出的表格按当前班级和作业筛选结果生成。"
-          >
-            <ul className="space-y-3 text-sm leading-6 text-slate-600">
+          <Card variant="surface" className="p-5">
+            <h2 className="font-headline text-lg font-extrabold text-on-surface">导出说明</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">导出的表格按当前班级和作业筛选结果生成。</p>
+            <ul className="mt-4 space-y-3 text-sm leading-6 text-on-surface-variant">
               <li>最佳成绩按分数最高优先，同分取更晚提交。</li>
               <li>逾期判断取最佳成绩那次提交的逾期状态。</li>
               <li>没有提交的学生仍会保留在表格中，便于定位未完成情况。</li>
             </ul>
-          </SectionBlock>
+          </Card>
         </aside>
       </div>
     </div>

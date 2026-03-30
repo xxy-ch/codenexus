@@ -3,13 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { problemsService } from '@/services/problems'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
-import { ActionBar } from '@/components/page/ActionBar'
-import { EmptyState } from '@/components/page/EmptyState'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
-import { StatCard } from '@/components/page/StatCard'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Card } from '@/components/ui/Card'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils'
 import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
 
@@ -105,30 +101,26 @@ export function SubmissionDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loading message="加载中..." />
+      <div className="flex min-h-[400px] items-center justify-center">
+        <LoadingState message="加载提交详情中..." />
       </div>
     )
   }
 
   if (error || !submission) {
     return (
-      <EmptyState
-        title={
-          error instanceof Error && error.message.includes('not found') ? '提交记录不存在' : '加载失败'
-        }
-        description={error instanceof Error ? error.message : '无法加载提交详情'}
-        action={
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              返回
-            </Button>
-            <Button variant="primary" onClick={() => refetch()}>
-              重试
-            </Button>
-          </div>
-        }
-      />
+      <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-8">
+        <EmptyState
+          title={
+            error instanceof Error && error.message.includes('not found') ? '提交记录不存在' : '加载失败'
+          }
+          description={error instanceof Error ? error.message : '无法加载提交详情'}
+          action={{
+            label: '重试',
+            onClick: () => refetch()
+          }}
+        />
+      </div>
     )
   }
 
@@ -138,63 +130,84 @@ export function SubmissionDetail() {
   const statusLabel = localizedStatusLabel(submission.status)
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="判题诊断台"
-        breadcrumb={['题目中心', submission.problem_title, `提交 #${submission.id}`]}
-        title="提交详情"
-        description={`${submission.problem_title} 的完整判题诊断，包含状态摘要、性能数据、测试点池和提交代码。`}
-        actions={
-          <>
-            <Button variant="ghost" onClick={() => navigate(-1)} aria-label="返回">
-              返回
-            </Button>
-            <Link to={`/problems/${submission.problem_id}/solve`}>
-              <Button variant="primary">再次挑战</Button>
-            </Link>
-          </>
-        }
-      />
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+            题目中心 / {submission.problem_title} / 提交 #{submission.id}
+          </p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+            提交详情
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
+            {submission.problem_title} 的完整判题诊断，包含状态摘要、性能数据、测试点池和提交代码。
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" onClick={() => navigate(-1)}>
+            返回
+          </Button>
+          <Link to={`/problems/${submission.problem_id}/solve`}>
+            <Button>再次挑战</Button>
+          </Link>
+        </div>
+      </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.3fr_0.9fr]">
-        <SurfaceCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(7,43,117,0.98)_0%,rgba(13,82,186,0.96)_54%,rgba(140,198,255,0.9)_100%)] px-6 py-6 text-white shadow-[0_22px_48px_rgba(8,50,132,0.22)]">
+        {/* Hero Card */}
+        <Card variant="default" className="overflow-hidden bg-gradient-to-br from-primary to-primary-container px-6 py-6 text-on-primary">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/72">当前诊断</p>
-              <h2 className="mt-3 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.05em] text-white md:text-[2.5rem]">判题诊断台</h2>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-white/80">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-primary/70">当前诊断</p>
+              <h2 className="mt-3 font-headline text-3xl font-extrabold text-on-primary md:text-4xl">判题诊断台</h2>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-on-primary/80">
                 在同一屏里读取结果状态、性能指标和测试点反馈，阅读顺序贴近真实排错路径。
               </p>
             </div>
-            <div className="rounded-[28px] border border-white/16 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-sm">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">当前状态</p>
-              <p className="mt-2 text-3xl font-semibold text-white">{statusLabel}</p>
-              <p className="mt-2 text-sm text-white/74">{submission.problem_title}</p>
+            <div className="rounded-2xl border border-on-primary/20 bg-on-primary/10 p-4 backdrop-blur-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-primary/60">当前状态</p>
+              <p className="mt-2 text-3xl font-semibold text-on-primary">{statusLabel}</p>
+              <p className="mt-2 text-sm text-on-primary/70">{submission.problem_title}</p>
             </div>
           </div>
-        </SurfaceCard>
+        </Card>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-2">
-        <StatCard label="判题状态" value={statusLabel} />
-        <StatCard
-          label="运行时间"
-          value={submission.time_ms !== undefined ? `${submission.time_ms}ms` : '-'}
-        />
-        <StatCard
-          label="内存占用"
-          value={submission.memory_kb !== undefined ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}
-        />
-        <StatCard label="测试点通过" value={`${passedTestCases}/${totalTestCases}`} />
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 gap-4 xl:grid-cols-2">
+          <Card variant="surface" className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">判题状态</p>
+            <p className="mt-4 font-headline text-2xl font-extrabold text-on-surface">{statusLabel}</p>
+          </Card>
+          <Card variant="surface" className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">运行时间</p>
+            <p className="mt-4 font-headline text-2xl font-extrabold text-on-surface">
+              {submission.time_ms !== undefined ? `${submission.time_ms}ms` : '-'}
+            </p>
+          </Card>
+          <Card variant="surface" className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">内存占用</p>
+            <p className="mt-4 font-headline text-2xl font-extrabold text-on-surface">
+              {submission.memory_kb !== undefined ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}
+            </p>
+          </Card>
+          <Card variant="surface" className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">测试点通过</p>
+            <p className="mt-4 font-headline text-2xl font-extrabold text-on-surface">
+              {passedTestCases}/{totalTestCases}
+            </p>
+          </Card>
         </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_360px]">
+        {/* Main Content */}
         <div className="space-y-6">
-          <SectionBlock
-            title="判题分析摘要"
-            description="状态、性能和测试点拆开呈现，阅读顺序贴近实际排错路径。"
-          >
-            <div className="flex flex-wrap items-center gap-3">
+          {/* Analysis Summary */}
+          <Card variant="default" className="p-6">
+            <h2 className="font-headline text-xl font-extrabold text-on-surface">判题分析摘要</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">状态、性能和测试点拆开呈现，阅读顺序贴近实际排错路径。</p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
               <div
                 className={cn(
                   'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold',
@@ -206,40 +219,43 @@ export function SubmissionDetail() {
                 <span className="material-symbols-outlined text-base">{statusConfig.icon}</span>
                 {statusLabel}
               </div>
-              <span className="text-sm text-slate-500">提交用户 {submission.username}</span>
-              <span className="text-sm text-slate-500">语言 {submission.language}</span>
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-on-surface-variant">提交用户 {submission.username}</span>
+              <span className="text-sm text-on-surface-variant">语言 {submission.language}</span>
+              <span className="text-sm text-on-surface-variant">
                 更新时间 {new Date(submission.updated_at).toLocaleString('zh-CN')}
               </span>
             </div>
 
             {(submission.status === 'pending' || submission.status === 'running') && (
-              <SurfaceCard tone="muted" className="mt-4 p-4">
+              <Card variant="surface" className="mt-4 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-slate-900" />
-                  <p className="text-sm text-slate-700">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-outline-variant border-t-on-surface" />
+                  <p className="text-sm text-on-surface">
                     {submission.status === 'running' ? '您的代码正在判题中...' : '提交已进入判题队列。'}
                   </p>
                 </div>
-              </SurfaceCard>
+              </Card>
             )}
 
             {(submission.status === 'compilation_error' ||
               submission.status === 'runtime_error' ||
               submission.status === 'wrong_answer') &&
               submission.error_message && (
-                <SurfaceCard tone="muted" className="mt-4 border-rose-200 bg-rose-50 p-4">
-                  <h3 className="text-sm font-semibold text-slate-700">错误信息:</h3>
-                  <pre className="mt-2 whitespace-pre-wrap font-mono text-sm text-rose-700">
+                <Card variant="surface" className="mt-4 border-error bg-error-container/30 p-4">
+                  <h3 className="text-sm font-semibold text-on-surface">错误信息:</h3>
+                  <pre className="mt-2 whitespace-pre-wrap font-mono text-sm text-on-error-container">
                     {submission.error_message}
                   </pre>
-                </SurfaceCard>
+                </Card>
               )}
-          </SectionBlock>
+          </Card>
 
+          {/* Test Cases */}
           {submission.test_cases && submission.test_cases.length > 0 && (
-            <SectionBlock title="测试点池" description="展开测试点可查看输入、期望输出与实际输出。">
-              <div className="space-y-3">
+            <Card variant="default" className="p-6">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">测试点池</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">展开测试点可查看输入、期望输出与实际输出。</p>
+              <div className="mt-5 space-y-3">
                 {submission.test_cases.map((testCase, index) => {
                   const isExpanded = expandedTestCases.has(index)
                   const isPassed = testCase.status === 'passed'
@@ -250,8 +266,8 @@ export function SubmissionDetail() {
                       className={cn(
                         'overflow-hidden rounded-2xl border',
                         isPassed
-                          ? 'border-emerald-200 bg-emerald-50/70'
-                          : 'border-rose-200 bg-rose-50/70',
+                          ? 'border-tertiary bg-tertiary-container/30'
+                          : 'border-error bg-error-container/30',
                       )}
                     >
                       <button
@@ -263,22 +279,22 @@ export function SubmissionDetail() {
                           <span
                             className={cn(
                               'material-symbols-outlined text-xl',
-                              isPassed ? 'text-emerald-600' : 'text-rose-600',
+                              isPassed ? 'text-tertiary' : 'text-error',
                             )}
                           >
                             {isPassed ? 'check_circle' : 'cancel'}
                           </span>
                           <div>
-                            <p className="font-medium text-slate-950">测试用例 {testCase.id}</p>
+                            <p className="font-medium text-on-surface">测试用例 {testCase.id}</p>
                             {testCase.time_ms !== undefined ? (
-                              <p className="text-xs text-slate-500">{testCase.time_ms}ms</p>
+                              <p className="text-xs text-on-surface-variant">{testCase.time_ms}ms</p>
                             ) : null}
                           </div>
                         </div>
                         <span
                           className={cn(
                             'rounded-full px-3 py-1 text-xs font-semibold',
-                            isPassed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700',
+                            isPassed ? 'bg-tertiary text-on-tertiary' : 'bg-error text-on-error',
                           )}
                         >
                           {isPassed ? '通过' : '失败'}
@@ -286,21 +302,21 @@ export function SubmissionDetail() {
                       </button>
 
                       {isExpanded && (
-                        <div className="space-y-3 border-t border-white/70 px-4 py-4">
+                        <div className="space-y-3 border-t border-outline-variant/30 px-4 py-4">
                           {!isPassed && testCase.error ? (
-                            <div className="text-xs text-rose-700">{testCase.error}</div>
+                            <div className="text-xs text-on-error">{testCase.error}</div>
                           ) : null}
 
                           <div className="grid gap-3 md:grid-cols-2">
                             <div>
-                              <p className="mb-1 text-xs font-semibold text-slate-600">输入:</p>
-                              <pre className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-3 text-xs font-mono text-slate-700">
+                              <p className="mb-1 text-xs font-semibold text-on-surface-variant">输入:</p>
+                              <pre className="overflow-x-auto rounded-xl border border-outline-variant bg-surface p-3 text-xs font-mono text-on-surface">
                                 {testCase.input}
                               </pre>
                             </div>
                             <div>
-                              <p className="mb-1 text-xs font-semibold text-slate-600">期望输出:</p>
-                              <pre className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-3 text-xs font-mono text-slate-700">
+                              <p className="mb-1 text-xs font-semibold text-on-surface-variant">期望输出:</p>
+                              <pre className="overflow-x-auto rounded-xl border border-outline-variant bg-surface p-3 text-xs font-mono text-on-surface">
                                 {testCase.expected_output}
                               </pre>
                             </div>
@@ -308,13 +324,13 @@ export function SubmissionDetail() {
 
                           {testCase.actual_output && (
                             <div>
-                              <p className="mb-1 text-xs font-semibold text-slate-600">实际输出:</p>
+                              <p className="mb-1 text-xs font-semibold text-on-surface-variant">实际输出:</p>
                               <pre
                                 className={cn(
                                   'overflow-x-auto rounded-xl p-3 text-xs font-mono',
                                   testCase.actual_output === testCase.expected_output
-                                    ? 'bg-emerald-100 text-emerald-800'
-                                    : 'bg-rose-100 text-rose-800',
+                                    ? 'bg-tertiary-container/30 text-on-tertiary-container'
+                                    : 'bg-error-container/30 text-on-error-container',
                                 )}
                               >
                                 {testCase.actual_output}
@@ -327,76 +343,88 @@ export function SubmissionDetail() {
                   )
                 })}
               </div>
-            </SectionBlock>
+            </Card>
           )}
 
-          <SectionBlock
-            title="提交代码"
-            description={`语言: ${submission.language} • ${new Date(submission.created_at).toLocaleString('zh-CN')}`}
-          >
-            <div className="mb-4 flex justify-end">
-              <Button variant="outline" size="small" onClick={handleCopyCode} className="min-w-[108px]">
-                <span className="material-symbols-outlined">{copied ? 'check' : 'content_copy'}</span>
+          {/* Submitted Code */}
+          <Card variant="default" className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-headline text-xl font-extrabold text-on-surface">提交代码</h2>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  语言: {submission.language} • {new Date(submission.created_at).toLocaleString('zh-CN')}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyCode}
+              >
+                <span className="material-symbols-outlined text-base">{copied ? 'check' : 'content_copy'}</span>
                 {copied ? '已复制' : '复制代码'}
               </Button>
             </div>
-            <pre className="overflow-x-auto rounded-2xl bg-slate-950 p-4 text-sm text-slate-100">
+            <pre className="mt-4 overflow-x-auto rounded-2xl bg-surface-container-high p-4 text-sm text-on-surface">
               <code>{submission.code}</code>
             </pre>
-          </SectionBlock>
+          </Card>
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-6">
-          <SurfaceCard className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+          <Card variant="surface" className="p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
               诊断侧栏
             </p>
-            <div className="space-y-3 text-sm">
+            <div className="mt-5 space-y-4 text-sm">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                   提交时间
                 </p>
-                <p className="mt-1 text-slate-950">
+                <p className="mt-1 text-on-surface">
                   {new Date(submission.created_at).toLocaleString('zh-CN')}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                   更新时间
                 </p>
-                <p className="mt-1 text-slate-950">
+                <p className="mt-1 text-on-surface">
                   {new Date(submission.updated_at).toLocaleString('zh-CN')}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                   提交用户
                 </p>
-                <p className="mt-1 text-slate-950">{submission.username}</p>
+                <p className="mt-1 text-on-surface">{submission.username}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                   题目 ID
                 </p>
-                <p className="mt-1 text-slate-950">{submission.problem_id}</p>
+                <p className="mt-1 text-on-surface">{submission.problem_id}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
                   提交 ID
                 </p>
-                <p className="mt-1 text-slate-950">{submission.id}</p>
+                <p className="mt-1 text-on-surface">{submission.id}</p>
               </div>
             </div>
-          </SurfaceCard>
+          </Card>
 
-          <ActionBar className="justify-start xl:justify-end">
-            <Button variant="outline" onClick={() => navigate(`/problems/${submission.problem_id}`)}>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/problems/${submission.problem_id}`)}
+            >
               返回题目
             </Button>
-            <Button variant="primary" onClick={() => refetch()}>
+            <Button variant="default" onClick={() => refetch()}>
               刷新状态
             </Button>
-          </ActionBar>
+          </div>
         </div>
       </div>
     </div>

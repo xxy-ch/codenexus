@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Architectural Scholar Admin - Dashboard</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed": "#0d1c2e",
+              "background": "#faf8ff",
+              "tertiary-fixed-dim": "#68dba9",
+              "surface-container-high": "#e2e7ff",
+              "on-background": "#131b2e",
+              "surface-container": "#eaedff",
+              "primary-container": "#0052cc",
+              "on-error-container": "#93000a",
+              "on-tertiary-fixed": "#002114",
+              "on-secondary-container": "#57657a",
+              "tertiary": "#004e34",
+              "surface-dim": "#d2d9f4",
+              "error": "#ba1a1a",
+              "on-tertiary-fixed-variant": "#005137",
+              "surface-container-lowest": "#ffffff",
+              "surface-bright": "#faf8ff",
+              "secondary": "#515f74",
+              "primary-fixed": "#dae2ff",
+              "on-primary": "#ffffff",
+              "on-primary-fixed-variant": "#0040a2",
+              "on-surface": "#131b2e",
+              "inverse-on-surface": "#eef0ff",
+              "primary": "#003d9b",
+              "surface-tint": "#0c56d0",
+              "on-tertiary-container": "#75e8b5",
+              "on-primary-fixed": "#001848",
+              "secondary-fixed-dim": "#b9c7df",
+              "surface-container-low": "#f2f3ff",
+              "on-surface-variant": "#434654",
+              "secondary-fixed": "#d5e3fc",
+              "on-primary-container": "#c4d2ff",
+              "surface-variant": "#dae2fd",
+              "outline-variant": "#c3c6d6",
+              "inverse-surface": "#283044",
+              "inverse-primary": "#b2c5ff",
+              "tertiary-container": "#006847",
+              "primary-fixed-dim": "#b2c5ff",
+              "on-error": "#ffffff",
+              "tertiary-fixed": "#85f8c4",
+              "outline": "#737685",
+              "error-container": "#ffdad6",
+              "on-tertiary": "#ffffff",
+              "secondary-container": "#d5e3fc",
+              "on-secondary-fixed-variant": "#3a485b",
+              "surface-container-highest": "#dae2fd",
+              "surface": "#faf8ff",
+              "on-secondary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      h1, h2, h3, .brand-font {
+        font-family: 'Manrope', sans-serif;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-white">
+<!-- SideNavBar (Predicted Anchor) -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-slate-100 dark:bg-slate-950 flex flex-col py-4 z-50 transition-all duration-200 ease-in-out font-manrope text-xs font-medium">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-2xl" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h1 class="text-xl font-black text-blue-900 dark:text-white leading-tight">Judge Admin</h1>
+<p class="text-[10px] text-slate-500 font-bold tracking-widest uppercase">v2.4.0-stable</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 font-bold rounded-l-lg transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-blue-600 transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+                Users
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-blue-600 transition-all" href="#">
+<span class="material-symbols-outlined">gavel</span>
+                Moderation
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-blue-600 transition-all" href="#">
+<span class="material-symbols-outlined">event_note</span>
+                Contests
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-blue-600 transition-all" href="#">
+<span class="material-symbols-outlined">shield</span>
+                Security
+            </a>
+</nav>
+<div class="px-4 mt-auto space-y-4">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-white py-3 rounded-lg font-bold shadow-sm hover:brightness-110 transition-all text-sm">
+                Generate Report
+            </button>
+<div class="space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">help</span>
+                    Help Center
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 text-error hover:opacity-80 transition-colors" href="#">
+<span class="material-symbols-outlined text-lg">logout</span>
+                    Logout
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- TopNavBar (Predicted Anchor) -->
+<header class="flex justify-between items-center px-6 h-16 w-full bg-slate-50 dark:bg-slate-900 sticky top-0 z-40">
+<div class="flex items-center gap-8">
+<h2 class="text-lg font-bold text-blue-900 dark:text-blue-100 font-manrope tracking-tight">System Overview</h2>
+<nav class="hidden lg:flex items-center gap-6 font-manrope text-sm tracking-tight">
+<a class="text-blue-700 dark:text-blue-400 border-b-2 border-blue-700 font-semibold h-16 flex items-center" href="#">System Health</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-700 transition-colors h-16 flex items-center" href="#">Audit Logs</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-blue-700 transition-colors h-16 flex items-center" href="#">Security</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative flex items-center bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border-none focus-within:ring-2 ring-primary/20">
+<span class="material-symbols-outlined text-slate-400 text-lg mr-2">search</span>
+<input class="bg-transparent border-none text-xs focus:ring-0 w-48 font-body" placeholder="Quick search commands..." type="text"/>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-slate-50"></span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
+<img class="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 object-cover" data-alt="Admin profile avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBw0HhHIjuis2rCwoTXQZMYIcw2ZaxfAZHAzhPFcaFEFlYiDFEI1npHn1DtwMMvWDKQv75xXEq4fdA8dymUxwMXwPC5aMd_yMFuJVoCWYnkSwv396AI9RcO7JGzZO7sI0fKx8opqaNZGUCVXNEsgHvk-SpgJeJ-YcgybXdeIomiPqKsP1Zzxh1pCIR_YPLZFzCjkENgqvlWsjJk1qPSzhbZyTy9GhWkwxt_NnNJWNvhKA1Rynwx1e5mv5LsEl6yN_x18Umx1Jhi35JV"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="p-8 space-y-8 flex-1 bg-background">
+<!-- Metric Cards (Bento Style) -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Server Load -->
+<div class="bg-surface-container-low p-6 rounded-lg group hover:bg-surface-container transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-primary/10 rounded-lg">
+<span class="material-symbols-outlined text-primary">dns</span>
+</div>
+<span class="text-[10px] font-bold text-tertiary px-2 py-0.5 bg-tertiary-container rounded-full">OPTIMAL</span>
+</div>
+<p class="text-on-surface-variant text-xs font-semibold uppercase tracking-widest mb-1">Server Load</p>
+<div class="flex items-baseline gap-2">
+<h3 class="text-3xl font-black text-on-surface">42%</h3>
+<span class="text-xs text-secondary font-medium">-3% avg</span>
+</div>
+<div class="mt-4 w-full bg-slate-200 dark:bg-slate-800 h-1 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[42%]"></div>
+</div>
+</div>
+<!-- Active Users -->
+<div class="bg-surface-container-low p-6 rounded-lg group hover:bg-surface-container transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-secondary-container rounded-lg">
+<span class="material-symbols-outlined text-secondary">person_pin_circle</span>
+</div>
+<span class="flex items-center text-[10px] font-bold text-primary gap-1">
+<span class="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span> LIVE
+                        </span>
+</div>
+<p class="text-on-surface-variant text-xs font-semibold uppercase tracking-widest mb-1">Active Users</p>
+<div class="flex items-baseline gap-2">
+<h3 class="text-3xl font-black text-on-surface">1,240</h3>
+<span class="text-xs text-tertiary font-medium">+12% peak</span>
+</div>
+<div class="mt-4 flex -space-x-2">
+<img class="w-6 h-6 rounded-full border-2 border-surface-container-low object-cover" data-alt="Active user avatar 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC085CvXJO-s8blZ2v_CWre9IQj2LBVKifEsCYqX5frvnTghexy1dBe-YHJEid7ESAmcxK5JUvNXQ6mmUn2F3Dx_j9hQKj0DpXkS74ujZrO3bThNPXRZuHf4FVs964M4gpt3nuWOv2vsr4kRc4VSSuenY605CmjsMuVEy8G4OKSs7rTHoj-jpMCiKRnpqjTVcLBPeEAVx6i8q8ge9wVoN-gtJFTJMXI57KBQSNVscmKU8TrMhr6BIzZ8Gkk2py0DtO8p9iepaGHHvIP"/>
+<img class="w-6 h-6 rounded-full border-2 border-surface-container-low object-cover" data-alt="Active user avatar 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLfh9VZkpKNDz2B4JH-q3cyl7FsaRm776ZYX4WC6QDagJG-t44Y2bNNTHshW8kmrxqaSgAF6KTck3g44r_kYZ5vuyq84uvxI8igTtHesoMLTt7RHkxtqBTCwOFUDHk_C31boq0TWyBJZxp71gNcgbrB4b415bWkwsZnEQKMS7LTKf4SgwcF73-Sxd3pooU5AOP4BZqNw4LVg7OZnq75zbZ-D5Rpmvp6bAi4-dimUXU5RHJmelLD6QrSbMNZRUZa7XnHxsCUmb38UNt"/>
+<img class="w-6 h-6 rounded-full border-2 border-surface-container-low object-cover" data-alt="Active user avatar 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAHWONT4lhe00Smw3g9czJvFJUo85aLgauNdAechxDLuGNZoe5fLmf1sfcYSiN7Ll3yktT56OoFDsXq-HP8aoOJqek0VGkrO1nmoiu3xsXvtdCU_3A-ByaNj0FQQj87g_CqArJpcku_Qi0oXrvFNpfhzQKW38PAWlhHpryQ4l1v8v_qnNIag4uRz-rKcXI4z-NdGokAuoi3xGpvmqecHF7asrduXJhgqX6Cxuiyf7h5x_0pgL-Wh-KmwdMuehEO6x8y8wy1oOokKuk"/>
+<div class="w-6 h-6 rounded-full border-2 border-surface-container-low bg-primary flex items-center justify-center text-[8px] text-white font-bold">+1.2k</div>
+</div>
+</div>
+<!-- Submissions/Min -->
+<div class="bg-surface-container-low p-6 rounded-lg group hover:bg-surface-container transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-tertiary-container rounded-lg">
+<span class="material-symbols-outlined text-tertiary">speed</span>
+</div>
+</div>
+<p class="text-on-surface-variant text-xs font-semibold uppercase tracking-widest mb-1">Submissions/Min</p>
+<div class="flex items-baseline gap-2">
+<h3 class="text-3xl font-black text-on-surface">150</h3>
+<span class="text-xs text-secondary font-medium">Stable flow</span>
+</div>
+<div class="mt-4 flex gap-1 h-6 items-end">
+<div class="w-1 bg-tertiary h-2 rounded-full opacity-30"></div>
+<div class="w-1 bg-tertiary h-4 rounded-full opacity-50"></div>
+<div class="w-1 bg-tertiary h-3 rounded-full opacity-40"></div>
+<div class="w-1 bg-tertiary h-5 rounded-full"></div>
+<div class="w-1 bg-tertiary h-6 rounded-full"></div>
+<div class="w-1 bg-tertiary h-4 rounded-full opacity-60"></div>
+</div>
+</div>
+<!-- Pending Reports -->
+<div class="bg-surface-container-low p-6 rounded-lg group hover:bg-surface-container transition-colors">
+<div class="flex justify-between items-start mb-4">
+<div class="p-2 bg-error-container rounded-lg">
+<span class="material-symbols-outlined text-error">flag</span>
+</div>
+<span class="text-[10px] font-bold text-error px-2 py-0.5 bg-error-container rounded-full">URGENT</span>
+</div>
+<p class="text-on-surface-variant text-xs font-semibold uppercase tracking-widest mb-1">Pending Reports</p>
+<div class="flex items-baseline gap-2">
+<h3 class="text-3xl font-black text-on-surface">12</h3>
+<span class="text-xs text-error font-medium">Needs review</span>
+</div>
+<div class="mt-4">
+<button class="text-[10px] font-bold text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary transition-all">VIEW MODERATION QUEUE</button>
+</div>
+</div>
+</section>
+<!-- Middle Section: Graph & Actions -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Activity Graph -->
+<div class="lg:col-span-2 bg-surface-container-lowest p-8 rounded-lg">
+<div class="flex justify-between items-center mb-8">
+<div>
+<h4 class="text-lg font-bold text-on-surface leading-tight">Submission Activity</h4>
+<p class="text-xs text-on-surface-variant font-medium">Past 24 hours throughput</p>
+</div>
+<div class="flex gap-2">
+<button class="px-3 py-1 bg-surface-container-low text-[10px] font-bold rounded-full">D</button>
+<button class="px-3 py-1 text-[10px] font-bold rounded-full text-on-surface-variant">W</button>
+<button class="px-3 py-1 text-[10px] font-bold rounded-full text-on-surface-variant">M</button>
+</div>
+</div>
+<!-- SVG Chart Mockup -->
+<div class="h-64 w-full relative">
+<svg class="w-full h-full preserve-3d" viewbox="0 0 1000 300">
+<!-- Grid Lines -->
+<line stroke="#f2f3ff" stroke-width="1" x1="0" x2="1000" y1="50" y2="50"></line>
+<line stroke="#f2f3ff" stroke-width="1" x1="0" x2="1000" y1="150" y2="150"></line>
+<line stroke="#f2f3ff" stroke-width="1" x1="0" x2="1000" y1="250" y2="250"></line>
+<!-- Area Fill -->
+<path d="M0,300 L0,200 C150,180 250,250 400,100 C550,50 700,150 850,80 L1000,60 L1000,300 Z" fill="url(#gradient-area)" opacity="0.1"></path>
+<!-- Line Path -->
+<path d="M0,200 C150,180 250,250 400,100 C550,50 700,150 850,80 L1000,60" fill="none" stroke="#003d9b" stroke-linecap="round" stroke-width="4"></path>
+<defs>
+<lineargradient id="gradient-area" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#003d9b"></stop>
+<stop offset="100%" stop-color="#ffffff"></stop>
+</lineargradient>
+</defs>
+<!-- Data Points -->
+<circle cx="400" cy="100" fill="#003d9b" r="6"></circle>
+<circle cx="1000" cy="60" fill="#003d9b" r="6"></circle>
+</svg>
+<!-- Axis Labels -->
+<div class="flex justify-between mt-4 text-[10px] font-bold text-on-surface-variant font-label tracking-widest">
+<span>00:00</span>
+<span>06:00</span>
+<span>12:00</span>
+<span>18:00</span>
+<span>23:59</span>
+</div>
+</div>
+</div>
+<!-- Quick Management Panel -->
+<div class="bg-surface-container-low p-8 rounded-lg border border-outline-variant/10">
+<h4 class="text-lg font-bold text-on-surface mb-6 leading-tight">Quick Management</h4>
+<div class="grid grid-cols-1 gap-3">
+<button class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-lg hover:bg-primary hover:text-white transition-all group">
+<span class="material-symbols-outlined group-hover:text-white text-primary">add_box</span>
+<span class="text-sm font-semibold">Create New Contest</span>
+</button>
+<button class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-lg hover:bg-primary hover:text-white transition-all group">
+<span class="material-symbols-outlined group-hover:text-white text-primary">description</span>
+<span class="text-sm font-semibold">Add Problem</span>
+</button>
+<button class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-lg hover:bg-primary hover:text-white transition-all group">
+<span class="material-symbols-outlined group-hover:text-white text-primary">campaign</span>
+<span class="text-sm font-semibold">Broadcast Announcement</span>
+</button>
+<button class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-lg hover:bg-primary hover:text-white transition-all group">
+<span class="material-symbols-outlined group-hover:text-white text-primary">sim_card_download</span>
+<span class="text-sm font-semibold">Export Logs</span>
+</button>
+</div>
+<!-- Plagiarism Alert Sub-section -->
+<div class="mt-8 pt-8 border-t border-outline-variant/15">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-error text-lg" style="font-variation-settings: 'FILL' 1;">warning</span>
+<h5 class="text-xs font-bold text-error uppercase tracking-widest">Security Alerts</h5>
+</div>
+<div class="bg-error-container/30 p-4 rounded-lg">
+<p class="text-xs font-semibold text-on-error-container mb-1">High Similarity Detected</p>
+<p class="text-[10px] text-secondary font-medium mb-3">Problem #104 (Binary Search Tree)</p>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold bg-error-container text-error px-2 py-0.5 rounded">98% Match</span>
+<button class="text-[10px] font-bold text-primary underline ml-auto">INVESTIGATE</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Bottom Section: Audit Logs -->
+<section class="bg-surface-container-lowest rounded-lg overflow-hidden">
+<div class="px-8 py-6 border-b border-surface-container flex justify-between items-center">
+<div>
+<h4 class="text-lg font-bold text-on-surface">Audit Logs Feed</h4>
+<p class="text-xs text-on-surface-variant font-medium">Recent administrative oversight actions</p>
+</div>
+<button class="text-xs font-bold text-primary hover:underline">View All Logs</button>
+</div>
+<div class="overflow-x-auto no-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-low">
+<tr>
+<th class="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Admin User</th>
+<th class="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Action</th>
+<th class="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Target Entity</th>
+<th class="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest text-right">Timestamp</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-50">
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-8 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-[10px] font-bold text-primary">AM</div>
+<span class="text-sm font-semibold text-on-surface">Admin Alex</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="text-xs font-medium text-tertiary-fixed-variant px-2 py-1 bg-tertiary-container/30 rounded">Problem Approval</span>
+</td>
+<td class="px-8 py-4 text-xs font-medium text-on-surface-variant">Problem #102: Dijkstra Refactored</td>
+<td class="px-8 py-4 text-[10px] font-bold text-secondary text-right">2 mins ago</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-8 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-[10px] font-bold text-secondary">MB</div>
+<span class="text-sm font-semibold text-on-surface">Moderator B</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="text-xs font-medium text-on-error-container px-2 py-1 bg-error-container/30 rounded">Comment Deleted</span>
+</td>
+<td class="px-8 py-4 text-xs font-medium text-on-surface-variant">Discussion Thread #991</td>
+<td class="px-8 py-4 text-[10px] font-bold text-secondary text-right">15 mins ago</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-8 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-[10px] font-bold text-primary">SK</div>
+<span class="text-sm font-semibold text-on-surface">Sarah King</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="text-xs font-medium text-on-primary-fixed-variant px-2 py-1 bg-primary-fixed rounded">Contest Updated</span>
+</td>
+<td class="px-8 py-4 text-xs font-medium text-on-surface-variant">Winter Code Sprint 2024</td>
+<td class="px-8 py-4 text-[10px] font-bold text-secondary text-right">1 hour ago</td>
+</tr>
+<tr class="hover:bg-surface-container-low/50 transition-colors">
+<td class="px-8 py-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center text-[10px] font-bold text-primary">AM</div>
+<span class="text-sm font-semibold text-on-surface">Admin Alex</span>
+</div>
+</td>
+<td class="px-8 py-4">
+<span class="text-xs font-medium text-on-surface-variant px-2 py-1 bg-surface-container rounded">System Update</span>
+</td>
+<td class="px-8 py-4 text-xs font-medium text-on-surface-variant">API Gateway Configuration</td>
+<td class="px-8 py-4 text-[10px] font-bold text-secondary text-right">4 hours ago</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+<!-- System Footer Metadata -->
+<footer class="p-6 bg-surface-container-low text-center border-t border-outline-variant/10">
+<p class="text-[10px] font-bold text-on-surface-variant tracking-[0.2em] uppercase">
+                Architectural Scholar Admin Terminal — Dedicated Internal Environment — Confidential
+            </p>
+</footer>
+</main>
+</body></html>

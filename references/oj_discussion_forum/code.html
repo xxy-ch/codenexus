@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Architectural Scholar | Community Forum</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-fixed-variant": "#005137",
+              "on-secondary-fixed-variant": "#3a485b",
+              "surface-container-high": "#e2e7ff",
+              "primary": "#003d9b",
+              "error": "#ba1a1a",
+              "surface-tint": "#0c56d0",
+              "secondary-fixed-dim": "#b9c7df",
+              "on-background": "#131b2e",
+              "surface-bright": "#faf8ff",
+              "inverse-on-surface": "#eef0ff",
+              "primary-container": "#0052cc",
+              "primary-fixed": "#dae2ff",
+              "on-error": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "outline": "#737685",
+              "inverse-surface": "#283044",
+              "tertiary-fixed": "#85f8c4",
+              "surface-dim": "#d2d9f4",
+              "surface-container-highest": "#dae2fd",
+              "secondary-container": "#d5e3fc",
+              "tertiary": "#004e34",
+              "surface-container-low": "#f2f3ff",
+              "on-tertiary-fixed": "#002114",
+              "on-tertiary-container": "#75e8b5",
+              "inverse-primary": "#b2c5ff",
+              "surface-container": "#eaedff",
+              "on-primary": "#ffffff",
+              "tertiary-container": "#006847",
+              "on-secondary-fixed": "#0d1c2e",
+              "primary-fixed-dim": "#b2c5ff",
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed-variant": "#0040a2",
+              "on-primary-container": "#c4d2ff",
+              "error-container": "#ffdad6",
+              "tertiary-fixed-dim": "#68dba9",
+              "surface": "#faf8ff",
+              "secondary": "#515f74",
+              "on-error-container": "#93000a",
+              "on-surface-variant": "#434654",
+              "on-primary-fixed": "#001848",
+              "surface-variant": "#dae2fd",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#d5e3fc",
+              "on-secondary-container": "#57657a",
+              "outline-variant": "#c3c6d6",
+              "on-surface": "#131b2e",
+              "background": "#faf8ff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .action-gradient {
+            background: linear-gradient(135deg, #003d9b 0%, #0052cc 100%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body antialiased">
+<!-- Top Navigation Shell -->
+<header class="bg-slate-50 fixed top-0 w-full z-50">
+<div class="flex items-center justify-between px-6 py-3 w-full max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-blue-900">Architectural Scholar</span>
+<nav class="hidden md:flex items-center gap-6 font-manrope antialiased tracking-tight">
+<a class="text-slate-500 hover:text-blue-600 transition-colors" href="#">Problems</a>
+<a class="text-slate-500 hover:text-blue-600 transition-colors" href="#">Contests</a>
+<a class="text-blue-700 font-semibold border-b-2 border-blue-700 pb-1" href="#">Community</a>
+<a class="text-slate-500 hover:text-blue-600 transition-colors" href="#">Rankings</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center bg-surface-container-low rounded px-3 py-1.5 gap-2 group">
+<span class="material-symbols-outlined text-outline text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 font-label" placeholder="Search discussions..." type="text"/>
+</div>
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 transition-all rounded-full active:scale-95">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 transition-all rounded-full active:scale-95">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full ml-2 ring-2 ring-surface-container-high" data-alt="Small circular user profile avatar showing a smiling scholar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnSChImMebIkOU2qreNesPoHxTHlxmnr1pSGRj0c3491IC3n3G82HSGOJtK3QNUH8ecw5Aly1-xoVD9x_vlsvQfQn_D2cHXmhwCXy551TlVpZpF14oowdLh7JYZ-3rqFi5ETMvlhvZ9DoC-oMoCNSe8e-__dmakALhzdVa5rTrq7UKthzerYPQeErKOFqSRxo7rYfWeeTPomNk9yAnUxqXEsoyicO30fGHG1LoyLAhbYNwcxYWPObUmhn4ScmguLNCEU7ziuvrOK8l"/>
+</div>
+</div>
+</header>
+<div class="flex pt-16 min-h-screen max-w-screen-2xl mx-auto">
+<!-- Sidebar Shell -->
+<aside class="hidden md:flex flex-col h-[calc(100vh-4rem)] w-64 p-4 space-y-2 fixed bg-slate-50 border-r-0">
+<div class="mb-6 px-3">
+<h2 class="font-manrope text-lg font-bold text-primary">Community</h2>
+<p class="text-xs text-slate-500 font-medium">Knowledge Exchange</p>
+</div>
+<button class="action-gradient text-white font-manrope font-semibold py-2.5 px-4 rounded mb-6 flex items-center justify-center gap-2 shadow-sm active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Post
+            </button>
+<nav class="flex-1 space-y-1 font-manrope text-sm font-medium">
+<a class="bg-blue-100/50 text-blue-800 rounded-lg px-3 py-2 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="forum">forum</span> All Posts
+                </a>
+<a class="text-slate-600 hover:bg-slate-200/50 rounded-lg px-3 py-2 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span> Editorials
+                </a>
+<a class="text-slate-600 hover:bg-slate-200/50 rounded-lg px-3 py-2 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span> Announcements
+                </a>
+<a class="text-slate-600 hover:bg-slate-200/50 rounded-lg px-3 py-2 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span> Discussion
+                </a>
+<a class="text-slate-600 hover:bg-slate-200/50 rounded-lg px-3 py-2 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span> My Activity
+                </a>
+</nav>
+<div class="pt-4 border-t border-slate-200/50 space-y-1 font-manrope text-sm font-medium">
+<a class="text-slate-600 hover:bg-slate-200/50 rounded-lg px-3 py-2 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span> Help
+                </a>
+<a class="text-slate-600 hover:bg-slate-200/50 rounded-lg px-3 py-2 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="rate_review">rate_review</span> Feedback
+                </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 bg-background px-8 py-8">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+<div class="max-w-2xl">
+<h1 class="font-headline text-3xl font-extrabold tracking-tight text-on-surface mb-2">Knowledge Exchange</h1>
+<p class="text-on-surface-variant font-body leading-relaxed">Join the discussion on algorithms, data structures, and architectural patterns. Share your insights or ask for help with the latest challenges.</p>
+</div>
+<div class="flex items-center gap-2 bg-surface-container-low p-1 rounded-lg">
+<button class="bg-surface-container-lowest text-primary text-xs font-semibold px-4 py-2 rounded shadow-sm">Latest</button>
+<button class="text-on-surface-variant text-xs font-medium px-4 py-2 rounded hover:bg-slate-200/50 transition-colors">Trending</button>
+<button class="text-on-surface-variant text-xs font-medium px-4 py-2 rounded hover:bg-slate-200/50 transition-colors">Unsolved</button>
+</div>
+</div>
+<!-- Discussion List (Bento-style spacing) -->
+<div class="grid grid-cols-1 gap-1.5">
+<!-- Thread Item 1 -->
+<div class="group flex items-center justify-between p-5 bg-surface-container-lowest hover:bg-surface-container-medium transition-all duration-200 rounded-lg">
+<div class="flex items-start gap-4 flex-1">
+<img class="w-10 h-10 rounded shadow-sm" data-alt="User avatar of an author" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLVGmg9P4ajBUieQ63aQ3f1eXawBk-J2Zg7V6Xd8QWduZpJ3JbcKBZUwTQQAjp0pfMY4rEsGoEM8_TYBu5RI47jOLiraHqec0Hvf-ovrD9bfTeHr6CymFHuH0ekTadLmuOsSQnCeT3ropUq9gzlq3FiYdiapp3rF1UHgE7ZvEUgzNEDAvz6hVD3Hvzvk6WcrbQCG4Q16gXC4H5Ac8U82AB6I84FAdQOEi7V6PeXT208Q3BKYTqD_TkCI7A_FFhWsX6uiSPkfpPkjQl"/>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-bold text-primary tracking-wide">ALGORITHM</span>
+<span class="text-[10px] text-outline">•</span>
+<span class="text-xs text-on-surface-variant font-medium">Posted by <span class="text-on-surface font-semibold">BinaryArchitect</span></span>
+</div>
+<h3 class="font-headline text-base font-bold text-on-surface leading-snug group-hover:text-primary transition-colors">Optimizing Segment Trees for Range GCD Queries in O(1) space?</h3>
+<div class="flex items-center gap-4 mt-2">
+<span class="flex items-center gap-1 text-[11px] font-label text-outline">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 2 hours ago
+                                </span>
+<span class="bg-tertiary-container text-on-tertiary-fixed-variant text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Solved</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-10 text-center px-4">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-on-surface leading-tight">124</span>
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">Replies</span>
+</div>
+<div class="flex flex-col">
+<span class="text-lg font-bold text-on-surface leading-tight">2.4k</span>
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">Views</span>
+</div>
+</div>
+</div>
+<!-- Thread Item 2 -->
+<div class="group flex items-center justify-between p-5 bg-surface-container-lowest hover:bg-surface-container-medium transition-all duration-200 rounded-lg">
+<div class="flex items-start gap-4 flex-1">
+<img class="w-10 h-10 rounded shadow-sm" data-alt="User avatar of a female coder" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4sf1AiWFnzP3Syjtyiok-LdRDSlBBL0fVau7XR8F8ypOLkuitsoZMKC4sivmkRAoSQBma3X9AK5b-cAAwozQal_1J6NiECXBgkvVCQD9YGlcr9ZYIsIt5mH5Nuj8owqtm-Efkt_NVEuNo_V6DA5OH-SSJIG7-jd_xVvTcbHiGNJ2mFRR1PxEFPdMvmZ5McPU54u40YqnBYr2BRb_vN6MVyd2gzVgqwlBHPXOPCw1kJmAMt9YA6hWQSHsf2ObChAXwdKrt0wNhBDHh"/>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-bold text-error tracking-wide">BUG</span>
+<span class="text-[10px] text-outline">•</span>
+<span class="text-xs text-on-surface-variant font-medium">Posted by <span class="text-on-surface font-semibold">RecursiveMind</span></span>
+</div>
+<h3 class="font-headline text-base font-bold text-on-surface leading-snug group-hover:text-primary transition-colors">Turing Machine Emulator: Memory leak on long tapes</h3>
+<div class="flex items-center gap-4 mt-2">
+<span class="flex items-center gap-1 text-[11px] font-label text-outline">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 5 hours ago
+                                </span>
+<span class="bg-secondary-container text-on-secondary-fixed-variant text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Investigating</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-10 text-center px-4">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-on-surface leading-tight">42</span>
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">Replies</span>
+</div>
+<div class="flex flex-col">
+<span class="text-lg font-bold text-on-surface leading-tight">890</span>
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">Views</span>
+</div>
+</div>
+</div>
+<!-- Thread Item 3 -->
+<div class="group flex items-center justify-between p-5 bg-surface-container-lowest hover:bg-surface-container-medium transition-all duration-200 rounded-lg">
+<div class="flex items-start gap-4 flex-1">
+<img class="w-10 h-10 rounded shadow-sm" data-alt="User avatar of a young programmer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpZceqxppzRE7O82WwxrKj1-_HuxXRFr29wRN2NI1G0nnHoK_xYfXTTKFo_X-vx5QAyiquhx12xXB3ciZHXJlIiJFKyt-ebRpD4kaxEoW9KDYlT2xdNM0g0Yba5avcZIoBKcM029QlCS1i7-40q2B9JgSntpJTNjmXCjAG-yxNTWp4bqvFIrTxiMSITTJAdWKrYWvaeTs6hU9fwYGUtQNYCyxolSXQyc-GTwrcBTzCuxkhUcScWTjhGhquhnEqJFssoAWsoEVAxj83"/>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-bold text-primary-container tracking-wide">HELP</span>
+<span class="text-[10px] text-outline">•</span>
+<span class="text-xs text-on-surface-variant font-medium">Posted by <span class="text-on-surface font-semibold">DataSage</span></span>
+</div>
+<h3 class="font-headline text-base font-bold text-on-surface leading-snug group-hover:text-primary transition-colors">Understanding Amortized Analysis in Dynamic Arrays</h3>
+<div class="flex items-center gap-4 mt-2">
+<span class="flex items-center gap-1 text-[11px] font-label text-outline">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 8 hours ago
+                                </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-10 text-center px-4">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-on-surface leading-tight">15</span>
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">Replies</span>
+</div>
+<div class="flex flex-col">
+<span class="text-lg font-bold text-on-surface leading-tight">412</span>
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">Views</span>
+</div>
+</div>
+</div>
+<!-- Thread Item 4 -->
+<div class="group flex items-center justify-between p-5 bg-surface-container-lowest hover:bg-surface-container-medium transition-all duration-200 rounded-lg">
+<div class="flex items-start gap-4 flex-1">
+<img class="w-10 h-10 rounded shadow-sm" data-alt="User avatar of a senior developer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDWQ-JiGA5DLE9K-gfsbUq09nku5jyGpOsHbVH1G83BBHxogTaKoSvlkB-gQoo74vUhWC04RRmmvYuX78wQFWe7nSjOTabbLnyd_FXEtda5CLp1hT8Jg_PvJMepdeiIvsEGyxmQdeVspLdmQWuPVOc9T6l3ogQeNeUJ6cczQ4VcCsblW6ai2RCn73Ltl4I0qb-9fioyhNZy3WflkrKA2f1MJcrB1whEuOU9hHVZPK4gnBZIHZ5ptPeMI_FB-fEqmFnSxxG37-fxghrn"/>
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-bold text-blue-900 tracking-wide">EDITORIAL</span>
+<span class="text-[10px] text-outline">•</span>
+<span class="text-xs text-on-surface-variant font-medium">Posted by <span class="text-on-surface font-semibold">Scholar_Official</span></span>
+</div>
+<h3 class="font-headline text-base font-bold text-on-surface leading-snug group-hover:text-primary transition-colors">Architectural breakdown: How to solve 'The Iron Cathedral' problem set</h3>
+<div class="flex items-center gap-4 mt-2">
+<span class="flex items-center gap-1 text-[11px] font-label text-outline">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 1 day ago
+                                </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-10 text-center px-4">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-on-surface leading-tight">356</span>
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">Replies</span>
+</div>
+<div class="flex flex-col">
+<span class="text-lg font-bold text-on-surface leading-tight">12.5k</span>
+<span class="text-[10px] font-label text-outline uppercase tracking-tighter">Views</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Section -->
+<footer class="mt-12 w-full max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between items-center px-0 py-6 text-slate-500 font-inter text-xs tracking-wide border-t-0">
+<div class="mb-4 md:mb-0">
+                    © 2024 Architectural Scholar Online Judge. All rights reserved.
+                </div>
+<div class="flex gap-6">
+<a class="no-underline hover:text-blue-600 transition-colors" href="#">Privacy Policy</a>
+<a class="no-underline hover:text-blue-600 transition-colors" href="#">Terms of Service</a>
+<a class="no-underline hover:text-blue-600 transition-colors" href="#">API Docs</a>
+<a class="no-underline hover:text-blue-600 transition-colors" href="#">Status</a>
+</div>
+</footer>
+</main>
+<!-- Right Side Stats/Context (Optional Sidebar for high density) -->
+<aside class="hidden xl:block w-72 p-8 border-l-0 bg-background">
+<div class="space-y-8">
+<section>
+<h4 class="font-headline text-sm font-extrabold text-on-surface mb-4 tracking-tight uppercase">Top Contributors</h4>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<img class="w-8 h-8 rounded-full" data-alt="Small avatar of a contributor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlZ43dBkBT45dwKSxaTk1emXOnhG7K4DD-WwPOFaAFz4irb8qndha3OiFpTMvwGR2-QTxN1-RIsWVhkL3jz6KD5rr5dw5jCMu4WgXkFSxbWszlxdNwIbDj53N17pWEKs0Vsk5yrvOQy0Rvl9fppoRIydKFzKNdwDThAW6N1lxrR1Hfc9af6CbQQMW-6NOB-r7e7rh1mLTNV4tMXo7kGSF6TcBn5tNEr3olvAnXJMrf8Go-6Z7IjTP50yiiJqSDHboRW_D4zky-oTlo"/>
+<div>
+<p class="text-xs font-bold text-on-surface">GraphMaster</p>
+<p class="text-[10px] text-outline font-medium">1,240 points</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<img class="w-8 h-8 rounded-full" data-alt="Small avatar of a contributor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAp4VhPqbl7IfM6EwxMkk30sUhGa6ZzLrYMQXm5cEpCalVHWFs9tc6Ll1-1tNvHEQwEc_ee-gNAnCvX2COI_APXT-F3MALc411lAJ5UM4Mt92GfoCS1Lg69Irf_aTI4BgYEmUImOJFXzsWnVA6Ya74_o1awYBJjwI3gnV4Bns-ubAhySZi7gDPs1ed4z1zlcCMfyYCqKxl9bQ_IudNB4RXjYWfaEKLSOAdw3x-weNyfHXTsZIMMO5FHFwlgy2lq5iBOGfR2TBqajgG8"/>
+<div>
+<p class="text-xs font-bold text-on-surface">PixelPioneer</p>
+<p class="text-[10px] text-outline font-medium">980 points</p>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-surface-container-low p-4 rounded">
+<h4 class="font-headline text-xs font-extrabold text-on-surface mb-2 tracking-tight uppercase">Community Stats</h4>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-xl font-bold text-primary">12k+</p>
+<p class="text-[10px] text-outline font-medium uppercase">Threads</p>
+</div>
+<div>
+<p class="text-xl font-bold text-primary">45k+</p>
+<p class="text-[10px] text-outline font-medium uppercase">Members</p>
+</div>
+</div>
+</section>
+</div>
+</aside>
+</div>
+<!-- Mobile Bottom Navigation -->
+<nav class="md:hidden fixed bottom-0 w-full bg-slate-50 flex justify-around items-center py-3 border-t-0 z-50 shadow-lg">
+<a class="flex flex-col items-center text-blue-700" href="#">
+<span class="material-symbols-outlined" data-icon="forum" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span class="text-[10px] font-bold mt-1">Forum</span>
+</a>
+<a class="flex flex-col items-center text-slate-500" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="text-[10px] font-medium mt-1">Code</span>
+</a>
+<a class="flex flex-col items-center text-slate-500" href="#">
+<span class="material-symbols-outlined" data-icon="emoji_events">emoji_events</span>
+<span class="text-[10px] font-medium mt-1">Leader</span>
+</a>
+<a class="flex flex-col items-center text-slate-500" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-medium mt-1">Me</span>
+</a>
+</nav>
+</body></html>

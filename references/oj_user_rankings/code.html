@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Architectural Scholar | User Rankings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#003d9b",
+              "on-secondary-fixed-variant": "#3a485b",
+              "tertiary-fixed": "#85f8c4",
+              "secondary-fixed-dim": "#b9c7df",
+              "secondary-fixed": "#d5e3fc",
+              "surface-container-lowest": "#ffffff",
+              "primary-container": "#0052cc",
+              "on-secondary": "#ffffff",
+              "inverse-on-surface": "#eef0ff",
+              "background": "#faf8ff",
+              "outline": "#737685",
+              "on-primary-fixed": "#001848",
+              "on-primary-container": "#c4d2ff",
+              "on-background": "#131b2e",
+              "surface-dim": "#d2d9f4",
+              "secondary": "#515f74",
+              "primary-fixed": "#dae2ff",
+              "on-surface": "#131b2e",
+              "surface-variant": "#dae2fd",
+              "on-primary": "#ffffff",
+              "surface-container-low": "#f2f3ff",
+              "surface-bright": "#faf8ff",
+              "primary-fixed-dim": "#b2c5ff",
+              "on-secondary-container": "#57657a",
+              "inverse-surface": "#283044",
+              "secondary-container": "#d5e3fc",
+              "on-tertiary": "#ffffff",
+              "outline-variant": "#c3c6d6",
+              "on-secondary-fixed": "#0d1c2e",
+              "surface-tint": "#0c56d0",
+              "surface-container-highest": "#dae2fd",
+              "error-container": "#ffdad6",
+              "tertiary-fixed-dim": "#68dba9",
+              "surface-container-high": "#e2e7ff",
+              "surface-container": "#eaedff",
+              "error": "#ba1a1a",
+              "on-tertiary-fixed-variant": "#005137",
+              "on-primary-fixed-variant": "#0040a2",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed": "#002114",
+              "on-error-container": "#93000a",
+              "tertiary-container": "#006847",
+              "on-surface-variant": "#434654",
+              "inverse-primary": "#b2c5ff",
+              "surface": "#faf8ff",
+              "on-tertiary-container": "#75e8b5",
+              "tertiary": "#004e34"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased font-body">
+<!-- Top Navigation Bar -->
+<header class="bg-[#faf8ff] dark:bg-slate-950 w-full top-0 z-50">
+<nav class="flex justify-between items-center px-6 h-16 w-full max-w-[1920px] mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-[#003d9b] dark:text-blue-400 font-headline tracking-tight">Architectural Scholar</span>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-slate-600 dark:text-slate-400 font-medium font-manrope antialiased tracking-tight hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors px-3 py-1 rounded" href="#">Dashboard</a>
+<a class="text-slate-600 dark:text-slate-400 font-medium font-manrope antialiased tracking-tight hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors px-3 py-1 rounded" href="#">Problems</a>
+<a class="text-slate-600 dark:text-slate-400 font-medium font-manrope antialiased tracking-tight hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors px-3 py-1 rounded" href="#">Contests</a>
+<a class="text-[#003d9b] dark:text-blue-300 border-b-2 border-[#003d9b] font-semibold font-manrope antialiased tracking-tight px-3 py-1" href="#">Rankings</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-outline-variant" data-alt="User profile avatar of a young scholar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-F2VfduClg3HcjdatNBYmjwZTVs8lZdGLjDL71mZIc5CkeffRteK5zXXKtzXqGlreVQRYdEjHPCGQ4--pwbQvvx929krx5UREuuK4S_D12Ys-bUMKkIVkWAwWDBhMHmBW-xPVBZqG4hlgsxcrsmst0FsypkHtc2L-ToBM6se7jBuaRpIJsI_u-qBueb_qo08m383aWrxre9IVliSyNu5CN3sa4rB5UjdcSVLChNNE0sLCMt8P7nZrqScQln7H3xImUVQ2scPWdF0M"/>
+</div>
+</nav>
+</header>
+<main class="flex min-h-screen">
+<!-- Sidebar Navigation (Hidden on Mobile) -->
+<aside class="hidden md:flex flex-col py-4 gap-1 h-screen w-64 bg-[#f2f3ff] dark:bg-slate-900 font-manrope text-sm font-medium border-r-0">
+<div class="px-6 mb-8">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-sm" data-icon="code">code</span>
+</div>
+<div>
+<h3 class="font-bold text-[#003d9b]">Problem Solver</h3>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-wider">Mastering Algorithms</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-2 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-[#003d9b] hover:bg-[#dae2fd] transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+<span>Workspace</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-[#003d9b] hover:bg-[#dae2fd] transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>Submissions</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800 text-[#003d9b] dark:text-blue-300 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-[#003d9b] hover:bg-[#dae2fd] transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span>Editorial</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 hover:text-[#003d9b] hover:bg-[#dae2fd] transition-all duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+<span>Discussion</span>
+</a>
+</nav>
+<div class="px-4 mt-auto">
+<button class="w-full py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-lg font-bold shadow-sm active:scale-95 transition-transform">
+                    Run Code
+                </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<section class="flex-1 bg-surface-container-lowest p-6 md:p-12 overflow-y-auto">
+<div class="max-w-6xl mx-auto">
+<!-- Page Header -->
+<div class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h1 class="text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight mb-2">Global Rankings</h1>
+<p class="text-on-surface-variant max-w-lg">The academic leaderboard of top algorithmic architects worldwide. Rankings are updated in real-time after every competitive cycle.</p>
+</div>
+<div class="flex gap-2">
+<div class="bg-surface-container-low px-4 py-2 rounded flex items-center gap-2">
+<span class="text-xs font-bold text-on-surface-variant uppercase">Global Rank</span>
+<span class="text-lg font-bold text-primary">#1,240</span>
+</div>
+</div>
+</div>
+<!-- Featured Top 3 (Asymmetric Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12">
+<!-- Rank 1 -->
+<div class="md:col-span-6 bg-gradient-to-br from-primary to-[#0052cc] rounded-xl p-8 text-on-primary flex items-center justify-between shadow-2xl shadow-primary/10">
+<div class="flex items-center gap-6">
+<div class="relative">
+<img alt="Rank 1 Avatar" class="w-24 h-24 rounded-lg object-cover ring-4 ring-primary-fixed-dim" data-alt="Avatar of the top ranked user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuk7F9WveB-Ei1-NlXBQxOoW_08pJvtWC5jZS0FXmHMsFzp3gl5LUsZirmolVnZOJqEeAltu_JuFNmP7Z4pvIM4ymcqNMlBfXMt6P8xWyjHL1dtG8LR_wbtVb16YyA8ocZaYYJd1IrjJciFRXwp5No-k__seTWs2YE6bPGGPbD16M62pFjfsKeoYmnXWg7WINDZhYnY8AO20ETaH53-4_jkoP8HHCmILyEiWjpfcPZXxy0LbTvxRXlIsQe7fHcZ96NfKqLXCSnZHFa"/>
+<div class="absolute -top-3 -right-3 bg-tertiary-fixed text-on-tertiary-fixed w-10 h-10 rounded-full flex items-center justify-center font-bold text-xl">1</div>
+</div>
+<div>
+<h2 class="text-2xl font-bold font-headline">albert_coder</h2>
+<p class="text-on-primary-container font-medium">Grandmaster</p>
+<div class="mt-4 flex gap-4">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase opacity-70">Rating</span>
+<span class="text-xl font-bold">2942</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase opacity-70">Solved</span>
+<span class="text-xl font-bold">1,482</span>
+</div>
+</div>
+</div>
+</div>
+<div class="hidden lg:block text-tertiary-fixed">
+<span class="material-symbols-outlined text-6xl" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+</div>
+</div>
+<!-- Rank 2 & 3 Vertical Stack -->
+<div class="md:col-span-6 flex flex-col gap-6">
+<div class="flex-1 bg-surface-container-low rounded-xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold text-xl">2</div>
+<div>
+<h3 class="font-bold text-on-surface">binary_sage</h3>
+<p class="text-xs text-on-surface-variant font-medium">Grandmaster</p>
+</div>
+</div>
+<div class="text-right">
+<div class="text-primary font-bold">2890</div>
+<div class="text-[10px] text-tertiary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span> +12
+                                </div>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low rounded-xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center text-primary font-bold text-xl">3</div>
+<div>
+<h3 class="font-bold text-on-surface">null_pointer</h3>
+<p class="text-xs text-on-surface-variant font-medium">Master</p>
+</div>
+</div>
+<div class="text-right">
+<div class="text-primary font-bold">2845</div>
+<div class="text-[10px] text-error font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_down">trending_down</span> -4
+                                </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Leaderboard Table -->
+<div class="bg-surface-container-lowest overflow-hidden">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-xl font-bold font-headline text-on-surface">Global Pool</h2>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-surface-container-low text-on-surface-variant text-sm font-bold rounded-lg hover:bg-surface-container-high transition-colors">Filter By Region</button>
+<button class="px-4 py-2 bg-surface-container-low text-on-surface-variant text-sm font-bold rounded-lg hover:bg-surface-container-high transition-colors">Time: All</button>
+</div>
+</div>
+<div class="w-full">
+<!-- Table Header -->
+<div class="grid grid-cols-12 px-6 py-4 bg-surface-container-low rounded-t-lg text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+<div class="col-span-1">Rank</div>
+<div class="col-span-5 md:col-span-4">Username</div>
+<div class="col-span-2 hidden md:block">Rating</div>
+<div class="col-span-3 md:col-span-2 text-right">Solved</div>
+<div class="col-span-3 md:col-span-3 text-right">Points</div>
+</div>
+<!-- Table Rows -->
+<div class="flex flex-col gap-1.5 mt-1.5">
+<!-- Row 1 -->
+<div class="grid grid-cols-12 px-6 py-4 items-center bg-surface-container-lowest hover:bg-surface-container-low transition-colors rounded-lg group cursor-pointer">
+<div class="col-span-1 font-bold text-on-surface-variant">4</div>
+<div class="col-span-5 md:col-span-4 flex items-center gap-3">
+<img alt="User" class="w-8 h-8 rounded-full" data-alt="Avatar of user rank 4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBL4mjp2vh9Wh-QP9vdXp8DGDP7NYVsmGU5LR8VeBBwItXdjMHSCEtgXSyImE3Uu7idKypKWKYufwX2suYJ-eav2eILojci_g3UhlauJ9HvDEIG2OeISMlemAePgPxzrrFOfFNvdMcCiH7q-tMxaCDq76oqsjxBcp7NExHoAYwEN3Ufvif-fyuOW8NCOfs7-_86xOf7SGFaaS_qctbcUDBDRoIIjZzuS26HNdO9JG4nJtHCsYP9VeLc1DK7XxAFY0IWt-ASEnEQemBr"/>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">dev_matrix</div>
+<div class="text-[10px] px-1.5 py-0.5 bg-tertiary-container text-on-tertiary-container rounded inline-block">Master</div>
+</div>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="font-mono font-medium text-primary">2795</span>
+</div>
+<div class="col-span-3 md:col-span-2 text-right">
+<span class="font-medium">1,120</span>
+</div>
+<div class="col-span-3 md:col-span-3 text-right flex items-center justify-end gap-3">
+<span class="font-bold">14,290</span>
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="trending_up">trending_up</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-12 px-6 py-4 items-center bg-surface-container-lowest hover:bg-surface-container-low transition-colors rounded-lg group cursor-pointer">
+<div class="col-span-1 font-bold text-on-surface-variant">5</div>
+<div class="col-span-5 md:col-span-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs">SK</div>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">skywalker_7</div>
+<div class="text-[10px] px-1.5 py-0.5 bg-tertiary-container text-on-tertiary-container rounded inline-block">Master</div>
+</div>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="font-mono font-medium text-primary">2782</span>
+</div>
+<div class="col-span-3 md:col-span-2 text-right">
+<span class="font-medium">1,095</span>
+</div>
+<div class="col-span-3 md:col-span-3 text-right flex items-center justify-end gap-3">
+<span class="font-bold">13,912</span>
+<span class="material-symbols-outlined text-outline-variant text-sm" data-icon="horizontal_rule">horizontal_rule</span>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-12 px-6 py-4 items-center bg-surface-container-lowest hover:bg-surface-container-low transition-colors rounded-lg group cursor-pointer">
+<div class="col-span-1 font-bold text-on-surface-variant">6</div>
+<div class="col-span-5 md:col-span-4 flex items-center gap-3">
+<img alt="User" class="w-8 h-8 rounded-full" data-alt="Avatar of user rank 6" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCG7gLxEBdv0oZjQdjq8vcV-QGoxQtj0gkSgt8hY1rpl7FkZzDiTgKhRdmbGxMCwPssEmpwYTaLiYUEhtvBQHP3V3QrcNBvQw-I7vDy1KbOe5AMoZhbNSdacHiWGW2I3TlyEz00feB5xVFQxBizz-u3SCpPup3RqL-IOdEGYpwacPAXKcvxHbPDHS88Q6JwwXHszvYG7lgmt3FFW_szrSIDZkS3GgFihwAjHno2U8269N0eUK2S5-6Zt9Hm8Tniu_9wBdNHws6nEiqE"/>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">lambda_hero</div>
+<div class="text-[10px] px-1.5 py-0.5 bg-secondary-container text-on-secondary-container rounded inline-block">Candidate Master</div>
+</div>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="font-mono font-medium text-primary">2710</span>
+</div>
+<div class="col-span-3 md:col-span-2 text-right">
+<span class="font-medium">988</span>
+</div>
+<div class="col-span-3 md:col-span-3 text-right flex items-center justify-end gap-3">
+<span class="font-bold">13,205</span>
+<span class="material-symbols-outlined text-error text-sm" data-icon="trending_down">trending_down</span>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="grid grid-cols-12 px-6 py-4 items-center bg-surface-container-lowest hover:bg-surface-container-low transition-colors rounded-lg group cursor-pointer">
+<div class="col-span-1 font-bold text-on-surface-variant">7</div>
+<div class="col-span-5 md:col-span-4 flex items-center gap-3">
+<img alt="User" class="w-8 h-8 rounded-full" data-alt="Avatar of user rank 7" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpyF5HoiMcOEvwM94LGUUCJTb5act-IaYp5R8TvzDEQkl4r031zbxDRUpOi6fRMeWbe4JnXLPqKWS2MMJyO_Qzj6QCSSrTQdpozAxvWaXWn0Q2ID3gH_XLNquca3fv9whfxjXqtnPploP3AC1Csc9yIm5h9CWiH56Dc0a5wlwvfGrY2xy8jhq7pIADz2mW2-GI3RWgLUZoEi8uwmqTSq7gUMbA6CtOjQWoF0G-GMlHjM55yTeW_PrSFXV4S7pDACw3MpHu6YPJa51e"/>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">queen_logic</div>
+<div class="text-[10px] px-1.5 py-0.5 bg-secondary-container text-on-secondary-container rounded inline-block">Candidate Master</div>
+</div>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="font-mono font-medium text-primary">2695</span>
+</div>
+<div class="col-span-3 md:col-span-2 text-right">
+<span class="font-medium">942</span>
+</div>
+<div class="col-span-3 md:col-span-3 text-right flex items-center justify-end gap-3">
+<span class="font-bold">12,880</span>
+<span class="material-symbols-outlined text-tertiary text-sm" data-icon="trending_up">trending_up</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Pagination -->
+<div class="mt-8 flex items-center justify-between px-6 py-4 border-t border-surface-container">
+<span class="text-sm text-on-surface-variant">Showing 1 to 50 of 4,209 scholars</span>
+<div class="flex gap-2">
+<button class="p-2 rounded hover:bg-surface-container-low text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-primary text-on-primary text-sm font-bold">1</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container-low text-on-surface-variant text-sm font-bold transition-colors">2</button>
+<button class="w-8 h-8 rounded hover:bg-surface-container-low text-on-surface-variant text-sm font-bold transition-colors">3</button>
+<span class="px-2">...</span>
+<button class="w-8 h-8 rounded hover:bg-surface-container-low text-on-surface-variant text-sm font-bold transition-colors">85</button>
+<button class="p-2 rounded hover:bg-surface-container-low text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-4 pt-2 md:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_24px_rgba(19,27,46,0.04)] z-50">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-wider">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-wider">Problems</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#dae2fd] dark:bg-blue-900/40 text-[#003d9b] dark:text-blue-200 rounded-xl px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="emoji_events">emoji_events</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-wider">Contests</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+<span class="font-manrope text-[10px] font-bold uppercase tracking-wider">Profile</span>
+</a>
+</nav>
+</body></html>

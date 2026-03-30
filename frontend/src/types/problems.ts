@@ -7,6 +7,9 @@ export interface Problem {
   time_limit: number
   memory_limit: number
   points: number
+  input_format?: string
+  output_format?: string
+  constraints?: string
   created_at: string
   updated_at: string
 }

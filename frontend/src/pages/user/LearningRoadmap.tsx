@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { usersService } from '@/services/users'
-import { EmptyState } from '@/components/page/EmptyState'
-import { PageHeader } from '@/components/page/PageHeader'
-import { StatCard } from '@/components/page/StatCard'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
-import { Loading } from '@/components/ui/Loading'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { cn } from '@/lib/utils'
 
 const roadmapStages = [
@@ -22,27 +21,18 @@ export function LearningRoadmap() {
   if (isLoading) {
     return (
       <div className="flex min-h-[320px] items-center justify-center">
-        <Loading message="加载学习路线图..." />
+        <LoadingState message="加载学习路线图..." />
       </div>
     )
   }
 
   if (error || !stats) {
     return (
-      <div className="flex min-h-[320px] items-center justify-center">
+      <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-8">
         <EmptyState
           title="学习路线图暂不可用"
           description="请稍后重新拉取统计数据。"
-          action={
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white"
-            >
-              重新拉取
-            </button>
-          }
-          className="w-full max-w-xl"
+          action={{ label: '重新拉取', onClick: () => refetch() }}
         />
       </div>
     )
@@ -54,63 +44,96 @@ export function LearningRoadmap() {
   )
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="学习工作台"
-        title="学习路线图"
-        description="按当前做题进度给出下一阶段学习重点，便于从题库直接推进到竞赛训练。"
-      />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard label="当前路线完成度" value={`${completion}%`} helper="按已解决题目估算" />
-        <StatCard label="已解决题目" value={`${stats.unique_problems_solved} 道`} helper="学习路径推进基数" />
-        <StatCard label="当前连续学习" value={`${stats.current_streak} 天`} helper={`最高 ${stats.longest_streak} 天`} />
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="max-w-3xl space-y-2">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+          个人 / 学习
+        </p>
+        <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+          学习路线图
+        </h1>
+        <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
+          按当前做题进度给出下一阶段学习重点，便于从题库直接推进到竞赛训练。
+        </p>
       </div>
 
-      <SurfaceCard>
+      {/* Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card variant="surface" className="p-5">
+          <p className="text-sm font-medium text-on-surface-variant">当前路线完成度</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-on-surface">{completion}%</p>
+          <p className="mt-2 text-sm text-on-surface-variant">按已解决题目估算</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-sm font-medium text-on-surface-variant">已解决题目</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-primary">{stats.unique_problems_solved} 道</p>
+          <p className="mt-2 text-sm text-on-surface-variant">学习路径推进基数</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-sm font-medium text-on-surface-variant">当前连续学习</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-secondary">{stats.current_streak} 天</p>
+          <p className="mt-2 text-sm text-on-surface-variant">最高 {stats.longest_streak} 天</p>
+        </Card>
+      </div>
+
+      {/* Progress Card */}
+      <Card variant="surface" className="p-5">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-slate-700">总体进度</span>
-          <span className="text-sm font-semibold text-slate-950">{completion}%</span>
+          <span className="text-sm font-medium text-on-surface">总体进度</span>
+          <span className="text-sm font-semibold text-on-surface">{completion}%</span>
         </div>
-        <div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-200">
-          <div className="h-full rounded-full bg-slate-950" style={{ width: `${completion}%` }} />
+        <div className="mt-3 h-3 overflow-hidden rounded-full bg-surface-container-high">
+          <div className="h-full rounded-full bg-primary" style={{ width: `${completion}%` }} />
         </div>
-      </SurfaceCard>
+      </Card>
 
-      <SurfaceCard className="space-y-2">
-        <div className="text-sm font-medium text-slate-700">下一步建议</div>
-        <p className="text-sm leading-6 text-slate-600">
-          {completion < 34
-            ? '先补齐数组、字符串和哈希表基础题。'
-            : completion < 67
-              ? '继续推进二分、滑动窗口和前缀和。'
-              : '可以直接进入图论、动态规划和数据结构专题。'}
-        </p>
-      </SurfaceCard>
+      {/* Next Steps */}
+      <Card variant="surface" className="p-5">
+        <div className="flex items-start gap-3">
+          <span className="material-symbols-outlined text-2xl text-tertiary">lightbulb</span>
+          <div>
+            <p className="text-sm font-medium text-on-surface">下一步建议</p>
+            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
+              {completion < 34
+                ? '先补齐数组、字符串和哈希表基础题。'
+                : completion < 67
+                  ? '继续推进二分、滑动窗口和前缀和。'
+                  : '可以直接进入图论、动态规划和数据结构专题。'}
+            </p>
+          </div>
+        </div>
+      </Card>
 
+      {/* Roadmap Stages */}
       <div className="grid gap-4 md:grid-cols-3">
         {roadmapStages.map((stage, index) => {
           const stageDone = completion >= (index + 1) * 30
 
           return (
-            <SurfaceCard key={stage.id} tone={stageDone ? 'default' : 'muted'} className="p-5">
+            <Card key={stage.id} variant={stageDone ? 'default' : 'surface'} className="p-5">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-slate-950">{stage.title}</h3>
+                <h3 className="text-lg font-semibold text-on-surface">{stage.title}</h3>
                 <span
                   className={cn(
-                    'rounded-full px-2.5 py-1 text-xs font-medium',
-                    stageDone ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600',
+                    'rounded-full px-3 py-1 text-xs font-semibold',
+                    stageDone ? 'bg-tertiary text-on-tertiary' : 'bg-surface-container-high text-on-surface-variant',
                   )}
                 >
                   {stageDone ? '已完成' : '进行中'}
                 </span>
               </div>
-              <ul className="mt-4 space-y-2 text-sm text-slate-600">
+              <ul className="mt-4 space-y-2 text-sm text-on-surface-variant">
                 {stage.topics.map((topic) => (
-                  <li key={topic}>{topic}</li>
+                  <li key={topic} className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-base">
+                      {stageDone ? 'check_circle' : 'radio_button_unchecked'}
+                    </span>
+                    {topic}
+                  </li>
                 ))}
               </ul>
-            </SurfaceCard>
+            </Card>
           )
         })}
       </div>

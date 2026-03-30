@@ -2,12 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { blogApi } from '@/services/communityApi'
 import type { ArticleComment, ArticleDetail } from '@/types/community'
-import { Loading } from '@/components/ui/Loading'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { EmptyState } from '@/components/page/EmptyState'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { useArticleUpdates } from '@/hooks/useCommunityUpdates'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
@@ -157,31 +155,31 @@ export function BlogDetail() {
       <div
         key={comment.id}
         className={cn(
-          'rounded-2xl border border-slate-200 bg-slate-50/80 p-4',
+          'rounded-2xl border border-outline-variant/30 bg-surface-container-low p-4',
           depth > 0 ? 'ml-6 mt-3' : '',
         )}
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-on-surface text-xs font-semibold text-surface">
               {comment.author_username.charAt(0).toUpperCase()}
             </div>
-            <span className="text-sm font-medium text-slate-950">{comment.author_username}</span>
+            <span className="text-sm font-medium text-on-surface">{comment.author_username}</span>
           </div>
-          <span className="text-xs text-slate-400">{formatDate(comment.created_at)}</span>
+          <span className="text-xs text-on-surface-variant">{formatDate(comment.created_at)}</span>
         </div>
 
-        <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{comment.content}</div>
+        <div className="mt-3 whitespace-pre-wrap text-sm leading-6 text-on-surface">{comment.content}</div>
 
         <div className="mt-3 flex items-center gap-4 text-sm">
           <button
             type="button"
             onClick={() => setParentCommentId(comment.id)}
-            className="text-slate-500 transition hover:text-slate-900"
+            className="text-on-surface-variant transition hover:text-primary"
           >
             回复
           </button>
-          <button type="button" className="text-slate-500 transition hover:text-slate-900">
+          <button type="button" className="text-on-surface-variant transition hover:text-primary">
             赞同 {comment.like_count}
           </button>
         </div>
@@ -193,77 +191,87 @@ export function BlogDetail() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <Loading message="正在加载文章..." />
+        <LoadingState message="正在加载文章..." />
       </div>
     )
   }
 
   if (!article) {
     return (
-      <EmptyState
-        title="文章未找到"
-        description="当前文章无法读取，请返回博客列表后重试。"
-        action={
-          <Button variant="primary" onClick={() => navigate('/blog')}>
-            返回博客
-          </Button>
-        }
-      />
+      <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-8">
+        <EmptyState
+          title="文章未找到"
+          description="当前文章无法读取，请返回博客列表后重试。"
+          action={{ label: '返回博客', onClick: () => navigate('/blog') }}
+        />
+      </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="社区"
-        breadcrumb={['博客', article.article.title]}
-        title={article.article.title}
-        description={article.article.excerpt || '文章详情页'}
-        actions={
-          <Button variant="outline" onClick={() => navigate('/blog')}>
-            返回博客
-          </Button>
-        }
-      />
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+            社区 / 博客 / {article.article.title}
+          </p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+            {article.article.title}
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
+            {article.article.excerpt || '文章详情页'}
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => navigate('/blog')}>
+          <span className="material-symbols-outlined text-base">arrow_back</span>
+          返回博客
+        </Button>
+      </div>
 
-      <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Tags */}
+      <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1">
         {article.article.is_featured ? (
-          <span className="shrink-0 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
+          <span className="shrink-0 rounded-full bg-secondary-container px-3 py-1 text-xs font-semibold uppercase tracking-wider text-on-secondary-container">
             精选文章
           </span>
         ) : null}
         {article.article.category ? (
-          <span className="shrink-0 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">
+          <span className="shrink-0 rounded-full bg-surface-container-high px-3 py-1 text-xs font-semibold text-on-surface">
             {article.article.category}
           </span>
         ) : null}
         {article.article.tags.map((tag) => (
           <span
             key={tag}
-            className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600"
+            className="shrink-0 rounded-full bg-surface px-3 py-1 text-xs font-semibold text-on-surface-variant"
           >
             #{tag}
           </span>
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+        {/* Main Content */}
         <div className="space-y-6">
-          <SectionBlock title="文章正文" description="正文和评论分开呈现，阅读优先。">
-            <div className="whitespace-pre-wrap text-sm leading-8 text-slate-700">{article.article.content}</div>
-          </SectionBlock>
+          <Card variant="default" className="p-6">
+            <h2 className="font-headline text-xl font-extrabold text-on-surface">文章正文</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">正文和评论分开呈现，阅读优先。</p>
+            <div className="mt-5 whitespace-pre-wrap text-sm leading-8 text-on-surface">{article.article.content}</div>
+          </Card>
 
           {parentCommentId !== null ? (
-            <SectionBlock
-              title={typeof parentCommentId === 'number' ? '回复评论' : '写评论'}
-              description="提交后会直接写入当前文章评论流。"
-            >
+            <Card variant="default" className="p-6">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">
+                {typeof parentCommentId === 'number' ? '回复评论' : '写评论'}
+              </h2>
+              <p className="mt-1 text-sm text-on-surface-variant">提交后会直接写入当前文章评论流。</p>
               <textarea
                 value={commentContent}
                 onChange={(e) => setCommentContent(e.target.value)}
                 placeholder="写下你对这篇文章的补充、修正或追问。"
                 rows={4}
-                className="w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                className="mt-5 w-full resize-none rounded-2xl border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface outline-none transition focus:ring-2 focus:ring-primary/20"
               />
               <div className="mt-4 flex justify-end gap-3">
                 <Button
@@ -276,80 +284,80 @@ export function BlogDetail() {
                   取消
                 </Button>
                 <Button
-                  variant="primary"
                   onClick={handleSubmitComment}
                   disabled={!commentContent.trim() || submitting}
                 >
                   {submitting ? '发布中...' : '发布评论'}
                 </Button>
               </div>
-            </SectionBlock>
+            </Card>
           ) : null}
 
-          <SectionBlock title={`评论池（${article.comments.length}）`} description="支持嵌套回复和逐条追问。">
+          <Card variant="default" className="p-6">
+            <h2 className="font-headline text-xl font-extrabold text-on-surface">评论池（{article.comments.length}）</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">支持嵌套回复和逐条追问。</p>
             {article.comments.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-sm text-slate-500">暂时还没有评论，先写下第一条观点吧。</p>
+                <p className="text-sm text-on-surface-variant">暂时还没有评论，先写下第一条观点吧。</p>
                 <div className="mt-4">
-                  <Button variant="primary" onClick={() => setParentCommentId('root')}>
-                    写评论
-                  </Button>
+                  <Button onClick={() => setParentCommentId('root')}>写评论</Button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">{renderComments(article.comments)}</div>
+              <div className="mt-5 space-y-3">{renderComments(article.comments)}</div>
             )}
-          </SectionBlock>
+          </Card>
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-6">
-          <SurfaceCard className="space-y-4">
+          <Card variant="surface" className="p-5">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface text-sm font-semibold text-surface">
                 {article.author.username.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="font-semibold text-slate-950">文章侧栏</p>
-                <p className="text-sm text-slate-500">{article.author.username}</p>
-                <p className="text-sm text-slate-500">
+                <p className="font-semibold text-on-surface">{article.author.username}</p>
+                <p className="text-sm text-on-surface-variant">
                   {article.article.published_at
                     ? formatDate(article.article.published_at)
                     : formatDate(article.article.created_at)}
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">浏览量</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">{article.article.view_count}</p>
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-2xl bg-surface-container-high px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">浏览量</p>
+                <p className="mt-2 text-lg font-semibold text-on-surface">{article.article.view_count}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">评论数</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950">{article.article.comment_count}</p>
+              <div className="rounded-2xl bg-surface-container-high px-4 py-3">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-on-surface-variant">评论数</p>
+                <p className="mt-2 text-lg font-semibold text-on-surface">{article.article.comment_count}</p>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="mt-4 space-y-3">
               {user && user.id === article.author.id ? (
                 <Button
-                  fullWidth
                   variant="outline"
+                  className="w-full"
                   onClick={() => navigate(`/blog/${article.article.slug}/edit`)}
                 >
                   编辑文章
                 </Button>
               ) : null}
               <Button
-                fullWidth
-                variant={liked ? 'primary' : 'outline'}
+                className="w-full"
+                variant={liked ? 'filled' : 'outline'}
                 onClick={handleLike}
               >
+                <span className="material-symbols-outlined text-base">{liked ? 'favorite' : 'favorite_border'}</span>
                 赞同 {article.article.like_count}
               </Button>
-              <Button fullWidth variant="primary" onClick={() => setParentCommentId('root')}>
+              <Button className="w-full" onClick={() => setParentCommentId('root')}>
                 写评论
               </Button>
             </div>
-          </SurfaceCard>
+          </Card>
         </div>
       </div>
     </div>

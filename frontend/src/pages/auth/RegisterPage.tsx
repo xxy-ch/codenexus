@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { LockKeyhole, Mail, UserRound } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Loading } from '@/components/ui/Loading'
+import { LoadingState } from '@/components/ui/LoadingState'
 import type { RegisterRequest } from '@/types/auth'
 
 export function RegisterPage() {
@@ -34,29 +33,29 @@ export function RegisterPage() {
     const errors: Record<string, string> = {}
 
     if (!formData.email) {
-      errors.email = '请输入邮箱地址'
+      errors.email = 'Please enter your email'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = '邮箱格式不正确'
+      errors.email = 'Please enter a valid email'
     }
 
     if (!formData.username) {
-      errors.username = '请输入用户名'
+      errors.username = 'Please enter a username'
     } else if (formData.username.trim().length < 3) {
-      errors.username = '用户名至少需要 3 个字符'
+      errors.username = 'Username must be at least 3 characters'
     }
 
     if (!formData.password) {
-      errors.password = '请输入密码'
+      errors.password = 'Please enter a password'
     } else if (formData.password.length < 6) {
-      errors.password = '密码至少需要 6 个字符'
+      errors.password = 'Password must be at least 6 characters'
     }
 
     if (formData.password !== confirmPassword) {
-      errors.confirmPassword = '两次输入的密码不一致'
+      errors.confirmPassword = 'Passwords do not match'
     }
 
     if (!agreedToTerms) {
-      errors.terms = '请先阅读并同意相关条款'
+      errors.terms = 'Please agree to the terms and conditions'
     }
 
     setValidationErrors(errors)
@@ -76,10 +75,10 @@ export function RegisterPage() {
     try {
       const result = await register(formData)
       if (!result.success) {
-        setError(result.error || '注册失败，请稍后重试')
+        setError(result.error || 'Registration failed, please try again')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '注册时发生异常，请稍后重试')
+      setError(err instanceof Error ? err.message : 'An error occurred during registration')
     } finally {
       setIsSubmitting(false)
     }
@@ -114,49 +113,52 @@ export function RegisterPage() {
   }
 
   if (isLoading) {
-    return <Loading message="正在加载注册页..." />
+    return <LoadingState message="Loading registration page..." />
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[rgb(var(--page-bg-rgb))] p-6 md:p-8">
+    <div className="flex min-h-screen items-center justify-center bg-background p-6 md:p-8">
       <div
         data-testid="register-card"
-        className="grid min-h-[640px] w-full max-w-[1200px] overflow-hidden rounded-xl bg-[rgba(255,255,255,0.96)] shadow-[0_30px_70px_rgba(19,27,46,0.08)] md:min-h-[720px] md:grid-cols-12"
+        className="grid min-h-[640px] w-full max-w-[1200px] overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm md:min-h-[720px] md:grid-cols-12"
       >
-        <section className="relative hidden min-h-[720px] overflow-hidden bg-[rgb(var(--sidebar-bg-rgb))] px-12 py-12 md:col-span-5 md:flex md:flex-col md:justify-between lg:col-span-7 lg:px-14 lg:py-14">
-          <div className="absolute -right-20 bottom-10 h-80 w-80 rounded-full bg-[rgba(0,82,204,0.10)] blur-3xl" />
-          <div className="absolute right-10 top-1/2 hidden w-64 -translate-y-1/2 rotate-3 rounded-lg border border-[rgba(195,198,214,0.22)] bg-white/80 p-6 shadow-[0_22px_44px_rgba(19,27,46,0.10)] backdrop-blur-xl lg:block">
+        {/* Brand Visual Side */}
+        <section className="relative hidden min-h-[720px] overflow-hidden bg-surface-container-low px-12 py-12 md:col-span-5 md:flex md:flex-col md:justify-between lg:col-span-7 lg:px-14 lg:py-14">
+          {/* Decorative elements */}
+          <div className="absolute -right-20 bottom-10 h-96 w-96 rounded-full bg-primary-container/10 blur-3xl" />
+          <div className="absolute right-10 top-1/2 hidden w-64 -translate-y-1/2 rotate-3 rounded-lg border border-outline-variant/15 bg-surface-bright/80 p-6 shadow-xl backdrop-blur-xl lg:block">
             <div className="mb-4 flex items-center gap-3">
-              <span className="h-3 w-3 rounded-full bg-[#ba1a1a]" />
-              <span className="h-3 w-3 rounded-full bg-[#68dba9]" />
-              <span className="h-3 w-3 rounded-full bg-[#515f74]" />
+              <div className="h-3 w-3 rounded-full bg-error" />
+              <div className="h-3 w-3 rounded-full bg-tertiary-fixed-dim" />
+              <div className="h-3 w-3 rounded-full bg-secondary" />
             </div>
             <div className="space-y-3">
-              <div className="h-2 w-3/4 rounded bg-[#dae2ff]" />
-              <div className="h-2 w-full rounded bg-[rgba(195,198,214,0.35)]" />
-              <div className="h-2 w-1/2 rounded bg-[rgba(195,198,214,0.35)]" />
+              <div className="h-2 w-3/4 rounded bg-primary-fixed" />
+              <div className="h-2 w-full rounded bg-outline-variant/30" />
+              <div className="h-2 w-1/2 rounded bg-outline-variant/30" />
             </div>
-            <div className="mt-6 text-right text-[10px] font-semibold uppercase tracking-[0.24em] text-[#003d9b]">
-              注册通道：开放中
+            <div className="mt-6 text-right text-[10px] font-mono font-bold text-primary">
+              STATUS: ACCEPTED
             </div>
           </div>
 
           <div className="relative z-10">
-            <div className="mb-12 flex items-center gap-3">
-              <span className="material-symbols-outlined text-[32px] text-[#003d9b]" aria-hidden="true">
+            <div className="mb-12 flex items-center gap-2">
+              <span className="material-symbols-outlined text-3xl text-primary" aria-hidden="true">
                 architecture
               </span>
-              <span className="font-['Manrope'] text-2xl font-black tracking-[-0.05em] text-[#003d9b]">
-                建筑算法学社
+              <span className="font-headline text-2xl font-black tracking-tighter text-primary">
+                Online Judge
               </span>
             </div>
 
-            <h1 className="max-w-[36rem] font-['Manrope'] text-[3.35rem] font-extrabold leading-[0.95] tracking-[-0.06em] text-[#131b2e]">
-              完成一次注册
-              <span className="block text-[#0052cc]">就能进入完整训练空间。</span>
+            <h1 className="font-headline text-5xl font-extrabold tracking-tight text-on-surface">
+              Join the{' '}
+              <span className="text-primary-container">Architectural Scholar</span>{' '}
+              Community
             </h1>
-            <p className="mt-6 max-w-[30rem] text-lg leading-8 text-[#5f6d87]">
-              设置基础资料后，可直接用于题库、班级、竞赛和讨论区的统一身份流转。
+            <p className="mt-6 max-w-md text-lg leading-relaxed text-on-surface-variant">
+              Create your researcher account and access the world's most sophisticated workspace for competitive programming.
             </p>
           </div>
 
@@ -169,38 +171,46 @@ export function RegisterPage() {
               ].map((src, index) => (
                 <img
                   key={src}
-                  alt={`成员头像 ${index + 1}`}
-                  className="h-10 w-10 rounded-full border-2 border-[rgb(var(--sidebar-bg-rgb))] object-cover"
+                  alt={`Contributor avatar ${index + 1}`}
+                  className="h-10 w-10 rounded-full border-2 border-surface-container-low object-cover"
                   src={src}
                 />
               ))}
             </div>
-            <span className="text-sm font-medium text-[#65748d]">每周都有新的训练批次进入平台</span>
+            <span className="text-sm font-medium text-on-surface-variant">
+              Joined by 12k+ scholars worldwide
+            </span>
           </div>
         </section>
 
+        {/* Registration Form Side */}
         <section
           data-testid="register-form-shell"
           className="flex min-h-[640px] flex-col justify-between p-8 md:col-span-7 md:min-h-[720px] md:p-12 lg:col-span-5 lg:p-16"
         >
           <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
+            {/* Mobile Header */}
             <div className="mb-8 flex items-center gap-2 md:hidden">
-              <span className="material-symbols-outlined text-[28px] text-[#003d9b]" aria-hidden="true">
+              <span className="material-symbols-outlined text-2xl text-primary" aria-hidden="true">
                 architecture
               </span>
-              <span className="font-['Manrope'] text-lg font-bold text-[#003d9b]">建筑算法学社</span>
+              <span className="font-headline text-lg font-bold text-primary">Online Judge</span>
             </div>
 
             <div className="mb-10">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">账号创建</p>
-              <h2 className="mt-3 font-['Manrope'] text-3xl font-bold tracking-[-0.05em] text-[#131b2e]">创建你的账号</h2>
-              <p className="mt-2 text-sm font-medium text-[#5f6d87]">
-                补齐基础资料后，即可在题库、课堂与竞赛场景中直接使用。
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                Create Account
+              </p>
+              <h2 className="mt-3 font-headline text-3xl font-bold text-on-surface">
+                Join our community
+              </h2>
+              <p className="mt-2 text-sm font-medium text-on-surface-variant">
+                Start your competitive programming journey today.
               </p>
             </div>
 
             {error ? (
-              <div className="mb-6 rounded-[12px] bg-[rgba(255,218,214,0.84)] px-4 py-3 text-sm text-[#93000a]">
+              <div className="mb-6 rounded-lg bg-error-container px-4 py-3 text-sm text-on-error-container">
                 {error}
               </div>
             ) : null}
@@ -208,89 +218,83 @@ export function RegisterPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {[
                 {
-                  label: '显示名称',
+                  label: 'Display Name',
                   name: 'display_name',
                   type: 'text',
                   autoComplete: 'nickname',
-                  placeholder: '例如：张三',
+                  placeholder: 'e.g. Zhang San',
                   value: formData.display_name || '',
-                  icon: UserRound,
                   error: undefined,
                   onChange: handleChange,
                 },
                 {
-                  label: '用户名',
+                  label: 'Username',
                   name: 'username',
                   type: 'text',
                   autoComplete: 'username',
-                  placeholder: '例如：zhangsan01',
+                  placeholder: 'e.g. zhangsan01',
                   value: formData.username,
-                  icon: UserRound,
                   error: validationErrors.username,
                   onChange: handleChange,
                 },
                 {
-                  label: '邮箱地址',
+                  label: 'Email Address',
                   name: 'email',
                   type: 'email',
                   autoComplete: 'email',
                   placeholder: 'name@example.com',
                   value: formData.email,
-                  icon: Mail,
                   error: validationErrors.email,
                   onChange: handleChange,
                 },
                 {
-                  label: '密码',
+                  label: 'Password',
                   name: 'password',
                   type: 'password',
                   autoComplete: 'new-password',
-                  placeholder: '请输入密码',
+                  placeholder: 'Enter a password',
                   value: formData.password,
-                  icon: LockKeyhole,
                   error: validationErrors.password,
                   onChange: handleChange,
                 },
                 {
-                  label: '确认密码',
+                  label: 'Confirm Password',
                   name: 'confirmPassword',
                   type: 'password',
                   autoComplete: 'new-password',
-                  placeholder: '请再次输入密码',
+                  placeholder: 'Confirm your password',
                   value: confirmPassword,
-                  icon: LockKeyhole,
                   error: validationErrors.confirmPassword,
                   onChange: handleConfirmPasswordChange,
                 },
-              ].map((field) => {
-                const Icon = field.icon
-                return (
-                  <label key={field.name} className="block">
-                    <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6b7ca7]">
-                      {field.label}
+              ].map((field) => (
+                <label key={field.name} className="block">
+                  <span className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                    {field.label}
+                  </span>
+                  <div className="relative rounded-lg border border-outline-variant/32 bg-surface-container/98 shadow-sm transition-all duration-200 focus-within:border-primary/24 focus-within:bg-white focus-within:shadow-md">
+                    <span className="material-symbols-outlined pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg text-on-surface-variant">
+                      {field.name === 'email' ? 'email' : field.name === 'display_name' ? 'badge' : 'person'}
                     </span>
-                    <div className="relative rounded-[14px] border border-[rgba(195,198,214,0.32)] bg-[rgba(234,237,255,0.98)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_10px_24px_rgba(19,27,46,0.04)] transition-all duration-200 focus-within:border-[rgba(12,86,208,0.24)] focus-within:bg-white focus-within:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_0_0_4px_rgba(12,86,208,0.08)]">
-                      <Icon className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#5f6d87]" />
-                      <Input
-                        name={field.name}
-                        type={field.type}
-                        autoComplete={field.autoComplete}
-                        placeholder={field.placeholder}
-                        value={field.value}
-                        onChange={field.onChange}
-                        required={field.name !== 'display_name'}
-                        disabled={isSubmitting}
-                        error={field.error}
-                        className="bg-transparent py-4 pl-12 pr-4 text-[15px] text-[#17305e] placeholder:text-[#8d98b3] shadow-none focus-visible:bg-transparent focus-visible:ring-0"
-                        style={{ paddingTop: '1rem', paddingRight: '1rem', paddingBottom: '1rem', paddingLeft: '3rem' }}
-                      />
-                    </div>
-                    {field.error ? <p className="mt-2 text-sm text-[#93000a]">{field.error}</p> : null}
-                  </label>
-                )
-              })}
+                    <Input
+                      name={field.name}
+                      type={field.type}
+                      autoComplete={field.autoComplete}
+                      placeholder={field.placeholder}
+                      value={field.value}
+                      onChange={field.onChange}
+                      required={field.name !== 'display_name'}
+                      disabled={isSubmitting}
+                      className="bg-transparent py-3 pl-12 pr-4 text-sm text-on-surface placeholder:text-on-surface-variant/60 shadow-none focus-visible:bg-transparent focus-visible:ring-0"
+                    />
+                  </div>
+                  {field.error ? (
+                    <p className="mt-2 text-sm text-on-error-container">{field.error}</p>
+                  ) : null}
+                </label>
+              ))}
 
-              <div className="space-y-2 rounded-[14px] border border-[rgba(195,198,214,0.24)] bg-[rgba(242,243,255,0.72)] px-4 py-3 text-sm text-[#445472]">
+              <div className="space-y-2 rounded-lg border border-outline-variant/24 bg-surface-container-low/72 px-4 py-3 text-sm text-on-surface-variant">
                 <label className="flex items-start gap-3">
                   <input
                     type="checkbox"
@@ -309,46 +313,46 @@ export function RegisterPage() {
                     className="mt-0.5"
                   />
                   <span>
-                    我已阅读并同意{' '}
-                    <Link to="/terms" className="font-semibold text-[#003d9b] hover:underline underline-offset-4">
-                      服务条款
+                    I have read and agree to the{' '}
+                    <Link to="/terms" className="font-semibold text-primary hover:underline underline-offset-4">
+                      Terms of Service
                     </Link>{' '}
-                    与{' '}
-                    <Link to="/privacy" className="font-semibold text-[#003d9b] hover:underline underline-offset-4">
-                      隐私政策
+                    and{' '}
+                    <Link to="/privacy" className="font-semibold text-primary hover:underline underline-offset-4">
+                      Privacy Policy
                     </Link>
-                    。
+                    .
                   </span>
                 </label>
                 {validationErrors.terms ? (
-                  <p className="text-sm text-[#93000a]">{validationErrors.terms}</p>
+                  <p className="text-sm text-on-error-container">{validationErrors.terms}</p>
                 ) : null}
               </div>
 
               <Button
                 type="submit"
+                variant="gradient"
+                size="lg"
                 fullWidth
                 disabled={isSubmitting}
-                className="border border-[rgba(0,61,155,0.06)] text-base font-extrabold tracking-[-0.02em] text-white shadow-[0_18px_36px_rgba(0,61,155,0.24)] hover:scale-[1.01] active:scale-[0.985]"
-                style={{ backgroundImage: 'linear-gradient(135deg, #003d9b 0%, #0052cc 100%)' }}
               >
-                {isSubmitting ? '注册中...' : '创建账号'}
+                {isSubmitting ? 'Creating account...' : 'Create Account'}
               </Button>
             </form>
 
-            <div className="mt-10 text-center text-sm text-[#65748d]">
-              <span>已有账号？</span>
-              <Link className="ml-1 font-bold text-[#003d9b] hover:underline underline-offset-4" to="/login">
-                立即登录
+            <div className="mt-10 text-center text-sm text-on-surface-variant">
+              <span>Already have an account?</span>
+              <Link className="ml-1 font-bold text-primary hover:underline underline-offset-4" to="/login">
+                Sign in
               </Link>
             </div>
           </div>
 
-          <footer className="mx-auto mt-12 w-full max-w-md border-t border-[rgba(195,198,214,0.16)] pt-8">
-            <div className="flex flex-wrap justify-center gap-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-[rgba(67,70,84,0.56)] md:justify-start">
-              <span>隐私说明</span>
-              <span>服务状态</span>
-              <span>版本记录</span>
+          <footer className="mx-auto mt-12 w-full max-w-md border-t border-outline-variant/16 pt-8">
+            <div className="flex flex-wrap justify-center gap-6 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant/56 md:justify-start">
+              <span>Privacy</span>
+              <span>Terms</span>
+              <span>Status</span>
             </div>
           </footer>
         </section>

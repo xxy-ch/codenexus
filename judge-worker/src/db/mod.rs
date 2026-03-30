@@ -21,3 +21,21 @@ pub struct TestCase {
     pub is_hidden: bool,
     pub score: i32,
 }
+
+impl TestCase {
+    pub fn from_schema_row(
+        id: i64,
+        input: String,
+        output: String,
+        is_secret: bool,
+        points: i32,
+    ) -> Self {
+        Self {
+            id,
+            input,
+            expected_output: output,
+            is_hidden: is_secret,
+            score: points,
+        }
+    }
+}

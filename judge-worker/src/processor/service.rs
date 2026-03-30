@@ -19,6 +19,17 @@ struct ExecutionOutput {
     memory_kb: i32,
 }
 
+pub(crate) fn build_missing_test_cases_result(submission_id: i64) -> JudgeResult {
+    JudgeResult {
+        submission_id,
+        status: "system_error".to_string(),
+        score: Some(0),
+        runtime_ms: None,
+        memory_kb: Some(DEFAULT_MEMORY_KB),
+        test_case_results: vec![],
+    }
+}
+
 pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeResult> {
     info!("Processing submission {}", submission.submission_id);
 
@@ -27,14 +38,7 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
     let test_cases = fetch_test_cases(submission.problem_id).await?;
 
     if test_cases.is_empty() {
-        return Ok(JudgeResult {
-            submission_id: submission.submission_id,
-            status: "runtime_error".to_string(),
-            score: Some(0),
-            runtime_ms: None,
-            memory_kb: Some(DEFAULT_MEMORY_KB),
-            test_case_results: vec![],
-        });
+        return Ok(build_missing_test_cases_result(submission.submission_id));
     }
 
     let executable_path = match submission.language.as_str() {
@@ -125,19 +129,39 @@ async fn save_source_code(work_dir: &PathBuf, submission: &SubmissionMessage) ->
 pub async fn fetch_test_cases(problem_id: i64) -> Result<Vec<TestCase>> {
     let pool = get_db_connection().await?;
 
-    let test_cases = sqlx::query_as::<_, TestCase>(
+    #[derive(sqlx::FromRow)]
+    struct RawTestCase {
+        id: i64,
+        input: String,
+        output: String,
+        is_secret: bool,
+        points: i32,
+    }
+
+    let rows = sqlx::query_as::<_, RawTestCase>(
         r#"
-        SELECT id, input, expected_output, is_hidden, score
-        FROM problems_test_cases
+        SELECT id, input, output, is_secret, points
+        FROM test_cases
         WHERE problem_id = $1
-        ORDER BY id ASC
+        ORDER BY order_index ASC, id ASC
         "#,
     )
     .bind(problem_id)
     .fetch_all(&pool)
     .await?;
 
-    Ok(test_cases)
+    Ok(rows
+        .into_iter()
+        .map(|row| {
+            TestCase::from_schema_row(
+                row.id,
+                row.input,
+                row.output,
+                row.is_secret,
+                row.points,
+            )
+        })
+        .collect())
 }
 
 async fn compile_code(source_file: &Path, language: &str, work_dir: &Path) -> Result<PathBuf> {

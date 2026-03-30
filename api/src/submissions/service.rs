@@ -465,20 +465,20 @@ impl SubmissionService {
         let result_id = sqlx::query_scalar::<_, i64>(
             r#"
             INSERT INTO test_case_results (
-                submission_id, test_case_id, status,
-                expected_output, actual_output, error_message,
-                runtime_ms, memory_kb
+                submission_id, test_case_id, verdict, time_ms, memory_kb
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (submission_id, test_case_id) DO UPDATE
+            SET
+                verdict = EXCLUDED.verdict,
+                time_ms = EXCLUDED.time_ms,
+                memory_kb = EXCLUDED.memory_kb
             RETURNING id
             "#
         )
         .bind(submission_id)
         .bind(test_case_id)
-        .bind(status)
-        .bind(&expected_output)
-        .bind(&actual_output)
-        .bind(&error_message)
+        .bind(map_verdict(status).unwrap_or("ie"))
         .bind(runtime_ms)
         .bind(memory_kb)
         .fetch_one(&self.pool)

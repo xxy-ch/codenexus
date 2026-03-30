@@ -23,13 +23,13 @@ use axum::{
     Extension,
     extract::State,
     response::Json,
-    http::{header, Method, StatusCode},
+    http::{header, HeaderValue, Method, StatusCode},
 };
 use axum::serve;
 use deadpool_redis::Pool as RedisPool;
 use sqlx::PgPool;
 use std::net::SocketAddr;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use auth::JwtService;
@@ -107,7 +107,11 @@ async fn main() -> anyhow::Result<()> {
 
 fn create_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
-        .allow_origin(Any)
+        .allow_origin([
+            HeaderValue::from_static("http://127.0.0.1:5173"),
+            HeaderValue::from_static("http://localhost:5173"),
+        ])
+        .allow_credentials(true)
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE, Method::OPTIONS])
         .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
 
@@ -119,6 +123,7 @@ fn create_router(state: AppState) -> Router {
         .route("/auth/refresh", post(auth::refresh))
         .route("/auth/register", post(auth::register))
         .route("/auth/logout", post(auth::logout))
+        .nest("/submissions", submissions::submissions_callback_router())
         // WebSocket route (public, auth handled in handler)
         .route("/ws", get(websocket::handler::websocket_upgrade_handler));
 

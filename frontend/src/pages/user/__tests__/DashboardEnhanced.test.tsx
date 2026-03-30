@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
 import { DashboardEnhanced } from '../DashboardEnhanced'
-import type { UserActivity, RecommendedProblem } from '@/types/users'
 import type { Problem } from '@/types/problems'
+import type { RecommendedProblem, UserActivity, UserStats } from '@/types/users'
 
-// Mock the API services
 vi.mock('@/services/users', () => ({
   usersService: {
     getUserStats: vi.fn(),
@@ -27,7 +27,7 @@ import { problemsService } from '@/services/problems'
 describe('DashboardEnhanced', () => {
   let queryClient: QueryClient
 
-  const mockUserStats = {
+  const mockUserStats: UserStats = {
     total_submissions: 150,
     accepted_submissions: 75,
     unique_problems_solved: 45,
@@ -39,6 +39,12 @@ describe('DashboardEnhanced', () => {
     medium_solved: 18,
     hard_solved: 7,
     accuracy_rate: 50,
+    total_achievements: 10,
+    unlocked_achievements: 2,
+    achievements: [
+      { id: 'first_solve', name: '初出茅庐', description: '解决第一道题', icon: 'star' },
+      { id: 'streak_7', name: '坚持不懈', description: '连续学习7天', icon: 'local_fire_department' },
+    ],
   }
 
   const mockRecentActivity: UserActivity[] = [
@@ -67,6 +73,24 @@ describe('DashboardEnhanced', () => {
       language: 'python',
       created_at: '2024-01-11T15:20:00Z',
     },
+    {
+      id: '4',
+      type: 'submission',
+      problem_id: '3',
+      problem_title: 'Median of Two Sorted Arrays',
+      status: 'judged',
+      language: 'rust',
+      created_at: '2024-01-11T13:00:00Z',
+    },
+    {
+      id: '5',
+      type: 'submission',
+      problem_id: '4',
+      problem_title: 'Trapping Rain Water',
+      status: 'queued',
+      language: 'java',
+      created_at: '2024-01-10T13:00:00Z',
+    },
   ]
 
   const mockRecommendedProblems: RecommendedProblem[] = [
@@ -90,16 +114,30 @@ describe('DashboardEnhanced', () => {
     },
   ]
 
+  const mockDailyProblem: Problem = {
+    id: '10',
+    title: 'Daily Challenge: Valid Parentheses',
+    description: 'Given a string containing just parentheses, determine if it is valid.',
+    difficulty: 'medium',
+    tags: ['Stack', 'String'],
+    points: 30,
+    time_limit: 1000,
+    memory_limit: 256,
+    created_at: '2024-01-12T00:00:00Z',
+    updated_at: '2024-01-12T00:00:00Z',
+  }
+
   beforeEach(() => {
     queryClient = new QueryClient({
       defaultOptions: {
-        queries: {
-          retry: false,
-        },
+        queries: { retry: false },
       },
     })
 
     vi.clearAllMocks()
+    vi.setSystemTime(new Date('2024-01-12T12:00:00Z'))
+
+    vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
     vi.mocked(usersService.getUserActivity).mockResolvedValue([])
     vi.mocked(usersService.getRecommendedProblems).mockResolvedValue([])
     vi.mocked(problemsService.getProblems).mockResolvedValue({
@@ -111,360 +149,120 @@ describe('DashboardEnhanced', () => {
     })
   })
 
-  const renderComponent = () => {
-    return render(
+  const renderComponent = () =>
+    render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter>
           <DashboardEnhanced />
         </MemoryRouter>
-      </QueryClientProvider>
+      </QueryClientProvider>,
     )
-  }
 
-  describe('用户统计信息', () => {
-    it('应该显示基本统计数据', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
+  it('renders the current summary and stats cards', async () => {
+    renderComponent()
 
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/150.*次提交|submissions/i)).toBeInTheDocument()
-        expect(screen.getByText(/45.*题|solved/i)).toBeInTheDocument()
-        expect(screen.getByText(/50.*%|accuracy/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示当前连续天数', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getAllByText(/7.*天|streak/i).length).toBeGreaterThan(0)
-      })
-    })
-
-    it('应该显示用户排名', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/128|ranking/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示积分', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/1250.*分|points/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示难度分布', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText('难度分布')).toBeInTheDocument()
-        expect(screen.getByText('简单')).toBeInTheDocument()
-        expect(screen.getByText('20 道题')).toBeInTheDocument()
-        expect(screen.getByText('中等')).toBeInTheDocument()
-        expect(screen.getByText('18 道题')).toBeInTheDocument()
-        expect(screen.getByText('困难')).toBeInTheDocument()
-        expect(screen.getByText('7 道题')).toBeInTheDocument()
-      })
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Learning Overview' })).toBeInTheDocument()
+      expect(screen.getByText(/过去 7 天共提交 150 次/)).toBeInTheDocument()
+      expect(screen.getByText('Problems Solved')).toBeInTheDocument()
+      expect(screen.getByText('45')).toBeInTheDocument()
+      expect(screen.getByText('150 submissions · 50% accuracy')).toBeInTheDocument()
+      expect(screen.getByText('#128')).toBeInTheDocument()
+      expect(screen.getByText('7 Days')).toBeInTheDocument()
+      expect(screen.getByText('1250')).toBeInTheDocument()
     })
   })
 
-  describe('学习进度图表', () => {
-    it('应该显示每日提交统计', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
+  it('renders recent activity using the current labels and limits to four items', async () => {
+    vi.mocked(usersService.getUserActivity).mockResolvedValue(mockRecentActivity)
 
-      renderComponent()
+    renderComponent()
 
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: /学习节奏|最近 7 天|activity/i })).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示最近7天的活动趋势', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getAllByText(/最近 7 天|last 7 days|past week/i).length).toBeGreaterThan(0)
-      })
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Recent Submissions' })).toBeInTheDocument()
+      expect(screen.getByText('Two Sum')).toBeInTheDocument()
+      expect(screen.getByText('Weekly Contest 345')).toBeInTheDocument()
+      expect(screen.getByText('Add Two Numbers')).toBeInTheDocument()
+      expect(screen.getByText('Median of Two Sorted Arrays')).toBeInTheDocument()
+      expect(screen.queryByText('Trapping Rain Water')).not.toBeInTheDocument()
+      expect(screen.getByText('提交 · 已通过')).toBeInTheDocument()
+      expect(screen.getByText('竞赛报名')).toBeInTheDocument()
+      expect(screen.getByText('提交 · 已评测')).toBeInTheDocument()
+      expect(screen.getAllByText('Judged').length).toBeGreaterThan(0)
     })
   })
 
-  describe('推荐题目', () => {
-    it('应该显示推荐题目列表', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-      vi.mocked(usersService.getRecommendedProblems).mockResolvedValue(mockRecommendedProblems)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText('Reverse Linked List')).toBeInTheDocument()
-        expect(screen.getByText('Merge Intervals')).toBeInTheDocument()
-      })
+  it('renders daily challenge and recommendation cards from live query data', async () => {
+    vi.mocked(usersService.getRecommendedProblems).mockResolvedValue(mockRecommendedProblems)
+    vi.mocked(problemsService.getProblems).mockResolvedValue({
+      problems: [mockDailyProblem],
+      total: 1,
+      page: 1,
+      limit: 20,
+      pages: 1,
     })
 
-    it('应该显示推荐理由', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-      vi.mocked(usersService.getRecommendedProblems).mockResolvedValue(mockRecommendedProblems)
+    renderComponent()
 
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/based on your recent activity/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示题目难度和通过率', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-      vi.mocked(usersService.getRecommendedProblems).mockResolvedValue(mockRecommendedProblems)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/65.*%|acceptance/i)).toBeInTheDocument()
-        expect(screen.getByText(/45.*%|acceptance/i)).toBeInTheDocument()
-      })
-    })
-
-    it('点击推荐题目应该导航到题目页面', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-      vi.mocked(usersService.getRecommendedProblems).mockResolvedValue(mockRecommendedProblems)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText('Reverse Linked List')).toBeInTheDocument()
-      })
-
-      const problemLink = screen.getByText('Reverse Linked List').closest('a')
-      expect(problemLink).toHaveAttribute('href', '/problems/5')
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Daily Problem' })).toBeInTheDocument()
+      expect(screen.getByText('Daily Challenge: Valid Parentheses')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Start Now' })).toHaveAttribute('href', '/problems/10')
+      expect(screen.getByRole('heading', { name: 'Recommended' })).toBeInTheDocument()
+      expect(screen.getByText('Reverse Linked List')).toBeInTheDocument()
+      expect(screen.getByText('Merge Intervals')).toBeInTheDocument()
+      expect(screen.getByText('65% acceptance')).toBeInTheDocument()
+      expect(screen.getByText('25 pts')).toBeInTheDocument()
     })
   })
 
-  describe('最近活动', () => {
-    it('应该显示最近活动记录', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-      vi.mocked(usersService.getUserActivity).mockResolvedValue(mockRecentActivity)
+  it('renders difficulty distribution and achievements with current copy', async () => {
+    renderComponent()
 
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText('Two Sum')).toBeInTheDocument()
-        expect(screen.getByText('Weekly Contest 345')).toBeInTheDocument()
-        expect(screen.getByText('Add Two Numbers')).toBeInTheDocument()
-      })
-    })
-
-    it('应该显示活动类型', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-      vi.mocked(usersService.getUserActivity).mockResolvedValue(mockRecentActivity)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getAllByText('提交 · 已通过').length).toBeGreaterThan(0)
-        expect(screen.getAllByText('竞赛报名').length).toBeGreaterThan(0)
-      })
-    })
-
-    it('应该显示活动时间', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-      vi.mocked(usersService.getUserActivity).mockResolvedValue(mockRecentActivity)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getAllByText(/2024|01\/12|1\/12/i).length).toBeGreaterThan(0)
-      })
-    })
-
-    it('应该限制显示的活动数量', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-      vi.mocked(usersService.getUserActivity).mockResolvedValue(mockRecentActivity)
-
-      renderComponent()
-
-      await waitFor(() => {
-        const activities = screen.getAllByText(/two sum|add two numbers|weekly contest/i)
-        expect(activities.length).toBe(3)
-      })
+    await waitFor(() => {
+      expect(screen.getByText('Difficulty Distribution')).toBeInTheDocument()
+      expect(screen.getByText('Easy')).toBeInTheDocument()
+      expect(screen.getByText('20 solved')).toBeInTheDocument()
+      expect(screen.getByText('Medium')).toBeInTheDocument()
+      expect(screen.getByText('18 solved')).toBeInTheDocument()
+      expect(screen.getByText('Hard')).toBeInTheDocument()
+      expect(screen.getByText('7 solved')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Achievements' })).toBeInTheDocument()
+      expect(screen.getByText('2 / 10 unlocked')).toBeInTheDocument()
+      expect(screen.getByText('初出茅庐')).toBeInTheDocument()
+      expect(screen.getByText('坚持不懈')).toBeInTheDocument()
     })
   })
 
-  describe('每日挑战', () => {
-    it('应该显示每日挑战推荐', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-      vi.mocked(problemsService.getProblems).mockResolvedValue({
-        problems: [
-          {
-            id: '10',
-            title: 'Daily Challenge: Valid Parentheses',
-            description: 'Given a string containing just parentheses, determine if it is valid.',
-            difficulty: 'medium',
-            tags: ['Stack', 'String'],
-            points: 30,
-            time_limit: 1000,
-            memory_limit: 256,
-            created_at: '2024-01-12T00:00:00Z',
-            updated_at: '2024-01-12T00:00:00Z',
-          },
-        ] as Problem[],
-        total: 1,
-        page: 1,
-        limit: 20,
-        pages: 1,
-      })
+  it('shows loading and error states with the current shared components', async () => {
+    vi.mocked(usersService.getUserStats).mockImplementationOnce(() => new Promise(() => {}))
+    renderComponent()
+    expect(screen.getByText('Loading dashboard...')).toBeInTheDocument()
 
-      renderComponent()
+    queryClient.clear()
+    vi.mocked(usersService.getUserStats).mockRejectedValueOnce(new Error('Failed to fetch user stats'))
+    renderComponent()
 
-      await waitFor(() => {
-        expect(screen.getByRole('heading', { name: /今日建议|daily challenge/i })).toBeInTheDocument()
-      })
+    await waitFor(() => {
+      expect(screen.getByText('Failed to load dashboard')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
     })
   })
 
-  describe('成就系统', () => {
-    it('应该显示用户成就', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue({
-        ...mockUserStats,
-        achievements: [
-          { id: 'first_solve', name: '初出茅庐', description: '解决第一道题', icon: 'star', unlocked_at: '2024-01-01T00:00:00Z' },
-          { id: 'streak_7', name: '坚持不懈', description: '连续学习7天', icon: 'local_fire_department', unlocked_at: '2024-01-12T00:00:00Z' },
-        ],
-      })
+  it('refreshes all top-level dashboard queries from the refresh button', async () => {
+    const user = userEvent.setup()
+    renderComponent()
 
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/初出茅庐|first solve/i)).toBeInTheDocument()
-        expect(screen.getByText(/坚持不懈|streak/i)).toBeInTheDocument()
-      })
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'refresh Refresh' })).toBeInTheDocument()
     })
 
-    it('应该显示成就解锁进度', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue({
-        ...mockUserStats,
-        total_achievements: 10,
-        unlocked_achievements: 2,
-      })
+    await user.click(screen.getByRole('button', { name: 'refresh Refresh' }))
 
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/2.*10|achievements/i)).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('加载状态', () => {
-    it('应该显示加载状态', () => {
-      vi.mocked(usersService.getUserStats).mockImplementation(
-        () => new Promise(() => {})
-      )
-
-      renderComponent()
-
-      expect(screen.getByText(/加载中|loading/i)).toBeInTheDocument()
-    })
-  })
-
-  describe('错误处理', () => {
-    it('应该显示错误消息', async () => {
-      vi.mocked(usersService.getUserStats).mockRejectedValue(
-        new Error('Failed to fetch user stats')
-      )
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/加载失败|error|failed/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该提供重试选项', async () => {
-      vi.mocked(usersService.getUserStats).mockRejectedValue(
-        new Error('Failed to fetch user stats')
-      )
-
-      renderComponent()
-
-      await waitFor(() => {
-        const retryButton = screen.getByRole('button', { name: /重试|retry/i })
-        expect(retryButton).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('快速操作', () => {
-    it('应该提供快速开始解题按钮', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/开始刷题|start practicing|continue/i)).toBeInTheDocument()
-      })
-    })
-
-    it('应该提供查看竞赛按钮', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/查看竞赛|view contests|contests/i)).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('响应式设计', () => {
-    it('应该在移动端正确显示', async () => {
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-
-      // 模拟移动端视口
-      global.innerWidth = 375
-      window.dispatchEvent(new Event('resize'))
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/45.*道题|solved/i)).toBeInTheDocument()
-      })
-    })
-  })
-
-  describe('数据刷新', () => {
-    it('应该支持手动刷新数据', async () => {
-      const user = require('@testing-library/user-event').default
-      const userEvent = user.setup()
-
-      vi.mocked(usersService.getUserStats).mockResolvedValue(mockUserStats)
-
-      renderComponent()
-
-      await waitFor(() => {
-        expect(screen.getByText(/150.*次提交/i)).toBeInTheDocument()
-      })
-
-      const refreshButton = screen.getByLabelText(/refresh|刷新/i)
-      await userEvent.click(refreshButton)
-
-      await waitFor(() => {
-        expect(usersService.getUserStats).toHaveBeenCalledTimes(2)
-      })
+    await waitFor(() => {
+      expect(usersService.getUserStats).toHaveBeenCalledTimes(2)
+      expect(usersService.getUserActivity).toHaveBeenCalledTimes(2)
+      expect(usersService.getRecommendedProblems).toHaveBeenCalledTimes(2)
     })
   })
 })

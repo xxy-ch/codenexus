@@ -1,32 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  CalendarDays,
-  CircleCheckBig,
-  Eye,
-  FileText,
-  Lock,
-  Plus,
-  RefreshCw,
-  ShieldCheck,
-  Timer,
-  UserRound,
-  X,
-} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import api from '@/services/api'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Textarea } from '@/components/ui/Textarea'
-import { EmptyState } from '@/components/page/EmptyState'
-import { FieldGroup } from '@/components/page/FieldGroup'
-import { FilterBar } from '@/components/page/FilterBar'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
-import { StatCard } from '@/components/page/StatCard'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
-import { Loading } from '@/components/ui/Loading'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { LoadingState } from '@/components/ui/LoadingState'
 import { cn, formatDateTime } from '@/lib/utils'
 
 type ContestRule = 'acm' | 'ioi' | 'education'
@@ -341,155 +323,195 @@ export function ContestWizard() {
   const orchestrationStatus = contestId ? '已创建主赛程' : '等待编排启动'
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="教师工作台"
-        breadcrumb={['竞赛中心', '竞赛编排台']}
-        title="竞赛编排台"
-        description="这页对齐内部编排工作台：先落赛程，再编排题目、读取真实参赛者记录，最后保存规则与发布说明。页面只调用后端已存在的竞赛、题目与参赛者接口，不伪造教师端尚未开放的能力。"
-        actions={
-          contestId ? (
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+            教师工作台 / 竞赛中心 / 竞赛编排台
+          </p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+            竞赛编排台
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
+            这页对齐内部编排工作台：先落赛程，再编排题目、读取真实参赛者记录，最后保存规则与发布说明。
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {contestId ? (
             <>
               <Button variant="outline" as={Link} to={`/contests/${contestId}`}>
+                <span className="material-symbols-outlined text-base">visibility</span>
                 打开竞赛详情
               </Button>
-              <Button variant="primary" as={Link} to={`/contests/${contestId}/scoreboard`}>
+              <Button as={Link} to={`/contests/${contestId}/scoreboard`}>
+                <span className="material-symbols-outlined text-base">leaderboard</span>
                 打开榜单
               </Button>
             </>
           ) : (
-            <div className="rounded-full border border-slate-200/90 bg-[rgba(246,249,253,0.92)] px-4 py-2 text-sm font-medium text-slate-700 shadow-[0_8px_18px_rgba(15,23,42,0.04)]">
+            <span className="rounded-full bg-surface-container-high px-4 py-2 text-sm font-medium text-on-surface-variant">
               等待创建竞赛
-            </div>
-          )
-        }
-      />
+            </span>
+          )}
+        </div>
+      </div>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="编排状态"
-          value={orchestrationStatus}
-          helper={contestSummary?.updated_at ? `最近保存于 ${formatDateTime(contestSummary.updated_at)}` : message}
-        />
-        <StatCard label="赛程时长" value={duration} helper={`当前赛制：${selectedRuleset.title}`} />
-        <StatCard label="已编排题目" value={contestProblems.length} helper="来自后端真实竞赛题目数" />
-        <StatCard label="参赛者记录" value={participants.length} helper="来自后端真实参赛者记录" />
-      </section>
+      {/* Stats Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card variant="default" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">编排状态</p>
+          <p className="mt-4 font-headline text-2xl font-extrabold text-on-surface">{orchestrationStatus}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">
+            {contestSummary?.updated_at ? `最近保存于 ${formatDateTime(contestSummary.updated_at)}` : message}
+          </p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">赛程时长</p>
+          <p className="mt-4 font-headline text-2xl font-extrabold text-primary">{duration}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">当前赛制：{selectedRuleset.title}</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">已编排题目</p>
+          <p className="mt-4 font-headline text-2xl font-extrabold text-tertiary">{contestProblems.length}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">来自后端真实竞赛题目数</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">参赛者记录</p>
+          <p className="mt-4 font-headline text-2xl font-extrabold text-secondary">{participants.length}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">来自后端真实参赛者记录</p>
+        </Card>
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="rounded-[30px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] p-4 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:sticky lg:top-6 lg:self-start">
-          <SurfaceCard className="border-0 bg-[linear-gradient(135deg,#1e40af_0%,#2563eb_58%,#60a5fa_100%)] p-5 text-white shadow-[0_24px_48px_rgba(30,64,175,0.28)]">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-blue-100/80">本场主控台</div>
-            <div className="mt-3 text-2xl font-semibold tracking-[-0.03em]">{form.name.trim() || '尚未命名的竞赛'}</div>
-            <p className="mt-3 text-sm leading-6 text-blue-50/86">
+      <div className="grid gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+        {/* Sidebar */}
+        <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+          <Card className="bg-gradient-to-br from-primary to-primary-container p-5 text-on-primary">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-primary/80">本场主控台</p>
+            <h2 className="mt-3 font-headline text-2xl font-semibold tracking-tight">{form.name.trim() || '尚未命名的竞赛'}</h2>
+            <p className="mt-3 text-sm leading-6 text-on-primary/80">
               参考内部编排台的工作方式，先锁定赛程，再推进题目、名单和规则发布。
             </p>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
-              <span className="rounded-full bg-white/16 px-3 py-1.5 text-white/92">{selectedRuleset.title}</span>
-              <span className="rounded-full bg-white/16 px-3 py-1.5 text-white/92">{contestId ? `竞赛 #${contestId}` : '未生成竞赛编号'}</span>
+              <span className="rounded-full bg-on-primary/16 px-3 py-1.5 text-on-primary">{selectedRuleset.title}</span>
+              <span className="rounded-full bg-on-primary/16 px-3 py-1.5 text-on-primary">
+                {contestId ? `竞赛 #${contestId}` : '未生成竞赛编号'}
+              </span>
             </div>
-          </SurfaceCard>
+          </Card>
 
-          <div className="mt-4 space-y-2">
+          <Card variant="default" className="p-4">
             <div className="px-2 pb-2">
-              <div className="text-sm font-semibold text-slate-900">编排进度</div>
-              <p className="mt-1 text-xs leading-5 text-slate-500">统一按赛程、题目、名单、发布四段收口。</p>
+              <p className="text-sm font-semibold text-on-surface">编排进度</p>
+              <p className="mt-1 text-xs leading-5 text-on-surface-variant">统一按赛程、题目、名单、发布四段收口。</p>
             </div>
-            {STEPS.map((step) => {
-              const active = activeStep === step.id
-              const completed = contestId ? step.id < 2 || (step.id === 2 && contestProblems.length > 0) : false
+            <div className="mt-3 space-y-2">
+              {STEPS.map((step) => {
+                const active = activeStep === step.id
+                const completed = contestId ? step.id < 2 || (step.id === 2 && contestProblems.length > 0) : false
 
-              return (
-                <button
-                  key={step.id}
-                  type="button"
-                  onClick={() => handleStepClick(step.id)}
-                  className={cn(
-                    'w-full rounded-2xl border px-4 py-3 text-left transition',
-                    active
-                      ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-sm'
-                      : 'border-transparent bg-[rgba(246,249,253,0.92)] text-slate-500 hover:border-slate-200 hover:bg-[rgba(255,255,255,0.92)]',
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={cn(
-                        'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold',
-                        active ? 'bg-white text-sky-700 ring-2 ring-sky-200' : 'bg-[rgba(255,255,255,0.92)] text-slate-500',
-                      )}
-                    >
-                      {completed ? <CircleCheckBig className="h-4 w-4 text-emerald-600" /> : step.id}
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => handleStepClick(step.id)}
+                    className={cn(
+                      'w-full rounded-2xl border px-4 py-3 text-left transition',
+                      active
+                        ? 'border-primary bg-primary-container text-on-primary-container'
+                        : 'border-transparent bg-surface-container-low text-on-surface-variant hover:bg-surface-container',
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={cn(
+                          'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold',
+                          active ? 'bg-on-primary-container text-on-primary-container' : 'bg-surface text-on-surface-variant',
+                        )}
+                      >
+                        {completed ? (
+                          <span className="material-symbols-outlined text-lg text-tertiary">check_circle</span>
+                        ) : (
+                          step.id
+                        )}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold">{step.title}</p>
+                        <p className="text-xs leading-5 opacity-80">{step.description}</p>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm font-semibold">{step.title}</div>
-                      <div className="text-xs leading-5 opacity-80">{step.description}</div>
-                    </div>
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </aside>
+                  </button>
+                )
+              })}
+            </div>
+          </Card>
+        </div>
 
         <div className="space-y-6">
-          <SurfaceCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(244,247,255,0.98)_0%,rgba(231,238,255,0.96)_48%,rgba(255,248,237,0.94)_100%)] p-0">
+          {/* Hero Card */}
+          <Card variant="default" className="overflow-hidden bg-gradient-to-br from-primary-container/30 to-tertiary-container/30 p-0">
             <div className="grid gap-6 px-6 py-6 lg:grid-cols-[minmax(0,1.4fr)_320px]">
               <div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#3f5f9c]">竞赛编排流</div>
-                <h2 className="mt-3 font-['Manrope'] text-[1.9rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">从赛程到发布，一次收口</h2>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-[#52627f]">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">竞赛编排流</p>
+                <h2 className="mt-3 font-headline text-3xl font-extrabold tracking-tight text-on-surface">从赛程到发布，一次收口</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-on-surface-variant">
                   主工作区对齐参考稿的编排台语言：左侧是进度与当前主赛，右侧是四段式编排内容。教师端当前只开放真实竞赛接口，因此名单管理保持只读预览。
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
-                  <div className="rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-medium text-[#17305e] shadow-[0_10px_24px_rgba(19,27,46,0.05)]">
+                  <span className="rounded-full bg-surface px-4 py-2 text-sm font-medium text-on-surface">
                     当前阶段：{STEPS[activeStep - 1]?.title}
-                  </div>
-                  <div className="rounded-full border border-white/70 bg-white/80 px-4 py-2 text-sm font-medium text-[#17305e] shadow-[0_10px_24px_rgba(19,27,46,0.05)]">
+                  </span>
+                  <span className="rounded-full bg-surface px-4 py-2 text-sm font-medium text-on-surface">
                     封榜：{form.freeze_minutes > 0 ? `${form.freeze_minutes} 分钟` : '不封榜'}
-                  </div>
+                  </span>
                 </div>
               </div>
-              <div className="rounded-[28px] border border-white/70 bg-white/85 p-5 shadow-[0_18px_34px_rgba(15,23,42,0.08)]">
-                <div className="text-sm font-semibold text-slate-950">编排摘要</div>
+              <Card variant="surface" className="p-5">
+                <p className="text-sm font-semibold text-on-surface">编排摘要</p>
                 <div className="mt-4 space-y-3">
-                  <div className="flex items-center justify-between rounded-[22px] bg-[#f4f7ff] px-4 py-3">
-                    <span className="text-sm text-slate-500">赛程编号</span>
-                    <span className="font-semibold text-slate-900">{contestId || '待生成'}</span>
+                  <div className="flex items-center justify-between rounded-2xl bg-surface-container-high px-4 py-3">
+                    <span className="text-sm text-on-surface-variant">赛程编号</span>
+                    <span className="font-semibold text-on-surface">{contestId || '待生成'}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-[22px] bg-[#f4f7ff] px-4 py-3">
-                    <span className="text-sm text-slate-500">计划时长</span>
-                    <span className="font-semibold text-slate-900">{duration}</span>
+                  <div className="flex items-center justify-between rounded-2xl bg-surface-container-high px-4 py-3">
+                    <span className="text-sm text-on-surface-variant">计划时长</span>
+                    <span className="font-semibold text-on-surface">{duration}</span>
                   </div>
-                  <div className="flex items-center justify-between rounded-[22px] bg-[#f4f7ff] px-4 py-3">
-                    <span className="text-sm text-slate-500">当前赛制</span>
-                    <span className="font-semibold text-slate-900">{selectedRuleset.title}</span>
+                  <div className="flex items-center justify-between rounded-2xl bg-surface-container-high px-4 py-3">
+                    <span className="text-sm text-on-surface-variant">当前赛制</span>
+                    <span className="font-semibold text-on-surface">{selectedRuleset.title}</span>
                   </div>
                 </div>
-              </div>
+              </Card>
             </div>
-          </SurfaceCard>
+          </Card>
 
-          <SectionBlock
-            title="基础赛程"
-            description="先录入竞赛基础信息，锁定归属、时间和赛制。"
-          >
+          {/* Basic Schedule */}
+          <Card variant="default" className="p-6">
+            <div className="mb-5">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">基础赛程</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">先录入竞赛基础信息，锁定归属、时间和赛制。</p>
+            </div>
             <div className="grid gap-5 md:grid-cols-2">
-              <FieldGroup label="竞赛名称">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">竞赛名称</label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder="例如：2026 春季算法联赛"
                 />
-              </FieldGroup>
-              <FieldGroup label="组织 ID">
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">组织 ID</label>
                 <Input
                   type="number"
                   min="1"
                   value={form.organization_id}
                   onChange={(e) => setForm((prev) => ({ ...prev, organization_id: Number(e.target.value) }))}
                 />
-              </FieldGroup>
-              <FieldGroup label="校区 ID">
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">校区 ID</label>
                 <Input
                   type="number"
                   min="1"
@@ -502,8 +524,9 @@ export function ContestWizard() {
                   }
                   placeholder="可留空"
                 />
-              </FieldGroup>
-              <FieldGroup label="规则集">
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">规则集</label>
                 <Select
                   value={form.rules}
                   onChange={(e) => setForm((prev) => ({ ...prev, rules: e.target.value as ContestRule }))}
@@ -514,79 +537,83 @@ export function ContestWizard() {
                     </option>
                   ))}
                 </Select>
-              </FieldGroup>
-              <FieldGroup label="开始时间">
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">开始时间</label>
                 <div className="relative">
-                  <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-base text-on-surface-variant">calendar_today</span>
                   <Input
                     aria-label="开始时间"
                     type="datetime-local"
                     value={toLocalInputValue(form.start_time)}
                     onChange={(e) => setForm((prev) => ({ ...prev, start_time: e.target.value }))}
-                    className="py-3.5 pl-11 pr-4"
+                    className="pl-11"
                   />
                 </div>
-              </FieldGroup>
-              <FieldGroup label="结束时间">
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">结束时间</label>
                 <div className="relative">
-                  <CalendarDays className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-base text-on-surface-variant">event</span>
                   <Input
                     aria-label="结束时间"
                     type="datetime-local"
                     value={toLocalInputValue(form.end_time)}
                     onChange={(e) => setForm((prev) => ({ ...prev, end_time: e.target.value }))}
-                    className="py-3.5 pl-11 pr-4"
+                    className="pl-11"
                   />
                 </div>
-              </FieldGroup>
-              <FieldGroup label="描述">
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium text-on-surface">描述</label>
                 <Textarea
                   value={form.description}
                   onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                  className="min-h-[132px]"
+                  className="min-h-[120px]"
                   placeholder="说明竞赛用途、可用语言、报名要求或课堂说明。"
                 />
-              </FieldGroup>
-              <FieldGroup label="封榜分钟数" description="0 表示不封榜。">
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">封榜分钟数</label>
+                <p className="text-xs text-on-surface-variant">0 表示不封榜</p>
                 <Input
                   type="number"
                   min="0"
                   value={form.freeze_minutes}
                   onChange={(e) => setForm((prev) => ({ ...prev, freeze_minutes: Number(e.target.value) }))}
                 />
-              </FieldGroup>
+              </div>
             </div>
 
-            <FilterBar className="mt-6 justify-between">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <Timer className="h-4 w-4" />
+            <div className="mt-6 flex items-center justify-between border-t border-outline-variant/10 pt-4">
+              <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                <span className="material-symbols-outlined text-base">schedule</span>
                 <span>赛程预览：{duration}</span>
               </div>
               <div className="flex items-center gap-3">
-                <Button type="button" variant="outline" onClick={() => setMessage('当前步骤草稿已自动保存在本地浏览器。')}>
+                <Button variant="outline" onClick={() => setMessage('当前步骤草稿已自动保存在本地浏览器。')}>
                   保存草稿
                 </Button>
-                <Button type="button" onClick={handleCreate} disabled={!canCreate}>
+                <Button onClick={handleCreate} disabled={!canCreate}>
                   {createMutation.isPending ? '创建中...' : contestId ? '更新基础赛程' : '创建竞赛并进入编排'}
                 </Button>
               </div>
-            </FilterBar>
-          </SectionBlock>
+            </div>
+          </Card>
 
-          <SectionBlock
-            title="题目编排"
-            description="只对真实竞赛做补题和题序调整，不在前端伪造题目实体。"
-          >
+          {/* Problem Arrangement */}
+          <Card variant="default" className="p-6">
+            <div className="mb-5">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">题目编排</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">只对真实竞赛做补题和题序调整，不在前端伪造题目实体。</p>
+            </div>
             {!contestId ? (
-              <EmptyState
-                className="border-0 p-0 shadow-none"
-                title="先创建竞赛"
-                description="只有在竞赛创建成功后，才能向其中添加题目。"
-              />
+              <EmptyState title="先创建竞赛" description="只有在竞赛创建成功后，才能向其中添加题目。" />
             ) : (
               <div className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px_160px]">
-                  <FieldGroup label="题目 ID">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-on-surface">题目 ID</label>
                     <Input
                       type="number"
                       min="1"
@@ -594,213 +621,219 @@ export function ContestWizard() {
                       value={problemForm.problem_id}
                       onChange={(e) => setProblemForm((prev) => ({ ...prev, problem_id: e.target.value }))}
                     />
-                  </FieldGroup>
-                  <FieldGroup label="分值">
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-on-surface">分值</label>
                     <Input
                       type="number"
                       min="1"
                       value={problemForm.points}
                       onChange={(e) => setProblemForm((prev) => ({ ...prev, points: e.target.value }))}
                     />
-                  </FieldGroup>
-                  <FieldGroup label="题序">
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-on-surface">题序</label>
                     <Input
                       type="number"
                       min="0"
                       value={problemForm.order_index}
                       onChange={(e) => setProblemForm((prev) => ({ ...prev, order_index: e.target.value }))}
                     />
-                  </FieldGroup>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-sm text-slate-500">
-                    当前题目数: {contestProblems.length}
-                  </div>
-                  <Button type="button" onClick={handleAddProblem} disabled={!canAddProblem}>
-                    <Plus className="h-4 w-4" />
+                  <p className="text-sm text-on-surface-variant">当前题目数: {contestProblems.length}</p>
+                  <Button onClick={handleAddProblem} disabled={!canAddProblem}>
+                    <span className="material-symbols-outlined text-base">add</span>
                     添加题目
                   </Button>
                 </div>
 
                 {problemsQuery.isLoading ? (
                   <div className="flex min-h-[180px] items-center justify-center">
-                    <Loading message="加载竞赛题目..." />
+                    <LoadingState message="加载竞赛题目..." />
                   </div>
                 ) : contestProblems.length === 0 ? (
                   <EmptyState
-                    className="border-dashed"
                     title="当前竞赛还没有题目"
                     description="先用上面的表单补一题，再继续后续配置。"
                   />
                 ) : (
-                  <div className="overflow-x-auto rounded-[28px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
-                    <table className="min-w-full divide-y divide-slate-200">
-                      <thead className="bg-slate-50">
-                        <tr>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">题目</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">标题</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">分值</th>
-                          <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">题序</th>
-                          <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">操作</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 bg-[rgba(255,255,255,0.78)]">
-                        {contestProblems.map((problem) => (
-                          <tr key={problem.id} className="transition hover:bg-blue-50/50">
-                            <td className="px-5 py-4 text-sm font-medium text-slate-900">#{problem.problem_id}</td>
-                            <td className="px-5 py-4 text-sm text-slate-600">
-                              <div className="font-medium text-slate-900">{problem.title || '未命名题目'}</div>
-                              <div className="mt-1 text-xs text-slate-500">{problem.difficulty || '暂未标注难度'}</div>
-                            </td>
-                            <td className="px-5 py-4 text-sm text-slate-600">{problem.points}</td>
-                            <td className="px-5 py-4 text-sm text-slate-600">{problem.order_index}</td>
-                            <td className="px-5 py-4 text-right">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeProblemMutation.mutate(problem.problem_id)}
-                                disabled={removeProblemMutation.isPending}
-                              >
-                                <X className="h-4 w-4" />
-                                移除
-                              </Button>
-                            </td>
+                  <Card variant="surface" className="overflow-hidden p-0">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-outline-variant/10">
+                        <thead className="bg-surface-container-low">
+                          <tr>
+                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">题目</th>
+                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">标题</th>
+                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">分值</th>
+                            <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">题序</th>
+                            <th className="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-on-surface-variant">操作</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-outline-variant/10">
+                          {contestProblems.map((problem) => (
+                            <tr key={problem.id} className="transition-colors hover:bg-surface-container-low/30">
+                              <td className="px-5 py-4 text-sm font-medium text-on-surface">#{problem.problem_id}</td>
+                              <td className="px-5 py-4 text-sm text-on-surface">
+                                <p className="font-medium">{problem.title || '未命名题目'}</p>
+                                <p className="mt-1 text-xs text-on-surface-variant">{problem.difficulty || '暂未标注难度'}</p>
+                              </td>
+                              <td className="px-5 py-4 text-sm text-on-surface">{problem.points}</td>
+                              <td className="px-5 py-4 text-sm text-on-surface">{problem.order_index}</td>
+                              <td className="px-5 py-4 text-right">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeProblemMutation.mutate(problem.problem_id)}
+                                  disabled={removeProblemMutation.isPending}
+                                >
+                                  <span className="material-symbols-outlined text-base">close</span>
+                                  移除
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
                 )}
               </div>
             )}
-          </SectionBlock>
+          </Card>
 
-          <SectionBlock
-            title="参赛者预览"
-            description="这里只做只读预览，教师端暂未开放批量导入或指派参赛者接口。"
-          >
+          {/* Participants Preview */}
+          <Card variant="default" className="p-6">
+            <div className="mb-5">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">参赛者预览</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">这里只做只读预览，教师端暂未开放批量导入或指派参赛者接口。</p>
+            </div>
             {!contestId ? (
-              <EmptyState
-                className="border-0 p-0 shadow-none"
-                title="先创建竞赛"
-                description="竞赛创建成功后，这里会拉取真实参赛者列表。"
-              />
+              <EmptyState title="先创建竞赛" description="竞赛创建成功后，这里会拉取真实参赛者列表。" />
             ) : participantsQuery.isLoading ? (
               <div className="flex min-h-[180px] items-center justify-center">
-                <Loading message="加载参赛者..." />
+                <LoadingState message="加载参赛者..." />
               </div>
             ) : participants.length === 0 ? (
               <EmptyState
-                className="border-dashed"
                 title="教师端直接管理未开放"
                 description="后端已有参赛者接口，但教师端没有批量邀请或指派入口，当前只保留只读预览。"
               />
             ) : (
-              <div className="overflow-x-auto rounded-[28px] border border-slate-200/90 bg-[rgba(255,255,255,0.92)] shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">用户 ID</th>
-                      <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">报名时间</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 bg-[rgba(255,255,255,0.78)]">
-                    {participants.map((participant) => (
-                      <tr key={participant.id}>
-                        <td className="px-5 py-4 font-mono text-sm text-slate-600">{participant.user_id}</td>
-                        <td className="px-5 py-4 text-sm text-slate-600">{formatDateTime(participant.registered_at)}</td>
+              <Card variant="surface" className="overflow-hidden p-0">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-outline-variant/10">
+                    <thead className="bg-surface-container-low">
+                      <tr>
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">用户 ID</th>
+                        <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">报名时间</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/10">
+                      {participants.map((participant) => (
+                        <tr key={participant.id}>
+                          <td className="px-5 py-4 font-mono text-sm text-on-surface">{participant.user_id}</td>
+                          <td className="px-5 py-4 text-sm text-on-surface">{formatDateTime(participant.registered_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
             )}
-          </SectionBlock>
+          </Card>
 
-          <SectionBlock
-            title="规则与发布"
-            description="保存当前竞赛规则、封榜和发布层面的说明。"
-          >
+          {/* Rules & Publishing */}
+          <Card variant="default" className="p-6">
+            <div className="mb-5">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">规则与发布</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">保存当前竞赛规则、封榜和发布层面的说明。</p>
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <SurfaceCard tone="muted" className="p-4 shadow-none">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  <Eye className="h-4 w-4 text-sky-700" />
+              <Card variant="surface" className="p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                  <span className="material-symbols-outlined text-lg text-primary">visibility</span>
                   可见性说明
                 </div>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
                   当前竞赛可见性由后端接口控制，此处只展示页面层级的运行说明，不伪造不存在的权限开关。
                 </p>
-                <div className="mt-4 inline-flex rounded-2xl bg-[rgba(255,255,255,0.92)] p-1 shadow-[0_10px_24px_rgba(15,23,42,0.05)] ring-1 ring-slate-200/90">
-                  <span className="rounded-2xl bg-blue-800 px-4 py-2 text-sm font-medium text-white">
-                    <Eye className="mr-2 inline-block h-4 w-4" />
+                <div className="mt-4 inline-flex rounded-2xl bg-surface p-1 shadow-sm">
+                  <span className="rounded-2xl bg-primary px-4 py-2 text-sm font-medium text-on-primary">
+                    <span className="material-symbols-outlined mr-2 align-middle text-base">public</span>
                     公开赛
                   </span>
-                  <span className="rounded-2xl px-4 py-2 text-sm font-medium text-slate-600">
-                    <Lock className="mr-2 inline-block h-4 w-4" />
+                  <span className="rounded-2xl px-4 py-2 text-sm font-medium text-on-surface-variant">
+                    <span className="material-symbols-outlined mr-2 align-middle text-base">lock</span>
                     私有赛
                   </span>
                 </div>
-              </SurfaceCard>
+              </Card>
 
-              <SurfaceCard tone="muted" className="p-4 shadow-none">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  <ShieldCheck className="h-4 w-4 text-sky-700" />
+              <Card variant="surface" className="p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                  <span className="material-symbols-outlined text-lg text-primary">verified_user</span>
                   发布策略
                 </div>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
+                <p className="mt-2 text-sm leading-6 text-on-surface-variant">
                   保存会调用真实的竞赛更新接口，包含名称、描述、规则、时间和封榜分钟数。
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <Button type="button" variant="outline" onClick={() => setMessage('设置区只保存后端已支持的规则与封榜字段。')}>
-                    <RefreshCw className="h-4 w-4" />
+                  <Button
+                    variant="outline"
+                    onClick={() => setMessage('设置区只保存后端已支持的规则与封榜字段。')}
+                  >
+                    <span className="material-symbols-outlined text-base">refresh</span>
                     刷新说明
                   </Button>
-                  <Button type="button" onClick={handleSaveSettings} disabled={!canUpdate}>
+                  <Button onClick={handleSaveSettings} disabled={!canUpdate}>
                     {updateMutation.isPending ? '保存中...' : '保存设置'}
                   </Button>
                 </div>
-              </SurfaceCard>
+              </Card>
             </div>
-          </SectionBlock>
+          </Card>
 
-          <SectionBlock
-            title="编排说明"
-            description="当前编排台的真实能力边界。"
-          >
+          {/* Notes */}
+          <Card variant="default" className="p-6">
+            <div className="mb-5">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">编排说明</h2>
+              <p className="mt-1 text-sm text-on-surface-variant">当前编排台的真实能力边界。</p>
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <SurfaceCard tone="muted" className="p-4 shadow-none">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  <FileText className="h-4 w-4 text-sky-700" />
+              <Card variant="surface" className="p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                  <span className="material-symbols-outlined text-lg text-primary">description</span>
                   当前状态
                 </div>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant">
                   <li>竞赛创建后自动进入补题阶段。</li>
                   <li>题目列表和参赛者列表都来自真实接口。</li>
                   <li>保存设置会回写后端，不做前端假缓存。</li>
                 </ul>
-              </SurfaceCard>
+              </Card>
 
-              <SurfaceCard tone="muted" className="p-4 shadow-none">
-                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  <UserRound className="h-4 w-4 text-sky-700" />
+              <Card variant="surface" className="p-4">
+                <div className="flex items-center gap-2 text-sm font-semibold text-on-surface">
+                  <span className="material-symbols-outlined text-lg text-primary">person_off</span>
                   受限能力
                 </div>
-                <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                <ul className="mt-3 space-y-2 text-sm leading-6 text-on-surface-variant">
                   <li>教师端暂未提供批量参赛者指派入口。</li>
                   <li>私有赛开关仍由后端和权限策略决定。</li>
                   <li>题目列表当前只维护竞赛关联，不修改题目本体。</li>
                 </ul>
-              </SurfaceCard>
+              </Card>
             </div>
-          </SectionBlock>
+          </Card>
 
-          <FilterBar className="justify-between">
-            <div className="text-sm text-slate-500">当前步骤：{activeStep} / {STEPS.length}</div>
+          {/* Navigation */}
+          <div className="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+            <p className="text-sm text-on-surface-variant">当前步骤：{activeStep} / {STEPS.length}</p>
             <div className="flex items-center gap-3">
               <Button
-                type="button"
                 variant="outline"
                 onClick={() => setActiveStep((current) => Math.max(1, current - 1))}
                 disabled={activeStep <= 1}
@@ -808,14 +841,13 @@ export function ContestWizard() {
                 上一步
               </Button>
               <Button
-                type="button"
                 onClick={() => setActiveStep((current) => Math.min(STEPS.length, current + 1))}
                 disabled={!contestId || activeStep >= STEPS.length}
               >
                 下一步
               </Button>
             </div>
-          </FilterBar>
+          </div>
         </div>
       </div>
     </div>

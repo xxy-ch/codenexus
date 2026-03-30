@@ -12,10 +12,10 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO users (id, user_code, username, email, password_hash, display_name, organization_id, campus_id, status)
 VALUES
-  ('11111111-1111-1111-1111-111111111111', '240101070014', '1001', 'admin@example.com', '$2b$12$NqrZ4WB0u47q5v1sx8eDhOaSPZNsRNffBl5ANqIXZGWj0qzwlY6gO', '管理员', 1, 1, 'active'),
-  ('22222222-2222-2222-2222-222222222222', '240101070015', '2001', 'student1@example.com', '$2b$12$NqrZ4WB0u47q5v1sx8eDhOaSPZNsRNffBl5ANqIXZGWj0qzwlY6gO', '学生甲', 1, 1, 'active'),
-  ('33333333-3333-3333-3333-333333333333', '240101070016', '2002', 'student2@example.com', '$2b$12$NqrZ4WB0u47q5v1sx8eDhOaSPZNsRNffBl5ANqIXZGWj0qzwlY6gO', '学生乙', 1, 1, 'active'),
-  ('44444444-4444-4444-4444-444444444444', '240101070017', '3001', 'teacher@example.com', '$2b$12$NqrZ4WB0u47q5v1sx8eDhOaSPZNsRNffBl5ANqIXZGWj0qzwlY6gO', '教师用户', 1, 1, 'active')
+  ('11111111-1111-1111-1111-111111111111', '240101070014', '1001', 'admin@example.com', '$2y$12$RfdF77m.1vw4P6/k7n/Uc.cO8q4jIyxfzfd5AnRlPNT9GjUp2MYNW', '管理员', 1, 1, 'active'),
+  ('22222222-2222-2222-2222-222222222222', '240101070015', '2001', 'student1@example.com', '$2y$12$RfdF77m.1vw4P6/k7n/Uc.cO8q4jIyxfzfd5AnRlPNT9GjUp2MYNW', '学生甲', 1, 1, 'active'),
+  ('33333333-3333-3333-3333-333333333333', '240101070016', '2002', 'student2@example.com', '$2y$12$RfdF77m.1vw4P6/k7n/Uc.cO8q4jIyxfzfd5AnRlPNT9GjUp2MYNW', '学生乙', 1, 1, 'active'),
+  ('44444444-4444-4444-4444-444444444444', '240101070017', '3001', 'teacher@example.com', '$2y$12$RfdF77m.1vw4P6/k7n/Uc.cO8q4jIyxfzfd5AnRlPNT9GjUp2MYNW', '教师用户', 1, 1, 'active')
 ON CONFLICT (id) DO UPDATE
 SET
   user_code = EXCLUDED.user_code,
@@ -96,6 +96,34 @@ VALUES
     262144
 )
 ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO test_cases (
+  id,
+  problem_id,
+  input,
+  output,
+  is_secret,
+  points,
+  order_index
+)
+VALUES
+  (
+    1,
+    1,
+    E'4\n2 7 11 15\n9\n',
+    E'0 1\n',
+    FALSE,
+    100,
+    1
+  )
+ON CONFLICT (id) DO UPDATE
+SET
+  problem_id = EXCLUDED.problem_id,
+  input = EXCLUDED.input,
+  output = EXCLUDED.output,
+  is_secret = EXCLUDED.is_secret,
+  points = EXCLUDED.points,
+  order_index = EXCLUDED.order_index;
 
 INSERT INTO contests (
   id,
@@ -210,6 +238,8 @@ VALUES
   (1, 1, 12),
   (1, 2, 15)
 ON CONFLICT (submission_id) DO NOTHING;
+
+SELECT setval('submissions_id_seq', COALESCE((SELECT MAX(id) FROM submissions), 1), TRUE);
 
 
 INSERT INTO articles (

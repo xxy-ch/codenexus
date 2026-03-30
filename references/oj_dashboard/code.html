@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Architectural Scholar - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-container": "#75e8b5",
+              "outline": "#737685",
+              "surface-container-lowest": "#ffffff",
+              "error-container": "#ffdad6",
+              "surface-dim": "#d2d9f4",
+              "inverse-primary": "#b2c5ff",
+              "on-error-container": "#93000a",
+              "primary-container": "#0052cc",
+              "inverse-on-surface": "#eef0ff",
+              "surface": "#faf8ff",
+              "primary-fixed": "#dae2ff",
+              "on-tertiary-fixed": "#002114",
+              "surface-container": "#eaedff",
+              "background": "#faf8ff",
+              "on-surface-variant": "#434654",
+              "primary": "#003d9b",
+              "on-tertiary-fixed-variant": "#005137",
+              "tertiary-fixed-dim": "#68dba9",
+              "outline-variant": "#c3c6d6",
+              "on-secondary-container": "#57657a",
+              "on-secondary-fixed": "#0d1c2e",
+              "secondary-container": "#d5e3fc",
+              "on-error": "#ffffff",
+              "on-tertiary": "#ffffff",
+              "secondary": "#515f74",
+              "secondary-fixed": "#d5e3fc",
+              "surface-tint": "#0c56d0",
+              "surface-bright": "#faf8ff",
+              "on-primary-container": "#c4d2ff",
+              "inverse-surface": "#283044",
+              "on-primary-fixed": "#001848",
+              "surface-variant": "#dae2fd",
+              "on-background": "#131b2e",
+              "tertiary": "#004e34",
+              "on-secondary-fixed-variant": "#3a485b",
+              "secondary-fixed-dim": "#b9c7df",
+              "surface-container-high": "#e2e7ff",
+              "on-primary": "#ffffff",
+              "error": "#ba1a1a",
+              "tertiary-fixed": "#85f8c4",
+              "surface-container-low": "#f2f3ff",
+              "primary-fixed-dim": "#b2c5ff",
+              "on-primary-fixed-variant": "#0040a2",
+              "on-secondary": "#ffffff",
+              "tertiary-container": "#006847",
+              "surface-container-highest": "#dae2fd",
+              "on-surface": "#131b2e"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.5rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-secondary-container">
+<!-- SideNavBar Component -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-100 dark:bg-slate-950 flex flex-col p-4 gap-2 z-40">
+<div class="mb-8 px-2 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary rounded flex items-center justify-center text-white shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined" data-icon="architecture" style="font-variation-settings: 'FILL' 1;">architecture</span>
+</div>
+<div>
+<h1 class="text-lg font-black text-blue-900 dark:text-white leading-none">OJ Portal</h1>
+<p class="text-[10px] font-bold uppercase tracking-widest text-primary/60">Deep Work Mode</p>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 rounded-lg shadow-sm flex items-center gap-3 px-3 py-2.5 font-manrope text-sm font-semibold transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+                Dashboard
+            </a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg flex items-center gap-3 px-3 py-2.5 font-manrope text-sm font-semibold transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+                Problems
+            </a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg flex items-center gap-3 px-3 py-2.5 font-manrope text-sm font-semibold transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+                Contests
+            </a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg flex items-center gap-3 px-3 py-2.5 font-manrope text-sm font-semibold transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+                Rankings
+            </a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg flex items-center gap-3 px-3 py-2.5 font-manrope text-sm font-semibold transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+                Discussions
+            </a>
+</nav>
+<div class="mt-auto pt-4 flex flex-col gap-1">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-white py-3 rounded-lg font-manrope text-sm font-bold shadow-lg shadow-primary/10 active:scale-95 transition-transform mb-4">
+                Submit Code
+            </button>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg flex items-center gap-3 px-3 py-2.5 font-manrope text-sm font-semibold transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+                Help
+            </a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg flex items-center gap-3 px-3 py-2.5 font-manrope text-sm font-semibold transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="pl-64 min-h-screen">
+<!-- TopAppBar Component -->
+<header class="w-full sticky top-0 z-50 bg-slate-50 dark:bg-slate-900 border-b-0">
+<div class="flex items-center justify-between px-8 py-4 w-full max-w-[1440px] mx-auto">
+<div class="flex items-center gap-8 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" data-icon="search">search</span>
+<input class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-lg pl-10 pr-4 py-2 text-sm font-manrope focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search problems, contests or users..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-full transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-full transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2"></div>
+<div class="flex items-center gap-3 pl-2">
+<div class="text-right">
+<p class="text-sm font-bold text-on-background leading-tight">Alex Rivera</p>
+<p class="text-[10px] text-primary font-bold uppercase tracking-tighter">Grandmaster</p>
+</div>
+<img alt="User profile" class="w-10 h-10 rounded-full border-2 border-primary-fixed" data-alt="User profile avatar of a developer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjMZNO7eEIIlRmk9l_09Mm9jx5Vm6gwgkhL0h1G0q5cUCHS_GIrA_Gmj-Vqu8JvD-3bGN3refepT06CmS9e9SZrOLJ-puOe3kv6MSg7WioMd4OfWB26cue-MxsQF_4Cbbs5PaC2DGcpQDh7jlc2OwbgDBS9QQ9c1ohUcsMMC7qVCp4mgz44UDXSc_8MfoiB9pLMam1WsCT0oZaINYFVlyLbMnXC_UsZzI-EFU5Mapy8YMrtMCGB1XRH_AuRWvAgRG8-DYSCy_O7CnF"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="p-8 max-w-[1440px] mx-auto space-y-8">
+<!-- Statistics Bento Grid -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Solved Count -->
+<div class="bg-surface-container-lowest p-6 rounded-lg border-none flex flex-col justify-between group hover:bg-surface-container-low transition-colors duration-300">
+<div>
+<span class="text-primary text-[10px] font-bold uppercase tracking-[0.2em] block mb-1">Solved Problems</span>
+<h2 class="text-4xl font-extrabold tracking-tighter text-on-background">412</h2>
+</div>
+<div class="mt-4 flex items-center gap-2">
+<span class="text-xs font-semibold text-tertiary-container flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span> +12
+                        </span>
+<span class="text-[10px] text-slate-400 font-medium">this month</span>
+</div>
+</div>
+<!-- Global Ranking -->
+<div class="bg-surface-container-lowest p-6 rounded-lg border-none flex flex-col justify-between hover:bg-surface-container-low transition-colors duration-300">
+<div>
+<span class="text-primary text-[10px] font-bold uppercase tracking-[0.2em] block mb-1">Current Ranking</span>
+<h2 class="text-4xl font-extrabold tracking-tighter text-on-background">#1,204</h2>
+</div>
+<div class="mt-4">
+<div class="w-full bg-slate-100 h-1 rounded-full overflow-hidden">
+<div class="bg-primary w-3/4 h-full"></div>
+</div>
+<p class="text-[10px] text-slate-400 mt-2 font-medium">Top 2% of total users</p>
+</div>
+</div>
+<!-- Streak -->
+<div class="bg-surface-container-lowest p-6 rounded-lg border-none flex flex-col justify-between hover:bg-surface-container-low transition-colors duration-300">
+<div>
+<span class="text-primary text-[10px] font-bold uppercase tracking-[0.2em] block mb-1">Current Streak</span>
+<div class="flex items-baseline gap-2">
+<h2 class="text-4xl font-extrabold tracking-tighter text-on-background">14</h2>
+<span class="text-lg font-bold text-slate-400">Days</span>
+</div>
+</div>
+<div class="mt-4 flex gap-1">
+<!-- Tiny Heatmap Representation -->
+<div class="w-2 h-2 rounded-sm bg-primary"></div>
+<div class="w-2 h-2 rounded-sm bg-primary"></div>
+<div class="w-2 h-2 rounded-sm bg-primary/20"></div>
+<div class="w-2 h-2 rounded-sm bg-primary"></div>
+<div class="w-2 h-2 rounded-sm bg-primary"></div>
+<div class="w-2 h-2 rounded-sm bg-primary"></div>
+<div class="w-2 h-2 rounded-sm bg-primary"></div>
+</div>
+</div>
+<!-- Rating -->
+<div class="bg-gradient-to-br from-primary to-primary-container p-6 rounded-lg border-none text-white shadow-xl shadow-primary/20">
+<span class="text-primary-fixed/60 text-[10px] font-bold uppercase tracking-[0.2em] block mb-1">Elo Rating</span>
+<h2 class="text-4xl font-extrabold tracking-tighter">2,410</h2>
+<div class="mt-4 bg-white/10 backdrop-blur-md rounded px-2 py-1 inline-flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+<span class="text-[10px] font-bold uppercase tracking-widest">Grandmaster</span>
+</div>
+</div>
+</section>
+<!-- Main Grid: Recent Submissions & Sidebar Widgets -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Recent Submissions Table -->
+<div class="lg:col-span-8 space-y-6">
+<div class="flex items-center justify-between">
+<h3 class="text-xl font-extrabold tracking-tight text-on-background">Recent Submissions</h3>
+<button class="text-sm font-bold text-primary hover:underline transition-all">View all history</button>
+</div>
+<div class="overflow-hidden bg-surface-container-lowest rounded-lg">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-slate-500">
+<th class="px-6 py-4 font-manrope text-[10px] font-black uppercase tracking-widest">Problem</th>
+<th class="px-6 py-4 font-manrope text-[10px] font-black uppercase tracking-widest">Status</th>
+<th class="px-6 py-4 font-manrope text-[10px] font-black uppercase tracking-widest">Runtime</th>
+<th class="px-6 py-4 font-manrope text-[10px] font-black uppercase tracking-widest">Date</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-50">
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-on-background">Longest Palindromic Substring</p>
+<p class="text-[10px] text-slate-400 font-medium">Difficulty: <span class="text-secondary font-bold">Medium</span></p>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-container text-[10px] font-black uppercase tracking-tighter text-on-tertiary-container">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span> Accepted
+                                        </span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-slate-500">42 ms</td>
+<td class="px-6 py-4 text-xs text-slate-400 font-medium">2 mins ago</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-on-background">Median of Two Sorted Arrays</p>
+<p class="text-[10px] text-slate-400 font-medium">Difficulty: <span class="text-error font-bold">Hard</span></p>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-error-container text-[10px] font-black uppercase tracking-tighter text-on-error-container">
+<span class="material-symbols-outlined text-sm" data-icon="cancel" style="font-variation-settings: 'FILL' 1;">cancel</span> Wrong Answer
+                                        </span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-slate-500">104 ms</td>
+<td class="px-6 py-4 text-xs text-slate-400 font-medium">45 mins ago</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-on-background">Two Sum</p>
+<p class="text-[10px] text-slate-400 font-medium">Difficulty: <span class="text-tertiary font-bold">Easy</span></p>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-container text-[10px] font-black uppercase tracking-tighter text-on-tertiary-container">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle" style="font-variation-settings: 'FILL' 1;">check_circle</span> Accepted
+                                        </span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-slate-500">2 ms</td>
+<td class="px-6 py-4 text-xs text-slate-400 font-medium">2 hours ago</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="px-6 py-4">
+<p class="text-sm font-bold text-on-background">Valid Parentheses</p>
+<p class="text-[10px] text-slate-400 font-medium">Difficulty: <span class="text-tertiary font-bold">Easy</span></p>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary-container text-[10px] font-black uppercase tracking-tighter text-on-secondary-fixed-variant">
+<span class="material-symbols-outlined text-sm" data-icon="pending" style="font-variation-settings: 'FILL' 1;">pending</span> Pending
+                                        </span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-slate-500">--</td>
+<td class="px-6 py-4 text-xs text-slate-400 font-medium">1 day ago</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Sidebar Widgets -->
+<div class="lg:col-span-4 space-y-8">
+<!-- Upcoming Contests -->
+<div class="bg-white p-6 rounded-lg shadow-sm">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary" data-icon="event_available">event_available</span>
+<h3 class="text-lg font-extrabold tracking-tight text-on-background">Upcoming Contests</h3>
+</div>
+<div class="space-y-4">
+<div class="flex gap-4 p-3 hover:bg-slate-50 rounded-lg transition-colors border-l-4 border-primary">
+<div class="flex-shrink-0 text-center">
+<p class="text-[10px] font-black text-slate-400 uppercase">May</p>
+<p class="text-lg font-black text-primary">24</p>
+</div>
+<div>
+<p class="text-sm font-bold text-on-background">Scholar Cup Series #12</p>
+<p class="text-[10px] text-slate-400 font-medium">14:00 - 16:30 • 500 Participants</p>
+</div>
+</div>
+<div class="flex gap-4 p-3 hover:bg-slate-50 rounded-lg transition-colors border-l-4 border-slate-200">
+<div class="flex-shrink-0 text-center">
+<p class="text-[10px] font-black text-slate-400 uppercase">May</p>
+<p class="text-lg font-black text-slate-400">28</p>
+</div>
+<div>
+<p class="text-sm font-bold text-on-background">Algorithm Sprint - Vol. 4</p>
+<p class="text-[10px] text-slate-400 font-medium">10:00 - 12:00 • 1,200 Participants</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-2.5 bg-surface-container-low hover:bg-surface-container-high text-primary font-bold text-xs rounded transition-colors uppercase tracking-widest">
+                            Browse All Contests
+                        </button>
+</div>
+<!-- Recommended Problems -->
+<div class="bg-surface-container-low p-6 rounded-lg">
+<div class="flex items-center gap-2 mb-6">
+<span class="material-symbols-outlined text-primary" data-icon="lightbulb">lightbulb</span>
+<h3 class="text-lg font-extrabold tracking-tight text-on-background">Personalized Pick</h3>
+</div>
+<div class="space-y-1">
+<div class="group bg-white p-4 rounded-lg flex items-center justify-between cursor-pointer hover:shadow-md transition-all">
+<div>
+<p class="text-sm font-bold text-on-background group-hover:text-primary transition-colors">Trapping Rain Water</p>
+<p class="text-[10px] text-slate-500 flex items-center gap-2">
+<span class="text-error font-bold">Hard</span> • Dynamic Programming
+                                    </p>
+</div>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="group bg-white p-4 rounded-lg flex items-center justify-between cursor-pointer hover:shadow-md transition-all">
+<div>
+<p class="text-sm font-bold text-on-background group-hover:text-primary transition-colors">Clone Graph</p>
+<p class="text-[10px] text-slate-500 flex items-center gap-2">
+<span class="text-secondary font-bold">Medium</span> • BFS/DFS
+                                    </p>
+</div>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+<div class="group bg-white p-4 rounded-lg flex items-center justify-between cursor-pointer hover:shadow-md transition-all">
+<div>
+<p class="text-sm font-bold text-on-background group-hover:text-primary transition-colors">Subsets II</p>
+<p class="text-[10px] text-slate-500 flex items-center gap-2">
+<span class="text-secondary font-bold">Medium</span> • Backtracking
+                                    </p>
+</div>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors" data-icon="chevron_right">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual FAB (Hidden as per mandate for detailed/dashboard screens unless strictly needed) -->
+<!-- Suppressed to prioritize the clean dashboard layout -->
+</body></html>

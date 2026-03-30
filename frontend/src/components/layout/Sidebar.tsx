@@ -18,8 +18,6 @@ interface SidebarProps {
 const DESKTOP_COLLAPSE_BREAKPOINT = 1100
 const MOBILE_LAYOUT_BREAKPOINT = 768
 const STORAGE_KEY = 'sidebar-collapsed'
-const COLLAPSED_SHELL_WIDTH = '96px'
-const EXPANDED_SHELL_WIDTH = '288px'
 
 const workspaceNavItems: NavItem[] = [
   { label: '首页', path: '/dashboard', icon: 'dashboard' },
@@ -63,18 +61,6 @@ function getInitialCollapsedState() {
   return window.innerWidth < DESKTOP_COLLAPSE_BREAKPOINT
 }
 
-function getSidebarShellWidth(collapsed: boolean) {
-  if (typeof window === 'undefined') {
-    return COLLAPSED_SHELL_WIDTH
-  }
-
-  if (window.innerWidth < MOBILE_LAYOUT_BREAKPOINT) {
-    return '0px'
-  }
-
-  return collapsed ? COLLAPSED_SHELL_WIDTH : EXPANDED_SHELL_WIDTH
-}
-
 export function Sidebar({ mode = 'workspace' }: SidebarProps) {
   const location = useLocation()
   const { user, logout } = useAuth()
@@ -95,7 +81,6 @@ export function Sidebar({ mode = 'workspace' }: SidebarProps) {
     const applyState = (nextCollapsed: boolean) => {
       setCollapsed(nextCollapsed)
       document.documentElement.dataset.sidebarCollapsed = nextCollapsed ? 'true' : 'false'
-      document.documentElement.style.setProperty('--sidebar-shell-width', getSidebarShellWidth(nextCollapsed))
     }
 
     applyState(getInitialCollapsedState())
@@ -116,7 +101,6 @@ export function Sidebar({ mode = 'workspace' }: SidebarProps) {
       return
     }
     document.documentElement.dataset.sidebarCollapsed = collapsed ? 'true' : 'false'
-    document.documentElement.style.setProperty('--sidebar-shell-width', getSidebarShellWidth(collapsed))
   }, [collapsed])
 
   const handleToggle = () => {
@@ -163,8 +147,8 @@ export function Sidebar({ mode = 'workspace' }: SidebarProps) {
     <aside
       aria-label="Global sidebar"
       className={cn(
-        'fixed inset-y-0 left-0 z-40 hidden shrink-0 flex-col bg-[rgb(var(--sidebar-bg-rgb))] px-3 py-4 text-[rgb(var(--foreground-rgb))] shadow-[20px_0_60px_rgba(0,22,74,0.06)] backdrop-blur-xl md:flex',
-        collapsed ? 'w-[96px]' : 'w-[288px]',
+        'fixed left-0 top-0 h-screen w-64 z-50 hidden flex-col bg-[rgb(var(--sidebar-bg-rgb))] px-4 py-4 text-[rgb(var(--foreground-rgb))] shadow-[20px_0_60px_rgba(0,22,74,0.06)] backdrop-blur-xl md:flex',
+        collapsed ? 'w-24' : 'w-64',
       )}
     >
       <div className="mb-6 flex items-center justify-between gap-3 px-2">

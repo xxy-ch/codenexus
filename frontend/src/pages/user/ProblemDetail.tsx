@@ -1,209 +1,317 @@
-import { Bookmark, ChevronRight, Edit3, Rocket } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
-import { cn } from '@/lib/utils'
+import { useParams, Link } from 'react-router-dom'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { DifficultyBadge } from '@/components/ui/StatusBadge'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { useProblem } from '@/hooks/useProblems'
+import type { Problem } from '@/types/problems'
 
-const insights = [
-  { label: '难度', value: '困难', tone: 'bg-[#006847] text-white' },
-  { label: '通过率', value: '34.8%' },
-  { label: '命题人', value: '建筑算法教研组', accent: 'text-[#003d9b]' },
-  { label: '收录时间', value: '2023 年 10 月 24 日' },
-]
+interface ProblemDetailProps {
+  problemId?: string
+}
 
-const relatedProblems = [
-  {
-    title: '直方图最大矩形',
-    difficulty: '简单',
-    difficultyTone: 'text-[#006847]',
-    description: '经典单调栈题，适合作为本题的前置训练。',
-  },
-  {
-    title: '区间树合并',
-    difficulty: '中等',
-    difficultyTone: 'text-[#003d9b]',
-    description: '处理重叠坐标与区间覆盖，帮助理解轮廓切分。',
-  },
-  {
-    title: '二维范围求和',
-    difficulty: '进阶',
-    difficultyTone: 'text-[#93000a]',
-    description: '进一步训练空间划分与区域查询能力。',
-  },
-]
+function ProblemDetailContent({ problem }: { problem: Problem }) {
+  const insights = [
+    { label: 'Difficulty', value: problem.difficulty },
+    { label: 'Points', value: `${problem.points} pts` },
+    { label: 'Time Limit', value: `${problem.time_limit} ms` },
+    { label: 'Memory Limit', value: `${Math.round(problem.memory_limit / 1024)} MB` },
+  ]
 
-export function ProblemDetail() {
+  const sampleInput = `3
+2 10 9
+3 15 7
+12 8 18`
+
+  const sampleOutput = `[2, 10, 3, 15, 7, 10, 9, 0, 12, 8, 18, 0]`
+
   return (
-    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 lg:py-10">
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1.75fr)_360px] xl:gap-12">
-        <article className="space-y-10">
-          <header className="space-y-5">
-            <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-[#667896]">
-              <span>题库</span>
-              <ChevronRight className="h-4 w-4" />
-              <span>动态规划</span>
-              <ChevronRight className="h-4 w-4" />
-              <span className="font-bold text-[#003d9b]">1042. 天际线切分</span>
-            </nav>
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,1.75fr)_360px] xl:gap-12">
+      <article className="space-y-10">
+        {/* Breadcrumb */}
+        <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-on-surface-variant">
+          <Link to="/problems" className="hover:text-primary transition-colors">
+            Problems
+          </Link>
+          <span className="material-symbols-outlined text-sm">chevron_right</span>
+          <span className="font-bold text-primary">{problem.id}. {problem.title}</span>
+        </nav>
 
-            <div className="space-y-4">
-              <h1 className="font-['Manrope'] text-[2.5rem] font-extrabold leading-tight tracking-[-0.05em] text-[#131b2e] md:text-[3.2rem]">
-                天际线切分优化
-              </h1>
-              <div className="max-w-4xl space-y-4 text-[15px] leading-8 text-[#4f5f7b] md:text-[17px]">
-                <p>
-                  给定一组建筑轮廓，请把最终形成的城市天际线切分成最少的不相交矩形区域，并满足结构稳定性约束。
-                </p>
-                <p>
-                  每栋建筑由三个整数 <code className="rounded bg-[#e9eeff] px-1.5 py-0.5 text-[#003d9b]">L</code>、
-                  <code className="rounded bg-[#e9eeff] px-1.5 py-0.5 text-[#003d9b]">H</code>、
-                  <code className="rounded bg-[#e9eeff] px-1.5 py-0.5 text-[#003d9b]">R</code> 表示，分别对应左边界、高度和右边界。
-                </p>
-              </div>
+        {/* Title Section */}
+        <header className="space-y-5">
+          <div className="flex flex-wrap items-center gap-3">
+            <DifficultyBadge difficulty={problem.difficulty} />
+            <span className="text-sm font-mono text-on-surface-variant">ID: {problem.id}</span>
+          </div>
+
+          <h1 className="font-headline text-3xl md:text-4xl font-extrabold tracking-tight text-on-surface">
+            {problem.title}
+          </h1>
+
+          {problem.description && (
+            <div className="max-w-4xl space-y-4 text-base leading-8 text-on-surface-variant">
+              <p>{problem.description}</p>
             </div>
-          </header>
+          )}
+        </header>
 
-          <section className="space-y-6">
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {/* Constraints Card */}
+        <Card variant="default" className="p-0">
+          <CardContent className="p-0">
+            <div className="grid gap-3 p-6 md:grid-cols-2 xl:grid-cols-4">
               {[
-                ['时间限制', '1000 ms'],
-                ['内存限制', '256 MB'],
-                ['题目分值', '2400'],
+                ['Time Limit', `${problem.time_limit} ms`],
+                ['Memory Limit', `${Math.round(problem.memory_limit / 1024)} MB`],
+                ['Points', problem.points],
+                ['Difficulty', problem.difficulty],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-[14px] bg-[#eef3ff] px-5 py-4">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#6b7ca7]">{label}</p>
-                  <p className="mt-2 font-['Manrope'] text-[1.35rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">
-                    {value}
+                <div key={label} className="rounded-lg bg-surface-container-low px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    {label}
+                  </p>
+                  <p className="mt-2 font-headline text-xl font-extrabold text-on-surface">
+                    {value as string}
                   </p>
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
 
-            <SurfaceCard className="space-y-8 p-7 md:p-8">
-              <section className="space-y-4">
-                <h2 className="flex items-center gap-2 font-['Manrope'] text-[1.35rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">
-                  题意说明
-                </h2>
-                <div className="space-y-4 text-[15px] leading-8 text-[#4f5f7b]">
-                  <p>请输出一组关键拐点，描述天际线从左到右的轮廓变化过程。相邻关键点之间表示一段稳定的水平区间。</p>
-                  <p>如果两栋建筑有重叠，较高的建筑会遮盖较低的部分；当高建筑结束后，需要恢复到底层轮廓。</p>
-                </div>
-              </section>
-
-              <section className="space-y-4">
-                <h2 className="font-['Manrope'] text-[1.35rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">
-                  约束与限制
-                </h2>
-                <ul className="space-y-3">
-                  {[
-                    '1 <= n <= 10^5',
-                    '0 <= L < R <= 10^9',
-                    '1 <= H <= 10^9',
-                    '时间限制：1.0 秒',
-                    '内存限制：256 MB',
-                  ].map((item) => (
-                    <li key={item} className="flex items-center gap-3 text-sm text-[#4f5f7b]">
-                      <span className="h-2 w-2 rounded-full bg-[#0052cc]" />
-                      <code className="font-mono text-[13px]">{item}</code>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-
-              <section className="space-y-5">
-                <h2 className="font-['Manrope'] text-[1.35rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">
-                  示例 1
-                </h2>
-                <div className="space-y-4 rounded-[18px] bg-[#f2f3ff] p-5 md:p-6">
-                  <div className="grid gap-4 md:grid-cols-2 md:gap-8">
-                    <div className="rounded-[14px] border border-[#e4e8f4] bg-white px-5 py-4">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6b7ca7]">输入</p>
-                      <pre className="mt-3 whitespace-pre-wrap font-mono text-sm leading-7 text-[#131b2e]">3{'\n'}2 10 9{'\n'}3 15 7{'\n'}12 8 18</pre>
-                    </div>
-                    <div className="rounded-[14px] border border-[#e4e8f4] bg-white px-5 py-4">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#6b7ca7]">输出</p>
-                      <pre className="mt-3 whitespace-pre-wrap font-mono text-sm leading-7 text-[#131b2e]">[2, 10, 3, 15, 7, 10, 9, 0, 12, 8, 18, 0]</pre>
-                    </div>
-                  </div>
-                  <div className="border-t border-[#d8dfef] pt-4 text-xs leading-6 text-[#667896]">
-                    三座建筑在区间内发生重叠，输出序列记录了轮廓上升、下降和归零的关键转折点。
-                  </div>
-                </div>
-              </section>
-            </SurfaceCard>
+        {/* Problem Content */}
+        <Card variant="default" className="space-y-8 p-6 md:p-8">
+          <section className="space-y-4">
+            <h2 className="font-headline text-xl font-extrabold text-on-surface">
+              Description
+            </h2>
+            {problem.description ? (
+              <div className="prose prose-sm max-w-none text-on-surface-variant">
+                <p>{problem.description}</p>
+              </div>
+            ) : (
+              <p className="text-on-surface-variant">No description available.</p>
+            )}
           </section>
-        </article>
 
-        <aside className="space-y-8 xl:pt-[72px]">
-          <SurfaceCard tone="muted" className="space-y-4 rounded-[20px] p-6">
-            <Link
-              to="/problems/1/solve"
-              className="flex items-center justify-center gap-2 rounded-[14px] bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-5 py-4 text-base font-semibold text-white shadow-[0_18px_38px_rgba(0,61,155,0.18)]"
-            >
-              <Rocket className="h-4 w-4" />
-              提交代码
-            </Link>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 rounded-[14px] bg-white px-4 py-3 text-sm font-semibold text-[#244171] transition-colors hover:bg-[#edf1ff]"
-              >
-                <Edit3 className="h-4 w-4" />
-                记录笔记
-              </button>
-              <button
-                type="button"
-                className="flex items-center justify-center gap-2 rounded-[14px] bg-white px-4 py-3 text-sm font-semibold text-[#244171] transition-colors hover:bg-[#edf1ff]"
-              >
-                <Bookmark className="h-4 w-4" />
-                收藏题目
-              </button>
-            </div>
-          </SurfaceCard>
+          {problem.input_format && (
+            <section className="space-y-4">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">
+                Input Format
+              </h2>
+              <div className="prose prose-sm max-w-none text-on-surface-variant">
+                <p>{problem.input_format}</p>
+              </div>
+            </section>
+          )}
 
-          <div className="space-y-4">
-            <h3 className="px-1 text-sm font-bold uppercase tracking-[0.22em] text-[#6b7ca7]">题目洞察</h3>
-            <div className="overflow-hidden rounded-[20px] border border-[#e4e8f4] bg-white">
-              {insights.map((item, index) => (
-                <div
-                  key={item.label}
-                  className={cn(
-                    'flex items-center justify-between gap-3 px-5 py-4',
-                    index !== insights.length - 1 && 'border-b border-[#eef2f7]',
-                  )}
-                >
-                  <span className="text-sm font-medium text-[#5f6d87]">{item.label}</span>
-                  <span className={cn('text-sm font-bold text-[#131b2e]', item.accent, item.tone && `rounded-full px-3 py-1 text-xs tracking-[0.14em] ${item.tone}`)}>
-                    {item.value}
-                  </span>
+          {problem.output_format && (
+            <section className="space-y-4">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">
+                Output Format
+              </h2>
+              <div className="prose prose-sm max-w-none text-on-surface-variant">
+                <p>{problem.output_format}</p>
+              </div>
+            </section>
+          )}
+
+          {problem.constraints && (
+            <section className="space-y-4">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">
+                Constraints
+              </h2>
+              <ul className="space-y-2">
+                {problem.constraints.split('\n').map((constraint, index) => (
+                  <li key={index} className="flex items-start gap-3 text-sm text-on-surface-variant">
+                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                    <code className="font-mono text-sm">{constraint}</code>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Sample Test Case */}
+          <section className="space-y-5">
+            <h2 className="font-headline text-xl font-extrabold text-on-surface">
+              Sample Test Case
+            </h2>
+            <div className="space-y-4 rounded-xl bg-surface-container-low p-5 md:p-6">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-lg border border-outline-variant/20 bg-white px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    Input
+                  </p>
+                  <pre className="mt-3 whitespace-pre-wrap font-mono text-sm text-on-surface">
+                    {sampleInput}
+                  </pre>
                 </div>
-              ))}
+                <div className="rounded-lg border border-outline-variant/20 bg-white px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    Output
+                  </p>
+                  <pre className="mt-3 whitespace-pre-wrap font-mono text-sm text-on-surface">
+                    {sampleOutput}
+                  </pre>
+                </div>
+              </div>
+              <div className="border-t border-outline-variant/10 pt-4 text-xs leading-6 text-on-surface-variant">
+                Sample input and output for testing your solution.
+              </div>
             </div>
-          </div>
+          </section>
 
-          <div className="space-y-4">
-            <h3 className="px-1 text-sm font-bold uppercase tracking-[0.22em] text-[#6b7ca7]">相关挑战</h3>
-            <div className="space-y-3">
-              {relatedProblems.map((problem) => (
-                <Link
-                  key={problem.title}
-                  to="/problems"
-                  className="group block rounded-[16px] border-l-4 border-transparent bg-[#f2f3ff] p-4 transition-all hover:border-[#003d9b] hover:bg-[#e9eeff]"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <h4 className="text-sm font-bold text-[#131b2e] transition-colors group-hover:text-[#003d9b]">
-                      {problem.title}
-                    </h4>
-                    <span className={cn('shrink-0 text-xs font-bold', problem.difficultyTone)}>
-                      {problem.difficulty}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-xs leading-5 text-[#667896]">{problem.description}</p>
-                </Link>
-              ))}
-            </div>
+          {/* Tags */}
+          {problem.tags && problem.tags.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="font-headline text-xl font-extrabold text-on-surface">
+                Tags
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {problem.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex rounded-full bg-surface-container-low px-3 py-1 text-sm font-semibold text-on-surface"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+        </Card>
+      </article>
+
+      {/* Sidebar */}
+      <aside className="space-y-8 xl:pt-20">
+        {/* Action Card */}
+        <Card className="space-y-4 p-6">
+          <Button
+            as={Link}
+            to={`/problems/${problem.id}/solve`}
+            variant="gradient"
+            size="lg"
+            fullWidth
+            leftIcon={<span className="material-symbols-outlined text-lg">rocket_launch</span>}
+          >
+            Solve Problem
+          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="outline" size="sm" fullWidth>
+              <span className="material-symbols-outlined text-sm mr-1">edit_note</span>
+              Notes
+            </Button>
+            <Button variant="outline" size="sm" fullWidth>
+              <span className="material-symbols-outlined text-sm mr-1">bookmark</span>
+              Save
+            </Button>
           </div>
-        </aside>
+        </Card>
+
+        {/* Insights Card */}
+        <Card variant="surface" className="overflow-hidden p-0">
+          <div className="border-b border-outline-variant/10 px-6 py-4">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-on-surface-variant">
+              Problem Insights
+            </h3>
+          </div>
+          <div className="divide-y divide-outline-variant/10">
+            {insights.map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-between gap-3 px-6 py-4"
+              >
+                <span className="text-sm font-medium text-on-surface-variant">
+                  {item.label}
+                </span>
+                <span className="text-sm font-bold text-on-surface">
+                  {item.value as string}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Related Problems */}
+        <div className="space-y-4">
+          <h3 className="px-1 text-sm font-bold uppercase tracking-wider text-on-surface-variant">
+            Related Problems
+          </h3>
+          <div className="space-y-3">
+            {[
+              { id: 2, title: 'Two Sum', difficulty: 'easy' as const, description: 'Classic array problem' },
+              { id: 3, title: 'Merge Intervals', difficulty: 'medium' as const, description: 'Interval merging technique' },
+            ].map((related) => (
+              <Link
+                key={related.id}
+                to={`/problems/${related.id}`}
+                className="group block rounded-lg border-l-4 border-transparent bg-surface-container-low p-4 transition-all hover:border-primary hover:bg-surface-container"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <h4 className="text-sm font-bold text-on-surface transition-colors group-hover:text-primary">
+                    {related.title}
+                  </h4>
+                  <DifficultyBadge difficulty={related.difficulty} />
+                </div>
+                <p className="mt-2 text-xs leading-5 text-on-surface-variant">
+                  {related.description}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </aside>
+    </div>
+  )
+}
+
+export function ProblemDetail({ problemId }: ProblemDetailProps) {
+  const { id } = useParams<{ id: string }>()
+  const effectiveProblemId = problemId || id
+
+  const { data: problem, isLoading, isError, error } = useProblem(effectiveProblemId || '')
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <LoadingState message="Loading problem..." />
       </div>
+    )
+  }
+
+  if (isError || !problem) {
+    // Check if this is an authentication error (401)
+    const isAuthError = (error as any)?.response?.status === 401 ||
+                        (error as any)?.message?.includes('401')
+
+    return (
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <ErrorState
+          title={isAuthError ? 'Authentication Required' : 'Problem not found'}
+          message={
+            isAuthError
+              ? 'Please log in to view this problem.'
+              : 'The problem you\'re looking for doesn\'t exist or you don\'t have access to it.'
+          }
+          action={{
+            label: isAuthError ? 'Go to Login' : 'Back to Problems',
+            onClick: () => {
+              if (isAuthError) {
+                window.location.href = '/login'
+              } else {
+                window.history.back()
+              }
+            },
+          }}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 lg:py-10">
+      <ProblemDetailContent problem={problem} />
     </div>
   )
 }

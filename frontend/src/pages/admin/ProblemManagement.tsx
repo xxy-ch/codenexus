@@ -1,28 +1,27 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ArrowRight, BookOpen, EyeOff, LibraryBig, Pencil, Plus, RotateCcw, ShieldCheck, SlidersHorizontal, Trash2 } from 'lucide-react'
-import { EmptyState } from '@/components/page/EmptyState'
-import { FieldGroup } from '@/components/page/FieldGroup'
-import { FilterBar } from '@/components/page/FilterBar'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SectionBlock } from '@/components/page/SectionBlock'
-import { StatCard } from '@/components/page/StatCard'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
-import { adminService } from '@/services/admin'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { Select } from '@/components/ui/Select'
-import { Textarea } from '@/components/ui/Textarea'
-import { Loading } from '@/components/ui/Loading'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { adminService } from '@/services/admin'
 import { cn } from '@/lib/utils'
 
 type DifficultyType = 'easy' | 'medium' | 'hard'
 type SortType = 'recent' | 'title' | 'submissions' | 'acceptance'
 
-const DIFFICULTY_CONFIG = {
-  easy: { label: '简单', color: 'bg-green-100 text-green-700' },
-  medium: { label: '中等', color: 'bg-amber-100 text-amber-700' },
-  hard: { label: '困难', color: 'bg-rose-100 text-rose-700' },
+const DIFFICULTY_CONFIG: Record<DifficultyType, { label: string; className: string }> = {
+  easy: { label: '简单', className: 'bg-tertiary-container text-on-tertiary-fixed-variant' },
+  medium: { label: '中等', className: 'bg-secondary-container text-on-secondary-container' },
+  hard: { label: '困难', className: 'bg-error-container text-on-error-container' },
+}
+
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  published: { label: '已发布', className: 'bg-tertiary-container text-on-tertiary-fixed-variant' },
+  draft: { label: '草稿', className: 'bg-secondary-container text-on-secondary-container' },
+  archived: { label: '已归档', className: 'bg-surface-container-low text-on-surface-variant' },
 }
 
 export function ProblemManagement() {
@@ -136,59 +135,100 @@ export function ProblemManagement() {
   }
 
   if (isLoading) {
-    return <Loading message="加载题目管理视图..." />
+    return (
+      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+        <LoadingState message="加载题目管理视图..." />
+      </div>
+    )
   }
 
   if (error) {
     return (
-      <EmptyState
-        title="题目管理加载失败"
-        description="当前无法读取真实题库数据。"
-        action={<Button onClick={() => refetch()}>重试</Button>}
-        className="border-rose-200 bg-rose-50"
-      />
+      <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-8">
+        <ErrorState
+          title="题目管理加载失败"
+          description="当前无法读取真实题库数据。"
+          action={{ label: '重试', onClick: () => refetch() }}
+        />
+      </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        eyebrow="管理台"
-        breadcrumb={['题库管理']}
-        title="题目管理"
-        description="题库后台切到统一的管理模式。创建、编辑、删除、筛选和可见性维护继续使用当前 `/problems` 读写链路，不改接口行为。"
-        actions={
-          <>
-            <Button variant="outline" onClick={() => refetch()}>
-              <RotateCcw className="h-4 w-4" />
-              刷新
-            </Button>
-            <div className="rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">增删改查在线</div>
-          </>
-        }
-      />
-
-        <SurfaceCard tone="muted" className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-1">
-          <h2 className="text-base font-semibold text-slate-950">最小可交付题目后台</h2>
-          <p className="max-w-3xl text-sm leading-6 text-slate-600">
-            本页负责题目创建、基础编辑、删除和列表筛选。更细粒度题面与判题数据仍分别在“题面配置”和“判题设置”页面维护。
+    <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8 space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="max-w-3xl space-y-2">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+            管理台 / 题库管理
+          </p>
+          <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+            题目管理
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
+            题库后台提供题目创建、编辑、删除和筛选功能。所有操作连接真实 API 接口。
           </p>
         </div>
-        <div className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
-          创建 / 编辑 / 删除已启用
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => refetch()}>
+            <span className="material-symbols-outlined text-base">refresh</span>
+            刷新
+          </Button>
+          <div className="rounded-full bg-on-surface px-4 py-2 text-sm font-semibold text-surface">
+            增删改查在线
+          </div>
         </div>
-      </SurfaceCard>
+      </div>
 
+      {/* Info Card */}
+      <Card variant="surface" className="flex flex-col gap-3 p-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-base font-semibold text-on-surface">最小可交付题目后台</h2>
+          <p className="max-w-3xl text-sm leading-6 text-on-surface-variant">
+            本页负责题目创建、基础编辑、删除和列表筛选。更细粒度题面与判题数据仍分别在"题面配置"和"判题设置"页面维护。
+          </p>
+        </div>
+        <span className="rounded-full border border-tertiary bg-tertiary-container px-4 py-2 text-xs font-semibold uppercase tracking-wider text-on-tertiary-fixed-variant">
+          创建 / 编辑 / 删除已启用
+        </span>
+      </Card>
+
+      {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="题目总数" value={total} helper="当前分页条件下的总题目量。" />
-        <StatCard label="已发布" value={<span className="text-emerald-600">{stats.publishedCount}</span>} helper="当前列表中的公开题目数量。" />
-        <StatCard label="草稿 / 隐藏" value={<span className="text-amber-600">{stats.draftCount}</span>} helper="按真实可见性映射出的非公开条目。" />
-        <StatCard label="低通过率" value={<span className="text-rose-600">{stats.lowCoverageCount}</span>} helper="通过率低于 30% 或暂无提交的题目。" />
+        <Card variant="default" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">题目总数</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-on-surface">{total}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">当前分页条件下的总题目量</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">已发布</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-tertiary">{stats.publishedCount}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">当前列表中的公开题目数量</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">草稿 / 隐藏</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-secondary">{stats.draftCount}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">按真实可见性映射出的非公开条目</p>
+        </Card>
+        <Card variant="surface" className="p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">低通过率</p>
+          <p className="mt-4 font-headline text-3xl font-extrabold text-error">{stats.lowCoverageCount}</p>
+          <p className="mt-2 text-sm text-on-surface-variant">通过率低于 30% 或暂无提交的题目</p>
+        </Card>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <SectionBlock title={formMode === 'create' ? '新建题目' : `编辑题目 #${editingId}`} description="这里维护后台最小可交付题目信息。">
+        {/* Form Card */}
+        <Card variant="default" className="p-6">
+          <div className="mb-4">
+            <h2 className="font-headline text-xl font-extrabold text-on-surface">
+              {formMode === 'create' ? '新建题目' : `编辑题目 #${editingId}`}
+            </h2>
+            <p className="mt-2 text-sm text-on-surface-variant">
+              这里维护后台最小可交付题目信息
+            </p>
+          </div>
+
           <div className="space-y-4">
             {formMode === 'edit' ? (
               <div className="flex justify-end">
@@ -198,62 +238,71 @@ export function ProblemManagement() {
               </div>
             ) : null}
 
-            <FieldGroup label="题目标题">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-on-surface">题目标题</label>
               <Input
                 value={form.title}
                 onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                 placeholder="题目标题"
               />
-            </FieldGroup>
+            </div>
 
-            <FieldGroup label="题目描述">
-              <Textarea
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-on-surface">题目描述</label>
+              <textarea
                 value={form.description}
                 onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                 placeholder="题目描述"
-                className="min-h-[180px]"
+                rows={6}
+                className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
               />
-            </FieldGroup>
+            </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <FieldGroup label="难度">
-                <Select
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">难度</label>
+                <select
                   value={form.difficulty}
                   onChange={(e) => setForm((prev) => ({ ...prev, difficulty: e.target.value as DifficultyType }))}
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="easy">简单</option>
                   <option value="medium">中等</option>
                   <option value="hard">困难</option>
-                </Select>
-              </FieldGroup>
-              <FieldGroup label="可见性">
-                <Select
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">可见性</label>
+                <select
                   value={form.visibility}
                   onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value as typeof form.visibility }))}
+                  className="w-full rounded-lg border border-outline-variant bg-surface px-4 py-3 text-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="private">仅自己可见</option>
                   <option value="public">公开</option>
                   <option value="campus">校区可见</option>
                   <option value="class">班级可见</option>
-                </Select>
-              </FieldGroup>
+                </select>
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <FieldGroup label="时间限制">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">时间限制 (ms)</label>
                 <Input
                   type="number"
                   value={form.time_limit}
                   onChange={(e) => setForm((prev) => ({ ...prev, time_limit: Number(e.target.value) }))}
                 />
-              </FieldGroup>
-              <FieldGroup label="内存限制">
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-on-surface">内存限制 (KB)</label>
                 <Input
                   type="number"
                   value={form.memory_limit}
                   onChange={(e) => setForm((prev) => ({ ...prev, memory_limit: Number(e.target.value) }))}
                 />
-              </FieldGroup>
+              </div>
             </div>
 
             <Button
@@ -261,19 +310,21 @@ export function ProblemManagement() {
               onClick={() => (formMode === 'create' ? createMutation.mutate() : updateMutation.mutate())}
               disabled={!form.title || !form.description || createMutation.isPending || updateMutation.isPending}
             >
-              <Plus className="h-4 w-4" />
+              <span className="material-symbols-outlined text-base">add</span>
               {submitLabel}
             </Button>
           </div>
-        </SectionBlock>
+        </Card>
 
-        <SectionBlock title="题库列表" description="共享筛选条和密集表格统一了管理端浏览模式。">
-          <div className="space-y-5">
-            <FilterBar>
-              <div className="min-w-[260px] flex-1">
+        {/* Problem List */}
+        <div className="space-y-6">
+          {/* Filters */}
+          <Card className="p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+              <div className="flex-1">
                 <Input
-                  aria-label="搜索题目"
                   type="search"
+                  aria-label="搜索题目"
                   placeholder="搜索题目标题、ID 或标签..."
                   value={search}
                   onChange={(e) => {
@@ -282,85 +333,94 @@ export function ProblemManagement() {
                   }}
                 />
               </div>
-              <Select
+              <select
                 aria-label="难度筛选"
                 value={difficulty}
                 onChange={(e) => {
                   setDifficulty(e.target.value)
                   setPage(1)
                 }}
+                className="h-10 rounded-lg border border-outline-variant bg-surface px-4 text-sm font-medium text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="all">所有难度</option>
                 <option value="easy">简单</option>
                 <option value="medium">中等</option>
                 <option value="hard">困难</option>
-              </Select>
-              <Select
+              </select>
+              <select
                 aria-label="状态筛选"
                 value={status}
                 onChange={(e) => {
                   setStatus(e.target.value)
                   setPage(1)
                 }}
+                className="h-10 rounded-lg border border-outline-variant bg-surface px-4 text-sm font-medium text-on-surface outline-none focus:ring-2 focus:ring-primary/20"
               >
                 <option value="all">所有状态</option>
                 <option value="published">已发布</option>
                 <option value="draft">草稿</option>
                 <option value="archived">已归档</option>
-              </Select>
-              <div className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                <SlidersHorizontal className="h-4 w-4" />
-                平均 {stats.averageAcceptance}%
-              </div>
-            </FilterBar>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {[
-                { value: 'recent', label: '最新' },
-                { value: 'title', label: '标题' },
-                { value: 'submissions', label: '提交数' },
-                { value: 'acceptance', label: '通过率' },
-              ].map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={sortBy === option.value ? 'primary' : 'secondary'}
-                  onClick={() => setSortBy(option.value as SortType)}
-                  className={cn(sortBy === option.value ? 'shadow-[0_10px_20px_rgba(15,23,42,0.12)]' : '')}
-                >
-                  {option.label}
-                </Button>
-              ))}
+              </select>
             </div>
+          </Card>
 
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 bg-white">
-                <thead className="bg-slate-50">
+          {/* Sort Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { value: 'recent', label: '最新' },
+              { value: 'title', label: '标题' },
+              { value: 'submissions', label: '提交数' },
+              { value: 'acceptance', label: '通过率' },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setSortBy(option.value as SortType)}
+                className={cn(
+                  'h-9 rounded-full px-4 text-sm font-semibold transition-colors',
+                  sortBy === option.value
+                    ? 'bg-primary text-on-primary'
+                    : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+            <span className="ml-2 inline-flex items-center gap-2 rounded-full bg-surface-container-low px-4 py-2 text-xs font-semibold uppercase tracking-wider text-on-surface-variant">
+              <span className="material-symbols-outlined text-base">tune</span>
+              平均 {stats.averageAcceptance}%
+            </span>
+          </div>
+
+          {/* Table */}
+          <Card className="overflow-hidden p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-outline-variant/10">
+                <thead className="bg-surface-container-low/50">
                   <tr>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">编号 / 标题</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">难度</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">状态</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">标签</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">统计</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">操作</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">编号 / 标题</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">难度</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">状态</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">标签</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">统计</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-on-surface-variant">操作</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-outline-variant/10">
                   {problems.map((problem) => {
                     const acceptanceRate =
                       problem.submissions_count > 0 ? Math.round((problem.accepted_count / problem.submissions_count) * 100) : 0
 
                     return (
-                      <tr key={problem.id} className="align-top transition hover:bg-slate-50">
+                      <tr key={problem.id} className="align-top transition-colors hover:bg-surface-container-low/30">
                         <td className="px-5 py-4">
-                          <div className="font-medium text-slate-950">
+                          <div className="font-medium text-on-surface">
                             #{problem.id} {problem.title}
                           </div>
-                          <div className="mt-1 text-xs text-slate-500">作者：{problem.author_username || '系统'}</div>
+                          <div className="mt-1 text-xs text-on-surface-variant">作者：{problem.author_username || '系统'}</div>
                         </td>
                         <td className="px-5 py-4">
-                          <span className={cn('rounded-full px-3 py-1 text-xs font-medium', DIFFICULTY_CONFIG[problem.difficulty as DifficultyType]?.color)}>
+                          <span className={cn('rounded-full px-3 py-1 text-xs font-medium', DIFFICULTY_CONFIG[problem.difficulty as DifficultyType]?.className)}>
                             {DIFFICULTY_CONFIG[problem.difficulty as DifficultyType]?.label ?? problem.difficulty}
                           </span>
                         </td>
@@ -368,50 +428,48 @@ export function ProblemManagement() {
                           <span
                             className={cn(
                               'rounded-full px-3 py-1 text-xs font-medium',
-                              problem.status === 'published' && 'bg-emerald-100 text-emerald-700',
-                              problem.status === 'draft' && 'bg-amber-100 text-amber-700',
-                              problem.status === 'archived' && 'bg-slate-100 text-slate-700',
+                              STATUS_CONFIG[problem.status]?.className ?? STATUS_CONFIG.draft.className
                             )}
                           >
-                            {problem.status === 'published' ? '已发布' : problem.status === 'draft' ? '草稿' : '已归档'}
+                            {STATUS_CONFIG[problem.status]?.label ?? problem.status}
                           </span>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex max-w-xs flex-wrap gap-2">
                             {problem.tags.length > 0 ? (
                               problem.tags.slice(0, 3).map((tag) => (
-                                <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
+                                <span key={tag} className="rounded-full bg-surface-container-low px-2.5 py-1 text-xs text-on-surface-variant">
                                   {tag}
                                 </span>
                               ))
                             ) : (
-                              <span className="text-sm text-slate-400">暂无标签</span>
+                              <span className="text-sm text-on-surface-variant">暂无标签</span>
                             )}
                           </div>
                         </td>
-                        <td className="px-5 py-4 text-sm text-slate-700">
+                        <td className="px-5 py-4 text-sm text-on-surface">
                           <div>{problem.submissions_count} 次提交</div>
-                          <div className="mt-1 text-slate-500">
+                          <div className="mt-1 text-on-surface-variant">
                             {problem.accepted_count} 次通过 · {acceptanceRate}%
                           </div>
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex flex-wrap gap-2">
                             <Button variant="outline" size="sm" onClick={() => startEdit(problem)}>
-                              <Pencil className="h-4 w-4" />
+                              <span className="material-symbols-outlined text-base">edit</span>
                               编辑
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
-                              className="border-rose-200 text-rose-600 hover:border-rose-300 hover:bg-rose-50 hover:text-rose-700"
+                              className="border-error-container text-error hover:bg-error-container/10"
                               onClick={() => {
                                 if (window.confirm(`确认删除题目 #${problem.id} ${problem.title} ?`)) {
                                   deleteMutation.mutate(problem.id)
                                 }
                               }}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <span className="material-symbols-outlined text-base">delete</span>
                               删除
                             </Button>
                           </div>
@@ -424,27 +482,36 @@ export function ProblemManagement() {
             </div>
 
             {problems.length === 0 ? (
-              <EmptyState title="未找到题目" description="尝试调整筛选条件，或者确认当前环境是否已导入基础题库数据。" className="shadow-none" />
+              <div className="p-12">
+                <EmptyState
+                  title="未找到题目"
+                  description="尝试调整筛选条件，或者确认当前环境是否已导入基础题库数据。"
+                  icon={<span className="material-symbols-outlined text-6xl text-on-surface-variant">library_books</span>}
+                />
+              </div>
             ) : null}
 
-            <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 md:flex-row md:items-center md:justify-between">
-              <div className="text-sm text-slate-500">
+            {/* Pagination */}
+            <div className="flex flex-col gap-4 border-t border-outline-variant/10 px-6 py-4 md:flex-row md:items-center md:justify-between">
+              <div className="text-sm text-on-surface-variant">
                 当前交付已接通后台 CRUD，第 {page} / {totalPages} 页
               </div>
               <div className="flex items-center gap-3">
                 <Button variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
-                  <ArrowLeft className="h-4 w-4" />
+                  <span className="material-symbols-outlined text-base">chevron_left</span>
                   上一页
                 </Button>
-                <Button variant="primary" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
+                <Button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
                   下一页
-                  <ArrowRight className="h-4 w-4" />
+                  <span className="material-symbols-outlined text-base">chevron_right</span>
                 </Button>
               </div>
             </div>
-          </div>
-        </SectionBlock>
+          </Card>
+        </div>
       </div>
     </div>
   )
 }
+
+export default ProblemManagement

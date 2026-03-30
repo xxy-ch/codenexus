@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Contests | Architectural Scholar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#003d9b",
+              "on-secondary-fixed-variant": "#3a485b",
+              "tertiary-fixed": "#85f8c4",
+              "secondary-fixed-dim": "#b9c7df",
+              "secondary-fixed": "#d5e3fc",
+              "surface-container-lowest": "#ffffff",
+              "primary-container": "#0052cc",
+              "on-secondary": "#ffffff",
+              "inverse-on-surface": "#eef0ff",
+              "background": "#faf8ff",
+              "outline": "#737685",
+              "on-primary-fixed": "#001848",
+              "on-primary-container": "#c4d2ff",
+              "on-background": "#131b2e",
+              "surface-dim": "#d2d9f4",
+              "secondary": "#515f74",
+              "primary-fixed": "#dae2ff",
+              "on-surface": "#131b2e",
+              "surface-variant": "#dae2fd",
+              "on-primary": "#ffffff",
+              "surface-container-low": "#f2f3ff",
+              "surface-bright": "#faf8ff",
+              "primary-fixed-dim": "#b2c5ff",
+              "on-secondary-container": "#57657a",
+              "inverse-surface": "#283044",
+              "secondary-container": "#d5e3fc",
+              "on-tertiary": "#ffffff",
+              "outline-variant": "#c3c6d6",
+              "on-secondary-fixed": "#0d1c2e",
+              "surface-tint": "#0c56d0",
+              "surface-container-highest": "#dae2fd",
+              "error-container": "#ffdad6",
+              "tertiary-fixed-dim": "#68dba9",
+              "surface-container-high": "#e2e7ff",
+              "surface-container": "#eaedff",
+              "error": "#ba1a1a",
+              "on-tertiary-fixed-variant": "#005137",
+              "on-primary-fixed-variant": "#0040a2",
+              "on-error": "#ffffff",
+              "on-tertiary-fixed": "#002114",
+              "on-error-container": "#93000a",
+              "tertiary-container": "#006847",
+              "on-surface-variant": "#434654",
+              "inverse-primary": "#b2c5ff",
+              "surface": "#faf8ff",
+              "on-tertiary-container": "#75e8b5",
+              "tertiary": "#004e34"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased font-body">
+<!-- Top Navigation Shell -->
+<header class="bg-[#faf8ff] dark:bg-slate-950 w-full top-0 z-50 font-manrope antialiased tracking-tight">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-[1920px] mx-auto">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-[#003d9b] dark:text-blue-400">Architectural Scholar</span>
+<nav class="hidden md:flex gap-6">
+<a class="text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors px-3 py-1 rounded" href="#">Dashboard</a>
+<a class="text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors px-3 py-1 rounded" href="#">Problems</a>
+<a class="text-[#003d9b] dark:text-blue-300 border-b-2 border-[#003d9b] font-semibold px-3 py-1" href="#">Contests</a>
+<a class="text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors px-3 py-1 rounded" href="#">Rankings</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-600 material-symbols-outlined hover:bg-slate-100 rounded-full transition-colors">notifications</button>
+<button class="p-2 text-slate-600 material-symbols-outlined hover:bg-slate-100 rounded-full transition-colors">settings</button>
+<div class="h-8 w-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/20">
+<img class="w-full h-full object-cover" data-alt="User profile avatar showing a professional scholar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiIKt_0qY001YD1ATb2KcFG976dHZZ5cTKqjkDz4bGpZ-aMbLEWI34WUD8RpKRAApr_DeK4H2BW9CjaFVvzEERzOD_q_p744kTR0HwE0abgLJSe19RWtyMeX3J-N3jQT5-hx47tjFogkrCStw-fGwTAKxswGGEMrgcZOZVSOAyCnJGoT25wXzAEMSKfeQsFwxDXMpgrxFWQv7aJflVMmGR7Uh8RU9dCs1ADXnAh9yynqIAtdYuh2NsekvKNIM8ZCTLdPuDgJ5teice"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-[1920px] mx-auto flex min-h-screen">
+<!-- Side Navigation (Workspace context) -->
+<aside class="hidden lg:flex flex-col py-4 gap-1 h-screen w-64 bg-[#f2f3ff] dark:bg-slate-900 font-manrope text-sm font-medium">
+<div class="px-6 py-4 mb-4">
+<h2 class="font-bold text-[#003d9b] text-lg">Problem Solver</h2>
+<p class="text-xs text-on-surface-variant/70">Mastering Algorithms</p>
+</div>
+<a class="flex items-center gap-3 py-2.5 px-6 text-slate-500 dark:text-slate-400 hover:text-[#003d9b] transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-lg">code</span>
+<span>Workspace</span>
+</a>
+<a class="flex items-center gap-3 py-2.5 px-6 bg-white dark:bg-slate-800 text-[#003d9b] dark:text-blue-300 rounded-lg mx-2" href="#">
+<span class="material-symbols-outlined text-lg">emoji_events</span>
+<span>Active Contests</span>
+</a>
+<a class="flex items-center gap-3 py-2.5 px-6 text-slate-500 dark:text-slate-400 hover:text-[#003d9b] transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-lg">history</span>
+<span>Submissions</span>
+</a>
+<a class="flex items-center gap-3 py-2.5 px-6 text-slate-500 dark:text-slate-400 hover:text-[#003d9b] transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-lg">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 py-2.5 px-6 text-slate-500 dark:text-slate-400 hover:text-[#003d9b] transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-lg">forum</span>
+<span>Discussion</span>
+</a>
+<div class="mt-auto px-4 pb-8">
+<button class="w-full bg-gradient-to-br from-primary to-primary-container text-white py-2.5 rounded-lg font-bold shadow-sm transition-transform active:scale-95">
+                    Run Code
+                </button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<section class="flex-1 px-4 md:px-12 py-8 overflow-y-auto">
+<div class="mb-12">
+<h1 class="text-4xl font-extrabold text-on-background tracking-tight mb-2">Algorithm Challenges</h1>
+<p class="text-on-surface-variant text-lg max-w-2xl">Competitive programming events tailored for the architectural mindset. Precise, structured, and rigorous.</p>
+</div>
+<!-- Bento Grid - Featured/Active Contest -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-12">
+<div class="lg:col-span-2 bg-gradient-to-br from-primary to-primary-container rounded-xl p-8 text-white relative overflow-hidden group">
+<div class="relative z-10 flex flex-col h-full">
+<div class="flex items-center gap-2 mb-6">
+<span class="bg-tertiary-container/30 text-tertiary-fixed px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Live Now</span>
+<span class="text-white/70 text-sm">• 4,281 participants</span>
+</div>
+<h2 class="text-3xl font-bold mb-4 leading-tight">The Structural Complexity <br/>Championship 2024</h2>
+<div class="flex gap-8 mt-auto pt-6 border-t border-white/10">
+<div>
+<p class="text-white/60 text-xs uppercase font-bold tracking-tighter mb-1">Duration</p>
+<p class="text-lg font-medium">3h 00m</p>
+</div>
+<div>
+<p class="text-white/60 text-xs uppercase font-bold tracking-tighter mb-1">Remaining</p>
+<p class="text-lg font-medium">01:14:42</p>
+</div>
+<div class="ml-auto">
+<button class="bg-white text-primary px-8 py-3 rounded-lg font-bold hover:bg-surface-variant transition-colors flex items-center gap-2">
+                                    Enter Contest <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Abstract Decor -->
+<div class="absolute -right-16 -bottom-16 w-64 h-64 bg-white/5 rounded-full blur-3xl group-hover:bg-white/10 transition-colors"></div>
+<div class="absolute right-12 top-12 opacity-10">
+<span class="material-symbols-outlined text-9xl">architecture</span>
+</div>
+</div>
+<div class="bg-surface-container-highest rounded-xl p-6 flex flex-col">
+<h3 class="font-bold text-on-surface mb-4">Quick Stats</h3>
+<div class="space-y-4 flex-1">
+<div class="bg-surface-container-lowest p-4 rounded-lg flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Your Global Rank</span>
+<span class="text-primary font-bold">#1,242</span>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-lg flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Rating Change</span>
+<span class="text-tertiary font-bold">+42 (1,894)</span>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-lg flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Solved Today</span>
+<span class="text-on-surface font-bold">0 / 8</span>
+</div>
+</div>
+<button class="mt-4 w-full text-primary font-bold text-sm hover:underline">View Your History</button>
+</div>
+</div>
+<!-- Tab System -->
+<div class="flex gap-8 mb-6 border-b border-outline-variant/15">
+<button class="pb-4 text-[#003d9b] border-b-2 border-primary font-bold text-sm tracking-wide">UPCOMING</button>
+<button class="pb-4 text-on-surface-variant hover:text-on-surface font-medium text-sm tracking-wide transition-colors">PAST CONTESTS</button>
+<button class="pb-4 text-on-surface-variant hover:text-on-surface font-medium text-sm tracking-wide transition-colors">MY SCHEDULE</button>
+</div>
+<!-- Contest List Table -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden">
+<!-- Header -->
+<div class="grid grid-cols-12 px-6 py-4 bg-surface-container-low text-[10px] uppercase font-bold tracking-widest text-on-secondary-container">
+<div class="col-span-6 lg:col-span-5">Contest Details</div>
+<div class="col-span-2 hidden lg:block text-center">Duration</div>
+<div class="col-span-4 lg:col-span-3">Start Time</div>
+<div class="col-span-2 text-right">Action</div>
+</div>
+<!-- Rows -->
+<div class="divide-y divide-outline-variant/5">
+<!-- Row 1 -->
+<div class="grid grid-cols-12 px-6 py-5 items-center hover:bg-surface-container transition-colors group">
+<div class="col-span-6 lg:col-span-5">
+<h4 class="font-bold text-on-surface group-hover:text-primary transition-colors">Weekly Sprint: Modular Arithmetic</h4>
+<div class="flex gap-2 mt-1">
+<span class="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded uppercase font-bold">Div. 2</span>
+<span class="text-[10px] bg-outline-variant/20 text-on-surface-variant px-2 py-0.5 rounded uppercase font-bold">Educational</span>
+</div>
+</div>
+<div class="col-span-2 hidden lg:block text-center text-on-surface-variant font-medium text-sm tracking-tight">2h 15m</div>
+<div class="col-span-4 lg:col-span-3">
+<p class="text-sm font-semibold text-on-surface">Oct 24, 2024</p>
+<p class="text-xs text-on-surface-variant/70">18:00 UTC</p>
+</div>
+<div class="col-span-2 text-right">
+<button class="bg-tertiary-container text-on-tertiary-fixed-variant px-4 py-1.5 rounded text-xs font-bold hover:opacity-90 transition-opacity">Registered</button>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-12 px-6 py-5 items-center hover:bg-surface-container transition-colors group">
+<div class="col-span-6 lg:col-span-5">
+<h4 class="font-bold text-on-surface group-hover:text-primary transition-colors">Graph Theory Mastery: The Bridge Problem</h4>
+<div class="flex gap-2 mt-1">
+<span class="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded uppercase font-bold">Div. 1</span>
+<span class="text-[10px] bg-outline-variant/20 text-on-surface-variant px-2 py-0.5 rounded uppercase font-bold">Rated</span>
+</div>
+</div>
+<div class="col-span-2 hidden lg:block text-center text-on-surface-variant font-medium text-sm tracking-tight">3h 30m</div>
+<div class="col-span-4 lg:col-span-3">
+<p class="text-sm font-semibold text-on-surface">Oct 26, 2024</p>
+<p class="text-xs text-on-surface-variant/70">04:00 UTC</p>
+</div>
+<div class="col-span-2 text-right">
+<button class="bg-primary-container/10 text-primary px-4 py-1.5 rounded text-xs font-bold hover:bg-primary hover:text-white transition-all">Register</button>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="grid grid-cols-12 px-6 py-5 items-center hover:bg-surface-container transition-colors group">
+<div class="col-span-6 lg:col-span-5">
+<h4 class="font-bold text-on-surface group-hover:text-primary transition-colors">Beginner's Arena: Array Fundamentals</h4>
+<div class="flex gap-2 mt-1">
+<span class="text-[10px] bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded uppercase font-bold">Div. 3</span>
+<span class="text-[10px] bg-outline-variant/20 text-on-surface-variant px-2 py-0.5 rounded uppercase font-bold">Tutorial</span>
+</div>
+</div>
+<div class="col-span-2 hidden lg:block text-center text-on-surface-variant font-medium text-sm tracking-tight">1h 45m</div>
+<div class="col-span-4 lg:col-span-3">
+<p class="text-sm font-semibold text-on-surface">Oct 28, 2024</p>
+<p class="text-xs text-on-surface-variant/70">12:00 UTC</p>
+</div>
+<div class="col-span-2 text-right">
+<button class="bg-primary-container/10 text-primary px-4 py-1.5 rounded text-xs font-bold hover:bg-primary hover:text-white transition-all">Register</button>
+</div>
+</div>
+<!-- Row 4 (Past Context Example) -->
+<div class="grid grid-cols-12 px-6 py-5 items-center bg-surface-container-low/30 opacity-70 group">
+<div class="col-span-6 lg:col-span-5">
+<h4 class="font-bold text-on-surface">The Geometric Series Open</h4>
+<div class="flex gap-2 mt-1">
+<span class="text-[10px] bg-outline-variant/20 text-on-surface-variant px-2 py-0.5 rounded uppercase font-bold">Concluded</span>
+</div>
+</div>
+<div class="col-span-2 hidden lg:block text-center text-on-surface-variant font-medium text-sm tracking-tight">2h 00m</div>
+<div class="col-span-4 lg:col-span-3">
+<p class="text-sm font-semibold text-on-surface">Oct 20, 2024</p>
+<p class="text-xs text-on-surface-variant/70">Completed</p>
+</div>
+<div class="col-span-2 text-right">
+<button class="text-primary text-xs font-bold flex items-center gap-1 ml-auto group-hover:underline">
+<span class="material-symbols-outlined text-sm">visibility</span> View Results
+                            </button>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-low px-6 py-4 flex justify-between items-center">
+<p class="text-xs text-on-surface-variant font-medium">Showing 4 of 48 contests</p>
+<div class="flex gap-2">
+<button class="p-1 hover:bg-white rounded transition-colors material-symbols-outlined text-on-surface-variant">chevron_left</button>
+<button class="p-1 hover:bg-white rounded transition-colors material-symbols-outlined text-on-surface-variant">chevron_right</button>
+</div>
+</div>
+</div>
+<!-- Footer Meta -->
+<div class="mt-12 pt-8 border-t border-outline-variant/15 flex flex-col md:flex-row gap-8 justify-between text-on-surface-variant/60 text-xs tracking-wide">
+<div class="flex gap-12">
+<div class="flex flex-col gap-2">
+<span class="font-bold text-on-surface/40 uppercase">Resources</span>
+<a class="hover:text-primary transition-colors" href="#">Contest Rules</a>
+<a class="hover:text-primary transition-colors" href="#">Rating System</a>
+<a class="hover:text-primary transition-colors" href="#">Problem Setter Guidelines</a>
+</div>
+<div class="flex flex-col gap-2">
+<span class="font-bold text-on-surface/40 uppercase">Support</span>
+<a class="hover:text-primary transition-colors" href="#">Help Center</a>
+<a class="hover:text-primary transition-colors" href="#">Platform Status</a>
+</div>
+</div>
+<div class="flex items-end text-right">
+<p>© 2024 Architectural Scholar Online Judge. <br/>All calculations are precise.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Shell (Mobile) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-4 pt-2 md:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl z-50 rounded-t-lg shadow-[0_-4px_24px_rgba(19,27,46,0.04)] font-manrope text-[10px] font-bold uppercase tracking-wider">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">dashboard</span>
+<span>Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">list_alt</span>
+<span>Problems</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#dae2fd] dark:bg-blue-900/40 text-[#003d9b] dark:text-blue-200 rounded-xl px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">emoji_events</span>
+<span>Contests</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-4 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined mb-1">account_circle</span>
+<span>Profile</span>
+</a>
+</nav>
+</body></html>

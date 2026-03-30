@@ -2,6 +2,32 @@ use super::SubmissionMessage;
 use anyhow::{Context, Result};
 use redis::Client;
 
+fn build_xreadgroup_args(
+    group_name: &str,
+    consumer_name: &str,
+    stream_name: &str,
+    block_ms: Option<u64>,
+) -> Vec<String> {
+    let mut args = vec![
+        "GROUP".to_string(),
+        group_name.to_string(),
+        consumer_name.to_string(),
+        "COUNT".to_string(),
+        "1".to_string(),
+    ];
+
+    if let Some(ms) = block_ms {
+        args.push("BLOCK".to_string());
+        args.push(ms.to_string());
+    }
+
+    args.push("STREAMS".to_string());
+    args.push(stream_name.to_string());
+    args.push(">".to_string());
+
+    args
+}
+
 pub async fn consume_submission(
     redis_client: &Client,
     stream_name: &str,
@@ -12,17 +38,8 @@ pub async fn consume_submission(
     let mut conn = redis_client.get_multiplexed_async_connection().await?;
 
     let mut cmd = redis::cmd("XREADGROUP");
-    cmd.arg("GROUP")
-        .arg(group_name)
-        .arg(consumer_name)
-        .arg("COUNT")
-        .arg(1)
-        .arg("STREAMS")
-        .arg(stream_name)
-        .arg(">");
-
-    if let Some(ms) = block_ms {
-        cmd.arg("BLOCK").arg(ms);
+    for arg in build_xreadgroup_args(group_name, consumer_name, stream_name, block_ms) {
+        cmd.arg(arg);
     }
 
     let result: redis::streams::StreamReadReply = cmd
@@ -98,6 +115,27 @@ pub async fn ensure_consumer_group(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_build_xreadgroup_args_places_block_before_streams() {
+        let args = build_xreadgroup_args("judge_workers", "worker-1", "submissions", Some(5000));
+
+        assert_eq!(
+            args,
+            vec![
+                "GROUP",
+                "judge_workers",
+                "worker-1",
+                "COUNT",
+                "1",
+                "BLOCK",
+                "5000",
+                "STREAMS",
+                "submissions",
+                ">",
+            ]
+        );
+    }
 
     #[tokio::test]
     #[ignore = "requires Redis"]

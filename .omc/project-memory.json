@@ -1,0 +1,352 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1774862152880,
+  "projectRoot": "/Users/xiexingyu/Documents/项目/Online_Judge",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Rust",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Cargo.toml"
+        ]
+      },
+      {
+        "name": "C/C++",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Makefile"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "axum",
+        "version": null,
+        "category": "backend"
+      }
+    ],
+    "packageManager": "cargo",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "cargo build",
+    "testCommand": "cargo test",
+    "lintCommand": "cargo clippy",
+    "devCommand": "cargo run",
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": {
+      "defaultBranch": "master",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "api": {
+      "path": "api",
+      "purpose": "API routes",
+      "fileCount": 7,
+      "lastAccessed": 1774862152854,
+      "keyFiles": [
+        "Cargo.toml",
+        "Cargo.toml.bak",
+        "Dockerfile",
+        "docker-entrypoint.sh",
+        "init_db.sh"
+      ]
+    },
+    "collaboration": {
+      "path": "collaboration",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1774862152854,
+      "keyFiles": []
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1774862152855,
+      "keyFiles": [
+        "README.md"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 26,
+      "lastAccessed": 1774862152856,
+      "keyFiles": [
+        "Dockerfile",
+        "README.md",
+        "aside.txt",
+        "colors.json",
+        "eslint.config.js"
+      ]
+    },
+    "judge-worker": {
+      "path": "judge-worker",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1774862152856,
+      "keyFiles": [
+        "Cargo.toml",
+        "Dockerfile"
+      ]
+    },
+    "references": {
+      "path": "references",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1774862152856,
+      "keyFiles": []
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 5,
+      "lastAccessed": 1774862152857,
+      "keyFiles": [
+        "__init__.py",
+        "apply_runtime_migrations.py",
+        "bootstrap_demo.sh",
+        "bootstrap_demo.sql",
+        "check_alignment.py"
+      ]
+    },
+    "shared": {
+      "path": "shared",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1774862152857,
+      "keyFiles": [
+        "Cargo.toml"
+      ]
+    },
+    "target": {
+      "path": "target",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1774862152857,
+      "keyFiles": [
+        "CACHEDIR.TAG"
+      ]
+    },
+    "api/migrations": {
+      "path": "api/migrations",
+      "purpose": "Database migrations",
+      "fileCount": 35,
+      "lastAccessed": 1774862152858,
+      "keyFiles": [
+        "000_create_update_updated_at_function.sql",
+        "001_create_organizations.sql",
+        "002_create_campuses.sql"
+      ]
+    },
+    "api/src": {
+      "path": "api/src",
+      "purpose": "Source code",
+      "fileCount": 3,
+      "lastAccessed": 1774862152858,
+      "keyFiles": [
+        "lib.rs",
+        "main.rs",
+        "main.rs.bak"
+      ]
+    },
+    "docs/api": {
+      "path": "docs/api",
+      "purpose": "API routes",
+      "fileCount": 4,
+      "lastAccessed": 1774862152858,
+      "keyFiles": [
+        "CONTEST_API.md",
+        "LEADERBOARD_API.md",
+        "PROBLEMS_API.md"
+      ]
+    },
+    "frontend/dist": {
+      "path": "frontend/dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 2,
+      "lastAccessed": 1774862152860,
+      "keyFiles": [
+        "index.html",
+        "vite.svg"
+      ]
+    },
+    "judge-worker/src": {
+      "path": "judge-worker/src",
+      "purpose": "Source code",
+      "fileCount": 3,
+      "lastAccessed": 1774862152861,
+      "keyFiles": [
+        "lib.rs",
+        "main.rs"
+      ]
+    },
+    "judge-worker/tests": {
+      "path": "judge-worker/tests",
+      "purpose": "Test files",
+      "fileCount": 5,
+      "lastAccessed": 1774862152862,
+      "keyFiles": [
+        "integration_tests.rs",
+        "mod.rs",
+        "processor_fetch_test_cases.rs"
+      ]
+    },
+    "scripts/tests": {
+      "path": "scripts/tests",
+      "purpose": "Test files",
+      "fileCount": 2,
+      "lastAccessed": 1774862152862,
+      "keyFiles": [
+        "test_apply_runtime_migrations.py",
+        "test_check_alignment.py"
+      ]
+    },
+    "shared/src": {
+      "path": "shared/src",
+      "purpose": "Source code",
+      "fileCount": 1,
+      "lastAccessed": 1774862152862,
+      "keyFiles": [
+        "lib.rs"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "frontend/src/pages/user/ProblemSet.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1774881820686,
+      "type": "file"
+    },
+    {
+      "path": "",
+      "accessCount": 1,
+      "lastAccessed": 1774877665000,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src/services/config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774881517944,
+      "type": "file"
+    },
+    {
+      "path": "api/src",
+      "accessCount": 1,
+      "lastAccessed": 1774881531116,
+      "type": "directory"
+    },
+    {
+      "path": "api/src/main.rs",
+      "accessCount": 1,
+      "lastAccessed": 1774881553232,
+      "type": "file"
+    },
+    {
+      "path": "frontend/vite.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774881573460,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/services/api.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774881614848,
+      "type": "file"
+    },
+    {
+      "path": "references/oj_problem_list/screen.png",
+      "accessCount": 1,
+      "lastAccessed": 1774881815768,
+      "type": "file"
+    },
+    {
+      "path": "references/oj_problem_list/code.html",
+      "accessCount": 1,
+      "lastAccessed": 1774881820751,
+      "type": "file"
+    },
+    {
+      "path": "references/oj_dashboard/screen.png",
+      "accessCount": 1,
+      "lastAccessed": 1774881821012,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/user/ProblemDetail.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774881828448,
+      "type": "file"
+    },
+    {
+      "path": "frontend/tailwind.config.js",
+      "accessCount": 1,
+      "lastAccessed": 1774881834382,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/hooks/useProblems.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774881834526,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "accessCount": 1,
+      "lastAccessed": 1774881834599,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/services/problems.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774881839996,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774881840050,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/components/layout/Sidebar.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774881843157,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/layouts/MainLayout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774881843253,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/components/layout/Header.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1774881843338,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

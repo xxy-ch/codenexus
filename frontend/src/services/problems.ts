@@ -113,7 +113,7 @@ export const problemsService = {
     language: string
   }): Promise<ProblemSubmission> {
     const response = await api.post<ProblemSubmission>('/submissions', {
-      problem_id: data.problemId,
+      problem_id: Number(data.problemId),
       code: data.code,
       language: data.language,
     })

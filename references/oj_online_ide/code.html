@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Architectural Scholar - IDE</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-surface": "#283044",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f2f3ff",
+                        "on-primary-container": "#c4d2ff",
+                        "on-background": "#131b2e",
+                        "background": "#faf8ff",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#0c56d0",
+                        "surface": "#faf8ff",
+                        "surface-bright": "#faf8ff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "on-tertiary-fixed-variant": "#005137",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "primary": "#003d9b",
+                        "tertiary-fixed-dim": "#68dba9",
+                        "surface-container-high": "#e2e7ff",
+                        "tertiary-fixed": "#85f8c4",
+                        "outline": "#737685",
+                        "surface-variant": "#dae2fd",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#d5e3fc",
+                        "surface-container-highest": "#dae2fd",
+                        "secondary-fixed": "#d5e3fc",
+                        "on-tertiary-fixed": "#002114",
+                        "on-surface-variant": "#434654",
+                        "on-primary-fixed-variant": "#0040a2",
+                        "on-tertiary-container": "#75e8b5",
+                        "on-primary": "#ffffff",
+                        "primary-fixed": "#dae2ff",
+                        "inverse-on-surface": "#eef0ff",
+                        "surface-dim": "#d2d9f4",
+                        "primary-container": "#0052cc",
+                        "secondary": "#515f74",
+                        "inverse-primary": "#b2c5ff",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#131b2e",
+                        "on-error": "#ffffff",
+                        "outline-variant": "#c3c6d6",
+                        "tertiary": "#004e34",
+                        "on-primary-fixed": "#001848",
+                        "surface-container": "#eaedff",
+                        "primary-fixed-dim": "#b2c5ff",
+                        "tertiary-container": "#006847",
+                        "on-secondary-container": "#57657a"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"],
+                        "mono": ["JetBrains Mono", "monospace"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #dae2fd; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c4d2ff; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-100 dark:bg-slate-950 flex flex-col p-4 gap-2 z-50">
+<div class="mb-8 px-2">
+<h1 class="text-lg font-black text-blue-900 dark:text-white leading-tight">OJ Portal</h1>
+<p class="text-xs font-semibold text-blue-800/60 dark:text-blue-300/60 uppercase tracking-widest">Deep Work Mode</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all duration-200 ease-in-out font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-300 rounded-lg shadow-sm font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="code" style="font-variation-settings: 'FILL' 1;">code</span>
+<span>Problems</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all duration-200 ease-in-out font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+<span>Contests</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all duration-200 ease-in-out font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span>Rankings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all duration-200 ease-in-out font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+<span>Discussions</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-slate-200 dark:border-slate-800 pt-4 space-y-1">
+<button class="w-full bg-primary-container text-white py-2.5 rounded-lg font-bold text-sm shadow-md hover:brightness-110 active:scale-95 transition-all mb-4">Submit Code</button>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all duration-200 ease-in-out font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all duration-200 ease-in-out font-manrope text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<main class="ml-64 flex-1 flex flex-col min-w-0">
+<!-- TopAppBar -->
+<header class="w-full sticky top-0 z-40 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+<div class="flex items-center justify-between px-6 py-3 w-full max-w-[1440px] mx-auto">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold tracking-tighter text-blue-900 dark:text-blue-100">Architectural Scholar</span>
+<div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-2"></div>
+<div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-transparent focus-within:border-blue-700/30 transition-all">
+<span class="material-symbols-outlined text-slate-400 text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 font-medium" placeholder="Jump to problem..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 rounded-lg transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border-2 border-primary-fixed">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Close up professional user headshot avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5N9PfVziOfKCQUBepAAfcSHf4g800w-RC4Nz2TtYae1CxvaDPawo4YiSky4dx-zi2mSew43OULpAE2_hj38Cp-T5Q3aWcAvgkAf-xk5nsx0aKd8gkvBmpj_kDa0u85dJkkj4fkgLvdXHEDHUzRG8MhWU68T6W0AJfd6tAPAYQT7T7Wm8fnyVGhfAeI4HNRqBvKz1I_m-3sgBgMysoYrzz2gcMWuaVHqmKU1nHR-QS5pszFjiEFeJ-tuMvtPXKN1P7MeHVPJZEOcPR"/>
+</div>
+</div>
+</div>
+</header>
+<!-- IDE Workspace -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Left Pane: Problem Description -->
+<section class="w-[40%] bg-surface-container-low overflow-y-auto px-8 py-10 flex flex-col gap-8 custom-scrollbar">
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<span class="bg-error-container text-on-error-container text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Hard</span>
+<span class="text-on-surface-variant font-mono text-xs tracking-tighter">ID: 1042-SQ</span>
+</div>
+<h2 class="text-3xl font-extrabold tracking-tight text-on-surface">Skyline Partition Optimization</h2>
+<div class="flex items-center gap-6 py-2 border-y border-outline-variant/15">
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-bold text-outline tracking-widest">Time Limit</span>
+<span class="text-sm font-semibold">1.0s</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-bold text-outline tracking-widest">Memory Limit</span>
+<span class="text-sm font-semibold">256.0 MB</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] uppercase font-bold text-outline tracking-widest">Difficulty Points</span>
+<span class="text-sm font-semibold">2400</span>
+</div>
+</div>
+</div>
+<div class="space-y-6 text-on-surface-variant leading-relaxed font-body">
+<div class="space-y-3">
+<h3 class="text-on-surface font-bold text-sm uppercase tracking-widest">Description</h3>
+<p>Given a set of <span class="font-mono bg-surface-container px-1 rounded text-primary">N</span> rectangular buildings forming a skyline, determine the minimum number of rectangular partitions required to completely cover the silhouette without overlap.</p>
+<p>Each building is represented by its start position <span class="font-mono">L_i</span>, end position <span class="font-mono">R_i</span>, and height <span class="font-mono">H_i</span>. The skyline is the upper envelope of these rectangles. A partition is defined as a rectangle that fits entirely within the silhouette.</p>
+</div>
+<div class="space-y-3">
+<h3 class="text-on-surface font-bold text-sm uppercase tracking-widest">Constraints</h3>
+<ul class="list-disc pl-5 space-y-1 text-sm">
+<li>1 ≤ N ≤ 10<sup>5</sup></li>
+<li>0 ≤ L_i &lt; R_i ≤ 10<sup>9</sup></li>
+<li>1 ≤ H_i ≤ 10<sup>9</sup></li>
+</ul>
+</div>
+<div class="space-y-4 pt-4">
+<h3 class="text-on-surface font-bold text-sm uppercase tracking-widest">Example Test Case</h3>
+<div class="bg-surface-container-highest/40 p-4 rounded-lg font-mono text-sm border border-outline-variant/10">
+<div class="mb-2">
+<span class="text-primary font-bold">Input:</span>
+<pre class="mt-1 text-on-surface">3
+1 5 10
+4 8 15
+7 10 8</pre>
+</div>
+<div>
+<span class="text-tertiary font-bold">Output:</span>
+<pre class="mt-1 text-on-surface">4</pre>
+</div>
+</div>
+<p class="text-xs italic text-outline">Explanation: The skyline can be covered by 4 non-overlapping rectangles placed strategically at height transitions.</p>
+</div>
+</div>
+</section>
+<!-- Right Pane: Code Editor & Console -->
+<section class="w-[60%] flex flex-col bg-surface-container-lowest relative">
+<!-- Editor Header -->
+<div class="flex items-center justify-between px-4 py-2 bg-surface-container-low/50 border-b border-outline-variant/10">
+<div class="flex items-center gap-2">
+<select class="bg-white dark:bg-slate-800 border-none rounded px-3 py-1 text-xs font-bold text-blue-800 shadow-sm focus:ring-1 focus:ring-primary/20 cursor-pointer">
+<option>Python 3.11</option>
+<option>C++ 20 (GCC 12.2)</option>
+<option>Java 17</option>
+<option>Rust 1.70</option>
+</select>
+<div class="flex gap-1 ml-4">
+<button class="p-1.5 hover:bg-surface-variant rounded transition-colors" title="Settings">
+<span class="material-symbols-outlined text-sm" data-icon="settings">settings</span>
+</button>
+<button class="p-1.5 hover:bg-surface-variant rounded transition-colors" title="Fullscreen">
+<span class="material-symbols-outlined text-sm" data-icon="fullscreen">fullscreen</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[10px] font-bold text-outline px-2 uppercase tracking-tighter">Auto-save: 2s ago</span>
+</div>
+</div>
+<!-- Code Editor Area -->
+<div class="flex-1 font-mono text-sm relative overflow-hidden flex">
+<!-- Line Numbers -->
+<div class="w-12 bg-surface-container-low flex flex-col items-end py-4 pr-3 text-slate-400 select-none text-[11px] leading-6">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span>
+</div>
+<!-- Editor Canvas -->
+<div class="flex-1 py-4 px-4 bg-white dark:bg-slate-900 overflow-y-auto leading-6">
+<div class="text-slate-400 italic mb-2"># Skyline Partition Optimization</div>
+<div class="flex gap-2"><span class="text-purple-600">import</span> <span class="text-blue-600">sys</span></div>
+<div class="flex gap-2"><span class="text-purple-600">from</span> <span class="text-blue-600">collections</span> <span class="text-purple-600">import</span> <span class="text-blue-600">deque</span></div>
+<div class="mt-4"><span class="text-purple-600">def</span> <span class="text-yellow-600">solve</span>():</div>
+<div class="pl-4">n = <span class="text-blue-600">int</span>(sys.stdin.readline())</div>
+<div class="pl-4">events = []</div>
+<div class="pl-4"><span class="text-purple-600">for</span> _ <span class="text-purple-600">in</span> <span class="text-blue-600">range</span>(n):</div>
+<div class="pl-8">l, r, h = <span class="text-blue-600">map</span>(<span class="text-blue-600">int</span>, sys.stdin.readline().split())</div>
+<div class="pl-8">events.append((l, <span class="text-red-600">1</span>, h))</div>
+<div class="pl-8">events.append((r, -<span class="text-red-600">1</span>, h))</div>
+<div class="pl-4 text-slate-300">|</div>
+<div class="pl-4"><span class="text-slate-400 italic"># Todo: Implement sweep-line with segment tree</span></div>
+<div class="pl-4">ans = <span class="text-red-600">0</span></div>
+<div class="pl-4"><span class="text-purple-600">print</span>(ans)</div>
+<div class="mt-4">solve()</div>
+</div>
+</div>
+<!-- Debug & Console Area -->
+<div class="h-48 border-t border-outline-variant/20 flex flex-col bg-surface-container-lowest">
+<!-- Console Header -->
+<div class="flex items-center justify-between px-6 py-2 bg-surface-container-high/30">
+<div class="flex gap-4">
+<button class="text-xs font-bold text-primary border-b-2 border-primary pb-0.5">Console</button>
+<button class="text-xs font-bold text-outline hover:text-on-surface-variant transition-colors">Test Cases</button>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-1.5 px-4 py-1.5 bg-surface-container-high text-on-primary-fixed-variant rounded-lg font-bold text-xs hover:brightness-95 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="play_arrow">play_arrow</span>
+                                Run Code
+                            </button>
+<button class="flex items-center gap-1.5 px-5 py-1.5 bg-gradient-to-br from-primary to-primary-container text-white rounded-lg font-bold text-xs shadow-md hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm" data-icon="upload">upload</span>
+                                Submit
+                            </button>
+</div>
+</div>
+<!-- Console Logs -->
+<div class="flex-1 p-4 overflow-y-auto font-mono text-[11px] space-y-2 bg-slate-900 text-slate-300">
+<div class="flex gap-2">
+<span class="text-slate-500">[14:22:01]</span>
+<span class="text-tertiary-fixed-dim">Compiling script...</span>
+</div>
+<div class="flex gap-2">
+<span class="text-slate-500">[14:22:02]</span>
+<span class="text-white">Running Test Case 1/12...</span>
+</div>
+<div class="flex gap-2 border-l-2 border-error pl-2 ml-1 mt-1">
+<span class="text-error">Runtime Error: EOF when reading a line</span>
+</div>
+<div class="flex gap-2">
+<span class="text-slate-500">[14:22:02]</span>
+<span class="text-slate-400">Execution finished in 0.04s</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

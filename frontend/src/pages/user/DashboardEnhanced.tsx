@@ -1,10 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
-import { cn } from '@/lib/utils'
+import { Card, CardContent } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { DifficultyBadge, StatusBadge } from '@/components/ui/StatusBadge'
 import { usersService } from '@/services/users'
 import { problemsService } from '@/services/problems'
+import { cn } from '@/lib/utils'
 
 const dayLabels = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
@@ -52,19 +57,11 @@ function formatActivityLabel(activity: { type: string; status?: string }) {
     return '提交 · 排队中'
   }
 
+  if (activity.status === 'judged') {
+    return '提交 · 已评测'
+  }
+
   return '提交'
-}
-
-function difficultyBadgeTone(difficulty?: string) {
-  if (difficulty === 'hard') return 'bg-[#ffe7e1] text-[#93000a]'
-  if (difficulty === 'medium') return 'bg-[#dae2ff] text-[#244171]'
-  return 'bg-[#d8f8e3] text-[#006847]'
-}
-
-function difficultyLabel(difficulty?: string) {
-  if (difficulty === 'hard') return '困难'
-  if (difficulty === 'medium') return '中等'
-  return '简单'
 }
 
 export function DashboardEnhanced() {
@@ -125,34 +122,10 @@ export function DashboardEnhanced() {
     void Promise.all([refetchStats(), refetchActivity(), refetchRecommended()])
   }
 
-  const statCards = [
-    {
-      label: '已解决',
-      value: `${userStats?.unique_problems_solved ?? '--'} 道题`,
-      helper: `${userStats?.total_submissions ?? 0} 次提交 · ${userStats?.accuracy_rate ?? 0}% 准确率`,
-    },
-    {
-      label: '当前名次',
-      value: `#${userStats?.ranking ?? '--'}`,
-      helper: '全站位置',
-    },
-    {
-      label: '连续学习',
-      value: `${userStats?.current_streak ?? '--'} 天`,
-      helper: `最高 ${userStats?.longest_streak ?? 0} 天`,
-    },
-    {
-      label: '总积分',
-      value: `${userStats?.total_points ?? '--'} 分`,
-      helper: `${userStats?.accepted_submissions ?? 0} 次通过`,
-      accent: true,
-    },
-  ]
-
   if (statsLoading) {
     return (
       <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
-        <SurfaceCard className="text-sm text-[#6b7ca7]">页面加载中...</SurfaceCard>
+        <LoadingState message="Loading dashboard..." />
       </div>
     )
   }
@@ -160,19 +133,11 @@ export function DashboardEnhanced() {
   if (statsError) {
     return (
       <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-8">
-        <SurfaceCard className="space-y-4 bg-[rgba(255,247,247,0.95)] text-[#5c2230]">
-          <div>
-            <h1 className="font-['Manrope'] text-[1.9rem] font-extrabold tracking-[-0.04em] text-[#7b1e2b]">加载失败</h1>
-            <p className="mt-2 text-sm text-[#7d5260]">当前无法读取学习总览，请重新拉取统计数据。</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => refetchStats()}
-            className="inline-flex items-center rounded-[8px] bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-4 py-2.5 text-sm font-semibold text-white"
-          >
-            重试
-          </button>
-        </SurfaceCard>
+        <ErrorState
+          title="Failed to load dashboard"
+          message="Unable to fetch your statistics. Please try again later."
+          action={{ label: 'Retry', onClick: () => refetchStats() }}
+        />
       </div>
     )
   }
@@ -180,98 +145,144 @@ export function DashboardEnhanced() {
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
       <div className="space-y-6">
+        {/* Page Header */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">工作区</p>
-            <h1 className="font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.04em] text-[#131b2e] md:text-[2.5rem]">学习总览</h1>
-            <p className="max-w-2xl text-sm leading-6 text-[#5f6d87]">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+              Workspace
+            </p>
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface md:text-5xl">
+              Learning Overview
+            </h1>
+            <p className="max-w-2xl text-sm leading-6 text-on-surface-variant">
               过去 7 天共提交 {userStats?.total_submissions ?? 0} 次，成功通过 {userStats?.accepted_submissions ?? 0} 次。
               当前连续学习 {userStats?.current_streak ?? 0} 天，继续保持稳定节奏。
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              aria-label="刷新"
+            <Button
+              variant="outline"
               onClick={handleRefresh}
-              className="inline-flex items-center gap-2 rounded-[8px] bg-white px-4 py-2.5 text-sm font-semibold text-[#244171] shadow-[0_10px_24px_rgba(19,27,46,0.05)]"
+              leftIcon={<span className="material-symbols-outlined text-base">refresh</span>}
             >
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">refresh</span>
-              <span>刷新</span>
-            </button>
-            <Link to="/problems" className="inline-flex items-center gap-2 rounded-[8px] bg-[rgba(226,231,255,0.88)] px-4 py-2.5 text-sm font-semibold text-[#244171]">
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">terminal</span>
-              <span>开始刷题</span>
-            </Link>
-            <Link to="/contests" className="inline-flex items-center gap-2 rounded-[8px] bg-[linear-gradient(135deg,#003d9b,#0052cc)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_14px_28px_rgba(0,61,155,0.16)]">
-              <span className="material-symbols-outlined text-[18px]" aria-hidden="true">emoji_events</span>
-              <span>查看竞赛</span>
-            </Link>
+              Refresh
+            </Button>
+            <Button
+              as={Link}
+              to="/problems"
+              variant="secondary"
+              leftIcon={<span className="material-symbols-outlined text-base">terminal</span>}
+            >
+              Start Solving
+            </Button>
+            <Button
+              as={Link}
+              to="/contests"
+              variant="gradient"
+              leftIcon={<span className="material-symbols-outlined text-lg">emoji_events</span>}
+            >
+              View Contests
+            </Button>
           </div>
         </div>
 
+        {/* Stats Cards */}
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {statCards.map((card) => (
-            <SurfaceCard
-              key={card.label}
-              className={cn(
-                'min-h-[134px] overflow-hidden',
-                card.accent ? 'bg-[linear-gradient(135deg,#003d9b,#0052cc)] text-white' : '',
-              )}
-            >
-              <p className={cn('text-[11px] font-semibold uppercase tracking-[0.24em]', card.accent ? 'text-[#b2c5ff]' : 'text-[#6b7ca7]')}>
-                {card.label}
-              </p>
-              <div className={cn("mt-4 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.05em]", card.accent ? 'text-white' : 'text-[#131b2e]')}>
-                {card.value}
-              </div>
-              <p className={cn('mt-3 text-sm', card.accent ? 'text-[#eef0ff]' : 'text-[#65748d]')}>
-                {card.helper}
-              </p>
-            </SurfaceCard>
-          ))}
+          <Card variant="default" className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+              Problems Solved
+            </p>
+            <p className="mt-4 font-headline text-3xl font-extrabold text-on-surface">
+              {userStats?.unique_problems_solved ?? '--'}
+            </p>
+            <p className="mt-3 text-sm text-on-surface-variant">
+              {userStats?.total_submissions ?? 0} submissions · {userStats?.accuracy_rate ?? 0}% accuracy
+            </p>
+          </Card>
+
+          <Card variant="default" className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+              Current Ranking
+            </p>
+            <p className="mt-4 font-headline text-3xl font-extrabold text-on-surface">
+              #{userStats?.ranking ?? '--'}
+            </p>
+            <p className="mt-3 text-sm text-on-surface-variant">Global position</p>
+          </Card>
+
+          <Card variant="default" className="p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+              Current Streak
+            </p>
+            <p className="mt-4 font-headline text-3xl font-extrabold text-on-surface">
+              {userStats?.current_streak ?? '--'} Days
+            </p>
+            <p className="mt-3 text-sm text-on-surface-variant">
+              Best: {userStats?.longest_streak ?? 0} days
+            </p>
+          </Card>
+
+          <Card className="overflow-hidden bg-gradient-to-br from-primary to-primary-container p-5 text-white shadow-lg">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-fixed/72">
+              Total Points
+            </p>
+            <p className="mt-4 font-headline text-3xl font-extrabold text-white">
+              {userStats?.total_points ?? '--'}
+            </p>
+            <p className="mt-3 text-sm text-primary-fixed/90">
+              {userStats?.accepted_submissions ?? 0} accepted
+            </p>
+          </Card>
         </section>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_360px]">
-          <SurfaceCard className="overflow-hidden">
+          {/* Recent Activity */}
+          <Card variant="default" className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="font-['Manrope'] text-[1.45rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">最近提交</h2>
-                <p className="mt-1 text-sm text-[#65748d]">保留最近提交和竞赛动作，方便快速回看。</p>
+                <h2 className="font-headline text-xl font-extrabold text-on-surface">Recent Submissions</h2>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  Track your latest submissions and contest activities.
+                </p>
               </div>
-              <Link to="/submissions" className="text-sm font-semibold text-[#003d9b]">查看全部</Link>
+              <Link to="/submissions" className="text-sm font-semibold text-primary">
+                View All
+              </Link>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-[10px] bg-[rgba(242,243,255,0.72)]">
-              <div className="grid grid-cols-[minmax(0,1fr)_128px_96px_110px] gap-3 border-b border-white/80 px-5 py-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">
-                <span>题目</span>
-                <span>状态</span>
-                <span>语言</span>
-                <span className="text-right">时间</span>
+            <div className="mt-6 overflow-hidden rounded-xl bg-surface-container-low/50">
+              <div className="grid grid-cols-[minmax(0,1fr)_128px_96px_110px] gap-3 border-b border-outline-variant/10 px-5 py-4 text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                <span>Problem</span>
+                <span>Status</span>
+                <span>Language</span>
+                <span className="text-right">Time</span>
               </div>
-              <div className="divide-y divide-white/80">
+              <div className="divide-y divide-outline-variant/10">
                 {recentActivity.length === 0 ? (
-                  <div className="px-5 py-6 text-sm text-[#65748d]">最近还没有新的活动记录。</div>
+                  <div className="px-5 py-6 text-sm text-on-surface-variant">
+                    No recent activity yet.
+                  </div>
                 ) : (
                   recentActivity.slice(0, 4).map((activity) => (
-                    <div key={activity.id} className="grid grid-cols-[minmax(0,1fr)_128px_96px_110px] items-center gap-3 px-5 py-4 transition-colors hover:bg-white/60">
+                    <div
+                      key={activity.id}
+                      className="grid grid-cols-[minmax(0,1fr)_128px_96px_110px] items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-container-low/30"
+                    >
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-[#131b2e]">
-                          {activity.problem_title || activity.contest_name || '未命名记录'}
+                        <p className="truncate text-sm font-semibold text-on-surface">
+                          {activity.problem_title || activity.contest_name || 'Unnamed Entry'}
                         </p>
-                        <p className="mt-1 text-[11px] text-[#65748d]">
+                        <p className="mt-1 text-[11px] text-on-surface-variant">
                           {formatActivityLabel(activity)}
                         </p>
                       </div>
                       <div>
-                        <span className={cn('inline-flex rounded-full px-3 py-1 text-[11px] font-bold tracking-[0.12em]', statusTone(activity.status))}>
-                          {formatActivityLabel(activity)}
-                        </span>
+                        <StatusBadge status={(activity.status ?? 'queued') as any} size="sm" />
                       </div>
-                      <div className="text-sm font-medium text-[#445472]">
+                      <div className="text-sm font-medium text-on-surface-variant">
                         {activity.type === 'submission' ? activity.language?.toUpperCase() || '—' : '—'}
                       </div>
-                      <div className="text-right text-sm text-[#6b7ca7]">
+                      <div className="text-right text-sm text-on-surface-variant">
                         {formatRelativeTime(activity.created_at)}
                       </div>
                     </div>
@@ -279,142 +290,179 @@ export function DashboardEnhanced() {
                 )}
               </div>
             </div>
-          </SurfaceCard>
+          </Card>
 
           <div className="space-y-6">
-            <SurfaceCard tone="muted" className="overflow-hidden bg-[linear-gradient(135deg,#0d47a1,#0052cc)] text-white">
+            {/* Daily Challenge */}
+            <Card className="overflow-hidden bg-gradient-to-br from-primary to-primary-container p-6 text-white shadow-lg">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#b2c5ff]">今日建议</p>
-                  <h2 className="mt-3 font-['Manrope'] text-[1.45rem] font-extrabold tracking-[-0.03em] text-white">今日建议</h2>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-fixed/72">
+                    Today's Challenge
+                  </p>
+                  <h2 className="mt-3 font-headline text-xl font-extrabold text-white">Daily Problem</h2>
                 </div>
                 {dailyChallenge ? (
-                  <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', difficultyBadgeTone(dailyChallenge.difficulty))}>
-                    {difficultyLabel(dailyChallenge.difficulty)}
-                  </span>
+                  <DifficultyBadge difficulty={dailyChallenge.difficulty} />
                 ) : null}
               </div>
               {dailyChallenge ? (
                 <div className="mt-5">
-                  <Link to={`/problems/${dailyChallenge.id}`} className="block text-lg font-semibold text-white transition-colors hover:text-[#dbe6ff]">
+                  <Link
+                    to={`/problems/${dailyChallenge.id}`}
+                    className="block text-lg font-semibold text-white transition-colors hover:text-primary-fixed/90"
+                  >
                     {dailyChallenge.title}
                   </Link>
-                  <p className="mt-3 text-sm leading-6 text-[#eef0ff]">
-                    {dailyChallenge.description || '根据当前题库流推荐一题，适合直接开始今天的训练。'}
+                  <p className="mt-3 text-sm leading-6 text-primary-fixed/90">
+                    {dailyChallenge.description || 'Recommended problem based on your progress.'}
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     {(dailyChallenge.tags ?? []).slice(0, 3).map((tag) => (
-                      <span key={tag} className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-semibold text-[#eef0ff]">
+                      <span
+                        key={tag}
+                        className="rounded-full bg-white/12 px-3 py-1 text-[11px] font-semibold text-primary-fixed"
+                      >
                         {tag}
                       </span>
                     ))}
                   </div>
-                  <Link to={`/problems/${dailyChallenge.id}`} className="mt-5 inline-flex rounded-[8px] bg-white px-4 py-2.5 text-sm font-semibold text-[#003d9b] shadow-[0_12px_24px_rgba(0,0,0,0.12)]">
-                    立即开始
-                  </Link>
+                  <Button
+                    as={Link}
+                    to={`/problems/${dailyChallenge.id}`}
+                    variant="secondary"
+                    className="mt-5 bg-white text-primary hover:bg-white/90"
+                    size="sm"
+                  >
+                    Start Now
+                  </Button>
                 </div>
               ) : (
-                <p className="mt-5 text-sm text-[#eef0ff]">题目数据加载完成后，这里会显示新的推荐题目。</p>
+                <p className="mt-5 text-sm text-primary-fixed/90">
+                  Loading today's recommended problem...
+                </p>
               )}
-            </SurfaceCard>
+            </Card>
 
-            <SurfaceCard tone="muted">
+            {/* Recommended Problems */}
+            <Card variant="surface" className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-['Manrope'] text-[1.45rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">推荐题目</h2>
-                  <p className="mt-1 text-sm text-[#65748d]">按当前节奏补同难度和相邻主题。</p>
+                  <h2 className="font-headline text-xl font-extrabold text-on-surface">Recommended</h2>
+                  <p className="mt-1 text-sm text-on-surface-variant">
+                    Problems matched to your current level
+                  </p>
                 </div>
-                <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">最近 7 天</span>
+                <span className="rounded-full bg-surface-container-low px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Last 7 Days
+                </span>
               </div>
               <div className="mt-6 space-y-3">
                 {recommendedProblems.length === 0 ? (
-                  <div className="rounded-[8px] bg-white/92 px-4 py-5 text-sm text-[#65748d]">当前没有推荐题目。</div>
+                  <div className="rounded-lg bg-white/92 px-4 py-5 text-sm text-on-surface-variant">
+                    No recommendations available.
+                  </div>
                 ) : (
                   recommendedProblems.map((problem) => (
-                    <Link key={problem.id} to={`/problems/${problem.id}`} className="block rounded-[8px] bg-white/92 px-4 py-4 transition-colors hover:bg-white">
+                    <Link
+                      key={problem.id}
+                      to={`/problems/${problem.id}`}
+                      className="block rounded-lg bg-white/92 px-4 py-4 transition-colors hover:bg-white"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-[#131b2e]">{problem.title}</p>
-                          <p className="mt-1 text-xs text-[#65748d]">{problem.reason}</p>
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#6b7ca7]">
-                            <span className={cn('rounded-full px-2.5 py-1 font-semibold', difficultyBadgeTone(problem.difficulty))}>
-                              {difficultyLabel(problem.difficulty)}
-                            </span>
-                            <span>{problem.acceptance_rate}% 通过率</span>
+                          <p className="truncate text-sm font-semibold text-on-surface">{problem.title}</p>
+                          <p className="mt-1 text-xs text-on-surface-variant">{problem.reason}</p>
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-on-surface-variant">
+                            <DifficultyBadge difficulty={problem.difficulty} />
+                            <span>{problem.acceptance_rate}% acceptance</span>
                           </div>
                         </div>
-                        <span className="rounded-full bg-[#dae2ff] px-2.5 py-1 text-xs font-semibold text-[#003d9b]">{problem.points} 分</span>
+                        <span className="rounded-full bg-primary-container px-2.5 py-1 text-xs font-semibold text-primary">
+                          {problem.points} pts
+                        </span>
                       </div>
                     </Link>
                   ))
                 )}
               </div>
-            </SurfaceCard>
+            </Card>
           </div>
         </div>
 
+        {/* Weekly Activity and Difficulty Distribution */}
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <SurfaceCard className="architectural-grid overflow-hidden">
+          <Card variant="default" className="p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="font-['Manrope'] text-[1.45rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">学习节奏</h2>
-                <p className="mt-1 text-sm text-[#65748d]">最近 7 天的提交与通过节奏。</p>
+                <h2 className="font-headline text-xl font-extrabold text-on-surface">Weekly Activity</h2>
+                <p className="mt-1 text-sm text-on-surface-variant">
+                  Submissions and acceptance rate over the past 7 days.
+                </p>
               </div>
-              <span className="rounded-full bg-[rgba(255,255,255,0.92)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">最近 7 天</span>
+              <span className="rounded-full bg-surface-container-low px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                Last 7 Days
+              </span>
             </div>
             <div className="mt-6 grid gap-3 md:grid-cols-7">
               {weeklyActivity.map((day) => (
-                <div key={day.label} className="rounded-[8px] bg-white/92 px-4 py-4 shadow-[0_8px_18px_rgba(19,27,46,0.04)]">
-                  <p className="text-sm font-semibold text-[#17305e]">{day.label}</p>
-                  <p className="mt-4 text-[13px] text-[#65748d]">提交 {day.submissions}</p>
-                  <p className="mt-1 text-[13px] text-[#65748d]">通过 {day.accepted}</p>
+                <div key={day.label} className="rounded-lg bg-surface-container-low px-4 py-4">
+                  <p className="text-sm font-semibold text-on-surface">{day.label}</p>
+                  <p className="mt-4 text-xs text-on-surface-variant">Submissions {day.submissions}</p>
+                  <p className="mt-1 text-xs text-on-surface-variant">Accepted {day.accepted}</p>
                 </div>
               ))}
             </div>
-          </SurfaceCard>
+          </Card>
 
           <div className="space-y-6">
-            <SurfaceCard>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#6b7ca7]">难度分布</p>
+            <Card variant="surface" className="p-6">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                Difficulty Distribution
+              </p>
               <div className="mt-4 grid gap-3">
-                <div className="flex items-center justify-between rounded-[8px] bg-[rgba(242,243,255,0.68)] px-4 py-3 text-sm text-[#17305e]">
-                  <span>简单</span>
-                  <span>{userStats?.easy_solved ?? 0} 道题</span>
+                <div className="flex items-center justify-between rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface">
+                  <span>Easy</span>
+                  <span className="font-semibold">{userStats?.easy_solved ?? 0} solved</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[8px] bg-[rgba(242,243,255,0.68)] px-4 py-3 text-sm text-[#17305e]">
-                  <span>中等</span>
-                  <span>{userStats?.medium_solved ?? 0} 道题</span>
+                <div className="flex items-center justify-between rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface">
+                  <span>Medium</span>
+                  <span className="font-semibold">{userStats?.medium_solved ?? 0} solved</span>
                 </div>
-                <div className="flex items-center justify-between rounded-[8px] bg-[rgba(242,243,255,0.68)] px-4 py-3 text-sm text-[#17305e]">
-                  <span>困难</span>
-                  <span>{userStats?.hard_solved ?? 0} 道题</span>
+                <div className="flex items-center justify-between rounded-lg bg-surface-container-low px-4 py-3 text-sm text-on-surface">
+                  <span>Hard</span>
+                  <span className="font-semibold">{userStats?.hard_solved ?? 0} solved</span>
                 </div>
               </div>
-            </SurfaceCard>
+            </Card>
 
-            <SurfaceCard tone="muted">
+            <Card variant="surface" className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-['Manrope'] text-[1.3rem] font-extrabold tracking-[-0.03em] text-[#131b2e]">成就进度</h2>
-                  <p className="mt-1 text-sm text-[#65748d]">
-                    {userStats?.unlocked_achievements ?? 0} / {userStats?.total_achievements ?? 0} 项成就
+                  <h2 className="font-headline text-lg font-extrabold text-on-surface">Achievements</h2>
+                  <p className="mt-1 text-sm text-on-surface-variant">
+                    {userStats?.unlocked_achievements ?? 0} / {userStats?.total_achievements ?? 0} unlocked
                   </p>
                 </div>
-                <span className="rounded-full bg-white/92 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6b7ca7]">成长记录</span>
+                <span className="rounded-full bg-surface-container-low px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                  Progress
+                </span>
               </div>
               <div className="mt-5 space-y-3">
                 {Array.isArray(userStats?.achievements) && userStats.achievements.length > 0 ? (
                   userStats.achievements.map((achievement) => (
-                    <div key={achievement.id} className="rounded-[8px] bg-white/92 px-4 py-3">
-                      <p className="text-sm font-semibold text-[#131b2e]">{achievement.name}</p>
-                      <p className="mt-1 text-xs text-[#65748d]">{achievement.description}</p>
+                    <div key={achievement.id} className="rounded-lg bg-white/92 px-4 py-3">
+                      <p className="text-sm font-semibold text-on-surface">{achievement.name}</p>
+                      <p className="mt-1 text-xs text-on-surface-variant">{achievement.description}</p>
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-[8px] bg-white/92 px-4 py-4 text-sm text-[#65748d]">当前还没有解锁成就。</div>
+                  <div className="rounded-lg bg-white/92 px-4 py-4 text-sm text-on-surface-variant">
+                    No achievements unlocked yet.
+                  </div>
                 )}
               </div>
-            </SurfaceCard>
+            </Card>
           </div>
         </div>
       </div>

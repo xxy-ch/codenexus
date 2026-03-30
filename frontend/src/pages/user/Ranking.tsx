@@ -1,18 +1,19 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Crown, RefreshCcw } from 'lucide-react'
-import { FilterBar } from '@/components/page/FilterBar'
-import { PageHeader } from '@/components/page/PageHeader'
-import { SurfaceCard } from '@/components/page/SurfaceCard'
+import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { LoadingState } from '@/components/ui/LoadingState'
+import { ErrorState } from '@/components/ui/ErrorState'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Avatar } from '@/components/ui/Avatar'
 import { rankingService } from '@/services/ranking'
 import { cn } from '@/lib/utils'
 
 function podiumTone(rank: number) {
-  if (rank === 1) return 'from-[#003d9b] to-[#0052cc] text-white'
-  if (rank === 2) return 'from-[#edf2ff] to-[#dae2ff] text-[#17305e]'
-  return 'from-[#f6f7ff] to-[#eef2ff] text-[#17305e]'
+  if (rank === 1) return 'bg-gradient-to-br from-primary to-primary-container text-white'
+  if (rank === 2) return 'bg-gradient-to-br from-[#edf2ff] to-[#dae2ff] text-on-surface'
+  return 'bg-gradient-to-br from-[#f6f7ff] to-[#eef2ff] text-on-surface'
 }
 
 export function Ranking() {
@@ -21,7 +22,7 @@ export function Ranking() {
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['ranking', timePeriod],
-    queryFn: () => rankingService.getGlobalRanking({ page: 1, limit: 20, time_period: timePeriod }),
+    queryFn: () => rankingService.getGlobalRanking({ page: 1, limit: 50, time_period: timePeriod }),
   })
 
   const filteredUsers = useMemo(() => {
@@ -41,7 +42,7 @@ export function Ranking() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
-        <SurfaceCard className="text-sm text-[#6b7ca7]">排行榜加载中...</SurfaceCard>
+        <LoadingState message="Loading rankings..." />
       </div>
     )
   }
@@ -49,16 +50,11 @@ export function Ranking() {
   if (isError) {
     return (
       <div className="mx-auto max-w-[1280px] px-4 py-6 md:px-8">
-        <SurfaceCard className="space-y-4 bg-[rgba(255,247,247,0.95)]">
-          <div>
-            <h1 className="font-['Manrope'] text-[1.8rem] font-extrabold tracking-[-0.04em] text-[#7b1e2b]">排行榜加载失败</h1>
-            <p className="mt-2 text-sm text-[#7d5260]">当前无法读取实时榜单。</p>
-          </div>
-          <Button onClick={() => refetch()}>
-            <RefreshCcw className="h-4 w-4" />
-            重试
-          </Button>
-        </SurfaceCard>
+        <ErrorState
+          title="Failed to load rankings"
+          message="Unable to fetch ranking data. Please try again later."
+          action={{ label: 'Retry', onClick: () => refetch() }}
+        />
       </div>
     )
   }
@@ -66,181 +62,259 @@ export function Ranking() {
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
       <div className="space-y-6">
-        <PageHeader
-          eyebrow="全站排名"
-          title="全站排名"
-          description="按参考稿收成全球榜单工作台，保留榜首三席、焦点摘要和全局榜单池，不再只是通用表格。"
-          actions={(
-            <Button variant="outline" onClick={() => refetch()}>
-              <RefreshCcw className="h-4 w-4" />
-              刷新榜单
-            </Button>
-          )}
-        />
+        {/* Page Header */}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+              Rankings
+            </p>
+            <h1 className="font-headline text-4xl font-extrabold tracking-tight text-on-surface">
+              Global Leaderboard
+            </h1>
+            <p className="max-w-xl text-sm leading-6 text-on-surface-variant">
+              Top performers from around the world, ranked by points and problems solved.
+            </p>
+          </div>
 
-        <div className="grid gap-5 xl:grid-cols-[1.45fr_0.95fr]">
-          <SurfaceCard className="overflow-hidden bg-[linear-gradient(135deg,rgba(7,43,117,0.98)_0%,rgba(13,82,186,0.96)_52%,rgba(140,198,255,0.9)_100%)] px-6 py-6 text-white shadow-[0_22px_48px_rgba(8,50,132,0.22)]">
+          <Button
+            variant="outline"
+            onClick={() => refetch()}
+            leftIcon={<span className="material-symbols-outlined text-base">refresh</span>}
+          >
+            Refresh
+          </Button>
+        </div>
+
+        {/* Main Overview Card */}
+        <div className="grid gap-6 xl:grid-cols-[1.45fr_0.9fr]">
+          <Card className="overflow-hidden bg-gradient-to-br from-primary to-primary-container px-6 py-6 text-white shadow-lg">
             <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/72">本期焦点</p>
-                <h2 className="mt-3 font-['Manrope'] text-[2rem] font-extrabold tracking-[-0.05em] text-white md:text-[2.5rem]">榜首三席</h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-white/80">
-                  把顶尖选手、积分走势和全站容量压到同一屏，形成参考稿那种榜单主舞台。
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-fixed/72">
+                  Top Performers
+                </p>
+                <h2 className="mt-3 font-headline text-3xl font-extrabold tracking-tight">
+                  Leaderboard Podium
+                </h2>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-primary-fixed/90">
+                  Celebrating the best programmers on the platform with their achievements and statistics.
                 </p>
               </div>
-              <div className="rounded-[28px] border border-white/16 bg-white/10 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60">榜首用户</p>
-                <p className="mt-2 text-xl font-semibold text-white">{topUser?.username ?? '暂无数据'}</p>
+              <div className="rounded-xl border border-white/16 bg-white/10 p-4 backdrop-blur-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-white/60">
+                  Top Ranker
+                </p>
+                <p className="mt-2 text-xl font-semibold text-white">
+                  {topUser?.username ?? 'Loading...'}
+                </p>
                 <p className="mt-2 text-sm text-white/74">
-                  {topUser ? `已完成 ${topUser.problems_solved} 题，积分 ${topUser.points}` : '等待榜单返回数据'}
+                  {topUser
+                    ? `${topUser.problems_solved} solved, ${topUser.points} points`
+                    : 'Loading leaderboard data...'}
                 </p>
               </div>
             </div>
-          </SurfaceCard>
+          </Card>
 
+          {/* Stats Cards */}
           <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-1">
-            <SurfaceCard className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,247,255,0.94)_100%)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4f6ea8]">总榜席位</p>
-              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">{filteredUsers.length}</p>
-              <p className="mt-2 text-sm text-[#5f6d87]">当前筛选后可见用户数</p>
-            </SurfaceCard>
-            <SurfaceCard className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,247,255,0.94)_100%)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4f6ea8]">榜首积分</p>
-              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">{topUser?.points ?? 0}</p>
-              <p className="mt-2 text-sm text-[#5f6d87]">最高分用户当前积分</p>
-            </SurfaceCard>
-            <SurfaceCard className="bg-[linear-gradient(180deg,rgba(255,255,255,0.98)_0%,rgba(244,247,255,0.94)_100%)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4f6ea8]">平均通过率</p>
-              <p className="mt-3 text-3xl font-semibold text-[#131b2e]">
+            <Card variant="surface" className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                Total Users
+              </p>
+              <p className="mt-3 text-3xl font-semibold text-on-surface">{filteredUsers.length}</p>
+              <p className="mt-2 text-sm text-on-surface-variant">Visible in current filter</p>
+            </Card>
+
+            <Card variant="surface" className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                Top Score
+              </p>
+              <p className="mt-3 text-3xl font-semibold text-on-surface">{topUser?.points ?? 0}</p>
+              <p className="mt-2 text-sm text-on-surface-variant">Highest score achieved</p>
+            </Card>
+
+            <Card variant="surface" className="p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                Avg Accuracy
+              </p>
+              <p className="mt-3 text-3xl font-semibold text-on-surface">
                 {filteredUsers.length > 0
-                  ? `${Math.round(filteredUsers.reduce((sum, user) => sum + user.accuracy, 0) / filteredUsers.length)}%`
+                  ? `${Math.round(filteredUsers.reduce((sum, user) => sum + (user.accuracy || 0), 0) / filteredUsers.length)}%`
                   : '0%'}
               </p>
-              <p className="mt-2 text-sm text-[#5f6d87]">筛选范围内的整体表现</p>
-            </SurfaceCard>
+              <p className="mt-2 text-sm text-on-surface-variant">Overall performance</p>
+            </Card>
           </div>
         </div>
 
-        <SurfaceCard tone="muted">
-          <FilterBar>
-            <Input
-              type="search"
-              aria-label="搜索用户名"
-              placeholder="搜索用户名、组织或排名席位"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="min-w-[260px] flex-1"
-            />
+        {/* Filters */}
+        <Card className="p-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="flex-1">
+              <Input
+                type="search"
+                aria-label="Search users"
+                placeholder="Search by username..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                className="max-w-md"
+              />
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               {[
-                ['all', '全部'],
-                ['week', '本周'],
-                ['month', '本月'],
-                ['year', '全年'],
-              ].map(([value, label]) => (
+                { value: 'all', label: 'All Time' },
+                { value: 'week', label: 'This Week' },
+                { value: 'month', label: 'This Month' },
+                { value: 'year', label: 'This Year' },
+              ].map((item) => (
                 <button
-                  key={value}
+                  key={item.value}
                   type="button"
-                  onClick={() => setTimePeriod(value as 'all' | 'week' | 'month' | 'year')}
+                  onClick={() => setTimePeriod(item.value as any)}
                   className={cn(
-                    'rounded-full px-4 py-2 text-sm font-medium transition',
-                    timePeriod === value ? 'bg-[#003d9b] text-white' : 'bg-white/92 text-[#586988] hover:bg-white',
+                    'rounded-full px-4 py-2 text-sm font-medium transition-colors',
+                    timePeriod === item.value
+                      ? 'bg-primary text-on-primary shadow-md'
+                      : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'
                   )}
                 >
-                  {label}
+                  {item.label}
                 </button>
               ))}
             </div>
-          </FilterBar>
-        </SurfaceCard>
+          </div>
+        </Card>
 
+        {/* Podium Section */}
         <section className="space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#4f6ea8]">榜首三席</p>
-              <h2 className="mt-2 font-['Manrope'] text-[1.6rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">榜首三席</h2>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+                Top 3
+              </p>
+              <h2 className="mt-2 font-headline text-2xl font-extrabold text-on-surface">
+                Podium Winners
+              </h2>
             </div>
           </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          {podium.map((user) => (
-            <SurfaceCard key={user.id} className={cn('bg-gradient-to-br', podiumTone(user.ranking))}>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-70">席位 #{user.ranking}</p>
-                  <h2 className="mt-3 font-['Manrope'] text-[1.8rem] font-extrabold tracking-[-0.05em]">{user.username}</h2>
-                  <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-                    {user.school_name ? <span className="rounded-full bg-white/18 px-2.5 py-1">{user.school_name}</span> : null}
-                    <span className="rounded-full bg-white/18 px-2.5 py-1">完成 {user.problems_solved} 题</span>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {podium.map((user, index) => (
+              <Card
+                key={user.id}
+                className={cn('bg-gradient-to-br p-6 text-white shadow-md', podiumTone(user.ranking || index + 1))}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-white/70">
+                      Rank #{user.ranking}
+                    </p>
+                    <h2 className="mt-3 font-headline text-2xl font-extrabold">
+                      {user.username}
+                    </h2>
+                    <div className="mt-4 flex flex-wrap items-center gap-2">
+                      {user.school_name ? (
+                        <span className="rounded-full bg-white/18 px-3 py-1 text-xs font-semibold">
+                          {user.school_name}
+                        </span>
+                      ) : null}
+                      <span className="rounded-full bg-white/18 px-3 py-1 text-xs font-semibold">
+                        {user.problems_solved} solved
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
+                    <span className="material-symbols-outlined text-2xl">emoji_events</span>
                   </div>
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/20">
-                  <Crown className="h-5 w-5" />
+                <div className="mt-6 grid grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/60">Points</p>
+                    <p className="mt-1 font-semibold">{user.points}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/60">Solved</p>
+                    <p className="mt-1 font-semibold">{user.problems_solved}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-white/60">Accuracy</p>
+                    <p className="mt-1 font-semibold">{user.accuracy || 0}%</p>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-8 grid grid-cols-3 gap-3 text-sm">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-65">积分</p>
-                  <p className="mt-1 font-semibold">{user.points}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-65">通过题数</p>
-                  <p className="mt-1 font-semibold">{user.problems_solved}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] opacity-65">通过率</p>
-                  <p className="mt-1 font-semibold">{user.accuracy}%</p>
-                </div>
-              </div>
-            </SurfaceCard>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
         </section>
 
-        <SurfaceCard className="overflow-hidden">
-          <div className="border-b border-[rgba(218,226,253,0.36)] px-4 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#4f6ea8]">全局榜单池</p>
-            <h2 className="mt-2 font-['Manrope'] text-[1.35rem] font-extrabold tracking-[-0.04em] text-[#131b2e]">全局榜单池</h2>
+        {/* Full Leaderboard */}
+        <Card className="overflow-hidden p-0">
+          <div className="border-b border-outline-variant/10 px-6 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
+              Full Leaderboard
+            </p>
+            <h2 className="mt-2 font-headline text-xl font-extrabold text-on-surface">
+              Global Rankings
+            </h2>
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead>
-                <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6b7ca7]">
-                  <th className="px-4 py-3">排名</th>
-                  <th className="px-4 py-3">用户</th>
-                  <th className="px-4 py-3">积分</th>
-                  <th className="px-4 py-3">AC 数</th>
-                  <th className="px-4 py-3">提交数</th>
-                  <th className="px-4 py-3">通过率</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rest.length === 0 ? (
-                  <tr>
-                    <td className="px-4 py-8 text-sm text-[#65748d]" colSpan={6}>当前没有更多榜单用户。</td>
+
+          {filteredUsers.length === 0 ? (
+            <div className="p-12">
+              <EmptyState
+                title="No rankings found"
+                description="Try adjusting your filters or check back later."
+                icon={
+                  <span className="material-symbols-outlined text-6xl text-on-surface-variant">
+                    leaderboard
+                  </span>
+                }
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="text-left text-[11px] font-bold uppercase tracking-wider text-on-surface-variant">
+                    <th className="px-4 py-3">Rank</th>
+                    <th className="px-4 py-3">User</th>
+                    <th className="px-4 py-3">Points</th>
+                    <th className="px-4 py-3">Solved</th>
+                    <th className="px-4 py-3">Submissions</th>
+                    <th className="px-4 py-3">Accuracy</th>
                   </tr>
-                ) : (
-                  rest.map((user) => (
-                    <tr key={user.id} className="border-t border-[rgba(218,226,253,0.36)] text-sm text-[#17305e]">
+                </thead>
+                <tbody>
+                  {rest.map((user) => (
+                    <tr
+                      key={user.id}
+                      className="border-t border-outline-variant/10 text-sm text-on-surface hover:bg-surface-container-low/30 transition-colors"
+                    >
                       <td className="px-4 py-4 font-semibold">#{user.ranking}</td>
                       <td className="px-4 py-4">
-                        <div>
-                          <p className="font-semibold text-[#131b2e]">{user.username}</p>
-                          {user.school_name ? <p className="mt-1 text-xs text-[#6b7ca7]">{user.school_name}</p> : null}
+                        <div className="flex items-center gap-3">
+                          <Avatar size="sm" />
+                          <div>
+                            <p className="font-semibold text-on-surface">{user.username}</p>
+                            {user.school_name ? (
+                              <p className="text-xs text-on-surface-variant">{user.school_name}</p>
+                            ) : null}
+                          </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4">{user.points}</td>
+                      <td className="px-4 py-4 font-semibold">{user.points}</td>
                       <td className="px-4 py-4">{user.problems_solved}</td>
-                      <td className="px-4 py-4">{user.submissions}</td>
-                      <td className="px-4 py-4">{user.accuracy}%</td>
+                      <td className="px-4 py-4 text-on-surface-variant">{user.submissions || 0}</td>
+                      <td className="px-4 py-4 text-on-surface-variant">{user.accuracy || 0}%</td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </SurfaceCard>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   )
 }
+
+export default Ranking
