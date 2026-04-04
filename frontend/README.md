@@ -121,7 +121,7 @@ function MyComponent() {
 
 ```typescript
 // 保护需要认证的路由
-<Route path="/dashboard" element={
+<Route path="/" element={
   <ProtectedRoute>
     <Dashboard />
   </ProtectedRoute>
@@ -137,40 +137,27 @@ function MyComponent() {
 
 ## 🎯 已实现界面
 
-### 认证界面 (P0)
+### 当前可用界面
 - ✅ 登录页面 (`/login`)
 - ✅ 注册页面 (`/register`)
-- ✅ 未授权页面 (`/unauthorized`)
+- ✅ 未授权页面 (`/403`)
 
-### 用户界面
-- ✅ 主仪表板 (`/dashboard`)
+- ✅ 主仪表板 (`/`)
+- ✅ 题库 (`/problems`)
+- ✅ 题目详情与提交 (`/problems/:id`)
+- ✅ 在线 IDE (`/ide`)
+- ✅ 提交记录 (`/submissions`)
+- ✅ 排行榜 (`/rankings`)
+- ✅ 讨论区 (`/discussions`)
+- ✅ 竞赛列表与详情 (`/contests`, `/contests/:id`)
+- ✅ 管理面板 (`/admin`)
 - ✅ 侧边栏导航
 - ✅ 顶部导航栏
 - ✅ 主布局系统
 
-## 🔜 下一步计划
+## 当前范围说明
 
-### P0 - 核心功能 (进行中)
-- ⏳ 题目列表页面
-- ⏳ 题目详情页面
-- ⏳ 在线IDE
-- ⏳ 提交系统
-
-### P1 - 高级功能
-- ⏳ 竞赛系统
-- ⏳ 用户排名
-- ⏳ 提交历史
-- ⏳ 实时更新
-
-### P2 - 社区功能
-- ⏳ 博客系统
-- ⏳ 讨论区
-- ⏳ 消息系统
-
-### P3 - 管理功能
-- ⏳ 教师工具
-- ⏳ 管理员面板
-- ⏳ 抄袭检测
+本轮前端已收敛为精简版 Online Judge 工作台。博客、站内消息、教师工具、搜索页、抄袭报告等旧页面当前不在交付范围内，相关契约与 smoke 用例已同步移除，避免文档和验证面继续漂移。
 
 ## 🛠️ 开发指南
 

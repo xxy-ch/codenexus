@@ -4,15 +4,8 @@
     "noEmit": true
   },
   "include": [
-    "src/services/**/*.ts",
-    "src/types/**/*.ts",
-    "src/components/messages/**/*.tsx",
-    "src/pages/community/DirectMessages.tsx",
-    "src/pages/admin/SimilarityScanConfig.tsx",
-    "src/pages/admin/PlagiarismReportList.tsx",
-    "src/pages/admin/PlagiarismReportDetail.tsx",
-    "src/pages/admin/JudgeSettings.tsx",
-    "src/pages/admin/ProblemContentConfig.tsx"
+    "src/**/*.ts",
+    "src/**/*.tsx"
   ],
   "exclude": [
     "src/**/*.test.ts",

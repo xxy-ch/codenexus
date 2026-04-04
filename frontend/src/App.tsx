@@ -1,202 +1,82 @@
-import { lazy, Suspense, type ComponentType } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ToastProvider } from './components/ui/Toast'
-import { MainLayout } from './layouts/MainLayout'
-import { AdminLayout } from './layouts/AdminLayout'
-import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute'
-import { AdminRoute } from './components/auth/AdminRoute'
-import { TeacherRoute } from './components/auth/TeacherRoute'
-import { Loading } from './components/ui/Loading'
-import { FEATURE_FLAGS } from './services/config'
+import { lazy, Suspense } from 'react'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuthStore } from './store/authStore'
+import { AppShell } from './components/layout/AppShell'
+import Loading from './components/ui/Loading'
 
-const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
-  lazy(async () => {
-    const module = await loader()
-    return { default: module[exportName] as ComponentType }
-  })
+// Lazy page imports
+const Login = lazy(() => import('./pages/auth/Login'))
+const Register = lazy(() => import('./pages/auth/Register'))
+const Dashboard = lazy(() => import('./pages/user/Dashboard'))
+const ProblemList = lazy(() => import('./pages/user/problems/ProblemList'))
+const ProblemDetail = lazy(() => import('./pages/user/problems/ProblemDetail'))
+const SubmissionHistory = lazy(() => import('./pages/user/SubmissionHistory'))
+const UserRankings = lazy(() => import('./pages/user/UserRankings'))
+const DiscussionForum = lazy(() => import('./pages/community/DiscussionForum'))
+const ContestList = lazy(() => import('./pages/contest/ContestList'))
+const ContestDetail = lazy(() => import('./pages/contest/ContestDetail'))
+const OnlineIDE = lazy(() => import('./pages/user/OnlineIDE'))
+const AdminPanel = lazy(() => import('./pages/admin/AdminPanel'))
+const Unauthorized = lazy(() => import('./pages/errors/Unauthorized'))
+const NotFound = lazy(() => import('./pages/errors/NotFound'))
 
-const LoginPage = lazyNamed(() => import('./pages/auth/LoginPage'), 'LoginPage')
-const AccountRecoveryPage = lazyNamed(() => import('./pages/auth/AccountRecoveryPage'), 'AccountRecoveryPage')
-const RegisterPage = lazyNamed(() => import('./pages/auth/RegisterPage'), 'RegisterPage')
-const UnauthorizedPage = lazyNamed(() => import('./pages/auth/UnauthorizedPage'), 'UnauthorizedPage')
-const NotFound = lazyNamed(() => import('./pages/error/NotFound'), 'NotFound')
-const TermsOfServicePage = lazyNamed(() => import('./pages/legal/TermsOfServicePage'), 'TermsOfServicePage')
-const PrivacyPolicyPage = lazyNamed(() => import('./pages/legal/PrivacyPolicyPage'), 'PrivacyPolicyPage')
-const ServerError = lazyNamed(() => import('./pages/error/ServerError'), 'ServerError')
-const DashboardEnhanced = lazyNamed(() => import('./pages/user/DashboardEnhanced'), 'DashboardEnhanced')
-const ProblemSet = lazyNamed(() => import('./pages/user/ProblemSet'), 'ProblemSet')
-const ProblemDetail = lazyNamed(() => import('./pages/user/ProblemDetail'), 'ProblemDetail')
-const ProblemIDEEnhanced = lazyNamed(() => import('./pages/user/ProblemIDEEnhanced'), 'ProblemIDEEnhanced')
-const SubmissionHistory = lazyNamed(() => import('./pages/user/SubmissionHistory'), 'SubmissionHistory')
-const SubmissionDetail = lazyNamed(() => import('./pages/user/SubmissionDetail'), 'SubmissionDetail')
-const ContestList = lazyNamed(() => import('./pages/user/ContestList'), 'ContestList')
-const ContestDetail = lazyNamed(() => import('./pages/user/ContestDetail'), 'ContestDetail')
-const ContestScoreboard = lazyNamed(() => import('./pages/contest/ContestScoreboard'), 'ContestScoreboard')
-const Ranking = lazyNamed(() => import('./pages/user/Ranking'), 'Ranking')
-const LearningRoadmap = lazyNamed(() => import('./pages/user/LearningRoadmap'), 'LearningRoadmap')
-const DiscussionList = lazyNamed(() => import('./pages/community/DiscussionList'), 'DiscussionList')
-const DiscussionDetail = lazyNamed(() => import('./pages/community/DiscussionDetail'), 'DiscussionDetail')
-const CreateDiscussion = lazyNamed(() => import('./pages/community/CreateDiscussion'), 'CreateDiscussion')
-const BlogList = lazyNamed(() => import('./pages/community/BlogList'), 'BlogList')
-const BlogDetail = lazyNamed(() => import('./pages/community/BlogDetail'), 'BlogDetail')
-const CreateArticle = lazyNamed(() => import('./pages/community/CreateArticle'), 'CreateArticle')
-const EditArticle = lazyNamed(() => import('./pages/community/EditArticle'), 'EditArticle')
-const DirectMessages = lazyNamed(() => import('./pages/community/DirectMessages'), 'DirectMessages')
-const SearchResults = lazyNamed(() => import('./pages/search/SearchResults'), 'SearchResults')
-const Profile = lazyNamed(() => import('./pages/user/Profile'), 'Profile')
-const Settings = lazyNamed(() => import('./pages/user/Settings'), 'Settings')
-const ClassManagement = lazyNamed(() => import('./pages/teacher/ClassManagement'), 'ClassManagement')
-const AssignmentReport = lazyNamed(() => import('./pages/teacher/AssignmentReport'), 'AssignmentReport')
-const ContestWizard = lazyNamed(() => import('./pages/teacher/ContestWizard'), 'ContestWizard')
-const AdminDashboard = lazyNamed(() => import('./pages/admin/AdminDashboard'), 'AdminDashboard')
-const UserManagement = lazyNamed(() => import('./pages/admin/UserManagement'), 'UserManagement')
-const ProblemManagement = lazyNamed(() => import('./pages/admin/ProblemManagement'), 'ProblemManagement')
-const JudgeSettings = lazyNamed(() => import('./pages/admin/JudgeSettings'), 'JudgeSettings')
-const ProblemContentConfig = lazyNamed(() => import('./pages/admin/ProblemContentConfig'), 'ProblemContentConfig')
-const SimilarityScanConfig = lazyNamed(() => import('./pages/admin/SimilarityScanConfig'), 'SimilarityScanConfig')
-const PlagiarismReportList = lazyNamed(() => import('./pages/admin/PlagiarismReportList'), 'PlagiarismReportList')
-const PlagiarismReportDetail = lazyNamed(() => import('./pages/admin/PlagiarismReportDetail'), 'PlagiarismReportDetail')
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
-})
-
-function RouteFallback() {
-  return (
-    <div className="flex min-h-[320px] items-center justify-center">
-      <Loading message="页面加载中..." />
-    </div>
-  )
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuthStore()
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
-function renderLazy(Component: ComponentType) {
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated } = useAuthStore()
+  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (user?.role !== 'admin') return <Navigate to="/403" replace />
+  return <>{children}</>
+}
+
+export default function App() {
   return (
-    <Suspense fallback={<RouteFallback />}>
-      <Component />
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        {/* Public */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/403" element={<Unauthorized />} />
+
+        {/* Protected user routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <AppShell />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="problems" element={<ProblemList />} />
+          <Route path="problems/:id" element={<ProblemDetail />} />
+          <Route path="submissions" element={<SubmissionHistory />} />
+          <Route path="rankings" element={<UserRankings />} />
+          <Route path="ide" element={<OnlineIDE />} />
+          <Route path="discussions" element={<DiscussionForum />} />
+          <Route path="contests" element={<ContestList />} />
+          <Route path="contests/:id" element={<ContestDetail />} />
+        </Route>
+
+        {/* Admin routes */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AppShell />
+            </AdminRoute>
+          }
+        >
+          <Route index element={<AdminPanel />} />
+        </Route>
+
+        {/* Fallback */}
+        <Route path="/404" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
+      </Routes>
     </Suspense>
   )
 }
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <BrowserRouter>
-          <Routes>
-          {/* Public Routes */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                {renderLazy(LoginPage)}
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicRoute>
-                {renderLazy(RegisterPage)}
-              </PublicRoute>
-            }
-          />
-          <Route path="/account-recovery" element={renderLazy(AccountRecoveryPage)} />
-          <Route path="/terms" element={renderLazy(TermsOfServicePage)} />
-          <Route path="/privacy" element={renderLazy(PrivacyPolicyPage)} />
-
-          {/* Protected Routes */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={renderLazy(DashboardEnhanced)} />
-            <Route path="problems" element={renderLazy(ProblemSet)} />
-            <Route path="problems/:problemId" element={renderLazy(ProblemDetail)} />
-            <Route path="problems/:problemId/solve" element={renderLazy(ProblemIDEEnhanced)} />
-            <Route path="submissions" element={renderLazy(SubmissionHistory)} />
-            <Route path="submissions/:submissionId" element={renderLazy(SubmissionDetail)} />
-            <Route path="contests" element={renderLazy(ContestList)} />
-            <Route path="contests/:contestId" element={renderLazy(ContestDetail)} />
-            <Route path="contests/:contestId/scoreboard" element={renderLazy(ContestScoreboard)} />
-            <Route path="ranking" element={renderLazy(Ranking)} />
-            <Route path="roadmap" element={renderLazy(LearningRoadmap)} />
-            <Route path="discussions" element={renderLazy(DiscussionList)} />
-            <Route path="discussions/new" element={renderLazy(CreateDiscussion)} />
-            <Route path="discussions/:problemId/new" element={renderLazy(CreateDiscussion)} />
-            <Route path="discussions/:id" element={renderLazy(DiscussionDetail)} />
-            <Route path="blog" element={renderLazy(BlogList)} />
-            <Route path="blog/new" element={renderLazy(CreateArticle)} />
-            <Route path="blog/:slug" element={renderLazy(BlogDetail)} />
-            <Route path="blog/:slug/edit" element={renderLazy(EditArticle)} />
-            {FEATURE_FLAGS.directMessages && (
-              <Route path="messages" element={renderLazy(DirectMessages)} />
-            )}
-            <Route path="search" element={renderLazy(SearchResults)} />
-            <Route path="profile" element={renderLazy(Profile)} />
-            <Route path="settings" element={renderLazy(Settings)} />
-            <Route
-              path="teacher/classes"
-              element={<TeacherRoute>{renderLazy(ClassManagement)}</TeacherRoute>}
-            />
-            <Route
-              path="teacher/assignment-report"
-              element={<TeacherRoute>{renderLazy(AssignmentReport)}</TeacherRoute>}
-            />
-            <Route
-              path="teacher/contest-wizard"
-              element={<TeacherRoute>{renderLazy(ContestWizard)}</TeacherRoute>}
-            />
-            {/* Add more protected routes here */}
-          </Route>
-
-          {/* Admin Routes */}
-          <Route
-            path="/admin"
-            element={
-              <AdminRoute>
-                <AdminLayout />
-              </AdminRoute>
-            }
-          >
-            <Route index element={renderLazy(AdminDashboard)} />
-            <Route path="users" element={renderLazy(UserManagement)} />
-            <Route path="problems" element={renderLazy(ProblemManagement)} />
-            <Route path="judge-settings" element={renderLazy(JudgeSettings)} />
-            <Route path="problem-content" element={renderLazy(ProblemContentConfig)} />
-            {FEATURE_FLAGS.plagiarism && (
-              <Route path="similarity-scan" element={renderLazy(SimilarityScanConfig)} />
-            )}
-            {FEATURE_FLAGS.plagiarism && (
-              <Route path="plagiarism-reports" element={renderLazy(PlagiarismReportList)} />
-            )}
-            {FEATURE_FLAGS.plagiarism && (
-              <Route path="plagiarism-reports/:reportId" element={renderLazy(PlagiarismReportDetail)} />
-            )}
-          </Route>
-
-          {/* Error Routes */}
-          <Route path="/unauthorized" element={renderLazy(UnauthorizedPage)} />
-          <Route path="/404" element={renderLazy(NotFound)} />
-          <Route path="/500" element={renderLazy(ServerError)} />
-
-          {/* Fallback */}
-          <Route path="*" element={renderLazy(NotFound)} />
-        </Routes>
-      </BrowserRouter>
-      </ToastProvider>
-    </QueryClientProvider>
-  )
-}
-
-export default App

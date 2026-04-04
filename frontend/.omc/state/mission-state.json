@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-03-30T15:00:57.922Z",
+  "updatedAt": "2026-03-31T03:04:49.597Z",
   "missions": [
     {
       "id": "session:a6700d43-d626-49be-98d6-d7ecedeb2b74:none",
@@ -7,15 +7,15 @@
       "name": "none",
       "objective": "Session mission",
       "createdAt": "2026-03-30T14:44:33.028Z",
-      "updatedAt": "2026-03-30T15:00:57.922Z",
+      "updatedAt": "2026-03-31T03:04:49.597Z",
       "status": "running",
       "workerCount": 10,
       "taskCounts": {
         "total": 10,
         "pending": 0,
         "blocked": 0,
-        "inProgress": 3,
-        "completed": 7,
+        "inProgress": 2,
+        "completed": 8,
         "failed": 0
       },
       "agents": [
@@ -23,11 +23,11 @@
           "name": "executor:a9100cb",
           "role": "executor",
           "ownership": "a9100cb21ee856aea",
-          "status": "running",
+          "status": "done",
           "currentStep": null,
-          "latestUpdate": null,
+          "latestUpdate": "completed",
           "completedSummary": null,
-          "updatedAt": "2026-03-30T14:44:33.028Z"
+          "updatedAt": "2026-03-31T03:04:49.597Z"
         },
         {
           "name": "executor:ae70608",
@@ -152,6 +152,30 @@
           "agent": "executor:a7c6a3d",
           "detail": "completed",
           "sourceKey": "session-stop:a7c6a3d4b67b3eca4"
+        },
+        {
+          "id": "session-stop:aaa618a37d8a53150:2026-03-30T15:14:07.621Z",
+          "at": "2026-03-30T15:14:07.621Z",
+          "kind": "completion",
+          "agent": "executor:a9100cb",
+          "detail": "completed",
+          "sourceKey": "session-stop:aaa618a37d8a53150"
+        },
+        {
+          "id": "session-stop:a6d2565e629937d70:2026-03-31T00:10:53.048Z",
+          "at": "2026-03-31T00:10:53.048Z",
+          "kind": "completion",
+          "agent": "executor:a9100cb",
+          "detail": "completed",
+          "sourceKey": "session-stop:a6d2565e629937d70"
+        },
+        {
+          "id": "session-stop:ac1e553baf32854b7:2026-03-31T03:04:49.597Z",
+          "at": "2026-03-31T03:04:49.597Z",
+          "kind": "completion",
+          "agent": "executor:a9100cb",
+          "detail": "completed",
+          "sourceKey": "session-stop:ac1e553baf32854b7"
         }
       ]
     }

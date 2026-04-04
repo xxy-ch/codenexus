@@ -22,36 +22,34 @@ function createLocalStorageMock() {
 }
 
 const localStorageMock = createLocalStorageMock()
+
 Object.defineProperty(window, 'localStorage', {
   configurable: true,
   value: localStorageMock,
 })
+
 Object.defineProperty(globalThis, 'localStorage', {
   configurable: true,
   value: localStorageMock,
 })
+
 Object.defineProperty(globalThis, '__resetLocalStorage__', {
   configurable: true,
   value: () => localStorageMock.clear(),
 })
 
-// Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
-  constructor() {}
   disconnect() {}
   observe() {}
   unobserve() {}
-}
+} as typeof IntersectionObserver
 
-// Mock ResizeObserver
 global.ResizeObserver = class ResizeObserver {
-  constructor() {}
   disconnect() {}
   observe() {}
   unobserve() {}
-}
+} as typeof ResizeObserver
 
-// Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: (query: string) => ({

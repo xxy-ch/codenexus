@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1774862152880,
+  "lastScanned": 1774949295959,
   "projectRoot": "/Users/xiexingyu/Documents/项目/Online_Judge",
   "techStack": {
     "languages": [
@@ -62,7 +62,7 @@
       "path": "api",
       "purpose": "API routes",
       "fileCount": 7,
-      "lastAccessed": 1774862152854,
+      "lastAccessed": 1774949295939,
       "keyFiles": [
         "Cargo.toml",
         "Cargo.toml.bak",
@@ -75,14 +75,14 @@
       "path": "collaboration",
       "purpose": null,
       "fileCount": 0,
-      "lastAccessed": 1774862152854,
+      "lastAccessed": 1774949295947,
       "keyFiles": []
     },
     "docs": {
       "path": "docs",
       "purpose": "Documentation",
       "fileCount": 1,
-      "lastAccessed": 1774862152855,
+      "lastAccessed": 1774949295949,
       "keyFiles": [
         "README.md"
       ]
@@ -91,7 +91,7 @@
       "path": "frontend",
       "purpose": null,
       "fileCount": 26,
-      "lastAccessed": 1774862152856,
+      "lastAccessed": 1774949295951,
       "keyFiles": [
         "Dockerfile",
         "README.md",
@@ -104,7 +104,7 @@
       "path": "judge-worker",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1774862152856,
+      "lastAccessed": 1774949295951,
       "keyFiles": [
         "Cargo.toml",
         "Dockerfile"
@@ -114,14 +114,14 @@
       "path": "references",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1774862152856,
+      "lastAccessed": 1774949295952,
       "keyFiles": []
     },
     "scripts": {
       "path": "scripts",
       "purpose": "Build/utility scripts",
       "fileCount": 5,
-      "lastAccessed": 1774862152857,
+      "lastAccessed": 1774949295952,
       "keyFiles": [
         "__init__.py",
         "apply_runtime_migrations.py",
@@ -134,7 +134,7 @@
       "path": "shared",
       "purpose": null,
       "fileCount": 1,
-      "lastAccessed": 1774862152857,
+      "lastAccessed": 1774949295952,
       "keyFiles": [
         "Cargo.toml"
       ]
@@ -143,7 +143,7 @@
       "path": "target",
       "purpose": null,
       "fileCount": 2,
-      "lastAccessed": 1774862152857,
+      "lastAccessed": 1774949295952,
       "keyFiles": [
         "CACHEDIR.TAG"
       ]
@@ -152,7 +152,7 @@
       "path": "api/migrations",
       "purpose": "Database migrations",
       "fileCount": 35,
-      "lastAccessed": 1774862152858,
+      "lastAccessed": 1774949295953,
       "keyFiles": [
         "000_create_update_updated_at_function.sql",
         "001_create_organizations.sql",
@@ -163,7 +163,7 @@
       "path": "api/src",
       "purpose": "Source code",
       "fileCount": 3,
-      "lastAccessed": 1774862152858,
+      "lastAccessed": 1774949295954,
       "keyFiles": [
         "lib.rs",
         "main.rs",
@@ -174,28 +174,18 @@
       "path": "docs/api",
       "purpose": "API routes",
       "fileCount": 4,
-      "lastAccessed": 1774862152858,
+      "lastAccessed": 1774949295958,
       "keyFiles": [
         "CONTEST_API.md",
         "LEADERBOARD_API.md",
         "PROBLEMS_API.md"
       ]
     },
-    "frontend/dist": {
-      "path": "frontend/dist",
-      "purpose": "Distribution/build output",
-      "fileCount": 2,
-      "lastAccessed": 1774862152860,
-      "keyFiles": [
-        "index.html",
-        "vite.svg"
-      ]
-    },
     "judge-worker/src": {
       "path": "judge-worker/src",
       "purpose": "Source code",
       "fileCount": 3,
-      "lastAccessed": 1774862152861,
+      "lastAccessed": 1774949295959,
       "keyFiles": [
         "lib.rs",
         "main.rs"
@@ -205,7 +195,7 @@
       "path": "judge-worker/tests",
       "purpose": "Test files",
       "fileCount": 5,
-      "lastAccessed": 1774862152862,
+      "lastAccessed": 1774949295959,
       "keyFiles": [
         "integration_tests.rs",
         "mod.rs",
@@ -216,7 +206,7 @@
       "path": "scripts/tests",
       "purpose": "Test files",
       "fileCount": 2,
-      "lastAccessed": 1774862152862,
+      "lastAccessed": 1774949295959,
       "keyFiles": [
         "test_apply_runtime_migrations.py",
         "test_check_alignment.py"
@@ -226,7 +216,7 @@
       "path": "shared/src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1774862152862,
+      "lastAccessed": 1774949295959,
       "keyFiles": [
         "lib.rs"
       ]
@@ -237,6 +227,12 @@
       "path": "frontend/src/pages/user/ProblemSet.tsx",
       "accessCount": 2,
       "lastAccessed": 1774881820686,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/services/api.ts",
+      "accessCount": 2,
+      "lastAccessed": 1774883416954,
       "type": "file"
     },
     {
@@ -267,12 +263,6 @@
       "path": "frontend/vite.config.ts",
       "accessCount": 1,
       "lastAccessed": 1774881573460,
-      "type": "file"
-    },
-    {
-      "path": "frontend/src/services/api.ts",
-      "accessCount": 1,
-      "lastAccessed": 1774881614848,
       "type": "file"
     },
     {
@@ -345,6 +335,18 @@
       "path": "frontend/src/components/layout/Header.tsx",
       "accessCount": 1,
       "lastAccessed": 1774881843338,
+      "type": "file"
+    },
+    {
+      "path": "frontend/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1774883376905,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/store/authStore.ts",
+      "accessCount": 1,
+      "lastAccessed": 1774883417005,
       "type": "file"
     }
   ],

@@ -3,38 +3,21 @@ export interface Discussion {
   title: string
   content: string
   author_id: string
-  author_username: string
-  author_avatar?: string | null
-  problem_id?: string
-  problem_title?: string
-  category: 'question' | 'solution' | 'general' | 'bug_report'
+  author_name: string
+  author_avatar?: string
   tags: string[]
-  likes_count: number
-  replies_count: number
-  views_count: number
-  is_pinned: boolean
-  is_locked: boolean
+  replies: number
+  views: number
   created_at: string
   updated_at: string
 }
 
-export interface DiscussionReply {
+export interface DiscussionComment {
   id: string
   discussion_id: string
-  parent_id?: string
-  content: string
   author_id: string
-  author_username: string
-  author_avatar?: string | null
-  likes_count: number
-  is_best_answer: boolean
+  author_name: string
+  author_avatar?: string
+  content: string
   created_at: string
-  updated_at: string
-}
-
-export interface DiscussionDetail extends Discussion {
-  replies: DiscussionReply[]
-  is_liked: boolean
-  can_edit: boolean
-  can_delete: boolean
 }

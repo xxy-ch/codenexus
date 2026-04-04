@@ -7,9 +7,6 @@ export interface Problem {
   time_limit: number
   memory_limit: number
   points: number
-  input_format?: string
-  output_format?: string
-  constraints?: string
   created_at: string
   updated_at: string
 }
@@ -29,33 +26,27 @@ export interface ProblemSubmission {
   user_id: string
   code: string
   language: string
-  status:
-    | 'pending'
-    | 'queued'
-    | 'running'
-    | 'judged'
-    | 'accepted'
-    | 'wrong_answer'
-    | 'time_limit_exceeded'
-    | 'memory_limit_exceeded'
-    | 'compilation_error'
-    | 'runtime_error'
-    | 'system_error'
-    | 'failed'
+  status: 'pending' | 'running' | 'accepted' | 'wrong_answer' | 'time_limit_exceeded' | 'memory_limit_exceeded' | 'runtime_error' | 'compilation_error' | 'system_error'
   time_ms?: number
   memory_kb?: number
   error_message?: string
-  test_cases?: TestCaseResult[]
+  test_cases?: Array<{
+    id: number
+    input: string
+    expected_output: string
+    actual_output?: string
+    status: 'passed' | 'failed' | 'pending' | 'running'
+    error?: string
+    time_ms?: number
+  }>
   created_at: string
   updated_at: string
 }
 
-export interface TestCaseResult {
-  id: number
-  input: string
-  expected_output: string
-  actual_output?: string
-  status: 'passed' | 'failed' | 'pending' | 'running'
-  error?: string
-  time_ms?: number
+export interface Language {
+  id: string
+  name: string
+  extension: string
+  enabled: boolean
+  is_default: boolean
 }
