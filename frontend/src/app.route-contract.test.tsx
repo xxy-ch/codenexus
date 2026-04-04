@@ -126,6 +126,7 @@ function renderGuardHarness({
 describe('route primitives contract', () => {
   beforeEach(() => {
     resetAuthState()
+    resetFeatureFlags()
   })
 
   it('redirects public login visits for authenticated users to the requested destination', async () => {
@@ -181,6 +182,16 @@ describe('route primitives contract', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/secure')
   })
 
+  it('redirects unauthenticated protected visits to /login', async () => {
+    renderGuardHarness({
+      initialEntry: '/secure',
+      element: <ProtectedRoute><div>Secure Only</div></ProtectedRoute>,
+    })
+
+    expect(await screen.findByText('Login Page')).toBeInTheDocument()
+    expect(screen.getByTestId('location')).toHaveTextContent('/login')
+  })
+
   it('keeps legacy feature flags enabled by default', () => {
     expect(FEATURE_FLAGS.directMessages).toBe(true)
     expect(FEATURE_FLAGS.plagiarism).toBe(true)
@@ -190,6 +201,7 @@ describe('route primitives contract', () => {
 describe('legacy route inventory contract', () => {
   beforeEach(() => {
     resetAuthState()
+    resetFeatureFlags()
   })
 
   it('redirects / to /dashboard for authenticated users', async () => {
@@ -271,6 +283,30 @@ describe('legacy route inventory contract', () => {
     renderAppAt(route)
 
     expect(await screen.findByTestId('location')).not.toHaveTextContent('/404')
+  })
+
+  it('hides /messages when the direct-messages flag is disabled', async () => {
+    Object.assign(FEATURE_FLAGS as MutableFeatureFlags, { directMessages: false })
+    setAuthenticatedUser(studentUser)
+
+    renderAppAt('/messages')
+
+    expect(await screen.findByText('NotFound')).toBeInTheDocument()
+    expect(screen.getByTestId('location')).toHaveTextContent('/404')
+  })
+
+  it.each([
+    '/admin/similarity-scan',
+    '/admin/plagiarism-reports',
+    '/admin/plagiarism-reports/report-1',
+  ])('hides plagiarism route %s when the plagiarism flag is disabled', async (route) => {
+    Object.assign(FEATURE_FLAGS as MutableFeatureFlags, { plagiarism: false })
+    setAuthenticatedUser(adminUser)
+
+    renderAppAt(route)
+
+    expect(await screen.findByText('NotFound')).toBeInTheDocument()
+    expect(screen.getByTestId('location')).toHaveTextContent('/404')
   })
 
   it('routes unknown paths to the 404 surface', async () => {
