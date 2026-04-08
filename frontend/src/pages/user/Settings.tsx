@@ -66,20 +66,14 @@ export function Settings() {
     },
   })
 
+  // TODO(P1): preferences persistence requires backend contract — current toggle is local-only
   const updatePreferencesMutation = useMutation({
     mutationFn: async (_data: typeof preferences) => ({ success: true }),
-    onSuccess: () => {
-      setMessage({ type: 'success', text: '偏好设置更新成功' })
-      setTimeout(() => setMessage(null), 3000)
-    },
   })
 
+  // TODO(P1): notification preferences persistence requires backend contract — current toggle is local-only
   const updateNotificationsMutation = useMutation({
     mutationFn: async (_data: typeof notifications) => ({ success: true }),
-    onSuccess: () => {
-      setMessage({ type: 'success', text: '通知设置更新成功' })
-      setTimeout(() => setMessage(null), 3000)
-    },
   })
 
   const tabs = [
@@ -249,9 +243,10 @@ export function Settings() {
                   </button>
                 ))}
               </div>
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-xs text-slate-400 dark:text-slate-500">偏好设置目前仅作用于本地，后端持久化将在后续版本落地。</p>
                 <Button variant="primary" onClick={() => updatePreferencesMutation.mutate(preferences)} disabled={updatePreferencesMutation.isPending}>
-                  {updatePreferencesMutation.isPending ? '保存中...' : '保存偏好'}
+                  {updatePreferencesMutation.isPending ? '保存中...' : '保存偏好（本地）'}
                 </Button>
               </div>
             </div>
@@ -284,9 +279,10 @@ export function Settings() {
                   </button>
                 ))}
               </div>
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-xs text-slate-400 dark:text-slate-500">通知偏好目前仅作用于本地，后端持久化将在后续版本落地。</p>
                 <Button variant="primary" onClick={() => updateNotificationsMutation.mutate(notifications)} disabled={updateNotificationsMutation.isPending}>
-                  {updateNotificationsMutation.isPending ? '保存中...' : '保存通知设置'}
+                  {updateNotificationsMutation.isPending ? '保存中...' : '保存通知设置（本地）'}
                 </Button>
               </div>
             </div>

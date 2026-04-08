@@ -142,7 +142,7 @@ mod tests {
             username: "1001".to_string(),
             email: "admin@example.com".to_string(),
             password_hash: String::new(),
-            role: "admin".to_string(),
+            role: "root".to_string(),
             school_id: 1,
             campus_id: Some(1),
         };

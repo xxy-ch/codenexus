@@ -6,8 +6,23 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use shared::models::role::Role;
 use sqlx::FromRow;
 use crate::AppState;
+
+fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
+    let role = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    if !role.is_higher_or_equal(Role::Teacher) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+    Ok(role)
+}
+
+fn is_management_role(role: &str) -> bool {
+    role.parse::<Role>()
+        .map(|r| r.is_higher_or_equal(Role::Teacher))
+        .unwrap_or(false)
+}
 
 /// Test case model
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -48,12 +63,22 @@ pub struct BatchImportTestCasesRequest {
     pub test_cases: Vec<CreateTestCaseRequest>,
 }
 
-/// List test cases for a problem
+/// Student-safe test case view — hides input/output/score for hidden cases
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PublicTestCase {
+    pub id: i64,
+    pub problem_id: i64,
+    pub is_hidden: bool,
+    pub order: i32,
+}
+
+/// List test cases for a problem.
+/// Management roles see full data; students see only non-hidden case metadata.
 pub async fn list_test_cases(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path(problem_id): Path<i64>,
-) -> Result<Json<Vec<TestCase>>, StatusCode> {
+) -> Result<Json<serde_json::Value>, StatusCode> {
     let test_cases = sqlx::query_as::<_, TestCase>(
         r#"
         SELECT
@@ -75,16 +100,33 @@ pub async fn list_test_cases(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(test_cases))
+    if is_management_role(&claims.role) {
+        // Management users see full test case data
+        Ok(Json(json!(test_cases)))
+    } else {
+        // Students only see non-hidden metadata
+        let public: Vec<PublicTestCase> = test_cases
+            .into_iter()
+            .filter(|tc| !tc.is_hidden)
+            .map(|tc| PublicTestCase {
+                id: tc.id,
+                problem_id: tc.problem_id,
+                is_hidden: false,
+                order: tc.order,
+            })
+            .collect();
+        Ok(Json(json!(public)))
+    }
 }
 
 /// Create a new test case
 pub async fn create_test_case(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path(problem_id): Path<i64>,
     Json(req): Json<CreateTestCaseRequest>,
 ) -> Result<Json<TestCase>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let test_case = sqlx::query_as::<_, TestCase>(
         r#"
         INSERT INTO test_cases (
@@ -118,10 +160,11 @@ pub async fn create_test_case(
 /// Update a test case
 pub async fn update_test_case(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path((problem_id, test_case_id)): Path<(i64, i64)>,
     Json(req): Json<UpdateTestCaseRequest>,
 ) -> Result<Json<TestCase>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let test_case = sqlx::query_as::<_, TestCase>(
         r#"
         UPDATE problems_test_cases
@@ -163,9 +206,10 @@ pub async fn update_test_case(
 /// Delete a test case
 pub async fn delete_test_case(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path((problem_id, test_case_id)): Path<(i64, i64)>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let result = sqlx::query(
         "DELETE FROM test_cases WHERE id = $1 AND problem_id = $2"
     )
@@ -187,10 +231,11 @@ pub async fn delete_test_case(
 /// Batch import test cases
 pub async fn batch_import_test_cases(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path(problem_id): Path<i64>,
     Json(req): Json<BatchImportTestCasesRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let mut imported_count = 0;
     let mut errors = Vec::new();
 

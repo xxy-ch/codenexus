@@ -8,87 +8,103 @@ export default {
   theme: {
     extend: {
       colors: {
-        white: '#ffffff',
-        black: '#000000',
+        // shadcn/ui CSS variable colors
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
         primary: {
-          DEFAULT: '#0d59f2',
-          hover: '#0a47c9',
-          light: '#3b82f6',
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
         },
-        secondary: '#6366f1',
-        success: '#10b981',
-        warning: '#f59e0b',
-        danger: '#ef4444',
-        background: {
-          light: '#f5f6f8',
-          dark: '#101622',
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
         },
-        surface: {
-          light: '#ffffff',
-          dark: '#1e2433',
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
         },
-        border: {
-          light: '#e2e8f0',
-          dark: '#334155',
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
         },
-        text: {
-          muted: '#6b7280',
-          primary: {
-            light: '#1f2937',
-            dark: '#f3f4f6',
-          },
-          secondary: {
-            light: '#6b7280',
-            dark: '#9ca3af',
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+
+        // OJ Status colors (CSS variables)
+        status: {
+          accepted: 'hsl(var(--status-accepted))',
+          wrong: 'hsl(var(--status-wrong))',
+          pending: 'hsl(var(--status-pending))',
+          tle: 'hsl(var(--status-tle))',
+          re: 'hsl(var(--status-re))',
+          error: 'hsl(var(--status-error))',
+        },
+
+        // OJ Difficulty colors (CSS variables)
+        difficulty: {
+          easy: 'hsl(var(--difficulty-easy))',
+          medium: 'hsl(var(--difficulty-medium))',
+          hard: 'hsl(var(--difficulty-hard))',
+        },
+
+        // Scene-specific tokens
+        scene: {
+          warm: {
+            bg: 'hsl(var(--scene-warm-bg))',
+            text: 'hsl(var(--scene-warm-text))',
           },
         },
       },
       fontFamily: {
-        display: ['Inter', 'sans-serif'],
-        mono: ['Fira Code', 'Monaco', 'Courier New', 'monospace'],
-      },
-      spacing: {
-        0: '0px',
-        1: '0.25rem',
-        2: '0.5rem',
-        3: '0.75rem',
-        4: '1rem',
-        5: '1.25rem',
-        6: '1.5rem',
-        8: '2rem',
-        10: '2.5rem',
-        11: '2.75rem',
-        12: '3rem',
-        14: '3.5rem',
-        16: '4rem',
-        20: '5rem',
-        24: '6rem',
-        32: '8rem',
-        40: '10rem',
-        64: '16rem',
+        display: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['Fira Code', 'SF Mono', 'Monaco', 'Courier New', 'monospace'],
       },
       fontSize: {
-        xs: '0.75rem',
-        sm: '0.875rem',
-        base: '1rem',
-        lg: '1.125rem',
-        xl: '1.25rem',
-        '2xl': '1.5rem',
-        '3xl': '1.875rem',
-        '4xl': '2.25rem',
+        xs: '0.75rem',      // 12px
+        sm: '0.8125rem',    // 13px — Linear default body size
+        base: '0.875rem',   // 14px — denser than typical
+        lg: '1rem',         // 16px
+        xl: '1.125rem',     // 18px
+        '2xl': '1.5rem',    // 24px
+        '3xl': '2rem',      // 32px
+        '4xl': '2.5rem',    // 40px
+      },
+      letterSpacing: {
+        tight: '-0.02em',
       },
       borderRadius: {
-        DEFAULT: '0.25rem',
-        lg: '0.5rem',
-        xl: '0.75rem',
-        '2xl': '1rem',
-        full: '9999px',
+        DEFAULT: '0.375rem', // 6px
+        lg: '0.5rem',       // 8px
+        xl: '0.75rem',      // 12px
+        '2xl': '1rem',      // 16px
+        full: '9999px',     // pill
       },
       boxShadow: {
-        sm: '0 1px 2px 0 rgba(15, 23, 42, 0.08)',
-        md: '0 6px 18px 0 rgba(15, 23, 42, 0.10)',
-        lg: '0 10px 30px 0 rgba(15, 23, 42, 0.14)',
-        'primary': '0 4px 14px 0 rgba(13, 89, 242, 0.39)',
+        sm: '0 1px 2px rgba(0, 0, 0, 0.3)',
+        md: '0 4px 12px rgba(0, 0, 0, 0.4)',
+        lg: '0 8px 24px rgba(0, 0, 0, 0.5)',
+        primary: '0 4px 14px rgba(94, 106, 210, 0.39)',
       },
       maxWidth: {
         md: '28rem',

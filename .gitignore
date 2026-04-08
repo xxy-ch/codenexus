@@ -44,3 +44,12 @@ frontend/test-results/
 # Backup files
 *_backup*
 *_bak*
+.gitnexus
+
+# other
+.claude/
+.crush/
+.cursor/
+.gemini/
+.omc/
+.omx/

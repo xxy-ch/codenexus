@@ -178,7 +178,7 @@ mod tests {
         let claims = Claims {
             sub: Uuid::new_v4(),
             email: "test@example.com".to_string(),
-            role: "admin".to_string(),
+            role: "root".to_string(),
             school_id: 999,
             campus_id: None,
             iat: chrono::Utc::now().timestamp(),

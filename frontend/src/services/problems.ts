@@ -1,5 +1,5 @@
 import api from './api'
-import type { Problem, TestCase, ProblemSubmission } from '@/types/problems'
+import type { Problem, ManagementTestCase, ProblemSubmission } from '@/types/problems'
 
 export interface ProblemFilters {
   difficulty?: 'easy' | 'medium' | 'hard' | 'all'
@@ -90,9 +90,9 @@ export const problemsService = {
   },
 
   /**
-   * 获取题目的测试用例
+   * 获取题目的测试用例 (management only — requires teacher+ role)
    */
-  async getTestCases(problemId: string): Promise<TestCase[]> {
+  async getTestCases(problemId: string): Promise<ManagementTestCase[]> {
     const response = await api.get<any[]>(`/problems/${problemId}/test-cases`)
     return (Array.isArray(response.data) ? response.data : []).map((testCase, index) => ({
       id: String(testCase?.id ?? index + 1),
@@ -101,6 +101,7 @@ export const problemsService = {
       expected_output: String(testCase?.expected_output ?? ''),
       is_hidden: Boolean(testCase?.is_hidden),
       order: Number(testCase?.order ?? index),
+      score: Number(testCase?.score ?? 0),
     }))
   },
 
@@ -268,67 +269,3 @@ function normalizeSubmission(submission: any): ProblemSubmission & {
     username: String(submission?.username ?? 'unknown'),
   }
 }
-
-// Mock数据用于开发测试
-export const mockProblems: Problem[] = [
-  {
-    id: '1',
-    title: 'Two Sum',
-    description: 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.',
-    difficulty: 'easy',
-    tags: ['Array', 'Hash Table'],
-    time_limit: 1000,
-    memory_limit: 256,
-    points: 10,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
-  },
-  {
-    id: '2',
-    title: 'Add Two Numbers',
-    description: 'You are given two non-empty linked lists representing two non-negative integers. The digits are stored in reverse order, and each of their nodes contains a single digit.',
-    difficulty: 'medium',
-    tags: ['Linked List', 'Math'],
-    time_limit: 2000,
-    memory_limit: 256,
-    points: 20,
-    created_at: '2024-01-02T00:00:00Z',
-    updated_at: '2024-01-02T00:00:00Z',
-  },
-  {
-    id: '3',
-    title: 'Longest Substring Without Repeating Characters',
-    description: 'Given a string s, find the length of the longest substring without repeating characters.',
-    difficulty: 'medium',
-    tags: ['String', 'Sliding Window'],
-    time_limit: 1500,
-    memory_limit: 128,
-    points: 25,
-    created_at: '2024-01-03T00:00:00Z',
-    updated_at: '2024-01-03T00:00:00Z',
-  },
-  {
-    id: '4',
-    title: 'Median of Two Sorted Arrays',
-    description: 'Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.',
-    difficulty: 'hard',
-    tags: ['Array', 'Binary Search', 'Divide and Conquer'],
-    time_limit: 3000,
-    memory_limit: 512,
-    points: 40,
-    created_at: '2024-01-04T00:00:00Z',
-    updated_at: '2024-01-04T00:00:00Z',
-  },
-  {
-    id: '5',
-    title: 'Reverse Linked List',
-    description: 'Given the head of a singly linked list, reverse the list, and return the reversed list.',
-    difficulty: 'easy',
-    tags: ['Linked List'],
-    time_limit: 1000,
-    memory_limit: 128,
-    points: 15,
-    created_at: '2024-01-05T00:00:00Z',
-    updated_at: '2024-01-05T00:00:00Z',
-  },
-]

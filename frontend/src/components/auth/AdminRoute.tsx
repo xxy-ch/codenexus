@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { Loading } from '@/components/ui/Loading'
+import { isAdmin } from '@/types/auth'
 
 interface AdminRouteProps {
   children: React.ReactNode
@@ -17,7 +18,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
     return <Navigate to="/login" replace />
   }
 
-  if (user.role !== 'admin') {
+  if (!isAdmin(user.role)) {
     return <Navigate to="/unauthorized" replace />
   }
 

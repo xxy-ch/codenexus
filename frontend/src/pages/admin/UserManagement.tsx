@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 import type { BatchCreateAdminUser } from '@/types/admin'
+import type { Role } from '@/types/auth'
+import { isAdmin } from '@/types/auth'
 
-type RoleType = 'user' | 'admin' | 'teacher'
+type RoleType = Role
 type SortType = 'recent' | 'name' | 'submissions' | 'rating'
 
 export function UserManagement() {
@@ -75,28 +77,32 @@ export function UserManagement() {
         user_code,
         display_name: display_name || undefined,
         email: email || undefined,
-        role: (roleValue as RoleType | undefined) || 'user',
+        role: (roleValue as RoleType | undefined) || 'student',
       }
     })
     .filter((item) => item.user_code)
 
   const overview = useMemo(() => {
-    const adminCount = users.filter((user) => user.role === 'admin').length
-    const teacherCount = users.filter((user) => user.role === 'teacher').length
-    const activeCount = users.filter((user) => user.status === 'active').length
-    const codedCount = users.filter((user) => user.user_code).length
+    const adminCount = users.filter((u: any) => isAdmin(u.role)).length
+    const teacherCount = users.filter((u: any) => u.role === 'teacher').length
+    const activeCount = users.filter((u: any) => u.status === 'active').length
+    const codedCount = users.filter((u: any) => u.user_code).length
 
     return { adminCount, teacherCount, activeCount, codedCount }
   }, [users])
 
   const getRoleBadge = (roleValue: RoleType) => {
-    const config = {
-      admin: { label: '管理员', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
+    const config: Record<string, { label: string; color: string }> = {
+      root: { label: '超级管理员', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
+      organizationadmin: { label: '机构管理员', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
+      campusadmin: { label: '校区管理员', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
       teacher: { label: '教师', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-      user: { label: '学生', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
-    }[roleValue]
+      teachingassistant: { label: '助教', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+      student: { label: '学生', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
+    }
+    const c = config[roleValue] ?? config.student
 
-    return <span className={cn('rounded-full px-3 py-1 text-xs font-medium', config.color)}>{config.label}</span>
+    return <span className={cn('rounded-full px-3 py-1 text-xs font-medium', c.color)}>{c.label}</span>
   }
 
   const getStatusBadge = (statusValue: string) => {
@@ -246,9 +252,9 @@ export function UserManagement() {
                 className="rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
               >
                 <option value="all">所有角色</option>
-                <option value="admin">管理员</option>
+                <option value="root">管理员</option>
                 <option value="teacher">教师</option>
-                <option value="user">学生</option>
+                <option value="student">学生</option>
               </select>
               <select
                 value={status}
@@ -385,9 +391,9 @@ export function UserManagement() {
                         disabled={updateRoleMutation.isPending}
                         className="block rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
                       >
-                        <option value="user">学生</option>
+                        <option value="student">学生</option>
                         <option value="teacher">教师</option>
-                        <option value="admin">管理员</option>
+                        <option value="root">管理员</option>
                       </select>
                     </div>
                   </td>

@@ -91,7 +91,7 @@ mod tests {
             username: "test-user".to_string(),
             email: "test@example.com".to_string(),
             password_hash: "hashed_password".to_string(),
-            role: "admin".to_string(),
+            role: "root".to_string(),
             school_id: 123,
             campus_id: Some(456),
         };
@@ -129,7 +129,7 @@ mod tests {
             username: "test-user".to_string(),
             email: "test@example.com".to_string(),
             password_hash: "hashed_password".to_string(),
-            role: "admin".to_string(),
+            role: "root".to_string(),
             school_id: 123,
             campus_id: Some(456),
         };

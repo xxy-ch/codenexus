@@ -6,12 +6,29 @@ use axum::{
 use sqlx::Row;
 
 use crate::middleware::auth::AuthExtractor;
+use shared::models::role::Role;
 use crate::AppState;
 
 use super::models::{
     CreateProblemRequest, ListProblemsQuery, Problem, ProblemDetail, ProblemStatistics,
     ProblemsListResponse, SupportedLanguage, UpdateProblemRequest, UpdateSupportedLanguagesRequest,
 };
+
+fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
+    let role = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    if !role.is_higher_or_equal(Role::Teacher) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+    Ok(role)
+}
+
+fn require_admin(role: &str) -> Result<Role, StatusCode> {
+    let parsed = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    match parsed {
+        Role::Root | Role::OrganizationAdmin | Role::CampusAdmin => Ok(parsed),
+        _ => Err(StatusCode::FORBIDDEN),
+    }
+}
 
 async fn ensure_language_settings(state: &AppState) -> Result<(), StatusCode> {
     sqlx::query(
@@ -78,6 +95,8 @@ pub async fn update_supported_languages(
     AuthExtractor(_claims): AuthExtractor,
     Json(req): Json<UpdateSupportedLanguagesRequest>,
 ) -> Result<Json<Vec<SupportedLanguage>>, StatusCode> {
+    // Admin-only: language settings control
+    require_admin(&_claims.role)?;
     ensure_language_settings(&state).await?;
 
     let row = sqlx::query(
@@ -115,6 +134,7 @@ pub async fn create_problem(
     AuthExtractor(claims): AuthExtractor,
     Json(req): Json<CreateProblemRequest>,
 ) -> Result<Json<Problem>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     if !["easy", "medium", "hard"].contains(&req.difficulty.as_str()) {
         return Err(StatusCode::BAD_REQUEST);
     }
@@ -316,10 +336,11 @@ pub async fn get_problem(
 
 pub async fn update_problem(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path(id): Path<i64>,
     Json(req): Json<UpdateProblemRequest>,
 ) -> Result<Json<Problem>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     if let Some(diff) = &req.difficulty {
         if !["easy", "medium", "hard"].contains(&diff.as_str()) {
             return Err(StatusCode::BAD_REQUEST);
@@ -385,9 +406,10 @@ pub async fn update_problem(
 
 pub async fn delete_problem(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path(id): Path<i64>,
 ) -> Result<StatusCode, StatusCode> {
+    require_admin(&claims.role)?;
     let result = sqlx::query("DELETE FROM problems WHERE id = $1")
         .bind(id)
         .execute(&state.db_pool)

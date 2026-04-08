@@ -1,3 +1,5 @@
+import type { Role } from './auth'
+
 export interface AdminStats {
   total_users: number
   total_problems: number
@@ -15,7 +17,7 @@ export interface UserManagement {
   username: string
   email?: string | null
   display_name?: string | null
-  role: 'admin' | 'teacher' | 'user'
+  role: Role
   organization_id?: string
   organization_name?: string
   status: 'active' | 'inactive' | 'banned'
@@ -31,7 +33,7 @@ export interface BatchCreateAdminUser {
   email?: string
   campus_id?: number
   password?: string
-  role?: 'admin' | 'teacher' | 'user'
+  role?: Role
 }
 
 export interface ProblemManagement {

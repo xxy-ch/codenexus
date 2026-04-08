@@ -11,14 +11,27 @@ export interface Problem {
   updated_at: string
 }
 
-export interface TestCase {
+/** Student-safe test case view — no input/output data exposed */
+export interface PublicTestCase {
+  id: string
+  problem_id: string
+  is_hidden: false
+  order: number
+}
+
+/** Management test case view — full data including hidden cases */
+export interface ManagementTestCase {
   id: string
   problem_id: string
   input: string
   expected_output: string
   is_hidden: boolean
   order: number
+  score: number
 }
+
+/** @deprecated Use PublicTestCase or ManagementTestCase explicitly */
+export type TestCase = ManagementTestCase
 
 export interface ProblemSubmission {
   id: string
@@ -47,12 +60,17 @@ export interface ProblemSubmission {
   updated_at: string
 }
 
+/** Test case result in a submission — student-safe for non-hidden cases */
 export interface TestCaseResult {
   id: number
-  input: string
-  expected_output: string
-  actual_output?: string
   status: 'passed' | 'failed' | 'pending' | 'running'
-  error?: string
   time_ms?: number
+  memory_kb?: number
+  error?: string
+  is_hidden?: boolean
+  /** Only populated for non-hidden test cases */
+  input?: string
+  /** Only populated for non-hidden test cases */
+  expected_output?: string
+  actual_output?: string
 }

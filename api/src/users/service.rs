@@ -118,20 +118,9 @@ impl UserService {
             .then_some(())
             .ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
 
-        // Get user role
+        // Get user role (canonical role from DB)
         let role = sqlx::query_scalar::<_, String>(
-            r#"
-            SELECT CASE role
-                WHEN 'root' THEN 'admin'
-                WHEN 'campusadmin' THEN 'admin'
-                WHEN 'teacher' THEN 'teacher'
-                ELSE 'user'
-            END
-            FROM user_roles
-            WHERE user_id = $1
-            ORDER BY created_at ASC
-            LIMIT 1
-            "#
+            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1"
         )
         .bind(user.id)
         .fetch_one(&self.pool)
@@ -187,20 +176,9 @@ impl UserService {
         .fetch_one(&self.pool)
         .await?;
 
-        // Get user role
+        // Get user role (canonical role from DB)
         let role = sqlx::query_scalar::<_, String>(
-            r#"
-            SELECT CASE role
-                WHEN 'root' THEN 'admin'
-                WHEN 'campusadmin' THEN 'admin'
-                WHEN 'teacher' THEN 'teacher'
-                ELSE 'user'
-            END
-            FROM user_roles
-            WHERE user_id = $1
-            ORDER BY created_at ASC
-            LIMIT 1
-            "#
+            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1"
         )
         .bind(user.id)
         .fetch_one(&self.pool)
@@ -250,20 +228,9 @@ impl UserService {
         .fetch_one(&self.pool)
         .await?;
 
-        // Get user role
+        // Get user role (canonical role from DB)
         let role = sqlx::query_scalar::<_, String>(
-            r#"
-            SELECT CASE role
-                WHEN 'root' THEN 'admin'
-                WHEN 'campusadmin' THEN 'admin'
-                WHEN 'teacher' THEN 'teacher'
-                ELSE 'user'
-            END
-            FROM user_roles
-            WHERE user_id = $1
-            ORDER BY created_at ASC
-            LIMIT 1
-            "#
+            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1"
         )
         .bind(user_id)
         .fetch_one(&self.pool)
@@ -372,12 +339,7 @@ impl UserService {
                     u.organization_id,
                     o.name AS organization_name,
                     u.created_at,
-                    CASE ur.role
-                        WHEN 'root' THEN 'admin'
-                        WHEN 'campusadmin' THEN 'admin'
-                        WHEN 'teacher' THEN 'teacher'
-                        ELSE 'user'
-                    END AS role,
+                    ur.role,
                     COUNT(s.id) AS submissions_count,
                     COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') AS problems_solved
                 FROM users u
@@ -385,12 +347,7 @@ impl UserService {
                 LEFT JOIN user_roles ur ON ur.user_id = u.id
                 LEFT JOIN submissions s ON s.user_id = u.id
                 WHERE ($1::TEXT IS NULL OR u.username ILIKE $1 OR COALESCE(u.email, '') ILIKE $1 OR COALESCE(u.user_code, '') ILIKE $1)
-                  AND ($2::TEXT IS NULL OR CASE ur.role
-                        WHEN 'root' THEN 'admin'
-                        WHEN 'campusadmin' THEN 'admin'
-                        WHEN 'teacher' THEN 'teacher'
-                        ELSE 'user'
-                    END = $2)
+                  AND ($2::TEXT IS NULL OR ur.role = $2)
                   AND ($3::TEXT IS NULL OR u.status = $3)
                 GROUP BY u.id, u.user_code, u.username, u.email, u.display_name, u.status, u.organization_id, o.name, u.created_at, ur.role
             )
@@ -416,12 +373,7 @@ impl UserService {
             FROM users u
             LEFT JOIN user_roles ur ON ur.user_id = u.id
             WHERE ($1::TEXT IS NULL OR u.username ILIKE $1 OR COALESCE(u.email, '') ILIKE $1 OR COALESCE(u.user_code, '') ILIKE $1)
-              AND ($2::TEXT IS NULL OR CASE ur.role
-                    WHEN 'root' THEN 'admin'
-                    WHEN 'campusadmin' THEN 'admin'
-                    WHEN 'teacher' THEN 'teacher'
-                    ELSE 'user'
-                END = $2)
+              AND ($2::TEXT IS NULL OR ur.role = $2)
               AND ($3::TEXT IS NULL OR u.status = $3)
             "#,
         )
@@ -435,12 +387,11 @@ impl UserService {
     }
 
     pub async fn update_user_role(&self, user_id: Uuid, role: &str) -> Result<()> {
-        let normalized_role = match role {
-            "admin" => "root",
-            "teacher" => "teacher",
-            "user" => "student",
-            _ => return Err(anyhow::anyhow!("Unsupported role")),
-        };
+        // Validate and normalize to canonical role
+        let normalized_role = role
+            .parse::<shared::models::Role>()
+            .map_err(|_| anyhow::anyhow!("Unsupported role: {}", role))?
+            .as_str();
 
         let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
             .bind(user_id)
@@ -540,7 +491,7 @@ impl UserService {
                 .await?;
 
             if let Some(role) = entry.role.as_deref() {
-                if role != "user" {
+                if role != "student" {
                     self.update_user_role(profile.id, role).await?;
                 }
             }

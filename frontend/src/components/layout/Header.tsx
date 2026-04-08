@@ -1,5 +1,3 @@
-import { useState } from 'react'
-import { cn } from '@/lib/utils'
 import { SearchBar } from '@/components/search/SearchBar'
 
 interface HeaderProps {
@@ -10,10 +8,10 @@ interface HeaderProps {
 
 export function Header({ title, showSearch = true, actions }: HeaderProps) {
   return (
-    <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-6 lg:px-8 z-10">
+    <header className="h-12 bg-card border-b border-border flex items-center justify-between px-6 z-10">
       <div className="flex items-center flex-1">
         {title && (
-          <h1 className="text-xl font-bold text-slate-800 dark:text-white mr-8 hidden md:block">
+          <h1 className="text-sm font-semibold text-foreground mr-8 hidden md:block">
             {title}
           </h1>
         )}
@@ -24,16 +22,16 @@ export function Header({ title, showSearch = true, actions }: HeaderProps) {
         )}
       </div>
 
-      <div className="flex items-center space-x-4">
-        <button className="relative p-2 text-slate-500 hover:text-primary transition-colors">
-          <span className="material-symbols-outlined">notifications</span>
-          <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
+      <div className="flex items-center space-x-3">
+        <button className="relative p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-muted">
+          <span className="material-symbols-outlined text-[20px]">notifications</span>
+          <span className="absolute top-1 right-1 h-1.5 w-1.5 bg-destructive rounded-full" />
         </button>
 
-        <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-2" />
+        <div className="h-5 w-px bg-border mx-1" />
 
         {actions || (
-          <button className="bg-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors shadow-lg shadow-primary/30 flex items-center gap-2">
+          <button className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors flex items-center gap-1.5">
             <span className="material-symbols-outlined text-base">add</span>
             <span className="hidden sm:inline">New Submission</span>
           </button>

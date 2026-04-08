@@ -12,11 +12,12 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { FEATURE_FLAGS } from '@/services/config'
+import { isAdmin } from '@/types/auth'
 
 export function AdminDashboard() {
   const { user } = useAuthStore()
 
-  if (user?.role !== 'admin') {
+  if (user?.role && !isAdmin(user.role)) {
     return (
       <div className="py-16 text-center">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-500">

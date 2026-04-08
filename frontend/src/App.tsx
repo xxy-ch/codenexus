@@ -7,6 +7,7 @@ import { AdminLayout } from './layouts/AdminLayout'
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
 import { Loading } from './components/ui/Loading'
+import { TEACHER_ROLES } from './types/auth'
 import { FEATURE_FLAGS } from './services/config'
 
 const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
@@ -138,9 +139,10 @@ function App() {
             <Route path="search" element={renderLazy(SearchResults)} />
             <Route path="profile" element={renderLazy(Profile)} />
             <Route path="settings" element={renderLazy(Settings)} />
-            <Route path="teacher/classes" element={renderLazy(ClassManagement)} />
-            <Route path="teacher/assignment-report" element={renderLazy(AssignmentReport)} />
-            <Route path="teacher/contest-wizard" element={renderLazy(ContestWizard)} />
+            {/* Teacher routes — gated by role */}
+            <Route path="teacher/classes" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ClassManagement)}</ProtectedRoute>} />
+            <Route path="teacher/assignment-report" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(AssignmentReport)}</ProtectedRoute>} />
+            <Route path="teacher/contest-wizard" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ContestWizard)}</ProtectedRoute>} />
             {/* Add more protected routes here */}
           </Route>
 
