@@ -28,7 +28,15 @@ impl SearchService {
         Ok(())
     }
 
-    pub async fn search(&self, query: SearchQuery) -> Result<SearchResponse> {
+    /// Search with tenant-aware filtering.
+    /// `school_id`: if Some, restrict results to that organization.
+    /// `is_teacher_plus`: if true, include private problems from the org.
+    pub async fn search_tenant_aware(
+        &self,
+        query: SearchQuery,
+        school_id: Option<i64>,
+        is_teacher_plus: bool,
+    ) -> Result<SearchResponse> {
         let query_text = query.q.clone().unwrap_or_default().trim().to_string();
         let normalized_type = query.r#type.to_lowercase();
         let include_problems = normalized_type == "all" || normalized_type == "problem";
@@ -38,12 +46,12 @@ impl SearchService {
         let offset = ((page - 1) * limit) as usize;
 
         let problem_results = if include_problems {
-            self.search_problems(&query_text).await?
+            self.search_problems(&query_text, school_id, is_teacher_plus).await?
         } else {
             Vec::new()
         };
         let discussion_results = if include_discussions {
-            self.search_discussions(&query_text).await?
+            self.search_discussions(&query_text, school_id).await?
         } else {
             Vec::new()
         };
@@ -154,8 +162,22 @@ impl SearchService {
         })
     }
 
-    async fn search_problems(&self, query_text: &str) -> Result<Vec<SearchResultItem>> {
-        let rows = sqlx::query(
+    async fn search_problems(&self, query_text: &str, school_id: Option<i64>, is_teacher_plus: bool) -> Result<Vec<SearchResultItem>> {
+        // Build visibility clause:
+        // - Public problems are always visible
+        // - Private problems are only visible to teachers/admins in the same org
+        let (visibility_clause, extra_bind) = if let Some(org_id) = school_id {
+            if is_teacher_plus {
+                ("(p.visibility = 'public' OR (p.visibility = 'private' AND p.organization_id = $3))".to_string(), Some(org_id))
+            } else {
+                ("p.visibility = 'public'".to_string(), None)
+            }
+        } else {
+            // Unauthenticated: public only
+            ("p.visibility = 'public'".to_string(), None)
+        };
+
+        let query_str = format!(
             r#"
             SELECT
                 p.id,
@@ -167,16 +189,22 @@ impl SearchService {
                 u.username AS author_username
             FROM problems p
             JOIN users u ON u.id = p.author_id
-            WHERE p.visibility = 'public'
-              AND ($1 = '' OR p.title ILIKE $2 OR p.description ILIKE $2)
+            WHERE {} AND ($1 = '' OR p.title ILIKE $2 OR p.description ILIKE $2)
             ORDER BY p.created_at DESC
             LIMIT 100
             "#,
-        )
-        .bind(query_text)
-        .bind(format!("%{}%", query_text))
-        .fetch_all(&self.pool)
-        .await?;
+            visibility_clause
+        );
+
+        let mut q = sqlx::query(&query_str)
+            .bind(query_text)
+            .bind(format!("%{}%", query_text));
+
+        if let Some(org_id) = extra_bind {
+            q = q.bind(org_id);
+        }
+
+        let rows = q.fetch_all(&self.pool).await?;
 
         Ok(rows
             .into_iter()
@@ -214,8 +242,15 @@ impl SearchService {
             .collect())
     }
 
-    async fn search_discussions(&self, query_text: &str) -> Result<Vec<SearchResultItem>> {
-        let rows = sqlx::query(
+    async fn search_discussions(&self, query_text: &str, school_id: Option<i64>) -> Result<Vec<SearchResultItem>> {
+        // Tenant filter: if authenticated, only show discussions from same org
+        let (tenant_clause, extra_bind) = if let Some(org_id) = school_id {
+            ("AND p.organization_id = $3".to_string(), Some(org_id))
+        } else {
+            (String::new(), None)
+        };
+
+        let query_str = format!(
             r#"
             SELECT
                 d.id,
@@ -230,14 +265,22 @@ impl SearchService {
             JOIN users u ON u.id = d.user_id
             JOIN problems p ON p.id = d.problem_id
             WHERE ($1 = '' OR d.content ILIKE $2 OR p.title ILIKE $2)
+            {}
             ORDER BY d.is_pinned DESC, d.created_at DESC
             LIMIT 100
             "#,
-        )
-        .bind(query_text)
-        .bind(format!("%{}%", query_text))
-        .fetch_all(&self.pool)
-        .await?;
+            tenant_clause
+        );
+
+        let mut q = sqlx::query(&query_str)
+            .bind(query_text)
+            .bind(format!("%{}%", query_text));
+
+        if let Some(org_id) = extra_bind {
+            q = q.bind(org_id);
+        }
+
+        let rows = q.fetch_all(&self.pool).await?;
 
         Ok(rows
             .into_iter()
