@@ -17,11 +17,42 @@ fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
     Ok(role)
 }
 
-/// List contests with filtering
+fn is_admin(role: &str) -> bool {
+    role.parse::<Role>()
+        .map(|r| r.is_higher_or_equal(Role::OrganizationAdmin))
+        .unwrap_or(false)
+}
+
+/// Verify tenant scope for a contest.
+async fn verify_contest_tenant(
+    service: &crate::contests::service::ContestService,
+    contest_id: i64,
+    school_id: i64,
+) -> Result<ContestDetail, StatusCode> {
+    let contest = service
+        .get_contest(contest_id)
+        .await
+        .map_err(|err| {
+            if err.to_string().contains("Contest not found") {
+                StatusCode::NOT_FOUND
+            } else {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
+        })?;
+    if contest.organization_id != school_id {
+        return Err(StatusCode::NOT_FOUND);
+    }
+    Ok(contest)
+}
+
+/// List contests with filtering — tenant-scoped to user's organization
 pub async fn list_contests(
     State(state): State<AppState>,
-    Query(query): Query<ListContestsQuery>,
+    AuthExtractor(claims): AuthExtractor,
+    Query(mut query): Query<ListContestsQuery>,
 ) -> Result<Json<ContestsListResponse>, StatusCode> {
+    // Tenant: force organization_id from claims
+    query.organization_id = Some(claims.school_id);
     let service = crate::contests::service::ContestService::new(state.db_pool);
 
     let page = query.page.unwrap_or(1);
@@ -46,34 +77,26 @@ pub async fn list_contests(
     }))
 }
 
-/// Get contest details
+/// Get contest details — tenant-scoped
 pub async fn get_contest(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(contest_id): Path<i64>,
 ) -> Result<Json<ContestDetail>, StatusCode> {
     let service = crate::contests::service::ContestService::new(state.db_pool);
-
-    let contest = service
-        .get_contest(contest_id)
-        .await
-        .map_err(|err| {
-            if err.to_string().contains("Contest not found") {
-                StatusCode::NOT_FOUND
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            }
-        })?;
-
+    let contest = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
     Ok(Json(contest))
 }
 
-/// Create a new contest
+/// Create a new contest — teacher_plus, tenant-scoped
 pub async fn create_contest(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
-    Json(req): Json<CreateContestRequest>,
+    Json(mut req): Json<CreateContestRequest>,
 ) -> Result<Json<Contest>, StatusCode> {
     require_teacher_plus(&claims.role)?;
+    // Tenant: force organization_id from claims
+    req.organization_id = claims.school_id;
     let service = crate::contests::service::ContestService::new(state.db_pool);
 
     let contest = service
@@ -84,7 +107,7 @@ pub async fn create_contest(
     Ok(Json(contest))
 }
 
-/// Update a contest
+/// Update a contest — teacher_plus + tenant scope
 pub async fn update_contest(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
@@ -93,6 +116,7 @@ pub async fn update_contest(
 ) -> Result<Json<Contest>, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     let contest = service
         .update_contest(contest_id, req)
@@ -102,7 +126,7 @@ pub async fn update_contest(
     Ok(Json(contest))
 }
 
-/// Delete a contest
+/// Delete a contest — teacher_plus + tenant scope
 pub async fn delete_contest(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
@@ -110,6 +134,7 @@ pub async fn delete_contest(
 ) -> Result<StatusCode, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     service
         .delete_contest(contest_id)
@@ -119,7 +144,7 @@ pub async fn delete_contest(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Add problem to contest
+/// Add problem to contest — teacher_plus + tenant scope
 pub async fn add_problem_to_contest(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
@@ -128,6 +153,7 @@ pub async fn add_problem_to_contest(
 ) -> Result<Json<ContestProblem>, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     let contest_problem = service
         .add_problem_to_contest(contest_id, req)
@@ -137,12 +163,14 @@ pub async fn add_problem_to_contest(
     Ok(Json(contest_problem))
 }
 
-/// Get contest problems
+/// Get contest problems — tenant-scoped
 pub async fn get_contest_problems(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(contest_id): Path<i64>,
 ) -> Result<Json<Vec<ContestProblemDetail>>, StatusCode> {
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     let problems = service
         .get_contest_problems(contest_id)
@@ -152,7 +180,7 @@ pub async fn get_contest_problems(
     Ok(Json(problems))
 }
 
-/// Remove problem from contest
+/// Remove problem from contest — teacher_plus + tenant scope
 pub async fn remove_problem_from_contest(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
@@ -160,6 +188,7 @@ pub async fn remove_problem_from_contest(
 ) -> Result<StatusCode, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     service
         .remove_problem_from_contest(contest_id, problem_id)
@@ -169,12 +198,14 @@ pub async fn remove_problem_from_contest(
     Ok(StatusCode::NO_CONTENT)
 }
 
-/// Get contest rankings/standings
+/// Get contest rankings/standings — tenant-scoped
 pub async fn get_contest_rankings(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(contest_id): Path<i64>,
 ) -> Result<Json<Vec<ContestRankingEntry>>, StatusCode> {
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     let rankings = service
         .get_contest_rankings(contest_id)
@@ -184,12 +215,14 @@ pub async fn get_contest_rankings(
     Ok(Json(rankings))
 }
 
-/// Get contest status
+/// Get contest status — tenant-scoped
 pub async fn get_contest_status(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(contest_id): Path<i64>,
 ) -> Result<Json<ContestStatus>, StatusCode> {
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     let status = service
         .get_contest_status(contest_id)
@@ -199,13 +232,15 @@ pub async fn get_contest_status(
     Ok(Json(status))
 }
 
-/// Register for contest
+/// Register for contest — any authenticated user, tenant-scoped
 pub async fn register_for_contest(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
     Path(contest_id): Path<i64>,
 ) -> Result<Json<ContestParticipant>, StatusCode> {
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    // Verify tenant scope before registering
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     let participant = service
         .register_for_contest(contest_id, claims.sub)
@@ -221,12 +256,18 @@ pub async fn register_for_contest(
     Ok(Json(participant))
 }
 
-/// Get contest participants
+/// Get contest participants — teacher/admin only, tenant-scoped
 pub async fn get_contest_participants(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(contest_id): Path<i64>,
 ) -> Result<Json<Vec<ContestParticipant>>, StatusCode> {
+    // Only teachers/admins can view full participant list
+    if !is_admin(&claims.role) {
+        require_teacher_plus(&claims.role)?;
+    }
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     let participants = service
         .get_contest_participants(contest_id)
@@ -236,12 +277,14 @@ pub async fn get_contest_participants(
     Ok(Json(participants))
 }
 
-/// Link submission to contest (internal use by judge system)
+/// Link submission to contest — internal worker use, tenant-scoped
 pub async fn link_submission(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path((contest_id, submission_id)): Path<(i64, i64)>,
 ) -> Result<Json<ContestSubmission>, StatusCode> {
     let service = crate::contests::service::ContestService::new(state.db_pool);
+    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 
     let contest_submission = service
         .link_submission_to_contest(contest_id, submission_id)

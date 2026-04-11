@@ -1,6 +1,8 @@
 use super::models::*;
 use super::service::LeaderboardService;
 use crate::AppState;
+use crate::middleware::auth::AuthExtractor;
+use crate::classes::service::ClassService;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -9,6 +11,19 @@ use axum::{
     routing::get,
 };
 use uuid::Uuid;
+use shared::models::role::Role;
+
+fn is_admin(role: &str) -> bool {
+    role.parse::<Role>()
+        .map(|r| r.is_higher_or_equal(Role::OrganizationAdmin))
+        .unwrap_or(false)
+}
+
+fn is_teacher_plus(role: &str) -> bool {
+    role.parse::<Role>()
+        .map(|r| r.is_higher_or_equal(Role::Teacher))
+        .unwrap_or(false)
+}
 
 pub fn leaderboard_router() -> Router<AppState> {
     Router::new()
@@ -20,9 +35,10 @@ pub fn leaderboard_router() -> Router<AppState> {
         .route("/problem/:problem_id", get(get_problem_leaderboard))
 }
 
-/// Get global leaderboard
+/// Get global leaderboard — accessible to all authenticated users (public top N)
 pub async fn get_global_leaderboard(
     State(state): State<AppState>,
+    _claims: AuthExtractor,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
     let service = LeaderboardService::new(
@@ -38,12 +54,18 @@ pub async fn get_global_leaderboard(
     Ok(Json(leaderboard))
 }
 
-/// Get school leaderboard
+/// Get school leaderboard — claims.school_id must match, or admin
 pub async fn get_school_leaderboard(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(school_id): Path<i64>,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
+    // Visibility: claims.school_id == school_id OR admin
+    if claims.school_id != school_id && !is_admin(&claims.role) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     let service = LeaderboardService::new(
         state.db_pool.clone(),
         &state.redis_url,
@@ -57,12 +79,18 @@ pub async fn get_school_leaderboard(
     Ok(Json(leaderboard))
 }
 
-/// Get campus leaderboard
+/// Get campus leaderboard — claims.campus_id must match, or admin
 pub async fn get_campus_leaderboard(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(campus_id): Path<i64>,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
+    // Visibility: claims.campus_id == Some(campus_id) OR admin
+    if claims.campus_id != Some(campus_id) && !is_admin(&claims.role) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     let service = LeaderboardService::new(
         state.db_pool.clone(),
         &state.redis_url,
@@ -76,12 +104,26 @@ pub async fn get_campus_leaderboard(
     Ok(Json(leaderboard))
 }
 
-/// Get class leaderboard
+/// Get class leaderboard — user must be class member OR teacher/admin
 pub async fn get_class_leaderboard(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(class_id): Path<i64>,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
+    // Visibility: user is class member OR teacher/admin
+    if !is_teacher_plus(&claims.role) && !is_admin(&claims.role) {
+        // Student: verify enrollment
+        let class_service = ClassService::new(state.db_pool.clone());
+        let students = class_service.get_class_students(class_id)
+            .await
+            .map_err(|_| StatusCode::NOT_FOUND)?;
+        let is_member = students.iter().any(|s| s.student_id == claims.sub);
+        if !is_member {
+            return Err(StatusCode::FORBIDDEN);
+        }
+    }
+
     let service = LeaderboardService::new(
         state.db_pool.clone(),
         &state.redis_url,
@@ -95,11 +137,20 @@ pub async fn get_class_leaderboard(
     Ok(Json(leaderboard))
 }
 
-/// Get user statistics
+/// Get user statistics — own stats, or teacher/admin of same org
 pub async fn get_user_stats(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(user_id): Path<Uuid>,
 ) -> Result<Json<UserStats>, StatusCode> {
+    // Visibility: claims.sub == user_id OR teacher/admin of same org
+    if claims.sub != user_id {
+        if !is_teacher_plus(&claims.role) && !is_admin(&claims.role) {
+            return Err(StatusCode::FORBIDDEN);
+        }
+        // Teacher/admin must be in same organization (checked by tenant middleware)
+    }
+
     let service = LeaderboardService::new(
         state.db_pool.clone(),
         &state.redis_url,
@@ -113,9 +164,10 @@ pub async fn get_user_stats(
     Ok(Json(stats))
 }
 
-/// Get problem leaderboard (fastest solvers)
+/// Get problem leaderboard (fastest solvers) — accessible to all authenticated users (public top N)
 pub async fn get_problem_leaderboard(
     State(state): State<AppState>,
+    _claims: AuthExtractor,
     Path(problem_id): Path<i64>,
     Query(params): Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<Vec<ProblemLeaderboardEntry>>, StatusCode> {
