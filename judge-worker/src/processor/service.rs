@@ -249,6 +249,22 @@ async fn execute_program(
     let stdout = std::fs::File::create(&stdout_path)?;
     let stderr = std::fs::File::create(&stderr_path)?;
 
+    // Create cgroup for resource limiting (Linux only, gracefully skip on other platforms).
+    let cgroup = crate::sandbox::cgroups::CgroupController::new(
+        &format!("judge-{}-{}", std::process::id(), submission.submission_id),
+        &crate::sandbox::SandboxConfig {
+            cpu_time_limit_ms: submission.time_limit_ms.max(1) as u64,
+            memory_limit_bytes: (submission.memory_limit_mb as u64) * 1024 * 1024,
+            pids_max: 64,
+            ..Default::default()
+        },
+    )
+    .ok();
+
+    if let Some(ref cg) = cgroup {
+        let _ = cg.create();
+    }
+
     let mut command = build_runtime_command(submission, source_file, executable_path, work_dir)?;
     unsafe {
         command.pre_exec(|| {
@@ -264,6 +280,10 @@ async fn execute_program(
     let started = Instant::now();
     let mut child = command.spawn().context("Failed to start submission process")?;
 
+    if let (Some(ref cg), Some(pid)) = (&cgroup, child.id()) {
+        let _ = cg.add_process(pid as i32);
+    }
+
     let wait_result = timeout(
         Duration::from_millis(submission.time_limit_ms.max(1)),
         child.wait(),
@@ -272,9 +292,16 @@ async fn execute_program(
 
     let runtime_ms = started.elapsed().as_millis() as i32;
 
+    // Get memory usage from cgroup (primary) or getrusage (fallback).
+    let cgroup_memory_kb = cgroup
+        .as_ref()
+        .and_then(|cg| cg.get_max_memory_usage().ok())
+        .map(|bytes| (bytes / 1024) as i32)
+        .unwrap_or(0);
+
     // Measure actual peak memory usage via getrusage(RUSAGE_CHILDREN).
     // This returns the max resident set size (in KB on Linux) of any child process.
-    let memory_kb = {
+    let rusage_memory_kb = {
         let mut usage: libc::rusage = unsafe { std::mem::zeroed() };
         let ret = unsafe { libc::getrusage(libc::RUSAGE_CHILDREN, &mut usage) };
         if ret == 0 {
@@ -293,6 +320,18 @@ async fn execute_program(
         }
     }
     .max(0);
+
+    // Use cgroup memory if available, otherwise fall back to getrusage.
+    let memory_kb = if cgroup_memory_kb > 0 {
+        cgroup_memory_kb
+    } else {
+        rusage_memory_kb
+    };
+
+    // Always clean up the cgroup.
+    if let Some(cg) = cgroup {
+        let _ = cg.destroy();
+    }
 
     let process_status = match wait_result {
         Ok(status) => status.context("Failed to wait for submission process")?,

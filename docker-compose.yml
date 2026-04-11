@@ -137,9 +137,11 @@ services:
         condition: service_healthy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    privileged: true
     cap_add:
+      - SYS_PTRACE
       - SYS_ADMIN
+    security_opt:
+      - no-new-privileges:true
     healthcheck:
       test: ["CMD", "pgrep", "-f", "judge-worker"]
       interval: 30s
