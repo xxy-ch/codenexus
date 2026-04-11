@@ -1,6 +1,7 @@
 mod db;
 mod redis;
 mod auth;
+mod error;
 mod middleware;
 mod rbac;
 mod problems;
@@ -41,6 +42,7 @@ pub struct AppState {
     pub redis_pool: Option<RedisPool>,
     pub redis_url: String,
     pub jwt_service: JwtService,
+    pub jwt_secret: String,
     pub websocket_server: std::sync::Arc<WebSocketServer>,
 }
 
@@ -86,6 +88,7 @@ async fn main() -> anyhow::Result<()> {
         redis_pool,
         redis_url,
         jwt_service,
+        jwt_secret,
         websocket_server,
     };
 
@@ -137,7 +140,7 @@ fn create_router(state: AppState) -> Router {
         .nest("/admin/plagiarism", plagiarism::plagiarism_router())
         // Apply auth/tenant middleware only to protected routes
         .route_layer(axum::middleware::from_fn(middleware::tenant::tenant_middleware))
-        .route_layer(axum::middleware::from_fn(middleware::auth::auth_middleware));
+        .route_layer(axum::middleware::from_fn_with_state(state.clone(), middleware::auth::auth_middleware));
 
     public_router
         .merge(protected_router)

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 
@@ -37,9 +37,11 @@ export function IDELayout({
     setIsResizing(true)
   }
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (!isResizing) return
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false)
+  }, [])
 
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     const container = document.getElementById('ide-container')
     if (!container) return
 
@@ -49,17 +51,19 @@ export function IDELayout({
     if (newLeftWidth >= 20 && newLeftWidth <= 80) {
       setLeftPanelWidth(newLeftWidth)
     }
-  }
+  }, [])
 
-  const handleMouseUp = () => {
-    setIsResizing(false)
-  }
+  useEffect(() => {
+    if (!isResizing) return
 
-  // 监听鼠标事件
-  if (isResizing) {
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
-  }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp])
 
   return (
     <div

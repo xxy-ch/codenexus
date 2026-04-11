@@ -5,6 +5,7 @@ use axum::{
     response::{IntoResponse, Json},
 };
 use crate::AppState;
+use crate::error::AppError;
 use crate::middleware::auth::AuthExtractor;
 
 pub fn notifications_router() -> axum::Router<AppState> {
@@ -115,36 +116,4 @@ async fn update_settings(
 
     let updated = service.update_settings(claims.sub, settings).await?;
     Ok(Json(updated))
-}
-
-#[derive(Debug)]
-pub enum AppError {
-    Notification(String),
-    Validation(String),
-    Database(String),
-    Internal(String),
-}
-
-impl IntoResponse for AppError {
-    fn into_response(self) -> axum::response::Response {
-        let (status, message) = match self {
-            AppError::Notification(msg) => (StatusCode::BAD_REQUEST, msg),
-            AppError::Validation(msg) => (StatusCode::BAD_REQUEST, msg),
-            AppError::Database(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
-            AppError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
-        };
-
-        let body = Json(serde_json::json!({
-            "error": message,
-            "status": status.as_u16(),
-        }));
-
-        (status, body).into_response()
-    }
-}
-
-impl From<anyhow::Error> for AppError {
-    fn from(err: anyhow::Error) -> Self {
-        AppError::Internal(err.to_string())
-    }
 }

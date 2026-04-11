@@ -1,11 +1,11 @@
 use super::{models::*, service::UserService};
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
-    response::{IntoResponse, Response},
+    response::IntoResponse,
     Json,
 };
 use crate::AppState;
+use crate::error::AppError;
 use crate::middleware::auth::AuthExtractor;
 use uuid::Uuid;
 
@@ -98,37 +98,5 @@ fn ensure_admin(role: &str) -> Result<(), AppError> {
         Ok(())
     } else {
         Err(AppError::Auth("Admin access required".to_string()))
-    }
-}
-
-#[derive(Debug)]
-pub enum AppError {
-    Auth(String),
-    User(String),
-    Database(String),
-    Internal(String),
-}
-
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        let (status, message) = match self {
-            AppError::Auth(msg) => (StatusCode::UNAUTHORIZED, msg),
-            AppError::User(msg) => (StatusCode::BAD_REQUEST, msg),
-            AppError::Database(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
-            AppError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
-        };
-
-        let body = Json(serde_json::json!({
-            "error": message,
-            "status": status.as_u16(),
-        }));
-
-        (status, body).into_response()
-    }
-}
-
-impl From<anyhow::Error> for AppError {
-    fn from(err: anyhow::Error) -> Self {
-        AppError::Internal(err.to_string())
     }
 }

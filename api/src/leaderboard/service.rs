@@ -791,16 +791,31 @@ impl LeaderboardService {
     /// Invalidate leaderboard cache (call on new submission)
     pub async fn invalidate_leaderboard_cache(&self) -> Result<()> {
         if let Ok(mut conn) = self.redis_client.get_multiplexed_async_connection().await {
-            // Find and delete all leaderboard cache keys
-            let keys: Vec<String> = redis::cmd("KEYS")
-                .arg("leaderboard:*")
-                .query_async(&mut conn)
-                .await
-                .unwrap_or_default();
+            // Use SCAN instead of KEYS to avoid blocking Redis
+            let mut cursor: u64 = 0;
+            let mut all_keys: Vec<String> = Vec::new();
 
-            if !keys.is_empty() {
+            loop {
+                let (next_cursor, keys): (u64, Vec<String>) = redis::cmd("SCAN")
+                    .arg(cursor)
+                    .arg("MATCH")
+                    .arg("leaderboard:*")
+                    .arg("COUNT")
+                    .arg(100)
+                    .query_async(&mut conn)
+                    .await
+                    .unwrap_or_default();
+
+                all_keys.extend(keys);
+                cursor = next_cursor;
+                if cursor == 0 {
+                    break;
+                }
+            }
+
+            if !all_keys.is_empty() {
                 let _: Result<(), _> = redis::cmd("DEL")
-                    .arg(keys)
+                    .arg(&all_keys)
                     .query_async(&mut conn)
                     .await;
             }

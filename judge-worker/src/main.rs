@@ -70,6 +70,8 @@ async fn run_processing_loop(
 ) -> Result<()> {
     info!("Starting main processing loop");
 
+    let mut error_count: u32 = 0;
+
     loop {
         // Block for up to 5 seconds waiting for messages
         match consume_and_process(
@@ -83,14 +85,19 @@ async fn run_processing_loop(
         .await
         {
             Ok(count) => {
+                error_count = 0;
                 if count > 0 {
                     info!("Processed {} submission(s)", count);
                 }
             }
             Err(e) => {
                 error!("Error processing submission: {}", e);
-                // Continue processing despite errors
-                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                error_count += 1;
+                let delay = tokio::time::Duration::from_millis(
+                    (1000 * 2u64.pow(error_count.min(6))).min(60_000),
+                );
+                warn!("Retrying in {:?} (error count: {})", delay, error_count);
+                tokio::time::sleep(delay).await;
             }
         }
     }

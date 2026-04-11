@@ -11,6 +11,7 @@ use serde_json::json;
 use crate::blog::{models::*, service::BlogService};
 use crate::AppState;
 use crate::websocket::message::WebSocketMessage;
+use shared::models::{Claims, Role};
 
 /// Create blog router
 pub fn blog_router() -> Router<AppState> {
@@ -209,6 +210,7 @@ async fn delete_article_handler(
     State(state): State<AppState>,
     Path(slug_or_id): Path<String>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
     // Get article ID first
     let id = match slug_or_id.parse::<i64>() {
@@ -225,9 +227,14 @@ async fn delete_article_handler(
         }
     };
 
+    let is_admin = matches!(
+        claims.role.parse::<Role>(),
+        Ok(Role::Root | Role::OrganizationAdmin | Role::CampusAdmin)
+    );
+
     let service = BlogService::new(state.db_pool);
 
-    match service.delete_article(id, user_id, false).await {
+    match service.delete_article(id, user_id, is_admin).await {
         Ok(true) => Ok(axum::http::StatusCode::NO_CONTENT),
         Ok(false) => Err((axum::http::StatusCode::FORBIDDEN, "Not authorized".to_string())),
         Err(e) => {

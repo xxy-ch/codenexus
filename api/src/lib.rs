@@ -1,5 +1,6 @@
 pub mod db;
 pub mod auth;
+pub mod error;
 pub mod users;
 pub mod problems;
 pub mod submissions;
@@ -26,5 +27,6 @@ pub struct AppState {
     pub redis_pool: Option<deadpool_redis::Pool>,
     pub redis_url: String,
     pub jwt_service: auth::JwtService,
+    pub jwt_secret: String,
     pub websocket_server: std::sync::Arc<websocket::WebSocketServer>,
 }

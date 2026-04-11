@@ -44,6 +44,7 @@ where
 }
 
 pub async fn auth_middleware(
+    axum::extract::State(state): axum::extract::State<crate::AppState>,
     request: axum::http::Request<axum::body::Body>,
     next: axum::middleware::Next,
 ) -> Result<Response, StatusCode> {
@@ -59,8 +60,7 @@ pub async fn auth_middleware(
 
     let token = &auth_header[7..];
 
-    let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| StatusCode::UNAUTHORIZED)?;
-    let jwt_service = Arc::new(JwtService::new(&jwt_secret));
+    let jwt_service = Arc::new(JwtService::new(&state.jwt_secret));
 
     let claims = jwt_service
         .validate_token(token)

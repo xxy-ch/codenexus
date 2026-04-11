@@ -11,6 +11,7 @@ use serde_json::json;
 use crate::discussions::{models::*, service::DiscussionService};
 use crate::AppState;
 use crate::websocket::message::WebSocketMessage;
+use shared::models::{Claims, Role};
 
 /// Create discussions router
 pub fn discussions_router() -> Router<AppState> {
@@ -103,10 +104,16 @@ async fn delete_discussion_handler(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
+    let is_admin = matches!(
+        claims.role.parse::<Role>(),
+        Ok(Role::Root | Role::OrganizationAdmin | Role::CampusAdmin)
+    );
+
     let service = DiscussionService::new(state.db_pool);
 
-    match service.delete_discussion(id, user_id, false).await {
+    match service.delete_discussion(id, user_id, is_admin).await {
         Ok(true) => Ok(axum::http::StatusCode::NO_CONTENT),
         Ok(false) => Err((axum::http::StatusCode::FORBIDDEN, "Not authorized".to_string())),
         Err(e) => {
