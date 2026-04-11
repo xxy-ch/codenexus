@@ -277,12 +277,13 @@ pub async fn get_contest_participants(
     Ok(Json(participants))
 }
 
-/// Link submission to contest — internal worker use, tenant-scoped
+/// Link submission to contest — teacher_plus only, tenant-scoped
 pub async fn link_submission(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
     Path((contest_id, submission_id)): Path<(i64, i64)>,
 ) -> Result<Json<ContestSubmission>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
     verify_contest_tenant(&service, contest_id, claims.school_id).await?;
 

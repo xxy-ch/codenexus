@@ -79,7 +79,7 @@ pub async fn get_school_leaderboard(
     Ok(Json(leaderboard))
 }
 
-/// Get campus leaderboard — claims.campus_id must match, or admin
+/// Get campus leaderboard — claims.campus_id must match AND same org, or admin
 pub async fn get_campus_leaderboard(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
@@ -89,6 +89,20 @@ pub async fn get_campus_leaderboard(
     // Visibility: claims.campus_id == Some(campus_id) OR admin
     if claims.campus_id != Some(campus_id) && !is_admin(&claims.role) {
         return Err(StatusCode::FORBIDDEN);
+    }
+    // Additional: verify campus belongs to user's org (prevent cross-tenant with shared campus IDs)
+    let class_service = ClassService::new(state.db_pool.clone());
+    let campus_class = sqlx::query_scalar::<_, i64>(
+        "SELECT organization_id FROM classes WHERE campus_id = $1 LIMIT 1"
+    )
+    .bind(campus_id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    if let Some(org_id) = campus_class {
+        if org_id != claims.school_id && !is_admin(&claims.role) {
+            return Err(StatusCode::FORBIDDEN);
+        }
     }
 
     let service = LeaderboardService::new(
@@ -104,13 +118,28 @@ pub async fn get_campus_leaderboard(
     Ok(Json(leaderboard))
 }
 
-/// Get class leaderboard — user must be class member OR teacher/admin
+/// Get class leaderboard — user must be class member OR teacher/admin in same org
 pub async fn get_class_leaderboard(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
     Path(class_id): Path<i64>,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
+    // First: verify the class belongs to user's org
+    let class_org = sqlx::query_scalar::<_, i64>(
+        "SELECT organization_id FROM classes WHERE id = $1"
+    )
+    .bind(class_id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match class_org {
+        Some(org_id) if org_id == claims.school_id || is_admin(&claims.role) => {}
+        Some(_) => return Err(StatusCode::FORBIDDEN),
+        None => return Err(StatusCode::NOT_FOUND),
+    }
+
     // Visibility: user is class member OR teacher/admin
     if !is_teacher_plus(&claims.role) && !is_admin(&claims.role) {
         // Student: verify enrollment
@@ -148,7 +177,19 @@ pub async fn get_user_stats(
         if !is_teacher_plus(&claims.role) && !is_admin(&claims.role) {
             return Err(StatusCode::FORBIDDEN);
         }
-        // Teacher/admin must be in same organization (checked by tenant middleware)
+        // Verify the target user belongs to the same organization
+        let target_org = sqlx::query_scalar::<_, i64>(
+            "SELECT organization_id FROM users WHERE id = $1"
+        )
+        .bind(user_id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        match target_org {
+            Some(org_id) if org_id == claims.school_id || is_admin(&claims.role) => {}
+            Some(_) => return Err(StatusCode::FORBIDDEN),
+            None => return Err(StatusCode::NOT_FOUND),
+        }
     }
 
     let service = LeaderboardService::new(

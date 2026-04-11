@@ -116,12 +116,16 @@ async fn update_judge_result(
     Path(id): Path<i64>,
     Json(result): Json<JudgeResultCallback>,
 ) -> Result<impl IntoResponse, AppError> {
-    // 1. Auth: verify X-Worker-Secret header
-    let worker_secret = headers
+    // 1. Auth: verify X-Worker-Secret header (constant-time comparison)
+    let provided_secret = headers
         .get("X-Worker-Secret")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
-    if worker_secret != state.worker_secret {
+    let expected = state.worker_secret.as_bytes();
+    let provided = provided_secret.as_bytes();
+    let secret_valid = provided.len() == expected.len()
+        && provided.iter().zip(expected.iter()).fold(0u8, |acc, (a, b)| acc | (a ^ b)) == 0;
+    if !secret_valid {
         return Err(AppError::Auth("Invalid or missing worker secret".into()));
     }
 
@@ -138,8 +142,8 @@ async fn update_judge_result(
     let current_status = service.get_submission_status(id).await?
         .ok_or_else(|| AppError::Validation("Submission not found".into()))?;
 
-    // 3a. Idempotency: duplicate callback with same status is accepted but ignored
-    if current_status == result.status {
+    // 3a. Idempotency: duplicate callback with same status is accepted but ignored (case-insensitive)
+    if current_status.eq_ignore_ascii_case(&result.status) {
         return Ok(Json(serde_json::json!({
             "message": "Judge result already processed (idempotent)",
             "submission_id": id,

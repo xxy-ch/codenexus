@@ -118,7 +118,7 @@ impl SearchService {
             r#"
             SELECT title
             FROM problems
-            WHERE LOWER(title) LIKE $1
+            WHERE LOWER(title) LIKE $1 AND visibility = 'public'
             ORDER BY created_at DESC
             LIMIT 5
             "#,
@@ -330,18 +330,27 @@ fn truncate_text(text: &str, max_len: usize) -> String {
 }
 
 fn highlight(text: &str, query: &str) -> String {
+    let escaped = html_escape(text);
     if query.trim().is_empty() {
-        return text.to_string();
+        return escaped;
     }
 
-    let lower = text.to_lowercase();
+    let lower = escaped.to_lowercase();
     let target = query.to_lowercase();
     if let Some(position) = lower.find(&target) {
-        let end = position + query.len();
-        format!("{}<mark>{}</mark>{}", &text[..position], &text[position..end], &text[end..])
+        let end = position + target.len();
+        format!("{}<mark>{}</mark>{}", &escaped[..position], &escaped[position..end], &escaped[end..])
     } else {
-        text.to_string()
+        escaped
     }
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+     .replace('<', "&lt;")
+     .replace('>', "&gt;")
+     .replace('"', "&quot;")
+     .replace('\'', "&#x27;")
 }
 
 fn score_text_match(title: &str, content: &str, query: &str) -> f64 {

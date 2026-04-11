@@ -19,8 +19,9 @@ pub struct TenantContext {
 
 /// Tenant isolation middleware
 ///
-/// Extracts tenant ID from JWT claims if present (from Authorization header),
-/// otherwise falls back to the `X-Tenant-ID` header.
+/// Extracts tenant ID exclusively from JWT claims (inserted by auth middleware).
+/// The X-Tenant-ID header is NOT trusted — tenant identity comes only from
+/// the verified JWT token.
 /// Returns 401 Unauthorized if no valid tenant ID can be found.
 pub async fn tenant_middleware(
     mut request: axum::http::Request<axum::body::Body>,
@@ -40,15 +41,9 @@ pub async fn tenant_middleware(
 }
 
 fn extract_tenant_id_from_request(request: &axum::http::Request<axum::body::Body>) -> Option<i64> {
-    if let Some(claims) = request.extensions().get::<Claims>() {
-        return Some(claims.school_id);
-    }
-
-    let headers = request.headers();
-    headers
-        .get(TENANT_HEADER)
-        .and_then(|value| value.to_str().ok())
-        .and_then(|s| s.parse::<i64>().ok())
+    // SECURITY: Only use JWT claims as source of tenant identity.
+    // Never trust client-supplied headers for tenant isolation.
+    request.extensions().get::<Claims>().map(|c| c.school_id)
 }
 
 #[cfg(test)]
@@ -88,19 +83,27 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_middleware_valid_tenant_header() {
+    async fn test_middleware_valid_tenant_from_claims() {
         let app = Router::new()
             .route("/test", get(get_tenant))
             .layer(middleware::from_fn(tenant_middleware));
 
-        let mut headers = HeaderMap::new();
-        headers.insert(TENANT_HEADER, "123".parse().unwrap());
+        let claims = Claims {
+            sub: Uuid::new_v4(),
+            email: "test@example.com".to_string(),
+            role: "root".to_string(),
+            school_id: 123,
+            campus_id: None,
+            iat: chrono::Utc::now().timestamp(),
+            exp: chrono::Utc::now().timestamp() + 3600,
+            jti: Uuid::new_v4(),
+        };
 
         let response = app
             .oneshot(
                 Request::builder()
                     .uri("/test")
-                    .header(TENANT_HEADER, "123")
+                    .extension(claims)
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -111,16 +114,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_middleware_invalid_tenant_header() {
+    async fn test_middleware_ignores_header_without_claims() {
         let app = Router::new()
             .route("/test", get(get_tenant))
             .layer(middleware::from_fn(tenant_middleware));
 
+        // Header alone should NOT grant access
         let response = app
             .oneshot(
                 Request::builder()
                     .uri("/test")
-                    .header(TENANT_HEADER, "invalid")
+                    .header(TENANT_HEADER, "123")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -140,6 +144,17 @@ mod tests {
             }
         }
 
+        let claims = Claims {
+            sub: Uuid::new_v4(),
+            email: "test@example.com".to_string(),
+            role: "student".to_string(),
+            school_id: 456,
+            campus_id: None,
+            iat: chrono::Utc::now().timestamp(),
+            exp: chrono::Utc::now().timestamp() + 3600,
+            jti: Uuid::new_v4(),
+        };
+
         let app = Router::new()
             .route("/test", get(handler))
             .layer(middleware::from_fn(tenant_middleware));
@@ -148,7 +163,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/test")
-                    .header(TENANT_HEADER, "456")
+                    .extension(claims)
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -159,7 +174,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_middleware_prefers_jwt_claims_over_header() {
+    async fn test_middleware_uses_claims_not_header() {
         async fn handler(
             Extension(ctx): Extension<TenantContext>,
             Extension(claims): Extension<Claims>,
@@ -186,6 +201,7 @@ mod tests {
             jti: Uuid::new_v4(),
         };
 
+        // Header says 123 but claims say 999 — must use claims
         let response = app
             .oneshot(
                 Request::builder()

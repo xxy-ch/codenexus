@@ -212,19 +212,18 @@ async fn enroll_with_code(
     let code = request.code
         .or(request.enrollment_code)
         .ok_or(StatusCode::BAD_REQUEST)?;
+
+    // Tenant: verify class belongs to user's org BEFORE enrolling (prevent TOCTOU)
+    let class = service.get_class_by_code(&code)
+        .await
+        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    if class.organization_id != claims.school_id {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     let enrollment = service.enroll_with_code(&code, claims.sub)
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?;
-
-    // Tenant: verify the class belongs to user's organization
-    let class = service.get_class(enrollment.class_id)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    if class.organization_id != claims.school_id {
-        // Rollback enrollment - tenant mismatch
-        let _ = service.remove_student(enrollment.class_id, claims.sub).await;
-        return Err(StatusCode::FORBIDDEN);
-    }
 
     Ok(Json(enrollment))
 }
