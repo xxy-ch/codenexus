@@ -44,6 +44,7 @@ pub struct AppState {
     pub redis_url: String,
     pub jwt_service: JwtService,
     pub jwt_secret: String,
+    pub worker_secret: String,
     pub websocket_server: std::sync::Arc<WebSocketServer>,
 }
 
@@ -64,6 +65,8 @@ async fn main() -> anyhow::Result<()> {
     let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
     let jwt_secret =
         std::env::var("JWT_SECRET").unwrap_or_else(|_| "default_jwt_secret_change_me".to_string());
+    let worker_secret =
+        std::env::var("WORKER_SECRET").unwrap_or_else(|_| "default_worker_secret_change_me".to_string());
     let bind_address = std::env::var("API_BIND_ADDRESS")
         .unwrap_or_else(|_| "0.0.0.0:3000".to_string());
 
@@ -90,6 +93,7 @@ async fn main() -> anyhow::Result<()> {
         redis_url,
         jwt_service,
         jwt_secret,
+        worker_secret,
         websocket_server,
     };
 

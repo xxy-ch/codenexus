@@ -1,6 +1,7 @@
 use super::{models::*, service::SubmissionService};
 use axum::{
     extract::{Path, Query, State},
+    http::HeaderMap,
     response::IntoResponse,
     Json,
 };
@@ -87,7 +88,7 @@ async fn get_submission(
 }
 
 /// Judge result callback from judge-worker
-/// This endpoint is called by the judge-worker after processing a submission
+/// Secured via X-Worker-Secret header, path/body ID validation, state machine, and idempotency.
 #[derive(Debug, Deserialize)]
 pub struct JudgeResultCallback {
     pub submission_id: i64,
@@ -111,12 +112,62 @@ pub struct TestCaseResultCallback {
 
 async fn update_judge_result(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Path(id): Path<i64>,
     Json(result): Json<JudgeResultCallback>,
 ) -> Result<impl IntoResponse, AppError> {
+    // 1. Auth: verify X-Worker-Secret header
+    let worker_secret = headers
+        .get("X-Worker-Secret")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("");
+    if worker_secret != state.worker_secret {
+        return Err(AppError::Auth("Invalid or missing worker secret".into()));
+    }
+
+    // 2. Path/body ID match
+    if id != result.submission_id {
+        return Err(AppError::Validation(
+            "Path ID does not match submission_id in body".into(),
+        ));
+    }
+
     let service = SubmissionService::new(state.db_pool);
 
-    // Update submission status and score
+    // 3. State machine: check current status
+    let current_status = service.get_submission_status(id).await?
+        .ok_or_else(|| AppError::Validation("Submission not found".into()))?;
+
+    // 3a. Idempotency: duplicate callback with same status is accepted but ignored
+    if current_status == result.status {
+        return Ok(Json(serde_json::json!({
+            "message": "Judge result already processed (idempotent)",
+            "submission_id": id,
+            "status": result.status,
+        })));
+    }
+
+    // 3b. Terminal states cannot be overwritten
+    if SubmissionService::is_terminal_status(&current_status) {
+        return Err(AppError::Validation(format!(
+            "Submission {} is in terminal state '{}' and cannot be overwritten",
+            id, current_status
+        )));
+    }
+
+    // 3c. Only allow valid transitions: pending/queued -> judging -> terminal
+    let is_valid_transition = matches!(
+        current_status.as_str(),
+        "pending" | "queued" | "judging"
+    );
+    if !is_valid_transition {
+        return Err(AppError::Validation(format!(
+            "Invalid state transition from '{}' to '{}'",
+            current_status, result.status
+        )));
+    }
+
+    // 4. Update submission status and score
     service.update_judge_result(
         id,
         &result.status,
@@ -125,7 +176,7 @@ async fn update_judge_result(
         result.memory_kb,
     ).await?;
 
-    // Store test case results
+    // 5. Store test case results
     for test_result in result.test_case_results {
         service.store_test_case_result(
             id,

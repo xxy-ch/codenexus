@@ -28,5 +28,6 @@ pub struct AppState {
     pub redis_url: String,
     pub jwt_service: auth::JwtService,
     pub jwt_secret: String,
+    pub worker_secret: String,
     pub websocket_server: std::sync::Arc<websocket::WebSocketServer>,
 }

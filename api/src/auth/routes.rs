@@ -192,6 +192,7 @@ mod tests {
             jwt_service,
             redis_url: String::new(),
             jwt_secret: jwt_secret.clone(),
+            worker_secret: "test_worker_secret".to_string(),
             websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
         };
 
@@ -361,6 +362,7 @@ mod tests {
             jwt_service: crate::auth::JwtService::new("test_secret"),
             redis_url: String::new(),
             jwt_secret: "test_secret".to_string(),
+            worker_secret: "test_worker_secret".to_string(),
             websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
         };
         let response = logout(Extension(claims), State(state)).await;

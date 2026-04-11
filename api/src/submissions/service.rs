@@ -432,6 +432,29 @@ impl SubmissionService {
         Ok(())
     }
 
+    /// Get current submission status (for state machine validation)
+    pub async fn get_submission_status(&self, submission_id: i64) -> Result<Option<String>> {
+        let row = sqlx::query_scalar::<_, Option<String>>(
+            "SELECT status FROM submissions WHERE id = $1"
+        )
+        .bind(submission_id)
+        .fetch_optional(&self.pool)
+        .await?
+        .flatten();
+
+        Ok(row)
+    }
+
+    /// Check if a status is terminal (cannot be overwritten)
+    pub fn is_terminal_status(status: &str) -> bool {
+        matches!(
+            status,
+            "accepted" | "wrong_answer" | "runtime_error" | "compilation_error"
+                | "time_limit_exceeded" | "memory_limit_exceeded" | "system_error"
+                | "judged" | "failed"
+        )
+    }
+
     /// Update submission with detailed judge results
     pub async fn update_judge_result(
         &self,

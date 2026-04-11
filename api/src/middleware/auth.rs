@@ -138,6 +138,7 @@ mod tests {
             jwt_service: JwtService::new("test_secret_key"),
             redis_url: String::new(),
             jwt_secret: "test_secret_key".to_string(),
+            worker_secret: "test_worker_secret".to_string(),
             websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
         };
         Router::new()
