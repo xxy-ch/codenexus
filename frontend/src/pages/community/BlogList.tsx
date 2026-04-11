@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowRight, Bookmark, Flame, FolderKanban, PenSquare, Search, Sparkles, Star } from 'lucide-react'
-import { blogApi } from '@/services/communityApi'
+import { blogApi } from '@/services/articlesApi'
 import type { Article, ArticleFilters, PopularTag } from '@/types/community'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'

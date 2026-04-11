@@ -13,7 +13,8 @@ vi.mock('@/services/api', () => ({
   default: mockApi,
 }))
 
-import { blogApi, discussionsApi } from '@/services/communityApi'
+import { blogApi } from '@/services/articlesApi'
+import { discussionsApi } from '@/services/discussionsApi'
 
 describe('communityApi normalization', () => {
   beforeEach(() => {

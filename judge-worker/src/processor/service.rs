@@ -236,6 +236,9 @@ async fn execute_program(
     input: &str,
     work_dir: &Path,
 ) -> Result<ExecutionOutput> {
+    // Each submission gets its own unique work_dir (created via create_work_dir using
+    // submission_id), so these I/O filenames are isolated per-submission. This is safe
+    // for concurrent processing — no two submissions will clobber each other's files.
     let input_path = work_dir.join("stdin.txt");
     let stdout_path = work_dir.join("stdout.txt");
     let stderr_path = work_dir.join("stderr.txt");
@@ -268,7 +271,28 @@ async fn execute_program(
     .await;
 
     let runtime_ms = started.elapsed().as_millis() as i32;
-    let memory_kb = DEFAULT_MEMORY_KB.min((submission.memory_limit_mb.saturating_mul(1024)) as i32);
+
+    // Measure actual peak memory usage via getrusage(RUSAGE_CHILDREN).
+    // This returns the max resident set size (in KB on Linux) of any child process.
+    let memory_kb = {
+        let mut usage: libc::rusage = unsafe { std::mem::zeroed() };
+        let ret = unsafe { libc::getrusage(libc::RUSAGE_CHILDREN, &mut usage) };
+        if ret == 0 {
+            // On Linux ru_maxrss is in KB; on macOS it is in bytes.
+            #[cfg(target_os = "linux")]
+            {
+                usage.ru_maxrss as i32
+            }
+            #[cfg(not(target_os = "linux"))]
+            {
+                (usage.ru_maxrss / 1024) as i32
+            }
+        } else {
+            // Fallback to the configured memory limit if getrusage fails
+            DEFAULT_MEMORY_KB.min((submission.memory_limit_mb.saturating_mul(1024)) as i32)
+        }
+    }
+    .max(0);
 
     let process_status = match wait_result {
         Ok(status) => status.context("Failed to wait for submission process")?,

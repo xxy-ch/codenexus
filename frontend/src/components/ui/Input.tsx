@@ -12,8 +12,8 @@ export function Input({ className, error, fullWidth = true, disabled, ...props }
     <div className={cn(fullWidth ? 'w-full' : 'w-fit')}>
       <input
         className={cn(
-          'w-full rounded-lg border bg-surface-light px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 placeholder:text-text-muted focus:border-primary focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 dark:border-border-dark dark:bg-surface-dark dark:text-slate-100 dark:disabled:bg-slate-900',
-          error ? 'border-danger focus:ring-red-500/20' : 'border-border-light',
+          'w-full rounded-lg border bg-card px-4 py-3 text-sm text-foreground shadow-sm outline-none transition-all duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground dark:disabled:bg-muted',
+          error ? 'border-destructive focus:ring-red-500/20' : 'border-border',
           className
         )}
         disabled={disabled}

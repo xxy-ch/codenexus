@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { discussionsApi } from '@/services/communityApi'
+import { discussionsApi } from '@/services/discussionsApi'
 import type { CreateDiscussionRequest } from '@/types/community'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
 import { Loading } from '@/components/ui/Loading'

@@ -4,17 +4,30 @@ use tokio::sync::{Mutex, RwLock};
 use uuid::Uuid;
 use crate::websocket::message::WebSocketMessage;
 
+/// Maximum concurrent WebSocket connections per user
+const MAX_CONNECTIONS_PER_USER: usize = 5;
+
 /// WebSocket connection manager
 #[derive(Clone)]
 pub struct WebSocketServer {
-    /// Connected clients: client_id -> (user_id, sender)
-    clients: Arc<RwLock<HashMap<Uuid, (Uuid, tokio::sync::mpsc::UnboundedSender<String>)>>>,
+    /// Connected clients: client_id -> (user_id, school_id, sender)
+    clients: Arc<RwLock<HashMap<Uuid, (Uuid, i64, tokio::sync::mpsc::UnboundedSender<String>)>>>,
 
     /// User subscriptions: user_id -> vec of client_ids
     user_connections: Arc<RwLock<HashMap<Uuid, Vec<Uuid>>>>,
 
     /// Topic subscriptions: topic -> vec of client_ids
     topic_subscriptions: Arc<RwLock<HashMap<String, Vec<Uuid>>>>,
+
+    /// Per-user connection counts (used for fast limit checks)
+    user_conn_counts: Arc<Mutex<HashMap<Uuid, usize>>>,
+}
+
+/// Result of attempting to add a client
+pub enum AddClientResult {
+    Added,
+    /// Connection limit exceeded; contains the max allowed connections
+    LimitExceeded(usize),
 }
 
 impl WebSocketServer {
@@ -24,29 +37,55 @@ impl WebSocketServer {
             clients: Arc::new(RwLock::new(HashMap::new())),
             user_connections: Arc::new(RwLock::new(HashMap::new())),
             topic_subscriptions: Arc::new(RwLock::new(HashMap::new())),
+            user_conn_counts: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
-    /// Add a new client connection
+    /// Add a new client connection with per-user connection limit.
+    /// Returns `AddClientResult::LimitExceeded` if the user already has
+    /// `MAX_CONNECTIONS_PER_USER` active connections.
     pub async fn add_client(
         &self,
         client_id: Uuid,
         user_id: Uuid,
+        school_id: i64,
         sender: tokio::sync::mpsc::UnboundedSender<String>,
-    ) {
+    ) -> AddClientResult {
+        // Check per-user connection limit first (using a Mutex for fast atomic check)
+        {
+            let mut counts = self.user_conn_counts.lock().await;
+            let current = counts.entry(user_id).or_insert(0);
+            if *current >= MAX_CONNECTIONS_PER_USER {
+                return AddClientResult::LimitExceeded(MAX_CONNECTIONS_PER_USER);
+            }
+            *current += 1;
+        }
+
         let mut clients = self.clients.write().await;
-        clients.insert(client_id, (user_id, sender.clone()));
+        clients.insert(client_id, (user_id, school_id, sender.clone()));
 
         let mut user_conns = self.user_connections.write().await;
         user_conns.entry(user_id).or_insert_with(Vec::new).push(client_id);
 
-        tracing::info!("WebSocket client connected: {} (user: {})", client_id, user_id);
+        tracing::info!("WebSocket client connected: {} (user: {}, tenant: {})", client_id, user_id, school_id);
+        AddClientResult::Added
     }
 
     /// Remove a client connection
     pub async fn remove_client(&self, client_id: Uuid) {
         let mut clients = self.clients.write().await;
-        if let Some((user_id, _)) = clients.remove(&client_id) {
+        if let Some((user_id, _school_id, _)) = clients.remove(&client_id) {
+            // Decrement per-user count
+            {
+                let mut counts = self.user_conn_counts.lock().await;
+                if let Some(count) = counts.get_mut(&user_id) {
+                    *count = count.saturating_sub(1);
+                    if *count == 0 {
+                        counts.remove(&user_id);
+                    }
+                }
+            }
+
             let mut user_conns = self.user_connections.write().await;
             if let Some(conns) = user_conns.get_mut(&user_id) {
                 conns.retain(|id| *id != client_id);
@@ -65,12 +104,23 @@ impl WebSocketServer {
         }
     }
 
-    /// Subscribe a client to a topic
-    pub async fn subscribe(&self, client_id: Uuid, topic: String) {
+    /// Subscribe a client to a topic. Returns `false` if the client is not connected.
+    pub async fn subscribe(&self, client_id: Uuid, topic: String) -> bool {
+        // Verify client exists
+        let clients = self.clients.read().await;
+        if !clients.contains_key(&client_id) {
+            return false;
+        }
+        drop(clients);
+
         let mut topics = self.topic_subscriptions.write().await;
-        topics.entry(topic).or_insert_with(Vec::new).push(client_id);
+        let subscribers = topics.entry(topic).or_insert_with(Vec::new);
+        if !subscribers.contains(&client_id) {
+            subscribers.push(client_id);
+        }
 
         tracing::debug!("Client {} subscribed to topic", client_id);
+        true
     }
 
     /// Unsubscribe a client from a topic
@@ -83,6 +133,12 @@ impl WebSocketServer {
         tracing::debug!("Client {} unsubscribed from topic {}", client_id, topic);
     }
 
+    /// Get the user_id for a connected client
+    pub async fn get_user_id(&self, client_id: Uuid) -> Option<Uuid> {
+        let clients = self.clients.read().await;
+        clients.get(&client_id).map(|(uid, _, _)| *uid)
+    }
+
     /// Send message to a specific user (all their connections)
     pub async fn send_to_user(&self, user_id: Uuid, message: &WebSocketMessage) -> Result<(), anyhow::Error> {
         let json = message.to_json()?;
@@ -91,7 +147,7 @@ impl WebSocketServer {
         if let Some(client_ids) = user_conns.get(&user_id) {
             let clients = self.clients.read().await;
             for client_id in client_ids {
-                if let Some((_, sender)) = clients.get(client_id) {
+                if let Some((_, _, sender)) = clients.get(client_id) {
                     let _ = sender.send(json.clone());
                 }
             }
@@ -108,7 +164,7 @@ impl WebSocketServer {
         if let Some(client_ids) = topics.get(topic) {
             let clients = self.clients.read().await;
             for client_id in client_ids {
-                if let Some((_, sender)) = clients.get(client_id) {
+                if let Some((_, _, sender)) = clients.get(client_id) {
                     let _ = sender.send(json.clone());
                 }
             }
@@ -122,8 +178,27 @@ impl WebSocketServer {
         let json = message.to_json()?;
         let clients = self.clients.read().await;
 
-        for (_, (_, sender)) in clients.iter() {
+        for (_, (_, _, sender)) in clients.iter() {
             let _ = sender.send(json.clone());
+        }
+
+        Ok(())
+    }
+
+    /// Broadcast message only to clients belonging to a specific tenant (school_id).
+    /// Used for tenant-scoped notifications like blog updates.
+    pub async fn broadcast_to_tenant(
+        &self,
+        school_id: i64,
+        message: &WebSocketMessage,
+    ) -> Result<(), anyhow::Error> {
+        let json = message.to_json()?;
+        let clients = self.clients.read().await;
+
+        for (_, (_, tenant, sender)) in clients.iter() {
+            if *tenant == school_id {
+                let _ = sender.send(json.clone());
+            }
         }
 
         Ok(())
@@ -138,6 +213,12 @@ impl WebSocketServer {
     pub async fn topic_subscriber_count(&self, topic: &str) -> usize {
         let topics = self.topic_subscriptions.read().await;
         topics.get(topic).map(|v| v.len()).unwrap_or(0)
+    }
+
+    /// Get the number of active connections for a user
+    pub async fn user_connection_count(&self, user_id: Uuid) -> usize {
+        let counts = self.user_conn_counts.lock().await;
+        counts.get(&user_id).copied().unwrap_or(0)
     }
 }
 
@@ -215,11 +296,44 @@ mod tests {
         let user_id = Uuid::new_v4();
         let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
 
-        server.add_client(client_id, user_id, tx).await;
+        let result = server.add_client(client_id, user_id, 1, tx).await;
+        assert!(matches!(result, AddClientResult::Added));
         assert_eq!(server.client_count().await, 1);
+        assert_eq!(server.user_connection_count(user_id).await, 1);
 
         server.remove_client(client_id).await;
         assert_eq!(server.client_count().await, 0);
+        assert_eq!(server.user_connection_count(user_id).await, 0);
+    }
+
+    #[tokio::test]
+    async fn test_per_user_connection_limit() {
+        let server = WebSocketServer::new();
+        let user_id = Uuid::new_v4();
+
+        // Add MAX_CONNECTIONS_PER_USER connections for the same user
+        let mut client_ids = Vec::new();
+        for _ in 0..MAX_CONNECTIONS_PER_USER {
+            let client_id = Uuid::new_v4();
+            let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
+            let result = server.add_client(client_id, user_id, 1, tx).await;
+            assert!(matches!(result, AddClientResult::Added));
+            client_ids.push(client_id);
+        }
+
+        // The next one should be rejected
+        let extra_client = Uuid::new_v4();
+        let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
+        let result = server.add_client(extra_client, user_id, 1, tx).await;
+        assert!(matches!(result, AddClientResult::LimitExceeded(MAX_CONNECTIONS_PER_USER)));
+        assert_eq!(server.client_count().await, MAX_CONNECTIONS_PER_USER);
+
+        // After removing one, a new connection should succeed
+        server.remove_client(client_ids[0]).await;
+        let new_client = Uuid::new_v4();
+        let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
+        let result = server.add_client(new_client, user_id, 1, tx).await;
+        assert!(matches!(result, AddClientResult::Added));
     }
 
     #[tokio::test]
@@ -229,12 +343,45 @@ mod tests {
         let user_id = Uuid::new_v4();
         let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
 
-        server.add_client(client_id, user_id, tx).await;
-        server.subscribe(client_id, "test_topic".to_string()).await;
+        server.add_client(client_id, user_id, 1, tx).await;
+        let result = server.subscribe(client_id, "test_topic".to_string()).await;
+        assert!(result);
 
         assert_eq!(server.topic_subscriber_count("test_topic").await, 1);
 
         server.unsubscribe(client_id, "test_topic").await;
         assert_eq!(server.topic_subscriber_count("test_topic").await, 0);
+    }
+
+    #[tokio::test]
+    async fn test_subscribe_unknown_client_fails() {
+        let server = WebSocketServer::new();
+        let unknown_client = Uuid::new_v4();
+        let result = server.subscribe(unknown_client, "test_topic".to_string()).await;
+        assert!(!result);
+    }
+
+    #[tokio::test]
+    async fn test_tenant_scoped_broadcast() {
+        let server = WebSocketServer::new();
+        let user_a = Uuid::new_v4();
+        let user_b = Uuid::new_v4();
+
+        let (tx_a, mut rx_a) = tokio::sync::mpsc::unbounded_channel::<String>();
+        let (tx_b, mut rx_b) = tokio::sync::mpsc::unbounded_channel::<String>();
+
+        let client_a = Uuid::new_v4();
+        let client_b = Uuid::new_v4();
+
+        server.add_client(client_a, user_a, 1, tx_a).await;
+        server.add_client(client_b, user_b, 2, tx_b).await;
+
+        let msg = WebSocketMessage::TrendingArticles { articles: vec![] };
+        server.broadcast_to_tenant(1, &msg).await.unwrap();
+
+        // User A (tenant 1) should receive
+        assert!(rx_a.try_recv().is_ok());
+        // User B (tenant 2) should NOT receive
+        assert!(rx_b.try_recv().is_err());
     }
 }

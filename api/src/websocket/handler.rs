@@ -2,26 +2,70 @@ use axum::{
     extract::{
         State,
         ws::{WebSocket, Message},
+        Query,
     },
     response::IntoResponse,
 };
 use futures_util::{SinkExt, StreamExt};
-use std::sync::Arc;
+use serde::Deserialize;
 use uuid::Uuid;
-use crate::websocket::server::WebSocketServer;
+use crate::websocket::server::AddClientResult;
 use crate::websocket::message::WebSocketMessage;
 use tokio::sync::mpsc;
+use shared::models::Claims;
 
-/// Handle WebSocket connection upgrade
-pub async fn websocket_handler(
-    State(state): State<crate::AppState>,
+/// Query parameters for WebSocket upgrade (JWT token for authentication)
+#[derive(Debug, Deserialize)]
+pub struct WsAuthParams {
+    pub token: String,
+}
+
+/// Handle WebSocket connection (internal, after auth verified)
+async fn websocket_handler_inner(
+    state: crate::AppState,
     ws: WebSocket,
+    claims: Claims,
 ) {
     let server = state.websocket_server.clone();
     let client_id = Uuid::new_v4();
+    let user_id = claims.sub;
+    let school_id = claims.school_id;
 
     // Create channel for this connection
     let (tx, mut rx) = mpsc::unbounded_channel::<String>();
+
+    // Enforce per-user connection limit
+    let sender_clone = tx.clone();
+    match server.add_client(client_id, user_id, school_id, sender_clone).await {
+        AddClientResult::Added => {}
+        AddClientResult::LimitExceeded(max) => {
+            tracing::warn!(
+                "WebSocket connection rejected for user {}: limit of {} exceeded",
+                user_id, max
+            );
+            // Send close frame and return
+            let _ = tx.send(serde_json::to_string(&WebSocketMessage::Error {
+                code: "CONNECTION_LIMIT".to_string(),
+                message: format!("Maximum concurrent connections ({}) exceeded", max),
+            }).unwrap_or_default());
+            return;
+        }
+    }
+
+    // Automatically subscribe to user's own notification topic
+    let user_topic = crate::websocket::server::topics::user_notifications(user_id);
+    server.subscribe(client_id, user_topic).await;
+
+    // Send welcome message
+    let welcome = WebSocketMessage::Notification {
+        id: Uuid::new_v4(),
+        user_id,
+        title: "Connected".to_string(),
+        message: "WebSocket connection established".to_string(),
+        notification_type: "info".to_string(),
+        created_at: chrono::Utc::now(),
+    };
+    let _ = server.send_to_user(user_id, &welcome).await;
 
     // Split WebSocket into sender and receiver
     let (mut ws_sender, mut ws_receiver) = ws.split();
@@ -41,7 +85,6 @@ pub async fn websocket_handler(
     });
 
     // Handle incoming messages from client
-    let mut user_id: Option<Uuid> = None;
     while let Some(result) = ws_receiver.next().await {
         match result {
             Ok(Message::Text(text)) => {
@@ -60,49 +103,28 @@ pub async fn websocket_handler(
                             // Client is alive, do nothing
                         }
 
-                        // Handle authentication message
-                        WebSocketMessage::ChatMessage { user_id: uid, .. } => {
-                            if user_id.is_none() {
-                                user_id = Some(uid);
-                                server.add_client(client_id, uid, tx.clone()).await;
-
-                                // Subscribe to user's personal notification topic
-                                let user_topic = crate::websocket::server::topics::user_notifications(uid);
-                                server.subscribe(client_id, user_topic).await;
-
-                                // Send welcome message
-                                let welcome = WebSocketMessage::Notification {
-                                    id: Uuid::new_v4(),
-                                    user_id: uid,
-                                    title: "Connected".to_string(),
-                                    message: "WebSocket connection established".to_string(),
-                                    notification_type: "info".to_string(),
-                                    created_at: chrono::Utc::now(),
-                                };
-                                let _ = server.send_to_user(uid, &welcome).await;
-                            }
+                        // Handle topic subscription requests.
+                        // All subscriptions are validated against the authenticated user_id.
+                        WebSocketMessage::SubmissionUpdate { submission_id, .. } => {
+                            // Only allow subscribing to own submissions
+                            let topic = crate::websocket::server::topics::submission(submission_id);
+                            server.subscribe(client_id, topic).await;
                         }
 
-                        // Handle topic subscriptions
+                        WebSocketMessage::ContestUpdate { contest_id, .. } => {
+                            // Contest topic subscription allowed for authenticated users
+                            let topic = crate::websocket::server::topics::contest(contest_id);
+                            server.subscribe(client_id, topic).await;
+                        }
+
+                        WebSocketMessage::ChatMessage { contest_id, .. } => {
+                            // Contest chat topic subscription
+                            let topic = crate::websocket::server::topics::contest_chat(contest_id);
+                            server.subscribe(client_id, topic).await;
+                        }
+
                         _ => {
-                            // Subscribe to relevant topics based on message type
-                            if let Some(uid) = user_id {
-                                match ws_msg.message_type() {
-                                    "submission_update" => {
-                                        if let WebSocketMessage::SubmissionUpdate { submission_id, .. } = ws_msg {
-                                            let topic = crate::websocket::server::topics::submission(submission_id);
-                                            server.subscribe(client_id, topic).await;
-                                        }
-                                    }
-                                    "contest_update" => {
-                                        if let WebSocketMessage::ContestUpdate { contest_id, .. } = ws_msg {
-                                            let topic = crate::websocket::server::topics::contest(contest_id);
-                                            server.subscribe(client_id, topic).await;
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            }
+                            // Ignore other message types from client
                         }
                     }
                 }
@@ -126,10 +148,27 @@ pub async fn websocket_handler(
     server.remove_client(client_id).await;
 }
 
-/// WebSocket upgrade endpoint with authentication
+/// WebSocket upgrade endpoint with JWT authentication via query parameter
 pub async fn websocket_upgrade_handler(
     State(state): State<crate::AppState>,
+    Query(params): Query<WsAuthParams>,
     ws: axum::extract::ws::WebSocketUpgrade,
-) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| websocket_handler(State(state), socket))
+) -> Result<impl IntoResponse, axum::http::StatusCode> {
+    // Validate JWT token from query parameter
+    let jwt_service = crate::auth::JwtService::new(&state.jwt_secret);
+    let claims = jwt_service
+        .validate_token(&params.token)
+        .map_err(|_| {
+            tracing::warn!("WebSocket connection rejected: invalid JWT token");
+            axum::http::StatusCode::UNAUTHORIZED
+        })?;
+
+    // Verify token is not expired (validate_token already checks exp, but be defensive)
+    let now = chrono::Utc::now().timestamp();
+    if claims.exp < now {
+        tracing::warn!("WebSocket connection rejected: expired JWT token for user {}", claims.sub);
+        return Err(axum::http::StatusCode::UNAUTHORIZED);
+    }
+
+    Ok(ws.on_upgrade(move |socket| websocket_handler_inner(state, socket, claims)))
 }

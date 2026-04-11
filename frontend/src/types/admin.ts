@@ -18,9 +18,9 @@ export interface UserManagement {
   email?: string | null
   display_name?: string | null
   role: Role
-  organization_id?: string
+  organization_id: number
   organization_name?: string
-  status: 'active' | 'inactive' | 'banned'
+  status: string
   created_at: string
   last_login?: string
   submissions_count: number

@@ -1,6 +1,8 @@
 use anyhow::Result;
 use redis::Client;
 use std::env;
+use std::sync::Arc;
+use tokio::sync::Semaphore;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -11,6 +13,8 @@ mod db;
 mod sandbox;
 
 use queue::consumer;
+
+const MAX_CONCURRENT_SUBMISSIONS: usize = 4;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -40,19 +44,23 @@ async fn main() -> Result<()> {
     info!("Connecting to Redis at {}", redis_url);
     let redis_client = Client::open(redis_url)?;
 
+    // Create a single shared MultiplexedConnection reused across all calls
+    let conn = redis_client.get_multiplexed_async_connection().await?;
+    let conn = Arc::new(tokio::sync::Mutex::new(conn));
+
     // Ensure consumer group exists
     info!(
         "Setting up consumer group '{}' on stream '{}'",
         group_name, stream_name
     );
-    consumer::ensure_consumer_group(&redis_client, &stream_name, &group_name).await?;
+    consumer::ensure_consumer_group(&mut *conn.lock().await, &stream_name, &group_name).await?;
 
     info!("Judge worker ready with consumer name: {}", consumer_name);
     info!("Connected to API at: {}", api_url);
 
     // Enter main processing loop
     run_processing_loop(
-        redis_client,
+        conn,
         &stream_name,
         &group_name,
         &consumer_name,
@@ -62,7 +70,7 @@ async fn main() -> Result<()> {
 }
 
 async fn run_processing_loop(
-    redis_client: Client,
+    conn: Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
     stream_name: &str,
     group_name: &str,
     consumer_name: &str,
@@ -75,7 +83,7 @@ async fn run_processing_loop(
     loop {
         // Block for up to 5 seconds waiting for messages
         match consume_and_process(
-            &redis_client,
+            &conn,
             stream_name,
             group_name,
             consumer_name,
@@ -104,7 +112,7 @@ async fn run_processing_loop(
 }
 
 async fn consume_and_process(
-    redis_client: &Client,
+    conn: &Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
     stream_name: &str,
     group_name: &str,
     consumer_name: &str,
@@ -112,80 +120,106 @@ async fn consume_and_process(
     block_ms: Option<u64>,
 ) -> Result<usize> {
     // Consume messages from queue
-    let messages = consumer::consume_submission(
-        redis_client,
-        stream_name,
-        group_name,
-        consumer_name,
-        block_ms,
-    )
-    .await?;
+    let messages = {
+        let mut locked_conn = conn.lock().await;
+        consumer::consume_submission(
+            &mut locked_conn,
+            stream_name,
+            group_name,
+            consumer_name,
+            block_ms,
+        )
+        .await?
+    };
 
     if messages.is_empty() {
         return Ok(0);
     }
 
-    // Process each message
-    let mut processed = 0;
+    // Process messages concurrently with a concurrency limit
+    let semaphore = Arc::new(Semaphore::new(MAX_CONCURRENT_SUBMISSIONS));
+    let mut handles = Vec::with_capacity(messages.len());
+
     for (message_id, submission) in messages {
-        info!(
-            "Processing submission {} (message ID: {})",
-            submission.submission_id, message_id
-        );
+        let permit = semaphore.clone().acquire_owned().await?;
+        let conn = Arc::clone(conn);
+        let stream_name = stream_name.to_string();
+        let group_name = group_name.to_string();
+        let api_url = api_url.to_string();
 
-        // Process the submission
-        let result = processor::service::process_submission(&submission).await;
+        let handle = tokio::spawn(async move {
+            let _permit = permit;
 
-        // Send result back to API
-        match result {
-            Ok(judge_result) => {
-                if let Err(e) = send_result_to_api(api_url, &judge_result).await {
-                    error!(
-                        "Failed to send result for submission {}: {}",
-                        submission.submission_id, e
-                    );
-                    // Don't acknowledge if sending failed
-                    continue;
-                }
+            info!(
+                "Processing submission {} (message ID: {})",
+                submission.submission_id, message_id
+            );
 
-                // Acknowledge the message
-                match consumer::acknowledge_submission(
-                    redis_client,
-                    stream_name,
-                    group_name,
-                    &message_id,
-                )
-                .await
-                {
-                    Ok(_) => {
-                        info!(
-                            "Submission {} completed and acknowledged",
-                            submission.submission_id
-                        );
-                        processed += 1;
-                    }
-                    Err(e) => {
-                        warn!(
-                            "Failed to acknowledge submission {}: {}",
+            let result = processor::service::process_submission(&submission).await;
+
+            match result {
+                Ok(judge_result) => {
+                    if let Err(e) = send_result_to_api(&api_url, &judge_result).await {
+                        error!(
+                            "Failed to send result for submission {}: {}",
                             submission.submission_id, e
                         );
+                        // Don't acknowledge if sending failed
+                        return false;
+                    }
+
+                    // Acknowledge the message
+                    let mut locked_conn = conn.lock().await;
+                    match consumer::acknowledge_submission(
+                        &mut locked_conn,
+                        &stream_name,
+                        &group_name,
+                        &message_id,
+                    )
+                    .await
+                    {
+                        Ok(_) => {
+                            info!(
+                                "Submission {} completed and acknowledged",
+                                submission.submission_id
+                            );
+                            true
+                        }
+                        Err(e) => {
+                            warn!(
+                                "Failed to acknowledge submission {}: {}",
+                                submission.submission_id, e
+                            );
+                            false
+                        }
                     }
                 }
+                Err(e) => {
+                    error!(
+                        "Failed to process submission {}: {}",
+                        submission.submission_id, e
+                    );
+                    // Still acknowledge to avoid infinite retries
+                    let mut locked_conn = conn.lock().await;
+                    let _ = consumer::acknowledge_submission(
+                        &mut locked_conn,
+                        &stream_name,
+                        &group_name,
+                        &message_id,
+                    )
+                    .await;
+                    false
+                }
             }
-            Err(e) => {
-                error!(
-                    "Failed to process submission {}: {}",
-                    submission.submission_id, e
-                );
-                // Still acknowledge to avoid infinite retries
-                let _ = consumer::acknowledge_submission(
-                    redis_client,
-                    stream_name,
-                    group_name,
-                    &message_id,
-                )
-                .await;
-            }
+        });
+
+        handles.push(handle);
+    }
+
+    let mut processed = 0;
+    for handle in handles {
+        if handle.await.unwrap_or(false) {
+            processed += 1;
         }
     }
 

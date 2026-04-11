@@ -11,12 +11,12 @@
 | Severity | OPEN | FIXED | Total |
 |----------|------|-------|-------|
 | P0 (Critical) | 0 | 5 | 5 |
-| P1 (High) | 4 | 0 | 4 |
-| P2 (Medium) | 3 | 2 | 5 |
+| P1 (High) | 0 | 4 | 4 |
+| P2 (Medium) | 1 | 4 | 5 |
 | P3 (Low) | 1 | 2 | 3 |
-| **Total** | **8** | **9** | **17** |
+| **Total** | **2** | **15** | **17** |
 
-### Newly Fixed (2026-04-11)
+### Round 1 Fixes (2026-04-11)
 
 | ID | Description |
 |----|-------------|

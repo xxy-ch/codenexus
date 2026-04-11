@@ -94,10 +94,10 @@ export function UserManagement() {
   const getRoleBadge = (roleValue: RoleType) => {
     const config: Record<string, { label: string; color: string }> = {
       root: { label: '超级管理员', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
-      organizationadmin: { label: '机构管理员', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
-      campusadmin: { label: '校区管理员', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
+      organizationAdmin: { label: '机构管理员', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
+      campusAdmin: { label: '校区管理员', color: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300' },
       teacher: { label: '教师', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-      teachingassistant: { label: '助教', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
+      teachingAssistant: { label: '助教', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' },
       student: { label: '学生', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300' },
     }
     const c = config[roleValue] ?? config.student

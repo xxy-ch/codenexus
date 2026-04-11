@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { discussionsApi } from '@/services/communityApi'
+import { discussionsApi } from '@/services/discussionsApi'
 import type { Discussion, DiscussionFilters } from '@/types/community'
 import { Loading } from '@/components/ui/Loading'
 

@@ -7,7 +7,15 @@ use axum::{
     Json as JsonVec,
 };
 use crate::AppState;
-use uuid::Uuid;
+use shared::models::role::Role;
+
+fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
+    let role = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    if !role.is_higher_or_equal(Role::Teacher) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+    Ok(role)
+}
 
 /// List contests with filtering
 pub async fn list_contests(
@@ -62,9 +70,10 @@ pub async fn get_contest(
 /// Create a new contest
 pub async fn create_contest(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Json(req): Json<CreateContestRequest>,
 ) -> Result<Json<Contest>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
 
     let contest = service
@@ -78,10 +87,11 @@ pub async fn create_contest(
 /// Update a contest
 pub async fn update_contest(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path(contest_id): Path<i64>,
     Json(req): Json<UpdateContestRequest>,
 ) -> Result<Json<Contest>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
 
     let contest = service
@@ -95,9 +105,10 @@ pub async fn update_contest(
 /// Delete a contest
 pub async fn delete_contest(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path(contest_id): Path<i64>,
 ) -> Result<StatusCode, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
 
     service
@@ -111,10 +122,11 @@ pub async fn delete_contest(
 /// Add problem to contest
 pub async fn add_problem_to_contest(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path(contest_id): Path<i64>,
     Json(req): Json<AddProblemToContestRequest>,
 ) -> Result<Json<ContestProblem>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
 
     let contest_problem = service
@@ -143,9 +155,10 @@ pub async fn get_contest_problems(
 /// Remove problem from contest
 pub async fn remove_problem_from_contest(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path((contest_id, problem_id)): Path<(i64, i64)>,
 ) -> Result<StatusCode, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let service = crate::contests::service::ContestService::new(state.db_pool);
 
     service
@@ -247,7 +260,7 @@ pub async fn link_submission(
 }
 
 pub fn contests_router() -> axum::Router<AppState> {
-    use axum::routing::{get, post, put, delete};
+    use axum::routing::{get, post, delete};
 
     axum::Router::new()
         .route("/", get(list_contests).post(create_contest))

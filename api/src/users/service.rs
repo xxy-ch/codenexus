@@ -15,6 +15,11 @@ impl UserService {
     }
 
     pub async fn register(&self, req: RegisterRequest) -> Result<UserProfile> {
+        // Validate password complexity
+        if req.password.len() < 8 {
+            return Err(anyhow::anyhow!("Password must be at least 8 characters"));
+        }
+
         // Validate username format (numeric only)
         if !req.username.chars().all(|c| c.is_numeric()) {
             return Err(anyhow::anyhow!("Username must be numeric only"));

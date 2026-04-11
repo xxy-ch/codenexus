@@ -72,4 +72,30 @@ api.interceptors.response.use(
   }
 )
 
+/**
+ * Convenience wrapper that accepts an optional AbortSignal.
+ * Use this for user-initiated requests that may be cancelled
+ * (e.g. search-as-you-type, component unmount during fetch).
+ */
+export function request<T>(
+  method: 'get' | 'post' | 'put' | 'patch' | 'delete',
+  url: string,
+  data?: unknown,
+  signal?: AbortSignal,
+): Promise<T> {
+  const config = signal ? { signal } : undefined
+  switch (method) {
+    case 'get':
+      return api.get<T>(url, config).then((r) => r.data)
+    case 'delete':
+      return api.delete<T>(url, config).then((r) => r.data)
+    case 'post':
+      return api.post<T>(url, data, config).then((r) => r.data)
+    case 'put':
+      return api.put<T>(url, data, config).then((r) => r.data)
+    case 'patch':
+      return api.patch<T>(url, data, config).then((r) => r.data)
+  }
+}
+
 export default api

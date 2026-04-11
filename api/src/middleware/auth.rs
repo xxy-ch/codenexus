@@ -66,6 +66,20 @@ pub async fn auth_middleware(
         .validate_token(token)
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
+    // Check JWT blacklist (revoked tokens)
+    if let Some(redis_pool) = &state.redis_pool {
+        if let Ok(mut conn) = redis_pool.get().await {
+            let blacklisted: bool = deadpool_redis::redis::cmd("EXISTS")
+                .arg(format!("bl:{}", claims.jti))
+                .query_async(&mut conn)
+                .await
+                .unwrap_or(false);
+            if blacklisted {
+                return Err(StatusCode::UNAUTHORIZED);
+            }
+        }
+    }
+
     let mut request = request;
     request.extensions_mut().insert(claims.sub);
     request.extensions_mut().insert(claims);
@@ -90,9 +104,18 @@ mod tests {
     }
 
     fn create_test_app() -> Router {
+        let state = crate::AppState {
+            db_pool: sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+            redis_pool: None,
+            jwt_service: JwtService::new("test_secret_key"),
+            redis_url: String::new(),
+            jwt_secret: "test_secret_key".to_string(),
+            websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
+        };
         Router::new()
             .route("/protected", get(protected_handler))
-            .layer(middleware::from_fn(auth_middleware))
+            .layer(middleware::from_fn_with_state(state.clone(), auth_middleware))
+            .with_state(state)
     }
 
     #[tokio::test]

@@ -1,15 +1,14 @@
 use super::SubmissionMessage;
 use anyhow::{Context, Result};
-use redis::Client;
+use redis::aio::MultiplexedConnection;
 
 pub async fn consume_submission(
-    redis_client: &Client,
+    conn: &mut MultiplexedConnection,
     stream_name: &str,
     group_name: &str,
     consumer_name: &str,
     block_ms: Option<u64>,
 ) -> Result<Vec<(String, SubmissionMessage)>> {
-    let mut conn = redis_client.get_multiplexed_async_connection().await?;
 
     let mut cmd = redis::cmd("XREADGROUP");
     cmd.arg("GROUP")
@@ -26,7 +25,7 @@ pub async fn consume_submission(
     }
 
     let result: redis::streams::StreamReadReply = cmd
-        .query_async(&mut conn)
+        .query_async(conn)
         .await
         .context("Failed to read from stream")?;
 
@@ -52,18 +51,16 @@ pub async fn consume_submission(
 }
 
 pub async fn acknowledge_submission(
-    redis_client: &Client,
+    conn: &mut MultiplexedConnection,
     stream_name: &str,
     group_name: &str,
     message_id: &str,
 ) -> Result<i64> {
-    let mut conn = redis_client.get_multiplexed_async_connection().await?;
-
     let acknowledged: i64 = redis::cmd("XACK")
         .arg(stream_name)
         .arg(group_name)
         .arg(message_id)
-        .query_async(&mut conn)
+        .query_async(conn)
         .await
         .context("Failed to acknowledge message")?;
 
@@ -71,19 +68,17 @@ pub async fn acknowledge_submission(
 }
 
 pub async fn ensure_consumer_group(
-    redis_client: &Client,
+    conn: &mut MultiplexedConnection,
     stream_name: &str,
     group_name: &str,
 ) -> Result<()> {
-    let mut conn = redis_client.get_multiplexed_async_connection().await?;
-
     let _: Result<String, redis::RedisError> = redis::cmd("XGROUP")
         .arg("CREATE")
         .arg(stream_name)
         .arg(group_name)
         .arg("0")
         .arg("MKSTREAM")
-        .query_async(&mut conn)
+        .query_async(conn)
         .await;
 
     tracing::info!(
@@ -98,21 +93,23 @@ pub async fn ensure_consumer_group(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use redis::Client;
 
     #[tokio::test]
     #[ignore = "requires Redis"]
     async fn test_consume() {
         let client = Client::open("redis://127.0.0.1/").unwrap();
+        let mut conn = client.get_multiplexed_async_connection().await.unwrap();
         let stream_name = "test_submissions";
         let group_name = "test_workers";
         let consumer_name = "test_consumer";
 
-        ensure_consumer_group(&client, stream_name, group_name)
+        ensure_consumer_group(&mut conn, stream_name, group_name)
             .await
             .unwrap();
 
         let messages = consume_submission(
-            &client,
+            &mut conn,
             stream_name,
             group_name,
             consumer_name,

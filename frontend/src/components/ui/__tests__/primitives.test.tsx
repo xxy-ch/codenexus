@@ -17,8 +17,8 @@ describe('ui primitives', () => {
     render(<Input aria-label="Username" placeholder="1001" />)
 
     const input = screen.getByRole('textbox', { name: 'Username' })
-    expect(input).toHaveClass('bg-surface-light')
-    expect(input).toHaveClass('border-border-light')
+    expect(input).toHaveClass('bg-card')
+    expect(input).toHaveClass('border-border')
     expect(input).toHaveClass('rounded-lg')
   })
 

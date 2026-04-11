@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, PencilLine, Save, Send, Tags } from 'lucide-react'
-import { blogApi } from '@/services/communityApi'
+import { blogApi } from '@/services/articlesApi'
 import type { CreateArticleRequest } from '@/types/community'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
 

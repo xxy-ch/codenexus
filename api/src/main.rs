@@ -30,6 +30,7 @@ use deadpool_redis::Pool as RedisPool;
 use sqlx::PgPool;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
+use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use auth::JwtService;
@@ -113,6 +114,13 @@ fn create_router(state: AppState) -> Router {
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE, Method::OPTIONS])
         .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
 
+    // Rate limit: 30 requests per minute per IP (covers all endpoints including internal worker)
+    let governor_config = GovernorConfigBuilder::default()
+        .per_second(1)
+        .burst_size(30)
+        .finish()
+        .unwrap();
+
     let public_router = Router::new()
         .route("/health", get(health_check))
         .route("/status", get(get_system_status))
@@ -142,8 +150,12 @@ fn create_router(state: AppState) -> Router {
         .route_layer(axum::middleware::from_fn(middleware::tenant::tenant_middleware))
         .route_layer(axum::middleware::from_fn_with_state(state.clone(), middleware::auth::auth_middleware));
 
+    // Layer ordering (outermost to innermost): CORS -> rate limit -> auth -> handler
     public_router
         .merge(protected_router)
+        .layer(GovernorLayer {
+            config: std::sync::Arc::new(governor_config),
+        })
         .layer(cors)
         .with_state(state)
 }
@@ -154,28 +166,14 @@ async fn health_check() -> &'static str {
 
 async fn get_system_status(State(state): State<AppState>) -> Result<Json<serde_json::Value>, StatusCode> {
     // Check database connection
-    let db_status = sqlx::query_scalar::<_, i64>("SELECT 1")
+    let db_ok = sqlx::query_scalar::<_, i64>("SELECT 1")
         .fetch_one(&state.db_pool)
         .await
         .is_ok();
 
-    let mut status = serde_json::json!({
-        "status": "healthy",
-        "version": "1.0.0",
-        "database": if db_status { "connected" } else { "disconnected" },
-        "timestamp": chrono::Utc::now().to_rfc3339()
-    });
-
-    // Check Redis connection if available
-    if let Some(redis_pool) = &state.redis_pool {
-        let redis_status = redis_pool.get().await.is_ok();
-        status["redis"] = serde_json::json!(if redis_status { "connected" } else { "disconnected" });
-    }
-
-    if db_status {
-        Ok(Json(status))
+    if db_ok {
+        Ok(Json(serde_json::json!({ "status": "ok" })))
     } else {
-        status["status"] = serde_json::json!("unhealthy");
         Err(StatusCode::SERVICE_UNAVAILABLE)
     }
 }

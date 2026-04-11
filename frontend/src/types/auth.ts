@@ -1,17 +1,17 @@
-/** Canonical runtime roles — must match shared/src/models/role.rs */
+/** Canonical runtime roles — must match shared/src/models/role.rs with camelCase serialization */
 export type Role =
   | 'root'
-  | 'organizationadmin'
-  | 'campusadmin'
+  | 'organizationAdmin'
+  | 'campusAdmin'
   | 'teacher'
-  | 'teachingassistant'
+  | 'teachingAssistant'
   | 'student'
 
 /** Roles that grant admin panel access */
-export const ADMIN_ROLES: readonly Role[] = ['root', 'organizationadmin', 'campusadmin']
+export const ADMIN_ROLES: readonly Role[] = ['root', 'organizationAdmin', 'campusAdmin']
 
 /** Roles that grant teacher-level feature access */
-export const TEACHER_ROLES: readonly Role[] = ['root', 'organizationadmin', 'campusadmin', 'teacher']
+export const TEACHER_ROLES: readonly Role[] = ['root', 'organizationAdmin', 'campusAdmin', 'teacher']
 
 export function isAdmin(role: Role): boolean {
   return (ADMIN_ROLES as readonly string[]).includes(role)
@@ -25,22 +25,24 @@ export function isTeacherOrAbove(role: Role): boolean {
 export function roleLabel(role: Role): string {
   switch (role) {
     case 'root': return '超级管理员'
-    case 'organizationadmin': return '机构管理员'
-    case 'campusadmin': return '校区管理员'
+    case 'organizationAdmin': return '机构管理员'
+    case 'campusAdmin': return '校区管理员'
     case 'teacher': return '教师'
-    case 'teachingassistant': return '助教'
+    case 'teachingAssistant': return '助教'
     case 'student': return '学生'
   }
 }
 
 export interface User {
   id: string
-  email: string
+  user_code?: string | null
   username: string
-  display_name?: string
-  organization_id?: number
+  email?: string | null
+  display_name?: string | null
+  organization_id: number
   campus_id?: number | null
   role: Role
+  status: string
   created_at: string
   updated_at: string
 }
@@ -51,9 +53,10 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  email?: string
+  user_code?: string
   username: string
   password: string
+  email?: string
   display_name?: string
   organization_id: number
   campus_id?: number | null

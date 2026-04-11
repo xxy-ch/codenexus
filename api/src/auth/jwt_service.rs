@@ -3,7 +3,7 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use shared::models::Claims;
 use uuid::Uuid;
 
-const ACCESS_TOKEN_EXPIRATION_HOURS: i64 = 24;
+const ACCESS_TOKEN_EXPIRATION_HOURS: i64 = 4;
 const REFRESH_TOKEN_EXPIRATION_DAYS: i64 = 30;
 
 #[derive(Clone)]

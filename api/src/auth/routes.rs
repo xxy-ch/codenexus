@@ -1,5 +1,5 @@
-use axum::{extract::State, http::StatusCode, response::Json};
-use shared::models::{LoginRequest, LoginResponse, RefreshRequest, RefreshResponse, UserPublic};
+use axum::{extract::State, http::StatusCode, response::Json, Extension};
+use shared::models::{Claims, LoginRequest, LoginResponse, RefreshRequest, RefreshResponse, UserPublic};
 use crate::AppState;
 use crate::users::{models::{RegisterRequest, LoginRequest as DbLoginRequest, RefreshTokenRequest}, service::UserService};
 
@@ -45,7 +45,25 @@ pub async fn refresh(
     Ok(Json(RefreshResponse { token: response.token }))
 }
 
-pub async fn logout() -> StatusCode {
+pub async fn logout(
+    Extension(claims): Extension<Claims>,
+    State(state): State<AppState>,
+) -> StatusCode {
+    let ttl = claims.exp - chrono::Utc::now().timestamp();
+    if ttl > 0 {
+        if let Some(redis_pool) = &state.redis_pool {
+            if let Ok(mut conn) = redis_pool.get().await {
+                let _: () = deadpool_redis::redis::cmd("SET")
+                    .arg(format!("bl:{}", claims.jti))
+                    .arg("1")
+                    .arg("EX")
+                    .arg(ttl)
+                    .query_async(&mut conn)
+                    .await
+                    .unwrap_or(());
+            }
+        }
+    }
     StatusCode::OK
 }
 
@@ -120,6 +138,7 @@ mod tests {
             redis_pool: None,
             jwt_service,
             redis_url: String::new(),
+            jwt_secret: jwt_secret.clone(),
             websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
         };
 
@@ -273,7 +292,25 @@ mod tests {
 
     #[tokio::test]
     async fn test_logout_returns_ok() {
-        let response = logout().await;
+        let claims = Claims {
+            sub: uuid::Uuid::new_v4(),
+            email: "test@example.com".to_string(),
+            role: "student".to_string(),
+            school_id: 1,
+            campus_id: None,
+            iat: chrono::Utc::now().timestamp(),
+            exp: chrono::Utc::now().timestamp() + 3600,
+            jti: uuid::Uuid::new_v4(),
+        };
+        let state = crate::AppState {
+            db_pool: sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+            redis_pool: None,
+            jwt_service: crate::auth::JwtService::new("test_secret"),
+            redis_url: String::new(),
+            jwt_secret: "test_secret".to_string(),
+            websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
+        };
+        let response = logout(Extension(claims), State(state)).await;
         assert_eq!(response, StatusCode::OK);
     }
 }

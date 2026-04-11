@@ -10,6 +10,15 @@ use crate::AppState;
 use crate::classes::models::*;
 use crate::classes::service::ClassService;
 use crate::middleware::auth::AuthExtractor;
+use shared::models::role::Role;
+
+fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
+    let role = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    if !role.is_higher_or_equal(Role::Teacher) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+    Ok(role)
+}
 
 pub fn classes_router() -> Router<AppState> {
     Router::new()
@@ -42,6 +51,7 @@ async fn create_class(
     AuthExtractor(claims): AuthExtractor,
     Json(request): Json<CreateClassRequest>,
 ) -> Result<Json<Class>, StatusCode> {
+    require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
     let class = service.create_class(&request, claims.sub)
         .await
@@ -73,10 +83,11 @@ async fn list_classes(
 
 async fn update_class(
     State(state): State<AppState>,
-    AuthExtractor(_auth): AuthExtractor,
+    AuthExtractor(auth): AuthExtractor,
     Path(class_id): Path<i64>,
     Json(request): Json<UpdateClassRequest>,
 ) -> Result<Json<Class>, StatusCode> {
+    require_teacher_plus(&auth.role)?;
     let service = ClassService::new(state.db_pool);
     let class = service.update_class(class_id, &request)
         .await
@@ -87,8 +98,9 @@ async fn update_class(
 async fn delete_class(
     State(state): State<AppState>,
     Path(class_id): Path<i64>,
-    AuthExtractor(_auth): AuthExtractor,
+    AuthExtractor(auth): AuthExtractor,
 ) -> Result<StatusCode, StatusCode> {
+    require_teacher_plus(&auth.role)?;
     let service = ClassService::new(state.db_pool);
     service.delete_class(class_id)
         .await
@@ -126,6 +138,7 @@ async fn add_student(
     Path(class_id): Path<i64>,
     Json(request): Json<AddStudentRequest>,
 ) -> Result<Json<ClassEnrollment>, StatusCode> {
+    require_teacher_plus(&auth.role)?;
     let service = ClassService::new(state.db_pool);
     let enrollment = service.add_student(class_id, auth.sub, &request.student_email)
         .await
@@ -154,6 +167,7 @@ async fn batch_import_students(
     Path(class_id): Path<i64>,
     Json(request): Json<BatchImportRequest>,
 ) -> Result<Json<Vec<ClassEnrollment>>, StatusCode> {
+    require_teacher_plus(&auth.role)?;
     let service = ClassService::new(state.db_pool);
     let enrollments = service.batch_import_students(class_id, auth.sub, request.emails)
         .await
@@ -164,8 +178,9 @@ async fn batch_import_students(
 async fn remove_student(
     State(state): State<AppState>,
     Path((class_id, student_id)): Path<(i64, Uuid)>,
-    AuthExtractor(_auth): AuthExtractor,
+    AuthExtractor(auth): AuthExtractor,
 ) -> Result<StatusCode, StatusCode> {
+    require_teacher_plus(&auth.role)?;
     let service = ClassService::new(state.db_pool);
     service.remove_student(class_id, student_id)
         .await
@@ -177,10 +192,11 @@ async fn remove_student(
 
 async fn create_assignment(
     State(state): State<AppState>,
-    AuthExtractor(_auth): AuthExtractor,
+    AuthExtractor(auth): AuthExtractor,
     Path(class_id): Path<i64>,
     Json(request): Json<CreateAssignmentRequest>,
 ) -> Result<Json<Assignment>, StatusCode> {
+    require_teacher_plus(&auth.role)?;
     let service = ClassService::new(state.db_pool);
     let assignment = service.create_assignment(class_id, &request)
         .await
@@ -212,10 +228,11 @@ async fn list_assignments(
 
 async fn update_assignment(
     State(state): State<AppState>,
-    AuthExtractor(_auth): AuthExtractor,
+    AuthExtractor(auth): AuthExtractor,
     Path(assignment_id): Path<i64>,
     Json(request): Json<UpdateAssignmentRequest>,
 ) -> Result<Json<Assignment>, StatusCode> {
+    require_teacher_plus(&auth.role)?;
     let service = ClassService::new(state.db_pool);
     let assignment = service.update_assignment(assignment_id, &request)
         .await
@@ -226,8 +243,9 @@ async fn update_assignment(
 async fn delete_assignment(
     State(state): State<AppState>,
     Path(assignment_id): Path<i64>,
-    AuthExtractor(_auth): AuthExtractor,
+    AuthExtractor(auth): AuthExtractor,
 ) -> Result<StatusCode, StatusCode> {
+    require_teacher_plus(&auth.role)?;
     let service = ClassService::new(state.db_pool);
     service.delete_assignment(assignment_id)
         .await
@@ -238,8 +256,9 @@ async fn delete_assignment(
 async fn publish_assignment(
     State(state): State<AppState>,
     Path(assignment_id): Path<i64>,
-    AuthExtractor(_auth): AuthExtractor,
+    AuthExtractor(auth): AuthExtractor,
 ) -> Result<Json<Assignment>, StatusCode> {
+    require_teacher_plus(&auth.role)?;
     let service = ClassService::new(state.db_pool);
     let assignment = service.publish_assignment(assignment_id)
         .await

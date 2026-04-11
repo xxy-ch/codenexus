@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { blogApi } from '@/services/communityApi'
+import { blogApi } from '@/services/articlesApi'
 import type { ArticleDetail, ArticleComment } from '@/types/community'
 import { Loading } from '@/components/ui/Loading'
 import { useArticleUpdates } from '@/hooks/useCommunityUpdates'

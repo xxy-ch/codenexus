@@ -18,6 +18,8 @@ redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
 deadpool-redis = { version = "0.22", features = ["serde"] }
 tower = "0.5"
 tower-http = { version = "0.5", features = ["fs", "trace", "cors"] }
+tower_governor = "0.4"
+governor = "0.7"
 bcrypt = "0.16"
 jsonwebtoken = "9"
 chrono = { version = "0.4", features = ["serde"] }

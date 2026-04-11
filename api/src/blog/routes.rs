@@ -140,6 +140,7 @@ async fn get_article_handler(
 async fn create_article_handler(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Json(req): axum::extract::Json<CreateArticleRequest>,
 ) -> Result<Json<Article>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
@@ -147,6 +148,7 @@ async fn create_article_handler(
     match service.create_article(user_id, req).await {
         Ok(article) => {
             // Send WebSocket notification for new article (trending update)
+            // Only broadcast to users in the same tenant (school_id)
             let msg = WebSocketMessage::TrendingArticles {
                 articles: vec![json!({
                     "id": article.id,
@@ -157,7 +159,7 @@ async fn create_article_handler(
                     "like_count": article.like_count,
                 })],
             };
-            let _ = state.websocket_server.broadcast(&msg).await;
+            let _ = state.websocket_server.broadcast_to_tenant(claims.school_id, &msg).await;
             Ok(Json(article))
         },
         Err(e) => {

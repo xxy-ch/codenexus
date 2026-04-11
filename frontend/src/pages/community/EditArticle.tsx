@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, RefreshCw, Save, Send, Tags } from 'lucide-react'
-import { blogApi } from '@/services/communityApi'
+import { blogApi } from '@/services/articlesApi'
 import type { UpdateArticleRequest } from '@/types/community'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
 import { Loading } from '@/components/ui/Loading'
