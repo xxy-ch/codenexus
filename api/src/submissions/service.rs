@@ -227,6 +227,13 @@ impl SubmissionService {
         limit: i64,
         offset: i64,
     ) -> Result<(Vec<Submission>, i64)> {
+        let verdict_filter = status.as_deref().and_then(map_verdict);
+        let status_filter = if verdict_filter.is_some() {
+            None
+        } else {
+            status.as_deref()
+        };
+
         let mut query = String::from(
             r#"
             SELECT
@@ -235,7 +242,19 @@ impl SubmissionService {
                 problem_id,
                 code,
                 language,
-                status,
+                COALESCE(
+                    CASE verdict
+                        WHEN 'ac' THEN 'accepted'
+                        WHEN 'wa' THEN 'wrong_answer'
+                        WHEN 'rte' THEN 'runtime_error'
+                        WHEN 'tle' THEN 'time_limit_exceeded'
+                        WHEN 'mle' THEN 'memory_limit_exceeded'
+                        WHEN 'ce' THEN 'compile_error'
+                        WHEN 'ie' THEN 'system_error'
+                        ELSE NULL
+                    END,
+                    status
+                ) as status,
                 NULL::INTEGER as score,
                 time_ms as runtime_ms,
                 memory_kb,
@@ -257,9 +276,14 @@ impl SubmissionService {
             conditions.push(format!(" AND problem_id = ${}", param_count));
         }
 
-        if let Some(status) = &status {
+        if let Some(status) = status_filter {
             param_count += 1;
             conditions.push(format!(" AND status = ${}", param_count));
+        }
+
+        if let Some(verdict) = verdict_filter {
+            param_count += 1;
+            conditions.push(format!(" AND verdict = ${}", param_count));
         }
 
         if let Some(language) = &language {
@@ -286,8 +310,11 @@ impl SubmissionService {
         if let Some(problem_id) = problem_id {
             query_builder = query_builder.bind(problem_id);
         }
-        if let Some(status) = &status {
+        if let Some(status) = status_filter {
             query_builder = query_builder.bind(status);
+        }
+        if let Some(verdict) = verdict_filter {
+            query_builder = query_builder.bind(verdict);
         }
         if let Some(language) = &language {
             query_builder = query_builder.bind(language);
@@ -443,29 +470,31 @@ impl SubmissionService {
         submission_id: i64,
         test_case_id: i64,
         status: &str,
-        expected_output: Option<String>,
-        actual_output: Option<String>,
-        error_message: Option<String>,
+        _expected_output: Option<String>,
+        _actual_output: Option<String>,
+        _error_message: Option<String>,
         runtime_ms: Option<i32>,
         memory_kb: Option<i32>,
     ) -> Result<i64> {
+        let verdict = map_verdict(status)
+            .ok_or_else(|| anyhow::anyhow!("Unsupported test case status: {}", status))?;
         let result_id = sqlx::query_scalar::<_, i64>(
             r#"
             INSERT INTO test_case_results (
-                submission_id, test_case_id, status,
-                expected_output, actual_output, error_message,
-                runtime_ms, memory_kb
+                submission_id, test_case_id, verdict, time_ms, memory_kb
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (submission_id, test_case_id)
+            DO UPDATE SET
+                verdict = EXCLUDED.verdict,
+                time_ms = EXCLUDED.time_ms,
+                memory_kb = EXCLUDED.memory_kb
             RETURNING id
             "#
         )
         .bind(submission_id)
         .bind(test_case_id)
-        .bind(status)
-        .bind(&expected_output)
-        .bind(&actual_output)
-        .bind(&error_message)
+        .bind(verdict)
         .bind(runtime_ms)
         .bind(memory_kb)
         .fetch_one(&self.pool)

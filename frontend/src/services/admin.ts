@@ -97,6 +97,7 @@ export const adminService = {
     if (params?.difficulty) queryParams.append('difficulty', params.difficulty)
     if (params?.page) queryParams.append('page', String(params.page))
     if (params?.limit) queryParams.append('limit', String(params.limit))
+    queryParams.append('is_public', 'false')
 
     const response = await api.get(`/problems?${queryParams}`)
     const payload = response.data
@@ -234,7 +235,7 @@ function getMockUsers(page = 1, limit = 20, role?: string, search?: string) {
       username: 'admin',
       email: 'admin@example.com',
       role: 'root',
-      organization_id: 'org1',
+      organization_id: 1,
       organization_name: 'MIT',
       status: 'active',
       created_at: '2023-01-01T00:00:00Z',
@@ -247,7 +248,7 @@ function getMockUsers(page = 1, limit = 20, role?: string, search?: string) {
       username: 'moderator1',
       email: 'moderator@example.com',
       role: 'teacher',
-      organization_id: 'org2',
+      organization_id: 2,
       organization_name: 'Stanford',
       status: 'active',
       created_at: '2023-06-01T00:00:00Z',
@@ -260,7 +261,7 @@ function getMockUsers(page = 1, limit = 20, role?: string, search?: string) {
       username: 'user1',
       email: 'user@example.com',
       role: 'student',
-      organization_id: 'org2',
+      organization_id: 2,
       organization_name: 'Stanford',
       status: 'active',
       created_at: '2024-01-01T00:00:00Z',

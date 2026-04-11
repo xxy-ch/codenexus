@@ -46,7 +46,9 @@ export function SubmissionDetail() {
     enabled: !!submissionId,
     refetchInterval: (query) => {
       const status = query.state.data?.status
-      return status === 'pending' || status === 'running' ? 2000 : false
+      return status === 'queued' || status === 'pending' || status === 'compiling' || status === 'running'
+        ? 2000
+        : false
     },
   })
 

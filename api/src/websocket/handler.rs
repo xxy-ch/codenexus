@@ -17,7 +17,22 @@ use shared::models::Claims;
 /// Query parameters for WebSocket upgrade (JWT token for authentication)
 #[derive(Debug, Deserialize)]
 pub struct WsAuthParams {
-    pub token: String,
+    pub token: Option<String>,
+}
+
+fn extract_cookie_token(headers: &axum::http::HeaderMap, cookie_name: &str) -> Option<String> {
+    headers
+        .get(axum::http::header::COOKIE)
+        .and_then(|c| c.to_str().ok())
+        .and_then(|cookies| {
+            cookies.split(';').find_map(|cookie| {
+                let mut parts = cookie.trim().splitn(2, '=');
+                match (parts.next(), parts.next()) {
+                    (Some(name), Some(value)) if name == cookie_name => Some(value.to_string()),
+                    _ => None,
+                }
+            })
+        })
 }
 
 /// Handle WebSocket connection (internal, after auth verified)
@@ -151,13 +166,22 @@ async fn websocket_handler_inner(
 /// WebSocket upgrade endpoint with JWT authentication via query parameter
 pub async fn websocket_upgrade_handler(
     State(state): State<crate::AppState>,
+    headers: axum::http::HeaderMap,
     Query(params): Query<WsAuthParams>,
     ws: axum::extract::ws::WebSocketUpgrade,
 ) -> Result<impl IntoResponse, axum::http::StatusCode> {
-    // Validate JWT token from query parameter
+    let token = params
+        .token
+        .or_else(|| extract_cookie_token(&headers, "access_token"))
+        .ok_or_else(|| {
+            tracing::warn!("WebSocket connection rejected: missing access token");
+            axum::http::StatusCode::UNAUTHORIZED
+        })?;
+
+    // Validate JWT token from query parameter or HttpOnly cookie
     let jwt_service = crate::auth::JwtService::new(&state.jwt_secret);
     let claims = jwt_service
-        .validate_token(&params.token)
+        .validate_token(&token)
         .map_err(|_| {
             tracing::warn!("WebSocket connection rejected: invalid JWT token");
             axum::http::StatusCode::UNAUTHORIZED
