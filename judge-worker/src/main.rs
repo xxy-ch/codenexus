@@ -159,16 +159,16 @@ async fn consume_and_process(
 
             match result {
                 Ok(judge_result) => {
-                    if let Err(e) = send_result_to_api(&api_url, &judge_result).await {
+                    if let Err(e) = send_result_with_retry(&api_url, &judge_result, &conn).await {
                         error!(
-                            "Failed to send result for submission {}: {}",
+                            "Failed to send result for submission {} after retries: {}",
                             submission.submission_id, e
                         );
-                        // Don't acknowledge if sending failed
-                        return false;
+                        // Result was written to DLQ by send_result_with_retry.
+                        // Still ack to avoid reprocessing.
                     }
 
-                    // Acknowledge the message
+                    // Always acknowledge — DLQ captures any permanently failed results
                     let mut locked_conn = conn.lock().await;
                     match consumer::acknowledge_submission(
                         &mut locked_conn,
@@ -229,7 +229,11 @@ async fn consume_and_process(
 async fn send_result_to_api(api_url: &str, result: &queue::JudgeResult) -> Result<()> {
     use reqwest::Client;
 
-    let client = Client::new();
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| anyhow::anyhow!("Failed to create HTTP client: {}", e))?;
+
     let url = format!("{}/submissions/{}/results", api_url, result.submission_id);
 
     let response = client
@@ -248,6 +252,41 @@ async fn send_result_to_api(api_url: &str, result: &queue::JudgeResult) -> Resul
             "API returned error status {}: {}",
             status,
             body
-        );
+        )
+    }
+}
+
+async fn send_result_with_retry(
+    api_url: &str,
+    result: &queue::JudgeResult,
+    conn: &Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
+) -> Result<()> {
+    let max_retries: u32 = 3;
+    let mut attempt: u32 = 0;
+
+    loop {
+        match send_result_to_api(api_url, result).await {
+            Ok(()) => return Ok(()),
+            Err(e) => {
+                attempt += 1;
+                if attempt >= max_retries {
+                    warn!(
+                        "All {} retries exhausted for submission {}. Writing to DLQ. Last error: {}",
+                        max_retries, result.submission_id, e
+                    );
+                    let mut locked_conn = conn.lock().await;
+                    if let Err(dlq_err) = queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string()).await {
+                        error!("Failed to write submission {} to DLQ: {}", result.submission_id, dlq_err);
+                    }
+                    return Err(e);
+                }
+                let delay = std::time::Duration::from_secs(1 << attempt.min(3));
+                warn!(
+                    "Retry {}/{} for submission {} in {:?}: {}",
+                    attempt, max_retries, result.submission_id, delay, e
+                );
+                tokio::time::sleep(delay).await;
+            }
+        }
     }
 }

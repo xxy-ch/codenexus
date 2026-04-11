@@ -1,5 +1,6 @@
 pub mod producer;
 pub mod consumer;
+pub mod dlq;
 
 use serde::{Deserialize, Serialize};
 
