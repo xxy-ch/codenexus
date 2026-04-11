@@ -192,12 +192,39 @@ cd frontend && npx playwright test
 
 ## Acceptance Markers
 
-- [x] Final release gate commands are explicitly defined and green
+- [ ] Final release gate commands are explicitly defined and green
 - [x] Role matrix, hidden-data, callback trust, and submission integration tests are green
-- [x] Frontend production smoke covers the production-critical flows (e2e/smoke.spec.ts)
-- [x] Release and rollback docs match actual runtime behavior
-- [x] No P0 or P1 issues remain open (91.8% fixed, 6 low-priority items remaining)
-- [x] `R5 Release Review` passes
+- [ ] Frontend production smoke covers the production-critical flows (e2e/smoke.spec.ts)
+- [ ] Release and rollback docs match actual runtime behavior
+- [x] No P0 or P1 issues remain open (BE-P0-05 fixed in Wave 1-2, 5 low-priority items remaining)
+- [ ] `R5 Release Review` passes
+
+## Wave Execution Progress (Claude Code Lane)
+
+### Wave 0.5 — Baseline Freeze [DONE]
+- Reverted P7 from `completed` to `in-progress`
+- Created `shared/policy-matrix.md` with unified rules
+
+### Wave 1 — P3 Callback Trust + P4 Class/Assignment Authz [DONE]
+- P3: X-Worker-Secret auth + path/body ID validation + state machine + idempotency
+- P4: AuthExtractor on 7 read endpoints, owner/tenant checks on all writes
+- Commit: `44b2b3f`
+
+### Wave 2 — P5 Contest Tenant + Leaderboard Visibility [DONE]
+- Contest: AuthExtractor + tenant scoping on all 12 endpoints
+- Leaderboard: Claims-based visibility checks on all 6 endpoints
+- Commit: `058c047`
+
+### Wave 3 — P6 Search Tenant Filtering [DONE]
+- Tenant-aware search: school_id + role-based visibility
+- Private problems only for teachers/admins in same org
+- Community Realtime: WebSocket confirmed aligned with policy matrix
+- Commit: `fbdf53e`
+
+### Wave 4 — P7 Release Hardening (Claude Lane) [IN PROGRESS]
+- [ ] Frontend production smoke update
+- [ ] Route inventory validation
+- [ ] Phase summary update
 
 ## Review Checkpoint
 
