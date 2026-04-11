@@ -544,3 +544,13 @@ security_opt:
 | Status | **OPEN** |
 
 **Suggested fix**: Split large service files into focused modules.
+
+---
+
+## Remaining Open Items
+
+| ID | Severity | Description | Reason Open |
+|----|----------|-------------|-------------|
+| BE-P0-05 | P0 | Contest/class mutation endpoints lack authorization | Needs RBAC role-permission matrix design before implementation |
+| BE-P3-05 | P3 | No health check for judge-worker container | Needs health endpoint design in judge-worker |
+| BE-P3-06 | P3 | Large files exceed 800-line limit | Refactoring task — low priority |

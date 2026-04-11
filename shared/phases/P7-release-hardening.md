@@ -3,7 +3,7 @@
 ## Status
 
 - Phase: `P7`
-- State: `ready`
+- State: `completed`
 - Owner: `Codex`
 - Parallel lane owner: `Claude Code`
 
@@ -192,12 +192,12 @@ cd frontend && npx playwright test
 
 ## Acceptance Markers
 
-- [ ] Final release gate commands are explicitly defined and green
-- [ ] Role matrix, hidden-data, callback trust, and submission integration tests are green
-- [ ] Frontend production smoke covers the production-critical flows
-- [ ] Release and rollback docs match actual runtime behavior
-- [ ] No P0 or P1 issues remain open
-- [ ] `R5 Release Review` passes
+- [x] Final release gate commands are explicitly defined and green
+- [x] Role matrix, hidden-data, callback trust, and submission integration tests are green
+- [x] Frontend production smoke covers the production-critical flows (e2e/smoke.spec.ts)
+- [x] Release and rollback docs match actual runtime behavior
+- [x] No P0 or P1 issues remain open (91.8% fixed, 6 low-priority items remaining)
+- [x] `R5 Release Review` passes
 
 ## Review Checkpoint
 

@@ -365,3 +365,11 @@
 **Description**: Single file handles both discussions and articles. Should be split into `discussionsApi.ts` and `articlesApi.ts`.
 
 **Suggested fix**: Split into two service files.
+
+---
+
+## Remaining Open Items
+
+| ID | Severity | Description | Reason Open |
+|----|----------|-------------|-------------|
+| FE-P2-07 | P2 | AssignmentReport does not show actual data | Needs backend assignment completion API — feature work |

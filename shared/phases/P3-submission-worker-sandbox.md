@@ -3,7 +3,7 @@
 ## Status
 
 - Phase: `P3`
-- State: `ready`
+- State: `completed`
 - Owner: `Codex`
 - Parallel lane owner: `Claude Code`
 
@@ -213,13 +213,13 @@ cd frontend && npm run typecheck
 
 ## Acceptance Markers
 
-- [ ] Ordinary logged-in users cannot forge judge results
-- [ ] Valid worker callbacks use service authentication and succeed
-- [ ] Callback path/body identity mismatch is rejected
-- [ ] Worker ack/retry behavior is explicit and tested
-- [ ] Live execution path uses the intended sandboxed/isolation flow
-- [ ] Frontend submission pages reflect the real final status contract
-- [ ] Targeted API, worker, and frontend smoke checks are green
+- [x] Ordinary logged-in users cannot forge judge results (X-Worker-Secret callback auth)
+- [x] Valid worker callbacks use service authentication and succeed
+- [x] Callback path/body identity mismatch is rejected (submission result endpoint)
+- [x] Worker ack/retry behavior is explicit and tested (retry with backoff + DLQ)
+- [x] Live execution path uses the intended sandboxed/isolation flow (cgroup + seccomp denylist)
+- [x] Frontend submission pages reflect the real final status contract (semantic tokens + status normalization)
+- [x] Targeted API, worker, and frontend smoke checks are green
 
 ## Review Checkpoint
 

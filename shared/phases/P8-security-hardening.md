@@ -34,11 +34,11 @@ Address remaining security and compatibility issues discovered during the post-P
 - Root cause: likely `types: ["vite/client"]` in tsconfig.app.json restricting type resolution
 - No action needed — builds pass, runtime unaffected
 
-## Out Of Scope
+## Out Of Scope (at time of P8)
 
-- P0-L1: JWT in localStorage → httpOnly cookies (requires full auth architecture migration)
-- P1-1: Sandbox integration in execution path (needs design work)
-- P1-5: CSRF protection (bundles with P0-L1 auth migration)
+- ~~P0-L1: JWT in localStorage → httpOnly cookies (requires full auth architecture migration)~~ → **FIXED** in Phase B auth migration (2026-04-11)
+- ~~P1-1: Sandbox integration in execution path (needs design work)~~ → **FIXED** in Phase A sandbox integration (2026-04-11)
+- ~~P1-5: CSRF protection (bundles with P0-L1 auth migration)~~ → **FIXED** via SameSite=Strict cookies (2026-04-11)
 
 ## Files Changed
 

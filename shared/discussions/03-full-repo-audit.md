@@ -12,8 +12,8 @@
 |----------|------|-------|-------|
 | P0 (Critical) | 0 | 5 | 5 |
 | P1 (High) | 0 | 4 | 4 |
-| P2 (Medium) | 1 | 4 | 5 |
-| P3 (Low) | 1 | 2 | 3 |
+| P2 (Medium) | 2 | 3 | 5 |
+| P3 (Low) | 0 | 3 | 3 |
 | **Total** | **2** | **15** | **17** |
 
 ### Round 1 Fixes (2026-04-11)
@@ -229,3 +229,12 @@ Note: `rsa` Marvin attack only affects sqlx-mysql (not used with PostgreSQL).
 **Description**: `slug_or_id.parse::<i64>().unwrap_or(0)` — when slug is a string, it binds to `id = 0`, potentially matching the wrong article if one exists with id 0.
 
 **Suggested fix**: Split into numeric ID vs slug lookup paths explicitly.
+
+---
+
+## Remaining Open Items
+
+| ID | Severity | Description | Reason Open |
+|----|----------|-------------|-------------|
+| XREP-P2-01 | P2 | Dependency CVEs — tokio-tar, rsa (no upstream fix available) | Awaiting upstream patches; not reachable in production code path |
+| XREP-P2-04 | P2 | Stale JWT role trusted for 24h | Needs token rotation architecture (short-lived access + refresh tokens) |
