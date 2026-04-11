@@ -3,7 +3,7 @@
 ## Status
 
 - Phase: `P7`
-- State: `completed`
+- State: `in-progress`
 - Owner: `Codex`
 - Parallel lane owner: `Claude Code`
 
