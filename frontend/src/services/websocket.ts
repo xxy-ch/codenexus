@@ -3,12 +3,10 @@
  * Manages real-time communication with the backend
  */
 
-import { v4 as uuidv4 } from 'uuid'
 import type {
   WebSocketMessage,
   WebSocketEventHandlers,
   SubmissionUpdateMessage,
-  ChatMessage,
 } from '../types/websocket'
 import { ConnectionStatus, WS_CONFIG } from './config'
 
@@ -45,9 +43,6 @@ class WebSocketService {
           this.status = ConnectionStatus.CONNECTED
           this.reconnectAttempts = 0
           this.startPing()
-
-          // Send authentication message
-          this.authenticate()
 
           this.handlers.onConnected?.()
           resolve()
@@ -207,31 +202,6 @@ class WebSocketService {
   }
 
   /**
-   * Send authentication message
-   */
-  private authenticate(): void {
-    if (!this.userId || !this.username) {
-      console.warn('[WebSocket] No user credentials, skipping auth')
-      return
-    }
-
-    const authMessage: ChatMessage = {
-      type: 'ChatMessage',
-      data: {
-        id: uuidv4(),
-        contest_id: 0, // Temp value
-        user_id: this.userId,
-        username: this.username,
-        message: '',
-        timestamp: new Date().toISOString(),
-      }
-    }
-
-    this.send(authMessage)
-    console.log('[WebSocket] Authentication sent')
-  }
-
-  /**
    * Start ping/pong heartbeat
    */
   private startPing(): void {
@@ -275,35 +245,17 @@ class WebSocketService {
   }
 
   /**
-   * Get user ID from localStorage
+   * Get user ID — returns null if not provided to connect()
    */
   private getUserIdFromStorage(): string | null {
-    try {
-      const userStr = localStorage.getItem('oj_user')
-      if (userStr) {
-        const user = JSON.parse(userStr)
-        return user.id || null
-      }
-    } catch (error) {
-      console.error('[WebSocket] Error reading user from storage:', error)
-    }
-    return null
+    return this.userId
   }
 
   /**
-   * Get username from localStorage
+   * Get username — returns null if not provided to connect()
    */
   private getUsernameFromStorage(): string | null {
-    try {
-      const userStr = localStorage.getItem('oj_user')
-      if (userStr) {
-        const user = JSON.parse(userStr)
-        return user.username || user.email || null
-      }
-    } catch (error) {
-      console.error('[WebSocket] Error reading username from storage:', error)
-    }
-    return null
+    return this.username
   }
 }
 

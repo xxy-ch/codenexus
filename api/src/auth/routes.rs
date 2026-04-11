@@ -3,10 +3,17 @@ use shared::models::{Claims, LoginRequest, LoginResponse, RefreshRequest, Refres
 use crate::AppState;
 use crate::users::{models::{RegisterRequest, LoginRequest as DbLoginRequest, RefreshTokenRequest}, service::UserService};
 
+fn make_cookie_header(name: &str, value: &str, max_age: u32, path: &str) -> String {
+    format!(
+        "{}={}; HttpOnly; SameSite=Strict; Path={}; Max-Age={}",
+        name, value, path, max_age
+    )
+}
+
 pub async fn login(
     State(state): State<AppState>,
     Json(request): Json<LoginRequest>,
-) -> Result<Json<LoginResponse>, StatusCode> {
+) -> Result<(axum::http::HeaderMap, Json<LoginResponse>), StatusCode> {
     let service = UserService::new(state.db_pool.clone(), state.jwt_service.clone());
     let response = service
         .login(DbLoginRequest {
@@ -16,7 +23,17 @@ pub async fn login(
         .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    Ok(Json(LoginResponse {
+    let mut headers = axum::http::HeaderMap::new();
+    headers.insert(
+        axum::http::header::SET_COOKIE,
+        make_cookie_header("access_token", &response.token, 14400, "/").parse().unwrap(),
+    );
+    headers.insert(
+        axum::http::header::SET_COOKIE,
+        make_cookie_header("refresh_token", &response.refresh_token, 604800, "/api/auth/refresh").parse().unwrap(),
+    );
+
+    Ok((headers, Json(LoginResponse {
         token: response.token,
         refresh_token: response.refresh_token,
         user: UserPublic {
@@ -27,22 +44,48 @@ pub async fn login(
             school_id: response.user.organization_id,
             campus_id: response.user.campus_id,
         },
-    }))
+    })))
 }
 
 pub async fn refresh(
     State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
     Json(request): Json<RefreshRequest>,
-) -> Result<Json<RefreshResponse>, StatusCode> {
+) -> Result<(axum::http::HeaderMap, Json<RefreshResponse>), StatusCode> {
+    // Try cookie first, then body
+    let refresh_token = headers
+        .get("cookie")
+        .and_then(|c| c.to_str().ok())
+        .and_then(|c| {
+            c.split(';')
+                .find_map(|cookie| {
+                    let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
+                    if parts.len() == 2 && parts[0] == "refresh_token" {
+                        Some(parts[1].to_string())
+                    } else {
+                        None
+                    }
+                })
+        })
+        .or(request.refresh_token);
+
+    let refresh_token = refresh_token.ok_or(StatusCode::UNAUTHORIZED)?;
+
     let service = UserService::new(state.db_pool.clone(), state.jwt_service.clone());
     let response = service
         .refresh_token(RefreshTokenRequest {
-            refresh_token: request.refresh_token,
+            refresh_token,
         })
         .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    Ok(Json(RefreshResponse { token: response.token }))
+    let mut resp_headers = axum::http::HeaderMap::new();
+    resp_headers.insert(
+        axum::http::header::SET_COOKIE,
+        make_cookie_header("access_token", &response.token, 14400, "/").parse().unwrap(),
+    );
+
+    Ok((resp_headers, Json(RefreshResponse { token: response.token })))
 }
 
 pub async fn logout(
@@ -70,7 +113,7 @@ pub async fn logout(
 pub async fn register(
     State(state): State<AppState>,
     Json(request): Json<RegisterRequest>,
-) -> Result<Json<crate::users::models::AuthResponse>, StatusCode> {
+) -> Result<(axum::http::HeaderMap, Json<crate::users::models::AuthResponse>), StatusCode> {
     let service = UserService::new(state.db_pool.clone(), state.jwt_service.clone());
     let profile = service
         .register(request)
@@ -96,11 +139,21 @@ pub async fn register(
         .generate_refresh_token(&shared_user)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Ok(Json(crate::users::models::AuthResponse {
+    let mut headers = axum::http::HeaderMap::new();
+    headers.insert(
+        axum::http::header::SET_COOKIE,
+        make_cookie_header("access_token", &token, 14400, "/").parse().unwrap(),
+    );
+    headers.insert(
+        axum::http::header::SET_COOKIE,
+        make_cookie_header("refresh_token", &refresh_token, 604800, "/api/auth/refresh").parse().unwrap(),
+    );
+
+    Ok((headers, Json(crate::users::models::AuthResponse {
         token,
         refresh_token,
         user: profile,
-    }))
+    })))
 }
 
 #[cfg(test)]

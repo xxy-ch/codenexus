@@ -1,14 +1,12 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import { authService } from '@/services/auth'
 import type { LoginRequest, RegisterRequest } from '@/types/auth'
 
 export function useAuth() {
   const navigate = useNavigate()
   const {
     user,
-    token,
     isAuthenticated,
     isLoading,
     error,
@@ -18,9 +16,6 @@ export function useAuth() {
     clearError,
   } = useAuthStore()
 
-  /**
-   * 处理登录
-   */
   const handleLogin = useCallback(async (credentials: LoginRequest) => {
     try {
       await storeLogin(credentials)
@@ -36,9 +31,6 @@ export function useAuth() {
     }
   }, [storeLogin, navigate])
 
-  /**
-   * 处理注册
-   */
   const handleRegister = useCallback(async (data: RegisterRequest) => {
     try {
       await storeRegister(data)
@@ -54,64 +46,45 @@ export function useAuth() {
     }
   }, [storeRegister, navigate])
 
-  /**
-   * 处理登出
-   */
   const handleLogout = useCallback(async () => {
-    try {
-      await authService.logout()
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      // 清除状态
-      logout()
-      // 清除本地存储
-      localStorage.removeItem('token')
-      localStorage.removeItem('refresh_token')
-      navigate('/login')
-    }
+    logout()
+    navigate('/login')
   }, [logout, navigate])
 
-  /**
-   * 检查认证状态
-   */
   const checkAuthentication = useCallback(async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      useAuthStore.setState({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-      })
-      return false
-    }
-
     try {
-      const user = await authService.getCurrentUser()
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/users/me`, {
+        credentials: 'include',
+      })
+
+      if (!response.ok) {
+        useAuthStore.setState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+        })
+        return false
+      }
+
+      const user = await response.json()
       useAuthStore.setState({
         user,
-        token,
         isAuthenticated: true,
         isLoading: false,
       })
       return true
-    } catch (error) {
+    } catch {
       useAuthStore.setState({
         user: null,
-        token: null,
         isAuthenticated: false,
         isLoading: false,
       })
-      localStorage.removeItem('token')
-      localStorage.removeItem('refresh_token')
       return false
     }
   }, [])
 
   return {
     user,
-    token,
     isAuthenticated,
     isLoading,
     error,

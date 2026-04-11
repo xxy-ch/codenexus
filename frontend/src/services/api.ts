@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import type { InternalAxiosRequestConfig } from 'axios'
-import { API_CONFIG, STORAGE_KEYS } from './config'
+import { API_CONFIG } from './config'
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
@@ -13,23 +13,10 @@ const api = axios.create({
   withCredentials: true,
 })
 
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token =
-      localStorage.getItem(STORAGE_KEYS.TOKEN) ||
-      localStorage.getItem('token')
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  }
-)
+// Token refresh mutex — concurrent 401s share one refresh promise
+let refreshPromise: Promise<string> | null = null
 
-// Response interceptor to handle errors and token refresh
+// Response interceptor to handle 401 with automatic token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -39,32 +26,21 @@ api.interceptors.response.use(
       originalRequest._retry = true
 
       try {
-        const refreshToken =
-          localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) ||
-          localStorage.getItem('refresh_token')
-        if (refreshToken) {
-          const response = await axios.post(`${API_CONFIG.baseURL}${API_CONFIG.endpoints.refresh}`, {
-            refresh_token: refreshToken,
-          })
-
-          const { token, refresh_token } = response.data
-          localStorage.setItem(STORAGE_KEYS.TOKEN, token)
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token)
-          localStorage.setItem('token', token)
-          localStorage.setItem('refresh_token', refresh_token)
-
-          originalRequest.headers.Authorization = `Bearer ${token}`
-          return api(originalRequest)
+        // Use shared refresh promise to prevent concurrent refreshes
+        if (!refreshPromise) {
+          refreshPromise = axios
+            .post(`${API_CONFIG.baseURL}${API_CONFIG.endpoints.refresh}`, {}, { withCredentials: true })
+            .then((response) => response.data.token as string)
+            .finally(() => { refreshPromise = null })
         }
-      } catch (refreshError) {
-        // Refresh failed, clear tokens and redirect to login
-        localStorage.removeItem(STORAGE_KEYS.TOKEN)
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
-        localStorage.removeItem('token')
-        localStorage.removeItem('refresh_token')
-        localStorage.removeItem(STORAGE_KEYS.USER)
+
+        const newToken = await refreshPromise
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        return api(originalRequest)
+      } catch {
+        // Refresh failed — redirect to login
         window.location.href = '/login'
-        return Promise.reject(refreshError)
+        return Promise.reject(error)
       }
     }
 
@@ -74,8 +50,6 @@ api.interceptors.response.use(
 
 /**
  * Convenience wrapper that accepts an optional AbortSignal.
- * Use this for user-initiated requests that may be cancelled
- * (e.g. search-as-you-type, component unmount during fetch).
  */
 export function request<T>(
   method: 'get' | 'post' | 'put' | 'patch' | 'delete',

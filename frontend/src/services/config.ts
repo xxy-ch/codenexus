@@ -82,8 +82,6 @@ export type ConnectionStatus = (typeof ConnectionStatus)[keyof typeof Connection
 
 // Storage keys
 export const STORAGE_KEYS = {
-  TOKEN: 'oj_token',
-  REFRESH_TOKEN: 'oj_refresh_token',
   USER: 'oj_user',
   THEME: 'oj_theme',
   LANGUAGE: 'oj_language',

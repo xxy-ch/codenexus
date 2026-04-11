@@ -19,24 +19,37 @@ where
         parts: &mut axum::http::request::Parts,
         _state: &S,
     ) -> Result<Self, Self::Rejection> {
-        let auth_header = parts
+        let token = parts
             .headers
             .get("authorization")
             .and_then(|h| h.to_str().ok())
+            .and_then(|h| h.strip_prefix("Bearer "))
+            .map(|t| t.to_string())
+            .or_else(|| {
+                parts
+                    .headers
+                    .get("cookie")
+                    .and_then(|c| c.to_str().ok())
+                    .and_then(|c| {
+                        c.split(';')
+                            .find_map(|cookie| {
+                                let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
+                                if parts.len() == 2 && parts[0] == "access_token" {
+                                    Some(parts[1].to_string())
+                                } else {
+                                    None
+                                }
+                            })
+                    })
+            })
             .ok_or(StatusCode::UNAUTHORIZED)?;
-
-        if !auth_header.starts_with("Bearer ") {
-            return Err(StatusCode::UNAUTHORIZED);
-        }
-
-        let token = &auth_header[7..];
 
         let jwt_secret =
             std::env::var("JWT_SECRET").map_err(|_| StatusCode::UNAUTHORIZED)?;
         let jwt_service = JwtService::new(&jwt_secret);
 
         let claims = jwt_service
-            .validate_token(token)
+            .validate_token(&token)
             .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
         Ok(AuthExtractor(claims))
@@ -48,22 +61,37 @@ pub async fn auth_middleware(
     request: axum::http::Request<axum::body::Body>,
     next: axum::middleware::Next,
 ) -> Result<Response, StatusCode> {
-    let auth_header = request
+    // Try Authorization header first, then fall back to cookie
+    let token = request
         .headers()
         .get("authorization")
         .and_then(|h| h.to_str().ok())
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+        .and_then(|h| h.strip_prefix("Bearer "))
+        .map(|t| t.to_string())
+        .or_else(|| {
+            request
+                .headers()
+                .get("cookie")
+                .and_then(|c| c.to_str().ok())
+                .and_then(|c| {
+                    c.split(';')
+                        .find_map(|cookie| {
+                            let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
+                            if parts.len() == 2 && parts[0] == "access_token" {
+                                Some(parts[1].to_string())
+                            } else {
+                                None
+                            }
+                        })
+                })
+        });
 
-    if !auth_header.starts_with("Bearer ") {
-        return Err(StatusCode::UNAUTHORIZED);
-    }
-
-    let token = &auth_header[7..];
+    let token = token.ok_or(StatusCode::UNAUTHORIZED)?;
 
     let jwt_service = Arc::new(JwtService::new(&state.jwt_secret));
 
     let claims = jwt_service
-        .validate_token(token)
+        .validate_token(&token)
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
     // Check JWT blacklist (revoked tokens)

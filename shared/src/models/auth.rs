@@ -44,7 +44,7 @@ pub struct LoginResponse {
 /// Refresh token request
 #[derive(Debug, Deserialize)]
 pub struct RefreshRequest {
-    pub refresh_token: String,
+    pub refresh_token: Option<String>,
 }
 
 /// Refresh token response
