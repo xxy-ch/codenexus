@@ -10,11 +10,11 @@
 
 | Severity | OPEN | FIXED | Total |
 |----------|------|-------|-------|
-| P0 (Critical) | 1 | 0 | 1 |
-| P1 (High) | 1 | 5 | 6 |
+| P0 (Critical) | 0 | 1 | 1 |
+| P1 (High) | 0 | 6 | 6 |
 | P2 (Medium) | 1 | 8 | 9 |
 | P3 (Low) | 0 | 5 | 5 |
-| **Total** | **3** | **18** | **21** |
+| **Total** | **1** | **20** | **21** |
 
 ### Round 1 Fixes (2026-04-11)
 
@@ -32,6 +32,13 @@
 | FE-P3-02 | Fast Refresh constants — verified already above components |
 | FE-P3-03 | Unused vars in MarkdownPreview — verified all params are used |
 | FE-P3-05 | Browserslist config added: `"Chrome >= 109"` |
+
+### Round 2 Fixes — Auth Migration (2026-04-11)
+
+| ID | Description |
+|----|-------------|
+| FE-P0-01 | JWT migrated from localStorage to httpOnly + SameSite=Strict cookies |
+| FE-P1-05 | CSRF protection via SameSite=Strict cookies (bundled with auth migration) |
 
 ---
 

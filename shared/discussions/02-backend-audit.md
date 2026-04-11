@@ -10,11 +10,11 @@
 
 | Severity | OPEN | FIXED | Total |
 |----------|------|-------|-------|
-| P0 (Critical) | 4 | 8 | 12 |
-| P1 (High) | 4 | 7 | 11 |
-| P2 (Medium) | 1 | 7 | 8 |
+| P0 (Critical) | 2 | 10 | 12 |
+| P1 (High) | 0 | 11 | 11 |
+| P2 (Medium) | 0 | 8 | 8 |
 | P3 (Low) | 1 | 3 | 4 |
-| **Total** | **10** | **25** | **35** |
+| **Total** | **3** | **32** | **35** |
 
 ### Round 1 Fixes (2026-04-11)
 
@@ -30,6 +30,18 @@
 | BE-P2-08 | Submission rate limit burst reduced 30 → 10 |
 | BE-P3-01 | Work dir cleanup — was already fixed in working tree |
 | BE-P3-04 | JWT secret stored in AppState, read once at startup |
+
+### Round 2 Fixes — Architectural (2026-04-11)
+
+| ID | Description |
+|----|-------------|
+| BE-P0-04 | Sandbox integrated — cgroup resource limits + seccomp denylist in processor execution path |
+| BE-P0-06 | apply_seccomp moved inside pre_exec closure (runs in child process) |
+| BE-P1-02 | Seccomp replaced strict mode with denylist (blocks mount/ptrace/reboot, allows execve) |
+| BE-P1-03 | Partial stdout/stderr captured on timeout (file-based I/O) |
+| BE-P1-04 | Dead letter queue: retry with backoff + Redis DLQ for permanently failed results |
+| BE-P1-05 | Docker capabilities: SYS_PTRACE + SYS_ADMIN + no-new-privileges (no privileged mode) |
+| BE-P2-06 | Cgroup cleanup separated from execution result (always returns execution output) |
 
 ---
 
