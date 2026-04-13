@@ -12,6 +12,7 @@
 - [ ] **ARCH-03**: Service trait interfaces defined for cross-domain communication
 - [ ] **ARCH-04**: Domain modules extracted as workspace crates in dependency order (users → problems → community → search → submissions → contests → classes → leaderboard)
 - [ ] **ARCH-05**: API binary assembles routers from domain crates, owns only main.rs and route mounting
+- [ ] **ARCH-06**: Shared test infrastructure — testcontainers setup (PostgreSQL, Redis), shared test fixtures, and test helper utilities for all domain modules
 
 ### Security & Technical Debt
 
@@ -20,6 +21,7 @@
 - [ ] **SEC-03**: Leaderboard `/global` and `/problem/:id` endpoints enforce tenant filtering (only show user's organization data; Root can see all)
 - [ ] **SEC-04**: Dead code removed: 26 dead code items, 11 unused imports, 14 unused variables, dead `rbac/` module eliminated
 - [ ] **SEC-05**: Redis connection pooling used consistently (no per-request connection creation)
+- [ ] **SEC-06**: Production/development environment distinction — `APP_ENV=production` vs `development` controls secret enforcement, CORS strictness, error detail verbosity
 
 ### CI/CD Pipeline
 
@@ -62,6 +64,7 @@
 - [ ] **JCON-01**: Priority submission queue — contest submissions routed to `submissions:contest` Redis stream with higher priority; workers consume from contest stream first, then normal stream
 - [ ] **JCON-02**: Queue monitoring API endpoint — returns current queue depth (contest + normal), active judge count, average wait time
 - [ ] **JCON-03**: Configurable worker concurrency — max concurrent judgements per worker configurable via environment variable
+- [ ] **JCON-04**: Judge Worker health reporting — workers periodically report alive status, consumption progress, and queue lag to API endpoint
 
 ### Fault Tolerance
 
@@ -123,55 +126,58 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | Phase 1 | Pending |
-| ARCH-02 | Phase 1 | Pending |
-| ARCH-03 | Phase 1 | Pending |
-| ARCH-04 | Phase 2-4 | Pending |
-| ARCH-05 | Phase 2-4 | Pending |
-| SEC-01 | Phase 5 | Pending |
-| SEC-02 | Phase 5 | Pending |
-| SEC-03 | Phase 5 | Pending |
-| SEC-04 | Phase 5 | Pending |
-| SEC-05 | Phase 5 | Pending |
-| CICD-01 | Phase 6 | Pending |
-| CICD-02 | Phase 6 | Pending |
-| CICD-03 | Phase 6 | Pending |
-| CICD-04 | Phase 6 | Pending |
-| CICD-05 | Phase 6 | Pending |
-| OBS-01 | Phase 6 | Pending |
-| OBS-02 | Phase 6 | Pending |
-| OBS-03 | Phase 6 | Pending |
-| TEST-01 | Phase 7 | Pending |
-| TEST-02 | Phase 7 | Pending |
-| TEST-03 | Phase 7 | Pending |
-| TEST-04 | Phase 7 | Pending |
-| TEST-05 | Phase 7 | Pending |
-| CONT-01 | Phase 8 | Pending |
-| CONT-02 | Phase 8 | Pending |
-| CONT-03 | Phase 8 | Pending |
-| IMEX-01 | Phase 9 | Pending |
-| IMEX-02 | Phase 9 | Pending |
-| IMEX-03 | Phase 9 | Pending |
-| IMEX-04 | Phase 9 | Pending |
-| IMEX-05 | Phase 9 | Pending |
-| JCON-01 | Phase 10 | Pending |
-| JCON-02 | Phase 10 | Pending |
-| JCON-03 | Phase 10 | Pending |
-| FTOL-01 | Phase 11 | Pending |
-| FTOL-02 | Phase 11 | Pending |
-| FTOL-03 | Phase 11 | Pending |
-| MIGR-01 | Phase 12 | Pending |
-| MIGR-02 | Phase 12 | Pending |
-| MIGR-03 | Phase 12 | Pending |
-| MIGR-04 | Phase 12 | Pending |
-| MIGR-05 | Phase 12 | Pending |
-| MIGR-06 | Phase 12 | Pending |
+| ARCH-01 | Phase 1: Architecture + Secrets | Pending |
+| ARCH-02 | Phase 1: Architecture + Secrets | Pending |
+| ARCH-03 | Phase 1: Architecture + Secrets | Pending |
+| ARCH-04 | Phase 2-4: Domain Extraction | Pending |
+| ARCH-05 | Phase 2-4: Domain Extraction | Pending |
+| ARCH-06 | Phase 1: Architecture + Secrets | Pending |
+| SEC-01 | Phase 1: Architecture + Secrets | Pending |
+| SEC-02 | Phase 5: Security & Debt | Pending |
+| SEC-03 | Phase 4: Complex Extraction | Pending |
+| SEC-04 | Phase 5: Security & Debt | Pending |
+| SEC-05 | Phase 5: Security & Debt | Pending |
+| SEC-06 | Phase 1: Architecture + Secrets | Pending |
+| CICD-01 | Phase 2: Basic CI + Core | Pending |
+| CICD-02 | Phase 2: Basic CI + Core | Pending |
+| CICD-03 | Phase 2: Basic CI + Core | Pending |
+| CICD-04 | Phase 6: Full CI/CD + Obs | Pending |
+| CICD-05 | Phase 6: Full CI/CD + Obs | Pending |
+| OBS-01 | Phase 6: Full CI/CD + Obs | Pending |
+| OBS-02 | Phase 6: Full CI/CD + Obs | Pending |
+| OBS-03 | Phase 6: Full CI/CD + Obs | Pending |
+| TEST-01 | Phase 7: Test + Contest | Pending |
+| TEST-02 | Phase 7: Test + Contest | Pending |
+| TEST-03 | Phase 7: Test + Contest | Pending |
+| TEST-04 | Phase 7: Test + Contest | Pending |
+| TEST-05 | Phase 7: Test + Contest | Pending |
+| CONT-01 | Phase 7: Test + Contest | Pending |
+| CONT-02 | Phase 7: Test + Contest | Pending |
+| CONT-03 | Phase 7: Test + Contest | Pending |
+| IMEX-01 | Phase 8: Import/Export | Pending |
+| IMEX-02 | Phase 8: Import/Export | Pending |
+| IMEX-03 | Phase 8: Import/Export | Pending |
+| IMEX-04 | Phase 8: Import/Export | Pending |
+| IMEX-05 | Phase 8: Import/Export | Pending |
+| JCON-01 | Phase 9: Judge + FT | Pending |
+| JCON-02 | Phase 9: Judge + FT | Pending |
+| JCON-03 | Phase 9: Judge + FT | Pending |
+| JCON-04 | Phase 9: Judge + FT | Pending |
+| FTOL-01 | Phase 9: Judge + FT | Pending |
+| FTOL-02 | Phase 9: Judge + FT | Pending |
+| FTOL-03 | Phase 9: Judge + FT | Pending |
+| MIGR-01 | Phase 10: Migration + Delivery | Pending |
+| MIGR-02 | Phase 10: Migration + Delivery | Pending |
+| MIGR-03 | Phase 10: Migration + Delivery | Pending |
+| MIGR-04 | Phase 10: Migration + Delivery | Pending |
+| MIGR-05 | Phase 10: Migration + Delivery | Pending |
+| MIGR-06 | Phase 10: Migration + Delivery | Pending |
 
 **Coverage:**
-- v1 requirements: 40 total
-- Mapped to phases: 40
-- Unmapped: 0 ✓
+- v1 requirements: 43 total
+- Mapped to phases: 43
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-13*
-*Last updated: 2026-04-13 after initial definition*
+*Last updated: 2026-04-13 after roadmap revision (10 phases, 43 requirements)*
