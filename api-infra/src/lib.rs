@@ -1,6 +1,7 @@
 pub mod error;
 pub mod middleware;
 pub mod rbac;
+pub mod traits;
 pub mod websocket;
 
 // NOTE: AppState stays in the api crate because it references api::auth::JwtService.
