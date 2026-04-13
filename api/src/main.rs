@@ -1,41 +1,41 @@
-mod db;
-mod redis;
 mod auth;
-mod error;
-mod middleware;
-mod rbac;
-mod problems;
-mod users;
-mod submissions;
-mod contests;
-mod leaderboard;
-mod classes;
-mod websocket;
-mod discussions;
 mod blog;
-mod search;
-mod notifications;
+mod classes;
+mod contests;
+mod db;
+mod discussions;
+mod error;
+mod leaderboard;
 mod messages;
+mod middleware;
+mod notifications;
 mod plagiarism;
+mod problems;
+mod rbac;
+mod redis;
+mod search;
+mod submissions;
+mod users;
+mod websocket;
 
+use auth::JwtService;
+use axum::serve;
 use axum::{
+    extract::State,
+    http::{header, Method, StatusCode},
+    response::Json,
     routing::{get, post},
     Router,
-    extract::State,
-    response::Json,
-    http::{header, Method, StatusCode},
 };
-use axum::serve;
+use db::schema::MIGRATOR;
 use deadpool_redis::Pool as RedisPool;
 use sqlx::PgPool;
 use std::net::SocketAddr;
-use tower_http::cors::{Any, CorsLayer};
 use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
+use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use auth::JwtService;
 use websocket::WebSocketServer;
-use db::schema::MIGRATOR;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -60,24 +60,17 @@ async fn main() -> anyhow::Result<()> {
 
     dotenvy::dotenv().ok();
 
-    let database_url =
-        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let redis_url = std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
-    let jwt_secret =
-        std::env::var("JWT_SECRET").unwrap_or_else(|_| "default_jwt_secret_change_me".to_string());
-    let worker_secret =
-        std::env::var("WORKER_SECRET").unwrap_or_else(|_| "default_worker_secret_change_me".to_string());
-    let bind_address = std::env::var("API_BIND_ADDRESS")
-        .unwrap_or_else(|_| "0.0.0.0:3000".to_string());
+    let config = api_infra::config::AppConfig::from_env()
+        .map_err(|e| anyhow::anyhow!("Configuration error: {}", e))?;
 
     info!("Connecting to database...");
-    let db_pool = db::create_pool(&database_url, Some(10), Some(30)).await?;
+    let db_pool = db::create_pool(&config.database_url, Some(10), Some(30)).await?;
     info!("Database connection pool created");
     info!("Running embedded database migrations...");
     MIGRATOR.run(&db_pool).await?;
     info!("Database migrations complete");
 
-    let redis_pool = if let Ok(pool) = redis::create_pool(&redis_url).await {
+    let redis_pool = if let Ok(pool) = redis::create_pool(&config.redis_url).await {
         info!("Redis connection pool created");
         Some(pool)
     } else {
@@ -85,38 +78,64 @@ async fn main() -> anyhow::Result<()> {
         None
     };
 
-    let jwt_service = auth::JwtService::new(&jwt_secret);
+    let jwt_service = auth::JwtService::new(&config.jwt_secret);
     let websocket_server = std::sync::Arc::new(WebSocketServer::new());
     let state = AppState {
         db_pool,
         redis_pool,
-        redis_url,
+        redis_url: config.redis_url.clone(),
         jwt_service,
-        jwt_secret,
-        worker_secret,
+        jwt_secret: config.jwt_secret.clone(),
+        worker_secret: config.worker_secret.clone(),
         websocket_server,
     };
 
-    let app = create_router(state);
+    let app = create_router(state, config.clone());
 
-    let addr: SocketAddr = bind_address
+    let addr: SocketAddr = config.bind_address
         .parse()
         .expect("Invalid API_BIND_ADDRESS format");
 
     info!("Starting server on {}", addr);
-    
+
     let listener = tokio::net::TcpListener::bind(addr).await?;
     info!("Server listening on {}", addr);
-    
-    serve(listener, app).await?;
+
+    serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await?;
     Ok(())
 }
 
-fn create_router(state: AppState) -> Router {
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE, Method::OPTIONS])
-        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]);
+fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Router {
+    let cors = if config.cors_origins.contains(&"*".to_string()) {
+        CorsLayer::new()
+            .allow_origin(Any)
+            .allow_methods([
+                Method::GET,
+                Method::POST,
+                Method::PUT,
+                Method::PATCH,
+                Method::DELETE,
+                Method::OPTIONS,
+            ])
+            .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+    } else {
+        let origins: Vec<axum::http::HeaderValue> = config
+            .cors_origins
+            .iter()
+            .filter_map(|o| o.parse().ok())
+            .collect();
+        CorsLayer::new()
+            .allow_origin(origins)
+            .allow_methods([
+                Method::GET,
+                Method::POST,
+                Method::PUT,
+                Method::PATCH,
+                Method::DELETE,
+                Method::OPTIONS,
+            ])
+            .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+    };
 
     // Rate limit: 30 requests per minute per IP (covers all endpoints including internal worker)
     let governor_config = GovernorConfigBuilder::default()
@@ -146,13 +165,21 @@ fn create_router(state: AppState) -> Router {
         .nest("/classes", classes::classes_router())
         .nest("/discussions", discussions::discussions_router())
         .nest("/blog", blog::blog_router())
-        .nest("/search", search::create_search_router(state.db_pool.clone(), state.redis_url.clone()))
+        .nest(
+            "/search",
+            search::create_search_router(state.db_pool.clone(), state.redis_url.clone()),
+        )
         .nest("/notifications", notifications::notifications_router())
         .nest("/messages", messages::messages_router())
         .nest("/admin/plagiarism", plagiarism::plagiarism_router())
         // Apply auth/tenant middleware only to protected routes
-        .route_layer(axum::middleware::from_fn(middleware::tenant::tenant_middleware))
-        .route_layer(axum::middleware::from_fn_with_state(state.clone(), middleware::auth::auth_middleware));
+        .route_layer(axum::middleware::from_fn(
+            middleware::tenant::tenant_middleware,
+        ))
+        .route_layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            middleware::auth::auth_middleware,
+        ));
 
     // Layer ordering (outermost to innermost): CORS -> rate limit -> auth -> handler
     public_router
@@ -168,7 +195,9 @@ async fn health_check() -> &'static str {
     "OK"
 }
 
-async fn get_system_status(State(state): State<AppState>) -> Result<Json<serde_json::Value>, StatusCode> {
+async fn get_system_status(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
     // Check database connection
     let db_ok = sqlx::query_scalar::<_, i64>("SELECT 1")
         .fetch_one(&state.db_pool)
