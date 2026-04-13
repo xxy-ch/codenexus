@@ -7,7 +7,7 @@
 
 ### Architecture Decoupling
 
-- [ ] **ARCH-01**: API infrastructure extracted into dedicated `api-infra` workspace crate (AppState, middleware, error types, extractors, WebSocket server)
+- [x] **ARCH-01**: API infrastructure extracted into dedicated `api-infra` workspace crate (AppState, middleware, error types, extractors, WebSocket server)
 - [ ] **ARCH-02**: Repository trait interfaces defined for all domain modules (ProblemRepo, SubmissionRepo, ContestRepo, ClassRepo, CommunityRepo, UserRepo, LeaderboardRepo, SearchRepo)
 - [ ] **ARCH-03**: Service trait interfaces defined for cross-domain communication
 - [ ] **ARCH-04**: Domain modules extracted as workspace crates in dependency order (users → problems → community → search → submissions → contests → classes → leaderboard)
@@ -126,7 +126,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | Phase 1: Architecture + Secrets | Pending |
+| ARCH-01 | Phase 1: Architecture + Secrets | Complete |
 | ARCH-02 | Phase 1: Architecture + Secrets | Pending |
 | ARCH-03 | Phase 1: Architecture + Secrets | Pending |
 | ARCH-04 | Phase 2-4: Domain Extraction | Pending |
