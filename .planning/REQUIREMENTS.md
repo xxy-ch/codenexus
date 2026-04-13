@@ -1,0 +1,177 @@
+# Requirements: AlgoMaster Online Judge
+
+**Defined:** 2026-04-13
+**Core Value:** Reliable, secure code judging with multi-tenancy — every submission correctly evaluated in isolation, data never leaks across organizational boundaries.
+
+## v1 Requirements
+
+### Architecture Decoupling
+
+- [ ] **ARCH-01**: API infrastructure extracted into dedicated `api-infra` workspace crate (AppState, middleware, error types, extractors, WebSocket server)
+- [ ] **ARCH-02**: Repository trait interfaces defined for all domain modules (ProblemRepo, SubmissionRepo, ContestRepo, ClassRepo, CommunityRepo, UserRepo, LeaderboardRepo, SearchRepo)
+- [ ] **ARCH-03**: Service trait interfaces defined for cross-domain communication
+- [ ] **ARCH-04**: Domain modules extracted as workspace crates in dependency order (users → problems → community → search → submissions → contests → classes → leaderboard)
+- [ ] **ARCH-05**: API binary assembles routers from domain crates, owns only main.rs and route mounting
+
+### Security & Technical Debt
+
+- [ ] **SEC-01**: All hardcoded default secrets removed; JWT_SECRET and WORKER_SECRET loaded from environment only, fail to start if unset in production mode
+- [ ] **SEC-02**: CORS policy restricts origins to configured list (not wildcard); configurable via environment variable
+- [ ] **SEC-03**: Leaderboard `/global` and `/problem/:id` endpoints enforce tenant filtering (only show user's organization data; Root can see all)
+- [ ] **SEC-04**: Dead code removed: 26 dead code items, 11 unused imports, 14 unused variables, dead `rbac/` module eliminated
+- [ ] **SEC-05**: Redis connection pooling used consistently (no per-request connection creation)
+
+### CI/CD Pipeline
+
+- [ ] **CICD-01**: GitHub Actions workflow with cargo fmt --check, clippy, cargo test --workspace on every push/PR
+- [ ] **CICD-02**: Rust compilation cache via Swatinem/rust-cache for faster CI runs
+- [ ] **CICD-03**: Frontend CI: npm ci, lint, vitest, build
+- [ ] **CICD-04**: Docker image builds for api, judge-worker, frontend on main branch
+- [ ] **CICD-05**: Codex automated PR review integrated into CI workflow
+
+### Observability
+
+- [ ] **OBS-01**: Structured logging via tracing + tracing-subscriber with env-filter for log level control
+- [ ] **OBS-02**: Prometheus metrics exported at `/metrics` endpoint (request latency, error rates, queue depth)
+- [ ] **OBS-03**: Liveness health check (`/health/live`) and readiness health check (`/health/ready` verifying DB + Redis connectivity)
+
+### Test Coverage
+
+- [ ] **TEST-01**: Integration tests per domain module using sqlx::test + testcontainers (PostgreSQL, Redis)
+- [ ] **TEST-02**: API handler tests using tower::ServiceExt::oneshot (no HTTP server needed)
+- [ ] **TEST-03**: Multi-tenant isolation test suite — verify every endpoint respects tenant boundaries
+- [ ] **TEST-04**: Frontend unit tests via Vitest for hooks and utility functions
+- [ ] **TEST-05**: E2E test suite via Playwright covering critical flows (login, submit code, view result, contest participation)
+
+### Contest Enhancement
+
+- [ ] **CONT-01**: Leaderboard freeze — standings can be frozen at a configurable time before contest end; frozen results hidden, revealed after contest
+- [ ] **CONT-02**: Post-contest upsolving — after contest ends, participants can submit solutions for practice; submissions tagged as upsolving, not counted in official standings
+- [ ] **CONT-03**: Submission recovery — if judge worker crashes, pending submissions in Redis Stream are automatically retried by other workers via XPENDING + XCLAIM
+
+### Import/Export
+
+- [ ] **IMEX-01**: Problem ZIP import — upload .zip containing problem.md (description), test case files (in/out pairs), config.json (time limit, memory limit, tags, difficulty, visibility)
+- [ ] **IMEX-02**: Problem ZIP export — download any problem as .zip with same structure, suitable for re-import
+- [ ] **IMEX-03**: User CSV import — upload CSV with columns: username, email, display_name, role; validate format, check duplicates, generate random passwords
+- [ ] **IMEX-04**: User CSV export — export user list with roles and status; exclude password hashes
+- [ ] **IMEX-05**: Import validation — validate archive/CSV structure before processing; return clear error messages for each issue
+
+### Judge Concurrency
+
+- [ ] **JCON-01**: Priority submission queue — contest submissions routed to `submissions:contest` Redis stream with higher priority; workers consume from contest stream first, then normal stream
+- [ ] **JCON-02**: Queue monitoring API endpoint — returns current queue depth (contest + normal), active judge count, average wait time
+- [ ] **JCON-03**: Configurable worker concurrency — max concurrent judgements per worker configurable via environment variable
+
+### Fault Tolerance
+
+- [ ] **FTOL-01**: Circuit breaker for external dependencies (Redis, judge worker callback) — open after N consecutive failures, half-open after timeout, close on success
+- [ ] **FTOL-02**: Configurable retry policies — exponential backoff with jitter for all retry-able operations; max retries configurable
+- [ ] **FTOL-03**: DLQ monitoring — API endpoint listing dead letter queue items with metadata; manual retry capability for individual items
+
+### Data Migration
+
+- [ ] **MIGR-01**: UOJ schema mapping — complete mapping table from UOJ MySQL tables to AlgoMaster PostgreSQL schema
+- [ ] **MIGR-02**: User migration — map UOJ users (varchar username) to AlgoMaster users (UUID); generate new passwords; assign to default organization
+- [ ] **MIGR-03**: Problem migration — migrate UOJ problems with test cases; map integer IDs to UUIDs via mapping table
+- [ ] **MIGR-04**: Submission migration — migrate historical submissions with status, score, runtime; map all foreign key IDs
+- [ ] **MIGR-05**: Blog migration — migrate UOJ blog posts to AlgoMaster blog_* tables
+- [ ] **MIGR-06**: Migration CLI tool — standalone binary that reads UOJ MySQL dump, transforms, writes to PostgreSQL; idempotent, re-runnable
+
+## v2 Requirements
+
+### Architecture
+
+- **ARCH-06**: Frontend feature-based directory reorganization
+
+### Contest
+
+- **CONT-04**: Virtual contest — start any past contest with personal timer and simulated experience
+- **CONT-05**: Practice mode — browse contest problems without timer
+- **CONT-06**: Contest cloning — duplicate contest settings and problems
+- **CONT-07**: Timer resilience — server-time-based timer that survives browser refresh
+
+### Resilience
+
+- **FTOL-04**: Graceful shutdown — drain in-flight requests before terminating process
+
+### Documentation
+
+- **DOC-01**: OpenAPI/Swagger documentation for all API endpoints
+- **DOC-02**: Deployment guide (Docker Compose production setup)
+- **DOC-03**: User guide (student, teacher, admin workflows)
+
+### Import/Export
+
+- **IMEX-06**: Batch problem import (multiple problems in one archive)
+- **IMEX-07**: Codeforces Polygon format import
+
+## Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Mobile native app | Web-first responsive is sufficient |
+| OAuth/social login | Email/password sufficient for educational use |
+| Internationalization (i18n) | Chinese-only for now |
+| Microservices architecture | Monorepo modularization is sufficient |
+| Team contests | Too complex, not needed for educational use |
+| Kubernetes deployment | Docker Compose sufficient for institution scale |
+| Real-time chat (general) | DMs + contest chat cover the need |
+| LDAP/AD integration | Not needed for educational context |
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| ARCH-01 | Phase 1 | Pending |
+| ARCH-02 | Phase 1 | Pending |
+| ARCH-03 | Phase 1 | Pending |
+| ARCH-04 | Phase 2-4 | Pending |
+| ARCH-05 | Phase 2-4 | Pending |
+| SEC-01 | Phase 5 | Pending |
+| SEC-02 | Phase 5 | Pending |
+| SEC-03 | Phase 5 | Pending |
+| SEC-04 | Phase 5 | Pending |
+| SEC-05 | Phase 5 | Pending |
+| CICD-01 | Phase 6 | Pending |
+| CICD-02 | Phase 6 | Pending |
+| CICD-03 | Phase 6 | Pending |
+| CICD-04 | Phase 6 | Pending |
+| CICD-05 | Phase 6 | Pending |
+| OBS-01 | Phase 6 | Pending |
+| OBS-02 | Phase 6 | Pending |
+| OBS-03 | Phase 6 | Pending |
+| TEST-01 | Phase 7 | Pending |
+| TEST-02 | Phase 7 | Pending |
+| TEST-03 | Phase 7 | Pending |
+| TEST-04 | Phase 7 | Pending |
+| TEST-05 | Phase 7 | Pending |
+| CONT-01 | Phase 8 | Pending |
+| CONT-02 | Phase 8 | Pending |
+| CONT-03 | Phase 8 | Pending |
+| IMEX-01 | Phase 9 | Pending |
+| IMEX-02 | Phase 9 | Pending |
+| IMEX-03 | Phase 9 | Pending |
+| IMEX-04 | Phase 9 | Pending |
+| IMEX-05 | Phase 9 | Pending |
+| JCON-01 | Phase 10 | Pending |
+| JCON-02 | Phase 10 | Pending |
+| JCON-03 | Phase 10 | Pending |
+| FTOL-01 | Phase 11 | Pending |
+| FTOL-02 | Phase 11 | Pending |
+| FTOL-03 | Phase 11 | Pending |
+| MIGR-01 | Phase 12 | Pending |
+| MIGR-02 | Phase 12 | Pending |
+| MIGR-03 | Phase 12 | Pending |
+| MIGR-04 | Phase 12 | Pending |
+| MIGR-05 | Phase 12 | Pending |
+| MIGR-06 | Phase 12 | Pending |
+
+**Coverage:**
+- v1 requirements: 40 total
+- Mapped to phases: 40
+- Unmapped: 0 ✓
+
+---
+*Requirements defined: 2026-04-13*
+*Last updated: 2026-04-13 after initial definition*
