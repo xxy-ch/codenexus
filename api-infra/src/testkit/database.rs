@@ -1,0 +1,34 @@
+use sqlx::PgPool;
+use anyhow::Result;
+use testcontainers::runners::AsyncRunner;
+
+/// A PostgreSQL test container managed by testcontainers.
+pub struct PgTestContainer {
+    container: testcontainers::ContainerAsync<testcontainers_modules::postgres::Postgres>,
+}
+
+impl PgTestContainer {
+    /// Start a new PostgreSQL test container.
+    pub async fn start() -> Result<Self> {
+        let container = testcontainers_modules::postgres::Postgres::default()
+            .start()
+            .await?;
+        Ok(Self { container })
+    }
+
+    /// Get the connection URL for this container.
+    pub async fn connection_url(&self) -> String {
+        let port = self.container.get_host_port_ipv4(5432).await.expect("Failed to get PG port");
+        format!("postgres://postgres:postgres@127.0.0.1:{port}/postgres")
+    }
+
+    /// Create a connection pool for this container.
+    pub async fn create_pool(&self) -> Result<PgPool> {
+        let url = self.connection_url().await;
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .max_connections(5)
+            .connect(&url)
+            .await?;
+        Ok(pool)
+    }
+}
