@@ -1,9 +1,9 @@
+use crate::AppState;
+use axum::{extract::State, http::StatusCode, response::Json, Extension};
 use domain_users::{
     models::{LoginRequest as DbLoginRequest, RefreshTokenRequest, RegisterRequest},
     service::UserService,
 };
-use crate::AppState;
-use axum::{extract::State, http::StatusCode, response::Json, Extension};
 use shared::models::{
     Claims, LoginRequest, LoginResponse, RefreshRequest, RefreshResponse, UserPublic,
 };
