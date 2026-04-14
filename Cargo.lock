@@ -701,6 +701,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "domain-community"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "api-infra",
+ "async-trait",
+ "axum",
+ "chrono",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "uuid",
+]
+
+[[package]]
 name = "domain-problems"
 version = "0.1.0"
 dependencies = [
@@ -708,6 +724,22 @@ dependencies = [
  "api-infra",
  "axum",
  "chrono",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "uuid",
+]
+
+[[package]]
+name = "domain-search"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "api-infra",
+ "axum",
+ "chrono",
+ "regex",
  "serde",
  "serde_json",
  "shared",

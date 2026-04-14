@@ -1,0 +1,68 @@
+use super::models::*;
+use super::service::SearchService;
+use api_infra::middleware::auth::AuthExtractor;
+use api_infra::state::AppState;
+use axum::{
+    extract::{Query, State},
+    Json, Router,
+};
+use shared::models::role::Role;
+
+fn is_teacher_plus(role: &str) -> bool {
+    role.parse::<Role>()
+        .map(|r| r.is_higher_or_equal(Role::Teacher))
+        .unwrap_or(false)
+}
+
+pub async fn search(
+    State(state): State<AppState>,
+    Query(query): Query<SearchQuery>,
+    auth: Option<AuthExtractor>,
+) -> Result<Json<SearchResponse>, axum::http::StatusCode> {
+    let pool = state.db_pool.clone();
+    let service = SearchService::with_redis(pool.clone(), &state.redis_url)
+        .unwrap_or_else(|_| SearchService::new(pool));
+
+    // Extract tenant info from claims if authenticated
+    let (school_id, teacher_plus) = auth
+        .as_ref()
+        .map(|AuthExtractor(claims)| (Some(claims.school_id), is_teacher_plus(&claims.role)))
+        .unwrap_or((None, false));
+
+    // Save recent search for authenticated users
+    if let (Some(AuthExtractor(claims)), Some(q)) = (auth, query.q.as_ref()) {
+        if !q.is_empty() {
+            let _ = service.save_recent_search(claims.sub, q).await;
+        }
+    }
+
+    service
+        .search_tenant_aware(query, school_id, teacher_plus)
+        .await
+        .map(Json)
+        .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)
+}
+
+pub async fn search_suggestions(
+    State(state): State<AppState>,
+    Query(params): Query<std::collections::HashMap<String, String>>,
+    _auth: Option<AuthExtractor>,
+) -> Result<Json<SearchSuggestionsResponse>, axum::http::StatusCode> {
+    let query = params.get("q").map(String::as_str).unwrap_or("");
+
+    let pool = state.db_pool.clone();
+    let service = SearchService::with_redis(pool.clone(), &state.redis_url)
+        .unwrap_or_else(|_| SearchService::new(pool));
+
+    service
+        .get_suggestions(query, None)
+        .await
+        .map(Json)
+        .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)
+}
+
+pub fn search_router() -> Router<AppState> {
+    Router::new()
+        .route("/", axum::routing::get(search))
+        .route("/suggestions", axum::routing::get(search_suggestions))
+}
