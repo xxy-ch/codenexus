@@ -10,7 +10,6 @@ mod messages;
 mod middleware;
 mod notifications;
 mod plagiarism;
-mod problems;
 mod rbac;
 mod redis;
 mod search;
@@ -153,7 +152,7 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
     let protected_router = Router::new()
         // Protected routes
         .nest("/users", users::user_router())
-        .nest("/problems", problems::problems_router())
+        .nest("/problems", domain_problems::problems_router())
         .nest("/contests", contests::contests_router())
         .nest("/leaderboard", leaderboard::leaderboard_router())
         .nest("/submissions", submissions::submissions_router())

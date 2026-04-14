@@ -10,7 +10,6 @@ pub mod messages;
 pub mod middleware;
 pub mod notifications;
 pub mod plagiarism;
-pub mod problems;
 pub mod rbac;
 pub mod redis;
 pub mod search;
