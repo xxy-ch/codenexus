@@ -51,7 +51,9 @@ async fn websocket_handler_inner(
 
     // Enforce per-user connection limit
     let sender_clone = tx.clone();
-    match server.add_client(client_id, user_id, school_id, sender_clone).await {
+    // TODO: extract real client IP from ConnectInfo<SocketAddr>
+    let placeholder_ip = std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1));
+    match server.add_client(client_id, user_id, school_id, placeholder_ip, sender_clone).await {
         AddClientResult::Added => {}
         AddClientResult::LimitExceeded(max) => {
             tracing::warn!(
@@ -62,6 +64,17 @@ async fn websocket_handler_inner(
             let _ = tx.send(serde_json::to_string(&WebSocketMessage::Error {
                 code: "CONNECTION_LIMIT".to_string(),
                 message: format!("Maximum concurrent connections ({}) exceeded", max),
+            }).unwrap_or_default());
+            return;
+        }
+        AddClientResult::IpLimitExceeded(max) => {
+            tracing::warn!(
+                "WebSocket connection rejected for IP: limit of {} exceeded",
+                max
+            );
+            let _ = tx.send(serde_json::to_string(&WebSocketMessage::Error {
+                code: "IP_CONNECTION_LIMIT".to_string(),
+                message: format!("Maximum concurrent IP connections ({}) exceeded", max),
             }).unwrap_or_default());
             return;
         }
