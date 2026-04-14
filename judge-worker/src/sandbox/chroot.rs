@@ -4,8 +4,6 @@ use std::{fs, path::Path, path::PathBuf};
 
 const SANDBOX_USER: Uid = Uid::from_raw(1000);
 const SANDBOX_GROUP: Gid = Gid::from_raw(1000);
-const SANDBOX_ROOT: &str = "/var/lib/onlinejudge/sandbox";
-
 pub struct ChrootEnvironment {
     pub root_path: PathBuf,
     pub original_pid: i32,

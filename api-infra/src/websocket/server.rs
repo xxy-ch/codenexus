@@ -5,6 +5,14 @@ use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 use uuid::Uuid;
 
+/// Type alias for the client entry stored in the connection map.
+type ClientEntry = (
+    Uuid,
+    i64,
+    IpAddr,
+    tokio::sync::mpsc::UnboundedSender<String>,
+);
+
 /// Maximum concurrent WebSocket connections per user
 const MAX_CONNECTIONS_PER_USER: usize = 5;
 /// Maximum concurrent WebSocket connections per IP address
@@ -16,9 +24,7 @@ const MAX_TOPICS_PER_CLIENT: usize = 16;
 #[derive(Clone)]
 pub struct WebSocketServer {
     /// Connected clients: client_id -> (user_id, school_id, ip_addr, sender)
-    clients: Arc<
-        RwLock<HashMap<Uuid, (Uuid, i64, IpAddr, tokio::sync::mpsc::UnboundedSender<String>)>>,
-    >,
+    clients: Arc<RwLock<HashMap<Uuid, ClientEntry>>>,
 
     /// User subscriptions: user_id -> vec of client_ids
     user_connections: Arc<RwLock<HashMap<Uuid, Vec<Uuid>>>>,
@@ -421,7 +427,9 @@ mod tests {
         // The next one should be rejected
         let extra_client = Uuid::new_v4();
         let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
-        let result = server.add_client(extra_client, user_id, 1, ip_addr, tx).await;
+        let result = server
+            .add_client(extra_client, user_id, 1, ip_addr, tx)
+            .await;
         assert!(matches!(
             result,
             AddClientResult::LimitExceeded(MAX_CONNECTIONS_PER_USER)
@@ -461,7 +469,10 @@ mod tests {
             result,
             AddClientResult::IpLimitExceeded(MAX_CONNECTIONS_PER_IP)
         ));
-        assert_eq!(server.ip_connection_count(ip_addr).await, MAX_CONNECTIONS_PER_IP);
+        assert_eq!(
+            server.ip_connection_count(ip_addr).await,
+            MAX_CONNECTIONS_PER_IP
+        );
         assert_eq!(server.user_connection_count(extra_user).await, 0);
 
         server.remove_client(client_ids[0]).await;

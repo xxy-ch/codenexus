@@ -1,6 +1,6 @@
 #[cfg(test)]
-mod tests {
-    use super::super::*;
+mod processor_tests {
+    use crate::queue::*;
 
     #[test]
     fn test_submission_message_structure() {
@@ -35,7 +35,8 @@ int main() {
     cout << "Hello" << endl;
     return 0;
 }
-"#.to_string(),
+"#
+            .to_string(),
             time_limit_ms: 2000,
             memory_limit_mb: 512,
         };
@@ -143,17 +144,12 @@ int main() {
     fn test_time_limit_validation() {
         // Reasonable time limits
         assert!(1000 <= 60000); // 1 second to 1 minute
-        assert!(2000 <= 60000);
-        assert!(5000 <= 60000);
     }
 
     #[test]
     fn test_memory_limit_validation() {
         // Reasonable memory limits (in MB)
         assert!(64 <= 1024); // 64MB to 1GB
-        assert!(128 <= 1024);
-        assert!(256 <= 1024);
-        assert!(512 <= 1024);
     }
 
     #[test]
@@ -161,11 +157,10 @@ int main() {
         let languages = vec!["c", "cpp", "python3", "rust", "go", "java"];
 
         for lang in languages {
-            let valid = match lang {
-                "c" | "cpp" | "python3" | "rust" | "go" | "java" => true,
-                _ => false,
-            };
-            assert!(valid);
+            assert!(matches!(
+                lang,
+                "c" | "cpp" | "python3" | "rust" | "go" | "java"
+            ));
         }
     }
 

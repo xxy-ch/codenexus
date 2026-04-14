@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use std::{fs, io::Write, path::Path, path::PathBuf, time::Duration};
-use tracing::{debug, error, info};
+use std::{fs, path::Path, path::PathBuf};
+use tracing::{debug, info};
 
 use crate::sandbox::SandboxConfig;
 
@@ -29,7 +29,10 @@ impl CgroupController {
             pids_max: config.pids_max,
         };
 
-        Ok(Self { cgroup_path, config: controller_config })
+        Ok(Self {
+            cgroup_path,
+            config: controller_config,
+        })
     }
 
     pub fn create(&self) -> Result<()> {
@@ -44,16 +47,16 @@ impl CgroupController {
             "cpu,memory,pids",
         )
         .with_context(|| "Failed to set cgroup controllers")?;
-        fs::write(self.cgroup_path.join("cpu.max"), &format!("{}", cpu_quota))
+        fs::write(self.cgroup_path.join("cpu.max"), format!("{}", cpu_quota))
             .with_context(|| "Failed to set CPU quota")?;
         fs::write(
             self.cgroup_path.join("memory.max"),
-            &format!("{}", self.config.memory_limit_bytes),
+            format!("{}", self.config.memory_limit_bytes),
         )
         .with_context(|| "Failed to set memory limit")?;
         fs::write(
             self.cgroup_path.join("pids.max"),
-            &format!("{}", self.config.pids_max),
+            format!("{}", self.config.pids_max),
         )
         .with_context(|| "Failed to set PIDs max")?;
 
@@ -88,46 +91,47 @@ impl CgroupController {
     /// Get current memory usage in bytes from cgroup
     pub fn get_memory_usage(&self) -> Result<u64> {
         let memory_file = self.cgroup_path.join("memory.current");
-        
+
         if !memory_file.exists() {
             return Ok(0);
         }
-        
+
         let content = fs::read_to_string(&memory_file)
             .with_context(|| format!("Failed to read memory usage from {:?}", memory_file))?;
-        
+
         let usage: u64 = content
             .trim()
             .parse()
             .with_context(|| "Failed to parse memory usage value")?;
-        
+
         Ok(usage)
     }
 
     /// Get maximum memory usage in bytes from cgroup
     pub fn get_max_memory_usage(&self) -> Result<u64> {
         let memory_file = self.cgroup_path.join("memory.peak");
-        
+
         if !memory_file.exists() {
             return Ok(0);
         }
-        
+
         let content = fs::read_to_string(&memory_file)
             .with_context(|| format!("Failed to read max memory usage from {:?}", memory_file))?;
-        
+
         let usage: u64 = content
             .trim()
             .parse()
             .with_context(|| "Failed to parse max memory usage value")?;
-        
+
         Ok(usage)
     }
 
     /// Clean up cgroup directory
     pub fn destroy(&self) -> Result<()> {
         if self.cgroup_path.exists() {
-            fs::remove_dir_all(&self.cgroup_path)
-                .with_context(|| format!("Failed to remove cgroup directory: {:?}", self.cgroup_path))?;
+            fs::remove_dir_all(&self.cgroup_path).with_context(|| {
+                format!("Failed to remove cgroup directory: {:?}", self.cgroup_path)
+            })?;
             debug!("Destroyed cgroup at {:?}", self.cgroup_path);
         }
         Ok(())

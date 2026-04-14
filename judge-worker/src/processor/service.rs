@@ -42,7 +42,10 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
             match compile_code(&source_file, &submission.language, &work_dir).await {
                 Ok(path) => Some(path),
                 Err(err) => {
-                    error!("Compilation failed for submission {}: {}", submission.submission_id, err);
+                    error!(
+                        "Compilation failed for submission {}: {}",
+                        submission.submission_id, err
+                    );
                     return Ok(JudgeResult {
                         submission_id: submission.submission_id,
                         status: "compilation_error".to_string(),
@@ -64,7 +67,14 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
     let mut test_case_results = Vec::with_capacity(test_cases.len());
 
     for test_case in &test_cases {
-        let result = run_test_case(submission, &source_file, executable_path.as_deref(), test_case, &work_dir).await?;
+        let result = run_test_case(
+            submission,
+            &source_file,
+            executable_path.as_deref(),
+            test_case,
+            &work_dir,
+        )
+        .await?;
 
         if result.status != "accepted" && final_status == "accepted" {
             final_status = result.status.clone();
@@ -105,7 +115,7 @@ async fn create_work_dir(submission_id: i64) -> Result<PathBuf> {
     Ok(work_dir)
 }
 
-async fn save_source_code(work_dir: &PathBuf, submission: &SubmissionMessage) -> Result<PathBuf> {
+async fn save_source_code(work_dir: &Path, submission: &SubmissionMessage) -> Result<PathBuf> {
     let filename = match submission.language.as_str() {
         "python3" => "solution.py",
         "javascript" => "solution.js",
@@ -147,44 +157,54 @@ async fn compile_code(source_file: &Path, language: &str, work_dir: &Path) -> Re
     };
 
     let output = match language {
-        "c" => Command::new("gcc")
-            .arg(source_file)
-            .arg("-O2")
-            .arg("-o")
-            .arg(&output_path)
-            .current_dir(work_dir)
-            .output()
-            .await?,
-        "cpp" => Command::new("g++")
-            .arg(source_file)
-            .arg("-O2")
-            .arg("-std=c++17")
-            .arg("-o")
-            .arg(&output_path)
-            .current_dir(work_dir)
-            .output()
-            .await?,
-        "rust" => Command::new("rustc")
-            .arg(source_file)
-            .arg("-O")
-            .arg("-o")
-            .arg(&output_path)
-            .current_dir(work_dir)
-            .output()
-            .await?,
-        "go" => Command::new("go")
-            .arg("build")
-            .arg("-o")
-            .arg(&output_path)
-            .arg(source_file)
-            .current_dir(work_dir)
-            .output()
-            .await?,
-        "java" => Command::new("javac")
-            .arg(source_file)
-            .current_dir(work_dir)
-            .output()
-            .await?,
+        "c" => {
+            Command::new("gcc")
+                .arg(source_file)
+                .arg("-O2")
+                .arg("-o")
+                .arg(&output_path)
+                .current_dir(work_dir)
+                .output()
+                .await?
+        }
+        "cpp" => {
+            Command::new("g++")
+                .arg(source_file)
+                .arg("-O2")
+                .arg("-std=c++17")
+                .arg("-o")
+                .arg(&output_path)
+                .current_dir(work_dir)
+                .output()
+                .await?
+        }
+        "rust" => {
+            Command::new("rustc")
+                .arg(source_file)
+                .arg("-O")
+                .arg("-o")
+                .arg(&output_path)
+                .current_dir(work_dir)
+                .output()
+                .await?
+        }
+        "go" => {
+            Command::new("go")
+                .arg("build")
+                .arg("-o")
+                .arg(&output_path)
+                .arg(source_file)
+                .current_dir(work_dir)
+                .output()
+                .await?
+        }
+        "java" => {
+            Command::new("javac")
+                .arg(source_file)
+                .current_dir(work_dir)
+                .output()
+                .await?
+        }
         _ => anyhow::bail!("Unsupported compiled language: {}", language),
     };
 
@@ -202,7 +222,14 @@ async fn run_test_case(
     test_case: &TestCase,
     work_dir: &Path,
 ) -> Result<TestCaseResult> {
-    let output = execute_program(submission, source_file, executable_path, &test_case.input, work_dir).await?;
+    let output = execute_program(
+        submission,
+        source_file,
+        executable_path,
+        &test_case.input,
+        work_dir,
+    )
+    .await?;
 
     let status = if output.status != "accepted" {
         output.status.clone()
@@ -253,8 +280,8 @@ async fn execute_program(
     let cgroup = crate::sandbox::cgroups::CgroupController::new(
         &format!("judge-{}-{}", std::process::id(), submission.submission_id),
         &crate::sandbox::SandboxConfig {
-            cpu_time_limit_ms: submission.time_limit_ms.max(1) as u64,
-            memory_limit_bytes: (submission.memory_limit_mb as u64) * 1024 * 1024,
+            cpu_time_limit_ms: submission.time_limit_ms.max(1),
+            memory_limit_bytes: submission.memory_limit_mb * 1024 * 1024,
             pids_max: 64,
             ..Default::default()
         },
@@ -278,7 +305,9 @@ async fn execute_program(
         .stderr(Stdio::from(stderr));
 
     let started = Instant::now();
-    let mut child = command.spawn().context("Failed to start submission process")?;
+    let mut child = command
+        .spawn()
+        .context("Failed to start submission process")?;
 
     if let (Some(ref cg), Some(pid)) = (&cgroup, child.id()) {
         let _ = cg.add_process(pid as i32);
@@ -400,5 +429,11 @@ fn build_runtime_command(
 }
 
 fn normalize_output(output: &str) -> String {
-    output.lines().map(str::trim_end).collect::<Vec<_>>().join("\n").trim().to_string()
+    output
+        .lines()
+        .map(str::trim_end)
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim()
+        .to_string()
 }
