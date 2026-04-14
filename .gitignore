@@ -12,6 +12,7 @@ release/
 .idea/
 .sisyphus/
 .github/
+!.github/workflows/
 *.swp
 *.swo
 *~
