@@ -14,7 +14,6 @@ mod rbac;
 mod redis;
 mod search;
 mod submissions;
-mod users;
 mod websocket;
 
 use api_infra::state::AppState;
@@ -151,7 +150,7 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
 
     let protected_router = Router::new()
         // Protected routes
-        .nest("/users", users::user_router())
+        .nest("/users", domain_users::user_router())
         .nest("/problems", domain_problems::problems_router())
         .nest("/contests", contests::contests_router())
         .nest("/leaderboard", leaderboard::leaderboard_router())

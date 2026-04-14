@@ -87,11 +87,14 @@ name = "api"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "api-infra",
  "async-trait",
  "axum",
  "bcrypt",
  "chrono",
  "deadpool-redis",
+ "domain-problems",
+ "domain-users",
  "dotenvy",
  "env_logger",
  "futures-util",
@@ -118,6 +121,29 @@ dependencies = [
  "tower_governor",
  "tracing",
  "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
+name = "api-infra"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "chrono",
+ "deadpool-redis",
+ "jsonwebtoken",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "testcontainers",
+ "testcontainers-modules",
+ "tokio",
+ "tokio-test",
+ "tower",
+ "tracing",
  "uuid",
 ]
 
@@ -672,6 +698,38 @@ dependencies = [
  "base64 0.21.7",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "domain-problems"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "api-infra",
+ "axum",
+ "chrono",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "uuid",
+]
+
+[[package]]
+name = "domain-users"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "api-infra",
+ "async-trait",
+ "axum",
+ "bcrypt",
+ "chrono",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "uuid",
 ]
 
 [[package]]

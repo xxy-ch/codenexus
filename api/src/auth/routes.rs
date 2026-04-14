@@ -1,4 +1,4 @@
-use crate::users::{
+use domain_users::{
     models::{LoginRequest as DbLoginRequest, RefreshTokenRequest, RegisterRequest},
     service::UserService,
 };
@@ -137,7 +137,7 @@ pub async fn register(
 ) -> Result<
     (
         axum::http::HeaderMap,
-        Json<crate::users::models::AuthResponse>,
+        Json<domain_users::models::AuthResponse>,
     ),
     StatusCode,
 > {
@@ -182,7 +182,7 @@ pub async fn register(
 
     Ok((
         headers,
-        Json(crate::users::models::AuthResponse {
+        Json(domain_users::models::AuthResponse {
             token,
             refresh_token,
             user: profile,

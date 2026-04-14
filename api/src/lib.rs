@@ -14,7 +14,6 @@ pub mod rbac;
 pub mod redis;
 pub mod search;
 pub mod submissions;
-pub mod users;
 pub mod websocket;
 
 pub use auth::*;
