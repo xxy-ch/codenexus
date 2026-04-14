@@ -3,6 +3,8 @@ use jsonwebtoken::{decode, encode, Algorithm, DecodingKey, EncodingKey, Header, 
 use shared::models::Claims;
 use uuid::Uuid;
 
+use api_infra::traits::token_service::TokenService;
+
 const ACCESS_TOKEN_EXPIRATION_HOURS: i64 = 4;
 const REFRESH_TOKEN_EXPIRATION_DAYS: i64 = 30;
 
@@ -73,6 +75,26 @@ impl JwtService {
 
     pub fn validate_token(&self, token: &str) -> Result<Claims, String> {
         self.decode_token(token).map_err(|e| e.to_string())
+    }
+}
+
+impl TokenService for JwtService {
+    fn generate_access_token(
+        &self,
+        user: &shared::models::User,
+    ) -> Result<String, jsonwebtoken::errors::Error> {
+        JwtService::generate_access_token(self, user)
+    }
+
+    fn generate_refresh_token(
+        &self,
+        user: &shared::models::User,
+    ) -> Result<String, jsonwebtoken::errors::Error> {
+        JwtService::generate_refresh_token(self, user)
+    }
+
+    fn validate_token(&self, token: &str) -> Result<Claims, String> {
+        JwtService::validate_token(self, token)
     }
 }
 

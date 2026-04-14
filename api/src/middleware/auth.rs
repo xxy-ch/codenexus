@@ -31,21 +31,19 @@ where
                     .get("cookie")
                     .and_then(|c| c.to_str().ok())
                     .and_then(|c| {
-                        c.split(';')
-                            .find_map(|cookie| {
-                                let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
-                                if parts.len() == 2 && parts[0] == "access_token" {
-                                    Some(parts[1].to_string())
-                                } else {
-                                    None
-                                }
-                            })
+                        c.split(';').find_map(|cookie| {
+                            let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
+                            if parts.len() == 2 && parts[0] == "access_token" {
+                                Some(parts[1].to_string())
+                            } else {
+                                None
+                            }
+                        })
                     })
             })
             .ok_or(StatusCode::UNAUTHORIZED)?;
 
-        let jwt_secret =
-            std::env::var("JWT_SECRET").map_err(|_| StatusCode::UNAUTHORIZED)?;
+        let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| StatusCode::UNAUTHORIZED)?;
         let jwt_service = JwtService::new(&jwt_secret);
 
         let claims = jwt_service
@@ -74,15 +72,14 @@ pub async fn auth_middleware(
                 .get("cookie")
                 .and_then(|c| c.to_str().ok())
                 .and_then(|c| {
-                    c.split(';')
-                        .find_map(|cookie| {
-                            let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
-                            if parts.len() == 2 && parts[0] == "access_token" {
-                                Some(parts[1].to_string())
-                            } else {
-                                None
-                            }
-                        })
+                    c.split(';').find_map(|cookie| {
+                        let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
+                        if parts.len() == 2 && parts[0] == "access_token" {
+                            Some(parts[1].to_string())
+                        } else {
+                            None
+                        }
+                    })
                 })
         });
 
@@ -132,10 +129,11 @@ mod tests {
     }
 
     fn create_test_app() -> Router {
+        let jwt_service = crate::auth::JwtService::new("test_secret_key");
         let state = crate::AppState {
             db_pool: sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
             redis_pool: None,
-            jwt_service: JwtService::new("test_secret_key"),
+            jwt_service: std::sync::Arc::new(jwt_service),
             redis_url: String::new(),
             jwt_secret: "test_secret_key".to_string(),
             worker_secret: "test_worker_secret".to_string(),
@@ -143,7 +141,10 @@ mod tests {
         };
         Router::new()
             .route("/protected", get(protected_handler))
-            .layer(middleware::from_fn_with_state(state.clone(), auth_middleware))
+            .layer(middleware::from_fn_with_state(
+                state.clone(),
+                auth_middleware,
+            ))
             .with_state(state)
     }
 

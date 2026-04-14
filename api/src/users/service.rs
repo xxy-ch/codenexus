@@ -1,16 +1,17 @@
 use super::models::*;
-use crate::auth::JwtService;
+use api_infra::traits::token_service::TokenService;
 use anyhow::Result;
 use sqlx::PgPool;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub struct UserService {
     pool: PgPool,
-    jwt_service: JwtService,
+    jwt_service: Arc<dyn TokenService>,
 }
 
 impl UserService {
-    pub fn new(pool: PgPool, jwt_service: JwtService) -> Self {
+    pub fn new(pool: PgPool, jwt_service: Arc<dyn TokenService>) -> Self {
         Self { pool, jwt_service }
     }
 
@@ -30,24 +31,22 @@ impl UserService {
         }
 
         // Check if username already exists
-        let existing_user = sqlx::query_scalar::<_, Uuid>(
-            "SELECT id FROM users WHERE username = $1"
-        )
-        .bind(&req.username)
-        .fetch_optional(&self.pool)
-        .await?;
+        let existing_user =
+            sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE username = $1")
+                .bind(&req.username)
+                .fetch_optional(&self.pool)
+                .await?;
 
         if existing_user.is_some() {
             return Err(anyhow::anyhow!("Username already exists"));
         }
 
         if let Some(user_code) = &req.user_code {
-            let existing_user_code = sqlx::query_scalar::<_, Uuid>(
-                "SELECT id FROM users WHERE user_code = $1"
-            )
-            .bind(user_code)
-            .fetch_optional(&self.pool)
-            .await?;
+            let existing_user_code =
+                sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE user_code = $1")
+                    .bind(user_code)
+                    .fetch_optional(&self.pool)
+                    .await?;
 
             if existing_user_code.is_some() {
                 return Err(anyhow::anyhow!("User code already exists"));
@@ -57,12 +56,11 @@ impl UserService {
         // Check if email already exists (if provided)
         if let Some(ref email) = req.email {
             if !email.is_empty() {
-                let existing_email = sqlx::query_scalar::<_, Uuid>(
-                    "SELECT id FROM users WHERE email = $1"
-                )
-                .bind(email)
-                .fetch_optional(&self.pool)
-                .await?;
+                let existing_email =
+                    sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE email = $1")
+                        .bind(email)
+                        .fetch_optional(&self.pool)
+                        .await?;
 
                 if existing_email.is_some() {
                     return Err(anyhow::anyhow!("Email already exists"));
@@ -74,7 +72,10 @@ impl UserService {
         let password_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)?;
 
         // Create display_name from username if not provided
-        let display_name = req.display_name.clone().unwrap_or_else(|| req.username.clone());
+        let display_name = req
+            .display_name
+            .clone()
+            .unwrap_or_else(|| req.username.clone());
 
         // Create user
         let user_id = sqlx::query_scalar::<_, Uuid>(
@@ -109,12 +110,10 @@ impl UserService {
 
     pub async fn login(&self, req: LoginRequest) -> Result<AuthResponse> {
         // Get user by username
-        let user = sqlx::query_as::<_, User>(
-            "SELECT * FROM users WHERE username = $1"
-        )
-        .bind(&req.username)
-        .fetch_optional(&self.pool)
-        .await?;
+        let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE username = $1")
+            .bind(&req.username)
+            .fetch_optional(&self.pool)
+            .await?;
 
         let user = user.ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
 
@@ -125,7 +124,7 @@ impl UserService {
 
         // Get user role (canonical role from DB)
         let role = sqlx::query_scalar::<_, String>(
-            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1"
+            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1",
         )
         .bind(user.id)
         .fetch_one(&self.pool)
@@ -169,21 +168,21 @@ impl UserService {
 
     pub async fn refresh_token(&self, req: RefreshTokenRequest) -> Result<AuthResponse> {
         // Verify refresh token
-        let claims = self.jwt_service.validate_token(&req.refresh_token)
+        let claims = self
+            .jwt_service
+            .validate_token(&req.refresh_token)
             .map_err(|e| anyhow::anyhow!("Invalid refresh token: {}", e))?;
         let user_id = claims.sub;
 
         // Get user
-        let user = sqlx::query_as::<_, User>(
-            "SELECT * FROM users WHERE id = $1"
-        )
-        .bind(user_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&self.pool)
+            .await?;
 
         // Get user role (canonical role from DB)
         let role = sqlx::query_scalar::<_, String>(
-            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1"
+            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1",
         )
         .bind(user.id)
         .fetch_one(&self.pool)
@@ -226,16 +225,14 @@ impl UserService {
     }
 
     pub async fn get_user_profile(&self, user_id: Uuid) -> Result<UserProfile> {
-        let user = sqlx::query_as::<_, User>(
-            "SELECT * FROM users WHERE id = $1"
-        )
-        .bind(user_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&self.pool)
+            .await?;
 
         // Get user role (canonical role from DB)
         let role = sqlx::query_scalar::<_, String>(
-            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1"
+            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1",
         )
         .bind(user_id)
         .fetch_one(&self.pool)
@@ -256,7 +253,11 @@ impl UserService {
         })
     }
 
-    pub async fn update_user_profile(&self, user_id: Uuid, updates: UserProfileUpdate) -> Result<UserProfile> {
+    pub async fn update_user_profile(
+        &self,
+        user_id: Uuid,
+        updates: UserProfileUpdate,
+    ) -> Result<UserProfile> {
         // Build dynamic update query
         let mut update_parts = vec![];
         let mut param_count = 0;
@@ -268,7 +269,10 @@ impl UserService {
 
         if updates.display_name.is_some() {
             param_count += 1;
-            update_parts.push(format!("display_name = COALESCE(${}, display_name)", param_count));
+            update_parts.push(format!(
+                "display_name = COALESCE(${}, display_name)",
+                param_count
+            ));
         }
 
         if updates.campus_id.is_some() {
@@ -327,7 +331,10 @@ impl UserService {
             _ => "u.created_at DESC",
         };
 
-        let search = query.search.as_ref().map(|value| format!("%{}%", value.trim()));
+        let search = query
+            .search
+            .as_ref()
+            .map(|value| format!("%{}%", value.trim()));
         let role = query.role.as_deref();
         let status = query.status.as_deref();
 
@@ -388,7 +395,12 @@ impl UserService {
         .fetch_one(&self.pool)
         .await?;
 
-        Ok(AdminUserListResponse { users, total, page, limit })
+        Ok(AdminUserListResponse {
+            users,
+            total,
+            page,
+            limit,
+        })
     }
 
     pub async fn update_user_role(&self, user_id: Uuid, role: &str) -> Result<()> {
@@ -465,7 +477,7 @@ impl UserService {
             }
 
             let exists = sqlx::query_scalar::<_, Uuid>(
-                "SELECT id FROM users WHERE user_code = $1 OR username = $1"
+                "SELECT id FROM users WHERE user_code = $1 OR username = $1",
             )
             .bind(&user_code)
             .fetch_optional(&self.pool)
@@ -479,7 +491,10 @@ impl UserService {
                 continue;
             }
 
-            let password = entry.password.clone().unwrap_or_else(|| default_password.clone());
+            let password = entry
+                .password
+                .clone()
+                .unwrap_or_else(|| default_password.clone());
             let profile = self
                 .register(RegisterRequest {
                     user_code: Some(user_code.clone()),
@@ -509,7 +524,9 @@ impl UserService {
 
     fn validate_user_code(user_code: &str) -> Result<()> {
         if user_code.len() != 12 || !user_code.chars().all(|c| c.is_ascii_digit()) {
-            return Err(anyhow::anyhow!("User code must be a 12-digit numeric string"));
+            return Err(anyhow::anyhow!(
+                "User code must be a 12-digit numeric string"
+            ));
         }
 
         Ok(())

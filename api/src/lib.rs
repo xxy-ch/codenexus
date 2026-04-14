@@ -1,33 +1,27 @@
-pub mod db;
 pub mod auth;
-pub mod error;
-pub mod users;
-pub mod problems;
-pub mod submissions;
-pub mod contests;
-pub mod leaderboard;
-pub mod classes;
-pub mod websocket;
-pub mod discussions;
 pub mod blog;
-pub mod search;
-pub mod notifications;
+pub mod classes;
+pub mod contests;
+pub mod db;
+pub mod discussions;
+pub mod error;
+pub mod leaderboard;
 pub mod messages;
-pub mod plagiarism;
-pub mod redis;
 pub mod middleware;
+pub mod notifications;
+pub mod plagiarism;
+pub mod problems;
 pub mod rbac;
+pub mod redis;
+pub mod search;
+pub mod submissions;
+pub mod users;
+pub mod websocket;
 
-pub use db::*;
 pub use auth::*;
+pub use db::*;
 
-#[derive(Clone)]
-pub struct AppState {
-    pub db_pool: sqlx::PgPool,
-    pub redis_pool: Option<deadpool_redis::Pool>,
-    pub redis_url: String,
-    pub jwt_service: auth::JwtService,
-    pub jwt_secret: String,
-    pub worker_secret: String,
-    pub websocket_server: std::sync::Arc<websocket::WebSocketServer>,
-}
+pub use api_infra::state::AppState;
+
+#[cfg(test)]
+mod release_gate_tests;

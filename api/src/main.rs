@@ -18,6 +18,7 @@ mod submissions;
 mod users;
 mod websocket;
 
+use api_infra::state::AppState;
 use auth::JwtService;
 use axum::serve;
 use axum::{
@@ -36,17 +37,6 @@ use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use websocket::WebSocketServer;
-
-#[derive(Clone)]
-pub struct AppState {
-    pub db_pool: PgPool,
-    pub redis_pool: Option<RedisPool>,
-    pub redis_url: String,
-    pub jwt_service: JwtService,
-    pub jwt_secret: String,
-    pub worker_secret: String,
-    pub websocket_server: std::sync::Arc<WebSocketServer>,
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -84,7 +74,7 @@ async fn main() -> anyhow::Result<()> {
         db_pool,
         redis_pool,
         redis_url: config.redis_url.clone(),
-        jwt_service,
+        jwt_service: std::sync::Arc::new(jwt_service),
         jwt_secret: config.jwt_secret.clone(),
         worker_secret: config.worker_secret.clone(),
         websocket_server,
@@ -92,7 +82,8 @@ async fn main() -> anyhow::Result<()> {
 
     let app = create_router(state, config.clone());
 
-    let addr: SocketAddr = config.bind_address
+    let addr: SocketAddr = config
+        .bind_address
         .parse()
         .expect("Invalid API_BIND_ADDRESS format");
 
@@ -101,7 +92,11 @@ async fn main() -> anyhow::Result<()> {
     let listener = tokio::net::TcpListener::bind(addr).await?;
     info!("Server listening on {}", addr);
 
-    serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await?;
+    serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
     Ok(())
 }
 
