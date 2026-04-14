@@ -33,16 +33,17 @@ impl SubmissionService {
             .ok_or_else(|| anyhow::anyhow!("Invalid language"))?;
 
         if !self.is_language_enabled(normalized_language).await? {
-            return Err(anyhow::anyhow!("Selected language is disabled by judge settings"));
+            return Err(anyhow::anyhow!(
+                "Selected language is disabled by judge settings"
+            ));
         }
 
         // Validate problem exists
-        let problem_exists = sqlx::query_scalar::<_, bool>(
-            "SELECT EXISTS(SELECT 1 FROM problems WHERE id = $1)"
-        )
-        .bind(req.problem_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let problem_exists =
+            sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM problems WHERE id = $1)")
+                .bind(req.problem_id)
+                .fetch_one(&self.pool)
+                .await?;
 
         if !problem_exists {
             return Err(anyhow::anyhow!("Problem not found"));
@@ -72,7 +73,7 @@ impl SubmissionService {
                 memory_kb,
                 created_at,
                 updated_at
-            "#
+            "#,
         )
         .bind(user_id)
         .bind(req.problem_id)
@@ -82,7 +83,14 @@ impl SubmissionService {
         .await?;
 
         // Send to judge queue
-        self.queue_for_judging(submission.id, req.problem_id, user_id, &req.code, normalized_language).await?;
+        self.queue_for_judging(
+            submission.id,
+            req.problem_id,
+            user_id,
+            &req.code,
+            normalized_language,
+        )
+        .await?;
 
         Ok(submission)
     }
@@ -100,14 +108,20 @@ impl SubmissionService {
         .await?;
 
         let (c_enabled, cpp_enabled) = if let Some(row) = row {
-            (row.get::<bool, _>("c_enabled"), row.get::<bool, _>("cpp_enabled"))
+            (
+                row.get::<bool, _>("c_enabled"),
+                row.get::<bool, _>("cpp_enabled"),
+            )
         } else {
             let row = sqlx::query(
                 "SELECT c_enabled, cpp_enabled FROM judge_language_settings WHERE id = TRUE",
             )
             .fetch_one(&self.pool)
             .await?;
-            (row.get::<bool, _>("c_enabled"), row.get::<bool, _>("cpp_enabled"))
+            (
+                row.get::<bool, _>("c_enabled"),
+                row.get::<bool, _>("cpp_enabled"),
+            )
         };
 
         Ok(match language {
@@ -118,7 +132,11 @@ impl SubmissionService {
         })
     }
 
-    pub async fn get_submission(&self, submission_id: i64, user_id: Uuid) -> Result<SubmissionResponse> {
+    pub async fn get_submission(
+        &self,
+        submission_id: i64,
+        user_id: Uuid,
+    ) -> Result<SubmissionResponse> {
         let submission = sqlx::query(
             r#"
             SELECT
@@ -151,7 +169,7 @@ impl SubmissionService {
             JOIN problems p ON p.id = s.problem_id
             JOIN users u ON u.id = s.user_id
             WHERE s.id = $1 AND s.user_id = $2
-            "#
+            "#,
         )
         .bind(submission_id)
         .bind(user_id)
@@ -184,21 +202,24 @@ impl SubmissionService {
             JOIN test_cases tc ON tc.id = tcr.test_case_id
             WHERE tcr.submission_id = $1
             ORDER BY tc.order_index ASC, tcr.id ASC
-            "#
+            "#,
         )
         .bind(submission_id)
         .fetch_all(&self.pool)
         .await?;
 
-        let test_case_results = test_cases.into_iter().map(|tc| TestCaseResult {
-            id: tc.get("id"),
-            status: tc.get("status"),
-            expected_output: tc.get("expected_output"),
-            actual_output: tc.get("actual_output"),
-            error_message: tc.get("error_message"),
-            runtime_ms: tc.get("runtime_ms"),
-            memory_kb: tc.get("memory_kb"),
-        }).collect();
+        let test_case_results = test_cases
+            .into_iter()
+            .map(|tc| TestCaseResult {
+                id: tc.get("id"),
+                status: tc.get("status"),
+                expected_output: tc.get("expected_output"),
+                actual_output: tc.get("actual_output"),
+                error_message: tc.get("error_message"),
+                runtime_ms: tc.get("runtime_ms"),
+                memory_kb: tc.get("memory_kb"),
+            })
+            .collect();
 
         Ok(SubmissionResponse {
             id: submission.get("id"),
@@ -262,31 +283,29 @@ impl SubmissionService {
                 updated_at
             FROM submissions
             WHERE user_id = $1
-            "#
+            "#,
         );
-        let mut count_query = String::from(
-            "SELECT COUNT(*) FROM submissions WHERE user_id = $1"
-        );
+        let mut count_query = String::from("SELECT COUNT(*) FROM submissions WHERE user_id = $1");
 
         let mut param_count = 1;
         let mut conditions = vec![];
 
-        if let Some(problem_id) = problem_id {
+        if let Some(_problem_id) = problem_id {
             param_count += 1;
             conditions.push(format!(" AND problem_id = ${}", param_count));
         }
 
-        if let Some(status) = status_filter {
+        if let Some(_status) = status_filter {
             param_count += 1;
             conditions.push(format!(" AND status = ${}", param_count));
         }
 
-        if let Some(verdict) = verdict_filter {
+        if let Some(_verdict) = verdict_filter {
             param_count += 1;
             conditions.push(format!(" AND verdict = ${}", param_count));
         }
 
-        if let Some(language) = &language {
+        if let Some(_language) = &language {
             param_count += 1;
             conditions.push(format!(" AND language = ${}", param_count));
         }
@@ -295,7 +314,10 @@ impl SubmissionService {
         query.push_str(&condition_str);
         count_query.push_str(&condition_str);
 
-        query.push_str(&format!(" ORDER BY created_at DESC LIMIT {} OFFSET {}", limit, offset));
+        query.push_str(&format!(
+            " ORDER BY created_at DESC LIMIT {} OFFSET {}",
+            limit, offset
+        ));
 
         // Execute count query
         let total: i64 = sqlx::query_scalar(&count_query)
@@ -370,18 +392,16 @@ impl SubmissionService {
         language: &str,
     ) -> Result<()> {
         // Update status to "queued"
-        sqlx::query(
-            "UPDATE submissions SET status = 'queued', updated_at = NOW() WHERE id = $1"
-        )
-        .bind(submission_id)
-        .execute(&self.pool)
-        .await?;
+        sqlx::query("UPDATE submissions SET status = 'queued', updated_at = NOW() WHERE id = $1")
+            .bind(submission_id)
+            .execute(&self.pool)
+            .await?;
 
         // If Redis is configured, send to queue
         if let Some(redis_pool) = &self.redis_pool {
             // Fetch problem limits
             let problem = sqlx::query_as::<_, (i32, i32)>(
-                "SELECT time_limit_ms, memory_limit_kb FROM problems WHERE id = $1"
+                "SELECT time_limit_ms, memory_limit_kb FROM problems WHERE id = $1",
             )
             .bind(problem_id)
             .fetch_optional(&self.pool)
@@ -407,11 +427,7 @@ impl SubmissionService {
                         );
                     }
                     Err(e) => {
-                        tracing::error!(
-                            "Failed to queue submission {}: {}",
-                            submission_id,
-                            e
-                        );
+                        tracing::error!("Failed to queue submission {}: {}", submission_id, e);
                         // Revert status to pending
                         sqlx::query(
                             "UPDATE submissions SET status = 'pending', updated_at = NOW() WHERE id = $1"
@@ -434,13 +450,12 @@ impl SubmissionService {
 
     /// Get current submission status (for state machine validation)
     pub async fn get_submission_status(&self, submission_id: i64) -> Result<Option<String>> {
-        let row = sqlx::query_scalar::<_, Option<String>>(
-            "SELECT status FROM submissions WHERE id = $1"
-        )
-        .bind(submission_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .flatten();
+        let row =
+            sqlx::query_scalar::<_, Option<String>>("SELECT status FROM submissions WHERE id = $1")
+                .bind(submission_id)
+                .fetch_optional(&self.pool)
+                .await?
+                .flatten();
 
         Ok(row)
     }
@@ -449,9 +464,15 @@ impl SubmissionService {
     pub fn is_terminal_status(status: &str) -> bool {
         matches!(
             status,
-            "accepted" | "wrong_answer" | "runtime_error" | "compilation_error"
-                | "time_limit_exceeded" | "memory_limit_exceeded" | "system_error"
-                | "judged" | "failed"
+            "accepted"
+                | "wrong_answer"
+                | "runtime_error"
+                | "compilation_error"
+                | "time_limit_exceeded"
+                | "memory_limit_exceeded"
+                | "system_error"
+                | "judged"
+                | "failed"
         )
     }
 
@@ -467,9 +488,23 @@ impl SubmissionService {
         sqlx::query(
             "UPDATE submissions
              SET status = $1, verdict = $2, time_ms = $3, memory_kb = $4, updated_at = NOW()
-             WHERE id = $5"
+             WHERE id = $5",
         )
-        .bind(if status == "accepted" || status == "wrong_answer" || status == "runtime_error" || status == "time_limit_exceeded" || status == "memory_limit_exceeded" || status == "compile_error" { "judged" } else if status == "failed" { "failed" } else { status })
+        .bind(
+            if status == "accepted"
+                || status == "wrong_answer"
+                || status == "runtime_error"
+                || status == "time_limit_exceeded"
+                || status == "memory_limit_exceeded"
+                || status == "compile_error"
+            {
+                "judged"
+            } else if status == "failed" {
+                "failed"
+            } else {
+                status
+            },
+        )
         .bind(map_verdict(status))
         .bind(runtime_ms)
         .bind(memory_kb)
@@ -488,6 +523,7 @@ impl SubmissionService {
     }
 
     /// Store test case result for a submission
+    #[allow(clippy::too_many_arguments)]
     pub async fn store_test_case_result(
         &self,
         submission_id: i64,
@@ -513,7 +549,7 @@ impl SubmissionService {
                 time_ms = EXCLUDED.time_ms,
                 memory_kb = EXCLUDED.memory_kb
             RETURNING id
-            "#
+            "#,
         )
         .bind(submission_id)
         .bind(test_case_id)

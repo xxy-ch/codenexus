@@ -22,7 +22,7 @@ pub async fn create_pool(redis_url: &str) -> Result<Pool, deadpool_redis::Create
     cfg.create_pool(Some(Runtime::Tokio1))
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, async_fn_in_trait)]
 pub trait RedisCacheOps {
     async fn cache_get(&self, key: &str) -> Result<Option<String>, PoolError>;
     async fn cache_set(&self, key: &str, value: &str) -> Result<(), PoolError>;
@@ -48,7 +48,7 @@ impl RedisCacheOps for Pool {
     }
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, async_fn_in_trait)]
 pub trait RedisStreamOps {
     async fn stream_create(&self, stream_name: &str) -> Result<(), PoolError>;
     async fn stream_add_message(

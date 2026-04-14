@@ -2,8 +2,9 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::time::Duration;
 
 pub async fn get_db_connection() -> Result<PgPool, sqlx::Error> {
-    let database_url = std::env::var("DATABASE_URL")
-        .map_err(|_| sqlx::Error::Configuration("DATABASE_URL environment variable not set".into()))?;
+    let database_url = std::env::var("DATABASE_URL").map_err(|_| {
+        sqlx::Error::Configuration("DATABASE_URL environment variable not set".into())
+    })?;
     let pool = PgPoolOptions::new()
         .max_connections(5)
         .acquire_timeout(Duration::from_secs(30))

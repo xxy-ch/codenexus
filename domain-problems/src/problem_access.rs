@@ -4,9 +4,8 @@ use api_infra::middleware::auth::AuthExtractor;
 use shared::models::role::Role;
 
 use super::access::{
-    ProblemAccessRecord, can_create_problem_in_organization, can_mutate_problem,
-    can_read_problem, can_view_management_problem_data, fetch_problem_access_record,
-    parse_role,
+    can_create_problem_in_organization, can_mutate_problem, can_read_problem,
+    can_view_management_problem_data, fetch_problem_access_record, parse_role, ProblemAccessRecord,
 };
 
 pub fn management_role_from_claims(claims: &AuthExtractor) -> Result<Role, StatusCode> {

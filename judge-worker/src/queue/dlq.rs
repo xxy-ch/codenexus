@@ -10,8 +10,8 @@ pub async fn write_to_dlq(
     result: &crate::queue::JudgeResult,
     error_reason: &str,
 ) -> Result<()> {
-    let result_json = serde_json::to_string(result)
-        .context("Failed to serialize judge result for DLQ")?;
+    let result_json =
+        serde_json::to_string(result).context("Failed to serialize judge result for DLQ")?;
 
     let fields = &[
         ("submission_id", result.submission_id.to_string()),
@@ -21,10 +21,7 @@ pub async fn write_to_dlq(
     ];
 
     let mut pipe = redis::pipe();
-    pipe.cmd("XADD")
-        .arg(DLQ_STREAM)
-        .arg("*")
-        .arg(fields);
+    pipe.cmd("XADD").arg(DLQ_STREAM).arg("*").arg(fields);
 
     pipe.query_async::<()>(conn)
         .await
@@ -53,10 +50,7 @@ pub async fn get_dlq_entries(
 }
 
 /// Delete an entry from the dead letter queue after processing
-pub async fn delete_dlq_entry(
-    conn: &mut MultiplexedConnection,
-    entry_id: &str,
-) -> Result<()> {
+pub async fn delete_dlq_entry(conn: &mut MultiplexedConnection, entry_id: &str) -> Result<()> {
     redis::cmd("XDEL")
         .arg(DLQ_STREAM)
         .arg(entry_id)

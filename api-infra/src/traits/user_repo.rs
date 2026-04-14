@@ -1,7 +1,7 @@
+use crate::error::AppError;
 use async_trait::async_trait;
 use shared::models::user::{User, UserPublic};
 use uuid::Uuid;
-use crate::error::AppError;
 
 /// Input for creating a new user
 #[derive(Debug, Clone)]

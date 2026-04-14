@@ -40,7 +40,11 @@ impl std::fmt::Display for AppStartupError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             AppStartupError::MissingSecret(key) => {
-                write!(f, "Required secret '{}' is not set. Set it in .env or environment.", key)
+                write!(
+                    f,
+                    "Required secret '{}' is not set. Set it in .env or environment.",
+                    key
+                )
             }
             AppStartupError::InvalidValue { key, reason } => {
                 write!(f, "Invalid value for '{}': {}", key, reason)
@@ -98,14 +102,14 @@ impl AppConfig {
             }
         };
 
-        let database_url = env::var("DATABASE_URL")
-            .map_err(|_| AppStartupError::MissingSecret("DATABASE_URL"))?;
+        let database_url =
+            env::var("DATABASE_URL").map_err(|_| AppStartupError::MissingSecret("DATABASE_URL"))?;
 
-        let redis_url = env::var("REDIS_URL")
-            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+        let redis_url =
+            env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
 
-        let bind_address = env::var("API_BIND_ADDRESS")
-            .unwrap_or_else(|_| "0.0.0.0:3000".to_string());
+        let bind_address =
+            env::var("API_BIND_ADDRESS").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
 
         let cors_origins = if app_env.is_production() {
             env::var("CORS_ORIGINS")
@@ -188,7 +192,11 @@ mod tests {
         assert!(result.is_err());
         let err = result.unwrap_err();
         let msg = format!("{}", err);
-        assert!(msg.contains("JWT_SECRET"), "Expected JWT_SECRET error, got: {}", msg);
+        assert!(
+            msg.contains("JWT_SECRET"),
+            "Expected JWT_SECRET error, got: {}",
+            msg
+        );
 
         std::env::remove_var("APP_ENV");
         std::env::remove_var("DATABASE_URL");
@@ -204,7 +212,11 @@ mod tests {
         let result = AppConfig::from_env();
         assert!(result.is_err());
         let msg = format!("{}", result.unwrap_err());
-        assert!(msg.contains("WORKER_SECRET"), "Expected WORKER_SECRET error, got: {}", msg);
+        assert!(
+            msg.contains("WORKER_SECRET"),
+            "Expected WORKER_SECRET error, got: {}",
+            msg
+        );
 
         std::env::remove_var("APP_ENV");
         std::env::remove_var("JWT_SECRET");
@@ -214,12 +226,15 @@ mod tests {
     #[test]
     fn test_empty_secret_treated_as_unset_in_production() {
         std::env::set_var("APP_ENV", "production");
-        std::env::set_var("JWT_SECRET", "");  // empty string
+        std::env::set_var("JWT_SECRET", ""); // empty string
         std::env::set_var("WORKER_SECRET", "real-secret");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
 
         let result = AppConfig::from_env();
-        assert!(result.is_err(), "Empty JWT_SECRET should be treated as unset");
+        assert!(
+            result.is_err(),
+            "Empty JWT_SECRET should be treated as unset"
+        );
 
         std::env::remove_var("APP_ENV");
         std::env::remove_var("JWT_SECRET");
@@ -252,7 +267,10 @@ mod tests {
         std::env::remove_var("CORS_ORIGINS");
 
         let config = AppConfig::from_env().unwrap();
-        assert!(config.cors_origins.is_empty(), "Production CORS should be empty when CORS_ORIGINS unset");
+        assert!(
+            config.cors_origins.is_empty(),
+            "Production CORS should be empty when CORS_ORIGINS unset"
+        );
         assert!(config.cors_origins.iter().all(|o| o != "*"));
 
         std::env::remove_var("APP_ENV");
@@ -278,12 +296,19 @@ mod tests {
         std::env::set_var("JWT_SECRET", "real-secret");
         std::env::set_var("WORKER_SECRET", "real-secret");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
-        std::env::set_var("CORS_ORIGINS", "https://example.com, https://app.example.com");
+        std::env::set_var(
+            "CORS_ORIGINS",
+            "https://example.com, https://app.example.com",
+        );
 
         let config = AppConfig::from_env().unwrap();
         assert_eq!(config.cors_origins.len(), 2);
-        assert!(config.cors_origins.contains(&"https://example.com".to_string()));
-        assert!(config.cors_origins.contains(&"https://app.example.com".to_string()));
+        assert!(config
+            .cors_origins
+            .contains(&"https://example.com".to_string()));
+        assert!(config
+            .cors_origins
+            .contains(&"https://app.example.com".to_string()));
 
         std::env::remove_var("APP_ENV");
         std::env::remove_var("JWT_SECRET");

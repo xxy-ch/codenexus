@@ -1,12 +1,11 @@
 use super::models::*;
 use crate::middleware::auth::AuthExtractor;
+use crate::AppState;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
-    Json as JsonVec,
 };
-use crate::AppState;
 use shared::models::role::Role;
 
 fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
@@ -29,16 +28,13 @@ async fn verify_contest_tenant(
     contest_id: i64,
     school_id: i64,
 ) -> Result<ContestDetail, StatusCode> {
-    let contest = service
-        .get_contest(contest_id)
-        .await
-        .map_err(|err| {
-            if err.to_string().contains("Contest not found") {
-                StatusCode::NOT_FOUND
-            } else {
-                StatusCode::INTERNAL_SERVER_ERROR
-            }
-        })?;
+    let contest = service.get_contest(contest_id).await.map_err(|err| {
+        if err.to_string().contains("Contest not found") {
+            StatusCode::NOT_FOUND
+        } else {
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
+    })?;
     if contest.organization_id != school_id {
         return Err(StatusCode::NOT_FOUND);
     }
@@ -304,11 +300,14 @@ pub async fn link_submission(
 }
 
 pub fn contests_router() -> axum::Router<AppState> {
-    use axum::routing::{get, post, delete};
+    use axum::routing::{delete, get, post};
 
     axum::Router::new()
         .route("/", get(list_contests).post(create_contest))
-        .route("/:id", get(get_contest).put(update_contest).delete(delete_contest))
+        .route(
+            "/:id",
+            get(get_contest).put(update_contest).delete(delete_contest),
+        )
         .route(
             "/:id/problems",
             get(get_contest_problems).post(add_problem_to_contest),

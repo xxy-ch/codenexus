@@ -15,6 +15,8 @@ shared = { path = "../shared" }
 api-infra = { path = "../api-infra" }
 domain-problems = { path = "../domain-problems" }
 domain-users = { path = "../domain-users" }
+domain-community = { path = "../domain-community" }
+domain-search = { path = "../domain-search" }
 sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "migrate"] }
 dotenvy = "0.15"
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }

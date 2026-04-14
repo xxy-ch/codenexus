@@ -1,5 +1,5 @@
-pub mod language;
 pub mod config;
+pub mod language;
 
 use anyhow::{anyhow, Context, Result};
 
@@ -91,8 +91,7 @@ pub fn compile_code(request: CompilationRequest) -> Result<CompilationResult> {
         cmd.arg(input);
     }
 
-    let output = cmd.output()
-        .context("Failed to execute compiler")?;
+    let output = cmd.output().context("Failed to execute compiler")?;
 
     let result = output.status;
     let error_message = if result.success() {

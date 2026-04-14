@@ -1,6 +1,6 @@
 // Producer is only used by API, not by judge-worker
 // This file is kept for compatibility but will not be used
-pub use super::{JudgeResult};
+pub use super::JudgeResult;
 
 use anyhow::Result;
 use redis::Client;
@@ -25,11 +25,11 @@ pub async fn send_judge_result(
 
     let mut cmd = redis::cmd("XADD");
     cmd.arg(stream_name)
-       .arg("*")
-       .arg("submission_id")
-       .arg(result.submission_id.to_string())
-       .arg("data")
-       .arg(result_json);
+        .arg("*")
+        .arg("submission_id")
+        .arg(result.submission_id.to_string())
+        .arg("data")
+        .arg(result_json);
 
     let message_id: String = cmd.query_async(&mut conn).await?;
 

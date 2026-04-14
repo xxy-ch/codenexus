@@ -1,4 +1,7 @@
 use super::{models::*, service::SubmissionService};
+use crate::error::AppError;
+use crate::middleware::auth::AuthExtractor;
+use crate::AppState;
 use axum::{
     extract::{Path, Query, State},
     http::HeaderMap,
@@ -6,9 +9,6 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
-use crate::AppState;
-use crate::error::AppError;
-use crate::middleware::auth::AuthExtractor;
 
 pub fn submissions_router() -> axum::Router<AppState> {
     axum::Router::new()
@@ -51,14 +51,16 @@ async fn list_submissions(
     let limit = query.limit.unwrap_or(20).min(100);
     let offset = query.offset.unwrap_or(0);
 
-    let (submissions, total) = service.list_submissions(
-        claims.sub,
-        query.problem_id,
-        query.status,
-        query.language,
-        limit,
-        offset,
-    ).await?;
+    let (submissions, total) = service
+        .list_submissions(
+            claims.sub,
+            query.problem_id,
+            query.status,
+            query.language,
+            limit,
+            offset,
+        )
+        .await?;
 
     Ok(Json(serde_json::json!({
         "submissions": submissions,
@@ -124,7 +126,11 @@ async fn update_judge_result(
     let expected = state.worker_secret.as_bytes();
     let provided = provided_secret.as_bytes();
     let secret_valid = provided.len() == expected.len()
-        && provided.iter().zip(expected.iter()).fold(0u8, |acc, (a, b)| acc | (a ^ b)) == 0;
+        && provided
+            .iter()
+            .zip(expected.iter())
+            .fold(0u8, |acc, (a, b)| acc | (a ^ b))
+            == 0;
     if !secret_valid {
         return Err(AppError::Auth("Invalid or missing worker secret".into()));
     }
@@ -139,7 +145,9 @@ async fn update_judge_result(
     let service = SubmissionService::new(state.db_pool);
 
     // 3. State machine: check current status
-    let current_status = service.get_submission_status(id).await?
+    let current_status = service
+        .get_submission_status(id)
+        .await?
         .ok_or_else(|| AppError::Validation("Submission not found".into()))?;
 
     // 3a. Idempotency: duplicate callback with same status is accepted but ignored (case-insensitive)
@@ -160,10 +168,7 @@ async fn update_judge_result(
     }
 
     // 3c. Only allow valid transitions: pending/queued -> judging -> terminal
-    let is_valid_transition = matches!(
-        current_status.as_str(),
-        "pending" | "queued" | "judging"
-    );
+    let is_valid_transition = matches!(current_status.as_str(), "pending" | "queued" | "judging");
     if !is_valid_transition {
         return Err(AppError::Validation(format!(
             "Invalid state transition from '{}' to '{}'",
@@ -172,26 +177,30 @@ async fn update_judge_result(
     }
 
     // 4. Update submission status and score
-    service.update_judge_result(
-        id,
-        &result.status,
-        result.score,
-        result.runtime_ms,
-        result.memory_kb,
-    ).await?;
+    service
+        .update_judge_result(
+            id,
+            &result.status,
+            result.score,
+            result.runtime_ms,
+            result.memory_kb,
+        )
+        .await?;
 
     // 5. Store test case results
     for test_result in result.test_case_results {
-        service.store_test_case_result(
-            id,
-            test_result.test_case_id,
-            &test_result.status,
-            test_result.expected_output,
-            test_result.actual_output,
-            test_result.error_message,
-            test_result.runtime_ms,
-            test_result.memory_kb,
-        ).await?;
+        service
+            .store_test_case_result(
+                id,
+                test_result.test_case_id,
+                &test_result.status,
+                test_result.expected_output,
+                test_result.actual_output,
+                test_result.error_message,
+                test_result.runtime_ms,
+                test_result.memory_kb,
+            )
+            .await?;
     }
 
     Ok(Json(serde_json::json!({

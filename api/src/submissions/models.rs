@@ -1,7 +1,7 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Submission {
@@ -19,6 +19,7 @@ pub struct Submission {
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
+#[allow(dead_code)]
 pub struct SubmissionResult {
     pub id: i64,
     pub submission_id: i64,
@@ -77,6 +78,7 @@ pub struct SubmissionStats {
     pub average_memory: f64,
 }
 
+#[allow(dead_code)]
 pub const SUBMISSION_STATUS: &[&str] = &[
     "pending",
     "running",
@@ -89,6 +91,7 @@ pub const SUBMISSION_STATUS: &[&str] = &[
     "system_error",
 ];
 
+#[allow(dead_code)]
 pub const LANGUAGE_CONFIG: &[(&str, &str, &str)] = &[
     ("python", "Python 3", "python3"),
     ("java", "Java", "java"),

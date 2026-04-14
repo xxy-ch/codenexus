@@ -1,5 +1,5 @@
-use async_trait::async_trait;
 use crate::error::AppError;
+use async_trait::async_trait;
 use uuid::Uuid;
 
 /// Summary type for cross-domain problem references.
@@ -79,6 +79,10 @@ pub trait ProblemRepo: Send + Sync {
     async fn delete(&self, id: i64) -> Result<(), AppError>;
     async fn list(&self, filter: ProblemFilter) -> Result<Vec<ProblemSummary>, AppError>;
     async fn count_by_organization(&self, organization_id: i64) -> Result<i64, AppError>;
-    async fn add_test_case(&self, problem_id: i64, input: CreateTestCaseInput) -> Result<i64, AppError>;
+    async fn add_test_case(
+        &self,
+        problem_id: i64,
+        input: CreateTestCaseInput,
+    ) -> Result<i64, AppError>;
     async fn get_test_cases(&self, problem_id: i64) -> Result<Vec<TestCaseSummary>, AppError>;
 }

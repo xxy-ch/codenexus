@@ -9,7 +9,6 @@ pub async fn consume_submission(
     consumer_name: &str,
     block_ms: Option<u64>,
 ) -> Result<Vec<(String, SubmissionMessage)>> {
-
     let mut cmd = redis::cmd("XREADGROUP");
     cmd.arg("GROUP")
         .arg(group_name)
@@ -41,8 +40,8 @@ pub async fn consume_submission(
 
             let data_json: String = redis::from_redis_value(data_value)
                 .context("Failed to decode Redis stream payload")?;
-            let submission: SubmissionMessage = serde_json::from_str(&data_json)
-                .context("Failed to parse submission message")?;
+            let submission: SubmissionMessage =
+                serde_json::from_str(&data_json).context("Failed to parse submission message")?;
             messages.push((message_id, submission));
         }
     }

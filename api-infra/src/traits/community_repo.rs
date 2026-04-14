@@ -1,7 +1,7 @@
-use async_trait::async_trait;
 use crate::error::AppError;
-use uuid::Uuid;
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 /// Summary type for discussion references.
 #[derive(Debug, Clone)]
@@ -104,18 +104,32 @@ pub trait CommunityRepo: Send + Sync {
     // Discussions
     async fn create_discussion(&self, input: CreateDiscussionInput) -> Result<i64, AppError>;
     async fn find_discussion_by_id(&self, id: i64) -> Result<Option<DiscussionSummary>, AppError>;
-    async fn list_discussions(&self, filter: DiscussionFilter) -> Result<Vec<DiscussionSummary>, AppError>;
+    async fn list_discussions(
+        &self,
+        filter: DiscussionFilter,
+    ) -> Result<Vec<DiscussionSummary>, AppError>;
     async fn delete_discussion(&self, id: i64) -> Result<(), AppError>;
 
     // Blog articles
     async fn create_article(&self, input: CreateBlogArticleInput) -> Result<i64, AppError>;
     async fn find_article_by_id(&self, id: i64) -> Result<Option<BlogArticleSummary>, AppError>;
     async fn list_articles(&self, filter: BlogFilter) -> Result<Vec<BlogArticleSummary>, AppError>;
-    async fn update_article(&self, id: i64, input: serde_json::Value) -> Result<BlogArticleSummary, AppError>;
+    async fn update_article(
+        &self,
+        id: i64,
+        input: serde_json::Value,
+    ) -> Result<BlogArticleSummary, AppError>;
     async fn delete_article(&self, id: i64) -> Result<(), AppError>;
 
     // Direct messages
     async fn send_message(&self, input: CreateMessageInput) -> Result<i64, AppError>;
-    async fn list_conversations(&self, user_id: Uuid) -> Result<Vec<ConversationSummary>, AppError>;
-    async fn list_messages(&self, user_id: Uuid, other_user_id: Uuid, limit: u32, offset: u32) -> Result<Vec<MessageSummary>, AppError>;
+    async fn list_conversations(&self, user_id: Uuid)
+        -> Result<Vec<ConversationSummary>, AppError>;
+    async fn list_messages(
+        &self,
+        user_id: Uuid,
+        other_user_id: Uuid,
+        limit: u32,
+        offset: u32,
+    ) -> Result<Vec<MessageSummary>, AppError>;
 }

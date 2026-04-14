@@ -1,8 +1,8 @@
 use super::models::*;
+use anyhow::Result;
 use sqlx::PgPool;
 use sqlx::Row;
 use uuid::Uuid;
-use anyhow::Result;
 
 pub struct NotificationService {
     db: PgPool,
@@ -14,6 +14,7 @@ impl NotificationService {
     }
 
     /// Create a new notification
+    #[allow(dead_code, clippy::too_many_arguments)]
     pub async fn create_notification(
         &self,
         user_id: Uuid,
@@ -34,7 +35,7 @@ impl NotificationService {
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING *
-            "#
+            "#,
         )
         .bind(user_id)
         .bind(notification_type)
@@ -73,7 +74,7 @@ impl NotificationService {
         }
 
         // Type filter
-        if let Some(notif_type) = &query.notification_type {
+        if let Some(_notif_type) = &query.notification_type {
             param_count += 1;
             conditions.push(format!(" AND type = ${}", param_count));
         }
@@ -82,7 +83,10 @@ impl NotificationService {
         base_query.push_str(&conditions_str);
         count_query.push_str(&conditions_str);
 
-        base_query.push_str(&format!(" ORDER BY created_at DESC LIMIT {} OFFSET {}", limit, offset));
+        base_query.push_str(&format!(
+            " ORDER BY created_at DESC LIMIT {} OFFSET {}",
+            limit, offset
+        ));
 
         // Execute count query
         let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query);
@@ -100,7 +104,7 @@ impl NotificationService {
 
         // Get unread count
         let unread_count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = FALSE"
+            "SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = FALSE",
         )
         .bind(user_id)
         .fetch_one(&self.db)
@@ -132,7 +136,7 @@ impl NotificationService {
     /// Mark notifications as read
     pub async fn mark_as_read(&self, user_id: Uuid, notification_ids: Vec<Uuid>) -> Result<i64> {
         let result = sqlx::query(
-            "UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND id = ANY($2)"
+            "UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND id = ANY($2)",
         )
         .bind(user_id)
         .bind(&notification_ids)
@@ -145,7 +149,7 @@ impl NotificationService {
     /// Mark all notifications as read for a user
     pub async fn mark_all_as_read(&self, user_id: Uuid) -> Result<i64> {
         let result = sqlx::query(
-            "UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE"
+            "UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE",
         )
         .bind(user_id)
         .execute(&self.db)
@@ -156,15 +160,14 @@ impl NotificationService {
 
     /// Get notification statistics
     pub async fn get_stats(&self, user_id: Uuid) -> Result<NotificationStatsResponse> {
-        let total_count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM notifications WHERE user_id = $1"
-        )
-        .bind(user_id)
-        .fetch_one(&self.db)
-        .await?;
+        let total_count: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM notifications WHERE user_id = $1")
+                .bind(user_id)
+                .fetch_one(&self.db)
+                .await?;
 
         let unread_count: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = FALSE"
+            "SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = FALSE",
         )
         .bind(user_id)
         .fetch_one(&self.db)
@@ -172,7 +175,7 @@ impl NotificationService {
 
         // Get count by type
         let by_type_rows = sqlx::query(
-            "SELECT type, COUNT(*) as count FROM notifications WHERE user_id = $1 GROUP BY type"
+            "SELECT type, COUNT(*) as count FROM notifications WHERE user_id = $1 GROUP BY type",
         )
         .bind(user_id)
         .fetch_all(&self.db)
@@ -194,13 +197,11 @@ impl NotificationService {
 
     /// Delete a notification
     pub async fn delete_notification(&self, user_id: Uuid, notification_id: Uuid) -> Result<bool> {
-        let result = sqlx::query(
-            "DELETE FROM notifications WHERE user_id = $1 AND id = $2"
-        )
-        .bind(user_id)
-        .bind(notification_id)
-        .execute(&self.db)
-        .await?;
+        let result = sqlx::query("DELETE FROM notifications WHERE user_id = $1 AND id = $2")
+            .bind(user_id)
+            .bind(notification_id)
+            .execute(&self.db)
+            .await?;
 
         Ok(result.rows_affected() > 0)
     }
@@ -208,7 +209,7 @@ impl NotificationService {
     /// Get user notification settings
     pub async fn get_settings(&self, user_id: Uuid) -> Result<Option<NotificationSettings>> {
         let settings = sqlx::query_as::<_, NotificationSettings>(
-            "SELECT * FROM notification_settings WHERE user_id = $1"
+            "SELECT * FROM notification_settings WHERE user_id = $1",
         )
         .bind(user_id)
         .fetch_optional(&self.db)
@@ -240,7 +241,7 @@ impl NotificationService {
                 system_notifications = EXCLUDED.system_notifications,
                 digest_mode = EXCLUDED.digest_mode
             RETURNING *
-            "#
+            "#,
         )
         .bind(user_id)
         .bind(settings.email_notifications)
@@ -257,7 +258,12 @@ impl NotificationService {
     }
 
     /// Check if user should receive notification based on settings
-    pub async fn should_notify(&self, user_id: Uuid, notification_type: &NotificationType) -> Result<bool> {
+    #[allow(dead_code)]
+    pub async fn should_notify(
+        &self,
+        user_id: Uuid,
+        notification_type: &NotificationType,
+    ) -> Result<bool> {
         let settings = self.get_settings(user_id).await?;
 
         if let Some(settings) = settings {

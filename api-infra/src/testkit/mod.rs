@@ -12,8 +12,8 @@ pub mod database;
 pub mod fixtures;
 pub mod redis;
 
-use sqlx::PgPool;
 use deadpool_redis::Pool as RedisPool;
+use sqlx::PgPool;
 
 /// Holds test container handles and connection pools.
 /// Dropping this struct will automatically stop the containers.

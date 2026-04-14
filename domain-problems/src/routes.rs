@@ -6,8 +6,8 @@ use axum::{
 use sqlx::Row;
 
 use api_infra::middleware::auth::AuthExtractor;
-use shared::models::role::Role;
 use api_infra::state::AppState;
+use shared::models::role::Role;
 
 use super::models::{
     CreateProblemRequest, ListProblemsQuery, Problem, ProblemDetail, ProblemStatistics,
@@ -77,12 +77,11 @@ pub async fn get_supported_languages(
 ) -> Result<Json<Vec<SupportedLanguage>>, StatusCode> {
     ensure_language_settings(&state).await?;
 
-    let row = sqlx::query(
-        "SELECT c_enabled, cpp_enabled FROM judge_language_settings WHERE id = TRUE",
-    )
-    .fetch_one(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let row =
+        sqlx::query("SELECT c_enabled, cpp_enabled FROM judge_language_settings WHERE id = TRUE")
+            .fetch_one(&state.db_pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(build_supported_languages(
         row.get("c_enabled"),
@@ -139,8 +138,8 @@ pub async fn create_problem(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    let visibility = normalize_visibility(&req.visibility, req.is_public)
-        .ok_or(StatusCode::BAD_REQUEST)?;
+    let visibility =
+        normalize_visibility(&req.visibility, req.is_public).ok_or(StatusCode::BAD_REQUEST)?;
 
     let problem = sqlx::query_as::<_, Problem>(
         r#"
@@ -173,7 +172,7 @@ pub async fn create_problem(
             NULL::TEXT AS author_note,
             created_at,
             updated_at
-        "#
+        "#,
     )
     .bind(req.organization_id)
     .bind(claims.sub)
@@ -247,7 +246,7 @@ pub async fn list_problems(
           AND ($5::BOOLEAN = false OR p.visibility = 'public')
         ORDER BY p.created_at DESC
         LIMIT $6 OFFSET $7
-        "#
+        "#,
     )
     .bind(&search)
     .bind(format!("%{}%", search))
@@ -293,7 +292,7 @@ pub async fn get_problem(
             updated_at
         FROM problems
         WHERE id = $1
-        "#
+        "#,
     )
     .bind(id)
     .fetch_optional(&state.db_pool)
@@ -305,13 +304,12 @@ pub async fn get_problem(
         None => return Err(StatusCode::NOT_FOUND),
     };
 
-    let test_case_count = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM test_cases WHERE problem_id = $1"
-    )
-    .bind(id)
-    .fetch_one(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let test_case_count =
+        sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM test_cases WHERE problem_id = $1")
+            .bind(id)
+            .fetch_one(&state.db_pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(ProblemDetail {
         id: problem.id,
@@ -385,7 +383,7 @@ pub async fn update_problem(
             NULL::TEXT AS author_note,
             created_at,
             updated_at
-        "#
+        "#,
     )
     .bind(req.title)
     .bind(req.description)
@@ -458,7 +456,7 @@ pub async fn get_problem_statistics(
             MAX(created_at) FILTER (WHERE verdict = 'ac') AS last_solved_at
         FROM submissions
         WHERE problem_id = $1
-        "#
+        "#,
     )
     .bind(id)
     .fetch_one(&state.db_pool)

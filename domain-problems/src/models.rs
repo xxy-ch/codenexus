@@ -24,8 +24,12 @@ pub struct Problem {
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-fn default_time_limit() -> i32 { 5000 }
-fn default_memory_limit() -> i32 { 256 }
+fn default_time_limit() -> i32 {
+    5000
+}
+fn default_memory_limit() -> i32 {
+    256
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateProblemRequest {
@@ -47,7 +51,9 @@ pub struct CreateProblemRequest {
     pub author_note: Option<String>,
 }
 
-fn default_visibility() -> String { "private".to_string() }
+fn default_visibility() -> String {
+    "private".to_string()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateProblemRequest {

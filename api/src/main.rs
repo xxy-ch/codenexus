@@ -1,23 +1,18 @@
 mod auth;
-mod blog;
 mod classes;
 mod contests;
 mod db;
-mod discussions;
 mod error;
 mod leaderboard;
-mod messages;
 mod middleware;
 mod notifications;
 mod plagiarism;
 mod rbac;
 mod redis;
-mod search;
 mod submissions;
 mod websocket;
 
 use api_infra::state::AppState;
-use auth::JwtService;
 use axum::serve;
 use axum::{
     extract::State,
@@ -27,8 +22,6 @@ use axum::{
     Router,
 };
 use db::schema::MIGRATOR;
-use deadpool_redis::Pool as RedisPool;
-use sqlx::PgPool;
 use std::net::SocketAddr;
 use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
 use tower_http::cors::{Any, CorsLayer};
@@ -156,14 +149,11 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .nest("/leaderboard", leaderboard::leaderboard_router())
         .nest("/submissions", submissions::submissions_router())
         .nest("/classes", classes::classes_router())
-        .nest("/discussions", discussions::discussions_router())
-        .nest("/blog", blog::blog_router())
-        .nest(
-            "/search",
-            search::create_search_router(state.db_pool.clone(), state.redis_url.clone()),
-        )
+        .nest("/discussions", domain_community::discussions_router())
+        .nest("/blog", domain_community::blog_router())
+        .nest("/search", domain_search::search_router())
         .nest("/notifications", notifications::notifications_router())
-        .nest("/messages", messages::messages_router())
+        .nest("/messages", domain_community::messages_router())
         .nest("/admin/plagiarism", plagiarism::plagiarism_router())
         // Apply auth/tenant middleware only to protected routes
         .route_layer(axum::middleware::from_fn(

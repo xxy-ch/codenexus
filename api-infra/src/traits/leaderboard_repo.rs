@@ -1,5 +1,5 @@
-use async_trait::async_trait;
 use crate::error::AppError;
+use async_trait::async_trait;
 use uuid::Uuid;
 
 /// Summary type for leaderboard entries.
@@ -37,10 +37,33 @@ pub struct BestAcSubmission {
 /// Repository interface for leaderboard domain operations.
 #[async_trait]
 pub trait LeaderboardRepo: Send + Sync {
-    async fn get_global(&self, filter: LeaderboardFilter) -> Result<Vec<LeaderboardEntry>, AppError>;
-    async fn get_by_problem(&self, problem_id: i64, filter: LeaderboardFilter) -> Result<Vec<LeaderboardEntry>, AppError>;
-    async fn get_by_contest(&self, contest_id: i64, filter: LeaderboardFilter) -> Result<Vec<LeaderboardEntry>, AppError>;
-    async fn get_by_class(&self, class_id: i64, filter: LeaderboardFilter) -> Result<Vec<LeaderboardEntry>, AppError>;
-    async fn get_best_ac_submission(&self, user_id: Uuid, problem_id: i64) -> Result<Option<BestAcSubmission>, AppError>;
-    async fn get_user_rank(&self, user_id: Uuid, organization_id: i64) -> Result<Option<i64>, AppError>;
+    async fn get_global(
+        &self,
+        filter: LeaderboardFilter,
+    ) -> Result<Vec<LeaderboardEntry>, AppError>;
+    async fn get_by_problem(
+        &self,
+        problem_id: i64,
+        filter: LeaderboardFilter,
+    ) -> Result<Vec<LeaderboardEntry>, AppError>;
+    async fn get_by_contest(
+        &self,
+        contest_id: i64,
+        filter: LeaderboardFilter,
+    ) -> Result<Vec<LeaderboardEntry>, AppError>;
+    async fn get_by_class(
+        &self,
+        class_id: i64,
+        filter: LeaderboardFilter,
+    ) -> Result<Vec<LeaderboardEntry>, AppError>;
+    async fn get_best_ac_submission(
+        &self,
+        user_id: Uuid,
+        problem_id: i64,
+    ) -> Result<Option<BestAcSubmission>, AppError>;
+    async fn get_user_rank(
+        &self,
+        user_id: Uuid,
+        organization_id: i64,
+    ) -> Result<Option<i64>, AppError>;
 }

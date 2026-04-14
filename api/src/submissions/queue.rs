@@ -1,7 +1,7 @@
+use crate::redis;
 use anyhow::Result;
 use deadpool_redis::Pool;
 use serde::{Deserialize, Serialize};
-use crate::redis;
 
 /// Submission message sent to judge queue
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,10 +31,7 @@ impl Default for QueueConfig {
 }
 
 /// Sends a submission to the judge queue
-pub async fn queue_submission(
-    pool: &Pool,
-    message: &SubmissionMessage,
-) -> Result<String> {
+pub async fn queue_submission(pool: &Pool, message: &SubmissionMessage) -> Result<String> {
     let config = QueueConfig::default();
 
     // Ensure stream exists (ignore error if already exists)
@@ -43,14 +40,15 @@ pub async fn queue_submission(
     // Create consumer group if it doesn't exist
     {
         let mut conn = pool.get().await?;
-        let _: Result<String, deadpool_redis::redis::RedisError> = deadpool_redis::redis::cmd("XGROUP")
-            .arg("CREATE")
-            .arg(&config.stream_name)
-            .arg(&config.group_name)
-            .arg("0")
-            .arg("MKSTREAM")
-            .query_async(&mut conn)
-            .await;
+        let _: Result<String, deadpool_redis::redis::RedisError> =
+            deadpool_redis::redis::cmd("XGROUP")
+                .arg("CREATE")
+                .arg(&config.stream_name)
+                .arg(&config.group_name)
+                .arg("0")
+                .arg("MKSTREAM")
+                .query_async(&mut conn)
+                .await;
     }
 
     // Serialize message to JSON
@@ -58,7 +56,10 @@ pub async fn queue_submission(
 
     // Add to stream
     let fields = vec![
-        ("submission_id".to_string(), message.submission_id.to_string()),
+        (
+            "submission_id".to_string(),
+            message.submission_id.to_string(),
+        ),
         ("data".to_string(), message_json),
     ];
 

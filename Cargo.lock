@@ -93,7 +93,9 @@ dependencies = [
  "bcrypt",
  "chrono",
  "deadpool-redis",
+ "domain-community",
  "domain-problems",
+ "domain-search",
  "domain-users",
  "dotenvy",
  "env_logger",
@@ -713,6 +715,7 @@ dependencies = [
  "serde_json",
  "shared",
  "sqlx",
+ "tracing",
  "uuid",
 ]
 

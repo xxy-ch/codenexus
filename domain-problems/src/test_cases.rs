@@ -1,4 +1,5 @@
 use api_infra::middleware::auth::AuthExtractor;
+use api_infra::state::AppState;
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -8,7 +9,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use shared::models::role::Role;
 use sqlx::FromRow;
-use api_infra::state::AppState;
 
 fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
     let role = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
@@ -93,7 +93,7 @@ pub async fn list_test_cases(
         FROM test_cases
         WHERE problem_id = $1
         ORDER BY order_index ASC, id ASC
-        "#
+        "#,
     )
     .bind(problem_id)
     .fetch_all(&state.db_pool)
@@ -142,7 +142,7 @@ pub async fn create_test_case(
             points AS score,
             order_index AS "order",
             created_at::text as created_at
-        "#
+        "#,
     )
     .bind(problem_id)
     .bind(&req.input)
@@ -184,7 +184,7 @@ pub async fn update_test_case(
             points AS score,
             order_index AS "order",
             created_at::text as created_at
-        "#
+        "#,
     )
     .bind(req.input)
     .bind(req.expected_output)
@@ -210,14 +210,12 @@ pub async fn delete_test_case(
     Path((problem_id, test_case_id)): Path<(i64, i64)>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     require_teacher_plus(&claims.role)?;
-    let result = sqlx::query(
-        "DELETE FROM test_cases WHERE id = $1 AND problem_id = $2"
-    )
-    .bind(test_case_id)
-    .bind(problem_id)
-    .execute(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let result = sqlx::query("DELETE FROM test_cases WHERE id = $1 AND problem_id = $2")
+        .bind(test_case_id)
+        .bind(problem_id)
+        .execute(&state.db_pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     if result.rows_affected() > 0 {
         Ok(Json(json!({
@@ -255,7 +253,7 @@ pub async fn batch_import_test_cases(
                 points AS score,
                 order_index AS "order",
                 created_at::text as created_at
-            "#
+            "#,
         )
         .bind(problem_id)
         .bind(&test_case_req.input)

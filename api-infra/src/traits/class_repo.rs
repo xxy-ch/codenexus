@@ -1,7 +1,7 @@
-use async_trait::async_trait;
 use crate::error::AppError;
-use uuid::Uuid;
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 /// Summary type for class references.
 #[derive(Debug, Clone)]

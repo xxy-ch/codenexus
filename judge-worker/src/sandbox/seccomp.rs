@@ -11,16 +11,7 @@ fn prctl(
     arg4: libc::c_ulong,
     arg5: libc::c_ulong,
 ) -> Result<()> {
-    let rc = unsafe {
-        libc::syscall(
-            libc::SYS_prctl,
-            option,
-            arg2,
-            arg3,
-            arg4,
-            arg5,
-        )
-    };
+    let rc = unsafe { libc::syscall(libc::SYS_prctl, option, arg2, arg3, arg4, arg5) };
 
     if rc != 0 {
         return Err(std::io::Error::last_os_error()).context("prctl syscall failed");

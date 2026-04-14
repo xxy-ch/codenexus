@@ -1,17 +1,17 @@
 use super::models::*;
 use super::service::LeaderboardService;
-use crate::AppState;
-use crate::middleware::auth::AuthExtractor;
 use crate::classes::service::ClassService;
+use crate::middleware::auth::AuthExtractor;
+use crate::AppState;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
-    Router,
     routing::get,
+    Router,
 };
-use uuid::Uuid;
 use shared::models::role::Role;
+use uuid::Uuid;
 
 fn is_admin(role: &str) -> bool {
     role.parse::<Role>()
@@ -41,10 +41,8 @@ pub async fn get_global_leaderboard(
     _claims: AuthExtractor,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
-    let service = LeaderboardService::new(
-        state.db_pool.clone(),
-        &state.redis_url,
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let service = LeaderboardService::new(state.db_pool.clone(), &state.redis_url)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let leaderboard = service
         .get_global_leaderboard(query)
@@ -66,10 +64,8 @@ pub async fn get_school_leaderboard(
         return Err(StatusCode::FORBIDDEN);
     }
 
-    let service = LeaderboardService::new(
-        state.db_pool.clone(),
-        &state.redis_url,
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let service = LeaderboardService::new(state.db_pool.clone(), &state.redis_url)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let leaderboard = service
         .get_school_leaderboard(school_id, query)
@@ -91,9 +87,9 @@ pub async fn get_campus_leaderboard(
         return Err(StatusCode::FORBIDDEN);
     }
     // Additional: verify campus belongs to user's org (prevent cross-tenant with shared campus IDs)
-    let class_service = ClassService::new(state.db_pool.clone());
+    let _class_service = ClassService::new(state.db_pool.clone());
     let campus_class = sqlx::query_scalar::<_, i64>(
-        "SELECT organization_id FROM classes WHERE campus_id = $1 LIMIT 1"
+        "SELECT organization_id FROM classes WHERE campus_id = $1 LIMIT 1",
     )
     .bind(campus_id)
     .fetch_optional(&state.db_pool)
@@ -105,10 +101,8 @@ pub async fn get_campus_leaderboard(
         }
     }
 
-    let service = LeaderboardService::new(
-        state.db_pool.clone(),
-        &state.redis_url,
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let service = LeaderboardService::new(state.db_pool.clone(), &state.redis_url)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let leaderboard = service
         .get_campus_leaderboard(campus_id, query)
@@ -126,13 +120,12 @@ pub async fn get_class_leaderboard(
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
     // First: verify the class belongs to user's org
-    let class_org = sqlx::query_scalar::<_, i64>(
-        "SELECT organization_id FROM classes WHERE id = $1"
-    )
-    .bind(class_id)
-    .fetch_optional(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let class_org =
+        sqlx::query_scalar::<_, i64>("SELECT organization_id FROM classes WHERE id = $1")
+            .bind(class_id)
+            .fetch_optional(&state.db_pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     match class_org {
         Some(org_id) if org_id == claims.school_id || is_admin(&claims.role) => {}
@@ -144,7 +137,8 @@ pub async fn get_class_leaderboard(
     if !is_teacher_plus(&claims.role) && !is_admin(&claims.role) {
         // Student: verify enrollment
         let class_service = ClassService::new(state.db_pool.clone());
-        let students = class_service.get_class_students(class_id)
+        let students = class_service
+            .get_class_students(class_id)
             .await
             .map_err(|_| StatusCode::NOT_FOUND)?;
         let is_member = students.iter().any(|s| s.student_id == claims.sub);
@@ -153,10 +147,8 @@ pub async fn get_class_leaderboard(
         }
     }
 
-    let service = LeaderboardService::new(
-        state.db_pool.clone(),
-        &state.redis_url,
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let service = LeaderboardService::new(state.db_pool.clone(), &state.redis_url)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let leaderboard = service
         .get_class_leaderboard(class_id, query)
@@ -178,13 +170,12 @@ pub async fn get_user_stats(
             return Err(StatusCode::FORBIDDEN);
         }
         // Verify the target user belongs to the same organization
-        let target_org = sqlx::query_scalar::<_, i64>(
-            "SELECT organization_id FROM users WHERE id = $1"
-        )
-        .bind(user_id)
-        .fetch_optional(&state.db_pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let target_org =
+            sqlx::query_scalar::<_, i64>("SELECT organization_id FROM users WHERE id = $1")
+                .bind(user_id)
+                .fetch_optional(&state.db_pool)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
         match target_org {
             Some(org_id) if org_id == claims.school_id || is_admin(&claims.role) => {}
             Some(_) => return Err(StatusCode::FORBIDDEN),
@@ -192,10 +183,8 @@ pub async fn get_user_stats(
         }
     }
 
-    let service = LeaderboardService::new(
-        state.db_pool.clone(),
-        &state.redis_url,
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let service = LeaderboardService::new(state.db_pool.clone(), &state.redis_url)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let stats = service
         .get_user_stats(user_id)
@@ -218,10 +207,8 @@ pub async fn get_problem_leaderboard(
         .unwrap_or(10)
         .min(100);
 
-    let service = LeaderboardService::new(
-        state.db_pool.clone(),
-        &state.redis_url,
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let service = LeaderboardService::new(state.db_pool.clone(), &state.redis_url)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let leaderboard = service
         .get_problem_leaderboard(problem_id, limit)

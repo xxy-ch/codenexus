@@ -9,11 +9,13 @@ use axum::{
 
 use shared::models::Claims;
 
+#[allow(dead_code)]
 const TENANT_HEADER: &str = "X-Tenant-ID";
 
 /// Tenant context stored in request extensions
 #[derive(Debug, Clone, Copy)]
 pub struct TenantContext {
+    #[allow(dead_code)]
     pub tenant_id: i64,
 }
 

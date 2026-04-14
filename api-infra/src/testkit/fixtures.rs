@@ -2,12 +2,7 @@ use shared::models::User;
 use uuid::Uuid;
 
 /// Build a test user with the given parameters.
-pub fn build_test_user(
-    id: Uuid,
-    username: &str,
-    role: &str,
-    school_id: i64,
-) -> User {
+pub fn build_test_user(id: Uuid, username: &str, role: &str, school_id: i64) -> User {
     User {
         id,
         username: username.to_string(),

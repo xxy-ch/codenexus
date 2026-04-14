@@ -1,16 +1,16 @@
-use axum::{
-    Router,
-    routing::{get, post, put, delete},
-    extract::{State, Path, Query},
-    response::Json,
-    http::StatusCode,
-};
-use uuid::Uuid;
-use crate::AppState;
 use crate::classes::models::*;
 use crate::classes::service::ClassService;
 use crate::middleware::auth::AuthExtractor;
+use crate::AppState;
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    response::Json,
+    routing::{delete, get, post, put},
+    Router,
+};
 use shared::models::role::Role;
+use uuid::Uuid;
 
 fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
     let role = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
@@ -33,7 +33,8 @@ async fn verify_class_tenant(
     class_id: i64,
     school_id: i64,
 ) -> Result<Class, StatusCode> {
-    let class = service.get_class(class_id)
+    let class = service
+        .get_class(class_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
     if class.organization_id != school_id {
@@ -84,8 +85,14 @@ pub fn classes_router() -> Router<AppState> {
         .route("/assignments/:assignment_id", get(get_assignment))
         .route("/assignments/:assignment_id", put(update_assignment))
         .route("/assignments/:assignment_id", delete(delete_assignment))
-        .route("/assignments/:assignment_id/publish", post(publish_assignment))
-        .route("/assignments/:assignment_id/submissions", get(get_assignment_submissions))
+        .route(
+            "/assignments/:assignment_id/publish",
+            post(publish_assignment),
+        )
+        .route(
+            "/assignments/:assignment_id/submissions",
+            get(get_assignment_submissions),
+        )
 }
 
 // ========== Class Routes ==========
@@ -100,7 +107,8 @@ async fn create_class(
     let mut req = request;
     req.organization_id = claims.school_id;
     let service = ClassService::new(state.db_pool);
-    let class = service.create_class(&req, claims.sub)
+    let class = service
+        .create_class(&req, claims.sub)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(class))
@@ -124,7 +132,8 @@ async fn list_classes(
     // Tenant: force organization_id from claims
     query.organization_id = Some(claims.school_id);
     let service = ClassService::new(state.db_pool);
-    let response = service.list_classes(&query)
+    let response = service
+        .list_classes(&query)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(response))
@@ -139,7 +148,8 @@ async fn update_class(
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
     verify_class_access(&service, class_id, &claims, true).await?;
-    let class = service.update_class(class_id, &request)
+    let class = service
+        .update_class(class_id, &request)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(class))
@@ -153,7 +163,8 @@ async fn delete_class(
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
     verify_class_access(&service, class_id, &claims, true).await?;
-    service.delete_class(class_id)
+    service
+        .delete_class(class_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(StatusCode::NO_CONTENT)
@@ -166,7 +177,8 @@ async fn get_class_stats(
 ) -> Result<Json<ClassStats>, StatusCode> {
     let service = ClassService::new(state.db_pool);
     verify_class_tenant(&service, class_id, claims.school_id).await?;
-    let stats = service.get_class_stats(class_id)
+    let stats = service
+        .get_class_stats(class_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
     Ok(Json(stats))
@@ -182,7 +194,8 @@ async fn get_class_students(
     let service = ClassService::new(state.db_pool);
     // Only class teacher/admin can view student list
     verify_class_access(&service, class_id, &claims, true).await?;
-    let students = service.get_class_students(class_id)
+    let students = service
+        .get_class_students(class_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(students))
@@ -197,7 +210,8 @@ async fn add_student(
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
     verify_class_access(&service, class_id, &claims, true).await?;
-    let enrollment = service.add_student(class_id, claims.sub, &request.student_email)
+    let enrollment = service
+        .add_student(class_id, claims.sub, &request.student_email)
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     Ok(Json(enrollment))
@@ -209,19 +223,22 @@ async fn enroll_with_code(
     Json(request): Json<EnrollWithCodeRequest>,
 ) -> Result<Json<ClassEnrollment>, StatusCode> {
     let service = ClassService::new(state.db_pool);
-    let code = request.code
+    let code = request
+        .code
         .or(request.enrollment_code)
         .ok_or(StatusCode::BAD_REQUEST)?;
 
     // Tenant: verify class belongs to user's org BEFORE enrolling (prevent TOCTOU)
-    let class = service.get_class_by_code(&code)
+    let class = service
+        .get_class_by_code(&code)
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     if class.organization_id != claims.school_id {
         return Err(StatusCode::FORBIDDEN);
     }
 
-    let enrollment = service.enroll_with_code(&code, claims.sub)
+    let enrollment = service
+        .enroll_with_code(&code, claims.sub)
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?;
 
@@ -237,7 +254,8 @@ async fn batch_import_students(
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
     verify_class_access(&service, class_id, &claims, true).await?;
-    let enrollments = service.batch_import_students(class_id, claims.sub, request.emails)
+    let enrollments = service
+        .batch_import_students(class_id, claims.sub, request.emails)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(enrollments))
@@ -251,7 +269,8 @@ async fn remove_student(
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
     verify_class_access(&service, class_id, &claims, true).await?;
-    service.remove_student(class_id, student_id)
+    service
+        .remove_student(class_id, student_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(StatusCode::NO_CONTENT)
@@ -268,7 +287,8 @@ async fn create_assignment(
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
     verify_class_access(&service, class_id, &claims, true).await?;
-    let assignment = service.create_assignment(class_id, &request)
+    let assignment = service
+        .create_assignment(class_id, &request)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(assignment))
@@ -280,7 +300,8 @@ async fn get_assignment(
     Path(assignment_id): Path<i64>,
 ) -> Result<Json<Assignment>, StatusCode> {
     let service = ClassService::new(state.db_pool);
-    let assignment = service.get_assignment(assignment_id)
+    let assignment = service
+        .get_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
     // Tenant: verify assignment's class belongs to user's org
@@ -295,7 +316,8 @@ async fn list_assignments(
 ) -> Result<Json<Vec<Assignment>>, StatusCode> {
     let service = ClassService::new(state.db_pool);
     verify_class_tenant(&service, class_id, claims.school_id).await?;
-    let assignments = service.list_assignments(class_id)
+    let assignments = service
+        .list_assignments(class_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(assignments))
@@ -309,12 +331,14 @@ async fn update_assignment(
 ) -> Result<Json<Assignment>, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
-    let assignment = service.get_assignment(assignment_id)
+    let assignment = service
+        .get_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
     // Owner check: verify the user owns the class this assignment belongs to
     verify_class_access(&service, assignment.class_id, &claims, true).await?;
-    let assignment = service.update_assignment(assignment_id, &request)
+    let assignment = service
+        .update_assignment(assignment_id, &request)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(assignment))
@@ -327,11 +351,13 @@ async fn delete_assignment(
 ) -> Result<StatusCode, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
-    let assignment = service.get_assignment(assignment_id)
+    let assignment = service
+        .get_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
     verify_class_access(&service, assignment.class_id, &claims, true).await?;
-    service.delete_assignment(assignment_id)
+    service
+        .delete_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(StatusCode::NO_CONTENT)
@@ -344,11 +370,13 @@ async fn publish_assignment(
 ) -> Result<Json<Assignment>, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
-    let assignment = service.get_assignment(assignment_id)
+    let assignment = service
+        .get_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
     verify_class_access(&service, assignment.class_id, &claims, true).await?;
-    let assignment = service.publish_assignment(assignment_id)
+    let assignment = service
+        .publish_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(assignment))
@@ -360,12 +388,14 @@ async fn get_assignment_submissions(
     Path(assignment_id): Path<i64>,
 ) -> Result<Json<Vec<AssignmentSubmission>>, StatusCode> {
     let service = ClassService::new(state.db_pool);
-    let assignment = service.get_assignment(assignment_id)
+    let assignment = service
+        .get_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
     // Only teacher/admin can view submissions
     verify_class_access(&service, assignment.class_id, &claims, true).await?;
-    let submissions = service.get_assignment_submissions(assignment_id)
+    let submissions = service
+        .get_assignment_submissions(assignment_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(submissions))

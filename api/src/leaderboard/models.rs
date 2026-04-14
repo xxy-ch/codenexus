@@ -1,6 +1,6 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 /// Leaderboard entry for a user
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -28,7 +28,7 @@ pub struct UserStats {
     pub school_rank: Option<i64>,
     pub campus_rank: Option<i64>,
     pub class_rank: Option<i64>,
-    pub streak_days: i64, // Current streak of days with at least one AC
+    pub streak_days: i64,     // Current streak of days with at least one AC
     pub max_streak_days: i64, // Maximum streak achieved
     pub last_ac_at: Option<DateTime<Utc>>,
     pub joined_at: DateTime<Utc>,
@@ -47,8 +47,8 @@ pub struct RecentAC {
 /// Leaderboard query parameters
 #[derive(Debug, Deserialize)]
 pub struct LeaderboardQuery {
-    pub limit: Option<i64>, // Default 100, max 1000
-    pub offset: Option<i64>, // For pagination
+    pub limit: Option<i64>,        // Default 100, max 1000
+    pub offset: Option<i64>,       // For pagination
     pub timeframe: Option<String>, // "all", "week", "month", "year"
     pub min_problems: Option<i64>, // Minimum problems solved to qualify
 }
@@ -77,6 +77,7 @@ pub struct ProblemLeaderboardEntry {
 
 /// Statistics overview
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct StatsOverview {
     pub total_users: i64,
     pub total_problems: i64,
@@ -89,6 +90,7 @@ pub struct StatsOverview {
 
 /// Language statistics
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct LanguageStats {
     pub language: String,
     pub submissions: i64,
@@ -98,6 +100,7 @@ pub struct LanguageStats {
 
 /// Daily submission count
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct DailySubmissionStats {
     pub date: String, // YYYY-MM-DD
     pub submissions: i64,
@@ -106,12 +109,14 @@ pub struct DailySubmissionStats {
 
 /// User ranking history
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct RankingHistory {
     pub user_id: Uuid,
     pub history: Vec<RankingSnapshot>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct RankingSnapshot {
     pub date: DateTime<Utc>,
     pub global_rank: i64,

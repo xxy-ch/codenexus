@@ -1,6 +1,5 @@
 use anyhow::Result;
-use chrono::Utc;
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use super::models::*;
@@ -172,7 +171,7 @@ impl DiscussionService {
             updates.push(format!("content = ${}", param_count + 1));
             param_count += 1;
         }
-        if let Some(tags) = &req.tags {
+        if let Some(_tags) = &req.tags {
             updates.push(format!("tags = ${}", param_count + 1));
             param_count += 1;
         }

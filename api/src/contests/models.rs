@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Contest {
@@ -141,14 +141,15 @@ pub struct ContestParticipant {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct RegisterForContestRequest {
     pub contest_id: i64,
 }
 
 #[derive(Debug, Serialize)]
 pub struct ContestStatus {
-    pub status: String, // "upcoming", "active", "ended"
+    pub status: String,                // "upcoming", "active", "ended"
     pub time_until_start: Option<i64>, // seconds
-    pub time_until_end: Option<i64>, // seconds
+    pub time_until_end: Option<i64>,   // seconds
     pub is_frozen: bool,
 }

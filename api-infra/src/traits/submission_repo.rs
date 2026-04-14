@@ -1,5 +1,5 @@
-use async_trait::async_trait;
 use crate::error::AppError;
+use async_trait::async_trait;
 use uuid::Uuid;
 
 /// Summary type for submission references.
@@ -55,10 +55,21 @@ pub struct SubmissionFilter {
 pub trait SubmissionRepo: Send + Sync {
     async fn find_by_id(&self, id: i64) -> Result<Option<SubmissionSummary>, AppError>;
     async fn create(&self, input: CreateSubmissionInput) -> Result<i64, AppError>;
-    async fn update_status(&self, id: i64, status: &str, score: Option<i32>, runtime_ms: Option<i32>, memory_kb: Option<i32>) -> Result<(), AppError>;
+    async fn update_status(
+        &self,
+        id: i64,
+        status: &str,
+        score: Option<i32>,
+        runtime_ms: Option<i32>,
+        memory_kb: Option<i32>,
+    ) -> Result<(), AppError>;
     async fn list(&self, filter: SubmissionFilter) -> Result<Vec<SubmissionSummary>, AppError>;
     async fn count_by_user(&self, user_id: Uuid) -> Result<i64, AppError>;
     async fn count_by_problem(&self, problem_id: i64) -> Result<i64, AppError>;
     async fn get_user_submission_count(&self, user_id: Uuid) -> Result<i64, AppError>;
-    async fn save_test_case_results(&self, submission_id: i64, results: Vec<TestCaseResultInput>) -> Result<(), AppError>;
+    async fn save_test_case_results(
+        &self,
+        submission_id: i64,
+        results: Vec<TestCaseResultInput>,
+    ) -> Result<(), AppError>;
 }

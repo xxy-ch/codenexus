@@ -1,18 +1,17 @@
+use crate::websocket::message::WebSocketMessage;
+use crate::websocket::server::AddClientResult;
 use axum::{
     extract::{
-        State,
-        ws::{WebSocket, Message},
-        Query,
+        ws::{Message, WebSocket},
+        Query, State,
     },
     response::IntoResponse,
 };
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
-use uuid::Uuid;
-use crate::websocket::server::AddClientResult;
-use crate::websocket::message::WebSocketMessage;
-use tokio::sync::mpsc;
 use shared::models::Claims;
+use tokio::sync::mpsc;
+use uuid::Uuid;
 
 /// Query parameters for WebSocket upgrade (JWT token for authentication)
 #[derive(Debug, Deserialize)]
@@ -35,11 +34,33 @@ fn extract_cookie_token(headers: &axum::http::HeaderMap, cookie_name: &str) -> O
         })
 }
 
+/// Extract the client IP from proxy headers, falling back to 127.0.0.1.
+fn extract_client_ip(headers: &axum::http::HeaderMap) -> std::net::IpAddr {
+    let fallback_ip = std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1));
+    match headers
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.split(',').next())
+        .map(|s| s.trim())
+    {
+        Some(ip_str) => ip_str.parse().unwrap_or(fallback_ip),
+        None => match headers
+            .get("x-real-ip")
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.trim())
+        {
+            Some(ip_str) => ip_str.parse().unwrap_or(fallback_ip),
+            None => fallback_ip,
+        },
+    }
+}
+
 /// Handle WebSocket connection (internal, after auth verified)
 async fn websocket_handler_inner(
     state: crate::AppState,
     ws: WebSocket,
     claims: Claims,
+    client_ip: std::net::IpAddr,
 ) {
     let server = state.websocket_server.clone();
     let client_id = Uuid::new_v4();
@@ -51,20 +72,25 @@ async fn websocket_handler_inner(
 
     // Enforce per-user connection limit
     let sender_clone = tx.clone();
-    // TODO: extract real client IP from ConnectInfo<SocketAddr>
-    let placeholder_ip = std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1));
-    match server.add_client(client_id, user_id, school_id, placeholder_ip, sender_clone).await {
+    match server
+        .add_client(client_id, user_id, school_id, client_ip, sender_clone)
+        .await
+    {
         AddClientResult::Added => {}
         AddClientResult::LimitExceeded(max) => {
             tracing::warn!(
                 "WebSocket connection rejected for user {}: limit of {} exceeded",
-                user_id, max
+                user_id,
+                max
             );
             // Send close frame and return
-            let _ = tx.send(serde_json::to_string(&WebSocketMessage::Error {
-                code: "CONNECTION_LIMIT".to_string(),
-                message: format!("Maximum concurrent connections ({}) exceeded", max),
-            }).unwrap_or_default());
+            let _ = tx.send(
+                serde_json::to_string(&WebSocketMessage::Error {
+                    code: "CONNECTION_LIMIT".to_string(),
+                    message: format!("Maximum concurrent connections ({}) exceeded", max),
+                })
+                .unwrap_or_default(),
+            );
             return;
         }
         AddClientResult::IpLimitExceeded(max) => {
@@ -72,10 +98,13 @@ async fn websocket_handler_inner(
                 "WebSocket connection rejected for IP: limit of {} exceeded",
                 max
             );
-            let _ = tx.send(serde_json::to_string(&WebSocketMessage::Error {
-                code: "IP_CONNECTION_LIMIT".to_string(),
-                message: format!("Maximum concurrent IP connections ({}) exceeded", max),
-            }).unwrap_or_default());
+            let _ = tx.send(
+                serde_json::to_string(&WebSocketMessage::Error {
+                    code: "IP_CONNECTION_LIMIT".to_string(),
+                    message: format!("Maximum concurrent IP connections ({}) exceeded", max),
+                })
+                .unwrap_or_default(),
+            );
             return;
         }
     }
@@ -193,19 +222,21 @@ pub async fn websocket_upgrade_handler(
 
     // Validate JWT token from query parameter or HttpOnly cookie
     let jwt_service = crate::auth::JwtService::new(&state.jwt_secret);
-    let claims = jwt_service
-        .validate_token(&token)
-        .map_err(|_| {
-            tracing::warn!("WebSocket connection rejected: invalid JWT token");
-            axum::http::StatusCode::UNAUTHORIZED
-        })?;
+    let claims = jwt_service.validate_token(&token).map_err(|_| {
+        tracing::warn!("WebSocket connection rejected: invalid JWT token");
+        axum::http::StatusCode::UNAUTHORIZED
+    })?;
 
     // Verify token is not expired (validate_token already checks exp, but be defensive)
     let now = chrono::Utc::now().timestamp();
     if claims.exp < now {
-        tracing::warn!("WebSocket connection rejected: expired JWT token for user {}", claims.sub);
+        tracing::warn!(
+            "WebSocket connection rejected: expired JWT token for user {}",
+            claims.sub
+        );
         return Err(axum::http::StatusCode::UNAUTHORIZED);
     }
 
-    Ok(ws.on_upgrade(move |socket| websocket_handler_inner(state, socket, claims)))
+    let client_ip = extract_client_ip(&headers);
+    Ok(ws.on_upgrade(move |socket| websocket_handler_inner(state, socket, claims, client_ip)))
 }

@@ -1,12 +1,12 @@
 use super::{models::*, service::NotificationService};
+use crate::error::AppError;
+use crate::middleware::auth::AuthExtractor;
+use crate::AppState;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::{IntoResponse, Json},
 };
-use crate::AppState;
-use crate::error::AppError;
-use crate::middleware::auth::AuthExtractor;
 
 pub fn notifications_router() -> axum::Router<AppState> {
     axum::Router::new()
@@ -44,7 +44,9 @@ async fn mark_as_read(
     Json(req): Json<MarkAsReadRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = NotificationService::new(state.db_pool);
-    let count = service.mark_as_read(claims.sub, req.notification_ids).await?;
+    let count = service
+        .mark_as_read(claims.sub, req.notification_ids)
+        .await?;
     Ok(Json(serde_json::json!({
         "message": "Notifications marked as read",
         "count": count
@@ -111,7 +113,9 @@ async fn update_settings(
 
     // Validate digest_mode
     if !["immediate", "hourly", "daily"].contains(&settings.digest_mode.as_str()) {
-        return Err(AppError::Validation("digest_mode must be one of: immediate, hourly, daily".to_string()));
+        return Err(AppError::Validation(
+            "digest_mode must be one of: immediate, hourly, daily".to_string(),
+        ));
     }
 
     let updated = service.update_settings(claims.sub, settings).await?;

@@ -1,7 +1,7 @@
-use async_trait::async_trait;
 use crate::error::AppError;
-use uuid::Uuid;
+use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use uuid::Uuid;
 
 /// Summary type for contest references.
 #[derive(Debug, Clone)]
@@ -64,6 +64,11 @@ pub trait ContestRepo: Send + Sync {
     async fn unregister_participant(&self, contest_id: i64, user_id: Uuid) -> Result<(), AppError>;
     async fn is_participant(&self, contest_id: i64, user_id: Uuid) -> Result<bool, AppError>;
     async fn list_participants(&self, contest_id: i64) -> Result<Vec<Uuid>, AppError>;
-    async fn add_problem(&self, contest_id: i64, problem_id: i64, order: i32) -> Result<(), AppError>;
+    async fn add_problem(
+        &self,
+        contest_id: i64,
+        problem_id: i64,
+        order: i32,
+    ) -> Result<(), AppError>;
     async fn list_problems(&self, contest_id: i64) -> Result<Vec<ContestProblemSummary>, AppError>;
 }

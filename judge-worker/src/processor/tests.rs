@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod processor_tests {
-    use crate::queue::*;
-
     #[test]
     fn test_submission_message_structure() {
         let submission = crate::queue::SubmissionMessage {
@@ -142,14 +140,16 @@ int main() {
 
     #[test]
     fn test_time_limit_validation() {
-        // Reasonable time limits
-        assert!(1000 <= 60000); // 1 second to 1 minute
+        // Reasonable time limits: 1 second to 1 minute
+        let time_limit_ms: u64 = 1000;
+        assert!(time_limit_ms <= 60000);
     }
 
     #[test]
     fn test_memory_limit_validation() {
-        // Reasonable memory limits (in MB)
-        assert!(64 <= 1024); // 64MB to 1GB
+        // Reasonable memory limits: 64MB to 1GB
+        let memory_limit_mb: u64 = 64;
+        assert!(memory_limit_mb <= 1024);
     }
 
     #[test]

@@ -4,8 +4,6 @@ use crate::contests;
 use crate::db::schema::MIGRATOR;
 use crate::leaderboard;
 use crate::middleware::auth::auth_middleware;
-use crate::search::models::SearchQuery;
-use crate::search::service::SearchService;
 use crate::websocket::WebSocketServer;
 use crate::AppState;
 use api_infra::traits::token_service::TokenService;
@@ -15,6 +13,8 @@ use axum::{
     middleware, Router,
 };
 use chrono::{Duration, Utc};
+use domain_search::models::SearchQuery;
+use domain_search::service::SearchService;
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use testcontainers::runners::SyncRunner;
 use testcontainers::Container;

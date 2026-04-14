@@ -1,10 +1,5 @@
 use crate::rbac::RbacService;
-use axum::{
-    extract::Request,
-    http::StatusCode,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
 use shared::models::{permission::Permission, role::Role, Claims};
 use std::str::FromStr;
 

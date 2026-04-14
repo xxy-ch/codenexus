@@ -1,7 +1,6 @@
 use super::models::*;
-use crate::AppState;
 use anyhow::Result;
-use sqlx::{PgPool, Row};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 pub struct ContestService {
@@ -14,6 +13,7 @@ impl ContestService {
     }
 
     /// List contests with filtering and pagination
+    #[allow(unused_assignments)]
     pub async fn list_contests(
         &self,
         organization_id: Option<i64>,
@@ -30,12 +30,12 @@ impl ContestService {
         let mut conditions = Vec::new();
         let mut param_count = 0;
 
-        if let Some(org_id) = organization_id {
+        if let Some(_org_id) = organization_id {
             param_count += 1;
             conditions.push(format!(" AND organization_id = ${}", param_count));
         }
 
-        if let Some(campus) = campus_id {
+        if let Some(_campus) = campus_id {
             param_count += 1;
             conditions.push(format!(" AND campus_id = ${}", param_count));
         }
@@ -43,9 +43,9 @@ impl ContestService {
         if let Some(is_active) = active {
             param_count += 1;
             if is_active {
-                conditions.push(format!(" AND start_time <= NOW() AND end_time >= NOW()"));
+                conditions.push(" AND start_time <= NOW() AND end_time >= NOW()".to_string());
             } else {
-                conditions.push(format!(" AND (end_time < NOW() OR start_time > NOW())"));
+                conditions.push(" AND (end_time < NOW() OR start_time > NOW())".to_string());
             }
         }
 
@@ -53,7 +53,10 @@ impl ContestService {
         base_query.push_str(&conditions_str);
         count_query.push_str(&conditions_str);
 
-        base_query.push_str(&format!(" ORDER BY start_time DESC LIMIT {} OFFSET {}", limit, offset));
+        base_query.push_str(&format!(
+            " ORDER BY start_time DESC LIMIT {} OFFSET {}",
+            limit, offset
+        ));
 
         // Execute count
         let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query);
@@ -80,17 +83,15 @@ impl ContestService {
 
     /// Get contest by ID with details
     pub async fn get_contest(&self, contest_id: i64) -> Result<ContestDetail> {
-        let contest = sqlx::query_as::<_, Contest>(
-            "SELECT * FROM contests WHERE id = $1"
-        )
-        .bind(contest_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
+        let contest = sqlx::query_as::<_, Contest>("SELECT * FROM contests WHERE id = $1")
+            .bind(contest_id)
+            .fetch_optional(&self.pool)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
 
         // Get problem count
         let problem_count: i64 = sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM contest_problems WHERE contest_id = $1"
+            "SELECT COUNT(*) FROM contest_problems WHERE contest_id = $1",
         )
         .bind(contest_id)
         .fetch_one(&self.pool)
@@ -101,7 +102,7 @@ impl ContestService {
             "SELECT COUNT(DISTINCT s.user_id)
              FROM contest_submissions cs
              JOIN submissions s ON s.id = cs.submission_id
-             WHERE cs.contest_id = $1"
+             WHERE cs.contest_id = $1",
         )
         .bind(contest_id)
         .fetch_one(&self.pool)
@@ -134,7 +135,7 @@ impl ContestService {
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING *
-            "#
+            "#,
         )
         .bind(req.organization_id)
         .bind(req.campus_id)
@@ -151,7 +152,11 @@ impl ContestService {
     }
 
     /// Update a contest
-    pub async fn update_contest(&self, contest_id: i64, req: UpdateContestRequest) -> Result<Contest> {
+    pub async fn update_contest(
+        &self,
+        contest_id: i64,
+        req: UpdateContestRequest,
+    ) -> Result<Contest> {
         let contest = sqlx::query_as::<_, Contest>(
             r#"
             UPDATE contests
@@ -165,7 +170,7 @@ impl ContestService {
                 updated_at = NOW()
             WHERE id = $7
             RETURNING *
-            "#
+            "#,
         )
         .bind(req.name)
         .bind(req.description)
@@ -210,7 +215,7 @@ impl ContestService {
                 points = EXCLUDED.points,
                 order_index = EXCLUDED.order_index
             RETURNING *
-            "#
+            "#,
         )
         .bind(contest_id)
         .bind(req.problem_id)
@@ -237,7 +242,7 @@ impl ContestService {
             JOIN problems p ON p.id = cp.problem_id
             WHERE cp.contest_id = $1
             ORDER BY cp.order_index ASC, cp.id ASC
-            "#
+            "#,
         )
         .bind(contest_id)
         .fetch_all(&self.pool)
@@ -252,13 +257,12 @@ impl ContestService {
         contest_id: i64,
         problem_id: i64,
     ) -> Result<()> {
-        let result = sqlx::query(
-            "DELETE FROM contest_problems WHERE contest_id = $1 AND problem_id = $2"
-        )
-        .bind(contest_id)
-        .bind(problem_id)
-        .execute(&self.pool)
-        .await?;
+        let result =
+            sqlx::query("DELETE FROM contest_problems WHERE contest_id = $1 AND problem_id = $2")
+                .bind(contest_id)
+                .bind(problem_id)
+                .execute(&self.pool)
+                .await?;
 
         if result.rows_affected() == 0 {
             return Err(anyhow::anyhow!("Problem not found in contest"));
@@ -270,17 +274,17 @@ impl ContestService {
     /// Get contest standings/rankings with ACM scoring
     pub async fn get_contest_rankings(&self, contest_id: i64) -> Result<Vec<ContestRankingEntry>> {
         // First check if contest exists and get rules
-        let contest = sqlx::query_as::<_, Contest>(
-            "SELECT * FROM contests WHERE id = $1"
-        )
-        .bind(contest_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
+        let contest = sqlx::query_as::<_, Contest>("SELECT * FROM contests WHERE id = $1")
+            .bind(contest_id)
+            .fetch_optional(&self.pool)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
 
         let now = chrono::Utc::now();
-        let is_frozen = contest.freeze_minutes.is_some()
-            && (contest.end_time - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64)) < now;
+        let _is_frozen = contest.freeze_minutes.is_some()
+            && (contest.end_time
+                - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64))
+                < now;
 
         // Get all participants (users who submitted in this contest)
         let participants = sqlx::query_as::<_, (Uuid, String)>(
@@ -291,7 +295,7 @@ impl ContestService {
             JOIN users u ON u.id = s.user_id
             WHERE cs.contest_id = $1
             ORDER BY u.username
-            "#
+            "#,
         )
         .bind(contest_id)
         .fetch_all(&self.pool)
@@ -364,17 +368,11 @@ impl ContestService {
             .await?;
 
             // Calculate score and penalty for ACM rules
-            let solved_count = problem_submissions.iter()
-                .filter(|p| p.score > 0)
-                .count() as i32;
+            let solved_count = problem_submissions.iter().filter(|p| p.score > 0).count() as i32;
 
-            let total_score: i32 = problem_submissions.iter()
-                .map(|p| p.score)
-                .sum();
+            let total_score: i32 = problem_submissions.iter().map(|p| p.score).sum();
 
-            let total_penalty: i32 = problem_submissions.iter()
-                .map(|p| p.time_penalty)
-                .sum();
+            let total_penalty: i32 = problem_submissions.iter().map(|p| p.time_penalty).sum();
 
             rankings.push(ContestRankingEntry {
                 user_id,
@@ -388,15 +386,12 @@ impl ContestService {
 
         // Sort by ACM rules: solved count DESC, penalty ASC, last AC time DESC
         rankings.sort_by(|a, b| {
-            b.solved_count.cmp(&a.solved_count)
+            b.solved_count
+                .cmp(&a.solved_count)
                 .then_with(|| a.penalty.cmp(&b.penalty))
                 .then_with(|| {
-                    let a_last_ac = a.submissions.iter()
-                        .filter_map(|p| p.first_solved_at)
-                        .max();
-                    let b_last_ac = b.submissions.iter()
-                        .filter_map(|p| p.first_solved_at)
-                        .max();
+                    let a_last_ac = a.submissions.iter().filter_map(|p| p.first_solved_at).max();
+                    let b_last_ac = b.submissions.iter().filter_map(|p| p.first_solved_at).max();
                     b_last_ac.cmp(&a_last_ac)
                 })
         });
@@ -405,19 +400,21 @@ impl ContestService {
     }
 
     /// Register user for contest
-    pub async fn register_for_contest(&self, contest_id: i64, user_id: Uuid) -> Result<ContestParticipant> {
+    pub async fn register_for_contest(
+        &self,
+        contest_id: i64,
+        user_id: Uuid,
+    ) -> Result<ContestParticipant> {
         // Check if contest exists
-        let contest = sqlx::query_as::<_, Contest>(
-            "SELECT * FROM contests WHERE id = $1"
-        )
-        .bind(contest_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
+        let _contest = sqlx::query_as::<_, Contest>("SELECT * FROM contests WHERE id = $1")
+            .bind(contest_id)
+            .fetch_optional(&self.pool)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
 
         // Check if already registered
         let existing = sqlx::query_as::<_, ContestParticipant>(
-            "SELECT * FROM contest_participants WHERE contest_id = $1 AND user_id = $2"
+            "SELECT * FROM contest_participants WHERE contest_id = $1 AND user_id = $2",
         )
         .bind(contest_id)
         .bind(user_id)
@@ -434,7 +431,7 @@ impl ContestService {
             INSERT INTO contest_participants (contest_id, user_id)
             VALUES ($1, $2)
             RETURNING *
-            "#
+            "#,
         )
         .bind(contest_id)
         .bind(user_id)
@@ -446,13 +443,11 @@ impl ContestService {
 
     /// Get contest status
     pub async fn get_contest_status(&self, contest_id: i64) -> Result<ContestStatus> {
-        let contest = sqlx::query_as::<_, Contest>(
-            "SELECT * FROM contests WHERE id = $1"
-        )
-        .bind(contest_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
+        let contest = sqlx::query_as::<_, Contest>("SELECT * FROM contests WHERE id = $1")
+            .bind(contest_id)
+            .fetch_optional(&self.pool)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
 
         let now = chrono::Utc::now();
         let status = if now < contest.start_time {
@@ -476,7 +471,8 @@ impl ContestService {
         };
 
         let is_frozen = if contest.freeze_minutes.is_some() {
-            let freeze_time = contest.end_time - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64);
+            let freeze_time = contest.end_time
+                - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64);
             now >= freeze_time && now <= contest.end_time
         } else {
             false
@@ -491,14 +487,17 @@ impl ContestService {
     }
 
     /// Get contest participants
-    pub async fn get_contest_participants(&self, contest_id: i64) -> Result<Vec<ContestParticipant>> {
+    pub async fn get_contest_participants(
+        &self,
+        contest_id: i64,
+    ) -> Result<Vec<ContestParticipant>> {
         let participants = sqlx::query_as::<_, ContestParticipant>(
             r#"
             SELECT cp.*
             FROM contest_participants cp
             WHERE cp.contest_id = $1
             ORDER BY cp.registered_at ASC
-            "#
+            "#,
         )
         .bind(contest_id)
         .fetch_all(&self.pool)
@@ -514,13 +513,11 @@ impl ContestService {
         submission_id: i64,
     ) -> Result<ContestSubmission> {
         // Verify contest exists and is active
-        let contest = sqlx::query_as::<_, Contest>(
-            "SELECT * FROM contests WHERE id = $1"
-        )
-        .bind(contest_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
+        let contest = sqlx::query_as::<_, Contest>("SELECT * FROM contests WHERE id = $1")
+            .bind(contest_id)
+            .fetch_optional(&self.pool)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
 
         let now = chrono::Utc::now();
         if now < contest.start_time || now > contest.end_time {
@@ -528,16 +525,15 @@ impl ContestService {
         }
 
         // Check if problem is in contest
-        let submission_problem: (i64,) = sqlx::query_as(
-            "SELECT problem_id FROM submissions WHERE id = $1"
-        )
-        .bind(submission_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("Submission not found"))?;
+        let submission_problem: (i64,) =
+            sqlx::query_as("SELECT problem_id FROM submissions WHERE id = $1")
+                .bind(submission_id)
+                .fetch_optional(&self.pool)
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("Submission not found"))?;
 
-        let problem_in_contest: (i64,) = sqlx::query_as(
-            "SELECT problem_id FROM contest_problems WHERE contest_id = $1 AND problem_id = $2"
+        let _problem_in_contest: (i64,) = sqlx::query_as(
+            "SELECT problem_id FROM contest_problems WHERE contest_id = $1 AND problem_id = $2",
         )
         .bind(contest_id)
         .bind(submission_problem.0)
@@ -552,7 +548,7 @@ impl ContestService {
             VALUES ($1, $2)
             ON CONFLICT DO NOTHING
             RETURNING *
-            "#
+            "#,
         )
         .bind(contest_id)
         .bind(submission_id)

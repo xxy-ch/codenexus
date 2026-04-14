@@ -1,5 +1,5 @@
-use deadpool_redis::Pool as RedisPool;
 use anyhow::Result;
+use deadpool_redis::Pool as RedisPool;
 use testcontainers::runners::AsyncRunner;
 
 /// A Redis test container managed by testcontainers.
@@ -18,7 +18,11 @@ impl RedisTestContainer {
 
     /// Get the connection URL for this container.
     pub async fn connection_url(&self) -> String {
-        let port = self.container.get_host_port_ipv4(6379).await.expect("Failed to get Redis port");
+        let port = self
+            .container
+            .get_host_port_ipv4(6379)
+            .await
+            .expect("Failed to get Redis port");
         format!("redis://127.0.0.1:{port}")
     }
 

@@ -3,7 +3,7 @@ use sqlx::FromRow;
 use uuid::Uuid;
 
 use api_infra::state::AppState;
-use shared::models::{Claims, role::Role};
+use shared::models::{role::Role, Claims};
 
 use super::models::ListProblemsQuery;
 
@@ -45,19 +45,11 @@ pub fn can_view_management_problem_data(
         || (role.is_higher_or_equal(Role::Teacher) && claims.school_id == problem.organization_id)
 }
 
-pub fn can_read_problem(
-    role: Role,
-    claims: &Claims,
-    problem: &ProblemAccessRecord,
-) -> bool {
+pub fn can_read_problem(role: Role, claims: &Claims, problem: &ProblemAccessRecord) -> bool {
     problem.visibility == "public" || can_view_management_problem_data(role, claims, problem)
 }
 
-pub fn can_mutate_problem(
-    role: Role,
-    claims: &Claims,
-    problem: &ProblemAccessRecord,
-) -> bool {
+pub fn can_mutate_problem(role: Role, claims: &Claims, problem: &ProblemAccessRecord) -> bool {
     if role == Role::Root {
         return true;
     }
@@ -163,9 +155,21 @@ mod tests {
     #[test]
     fn teacher_can_only_create_problems_inside_own_tenant() {
         let teacher_claims = claims("teacher", 7);
-        assert!(can_create_problem_in_organization(Role::Teacher, &teacher_claims, 7));
-        assert!(!can_create_problem_in_organization(Role::Teacher, &teacher_claims, 8));
-        assert!(can_create_problem_in_organization(Role::Root, &teacher_claims, 8));
+        assert!(can_create_problem_in_organization(
+            Role::Teacher,
+            &teacher_claims,
+            7
+        ));
+        assert!(!can_create_problem_in_organization(
+            Role::Teacher,
+            &teacher_claims,
+            8
+        ));
+        assert!(can_create_problem_in_organization(
+            Role::Root,
+            &teacher_claims,
+            8
+        ));
     }
 
     #[test]
@@ -175,9 +179,21 @@ mod tests {
         let public_problem = problem(9, 10, "public");
         let private_problem = problem(9, 10, "private");
 
-        assert!(can_read_problem(Role::Student, &student_claims, &public_problem));
-        assert!(!can_read_problem(Role::Student, &student_claims, &private_problem));
-        assert!(!can_read_problem(Role::Teacher, &teacher_claims, &private_problem));
+        assert!(can_read_problem(
+            Role::Student,
+            &student_claims,
+            &public_problem
+        ));
+        assert!(!can_read_problem(
+            Role::Student,
+            &student_claims,
+            &private_problem
+        ));
+        assert!(!can_read_problem(
+            Role::Teacher,
+            &teacher_claims,
+            &private_problem
+        ));
         assert!(can_read_problem(
             Role::OrganizationAdmin,
             &claims("organizationadmin", 9),
@@ -217,7 +233,11 @@ mod tests {
         let cross_tenant_admin = claims("organizationadmin", 9);
         let owned_problem = problem(7, 1, "private");
 
-        assert!(can_mutate_problem(Role::Teacher, &owner_claims, &owned_problem));
+        assert!(can_mutate_problem(
+            Role::Teacher,
+            &owner_claims,
+            &owned_problem
+        ));
         assert!(!can_mutate_problem(
             Role::Teacher,
             &same_tenant_non_owner,
@@ -233,6 +253,10 @@ mod tests {
             &cross_tenant_admin,
             &owned_problem
         ));
-        assert!(can_mutate_problem(Role::Root, &claims("root", 99), &owned_problem));
+        assert!(can_mutate_problem(
+            Role::Root,
+            &claims("root", 99),
+            &owned_problem
+        ));
     }
 }

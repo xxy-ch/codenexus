@@ -1,8 +1,8 @@
+use crate::classes::models::*;
 use anyhow::Result;
+use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
-use chrono::Utc;
-use crate::classes::models::*;
 
 pub struct ClassService {
     pool: PgPool,
@@ -22,7 +22,10 @@ impl ClassService {
         teacher_id: Uuid,
     ) -> Result<Class> {
         let now = Utc::now();
-        let code = format!("CLS{}", &Uuid::new_v4().simple().to_string()[..6].to_uppercase());
+        let code = format!(
+            "CLS{}",
+            &Uuid::new_v4().simple().to_string()[..6].to_uppercase()
+        );
 
         let class = sqlx::query_as::<_, Class>(
             r#"
@@ -75,7 +78,7 @@ impl ClassService {
                 updated_at
             FROM classes
             WHERE id = $1
-            "#
+            "#,
         )
         .bind(class_id)
         .fetch_one(&self.pool)
@@ -103,7 +106,7 @@ impl ClassService {
                 updated_at
             FROM classes
             WHERE code = $1
-            "#
+            "#,
         )
         .bind(code)
         .fetch_one(&self.pool)
@@ -170,10 +173,7 @@ impl ClassService {
             param_count + 2
         );
 
-        let count_query_str = format!(
-            "SELECT COUNT(*) as count FROM classes {}",
-            where_clause
-        );
+        let count_query_str = format!("SELECT COUNT(*) as count FROM classes {}", where_clause);
 
         let mut query_builder = sqlx::query_as::<_, Class>(&query_str);
         let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query_str);
@@ -233,7 +233,7 @@ impl ClassService {
                 semester,
                 created_at,
                 updated_at
-            "#
+            "#,
         )
         .bind(&request.name)
         .bind(request.campus_id)
@@ -263,19 +263,18 @@ impl ClassService {
             SELECT COUNT(*)
             FROM class_enrollments
             WHERE class_id = $1 AND status = 'active'
-            "#
+            "#,
         )
         .bind(class_id)
         .fetch_one(&self.pool)
         .await?;
 
-        let total_assignments: i64 = sqlx::query_scalar(
-            "SELECT COUNT(*) FROM assignments WHERE class_id = $1"
-        )
-        .bind(class_id)
-        .fetch_one(&self.pool)
-        .await
-        .unwrap_or(0);
+        let total_assignments: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM assignments WHERE class_id = $1")
+                .bind(class_id)
+                .fetch_one(&self.pool)
+                .await
+                .unwrap_or(0);
 
         let total_submissions: i64 = sqlx::query_scalar(
             r#"
@@ -284,7 +283,7 @@ impl ClassService {
             JOIN class_enrollments ce ON ce.class_id = a.class_id AND ce.status = 'active'
             JOIN submissions s ON s.problem_id = a.problem_id AND s.user_id = ce.student_id
             WHERE a.class_id = $1
-            "#
+            "#,
         )
         .bind(class_id)
         .fetch_one(&self.pool)
@@ -316,26 +315,25 @@ impl ClassService {
 
         // Verify teacher owns this class
         if class.teacher_id != teacher_id {
-            return Err(anyhow::anyhow!("Not authorized to add students to this class"));
+            return Err(anyhow::anyhow!(
+                "Not authorized to add students to this class"
+            ));
         }
 
         // Find student by email
-        let student: (Uuid,) = sqlx::query_as(
-            "SELECT id FROM users WHERE email = $1"
-        )
-        .bind(student_email)
-        .fetch_optional(&self.pool)
-        .await?
-        .ok_or_else(|| anyhow::anyhow!("Student not found"))?;
+        let student: (Uuid,) = sqlx::query_as("SELECT id FROM users WHERE email = $1")
+            .bind(student_email)
+            .fetch_optional(&self.pool)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("Student not found"))?;
 
         // Check if already enrolled
-        let existing = sqlx::query(
-            "SELECT id FROM class_enrollments WHERE class_id = $1 AND student_id = $2"
-        )
-        .bind(class_id)
-        .bind(student.0)
-        .fetch_optional(&self.pool)
-        .await?;
+        let existing =
+            sqlx::query("SELECT id FROM class_enrollments WHERE class_id = $1 AND student_id = $2")
+                .bind(class_id)
+                .bind(student.0)
+                .fetch_optional(&self.pool)
+                .await?;
 
         if existing.is_some() {
             return Err(anyhow::anyhow!("Student already enrolled"));
@@ -348,7 +346,7 @@ impl ClassService {
             INSERT INTO class_enrollments (class_id, student_id, status, enrolled_at)
             VALUES ($1, $2, 'active', $3)
             RETURNING id, class_id, student_id, status, enrolled_at
-            "#
+            "#,
         )
         .bind(class_id)
         .bind(student.0)
@@ -364,13 +362,12 @@ impl ClassService {
         let class = self.get_class_by_code(code).await?;
 
         // Check if already enrolled
-        let existing = sqlx::query(
-            "SELECT id FROM class_enrollments WHERE class_id = $1 AND student_id = $2"
-        )
-        .bind(class.id)
-        .bind(student_id)
-        .fetch_optional(&self.pool)
-        .await?;
+        let existing =
+            sqlx::query("SELECT id FROM class_enrollments WHERE class_id = $1 AND student_id = $2")
+                .bind(class.id)
+                .bind(student_id)
+                .fetch_optional(&self.pool)
+                .await?;
 
         if existing.is_some() {
             return Err(anyhow::anyhow!("Already enrolled in this class"));
@@ -381,7 +378,7 @@ impl ClassService {
             INSERT INTO class_enrollments (class_id, student_id, status, enrolled_at)
             VALUES ($1, $2, 'active', $3)
             RETURNING id, class_id, student_id, status, enrolled_at
-            "#
+            "#,
         )
         .bind(class.id)
         .bind(student_id)
@@ -394,13 +391,11 @@ impl ClassService {
 
     /// Remove student from class
     pub async fn remove_student(&self, class_id: i64, student_id: Uuid) -> Result<()> {
-        sqlx::query(
-            "DELETE FROM class_enrollments WHERE class_id = $1 AND student_id = $2"
-        )
-        .bind(class_id)
-        .bind(student_id)
-        .execute(&self.pool)
-        .await?;
+        sqlx::query("DELETE FROM class_enrollments WHERE class_id = $1 AND student_id = $2")
+            .bind(class_id)
+            .bind(student_id)
+            .execute(&self.pool)
+            .await?;
 
         Ok(())
     }
@@ -421,7 +416,7 @@ impl ClassService {
             JOIN users u ON u.id = ce.student_id
             WHERE ce.class_id = $1
             ORDER BY ce.enrolled_at DESC
-            "#
+            "#,
         )
         .bind(class_id)
         .fetch_all(&self.pool)
@@ -562,6 +557,7 @@ impl ClassService {
     }
 
     /// Record submission for assignment
+    #[allow(dead_code)]
     pub async fn record_submission(
         &self,
         assignment_id: i64,
@@ -576,7 +572,10 @@ impl ClassService {
     }
 
     /// Get submissions for assignment
-    pub async fn get_assignment_submissions(&self, assignment_id: i64) -> Result<Vec<AssignmentSubmission>> {
+    pub async fn get_assignment_submissions(
+        &self,
+        assignment_id: i64,
+    ) -> Result<Vec<AssignmentSubmission>> {
         let submissions = sqlx::query_as::<_, AssignmentSubmission>(
             r#"
             SELECT

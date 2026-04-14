@@ -1,6 +1,6 @@
 use super::models::*;
-use api_infra::traits::token_service::TokenService;
 use anyhow::Result;
+use api_infra::traits::token_service::TokenService;
 use sqlx::PgPool;
 use std::sync::Arc;
 use uuid::Uuid;

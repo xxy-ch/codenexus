@@ -2,15 +2,13 @@
 //! Type B (DB-dependent) stays here because they use AppState + sqlx.
 
 // Re-export pure middleware from api-infra
+#[allow(unused_imports)]
 pub use api_infra::middleware::permission::{
     require_all_permissions, require_any_permission, require_min_role, require_permission,
 };
 
 use crate::AppState;
-use axum::{
-    extract::State,
-    http::StatusCode,
-};
+use axum::{extract::State, http::StatusCode};
 use shared::models::{role::Role, Claims};
 use std::str::FromStr;
 
@@ -18,6 +16,7 @@ use std::str::FromStr;
 ///
 /// This middleware verifies that the user belongs to the specified organization
 /// or has a role that allows cross-organization access (Root, OrganizationAdmin).
+#[allow(dead_code)]
 pub async fn require_organization_access(
     State(state): State<AppState>,
     organization_id: i64,
@@ -50,6 +49,7 @@ pub async fn require_organization_access(
 ///
 /// This middleware verifies that the user belongs to the specified campus
 /// or has a role that allows cross-campus access.
+#[allow(dead_code)]
 pub async fn require_campus_access(
     State(state): State<AppState>,
     campus_id: i64,

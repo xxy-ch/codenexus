@@ -6,10 +6,14 @@ use tokio::sync::Semaphore;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+#[allow(dead_code)]
 mod compiler;
-mod processor;
-mod queue;
+#[allow(dead_code)]
 mod db;
+mod processor;
+#[allow(dead_code)]
+mod queue;
+#[allow(dead_code)]
 mod sandbox;
 
 use queue::consumer;
@@ -30,16 +34,12 @@ async fn main() -> Result<()> {
     info!("Judge worker starting...");
 
     // Load configuration
-    let redis_url = env::var("REDIS_URL")
-        .unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
-    let api_url = env::var("API_URL")
-        .unwrap_or_else(|_| "http://127.0.0.1:3000".to_string());
-    let stream_name = env::var("SUBMISSION_STREAM")
-        .unwrap_or_else(|_| "submissions".to_string());
-    let group_name = env::var("CONSUMER_GROUP")
-        .unwrap_or_else(|_| "judge_workers".to_string());
-    let consumer_name = env::var("CONSUMER_NAME")
-        .unwrap_or_else(|_| format!("worker-{}", uuid::Uuid::new_v4()));
+    let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
+    let api_url = env::var("API_URL").unwrap_or_else(|_| "http://127.0.0.1:3000".to_string());
+    let stream_name = env::var("SUBMISSION_STREAM").unwrap_or_else(|_| "submissions".to_string());
+    let group_name = env::var("CONSUMER_GROUP").unwrap_or_else(|_| "judge_workers".to_string());
+    let consumer_name =
+        env::var("CONSUMER_NAME").unwrap_or_else(|_| format!("worker-{}", uuid::Uuid::new_v4()));
 
     info!("Connecting to Redis at {}", redis_url);
     let redis_client = Client::open(redis_url)?;
@@ -59,14 +59,7 @@ async fn main() -> Result<()> {
     info!("Connected to API at: {}", api_url);
 
     // Enter main processing loop
-    run_processing_loop(
-        conn,
-        &stream_name,
-        &group_name,
-        &consumer_name,
-        &api_url,
-    )
-    .await
+    run_processing_loop(conn, &stream_name, &group_name, &consumer_name, &api_url).await
 }
 
 async fn run_processing_loop(
@@ -248,11 +241,7 @@ async fn send_result_to_api(api_url: &str, result: &queue::JudgeResult) -> Resul
     } else {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
-        anyhow::bail!(
-            "API returned error status {}: {}",
-            status,
-            body
-        )
+        anyhow::bail!("API returned error status {}: {}", status, body)
     }
 }
 
@@ -275,8 +264,13 @@ async fn send_result_with_retry(
                         max_retries, result.submission_id, e
                     );
                     let mut locked_conn = conn.lock().await;
-                    if let Err(dlq_err) = queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string()).await {
-                        error!("Failed to write submission {} to DLQ: {}", result.submission_id, dlq_err);
+                    if let Err(dlq_err) =
+                        queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string()).await
+                    {
+                        error!(
+                            "Failed to write submission {} to DLQ: {}",
+                            result.submission_id, dlq_err
+                        );
                     }
                     return Err(e);
                 }

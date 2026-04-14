@@ -1,6 +1,7 @@
-pub mod server;
 pub mod handler;
 pub mod message;
+pub mod server;
 
-pub use server::WebSocketServer;
+#[allow(unused_imports)]
 pub use message::WebSocketMessage;
+pub use server::WebSocketServer;

@@ -82,10 +82,16 @@ mod tests {
     fn test_role_from_str() {
         assert_eq!(Role::from_str("root"), Ok(Role::Root));
         assert_eq!(Role::from_str("ROOT"), Ok(Role::Root));
-        assert_eq!(Role::from_str("organizationadmin"), Ok(Role::OrganizationAdmin));
+        assert_eq!(
+            Role::from_str("organizationadmin"),
+            Ok(Role::OrganizationAdmin)
+        );
         assert_eq!(Role::from_str("campusadmin"), Ok(Role::CampusAdmin));
         assert_eq!(Role::from_str("teacher"), Ok(Role::Teacher));
-        assert_eq!(Role::from_str("teachingassistant"), Ok(Role::TeachingAssistant));
+        assert_eq!(
+            Role::from_str("teachingassistant"),
+            Ok(Role::TeachingAssistant)
+        );
         assert_eq!(Role::from_str("ta"), Ok(Role::TeachingAssistant));
         assert_eq!(Role::from_str("student"), Ok(Role::Student));
         assert!(Role::from_str("unknown").is_err());

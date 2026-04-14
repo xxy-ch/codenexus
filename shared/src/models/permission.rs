@@ -82,19 +82,23 @@ impl Permission {
     pub fn category(&self) -> PermissionCategory {
         match self {
             Permission::ManageUsers | Permission::ViewUsers => PermissionCategory::User,
-            Permission::ManageProblems | Permission::ViewAllProblems | Permission::SubmitSolution => {
-                PermissionCategory::Problem
+            Permission::ManageProblems
+            | Permission::ViewAllProblems
+            | Permission::SubmitSolution => PermissionCategory::Problem,
+            Permission::ManageContests
+            | Permission::RegisterContests
+            | Permission::ViewContestProblems => PermissionCategory::Contest,
+            Permission::ManageClasses
+            | Permission::ManageAssignments
+            | Permission::GradeSubmissions
+            | Permission::ViewClassStats => PermissionCategory::Class,
+            Permission::ManageOrganization | Permission::ManageCampus => {
+                PermissionCategory::Organization
             }
-            Permission::ManageContests | Permission::RegisterContests | Permission::ViewContestProblems => {
-                PermissionCategory::Contest
-            }
-            Permission::ManageClasses | Permission::ManageAssignments | Permission::GradeSubmissions | Permission::ViewClassStats => {
-                PermissionCategory::Class
-            }
-            Permission::ManageOrganization | Permission::ManageCampus => PermissionCategory::Organization,
-            Permission::ViewLeaderboard | Permission::ViewStatistics | Permission::ModerateContent | Permission::ManageTags => {
-                PermissionCategory::System
-            }
+            Permission::ViewLeaderboard
+            | Permission::ViewStatistics
+            | Permission::ModerateContent
+            | Permission::ManageTags => PermissionCategory::System,
             Permission::ManageSystem | Permission::ViewLogs | Permission::ManageApiKeys => {
                 PermissionCategory::System
             }
@@ -145,10 +149,25 @@ mod tests {
     #[test]
     fn test_permission_categories() {
         assert_eq!(Permission::ManageUsers.category(), PermissionCategory::User);
-        assert_eq!(Permission::SubmitSolution.category(), PermissionCategory::Problem);
-        assert_eq!(Permission::ManageContests.category(), PermissionCategory::Contest);
-        assert_eq!(Permission::ManageClasses.category(), PermissionCategory::Class);
-        assert_eq!(Permission::ManageOrganization.category(), PermissionCategory::Organization);
-        assert_eq!(Permission::ManageSystem.category(), PermissionCategory::System);
+        assert_eq!(
+            Permission::SubmitSolution.category(),
+            PermissionCategory::Problem
+        );
+        assert_eq!(
+            Permission::ManageContests.category(),
+            PermissionCategory::Contest
+        );
+        assert_eq!(
+            Permission::ManageClasses.category(),
+            PermissionCategory::Class
+        );
+        assert_eq!(
+            Permission::ManageOrganization.category(),
+            PermissionCategory::Organization
+        );
+        assert_eq!(
+            Permission::ManageSystem.category(),
+            PermissionCategory::System
+        );
     }
 }

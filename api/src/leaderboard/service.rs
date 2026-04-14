@@ -1,10 +1,9 @@
 use super::models::*;
-use crate::AppState;
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use redis::AsyncCommands;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 
 pub struct LeaderboardService {
     pool: PgPool,
@@ -52,7 +51,8 @@ impl LeaderboardService {
 
         let min_problems_filter = query.min_problems.unwrap_or(0);
 
-        let query_str = format!(r#"
+        let query_str = format!(
+            r#"
             WITH user_stats AS (
                 SELECT
                     u.id as user_id,
@@ -98,17 +98,20 @@ impl LeaderboardService {
             FROM user_stats
             ORDER BY score DESC, problems_solved DESC, username ASC
             LIMIT $2 OFFSET $3
-        "#, time_filter);
+        "#,
+            time_filter
+        );
 
         let entries = sqlx::query_as::<_, LeaderboardEntry>(&query_str)
-        .bind(min_problems_filter)
-        .bind(limit as i64)
-        .bind(offset as i64)
-        .fetch_all(&self.pool)
-        .await?;
+            .bind(min_problems_filter)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(&self.pool)
+            .await?;
 
         // Get total count
-        let count_query = format!(r#"
+        let count_query = format!(
+            r#"
             SELECT COUNT(*)
             FROM (
                 SELECT u.id
@@ -118,7 +121,9 @@ impl LeaderboardService {
                 GROUP BY u.id
                 HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
             ) qualified_users
-        "#, time_filter);
+        "#,
+            time_filter
+        );
 
         let total: i64 = sqlx::query_scalar(&count_query)
             .bind(min_problems_filter)
@@ -199,11 +204,11 @@ impl LeaderboardService {
             FROM user_stats
             ORDER BY score DESC, problems_solved DESC, username ASC
             LIMIT $2 OFFSET $3
-            "#
+            "#,
         )
         .bind(school_id)
-        .bind(limit as i64)
-        .bind(offset as i64)
+        .bind(limit)
+        .bind(offset)
         .fetch_all(&self.pool)
         .await?;
 
@@ -272,11 +277,11 @@ impl LeaderboardService {
             FROM user_stats
             ORDER BY score DESC, problems_solved DESC, username ASC
             LIMIT $2 OFFSET $3
-            "#
+            "#,
         )
         .bind(campus_id)
-        .bind(limit as i64)
-        .bind(offset as i64)
+        .bind(limit)
+        .bind(offset)
         .fetch_all(&self.pool)
         .await?;
 
@@ -346,11 +351,11 @@ impl LeaderboardService {
             FROM user_stats
             ORDER BY score DESC, problems_solved DESC, username ASC
             LIMIT $2 OFFSET $3
-            "#
+            "#,
         )
         .bind(class_id)
-        .bind(limit as i64)
-        .bind(offset as i64)
+        .bind(limit)
+        .bind(offset)
         .fetch_all(&self.pool)
         .await?;
 
@@ -366,12 +371,11 @@ impl LeaderboardService {
     /// Get user statistics
     pub async fn get_user_stats(&self, user_id: Uuid) -> Result<UserStats> {
         // Get basic user info
-        let user: (String, DateTime<Utc>) = sqlx::query_as(
-            "SELECT username, created_at FROM users WHERE id = $1"
-        )
-        .bind(user_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let user: (String, DateTime<Utc>) =
+            sqlx::query_as("SELECT username, created_at FROM users WHERE id = $1")
+                .bind(user_id)
+                .fetch_one(&self.pool)
+                .await?;
 
         // Get problem stats
         let stats: (i64, i64, Option<DateTime<Utc>>) = sqlx::query_as(
@@ -382,7 +386,7 @@ impl LeaderboardService {
                 MAX(created_at) FILTER (WHERE verdict = 'ac') as last_ac
             FROM submissions
             WHERE user_id = $1
-            "#
+            "#,
         )
         .bind(user_id)
         .fetch_one(&self.pool)
@@ -413,7 +417,7 @@ impl LeaderboardService {
             WHERE s.user_id = $1 AND s.verdict = 'ac'
             ORDER BY s.created_at DESC
             LIMIT 10
-            "#
+            "#,
         )
         .bind(user_id)
         .fetch_all(&self.pool)
@@ -459,7 +463,7 @@ impl LeaderboardService {
             FROM submissions
             WHERE user_id = $1 AND verdict = 'ac'
             ORDER BY ac_date DESC
-            "#
+            "#,
         )
         .bind(user_id)
         .fetch_all(&self.pool)
@@ -484,9 +488,8 @@ impl LeaderboardService {
         if !dates.is_empty() && (dates[0] == today || dates[0] == yesterday) {
             current_streak = 1;
             let mut expected_date = dates[0];
-            
-            for i in 1..dates.len() {
-                let next_date = dates[i];
+
+            for next_date in dates.iter().skip(1).copied() {
                 if expected_date - chrono::Duration::days(1) == next_date {
                     current_streak += 1;
                     expected_date = next_date;
@@ -499,9 +502,9 @@ impl LeaderboardService {
         // Calculate maximum streak
         let mut max_streak = 1i64;
         let mut temp_streak = 1i64;
-        
+
         for i in 1..dates.len() {
-            if dates[i-1] - dates[i] == chrono::Duration::days(1) {
+            if dates[i - 1] - dates[i] == chrono::Duration::days(1) {
                 temp_streak += 1;
             } else {
                 max_streak = max_streak.max(temp_streak);
@@ -528,8 +531,9 @@ impl LeaderboardService {
         scope_id: Option<i64>,
     ) -> Result<i64> {
         let rank: i64 = match scope {
-            Some("school") => sqlx::query_scalar(
-                r#"
+            Some("school") => {
+                sqlx::query_scalar(
+                    r#"
                 SELECT COUNT(*) + 1
                 FROM (
                     SELECT user_id, SUM(score) as total_score
@@ -569,20 +573,23 @@ impl LeaderboardService {
                         ) sub
                     )
                 ) ranks
-                "#
-            )
-            .bind(user_id)
-            .fetch_one(&self.pool)
-            .await?,
+                "#,
+                )
+                .bind(user_id)
+                .fetch_one(&self.pool)
+                .await?
+            }
             Some("campus") => {
                 let campus_id = match scope_id {
                     Some(id) => Some(id),
-                    None => sqlx::query_scalar::<_, Option<i64>>(
-                        "SELECT campus_id FROM users WHERE id = $1",
-                    )
-                    .bind(user_id)
-                    .fetch_one(&self.pool)
-                    .await?,
+                    None => {
+                        sqlx::query_scalar::<_, Option<i64>>(
+                            "SELECT campus_id FROM users WHERE id = $1",
+                        )
+                        .bind(user_id)
+                        .fetch_one(&self.pool)
+                        .await?
+                    }
                 };
 
                 if let Some(campus_id) = campus_id {
@@ -639,18 +646,20 @@ impl LeaderboardService {
             Some("class") => {
                 let class_id = match scope_id {
                     Some(id) => Some(id),
-                    None => sqlx::query_scalar::<_, i64>(
-                        r#"
+                    None => {
+                        sqlx::query_scalar::<_, i64>(
+                            r#"
                         SELECT class_id
                         FROM class_enrollments
                         WHERE student_id = $1 AND status = 'active'
                         ORDER BY enrolled_at DESC
                         LIMIT 1
                         "#,
-                    )
-                    .bind(user_id)
-                    .fetch_optional(&self.pool)
-                    .await?,
+                        )
+                        .bind(user_id)
+                        .fetch_optional(&self.pool)
+                        .await?
+                    }
                 };
 
                 if let Some(class_id) = class_id {
@@ -709,8 +718,9 @@ impl LeaderboardService {
                     0
                 }
             }
-            None => sqlx::query_scalar(
-                r#"
+            None => {
+                sqlx::query_scalar(
+                    r#"
                 SELECT COUNT(*) + 1
                 FROM (
                     SELECT user_id, SUM(score) as total_score
@@ -746,11 +756,12 @@ impl LeaderboardService {
                         ) sub
                     )
                 ) ranks
-                "#
-            )
-            .bind(user_id)
-            .fetch_one(&self.pool)
-            .await?,
+                "#,
+                )
+                .bind(user_id)
+                .fetch_one(&self.pool)
+                .await?
+            }
             Some(_) => 0,
         };
 
@@ -778,7 +789,7 @@ impl LeaderboardService {
             WHERE s.problem_id = $1 AND s.verdict = 'ac'
             ORDER BY s.time_ms ASC, s.created_at ASC
             LIMIT $2
-            "#
+            "#,
         )
         .bind(problem_id)
         .bind(limit)
@@ -789,6 +800,7 @@ impl LeaderboardService {
     }
 
     /// Invalidate leaderboard cache (call on new submission)
+    #[allow(dead_code)]
     pub async fn invalidate_leaderboard_cache(&self) -> Result<()> {
         if let Ok(mut conn) = self.redis_client.get_multiplexed_async_connection().await {
             // Use SCAN instead of KEYS to avoid blocking Redis

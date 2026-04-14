@@ -167,7 +167,7 @@ impl BlogService {
         .bind(&req.cover_image)
         .bind(author_id)
         .bind(&req.tags)
-        .bind(&req.category.unwrap_or_else(|| "general".to_string()))
+        .bind(req.category.unwrap_or_else(|| "general".to_string()))
         .bind(req.is_published.unwrap_or(false))
         .bind(req.is_featured.unwrap_or(false))
         .bind(published_at)
@@ -204,11 +204,11 @@ impl BlogService {
             updates.push(format!("cover_image = ${}", param_count + 1));
             param_count += 1;
         }
-        if let Some(tags) = &req.tags {
+        if let Some(_tags) = &req.tags {
             updates.push(format!("tags = ${}", param_count + 1));
             param_count += 1;
         }
-        if let Some(category) = &req.category {
+        if let Some(_category) = &req.category {
             updates.push(format!("category = ${}", param_count + 1));
             param_count += 1;
         }
@@ -216,7 +216,7 @@ impl BlogService {
             updates.push(format!("is_published = {}", is_published));
             // Set/unset published_at
             if is_published {
-                updates.push(format!("published_at = COALESCE(published_at, NOW())"));
+                updates.push("published_at = COALESCE(published_at, NOW())".to_string());
             }
         }
         if let Some(is_featured) = req.is_featured {
