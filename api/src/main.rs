@@ -93,6 +93,18 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Router {
+    if config.cors_origins.contains(&"*".to_string()) {
+        tracing::warn!(
+            "CORS: Allow-all wildcard is active. This should NOT be used in production."
+        );
+    } else {
+        tracing::info!(
+            "CORS: Configured with {} allowed origin(s): {:?}",
+            config.cors_origins.len(),
+            config.cors_origins
+        );
+    }
+
     let cors = if config.cors_origins.contains(&"*".to_string()) {
         CorsLayer::new()
             .allow_origin(Any)
