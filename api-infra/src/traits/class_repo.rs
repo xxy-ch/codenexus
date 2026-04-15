@@ -74,3 +74,11 @@ pub trait ClassRepo: Send + Sync {
     async fn create_assignment(&self, input: CreateAssignmentInput) -> Result<i64, AppError>;
     async fn list_assignments(&self, class_id: i64) -> Result<Vec<AssignmentSummary>, AppError>;
 }
+
+/// Trait for leaderboard to verify class membership without depending on domain-classes.
+/// Per D-06: cross-domain dependencies route through api-infra traits.
+#[async_trait]
+pub trait ClassMembershipChecker: Send + Sync {
+    /// Get student IDs enrolled in a class. Used by leaderboard to verify access.
+    async fn get_class_student_ids(&self, class_id: i64) -> Result<Vec<Uuid>, AppError>;
+}

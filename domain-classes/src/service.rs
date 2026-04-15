@@ -1,5 +1,8 @@
 use crate::models::*;
+use api_infra::error::AppError;
+use api_infra::traits::class_repo::ClassMembershipChecker;
 use anyhow::Result;
+use async_trait::async_trait;
 use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -599,5 +602,16 @@ impl ClassService {
         .await?;
 
         Ok(submissions)
+    }
+}
+
+#[async_trait]
+impl ClassMembershipChecker for ClassService {
+    async fn get_class_student_ids(&self, class_id: i64) -> Result<Vec<Uuid>, AppError> {
+        let students = self
+            .get_class_students(class_id)
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))?;
+        Ok(students.iter().map(|s| s.student_id).collect())
     }
 }
