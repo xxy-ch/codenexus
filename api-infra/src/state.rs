@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use crate::traits::class_repo::ClassMembershipChecker;
 use crate::traits::token_service::TokenService;
+use metrics_exporter_prometheus::PrometheusHandle;
 use sqlx::PgPool;
 
 /// Shared application state accessible to all route handlers.
@@ -24,4 +25,6 @@ pub struct AppState {
     pub websocket_server: Arc<crate::websocket::WebSocketServer>,
     /// D-06: trait object for class membership checks without depending on domain-classes.
     pub class_membership_checker: Arc<dyn ClassMembershipChecker>,
+    /// Prometheus handle for rendering metrics at /metrics endpoint.
+    pub prometheus_handle: PrometheusHandle,
 }

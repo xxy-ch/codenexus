@@ -231,6 +231,7 @@ mod tests {
             class_membership_checker: std::sync::Arc::new(
                 api_infra::traits::class_repo::NoopClassMembershipChecker,
             ),
+            prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
         };
 
         Router::new()
@@ -404,6 +405,7 @@ mod tests {
             class_membership_checker: std::sync::Arc::new(
                 api_infra::traits::class_repo::NoopClassMembershipChecker,
             ),
+            prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
         };
         let response = logout(Extension(claims), State(state)).await;
         assert_eq!(response, StatusCode::OK);

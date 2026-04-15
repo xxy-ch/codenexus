@@ -139,6 +139,7 @@ mod tests {
             class_membership_checker: std::sync::Arc::new(
                 api_infra::traits::class_repo::NoopClassMembershipChecker,
             ),
+            prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
         };
         Router::new()
             .route("/protected", get(protected_handler))

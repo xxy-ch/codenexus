@@ -8,6 +8,7 @@ mod redis;
 mod websocket;
 
 use api_infra::state::AppState;
+use api_infra::metrics::setup_metrics_recorder;
 use axum::serve;
 use axum::{
     extract::State,
@@ -60,6 +61,8 @@ async fn main() -> anyhow::Result<()> {
         dyn api_infra::traits::class_repo::ClassMembershipChecker,
     > = std::sync::Arc::new(domain_classes::service::ClassService::new(db_pool.clone()));
 
+    let prometheus_handle = setup_metrics_recorder();
+
     let state = AppState {
         db_pool,
         redis_pool,
@@ -69,6 +72,7 @@ async fn main() -> anyhow::Result<()> {
         worker_secret: config.worker_secret.clone(),
         websocket_server,
         class_membership_checker,
+        prometheus_handle,
     };
 
     let app = create_router(state, config.clone());
@@ -283,6 +287,7 @@ mod tests {
                 class_membership_checker: std::sync::Arc::new(
                     api_infra::traits::class_repo::NoopClassMembershipChecker,
                 ),
+                prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
             })
     }
 
