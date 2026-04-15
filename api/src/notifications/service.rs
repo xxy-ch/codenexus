@@ -13,45 +13,6 @@ impl NotificationService {
         Self { db }
     }
 
-    /// Create a new notification
-    #[allow(dead_code, clippy::too_many_arguments)]
-    pub async fn create_notification(
-        &self,
-        user_id: Uuid,
-        notification_type: NotificationType,
-        title: &str,
-        content: &str,
-        link: Option<String>,
-        actor_id: Option<Uuid>,
-        discussion_id: Option<Uuid>,
-        article_id: Option<Uuid>,
-        comment_id: Option<Uuid>,
-    ) -> Result<Notification> {
-        let notification = sqlx::query_as::<_, Notification>(
-            r#"
-            INSERT INTO notifications (
-                user_id, type, title, content, link,
-                actor_id, discussion_id, article_id, comment_id
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING *
-            "#,
-        )
-        .bind(user_id)
-        .bind(notification_type)
-        .bind(title)
-        .bind(content)
-        .bind(link)
-        .bind(actor_id)
-        .bind(discussion_id)
-        .bind(article_id)
-        .bind(comment_id)
-        .fetch_one(&self.db)
-        .await?;
-
-        Ok(notification)
-    }
-
     /// List notifications for a user
     pub async fn list_notifications(
         &self,
@@ -257,26 +218,4 @@ impl NotificationService {
         Ok(result)
     }
 
-    /// Check if user should receive notification based on settings
-    #[allow(dead_code)]
-    pub async fn should_notify(
-        &self,
-        user_id: Uuid,
-        notification_type: &NotificationType,
-    ) -> Result<bool> {
-        let settings = self.get_settings(user_id).await?;
-
-        if let Some(settings) = settings {
-            match notification_type {
-                NotificationType::Reply => Ok(settings.reply_notifications),
-                NotificationType::Comment => Ok(settings.comment_notifications),
-                NotificationType::Like => Ok(settings.like_notifications),
-                NotificationType::Mention => Ok(settings.mention_notifications),
-                NotificationType::System => Ok(settings.system_notifications),
-            }
-        } else {
-            // Default to true if no settings exist
-            Ok(true)
-        }
-    }
 }

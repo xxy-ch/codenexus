@@ -6,10 +6,8 @@ use std::collections::HashSet;
 /// This service uses an in-memory role-permission matrix to determine
 /// which permissions are granted to each role. The matrix is defined
 /// here but will be loaded from the database in future tasks.
-#[allow(dead_code)]
 pub struct RbacService;
 
-#[allow(dead_code)]
 impl RbacService {
     /// Get all permissions granted to a specific role
     ///

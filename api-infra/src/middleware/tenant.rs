@@ -1,17 +1,19 @@
-#![allow(unused_imports)]
-
 use axum::{
-    extract::Request,
-    http::{HeaderMap, StatusCode},
+    http::StatusCode,
     middleware::Next,
     response::Response,
 };
 
 use shared::models::Claims;
 
-/// Tenant context stored in request extensions
+/// Tenant context stored in request extensions.
+///
+/// Carries tenant (organization) ID from JWT claims through the middleware
+/// pipeline. Handlers can extract this via `Extension<TenantContext>` to
+/// access the authenticated tenant scope.
 #[derive(Debug, Clone, Copy)]
 pub struct TenantContext {
+    /// Tenant (organization) ID from JWT claims.
     pub tenant_id: i64,
 }
 
@@ -32,9 +34,9 @@ pub async fn tenant_middleware(
 
     match tenant_id {
         Some(id) => {
-            request
-                .extensions_mut()
-                .insert(TenantContext { tenant_id: id });
+            let ctx = TenantContext { tenant_id: id };
+            tracing::trace!("Tenant context established for org {}", ctx.tenant_id);
+            request.extensions_mut().insert(ctx);
             Ok(next.run(request).await)
         }
         None => Err(StatusCode::UNAUTHORIZED),

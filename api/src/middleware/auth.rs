@@ -1,5 +1,3 @@
-#![allow(unused_imports, dead_code)]
-
 use axum::{async_trait, extract::FromRequestParts, http::StatusCode, response::Response};
 use shared::models::Claims;
 use std::sync::Arc;
