@@ -140,12 +140,6 @@ pub struct ContestParticipant {
     pub registered_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-pub struct RegisterForContestRequest {
-    pub contest_id: i64,
-}
-
 #[derive(Debug, Serialize)]
 pub struct ContestStatus {
     pub status: String,                // "upcoming", "active", "ended"

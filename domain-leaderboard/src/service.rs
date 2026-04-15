@@ -31,16 +31,23 @@ impl LeaderboardService {
             Some(id) => format!(":org:{}", id),
             None => String::new(),
         };
-        let cache_key = format!("leaderboard:global{}:{}:{}", org_suffix, limit, offset);
+        let timeframe_key = query.timeframe.as_deref().unwrap_or("all");
+        let min_problems_key = query.min_problems.unwrap_or(0);
+        let cache_key = format!(
+            "leaderboard:global{}:tf={}:min={}:{}:{}",
+            org_suffix, timeframe_key, min_problems_key, limit, offset
+        );
 
         // Try to get from Redis cache first
         if let Some(pool) = &self.redis_pool {
             if let Ok(mut conn) = pool.get().await {
                 let cached: Result<String, _> = conn.get(&cache_key).await;
                 if let Ok(cached) = cached {
-                    if let Ok(entries) = serde_json::from_str::<Vec<LeaderboardEntry>>(&cached) {
+                    if let Ok((total, entries)) =
+                        serde_json::from_str::<(i64, Vec<LeaderboardEntry>)>(&cached)
+                    {
                         return Ok(LeaderboardResponse {
-                            total: entries.len() as i64,
+                            total,
                             entries,
                             limit,
                             offset,
@@ -181,7 +188,7 @@ impl LeaderboardService {
         // Cache result
         if let Some(pool) = &self.redis_pool {
             if let Ok(mut conn) = pool.get().await {
-                if let Ok(serialized) = serde_json::to_string(&entries) {
+                if let Ok(serialized) = serde_json::to_string(&(total, &entries)) {
                     let _: Result<(), _> = conn.set_ex(&cache_key, serialized, 300).await;
                 }
             }
@@ -260,8 +267,13 @@ impl LeaderboardService {
         .fetch_all(&self.pool)
         .await?;
 
+        let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE organization_id = $1")
+            .bind(school_id)
+            .fetch_one(&self.pool)
+            .await?;
+
         Ok(LeaderboardResponse {
-            total: entries.len() as i64,
+            total,
             entries,
             limit,
             offset,
@@ -333,8 +345,13 @@ impl LeaderboardService {
         .fetch_all(&self.pool)
         .await?;
 
+        let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE campus_id = $1")
+            .bind(campus_id)
+            .fetch_one(&self.pool)
+            .await?;
+
         Ok(LeaderboardResponse {
-            total: entries.len() as i64,
+            total,
             entries,
             limit,
             offset,
@@ -407,8 +424,14 @@ impl LeaderboardService {
         .fetch_all(&self.pool)
         .await?;
 
+        let total: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM class_enrollments WHERE class_id = $1 AND status = 'active'")
+                .bind(class_id)
+                .fetch_one(&self.pool)
+                .await?;
+
         Ok(LeaderboardResponse {
-            total: entries.len() as i64,
+            total,
             entries,
             limit,
             offset,
@@ -881,42 +904,4 @@ impl LeaderboardService {
         Ok(entries)
     }
 
-    /// Invalidate leaderboard cache (call on new submission)
-    #[allow(dead_code)]
-    pub async fn invalidate_leaderboard_cache(&self) -> Result<()> {
-        if let Some(pool) = &self.redis_pool {
-            if let Ok(mut conn) = pool.get().await {
-                // Use SCAN instead of KEYS to avoid blocking Redis
-                let mut cursor: u64 = 0;
-                let mut all_keys: Vec<String> = Vec::new();
-
-                loop {
-                    let (next_cursor, keys): (u64, Vec<String>) =
-                        deadpool_redis::redis::cmd("SCAN")
-                            .arg(cursor)
-                            .arg("MATCH")
-                            .arg("leaderboard:*")
-                            .arg("COUNT")
-                            .arg(100)
-                            .query_async(&mut conn)
-                            .await
-                            .unwrap_or_default();
-
-                    all_keys.extend(keys);
-                    cursor = next_cursor;
-                    if cursor == 0 {
-                        break;
-                    }
-                }
-
-                if !all_keys.is_empty() {
-                    let _: Result<(), _> = deadpool_redis::redis::cmd("DEL")
-                        .arg(&all_keys)
-                        .query_async(&mut conn)
-                        .await;
-                }
-            }
-        }
-        Ok(())
-    }
 }

@@ -46,7 +46,7 @@ pub struct ClassEnrollment {
 
 #[derive(Debug, Deserialize)]
 pub struct AddStudentRequest {
-    pub student_email: String,
+    pub username: String,
 }
 
 /// Assignment model
@@ -144,5 +144,5 @@ pub struct EnrollWithCodeRequest {
 /// Request to batch import students
 #[derive(Debug, Deserialize)]
 pub struct BatchImportRequest {
-    pub emails: Vec<String>,
+    pub usernames: Vec<String>,
 }

@@ -27,6 +27,7 @@ impl SubmissionService {
     pub async fn create_submission(
         &self,
         user_id: Uuid,
+        school_id: i64,
         req: CreateSubmissionRequest,
     ) -> Result<Submission> {
         let normalized_language = normalize_submission_language(&req.language)
@@ -38,12 +39,14 @@ impl SubmissionService {
             ));
         }
 
-        // Validate problem exists
-        let problem_exists =
-            sqlx::query_scalar::<_, bool>("SELECT EXISTS(SELECT 1 FROM problems WHERE id = $1)")
-                .bind(req.problem_id)
-                .fetch_one(&self.pool)
-                .await?;
+        // Validate problem exists AND belongs to the user's organization (SEC-03 tenant check)
+        let problem_exists = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM problems WHERE id = $1 AND organization_id = $2)",
+        )
+        .bind(req.problem_id)
+        .bind(school_id)
+        .fetch_one(&self.pool)
+        .await?;
 
         if !problem_exists {
             return Err(anyhow::anyhow!("Problem not found"));

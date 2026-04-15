@@ -13,7 +13,6 @@ impl ContestService {
     }
 
     /// List contests with filtering and pagination
-    #[allow(unused_assignments)]
     pub async fn list_contests(
         &self,
         organization_id: Option<i64>,
@@ -41,7 +40,6 @@ impl ContestService {
         }
 
         if let Some(is_active) = active {
-            param_count += 1;
             if is_active {
                 conditions.push(" AND start_time <= NOW() AND end_time >= NOW()".to_string());
             } else {
@@ -281,10 +279,19 @@ impl ContestService {
             .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
 
         let now = chrono::Utc::now();
-        let _is_frozen = contest.freeze_minutes.is_some()
+        // Freeze is active only during the freeze window, NOT after contest ends (CONT-01)
+        let is_frozen = contest.freeze_minutes.is_some()
             && (contest.end_time
                 - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64))
-                < now;
+                < now
+            && now < contest.end_time;
+
+        let submissions_cutoff = if is_frozen {
+            contest.end_time
+                - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64)
+        } else {
+            now // Effectively no filter — submissions cannot be in the future
+        };
 
         // Get all participants (users who submitted in this contest)
         let participants = sqlx::query_as::<_, (Uuid, String)>(
@@ -293,11 +300,12 @@ impl ContestService {
             FROM contest_submissions cs
             JOIN submissions s ON s.id = cs.submission_id
             JOIN users u ON u.id = s.user_id
-            WHERE cs.contest_id = $1
+            WHERE cs.contest_id = $1 AND s.created_at < $2
             ORDER BY u.username
             "#,
         )
         .bind(contest_id)
+        .bind(submissions_cutoff)
         .fetch_all(&self.pool)
         .await?;
 
@@ -319,7 +327,7 @@ impl ContestService {
                     JOIN submissions s ON s.id = cs.submission_id
                     JOIN contest_problems cp ON cp.contest_id = cs.contest_id AND cp.problem_id = s.problem_id
                     JOIN problems p ON p.id = cp.problem_id
-                    WHERE cs.contest_id = $1 AND s.user_id = $2
+                    WHERE cs.contest_id = $1 AND s.user_id = $2 AND s.created_at < $3
                 ),
                 first_ac AS (
                     SELECT
@@ -364,6 +372,7 @@ impl ContestService {
             )
             .bind(contest_id)
             .bind(user_id)
+            .bind(submissions_cutoff)
             .fetch_all(&self.pool)
             .await?;
 

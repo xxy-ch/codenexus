@@ -311,7 +311,7 @@ impl ClassService {
         &self,
         class_id: i64,
         teacher_id: Uuid,
-        student_email: &str,
+        username: &str,
     ) -> Result<ClassEnrollment> {
         // Get class
         let class = self.get_class(class_id).await?;
@@ -323,12 +323,14 @@ impl ClassService {
             ));
         }
 
-        // Find student by email
-        let student: (Uuid,) = sqlx::query_as("SELECT id FROM users WHERE email = $1")
-            .bind(student_email)
-            .fetch_optional(&self.pool)
-            .await?
-            .ok_or_else(|| anyhow::anyhow!("Student not found"))?;
+        // Find student by username within the same organization (SEC-03 tenant check)
+        let student: (Uuid,) =
+            sqlx::query_as("SELECT id FROM users WHERE username = $1 AND organization_id = $2")
+                .bind(username)
+                .bind(class.organization_id)
+                .fetch_optional(&self.pool)
+                .await?
+                .ok_or_else(|| anyhow::anyhow!("Student not found in this organization"))?;
 
         // Check if already enrolled
         let existing =
@@ -433,15 +435,15 @@ impl ClassService {
         &self,
         class_id: i64,
         teacher_id: Uuid,
-        emails: Vec<String>,
+        usernames: Vec<String>,
     ) -> Result<Vec<ClassEnrollment>> {
         let mut enrollments = Vec::new();
 
-        for email in emails {
-            match self.add_student(class_id, teacher_id, &email).await {
+        for username in usernames {
+            match self.add_student(class_id, teacher_id, &username).await {
                 Ok(enrollment) => enrollments.push(enrollment),
                 Err(e) => {
-                    tracing::warn!("Failed to enroll student {}: {}", email, e);
+                    tracing::warn!("Failed to enroll student {}: {}", username, e);
                 }
             }
         }
@@ -557,21 +559,6 @@ impl ClassService {
         .await?;
 
         Ok(assignment)
-    }
-
-    /// Record submission for assignment
-    #[allow(dead_code)]
-    pub async fn record_submission(
-        &self,
-        assignment_id: i64,
-        user_id: Uuid,
-        submission_id: i64,
-        score: i32,
-    ) -> Result<AssignmentSubmission> {
-        let _ = (assignment_id, user_id, submission_id, score);
-        Err(anyhow::anyhow!(
-            "Assignment submission recording is not supported by the current schema"
-        ))
     }
 
     /// Get submissions for assignment

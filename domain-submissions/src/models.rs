@@ -18,21 +18,6 @@ pub struct Submission {
     pub updated_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Serialize, Deserialize, FromRow)]
-#[allow(dead_code)]
-pub struct SubmissionResult {
-    pub id: i64,
-    pub submission_id: i64,
-    pub test_case_id: i64,
-    pub status: String,
-    pub expected_output: Option<String>,
-    pub actual_output: Option<String>,
-    pub error_message: Option<String>,
-    pub runtime_ms: Option<i32>,
-    pub memory_kb: Option<i32>,
-    pub created_at: DateTime<Utc>,
-}
-
 #[derive(Debug, Deserialize)]
 pub struct CreateSubmissionRequest {
     pub problem_id: i64,
@@ -77,30 +62,3 @@ pub struct SubmissionStats {
     pub average_runtime: f64,
     pub average_memory: f64,
 }
-
-#[allow(dead_code)]
-pub const SUBMISSION_STATUS: &[&str] = &[
-    "pending",
-    "running",
-    "accepted",
-    "wrong_answer",
-    "time_limit_exceeded",
-    "memory_limit_exceeded",
-    "runtime_error",
-    "compile_error",
-    "system_error",
-];
-
-#[allow(dead_code)]
-pub const LANGUAGE_CONFIG: &[(&str, &str, &str)] = &[
-    ("python", "Python 3", "python3"),
-    ("java", "Java", "java"),
-    ("cpp", "C++", "g++"),
-    ("c", "C", "gcc"),
-    ("go", "Go", "go"),
-    ("rust", "Rust", "rustc"),
-    ("javascript", "JavaScript", "node"),
-    ("typescript", "TypeScript", "ts-node"),
-    ("ruby", "Ruby", "ruby"),
-    ("php", "PHP", "php"),
-];

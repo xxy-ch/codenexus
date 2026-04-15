@@ -39,7 +39,9 @@ async fn create_submission(
     } else {
         SubmissionService::new(state.db_pool)
     };
-    let submission = service.create_submission(claims.sub, req).await?;
+    let submission = service
+        .create_submission(claims.sub, claims.school_id, req)
+        .await?;
     Ok(Json(submission))
 }
 
