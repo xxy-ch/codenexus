@@ -1,7 +1,7 @@
 # Roadmap: AlgoMaster Online Judge Modernization
 
 **Created:** 2026-04-13
-**Revised:** 2026-04-15 (Phase 4 planned)
+**Revised:** 2026-04-15 (Phase 4 complete)
 **Phases:** 10
 **v1 Requirements:** 43 (all mapped)
 
@@ -87,7 +87,7 @@ Plans:
 - [x] 04-02-PLAN.md — Create domain-submissions crate with inlined Redis helpers (Wave 1)
 - [x] 04-03-PLAN.md — Create domain-contests crate (Wave 1)
 - [x] 04-04-PLAN.md — Create domain-leaderboard crate + SEC-03 tenant filtering fix (Wave 2)
-- [ ] 04-05-PLAN.md — API integration: wire domain crates, remove old modules, full workspace verification (Wave 3)
+- [x] 04-05-PLAN.md — API integration: wire domain crates, remove old modules, full workspace verification (Wave 3)
 
 **Success Criteria:**
 1. `cargo build --workspace` succeeds with all 8 domain crates plus `api-infra`
@@ -294,4 +294,4 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 
 ---
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-15 Phase 4 planned*
+*Last updated: 2026-04-15 Phase 4 complete*
