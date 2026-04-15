@@ -126,13 +126,13 @@ export const classesService = {
     } satisfies ClassItem
   },
 
-  async addStudent(classId: number, student_email: string) {
-    const response = await api.post(`/classes/${classId}/students`, { student_email })
+  async addStudent(classId: number, username: string) {
+    const response = await api.post(`/classes/${classId}/students`, { username })
     return response.data
   },
 
-  async batchImportStudents(classId: number, emails: string[]) {
-    const response = await api.post(`/classes/${classId}/students/import`, { emails })
+  async batchImportStudents(classId: number, usernames: string[]) {
+    const response = await api.post(`/classes/${classId}/students/import`, { usernames })
     return response.data
   },
 

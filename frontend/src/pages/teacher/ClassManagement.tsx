@@ -9,7 +9,7 @@ export function ClassManagement() {
   const [search, setSearch] = useState('')
   const [newClassName, setNewClassName] = useState('')
   const [newSemester, setNewSemester] = useState('')
-  const [studentEmail, setStudentEmail] = useState('')
+  const [studentUsername, setStudentUsername] = useState('')
   const [studentImport, setStudentImport] = useState('')
   const [assignmentProblemId, setAssignmentProblemId] = useState('')
   const [assignmentDeadline, setAssignmentDeadline] = useState('')
@@ -95,9 +95,9 @@ export function ClassManagement() {
   })
 
   const addStudentMutation = useMutation({
-    mutationFn: () => classesService.addStudent(highlightedClass!.id, studentEmail),
+    mutationFn: () => classesService.addStudent(highlightedClass!.id, studentUsername),
     onSuccess: () => {
-      setStudentEmail('')
+      setStudentUsername('')
       invalidate()
     },
   })
@@ -172,7 +172,7 @@ export function ClassManagement() {
               <div>
                 <h1 className="text-3xl font-semibold tracking-tight text-slate-950">班级管理</h1>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  当前页面已接通真实写路径：建班、邀请码入班、按邮箱加人、批量导入、创建作业、发布作业，以及按作业查看提交记录。
+                  当前页面已接通真实写路径：建班、邀请码入班、按用户名加人、批量导入、创建作业、发布作业，以及按作业查看提交记录。
                 </p>
               </div>
             </div>
@@ -223,11 +223,11 @@ export function ClassManagement() {
                 <p className="mt-2 text-xs text-slate-500">学生可通过真实邀请码入班接口加入该班级。</p>
               </div>
               <div>
-                <input value={studentEmail} onChange={(e) => setStudentEmail(e.target.value)} placeholder="学生邮箱" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
-                <button type="button" onClick={() => addStudentMutation.mutate()} disabled={!highlightedClass || !studentEmail || addStudentMutation.isPending} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50">按邮箱添加学生</button>
+                <input value={studentUsername} onChange={(e) => setStudentUsername(e.target.value)} placeholder="学生用户名（12位ID）" className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
+                <button type="button" onClick={() => addStudentMutation.mutate()} disabled={!highlightedClass || !studentUsername || addStudentMutation.isPending} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50">按用户名添加学生</button>
               </div>
               <div>
-                <textarea value={studentImport} onChange={(e) => setStudentImport(e.target.value)} placeholder="批量导入邮箱，每行一个" className="min-h-[120px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
+                <textarea value={studentImport} onChange={(e) => setStudentImport(e.target.value)} placeholder="批量导入用户名，每行一个" className="min-h-[120px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400" />
                 <button type="button" onClick={() => importStudentsMutation.mutate()} disabled={!highlightedClass || !studentImport.trim() || importStudentsMutation.isPending} className="mt-3 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 disabled:opacity-50">批量导入学生</button>
               </div>
             </div>
