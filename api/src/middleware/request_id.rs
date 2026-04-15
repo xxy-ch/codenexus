@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 /// Request ID stored in request extensions for downstream access.
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
 pub struct RequestId(pub String);
 
 /// Request ID middleware that generates a unique ID per request and creates a
