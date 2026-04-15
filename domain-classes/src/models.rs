@@ -46,6 +46,7 @@ pub struct ClassEnrollment {
 
 #[derive(Debug, Deserialize)]
 pub struct AddStudentRequest {
+    #[serde(alias = "student_email")]
     pub username: String,
 }
 
@@ -144,5 +145,6 @@ pub struct EnrollWithCodeRequest {
 /// Request to batch import students
 #[derive(Debug, Deserialize)]
 pub struct BatchImportRequest {
+    #[serde(alias = "emails")]
     pub usernames: Vec<String>,
 }

@@ -211,7 +211,7 @@ async fn add_student(
     let service = ClassService::new(state.db_pool);
     verify_class_access(&service, class_id, &claims, true).await?;
     let enrollment = service
-        .add_student(class_id, claims.sub, &request.username)
+        .add_student(class_id, &request.username)
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?;
     Ok(Json(enrollment))
@@ -255,7 +255,7 @@ async fn batch_import_students(
     let service = ClassService::new(state.db_pool);
     verify_class_access(&service, class_id, &claims, true).await?;
     let enrollments = service
-        .batch_import_students(class_id, claims.sub, request.usernames)
+        .batch_import_students(class_id, request.usernames)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     Ok(Json(enrollments))

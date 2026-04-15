@@ -310,18 +310,10 @@ impl ClassService {
     pub async fn add_student(
         &self,
         class_id: i64,
-        teacher_id: Uuid,
         username: &str,
     ) -> Result<ClassEnrollment> {
         // Get class
         let class = self.get_class(class_id).await?;
-
-        // Verify teacher owns this class
-        if class.teacher_id != teacher_id {
-            return Err(anyhow::anyhow!(
-                "Not authorized to add students to this class"
-            ));
-        }
 
         // Find student by username within the same organization (SEC-03 tenant check)
         let student: (Uuid,) =
@@ -434,13 +426,12 @@ impl ClassService {
     pub async fn batch_import_students(
         &self,
         class_id: i64,
-        teacher_id: Uuid,
         usernames: Vec<String>,
     ) -> Result<Vec<ClassEnrollment>> {
         let mut enrollments = Vec::new();
 
         for username in usernames {
-            match self.add_student(class_id, teacher_id, &username).await {
+            match self.add_student(class_id, &username).await {
                 Ok(enrollment) => enrollments.push(enrollment),
                 Err(e) => {
                     tracing::warn!("Failed to enroll student {}: {}", username, e);
