@@ -1,2 +1,5 @@
-// Placeholder for domain-leaderboard crate
-// To be implemented in a future plan
+pub mod models;
+pub mod routes;
+pub mod service;
+
+pub use routes::leaderboard_router;

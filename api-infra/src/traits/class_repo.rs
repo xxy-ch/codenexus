@@ -82,3 +82,14 @@ pub trait ClassMembershipChecker: Send + Sync {
     /// Get student IDs enrolled in a class. Used by leaderboard to verify access.
     async fn get_class_student_ids(&self, class_id: i64) -> Result<Vec<Uuid>, AppError>;
 }
+
+/// No-op implementation for use during AppState construction before the real
+/// domain-classes wiring is complete (Plan 05). Returns an empty list for every class.
+pub struct NoopClassMembershipChecker;
+
+#[async_trait]
+impl ClassMembershipChecker for NoopClassMembershipChecker {
+    async fn get_class_student_ids(&self, _class_id: i64) -> Result<Vec<Uuid>, AppError> {
+        Ok(vec![])
+    }
+}

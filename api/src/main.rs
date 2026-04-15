@@ -61,6 +61,11 @@ async fn main() -> anyhow::Result<()> {
 
     let jwt_service = auth::JwtService::new(&config.jwt_secret);
     let websocket_server = std::sync::Arc::new(WebSocketServer::new());
+    // Temporary noop class membership checker; Plan 05 wires the real domain-classes implementation.
+    let class_membership_checker: std::sync::Arc<
+        dyn api_infra::traits::class_repo::ClassMembershipChecker,
+    > = std::sync::Arc::new(api_infra::traits::class_repo::NoopClassMembershipChecker);
+
     let state = AppState {
         db_pool,
         redis_pool,
@@ -69,6 +74,7 @@ async fn main() -> anyhow::Result<()> {
         jwt_secret: config.jwt_secret.clone(),
         worker_secret: config.worker_secret.clone(),
         websocket_server,
+        class_membership_checker,
     };
 
     let app = create_router(state, config.clone());

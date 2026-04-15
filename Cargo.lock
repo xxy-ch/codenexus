@@ -755,6 +755,20 @@ dependencies = [
 [[package]]
 name = "domain-leaderboard"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "api-infra",
+ "async-trait",
+ "axum",
+ "chrono",
+ "deadpool-redis",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "tracing",
+ "uuid",
+]
 
 [[package]]
 name = "domain-problems"

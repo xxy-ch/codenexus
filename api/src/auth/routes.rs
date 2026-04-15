@@ -228,6 +228,9 @@ mod tests {
             jwt_secret: jwt_secret.clone(),
             worker_secret: "test_worker_secret".to_string(),
             websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
+            class_membership_checker: std::sync::Arc::new(
+                api_infra::traits::class_repo::NoopClassMembershipChecker,
+            ),
         };
 
         Router::new()
@@ -398,6 +401,9 @@ mod tests {
             jwt_secret: "test_secret".to_string(),
             worker_secret: "test_worker_secret".to_string(),
             websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
+            class_membership_checker: std::sync::Arc::new(
+                api_infra::traits::class_repo::NoopClassMembershipChecker,
+            ),
         };
         let response = logout(Extension(claims), State(state)).await;
         assert_eq!(response, StatusCode::OK);

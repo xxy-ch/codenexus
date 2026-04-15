@@ -82,6 +82,9 @@ fn build_state(pool: PgPool) -> AppState {
         jwt_secret,
         worker_secret: "test_worker_secret".to_string(),
         websocket_server: std::sync::Arc::new(WebSocketServer::new()),
+        class_membership_checker: std::sync::Arc::new(
+            api_infra::traits::class_repo::NoopClassMembershipChecker,
+        ),
     }
 }
 

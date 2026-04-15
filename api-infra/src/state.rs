@@ -5,6 +5,7 @@
 
 use std::sync::Arc;
 
+use crate::traits::class_repo::ClassMembershipChecker;
 use crate::traits::token_service::TokenService;
 use sqlx::PgPool;
 
@@ -21,4 +22,6 @@ pub struct AppState {
     pub jwt_secret: String,
     pub worker_secret: String,
     pub websocket_server: Arc<crate::websocket::WebSocketServer>,
+    /// D-06: trait object for class membership checks without depending on domain-classes.
+    pub class_membership_checker: Arc<dyn ClassMembershipChecker>,
 }
