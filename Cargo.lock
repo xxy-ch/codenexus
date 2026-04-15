@@ -703,6 +703,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "domain-classes"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "api-infra",
+ "async-trait",
+ "axum",
+ "chrono",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "domain-community"
 version = "0.1.0"
 dependencies = [
@@ -718,6 +735,26 @@ dependencies = [
  "tracing",
  "uuid",
 ]
+
+[[package]]
+name = "domain-contests"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "api-infra",
+ "axum",
+ "chrono",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "domain-leaderboard"
+version = "0.1.0"
 
 [[package]]
 name = "domain-problems"
@@ -747,6 +784,23 @@ dependencies = [
  "serde_json",
  "shared",
  "sqlx",
+ "uuid",
+]
+
+[[package]]
+name = "domain-submissions"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "api-infra",
+ "axum",
+ "chrono",
+ "deadpool-redis",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "tracing",
  "uuid",
 ]
 
