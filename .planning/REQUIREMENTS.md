@@ -28,7 +28,7 @@
 - [ ] **CICD-01**: GitHub Actions workflow with cargo fmt --check, clippy, cargo test --workspace on every push/PR
 - [ ] **CICD-02**: Rust compilation cache via Swatinem/rust-cache for faster CI runs
 - [ ] **CICD-03**: Frontend CI: npm ci, lint, vitest, build
-- [ ] **CICD-04**: Docker image builds for api, judge-worker, frontend on main branch
+- [x] **CICD-04**: Docker image builds for api, judge-worker, frontend on main branch
 - [ ] **CICD-05**: Codex automated PR review integrated into CI workflow
 
 ### Observability
@@ -141,7 +141,7 @@
 | CICD-01 | Phase 2: Basic CI + Core | Pending |
 | CICD-02 | Phase 2: Basic CI + Core | Pending |
 | CICD-03 | Phase 2: Basic CI + Core | Pending |
-| CICD-04 | Phase 6: Full CI/CD + Obs | Pending |
+| CICD-04 | Phase 6: Full CI/CD + Obs | Complete |
 | CICD-05 | Phase 6: Full CI/CD + Obs | Pending |
 | OBS-01 | Phase 6: Full CI/CD + Obs | Pending |
 | OBS-02 | Phase 6: Full CI/CD + Obs | Pending |
