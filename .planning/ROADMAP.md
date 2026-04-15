@@ -142,7 +142,7 @@ Plans:
 Plans:
 - [x] 06-01-PLAN.md — CICD-04: Docker build verification in CI (Wave 1)
 - [x] 06-02-PLAN.md — OBS-01 + OBS-03: Health endpoints + request_id structured logging (Wave 1)
-- [ ] 06-03-PLAN.md — OBS-02: Prometheus metrics middleware + /metrics endpoint (Wave 2)
+- [x] 06-03-PLAN.md — OBS-02: Prometheus metrics middleware + /metrics endpoint (Wave 2)
 
 **Success Criteria:**
 1. Docker build verification runs for all 3 services on master push (no push/login steps)
