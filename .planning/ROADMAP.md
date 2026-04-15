@@ -1,7 +1,7 @@
 # Roadmap: AlgoMaster Online Judge Modernization
 
 **Created:** 2026-04-13
-**Revised:** 2026-04-13 (after review)
+**Revised:** 2026-04-15 (Phase 4 planned)
 **Phases:** 10
 **v1 Requirements:** 43 (all mapped)
 
@@ -80,12 +80,21 @@
 - ARCH-05 (remaining): API binary assembles remaining routers from their respective crates
 - SEC-03: Leaderboard `/global` and `/problem/:id` endpoints enforce tenant filtering (only show user's organization data; Root can see all)
 
+**Plans:** 5 plans in 3 waves
+
+Plans:
+- [ ] 04-01-PLAN.md — Create domain-classes crate (Wave 1)
+- [ ] 04-02-PLAN.md — Create domain-submissions crate with inlined Redis helpers (Wave 1)
+- [ ] 04-03-PLAN.md — Create domain-contests crate (Wave 1)
+- [ ] 04-04-PLAN.md — Create domain-leaderboard crate + SEC-03 tenant filtering fix (Wave 2)
+- [ ] 04-05-PLAN.md — API integration: wire domain crates, remove old modules, full workspace verification (Wave 3)
+
 **Success Criteria:**
 1. `cargo build --workspace` succeeds with all 8 domain crates plus `api-infra`
 2. The API binary's `main.rs` contains only `main()`, router mounting, and server startup
 3. Leaderboard `/global` returns only data from the requesting user's organization (or all for Root)
 4. Contest creation, registration, and scoreboard display work end-to-end
-5. Submission lifecycle (submit → queue → judge → callback → WebSocket) works without regression
+5. Submission lifecycle (submit -> queue -> judge -> callback -> WebSocket) works without regression
 
 **Dependency:** Phases 2 and 3 complete
 
@@ -150,7 +159,7 @@
 **Success Criteria:**
 1. `cargo test --workspace` runs integration tests for all 8 domain modules against real PostgreSQL/Redis
 2. Multi-tenant isolation test suite covers every API endpoint group and passes
-3. Playwright E2E completes: login → submit → view verdict → contest participation
+3. Playwright E2E completes: login -> submit -> view verdict -> contest participation
 4. Contest with freeze hides scoreboard during freeze window, reveals after end
 5. After contest ends, upsolving submissions are tagged and excluded from official standings
 
@@ -220,7 +229,7 @@
 1. Migration CLI tool compiles and runs against the UOJ MySQL dump at `references/app_uoj233.sql`
 2. Migrated users exist in PostgreSQL with correct roles and default organization assignment
 3. Migrated problems have correct descriptions, test cases, and time/memory limits
-4. ID mapping table records all old→new ID mappings for users, problems, submissions
+4. ID mapping table records all old->new ID mappings for users, problems, submissions
 5. Tool is idempotent — running twice produces the same result without duplicates
 
 **Dependency:** Phase 7 complete (independent of Phases 8-9 — can run in parallel)
@@ -285,4 +294,4 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 
 ---
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-13 after review revision*
+*Last updated: 2026-04-15 Phase 4 planned*
