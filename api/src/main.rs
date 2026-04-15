@@ -12,7 +12,7 @@ use axum::serve;
 use axum::{
     extract::State,
     http::{header, Method, StatusCode},
-    response::Json,
+    response::{IntoResponse, Json, Redirect},
     routing::{get, post},
     Router,
 };
@@ -143,8 +143,12 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .unwrap();
 
     let public_router = Router::new()
-        .route("/health", get(health_check))
-        .route("/status", get(get_system_status))
+        // New Kubernetes-style health endpoints
+        .route("/health/live", get(health_live))
+        .route("/health/ready", get(health_ready))
+        // Backward-compatible redirects for old endpoints
+        .route("/health", get(health_redirect))
+        .route("/status", get(status_redirect))
         // Public auth routes
         .route("/auth/login", post(auth::login))
         .route("/auth/refresh", post(auth::refresh))
@@ -186,22 +190,205 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .with_state(state)
 }
 
-async fn health_check() -> &'static str {
+/// Liveness probe -- returns 200 if the process is alive.
+async fn health_live() -> &'static str {
     "OK"
 }
 
-async fn get_system_status(
+/// Readiness probe -- checks DB and Redis connectivity.
+/// Returns 200 with status JSON when both dependencies are reachable,
+/// or 503 SERVICE_UNAVAILABLE when any critical dependency fails.
+///
+/// Per T-06-03 mitigation: response only contains "connected"/"unavailable"
+/// status strings; no connection strings, hostnames, or error messages.
+async fn health_ready(
     State(state): State<AppState>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
-    // Check database connection
+) -> impl IntoResponse {
     let db_ok = sqlx::query_scalar::<_, i64>("SELECT 1")
         .fetch_one(&state.db_pool)
         .await
         .is_ok();
 
-    if db_ok {
-        Ok(Json(serde_json::json!({ "status": "ok" })))
+    let (redis_ok, redis_status) = match &state.redis_pool {
+        Some(pool) => {
+            let conn_result = pool.get().await;
+            match conn_result {
+                Ok(mut conn) => {
+                    let ping_ok = deadpool_redis::redis::cmd("PING")
+                        .query_async::<String>(&mut conn)
+                        .await
+                        .is_ok();
+                    (ping_ok, "connected")
+                }
+                Err(_) => (false, "unavailable"),
+            }
+        }
+        None => (false, "not_configured"),
+    };
+
+    if db_ok && redis_ok {
+        Ok(Json(serde_json::json!({
+            "status": "ok",
+            "db": "connected",
+            "redis": "connected",
+        })))
     } else {
-        Err(StatusCode::SERVICE_UNAVAILABLE)
+        let db_status = if db_ok { "connected" } else { "unavailable" };
+        Err((
+            StatusCode::SERVICE_UNAVAILABLE,
+            Json(serde_json::json!({
+                "status": "unavailable",
+                "db": db_status,
+                "redis": redis_status,
+            })),
+        ))
+    }
+}
+
+/// Redirect old /health endpoint to /health/live (307 preserves method).
+async fn health_redirect() -> Redirect {
+    Redirect::temporary("/health/live")
+}
+
+/// Redirect old /status endpoint to /health/ready (307 preserves method).
+async fn status_redirect() -> Redirect {
+    Redirect::temporary("/health/ready")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::{Body, to_bytes};
+    use axum::http::{Request, StatusCode};
+    use tower::ServiceExt;
+
+    /// Build a minimal test router with just the health endpoints.
+    fn health_test_router() -> Router {
+        Router::new()
+            .route("/health/live", get(health_live))
+            .route("/health/ready", get(health_ready))
+            .route("/health", get(health_redirect))
+            .route("/status", get(status_redirect))
+            .with_state(AppState {
+                db_pool: sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+                redis_pool: None,
+                redis_url: String::new(),
+                jwt_secret: String::new(),
+                worker_secret: String::new(),
+                jwt_service: std::sync::Arc::new(crate::auth::JwtService::new("test")),
+                websocket_server: std::sync::Arc::new(WebSocketServer::new()),
+                class_membership_checker: std::sync::Arc::new(
+                    api_infra::traits::class_repo::NoopClassMembershipChecker,
+                ),
+            })
+    }
+
+    #[tokio::test]
+    async fn test_health_live_returns_200_ok() {
+        let app = health_test_router();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health/live")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = to_bytes(response.into_body(), 1024).await.unwrap();
+        assert_eq!(&body[..], b"OK");
+    }
+
+    #[tokio::test]
+    async fn test_health_ready_returns_503_when_db_unreachable() {
+        let app = health_test_router();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health/ready")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+
+        let body = to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(json["status"], "unavailable");
+        assert_eq!(json["db"], "unavailable");
+        assert_eq!(json["redis"], "not_configured");
+    }
+
+    #[tokio::test]
+    async fn test_health_ready_handles_redis_pool_none() {
+        let app = health_test_router();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health/ready")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // DB is unreachable too (lazy pool to nonexistent), so 503
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+
+        let body = to_bytes(response.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        // Redis pool is None, so status should be "not_configured"
+        assert_eq!(json["redis"], "not_configured");
+    }
+
+    #[tokio::test]
+    async fn test_health_redirects_to_health_live() {
+        let app = health_test_router();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::TEMPORARY_REDIRECT);
+        let location = response
+            .headers()
+            .get("location")
+            .expect("missing location header")
+            .to_str()
+            .unwrap();
+        assert_eq!(location, "/health/live");
+    }
+
+    #[tokio::test]
+    async fn test_status_redirects_to_health_ready() {
+        let app = health_test_router();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/status")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::TEMPORARY_REDIRECT);
+        let location = response
+            .headers()
+            .get("location")
+            .expect("missing location header")
+            .to_str()
+            .unwrap();
+        assert_eq!(location, "/health/ready");
     }
 }
