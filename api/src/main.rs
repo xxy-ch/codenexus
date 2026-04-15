@@ -153,6 +153,8 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         // Backward-compatible redirects for old endpoints
         .route("/health", get(health_redirect))
         .route("/status", get(status_redirect))
+        // Prometheus metrics endpoint (public, no auth required)
+        .route("/metrics", get(metrics_handler))
         // Public auth routes
         .route("/auth/login", post(auth::login))
         .route("/auth/refresh", post(auth::refresh))
@@ -184,9 +186,14 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
             middleware::auth::auth_middleware,
         ));
 
-    // Layer ordering (outermost to innermost): CORS -> rate limit -> request id -> auth -> tenant -> handler
+    // Layer ordering (outermost to innermost): CORS -> rate limit -> request id -> metrics -> auth -> tenant -> handler
     public_router
         .merge(protected_router)
+        // Metrics layer: records http_requests_total and http_request_duration_seconds
+        // Skips /metrics endpoint internally to avoid self-referential noise
+        .route_layer(axum::middleware::from_fn(
+            middleware::metrics::track_metrics,
+        ))
         .route_layer(axum::middleware::from_fn(
             middleware::request_id::request_id_middleware,
         ))
@@ -260,6 +267,12 @@ async fn health_redirect() -> Redirect {
 /// Redirect old /status endpoint to /health/ready (307 preserves method).
 async fn status_redirect() -> Redirect {
     Redirect::temporary("/health/ready")
+}
+
+/// Prometheus metrics handler.
+/// Returns Prometheus-formatted text for scraping.
+async fn metrics_handler(State(state): State<AppState>) -> String {
+    state.prometheus_handle.render()
 }
 
 #[cfg(test)]
