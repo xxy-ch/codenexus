@@ -1,7 +1,7 @@
 # Roadmap: AlgoMaster Online Judge Modernization
 
 **Created:** 2026-04-13
-**Revised:** 2026-04-15 (Phase 4 complete)
+**Revised:** 2026-04-15 (Phase 5 planned)
 **Phases:** 10
 **v1 Requirements:** 43 (all mapped)
 
@@ -108,6 +108,12 @@ Plans:
 - SEC-02: CORS policy restricts origins to configured list (not wildcard); configurable via environment variable
 - SEC-04: Dead code removed: 26 dead code items, 11 unused imports, 14 unused variables, dead `rbac/` module eliminated
 - SEC-05: Redis connection pooling used consistently (no per-request connection creation)
+
+**Plans:** 2 plans in 2 waves
+
+Plans:
+- [ ] 05-01-PLAN.md — SEC-02 CORS hardening + SEC-05 Redis pooling verification (Wave 1)
+- [ ] 05-02-PLAN.md — SEC-04 Deep dead code audit and elimination (Wave 2)
 
 **Success Criteria:**
 1. CORS response headers reflect only the configured allowed origins (not `*`)
@@ -294,4 +300,4 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 
 ---
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-15 Phase 4 complete*
+*Last updated: 2026-04-15 Phase 5 planned*
