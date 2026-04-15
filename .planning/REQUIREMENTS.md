@@ -10,7 +10,7 @@
 - [x] **ARCH-01**: API infrastructure extracted into dedicated `api-infra` workspace crate (AppState, middleware, error types, extractors, WebSocket server)
 - [ ] **ARCH-02**: Repository trait interfaces defined for all domain modules (ProblemRepo, SubmissionRepo, ContestRepo, ClassRepo, CommunityRepo, UserRepo, LeaderboardRepo, SearchRepo)
 - [ ] **ARCH-03**: Service trait interfaces defined for cross-domain communication
-- [ ] **ARCH-04**: Domain modules extracted as workspace crates in dependency order (users → problems → community → search → submissions → contests → classes → leaderboard)
+- [x] **ARCH-04**: Domain modules extracted as workspace crates in dependency order (users → problems → community → search → submissions → contests → classes → leaderboard)
 - [ ] **ARCH-05**: API binary assembles routers from domain crates, owns only main.rs and route mounting
 - [ ] **ARCH-06**: Shared test infrastructure — testcontainers setup (PostgreSQL, Redis), shared test fixtures, and test helper utilities for all domain modules
 
@@ -129,7 +129,7 @@
 | ARCH-01 | Phase 1: Architecture + Secrets | Complete |
 | ARCH-02 | Phase 1: Architecture + Secrets | Pending |
 | ARCH-03 | Phase 1: Architecture + Secrets | Pending |
-| ARCH-04 | Phase 2-4: Domain Extraction | Pending |
+| ARCH-04 | Phase 2-4: Domain Extraction | Complete |
 | ARCH-05 | Phase 2-4: Domain Extraction | Pending |
 | ARCH-06 | Phase 1: Architecture + Secrets | Pending |
 | SEC-01 | Phase 1: Architecture + Secrets | Pending |
