@@ -414,17 +414,19 @@ Grep for `crate::submissions`, `crate::contests`, `crate::classes`, `crate::lead
 
 **Note:** A1 verified by reading all of leaderboard/service.rs -- redis is used ONLY for caching (get/set/del/scan operations on leaderboard cache keys). A2 verified by reading release_gate_tests.rs lines 235-236. A3 verified by reading leaderboard/routes.rs lines 139-144 -- only `get_class_students(class_id)` returning students for membership check. A4 verified by grep -- no other module imports ContestService.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **LeaderboardService normalization timing** -- Should we normalize to deadpool Pool as part of extraction, or in a separate SEC-05 phase?
+1. **RESOLVED** **LeaderboardService normalization timing** -- Should we normalize to deadpool Pool as part of extraction, or in a separate SEC-05 phase?
    - What we know: CONTEXT.md lists this as Claude's discretion. SEC-05 is in Phase 5.
    - What's unclear: Whether the planner prefers to defer this to keep Phase 4 focused on extraction + SEC-03.
    - Recommendation: Normalize now since it's a small change (change constructor + cache ops) and prevents having to touch the file again in Phase 5. Also required for SEC-03 cache key changes.
+   - **Resolution:** Normalize now in Plan 04. LeaderboardService constructor changed to accept `Option<deadpool_redis::Pool>` from AppState. Required for SEC-03 cache key changes and prevents rework in Phase 5.
 
-2. **Redis helper extraction** -- Duplicate redis helpers in domain-submissions or add redis dependency to api-infra?
+2. **RESOLVED** **Redis helper extraction** -- Duplicate redis helpers in domain-submissions or add redis dependency to api-infra?
    - What we know: Only domain-submissions needs XADD/XGROUP. api-infra already has deadpool-redis but not the redis crate itself.
    - What's unclear: Whether adding redis to api-infra would cause issues for other consumers.
    - Recommendation: Duplicate the ~15 lines of redis stream helpers in domain-submissions/queue.rs. Keeps api-infra lean. The helpers are trivial and unlikely to diverge.
+   - **Resolution:** Duplicate in domain-submissions/queue.rs. Keeps api-infra lean. The helpers (~15 lines each) are trivial and will not diverge.
 
 ## Environment Availability
 
