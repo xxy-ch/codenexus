@@ -83,7 +83,7 @@
 **Plans:** 5 plans in 3 waves
 
 Plans:
-- [ ] 04-01-PLAN.md — Create domain-classes crate (Wave 1)
+- [x] 04-01-PLAN.md — Create domain-classes crate (Wave 1)
 - [ ] 04-02-PLAN.md — Create domain-submissions crate with inlined Redis helpers (Wave 1)
 - [ ] 04-03-PLAN.md — Create domain-contests crate (Wave 1)
 - [ ] 04-04-PLAN.md — Create domain-leaderboard crate + SEC-03 tenant filtering fix (Wave 2)
