@@ -180,9 +180,12 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
             middleware::auth::auth_middleware,
         ));
 
-    // Layer ordering (outermost to innermost): CORS -> rate limit -> auth -> handler
+    // Layer ordering (outermost to innermost): CORS -> rate limit -> request id -> auth -> tenant -> handler
     public_router
         .merge(protected_router)
+        .route_layer(axum::middleware::from_fn(
+            middleware::request_id::request_id_middleware,
+        ))
         .layer(GovernorLayer {
             config: std::sync::Arc::new(governor_config),
         })
