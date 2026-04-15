@@ -59,9 +59,15 @@ impl LeaderboardService {
             _ => "",
         };
 
-        // SEC-03: tenant isolation filter
+        // SEC-03: tenant isolation filter (placeholders match main query parameter order)
         let tenant_filter = match school_id {
             Some(_) => "AND u.organization_id = $4",
+            None => "",
+        };
+
+        // SEC-03: count query uses independent parameter numbering ($1, $2)
+        let count_tenant_filter = match school_id {
+            Some(_) => "AND u.organization_id = $2",
             None => "",
         };
 
@@ -135,7 +141,7 @@ impl LeaderboardService {
                 .await?
         };
 
-        // Get total count
+        // Get total count (uses independent $1, $2 placeholders)
         let count_query = format!(
             r#"
             SELECT COUNT(*)
@@ -144,7 +150,7 @@ impl LeaderboardService {
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id {time_filter}
                 LEFT JOIN problems p ON p.id = s.problem_id
-                WHERE 1=1 {tenant_filter}
+                WHERE 1=1 {count_tenant_filter}
                 GROUP BY u.id
                 HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
             ) qualified_users
@@ -157,13 +163,19 @@ impl LeaderboardService {
                 .bind(school_id)
                 .fetch_one(&self.pool)
                 .await
-                .unwrap_or(0)
+                .map_err(|e| {
+                    tracing::error!("Failed to count global leaderboard entries (tenant mode): {}", e);
+                    anyhow::anyhow!("Database error: {}", e)
+                })?
         } else {
             sqlx::query_scalar(&count_query)
                 .bind(min_problems_filter)
                 .fetch_one(&self.pool)
                 .await
-                .unwrap_or(0)
+                .map_err(|e| {
+                    tracing::error!("Failed to count global leaderboard entries (global mode): {}", e);
+                    anyhow::anyhow!("Database error: {}", e)
+                })?
         };
 
         // Cache result
