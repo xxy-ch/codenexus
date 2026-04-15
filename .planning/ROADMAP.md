@@ -1,7 +1,7 @@
 # Roadmap: AlgoMaster Online Judge Modernization
 
 **Created:** 2026-04-13
-**Revised:** 2026-04-15 (Phase 5 planned)
+**Revised:** 2026-04-15 (Phase 6 planned)
 **Phases:** 10
 **v1 Requirements:** 43 (all mapped)
 
@@ -128,21 +128,28 @@ Plans:
 
 ## Phase 6: Full CI/CD + Observability
 
-**Goal:** Complete the CI pipeline with Docker builds and Codex review, and add production observability. Structured logging, Prometheus metrics, and health checks provide runtime visibility.
+**Goal:** Complete the CI pipeline with Docker build verification (no push, no registry), and add production observability via structured logging, Prometheus metrics, and Kubernetes-style health checks.
 
 **Requirements:**
-- CICD-04: Docker image builds for api, judge-worker, frontend on main branch
-- CICD-05: Codex automated PR review integrated into CI workflow
-- OBS-01: Structured logging via tracing + tracing-subscriber with env-filter
-- OBS-02: Prometheus metrics exported at `/metrics` endpoint (request latency, error rates, queue depth)
-- OBS-03: Liveness (`/health/live`) and readiness (`/health/ready`) health checks verifying DB + Redis
+- CICD-04: Docker image builds for api, judge-worker, frontend on master branch (build verification only, no push)
+- CICD-05: Codex automated PR review — DEFERRED per D-03 (user prefers manual review)
+- OBS-01: Structured logging with request_id, tenant_id, duration_ms via tracing spans
+- OBS-02: Prometheus metrics exported at /metrics endpoint (request latency, error rates, queue depth)
+- OBS-03: Liveness (/health/live) and readiness (/health/ready) health checks verifying DB + Redis
+
+**Plans:** 3 plans in 2 waves
+
+Plans:
+- [ ] 06-01-PLAN.md — CICD-04: Docker build verification in CI (Wave 1)
+- [ ] 06-02-PLAN.md — OBS-01 + OBS-03: Health endpoints + request_id structured logging (Wave 1)
+- [ ] 06-03-PLAN.md — OBS-02: Prometheus metrics middleware + /metrics endpoint (Wave 2)
 
 **Success Criteria:**
-1. Docker images for all 3 services are built and tagged on merge to main
-2. Codex automated review posts a comment on every PR
-3. `GET /metrics` returns Prometheus-formatted metrics with `http_request_duration_seconds` and `submission_queue_depth`
-4. `GET /health/live` returns 200; `GET /health/ready` returns 200 when DB+Redis up, 503 when down
-5. Structured log output includes request_id, tenant_id, and duration fields
+1. Docker build verification runs for all 3 services on master push (no push/login steps)
+2. `GET /health/live` returns 200; `GET /health/ready` returns 200 when DB+Redis up, 503 when down
+3. `GET /health` redirects 307 to `/health/live`; `GET /status` redirects 307 to `/health/ready`
+4. `GET /metrics` returns Prometheus-formatted metrics with `http_request_duration_seconds` and `http_requests_total`
+5. Structured log output includes request_id, method, uri, duration_ms, and status fields
 
 **Dependency:** Phase 5 complete
 
@@ -285,14 +292,14 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 | 3 | ARCH-04 (partial), ARCH-05 (partial) | 2 |
 | 4 | ARCH-04 (remaining), ARCH-05 (remaining), SEC-03 | 3 |
 | 5 | SEC-02, SEC-04, SEC-05 | 3 |
-| 6 | CICD-04, CICD-05, OBS-01, OBS-02, OBS-03 | 5 |
+| 6 | CICD-04, CICD-05 (deferred), OBS-01, OBS-02, OBS-03 | 5 |
 | 7 | TEST-01..05, CONT-01..03 | 8 |
 | 8 | IMEX-01..05 | 5 |
 | 9 | JCON-01..04, FTOL-01..03 | 7 |
 | 10 | MIGR-01..06 | 6 |
 | **Total** | | **50** |
 
-> Note: ARCH-04 and ARCH-05 span Phases 2-4. CICD-01..03 are split across Phases 2 and 6.
+> Note: ARCH-04 and ARCH-05 span Phases 2-4. CICD-01..03 are split across Phases 2 and 6. CICD-05 deferred per D-03.
 
 **v1 requirements mapped:** 43
 **v2 requirements (not in scope):** 11
@@ -300,4 +307,4 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 
 ---
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-15 Phase 5 planned*
+*Last updated: 2026-04-15 Phase 6 planned*
