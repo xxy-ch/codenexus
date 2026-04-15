@@ -33,9 +33,9 @@
 
 ### Observability
 
-- [ ] **OBS-01**: Structured logging via tracing + tracing-subscriber with env-filter for log level control
+- [x] **OBS-01**: Structured logging via tracing + tracing-subscriber with env-filter for log level control
 - [ ] **OBS-02**: Prometheus metrics exported at `/metrics` endpoint (request latency, error rates, queue depth)
-- [ ] **OBS-03**: Liveness health check (`/health/live`) and readiness health check (`/health/ready` verifying DB + Redis connectivity)
+- [x] **OBS-03**: Liveness health check (`/health/live`) and readiness health check (`/health/ready` verifying DB + Redis connectivity)
 
 ### Test Coverage
 
@@ -143,9 +143,9 @@
 | CICD-03 | Phase 2: Basic CI + Core | Pending |
 | CICD-04 | Phase 6: Full CI/CD + Obs | Complete |
 | CICD-05 | Phase 6: Full CI/CD + Obs | Pending |
-| OBS-01 | Phase 6: Full CI/CD + Obs | Pending |
+| OBS-01 | Phase 6: Full CI/CD + Obs | Complete |
 | OBS-02 | Phase 6: Full CI/CD + Obs | Pending |
-| OBS-03 | Phase 6: Full CI/CD + Obs | Pending |
+| OBS-03 | Phase 6: Full CI/CD + Obs | Complete |
 | TEST-01 | Phase 7: Test + Contest | Pending |
 | TEST-02 | Phase 7: Test + Contest | Pending |
 | TEST-03 | Phase 7: Test + Contest | Pending |
