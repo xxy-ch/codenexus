@@ -4,7 +4,6 @@ mod error;
 mod middleware;
 mod notifications;
 mod plagiarism;
-mod rbac;
 mod redis;
 mod websocket;
 

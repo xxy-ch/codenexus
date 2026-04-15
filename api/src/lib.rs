@@ -4,7 +4,6 @@ pub mod error;
 pub mod middleware;
 pub mod notifications;
 pub mod plagiarism;
-pub mod rbac;
 pub mod redis;
 pub mod websocket;
 
