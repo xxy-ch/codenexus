@@ -138,6 +138,9 @@ mod tests {
             jwt_secret: "test_secret_key".to_string(),
             worker_secret: "test_worker_secret".to_string(),
             websocket_server: std::sync::Arc::new(crate::websocket::WebSocketServer::new()),
+            class_membership_checker: std::sync::Arc::new(
+                api_infra::traits::class_repo::NoopClassMembershipChecker,
+            ),
         };
         Router::new()
             .route("/protected", get(protected_handler))

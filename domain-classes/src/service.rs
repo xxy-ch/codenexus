@@ -1,7 +1,7 @@
 use crate::models::*;
+use anyhow::Result;
 use api_infra::error::AppError;
 use api_infra::traits::class_repo::ClassMembershipChecker;
-use anyhow::Result;
 use async_trait::async_trait;
 use chrono::Utc;
 use sqlx::PgPool;

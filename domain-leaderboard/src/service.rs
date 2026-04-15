@@ -879,17 +879,16 @@ impl LeaderboardService {
                 let mut all_keys: Vec<String> = Vec::new();
 
                 loop {
-                    let (next_cursor, keys): (u64, Vec<String>) = deadpool_redis::redis::cmd(
-                        "SCAN",
-                    )
-                        .arg(cursor)
-                        .arg("MATCH")
-                        .arg("leaderboard:*")
-                        .arg("COUNT")
-                        .arg(100)
-                        .query_async(&mut conn)
-                        .await
-                        .unwrap_or_default();
+                    let (next_cursor, keys): (u64, Vec<String>) =
+                        deadpool_redis::redis::cmd("SCAN")
+                            .arg(cursor)
+                            .arg("MATCH")
+                            .arg("leaderboard:*")
+                            .arg("COUNT")
+                            .arg(100)
+                            .query_async(&mut conn)
+                            .await
+                            .unwrap_or_default();
 
                     all_keys.extend(keys);
                     cursor = next_cursor;

@@ -1,15 +1,11 @@
 mod auth;
-mod classes;
-mod contests;
 mod db;
 mod error;
-mod leaderboard;
 mod middleware;
 mod notifications;
 mod plagiarism;
 mod rbac;
 mod redis;
-mod submissions;
 mod websocket;
 
 use api_infra::state::AppState;
@@ -61,10 +57,9 @@ async fn main() -> anyhow::Result<()> {
 
     let jwt_service = auth::JwtService::new(&config.jwt_secret);
     let websocket_server = std::sync::Arc::new(WebSocketServer::new());
-    // Temporary noop class membership checker; Plan 05 wires the real domain-classes implementation.
     let class_membership_checker: std::sync::Arc<
         dyn api_infra::traits::class_repo::ClassMembershipChecker,
-    > = std::sync::Arc::new(api_infra::traits::class_repo::NoopClassMembershipChecker);
+    > = std::sync::Arc::new(domain_classes::service::ClassService::new(db_pool.clone()));
 
     let state = AppState {
         db_pool,
@@ -151,10 +146,10 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         // Protected routes
         .nest("/users", domain_users::user_router())
         .nest("/problems", domain_problems::problems_router())
-        .nest("/contests", contests::contests_router())
-        .nest("/leaderboard", leaderboard::leaderboard_router())
-        .nest("/submissions", submissions::submissions_router())
-        .nest("/classes", classes::classes_router())
+        .nest("/contests", domain_contests::contests_router())
+        .nest("/leaderboard", domain_leaderboard::leaderboard_router())
+        .nest("/submissions", domain_submissions::submissions_router())
+        .nest("/classes", domain_classes::classes_router())
         .nest("/discussions", domain_community::discussions_router())
         .nest("/blog", domain_community::blog_router())
         .nest("/search", domain_search::search_router())

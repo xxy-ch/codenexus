@@ -1,8 +1,5 @@
 use crate::auth::JwtService;
-use crate::classes;
-use crate::contests;
 use crate::db::schema::MIGRATOR;
-use crate::leaderboard;
 use crate::middleware::auth::auth_middleware;
 use crate::websocket::WebSocketServer;
 use crate::AppState;
@@ -235,7 +232,7 @@ fn class_and_assignment_authorization_assignment_read_is_member_scoped() {
         let state = build_state(pool.clone());
         let app = build_protected_app(
             state.clone(),
-            Router::new().nest("/classes", classes::routes::classes_router()),
+            Router::new().nest("/classes", domain_classes::classes_router()),
         );
 
         let member_response = app
@@ -284,8 +281,8 @@ fn contest_and_leaderboard_scope_student_writes_and_cross_tenant_views_are_block
         let app = build_protected_app(
             state.clone(),
             Router::new()
-                .nest("/contests", contests::routes::contests_router())
-                .nest("/leaderboard", leaderboard::routes::leaderboard_router()),
+                .nest("/contests", domain_contests::contests_router())
+                .nest("/leaderboard", domain_leaderboard::leaderboard_router()),
         );
 
         let create_response = app

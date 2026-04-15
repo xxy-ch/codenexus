@@ -17,6 +17,10 @@ domain-problems = { path = "../domain-problems" }
 domain-users = { path = "../domain-users" }
 domain-community = { path = "../domain-community" }
 domain-search = { path = "../domain-search" }
+domain-classes = { path = "../domain-classes" }
+domain-contests = { path = "../domain-contests" }
+domain-leaderboard = { path = "../domain-leaderboard" }
+domain-submissions = { path = "../domain-submissions" }
 sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "migrate"] }
 dotenvy = "0.15"
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
