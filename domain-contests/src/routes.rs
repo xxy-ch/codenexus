@@ -288,10 +288,13 @@ pub async fn link_submission(
         .link_submission_to_contest(contest_id, submission_id)
         .await
         .map_err(|e| {
-            if e.to_string().contains("not active") {
-                StatusCode::FORBIDDEN
-            } else if e.to_string().contains("not found") {
+            let msg = e.to_string();
+            if msg.contains("not found") {
                 StatusCode::NOT_FOUND
+            } else if msg.contains("not started") || msg.contains("not active") {
+                StatusCode::FORBIDDEN
+            } else if msg.contains("not in contest") {
+                StatusCode::BAD_REQUEST
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR
             }

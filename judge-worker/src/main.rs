@@ -80,31 +80,43 @@ async fn main() -> Result<()> {
                     let result = processor::service::process_submission(&submission).await;
                     match result {
                         Ok(judge_result) => {
-                            if let Err(e) =
-                                send_result_with_retry(&api_url, &judge_result, &conn).await
-                            {
-                                error!(
-                                    "Failed to send recovered result for {}: {}",
-                                    submission.submission_id, e
-                                );
+                            match send_result_with_retry(&api_url, &judge_result, &conn).await {
+                                Ok(()) => {
+                                    // Only ACK after successful processing AND delivery
+                                    let mut locked_conn = conn.lock().await;
+                                    if let Err(e) = consumer::acknowledge_submission(
+                                        &mut locked_conn,
+                                        &stream_name,
+                                        &group_name,
+                                        &message_id,
+                                    )
+                                    .await
+                                    {
+                                        error!(
+                                            "Failed to ACK recovered message {}: {}",
+                                            message_id, e
+                                        );
+                                    }
+                                }
+                                Err(e) => {
+                                    // API delivery failed (already retried + DLQ attempted).
+                                    // Do NOT ACK — message will be recovered on next startup.
+                                    error!(
+                                        "Recovered submission {} processed but delivery failed (will retry on next startup): {}",
+                                        submission.submission_id, e
+                                    );
+                                }
                             }
                         }
                         Err(e) => {
+                            // Processing failed — do NOT ACK, let it retry on next startup.
+                            // Log loudly so operator can investigate persistent failures.
                             error!(
-                                "Failed to process recovered submission {}: {}",
+                                "Failed to process recovered submission {} (message will reappear on next recovery scan): {}",
                                 submission.submission_id, e
                             );
                         }
                     }
-                    // Acknowledge the recovered message
-                    let mut locked_conn = conn.lock().await;
-                    let _ = consumer::acknowledge_submission(
-                        &mut locked_conn,
-                        &stream_name,
-                        &group_name,
-                        &message_id,
-                    )
-                    .await;
                 }
             }
         }

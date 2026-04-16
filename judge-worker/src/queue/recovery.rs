@@ -18,54 +18,74 @@ pub async fn recover_pending_submissions(
     );
 
     // Step 1: XPENDING to find messages with idle time > threshold
-    // XPENDING stream group - + count
-    let pending_reply: redis::Value = redis::cmd("XPENDING")
-        .arg(stream_name)
-        .arg(group_name)
-        .arg("-")
-        .arg("+")
-        .arg(100)
-        .query_async(conn)
-        .await
-        .context("Failed to query XPENDING")?;
-
-    // Parse pending entries: [[id, consumer, idle_ms, deliveries], ...]
-    let entries = match pending_reply {
-        redis::Value::Array(arr) => arr,
-        redis::Value::Nil => {
-            info!("No pending messages found on stream '{}'", stream_name);
-            return Ok(Vec::new());
-        }
-        _ => {
-            warn!("Unexpected XPENDING response format, skipping recovery");
-            return Ok(Vec::new());
-        }
-    };
-
-    // Extract IDs with idle time > min_idle_ms
+    // Paginate in batches of 100 to handle large backlogs.
     let mut ids_to_claim: Vec<String> = Vec::new();
-    for entry in &entries {
-        if let redis::Value::Array(ref fields) = entry {
-            if fields.len() >= 3 {
-                let id = match fields.get(0) {
-                    Some(redis::Value::BulkString(bytes)) => {
-                        String::from_utf8_lossy(bytes).to_string()
+    let batch_size: usize = 100;
+    let mut start_id = "-".to_string();
+
+    loop {
+        let pending_reply: redis::Value = redis::cmd("XPENDING")
+            .arg(stream_name)
+            .arg(group_name)
+            .arg(&start_id)
+            .arg("+")
+            .arg(batch_size)
+            .query_async(conn)
+            .await
+            .context("Failed to query XPENDING")?;
+
+        let entries = match pending_reply {
+            redis::Value::Array(arr) => arr,
+            redis::Value::Nil => break,
+            _ => {
+                warn!("Unexpected XPENDING response format, skipping recovery");
+                break;
+            }
+        };
+
+        if entries.is_empty() {
+            break;
+        }
+
+        let mut last_id: Option<String> = None;
+        for entry in &entries {
+            if let redis::Value::Array(ref fields) = entry {
+                if fields.len() >= 3 {
+                    let id = match fields.get(0) {
+                        Some(redis::Value::BulkString(bytes)) => {
+                            String::from_utf8_lossy(bytes).to_string()
+                        }
+                        _ => continue,
+                    };
+                    let idle_ms: u64 = match fields.get(2) {
+                        Some(redis::Value::Int(n)) => *n as u64,
+                        Some(redis::Value::BulkString(bytes)) => {
+                            String::from_utf8_lossy(bytes).parse().unwrap_or(0)
+                        }
+                        _ => continue,
+                    };
+                    if idle_ms > min_idle_ms {
+                        ids_to_claim.push(id.clone());
                     }
-                    _ => continue,
-                };
-                let idle_ms: u64 = match fields.get(2) {
-                    Some(redis::Value::Int(n)) => *n as u64,
-                    Some(redis::Value::BulkString(bytes)) => {
-                        String::from_utf8_lossy(bytes).parse().unwrap_or(0)
-                    }
-                    _ => continue,
-                };
-                if idle_ms > min_idle_ms {
-                    ids_to_claim.push(id);
+                    last_id = Some(id);
                 }
             }
         }
+
+        match last_id {
+            Some(ref id) if entries.len() == batch_size => {
+                // More entries likely exist — continue from the next ID after this one
+                start_id = id.clone();
+            }
+            _ => break, // Last page or empty
+        }
     }
+
+    info!(
+        "XPENDING scan complete: {} total pending messages with idle > {}ms",
+        ids_to_claim.len(),
+        min_idle_ms
+    );
 
     if ids_to_claim.is_empty() {
         info!("No timed-out pending messages to recover");

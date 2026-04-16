@@ -605,31 +605,35 @@ impl ContestService {
             return Err(anyhow::anyhow!("Contest has not started yet"));
         }
 
-        let is_upsolving = now > contest.end_time;
 
-        // Check if problem is in contest
-        let submission_problem: (i64,) =
-            sqlx::query_as("SELECT problem_id FROM submissions WHERE id = $1")
+        // Check if problem is in contest and get submission creation time
+        let submission_info: (i64, chrono::DateTime<chrono::Utc>) =
+            sqlx::query_as("SELECT problem_id, created_at FROM submissions WHERE id = $1")
                 .bind(submission_id)
                 .fetch_optional(&self.pool)
                 .await?
                 .ok_or_else(|| anyhow::anyhow!("Submission not found"))?;
 
+        // Per Codex review: use submission's created_at (not link-time "now")
+        // to avoid mis-tagging contest-time submissions linked post-contest as upsolving.
+        let is_upsolving = submission_info.1 > contest.end_time;
+
         let _problem_in_contest: (i64,) = sqlx::query_as(
             "SELECT problem_id FROM contest_problems WHERE contest_id = $1 AND problem_id = $2",
         )
         .bind(contest_id)
-        .bind(submission_problem.0)
+        .bind(submission_info.0)
         .fetch_optional(&self.pool)
         .await?
         .ok_or_else(|| anyhow::anyhow!("Problem not in contest"))?;
 
-        // Link submission with upsolving flag
+        // Link submission with upsolving flag (idempotent: upsert returns existing row on conflict)
         let contest_submission = sqlx::query_as::<_, ContestSubmission>(
             r#"
             INSERT INTO contest_submissions (contest_id, submission_id, is_upsolving)
             VALUES ($1, $2, $3)
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (contest_id, submission_id)
+            DO UPDATE SET is_upsolving = EXCLUDED.is_upsolving
             RETURNING *
             "#,
         )

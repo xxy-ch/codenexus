@@ -6,5 +6,3 @@ CREATE TABLE IF NOT EXISTS contest_leaderboard_snapshots (
     snapshot_data JSONB NOT NULL,
     frozen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-CREATE INDEX IF NOT EXISTS idx_cl_snapshots_contest ON contest_leaderboard_snapshots(contest_id);
