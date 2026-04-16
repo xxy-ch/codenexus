@@ -338,34 +338,34 @@ function ProblemExportTab() {
   const [problems, setProblems] = useState<Array<{ id: string; title: string; difficulty: string }>>([])
   const [loaded, setLoaded] = useState(false)
 
+  const requestIdRef = useRef(0)
+
   const loadProblems = useCallback(async () => {
+    const myId = ++requestIdRef.current
     try {
       const data = await problemsService.getProblems({ search: search || undefined, limit: 100 })
+      // Discard stale responses
+      if (requestIdRef.current !== myId) return
       setProblems(data.problems.map((p) => ({ id: p.id, title: p.title, difficulty: p.difficulty })))
       setLoaded(true)
     } catch (error: unknown) {
+      if (requestIdRef.current !== myId) return
       const message = error instanceof Error ? error.message : 'Failed to load problems'
       toast.error(message)
     }
   }, [search])
 
-  // Load on first render and when search changes
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
-  const handleSearchChange = useCallback(
-    (value: string) => {
-      setSearch(value)
-      clearTimeout(searchTimeoutRef.current)
-      searchTimeoutRef.current = setTimeout(() => {
-        loadProblems()
-      }, 400)
-    },
-    [loadProblems],
-  )
-
-  // Load once on mount
+  // Single loading path: debounce search changes, load on mount
   useEffect(() => {
-    loadProblems()
+    const timer = setTimeout(() => {
+      loadProblems()
+    }, 400)
+    return () => clearTimeout(timer)
   }, [loadProblems])
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value)
+  }, [])
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {
