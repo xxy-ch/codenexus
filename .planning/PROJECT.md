@@ -29,23 +29,23 @@ Reliable, secure code judging with multi-tenancy — every student submission mu
 - WebSocket real-time: submission progress, contest events, contest chat — existing
 - Plagiarism detection with similarity scanning and reports (feature-flagged) — existing
 - Docker Compose orchestration for all services — existing
+- Monorepo internal modularization — 8 domain crates extracted (Phases 2-4)
+- CI/CD pipeline — GitHub Actions CI with lint, test, Docker build verification (Phase 6)
+- Technical debt clearance — hardcoded secrets, CORS policy, dead code cleanup (Phase 5)
+- Observability — structured logging, request-id middleware, Prometheus metrics, health endpoints (Phase 6)
+- Test coverage — 83 tests: 29 domain integration + 6 handler + 5 tenant isolation + 3 recovery + 35 frontend + 5 E2E (Phase 7)
+- Contest: leaderboard freeze (snapshot-style, lazy compute) + post-contest upsolving (auto-tagged, excluded from rankings) (Phase 7)
+- Submission recovery — judge worker XPENDING/XCLAIM self-healing on startup (Phase 7)
 
 ### Active
 
-- [ ] Monorepo internal modularization — backend modules (auth, problems, submissions, contests, classes, community, search, admin) decoupled with clear dependency boundaries
-- [ ] Frontend architecture decoupling — components, state management, and services reorganized by feature domain
-- [ ] Test coverage — unit tests, integration tests, E2E tests achieving meaningful coverage
 - [ ] Documentation — user guide, API docs, deployment guide, architecture docs
-- [ ] Observability — structured logging, metrics, health checks, error tracking
 - [ ] Problem import/export — batch operations for problems (import from file, export to standard formats)
 - [ ] User import/export — batch user provisioning and data export
-- [ ] Contest system enhancement — virtual contests, practice mode, post-contest review, leaderboard freeze, improved fault tolerance (submission recovery, timeout handling, timer resilience, reconnection state recovery)
+- [ ] Contest system enhancement — virtual contests, practice mode, post-contest review (remaining items)
 - [ ] Judge service high concurrency — horizontal scaling for judge workers, queue backpressure, daily large-volume handling
 - [ ] Backend fault tolerance — graceful degradation, circuit breakers, retry policies, dead letter handling improvements
 - [ ] Data migration tool — one-time migration from UOJ (MySQL) at references/app_uoj233.sql to current PostgreSQL schema
-- [ ] CI/CD pipeline — automated build, test, lint, and deployment
-- [ ] Technical debt clearance — hardcoded secrets, CORS policy, cross-tenant leaderboard leaks, dead code cleanup, frontend bundle optimization
-- [ ] Codex integration — automated PR review in GSD workflow
 
 ### Out of Scope
 
@@ -63,14 +63,16 @@ This is a brownfield project with extensive existing code. The codebase was buil
 **Tech stack:** Rust (Axum 0.7, SQLx 0.8, Tokio), TypeScript (React 19, Vite 7, TanStack Query, Zustand), PostgreSQL 16, Redis 7, Docker Compose.
 
 **Current issues (from codebase map):**
-- P0: Hardcoded default JWT/worker secrets
-- P0: No CI/CD pipeline
-- P1: CORS allows all origins
-- P1: Leaderboard `/global` and `/problem/:id` endpoints expose cross-tenant data
-- P2: Redis connection created per request (no pooling in some paths)
-- P2: Dead rbac/ module, 26 dead code items, 11 unused imports, 14 unused variables
 - P2: Frontend bundle oversized (editor 4.2MB, ts worker 7MB)
 - WebSocket community features (DiscussionReply, ArticleComment, TrendingArticles) degraded to compatibility shims, not real-time subscriptions
+
+**Resolved in recent phases:**
+- Hardcoded secrets → Phase 5: env-var only, no defaults
+- No CI/CD → Phase 6: GitHub Actions CI
+- CORS all origins → Phase 5: configured allow list
+- Cross-tenant leaderboard → Phase 5: tenant filtering
+- Dead code → Phase 5: removed rbac module, 26 dead items, unused imports
+- No test coverage → Phase 7: 83 tests across all layers
 
 **Migration source:** UOJ (Universal Online Judge) MySQL database at `references/app_uoj233.sql` with tables for best_ac_submissions, blogs, problems, submissions, users, etc.
 
@@ -112,4 +114,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-13 after initialization*
+*Last updated: 2026-04-16 after Phase 7 completion*
