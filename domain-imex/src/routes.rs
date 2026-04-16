@@ -301,7 +301,27 @@ pub async fn execute_problem_import(
 ) -> Result<Json<ImportResultResponse>, StatusCode> {
     require_teacher_plus(&claims.role)?;
 
-    // Remove cached preview (single-use)
+    // Read-only peek to validate ownership before consuming the token
+    let ref_entry = state
+        .preview_cache
+        .get(&req.token)
+        .ok_or(StatusCode::BAD_REQUEST)?;
+
+    let preview = ref_entry
+        .downcast_ref::<CachedPreview>()
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match preview {
+        CachedPreview::Problem(p) => {
+            if p.creator_user_id != claims.sub || p.organization_id != claims.school_id {
+                return Err(StatusCode::FORBIDDEN);
+            }
+        }
+        CachedPreview::User(_) => return Err(StatusCode::BAD_REQUEST),
+    }
+
+    // Ownership verified — drop the read guard and atomically consume the token
+    drop(ref_entry);
     let (_, cached) = state
         .preview_cache
         .remove(&req.token)
@@ -312,13 +332,7 @@ pub async fn execute_problem_import(
         .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let items = match preview {
-        CachedPreview::Problem(p) => {
-            // Verify the same user who created the preview is executing it
-            if p.creator_user_id != claims.sub || p.organization_id != claims.school_id {
-                return Err(StatusCode::FORBIDDEN);
-            }
-            &p.items
-        }
+        CachedPreview::Problem(p) => &p.items,
         CachedPreview::User(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
@@ -641,7 +655,27 @@ pub async fn execute_user_import(
 ) -> Result<Json<ImportResultResponse>, StatusCode> {
     require_admin(&claims.role)?;
 
-    // Remove cached preview (single-use)
+    // Read-only peek to validate ownership before consuming the token
+    let ref_entry = state
+        .preview_cache
+        .get(&req.token)
+        .ok_or(StatusCode::BAD_REQUEST)?;
+
+    let preview = ref_entry
+        .downcast_ref::<CachedPreview>()
+        .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match preview {
+        CachedPreview::User(p) => {
+            if p.creator_user_id != claims.sub || p.organization_id != claims.school_id {
+                return Err(StatusCode::FORBIDDEN);
+            }
+        }
+        CachedPreview::Problem(_) => return Err(StatusCode::BAD_REQUEST),
+    }
+
+    // Ownership verified — drop the read guard and atomically consume the token
+    drop(ref_entry);
     let (_, cached) = state
         .preview_cache
         .remove(&req.token)
@@ -652,13 +686,7 @@ pub async fn execute_user_import(
         .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let (rows, default_password) = match preview {
-        CachedPreview::User(p) => {
-            // Verify the same user who created the preview is executing it
-            if p.creator_user_id != claims.sub || p.organization_id != claims.school_id {
-                return Err(StatusCode::FORBIDDEN);
-            }
-            (&p.rows, p.default_password.clone())
-        }
+        CachedPreview::User(p) => (&p.rows, p.default_password.clone()),
         CachedPreview::Problem(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
