@@ -177,8 +177,8 @@ Plans:
 - [x] 07-07-PLAN.md — CONT-03: Judge worker XPENDING + XCLAIM submission recovery (Wave 2)
 - [x] 07-03-PLAN.md — Contest integration tests: freeze and upsolving against real DB (Wave 3)
 - [x] 07-04-PLAN.md — API handler tests + multi-tenant isolation test suite (Wave 3)
-- [ ] 07-05-PLAN.md — Frontend Vitest unit tests for hooks and utilities (Wave 4)
-- [ ] 07-06-PLAN.md — Playwright E2E tests for contest freeze and upsolving (Wave 4)
+- [x] 07-05-PLAN.md — Frontend Vitest unit tests for hooks and utilities (Wave 4)
+- [x] 07-06-PLAN.md — Playwright E2E tests for contest freeze and upsolving (Wave 4)
 
 **Success Criteria:**
 1. `cargo test --workspace` runs integration tests for all 8 domain modules against real PostgreSQL/Redis
