@@ -274,7 +274,11 @@ pub async fn validate_problem_import(
     // Cache the parsed items for the execute step
     state.preview_cache.insert(
         token,
-        Box::new(CachedPreview::Problem(ProblemImportPreview { items })),
+        Box::new(CachedPreview::Problem(ProblemImportPreview {
+            items,
+            creator_user_id: claims.sub,
+            organization_id: claims.school_id,
+        })),
     );
 
     // Auto-expire after 10 minutes (best-effort cleanup)
@@ -308,7 +312,13 @@ pub async fn execute_problem_import(
         .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let items = match preview {
-        CachedPreview::Problem(p) => &p.items,
+        CachedPreview::Problem(p) => {
+            // Verify the same user who created the preview is executing it
+            if p.creator_user_id != claims.sub || p.organization_id != claims.school_id {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            &p.items
+        }
         CachedPreview::User(_) => return Err(StatusCode::BAD_REQUEST),
     };
 
@@ -606,6 +616,8 @@ pub async fn validate_user_import(
         Box::new(CachedPreview::User(UserImportPreview {
             rows,
             default_password,
+            creator_user_id: claims.sub,
+            organization_id: claims.school_id,
         })),
     );
 
@@ -640,7 +652,13 @@ pub async fn execute_user_import(
         .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let (rows, default_password) = match preview {
-        CachedPreview::User(p) => (&p.rows, p.default_password.clone()),
+        CachedPreview::User(p) => {
+            // Verify the same user who created the preview is executing it
+            if p.creator_user_id != claims.sub || p.organization_id != claims.school_id {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            (&p.rows, p.default_password.clone())
+        }
         CachedPreview::Problem(_) => return Err(StatusCode::BAD_REQUEST),
     };
 

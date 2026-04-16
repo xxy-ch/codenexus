@@ -438,7 +438,7 @@ function ProblemExportTab() {
                     <input
                       type="checkbox"
                       checked={selectedIds.has(problem.id)}
-                      onChange={() => toggleSelect(problem.id)}
+                      readOnly
                       aria-label={`Select ${problem.title}`}
                     />
                   </TableCell>

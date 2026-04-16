@@ -195,6 +195,10 @@ pub struct ImportExecuteRequest {
 #[derive(Debug, Clone)]
 pub struct ProblemImportPreview {
     pub items: Vec<ProblemImportItem>,
+    /// The user who created this preview — execute must match.
+    pub creator_user_id: uuid::Uuid,
+    /// The organization context when the preview was created.
+    pub organization_id: i64,
 }
 
 /// User-specific import preview data cached server-side.
@@ -202,6 +206,10 @@ pub struct ProblemImportPreview {
 pub struct UserImportPreview {
     pub rows: Vec<UserImportRow>,
     pub default_password: String,
+    /// The user who created this preview — execute must match.
+    pub creator_user_id: uuid::Uuid,
+    /// The organization context when the preview was created.
+    pub organization_id: i64,
 }
 
 /// Union of cached preview data, discriminated by import type.
@@ -401,6 +409,8 @@ mod tests {
                 status: ImportItemStatus::Valid,
                 warning: None,
             }],
+            creator_user_id: uuid::Uuid::new_v4(),
+            organization_id: 1,
         });
 
         match problem_preview {
