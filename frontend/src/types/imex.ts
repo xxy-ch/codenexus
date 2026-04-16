@@ -36,7 +36,7 @@ export interface UserImportPreview {
 
 export interface CreatedItem {
   title: string
-  id: number
+  id: string
 }
 
 export interface SkippedItem {

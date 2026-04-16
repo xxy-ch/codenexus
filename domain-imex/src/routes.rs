@@ -425,7 +425,7 @@ pub async fn execute_problem_import(
                             } else {
                                 created_items.push(CreatedItem {
                                     title: item.config.title.clone(),
-                                    id: problem_id,
+                                    id: problem_id.to_string(),
                                 });
                             }
                         } else {
@@ -736,7 +736,7 @@ pub async fn execute_user_import(
                                 } else {
                                     created_items.push(CreatedItem {
                                         title: row.username.clone(),
-                                        id: user_id.as_bytes()[..8].iter().fold(0i64, |acc, &b| acc.wrapping_shl(8).wrapping_add(b as i64)),
+                                        id: user_id.to_string(),
                                     });
                                 }
                             }

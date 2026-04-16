@@ -5,18 +5,17 @@ use crate::security::sanitize_csv_cell;
 
 use anyhow::{anyhow, Result};
 use domain_users::models::{BatchCreateUserInput, BatchCreateUsersRequest};
+use shared::models::role::Role;
+use std::str::FromStr;
 
 /// UTF-8 BOM prefix bytes.
 const BOM: &[u8; 3] = b"\xEF\xBB\xBF";
 
-/// Role values always allowed in CSV import.
-const IMPORTABLE_ROLES: &[&str] = &["student", "teacher", "admin"];
-
-/// Roles that only a root user may assign via CSV import.
-const ROOT_ONLY_ROLES: &[&str] = &["organizationAdmin", "campusAdmin"];
+/// Roles that only a root user may assign via CSV import (canonical lowercase).
+const ROOT_ONLY_ROLES: &[&str] = &["organizationadmin", "campusadmin"];
 
 /// The `root` role must never be assigned through CSV import.
-const FORBIDDEN_ROLES: &[&str] = &["root"];
+const FORBIDDEN_ROLE: &str = "root";
 
 /// Required column headers in the CSV file.
 const REQUIRED_HEADERS: &[&str] = &["username", "role", "campus_id", "display_name"];
@@ -121,20 +120,22 @@ pub fn parse_user_csv(
             continue;
         }
 
-        // Validate role — enforce role policy
-        let role_error = if FORBIDDEN_ROLES.contains(&role.as_str()) {
-            Some(format!("Role '{}' cannot be assigned via import", role))
-        } else if ROOT_ONLY_ROLES.contains(&role.as_str()) && !role_policy.allow_root_roles {
-            Some(format!(
-                "Role '{}' requires root privileges to assign",
-                role
-            ))
-        } else if !IMPORTABLE_ROLES.contains(&role.as_str())
-            && !ROOT_ONLY_ROLES.contains(&role.as_str())
-        {
-            Some(format!("Invalid role: '{}'", role))
-        } else {
-            None
+        // Validate role using canonical Role enum (case-insensitive parse)
+        let role_result = Role::from_str(&role).map(|parsed| {
+            let canonical = parsed.as_str().to_string();
+            if canonical == FORBIDDEN_ROLE {
+                Err(format!("Role '{}' cannot be assigned via import", canonical))
+            } else if ROOT_ONLY_ROLES.contains(&canonical.as_str()) && !role_policy.allow_root_roles {
+                Err(format!("Role '{}' requires root privileges to assign", canonical))
+            } else {
+                Ok(canonical)
+            }
+        });
+
+        let role_error = match &role_result {
+            Ok(Ok(_)) => None,
+            Ok(Err(warning)) => Some(warning.clone()),
+            Err(_) => Some(format!("Invalid role: '{}'", role)),
         };
 
         if let Some(warning) = role_error {
@@ -149,6 +150,12 @@ pub fn parse_user_csv(
             });
             continue;
         }
+
+        // Normalize role to canonical lowercase
+        let role = match &role_result {
+            Ok(Ok(canonical)) => canonical.clone(),
+            _ => role, // error path, raw value preserved for error display
+        };
 
         // Parse campus_id
         let campus_id: i64 = match campus_id_str.parse() {
@@ -434,7 +441,36 @@ mod tests {
         let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy { allow_root_roles: true }).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Valid);
-        assert_eq!(rows[0].role, "organizationAdmin");
+        // Role should be normalized to canonical lowercase
+        assert_eq!(rows[0].role, "organizationadmin");
+    }
+
+    #[test]
+    fn rejects_admin_role_not_in_db() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["alice,admin,1,Admin User,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Error);
+        assert!(rows[0].warning.as_ref().unwrap().contains("Invalid role: 'admin'"));
+    }
+
+    #[test]
+    fn normalizes_role_case_to_lowercase() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["alice,Teacher,1,Alice,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Valid);
+        assert_eq!(rows[0].role, "teacher");
     }
 
     #[test]

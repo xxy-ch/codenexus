@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Download, FileUp, Loader2, CheckCircle2, AlertTriangle, XCircle, ChevronRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { imexService } from '@/services/imex'
@@ -363,9 +363,9 @@ function ProblemExportTab() {
   )
 
   // Load once on mount
-  if (!loaded) {
+  useEffect(() => {
     loadProblems()
-  }
+  }, [loadProblems])
 
   const toggleSelect = useCallback((id: string) => {
     setSelectedIds((prev) => {

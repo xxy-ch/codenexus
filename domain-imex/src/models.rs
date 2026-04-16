@@ -154,7 +154,7 @@ pub struct UserImportPreviewResponse {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreatedItem {
     pub title: String,
-    pub id: i64,
+    pub id: String,
 }
 
 /// Item skipped during import execution.
@@ -352,11 +352,11 @@ mod tests {
             created_items: vec![
                 CreatedItem {
                     title: "Two Sum".to_string(),
-                    id: 1,
+                    id: "1".to_string(),
                 },
                 CreatedItem {
                     title: "Add Two Numbers".to_string(),
-                    id: 2,
+                    id: "2".to_string(),
                 },
             ],
             skipped_items: vec![SkippedItem {
