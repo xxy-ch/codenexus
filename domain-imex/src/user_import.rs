@@ -71,7 +71,10 @@ pub fn parse_user_csv(
     }
 
     let mut rows = Vec::new();
-    let mut seen_usernames: HashSet<String> = HashSet::new();
+
+    // First pass: parse all rows, collecting username frequencies
+    let mut username_counts: std::collections::HashMap<String, usize> =
+        std::collections::HashMap::new();
 
     for record_result in reader.records() {
         let record = match record_result {
@@ -166,22 +169,18 @@ pub fn parse_user_csv(
 
         let email_opt = if email.is_empty() { None } else { Some(email) };
 
-        // Check duplicate username (database + intra-CSV)
+        // Tentatively mark as Valid; will be updated in second pass for intra-CSV dupes
         let (status, warning) = if skip_usernames.contains(&username) {
             (
                 ImportItemStatus::Duplicate,
                 Some("Username already exists in database".to_string()),
             )
-        } else if seen_usernames.contains(&username) {
-            (
-                ImportItemStatus::Duplicate,
-                Some("Duplicate username within CSV".to_string()),
-            )
         } else {
             (ImportItemStatus::Valid, None)
         };
 
-        seen_usernames.insert(username.clone());
+        // Track username frequency for intra-CSV duplicate detection
+        *username_counts.entry(username.clone()).or_insert(0) += 1;
 
         rows.push(UserImportRow {
             username,
@@ -192,6 +191,16 @@ pub fn parse_user_csv(
             status,
             warning,
         });
+    }
+
+    // Second pass: mark ALL rows with intra-CSV duplicate usernames
+    for row in &mut rows {
+        if row.status == ImportItemStatus::Valid
+            && username_counts.get(&row.username).copied().unwrap_or(0) > 1
+        {
+            row.status = ImportItemStatus::Duplicate;
+            row.warning = Some("Duplicate username within CSV".to_string());
+        }
     }
 
     Ok(rows)
@@ -442,7 +451,9 @@ mod tests {
         let skip = HashSet::new();
         let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
         assert_eq!(rows.len(), 3);
-        assert_eq!(rows[0].status, ImportItemStatus::Valid);
+        // ALL rows with duplicated username should be marked Duplicate
+        assert_eq!(rows[0].status, ImportItemStatus::Duplicate);
+        assert!(rows[0].warning.as_ref().unwrap().contains("within CSV"));
         assert_eq!(rows[1].status, ImportItemStatus::Valid);
         assert_eq!(rows[2].status, ImportItemStatus::Duplicate);
         assert!(rows[2].warning.as_ref().unwrap().contains("within CSV"));
