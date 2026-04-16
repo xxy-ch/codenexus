@@ -90,11 +90,12 @@ pub struct ContestSubmission {
     pub contest_id: i64,
     pub submission_id: i64,
     pub penalty_time: i32,
+    pub is_upsolving: bool,
     pub created_at: DateTime<Utc>,
 }
 
 // Ranking models
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ContestRankingEntry {
     pub user_id: uuid::Uuid,
     pub username: String,
@@ -104,7 +105,7 @@ pub struct ContestRankingEntry {
     pub submissions: Vec<ProblemSubmission>,
 }
 
-#[derive(Debug, Serialize, sqlx::FromRow)]
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct ProblemSubmission {
     pub problem_id: i64,
     pub problem_title: String,
@@ -146,4 +147,12 @@ pub struct ContestStatus {
     pub time_until_start: Option<i64>, // seconds
     pub time_until_end: Option<i64>,   // seconds
     pub is_frozen: bool,
+}
+
+// Leaderboard freeze snapshot (CONT-01)
+#[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct ContestLeaderboardSnapshot {
+    pub contest_id: i64,
+    pub snapshot_data: serde_json::Value,
+    pub frozen_at: DateTime<Utc>,
 }

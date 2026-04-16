@@ -269,9 +269,10 @@ impl ContestService {
         Ok(())
     }
 
-    /// Get contest standings/rankings with ACM scoring
+    /// Get contest standings/rankings with ACM scoring.
+    /// Per CONT-01: During freeze window, returns cached snapshot (lazy compute on first request).
+    /// After contest ends, auto-unfreezes and returns live rankings.
     pub async fn get_contest_rankings(&self, contest_id: i64) -> Result<Vec<ContestRankingEntry>> {
-        // First check if contest exists and get rules
         let contest = sqlx::query_as::<_, Contest>("SELECT * FROM contests WHERE id = $1")
             .bind(contest_id)
             .fetch_optional(&self.pool)
@@ -279,28 +280,50 @@ impl ContestService {
             .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
 
         let now = chrono::Utc::now();
-        // Freeze is active only during the freeze window, NOT after contest ends (CONT-01)
+
+        // Per D-03: Freeze is active only during the freeze window, NOT after contest ends
         let is_frozen = contest.freeze_minutes.is_some()
             && (contest.end_time
                 - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64))
                 < now
             && now < contest.end_time;
 
-        let submissions_cutoff = if is_frozen {
-            contest.end_time
-                - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64)
-        } else {
-            now // Effectively no filter — submissions cannot be in the future
-        };
+        if is_frozen {
+            // Per D-03: Lazy compute -- check for existing snapshot first
+            if let Some(snapshot) = self.get_frozen_snapshot(contest_id).await? {
+                return Ok(snapshot);
+            }
 
+            // No snapshot yet -- compute rankings up to freeze cutoff and store
+            let freeze_cutoff = contest.end_time
+                - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64);
+            let rankings = self.compute_rankings(contest_id, freeze_cutoff).await?;
+            self.store_frozen_snapshot(contest_id, &rankings).await?;
+            return Ok(rankings);
+        }
+
+        // Not frozen -- compute live rankings (includes all submissions)
+        self.compute_rankings(contest_id, now).await
+    }
+
+    /// Compute contest rankings using ACM scoring, only counting submissions before cutoff.
+    /// Per D-04: Excludes upsolving submissions from official rankings.
+    async fn compute_rankings(
+        &self,
+        contest_id: i64,
+        submissions_cutoff: chrono::DateTime<chrono::Utc>,
+    ) -> Result<Vec<ContestRankingEntry>> {
         // Get all participants (users who submitted in this contest)
+        // Per D-04: Filter out upsolving submissions
         let participants = sqlx::query_as::<_, (Uuid, String)>(
             r#"
             SELECT DISTINCT u.id, u.username
             FROM contest_submissions cs
             JOIN submissions s ON s.id = cs.submission_id
             JOIN users u ON u.id = s.user_id
-            WHERE cs.contest_id = $1 AND s.created_at < $2
+            WHERE cs.contest_id = $1
+              AND s.created_at < $2
+              AND NOT cs.is_upsolving
             ORDER BY u.username
             "#,
         )
@@ -328,6 +351,7 @@ impl ContestService {
                     JOIN contest_problems cp ON cp.contest_id = cs.contest_id AND cp.problem_id = s.problem_id
                     JOIN problems p ON p.id = cp.problem_id
                     WHERE cs.contest_id = $1 AND s.user_id = $2 AND s.created_at < $3
+                      AND NOT cs.is_upsolving
                 ),
                 first_ac AS (
                     SELECT
@@ -406,6 +430,51 @@ impl ContestService {
         });
 
         Ok(rankings)
+    }
+
+    /// Store a frozen leaderboard snapshot.
+    /// Per D-03: Uses INSERT ... ON CONFLICT DO UPDATE for idempotency.
+    async fn store_frozen_snapshot(
+        &self,
+        contest_id: i64,
+        rankings: &[ContestRankingEntry],
+    ) -> Result<()> {
+        let snapshot_json = serde_json::to_value(rankings)?;
+        sqlx::query(
+            r#"
+            INSERT INTO contest_leaderboard_snapshots (contest_id, snapshot_data, frozen_at)
+            VALUES ($1, $2, NOW())
+            ON CONFLICT (contest_id) DO UPDATE SET snapshot_data = $2, frozen_at = NOW()
+            "#,
+        )
+        .bind(contest_id)
+        .bind(&snapshot_json)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// Retrieve the frozen leaderboard snapshot if one exists.
+    async fn get_frozen_snapshot(
+        &self,
+        contest_id: i64,
+    ) -> Result<Option<Vec<ContestRankingEntry>>> {
+        let row: Option<ContestLeaderboardSnapshot> =
+            sqlx::query_as::<_, ContestLeaderboardSnapshot>(
+                "SELECT * FROM contest_leaderboard_snapshots WHERE contest_id = $1",
+            )
+            .bind(contest_id)
+            .fetch_optional(&self.pool)
+            .await?;
+
+        match row {
+            Some(snapshot) => {
+                let rankings: Vec<ContestRankingEntry> =
+                    serde_json::from_value(snapshot.snapshot_data)?;
+                Ok(Some(rankings))
+            }
+            None => Ok(None),
+        }
     }
 
     /// Register user for contest
@@ -515,13 +584,15 @@ impl ContestService {
         Ok(participants)
     }
 
-    /// Link submission to contest
+    /// Link submission to contest.
+    /// Per D-04: Allows post-contest submissions with is_upsolving=true.
+    /// Blocks pre-contest submissions.
     pub async fn link_submission_to_contest(
         &self,
         contest_id: i64,
         submission_id: i64,
     ) -> Result<ContestSubmission> {
-        // Verify contest exists and is active
+        // Verify contest exists
         let contest = sqlx::query_as::<_, Contest>("SELECT * FROM contests WHERE id = $1")
             .bind(contest_id)
             .fetch_optional(&self.pool)
@@ -529,9 +600,12 @@ impl ContestService {
             .ok_or_else(|| anyhow::anyhow!("Contest not found"))?;
 
         let now = chrono::Utc::now();
-        if now < contest.start_time || now > contest.end_time {
-            return Err(anyhow::anyhow!("Contest is not active"));
+        // Per D-04: Allow post-contest submissions (upsolving), block pre-contest
+        if now < contest.start_time {
+            return Err(anyhow::anyhow!("Contest has not started yet"));
         }
+
+        let is_upsolving = now > contest.end_time;
 
         // Check if problem is in contest
         let submission_problem: (i64,) =
@@ -550,17 +624,18 @@ impl ContestService {
         .await?
         .ok_or_else(|| anyhow::anyhow!("Problem not in contest"))?;
 
-        // Link submission
+        // Link submission with upsolving flag
         let contest_submission = sqlx::query_as::<_, ContestSubmission>(
             r#"
-            INSERT INTO contest_submissions (contest_id, submission_id)
-            VALUES ($1, $2)
+            INSERT INTO contest_submissions (contest_id, submission_id, is_upsolving)
+            VALUES ($1, $2, $3)
             ON CONFLICT DO NOTHING
             RETURNING *
             "#,
         )
         .bind(contest_id)
         .bind(submission_id)
+        .bind(is_upsolving)
         .fetch_one(&self.pool)
         .await?;
 
