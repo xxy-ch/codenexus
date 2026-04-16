@@ -57,3 +57,14 @@ testcontainers = { version = "0.23", features = ["blocking"] }
 testcontainers-modules = { version = "0.11", features = ["postgres"] }
 tokio-test = "0.4"
 env_logger = "0.11"
+api-infra = { path = "../api-infra", features = ["testkit"] }
+bcrypt = "0.16"
+chrono = { version = "0.4", features = ["serde"] }
+
+[[test]]
+name = "tenant_isolation"
+path = "tests/tenant_isolation.rs"
+
+[[test]]
+name = "handlers"
+path = "tests/handlers/mod.rs"
