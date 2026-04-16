@@ -53,11 +53,11 @@
 
 ### Import/Export
 
-- [ ] **IMEX-01**: Problem ZIP import — upload .zip containing problem.md (description), test case files (in/out pairs), config.json (time limit, memory limit, tags, difficulty, visibility)
-- [ ] **IMEX-02**: Problem ZIP export — download any problem as .zip with same structure, suitable for re-import
-- [ ] **IMEX-03**: User CSV import — upload CSV with columns: username, email, display_name, role; validate format, check duplicates, generate random passwords
-- [ ] **IMEX-04**: User CSV export — export user list with roles and status; exclude password hashes
-- [ ] **IMEX-05**: Import validation — validate archive/CSV structure before processing; return clear error messages for each issue
+- [x] **IMEX-01**: Problem ZIP import — upload .zip containing problem.md (description), test case files (in/out pairs), config.json (time limit, memory limit, tags, difficulty, visibility)
+- [x] **IMEX-02**: Problem ZIP export — download any problem as .zip with same structure, suitable for re-import
+- [x] **IMEX-03**: User CSV import — upload CSV with columns: username, email, display_name, role; validate format, check duplicates, generate random passwords
+- [x] **IMEX-04**: User CSV export — export user list with roles and status; exclude password hashes
+- [x] **IMEX-05**: Import validation — validate archive/CSV structure before processing; return clear error messages for each issue
 
 ### Judge Concurrency
 
@@ -154,11 +154,11 @@
 | CONT-01 | Phase 7: Test + Contest | Pending |
 | CONT-02 | Phase 7: Test + Contest | Pending |
 | CONT-03 | Phase 7: Test + Contest | Pending |
-| IMEX-01 | Phase 8: Import/Export | Pending |
-| IMEX-02 | Phase 8: Import/Export | Pending |
-| IMEX-03 | Phase 8: Import/Export | Pending |
-| IMEX-04 | Phase 8: Import/Export | Pending |
-| IMEX-05 | Phase 8: Import/Export | Pending |
+| IMEX-01 | Phase 8: Import/Export | Complete |
+| IMEX-02 | Phase 8: Import/Export | Complete |
+| IMEX-03 | Phase 8: Import/Export | Complete |
+| IMEX-04 | Phase 8: Import/Export | Complete |
+| IMEX-05 | Phase 8: Import/Export | Complete |
 | JCON-01 | Phase 9: Judge + FT | Pending |
 | JCON-02 | Phase 9: Judge + FT | Pending |
 | JCON-03 | Phase 9: Judge + FT | Pending |
