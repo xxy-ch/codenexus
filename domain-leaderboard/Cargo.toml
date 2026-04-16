@@ -16,3 +16,7 @@ anyhow = "1.0"
 async-trait = "0.1"
 tracing = { workspace = true }
 deadpool-redis = { version = "0.22", features = ["serde"] }
+
+[dev-dependencies]
+api-infra = { path = "../api-infra", features = ["testkit"] }
+tokio = { workspace = true, features = ["full"] }
