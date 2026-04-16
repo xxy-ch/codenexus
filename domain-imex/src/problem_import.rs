@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::io::Read;
 
 use crate::models::{
-    ImportItemStatus, ProblemConfig, ProblemImportItem, ProblemTestCaseConfig, TestCaseFile,
+    ImportItemStatus, ProblemConfig, ProblemImportItem, TestCaseFile,
 };
 use crate::security::{validate_zip_archive, validate_zip_entry};
 
@@ -263,6 +263,7 @@ fn empty_config(slug: &str) -> ProblemConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::ProblemTestCaseConfig;
     use std::io::Write;
     use zip::write::SimpleFileOptions;
     use zip::ZipWriter;

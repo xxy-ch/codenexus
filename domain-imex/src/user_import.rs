@@ -1,1 +1,399 @@
-// Stub: will be implemented in Task 3
+use std::collections::HashSet;
+
+use crate::models::{ImportItemStatus, UserImportRow};
+use crate::security::sanitize_csv_cell;
+
+use anyhow::{anyhow, Result};
+use domain_users::models::{BatchCreateUserInput, BatchCreateUsersRequest};
+
+/// UTF-8 BOM prefix bytes.
+const BOM: &[u8; 3] = b"\xEF\xBB\xBF";
+
+/// Valid role values accepted in CSV import.
+const VALID_ROLES: &[&str] = &[
+    "student",
+    "teacher",
+    "admin",
+    "organizationAdmin",
+    "campusAdmin",
+    "root",
+];
+
+/// Required column headers in the CSV file.
+const REQUIRED_HEADERS: &[&str] = &["username", "role", "campus_id", "display_name"];
+
+/// Parse a CSV file containing user definitions.
+///
+/// Expected header: `username,role,campus_id,display_name,email`
+///
+/// Returns a Vec of UserImportRow. Rows with validation errors get
+/// `ImportItemStatus::Error`. Rows whose username matches an entry in
+/// `skip_usernames` get `ImportItemStatus::Duplicate`.
+pub fn parse_user_csv(
+    csv_bytes: &[u8],
+    skip_usernames: &HashSet<String>,
+) -> Result<Vec<UserImportRow>> {
+    // Strip UTF-8 BOM if present
+    let data = if csv_bytes.starts_with(BOM) {
+        &csv_bytes[BOM.len()..]
+    } else {
+        csv_bytes
+    };
+
+    let mut reader = csv::Reader::from_reader(data);
+
+    // Read and validate headers
+    let headers = reader
+        .headers()
+        .map_err(|e| anyhow!("Failed to read CSV headers: {}", e))?
+        .clone();
+
+    let header_set: std::collections::HashSet<&str> =
+        headers.iter().map(|h| h.trim()).collect();
+
+    for required in REQUIRED_HEADERS {
+        if !header_set.contains(required) {
+            return Err(anyhow!("Missing required column: '{}'", required));
+        }
+    }
+
+    let mut rows = Vec::new();
+
+    for record_result in reader.records() {
+        let record = match record_result {
+            Ok(r) => r,
+            Err(e) => {
+                rows.push(UserImportRow {
+                    username: String::new(),
+                    role: String::new(),
+                    campus_id: 0,
+                    display_name: String::new(),
+                    email: None,
+                    status: ImportItemStatus::Error,
+                    warning: Some(format!("Failed to parse CSV row: {}", e)),
+                });
+                continue;
+            }
+        };
+
+        let username_raw = get_column(&record, &headers, "username").unwrap_or_default();
+        let role_raw = get_column(&record, &headers, "role").unwrap_or_default();
+        let campus_id_raw = get_column(&record, &headers, "campus_id").unwrap_or_default();
+        let display_name_raw =
+            get_column(&record, &headers, "display_name").unwrap_or_default();
+        let email_raw = get_column(&record, &headers, "email").unwrap_or_default();
+
+        // Sanitize all cell values
+        let username = sanitize_csv_cell(&username_raw);
+        let role = sanitize_csv_cell(&role_raw);
+        let campus_id_str = sanitize_csv_cell(&campus_id_raw);
+        let display_name = sanitize_csv_cell(&display_name_raw);
+        let email = sanitize_csv_cell(&email_raw);
+
+        // Validate username
+        if username.is_empty() {
+            rows.push(UserImportRow {
+                username: String::new(),
+                role,
+                campus_id: 0,
+                display_name,
+                email: if email.is_empty() { None } else { Some(email) },
+                status: ImportItemStatus::Error,
+                warning: Some("Username is required".to_string()),
+            });
+            continue;
+        }
+
+        // Validate role
+        if !VALID_ROLES.contains(&role.as_str()) {
+            let warning = format!("Invalid role: '{}'", role);
+            rows.push(UserImportRow {
+                username,
+                role,
+                campus_id: 0,
+                display_name,
+                email: if email.is_empty() { None } else { Some(email) },
+                status: ImportItemStatus::Error,
+                warning: Some(warning),
+            });
+            continue;
+        }
+
+        // Parse campus_id
+        let campus_id: i64 = match campus_id_str.parse() {
+            Ok(id) => id,
+            Err(_) => {
+                rows.push(UserImportRow {
+                    username,
+                    role,
+                    campus_id: 0,
+                    display_name,
+                    email: if email.is_empty() { None } else { Some(email) },
+                    status: ImportItemStatus::Error,
+                    warning: Some(format!("Invalid campus_id: '{}'", campus_id_str)),
+                });
+                continue;
+            }
+        };
+
+        let email_opt = if email.is_empty() { None } else { Some(email) };
+
+        // Check duplicate username
+        let (status, warning) = if skip_usernames.contains(&username) {
+            (
+                ImportItemStatus::Duplicate,
+                Some("Username already exists".to_string()),
+            )
+        } else {
+            (ImportItemStatus::Valid, None)
+        };
+
+        rows.push(UserImportRow {
+            username,
+            role,
+            campus_id,
+            display_name,
+            email: email_opt,
+            status,
+            warning,
+        });
+    }
+
+    Ok(rows)
+}
+
+/// Convert validated UserImportRows into a BatchCreateUsersRequest.
+pub fn convert_to_batch_request(
+    rows: &[UserImportRow],
+    default_password: &str,
+    organization_id: i64,
+) -> BatchCreateUsersRequest {
+    let users: Vec<BatchCreateUserInput> = rows
+        .iter()
+        .filter(|r| r.status == ImportItemStatus::Valid)
+        .map(|r| BatchCreateUserInput {
+            user_code: r.username.clone(),
+            display_name: Some(r.display_name.clone()),
+            email: r.email.clone(),
+            campus_id: Some(r.campus_id),
+            password: None,
+            role: Some(r.role.clone()),
+        })
+        .collect();
+
+    BatchCreateUsersRequest {
+        users,
+        default_password: Some(default_password.to_string()),
+        organization_id,
+        campus_id: None,
+    }
+}
+
+/// Helper: get a column value from a CSV record by header name.
+fn get_column<'a>(record: &'a csv::StringRecord, headers: &csv::StringRecord, name: &str) -> Option<String> {
+    headers
+        .iter()
+        .position(|h| h.trim() == name)
+        .and_then(|i| record.get(i).map(|s| s.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_csv(header: &str, rows: &[&str]) -> Vec<u8> {
+        let mut csv = header.to_string();
+        for row in rows {
+            csv.push('\n');
+            csv.push_str(row);
+        }
+        csv.into_bytes()
+    }
+
+    #[test]
+    fn parses_valid_csv_with_3_rows() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &[
+                "alice,student,1,Alice Smith,alice@example.com",
+                "bob,teacher,1,Bob Jones,bob@example.com",
+                "charlie,student,2,Charlie Brown,",
+            ],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+
+        assert_eq!(rows.len(), 3);
+        assert_eq!(rows[0].username, "alice");
+        assert_eq!(rows[0].role, "student");
+        assert_eq!(rows[0].campus_id, 1);
+        assert_eq!(rows[0].display_name, "Alice Smith");
+        assert_eq!(rows[0].email, Some("alice@example.com".to_string()));
+        assert_eq!(rows[0].status, ImportItemStatus::Valid);
+
+        assert_eq!(rows[1].username, "bob");
+        assert_eq!(rows[1].role, "teacher");
+        assert_eq!(rows[1].status, ImportItemStatus::Valid);
+
+        assert_eq!(rows[2].username, "charlie");
+        assert_eq!(rows[2].email, None);
+        assert_eq!(rows[2].status, ImportItemStatus::Valid);
+    }
+
+    #[test]
+    fn rejects_csv_missing_username_column() {
+        let csv_bytes = make_csv("role,campus_id,display_name,email", &["student,1,Alice,"]);
+
+        let skip = HashSet::new();
+        let result = parse_user_csv(&csv_bytes, &skip);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Missing required column: 'username'"));
+    }
+
+    #[test]
+    fn rejects_csv_missing_role_column() {
+        let csv_bytes = make_csv("username,campus_id,display_name,email", &["alice,1,Alice,"]);
+
+        let skip = HashSet::new();
+        let result = parse_user_csv(&csv_bytes, &skip);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("Missing required column: 'role'"));
+    }
+
+    #[test]
+    fn marks_error_for_empty_username() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &[",student,1,Some Name,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Error);
+        assert!(rows[0].warning.as_ref().unwrap().contains("Username is required"));
+    }
+
+    #[test]
+    fn marks_error_for_invalid_role() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["alice,superadmin,1,Alice,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Error);
+        assert!(rows[0].warning.as_ref().unwrap().contains("Invalid role: 'superadmin'"));
+    }
+
+    #[test]
+    fn marks_duplicate_for_existing_username() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["alice,student,1,Alice,"],
+        );
+
+        let mut skip = HashSet::new();
+        skip.insert("alice".to_string());
+
+        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Duplicate);
+        assert!(rows[0].warning.as_ref().unwrap().contains("already exists"));
+    }
+
+    #[test]
+    fn handles_utf8_bom() {
+        let mut csv_bytes = Vec::new();
+        csv_bytes.extend_from_slice(BOM);
+        csv_bytes.extend_from_slice(b"username,role,campus_id,display_name,email\nalice,student,1,Alice,");
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].username, "alice");
+        assert_eq!(rows[0].status, ImportItemStatus::Valid);
+    }
+
+    #[test]
+    fn sanitizes_csv_injection_payloads() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["=CMD(...),student,1,Evil User,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].username, "CMD(...)");
+        assert_eq!(rows[0].status, ImportItemStatus::Valid);
+    }
+
+    #[test]
+    fn marks_error_for_invalid_campus_id() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["alice,student,not_a_number,Alice,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Error);
+        assert!(rows[0].warning.as_ref().unwrap().contains("Invalid campus_id"));
+    }
+
+    #[test]
+    fn convert_to_batch_request_filters_valid_only() {
+        let rows = vec![
+            UserImportRow {
+                username: "alice".to_string(),
+                role: "student".to_string(),
+                campus_id: 1,
+                display_name: "Alice".to_string(),
+                email: Some("alice@example.com".to_string()),
+                status: ImportItemStatus::Valid,
+                warning: None,
+            },
+            UserImportRow {
+                username: "bob".to_string(),
+                role: "student".to_string(),
+                campus_id: 1,
+                display_name: "Bob".to_string(),
+                email: None,
+                status: ImportItemStatus::Duplicate,
+                warning: Some("already exists".to_string()),
+            },
+            UserImportRow {
+                username: "charlie".to_string(),
+                role: "student".to_string(),
+                campus_id: 2,
+                display_name: "Charlie".to_string(),
+                email: None,
+                status: ImportItemStatus::Valid,
+                warning: None,
+            },
+        ];
+
+        let req = convert_to_batch_request(&rows, "default123", 42);
+        assert_eq!(req.users.len(), 2);
+        assert_eq!(req.users[0].user_code, "alice");
+        assert_eq!(req.users[0].display_name, Some("Alice".to_string()));
+        assert_eq!(req.users[0].email, Some("alice@example.com".to_string()));
+        assert_eq!(req.users[0].campus_id, Some(1));
+        assert_eq!(req.users[0].password, None);
+        assert_eq!(req.users[0].role, Some("student".to_string()));
+        assert_eq!(req.users[1].user_code, "charlie");
+        assert_eq!(req.default_password, Some("default123".to_string()));
+        assert_eq!(req.organization_id, 42);
+        assert!(req.campus_id.is_none());
+    }
+}
