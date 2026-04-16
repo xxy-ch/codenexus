@@ -54,6 +54,7 @@ const ProblemContentConfig = lazyNamed(() => import('./pages/admin/ProblemConten
 const SimilarityScanConfig = lazyNamed(() => import('./pages/admin/SimilarityScanConfig'), 'SimilarityScanConfig')
 const PlagiarismReportList = lazyNamed(() => import('./pages/admin/PlagiarismReportList'), 'PlagiarismReportList')
 const PlagiarismReportDetail = lazyNamed(() => import('./pages/admin/PlagiarismReportDetail'), 'PlagiarismReportDetail')
+const BatchOperations = lazyNamed(() => import('./pages/admin/BatchOperations'), 'BatchOperations')
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -143,6 +144,7 @@ function App() {
             <Route path="teacher/classes" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ClassManagement)}</ProtectedRoute>} />
             <Route path="teacher/assignment-report" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(AssignmentReport)}</ProtectedRoute>} />
             <Route path="teacher/contest-wizard" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ContestWizard)}</ProtectedRoute>} />
+            <Route path="batch-operations" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(BatchOperations)}</ProtectedRoute>} />
             {/* Add more protected routes here */}
           </Route>
 

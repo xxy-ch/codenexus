@@ -25,6 +25,7 @@ const navItems: NavItem[] = [
   { label: 'Classes', path: '/teacher/classes', icon: 'group', minRole: 'teacher' },
   { label: 'Contest Wizard', path: '/teacher/contest-wizard', icon: 'build', minRole: 'teacher' },
   { label: 'Reports', path: '/teacher/assignment-report', icon: 'insights', minRole: 'teacher' },
+  { label: 'Batch Ops', path: '/batch-operations', icon: 'upload_file', minRole: 'teacher' },
 ]
 
 function canSeeItem(minRole: NavItem['minRole'], userRole: Role): boolean {
