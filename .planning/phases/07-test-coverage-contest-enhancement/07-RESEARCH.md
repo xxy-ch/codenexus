@@ -529,22 +529,22 @@ pub async fn link_submission_to_contest(
 | A4 | GitHub Actions CI runners have Docker available for testcontainers tests | Common Pitfalls | If not, integration tests need `#[ignore]` gate or separate CI job. Ubuntu runners do have Docker. [VERIFIED: GitHub Actions docs] |
 | A5 | The `api-infra` testkit `TestFixture` is the right shared infrastructure for all domain crate tests | Architecture Patterns | If testkit needs modifications (e.g., specific seed data), it could become a bottleneck. Mitigation: keep testkit minimal, put domain-specific fixtures in each crate. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **CI Integration Test Strategy**
    - What we know: CI runs `cargo test --workspace` with `SQLX_OFFLINE=true`. Integration tests in `tests/` directories are separate compilation units.
    - What's unclear: Should integration tests (requiring Docker) run in CI by default, or be behind a feature flag like `#[cfg(feature = "integration")]`?
-   - Recommendation: Run them in CI. GitHub Actions ubuntu-latest has Docker. Add a 5-minute timeout per integration test. If Docker is unavailable, tests will fail fast with a clear error message.
+   - Recommendation: Run them in CI. GitHub Actions ubuntu-latest has Docker. Add a 5-minute timeout per integration test. If Docker is unavailable, tests will fail fast with a clear error message. (RESOLVED)
 
 2. **Contest Leaderboard Snapshot Timing**
    - What we know: Freeze is time-based (checked against `chrono::Utc::now()`). Snapshot should be computed when freeze activates.
    - What's unclear: Should snapshot be computed eagerly (background task when freeze time arrives) or lazily (first request during freeze)?
-   - Recommendation: Lazy -- compute on first request during freeze, store in DB, return cached version on subsequent requests. Simpler, no background task needed.
+   - Recommendation: Lazy -- compute on first request during freeze, store in DB, return cached version on subsequent requests. Simpler, no background task needed. (RESOLVED)
 
 3. **Upsolving UX Flow**
    - What we know: Users submit through the same contest page. Submissions are tagged `is_upsolving=true`.
    - What's unclear: Should the contest page UI change when contest ends (e.g., show "Practice Mode" banner)?
-   - Recommendation: Yes, minimal UI change -- show a banner indicating practice mode. This is Claude's discretion for frontend scope.
+   - Recommendation: Yes, minimal UI change -- show a banner indicating practice mode. This is Claude's discretion for frontend scope. (RESOLVED)
 
 ## Environment Availability
 
