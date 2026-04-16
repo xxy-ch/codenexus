@@ -1,7 +1,7 @@
 # Roadmap: AlgoMaster Online Judge Modernization
 
 **Created:** 2026-04-13
-**Revised:** 2026-04-15 (Phase 6 planned)
+**Revised:** 2026-04-15 (Phase 7 planned)
 **Phases:** 10
 **v1 Requirements:** 43 (all mapped)
 
@@ -169,6 +169,17 @@ Plans:
 - CONT-02: Post-contest upsolving — submissions tagged as upsolving, not in official standings
 - CONT-03: Submission recovery — crashed worker's pending submissions retried via XPENDING + XCLAIM
 
+**Plans:** 7 plans in 4 waves
+
+Plans:
+- [ ] 07-01-PLAN.md — Domain crate integration tests: testkit dev-deps + tests for all 8 domain crates (Wave 1)
+- [ ] 07-02-PLAN.md — Contest features: freeze snapshot + upsolving DB migrations and service logic (Wave 2)
+- [ ] 07-07-PLAN.md — CONT-03: Judge worker XPENDING + XCLAIM submission recovery (Wave 2)
+- [ ] 07-03-PLAN.md — Contest integration tests: freeze and upsolving against real DB (Wave 3)
+- [ ] 07-04-PLAN.md — API handler tests + multi-tenant isolation test suite (Wave 3)
+- [ ] 07-05-PLAN.md — Frontend Vitest unit tests for hooks and utilities (Wave 4)
+- [ ] 07-06-PLAN.md — Playwright E2E tests for contest freeze and upsolving (Wave 4)
+
 **Success Criteria:**
 1. `cargo test --workspace` runs integration tests for all 8 domain modules against real PostgreSQL/Redis
 2. Multi-tenant isolation test suite covers every API endpoint group and passes
@@ -307,4 +318,4 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 
 ---
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-15 Phase 6 planned*
+*Last updated: 2026-04-15 Phase 7 planned*
