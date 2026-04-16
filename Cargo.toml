@@ -1,5 +1,5 @@
 [workspace]
-members = ["api", "api-infra", "domain-classes", "domain-community", "domain-contests", "domain-leaderboard", "domain-problems", "domain-search", "domain-submissions", "domain-users", "judge-worker", "shared"]
+members = ["api", "api-infra", "domain-classes", "domain-community", "domain-contests", "domain-imex", "domain-leaderboard", "domain-problems", "domain-search", "domain-submissions", "domain-users", "judge-worker", "shared"]
 resolver = "2"
 
 [workspace.dependencies]
