@@ -3,6 +3,20 @@ use anyhow::{Context, Result};
 use redis::aio::MultiplexedConnection;
 use tracing::{info, warn};
 
+/// Increment a Redis Stream ID's sequence number.
+/// Stream IDs are `<timestamp>-<sequence>` (e.g. `1700000000000-0`).
+/// Returns `<timestamp>-<sequence+1>` to use as exclusive start for XPENDING pagination.
+fn increment_stream_id(id: &str) -> String {
+    if let Some(pos) = id.rfind('-') {
+        let timestamp = &id[..pos];
+        let seq: u64 = id[pos + 1..].parse().unwrap_or(0);
+        format!("{}-{}", timestamp, seq + 1)
+    } else {
+        // Bare timestamp — append -1 to advance past it
+        format!("{}-1", id)
+    }
+}
+
 /// Scan Redis Stream for pending messages older than min_idle_ms and claim them.
 /// Per D-05: Called on worker startup to recover submissions left behind by crashed workers.
 pub async fn recover_pending_submissions(
@@ -51,7 +65,7 @@ pub async fn recover_pending_submissions(
         for entry in &entries {
             if let redis::Value::Array(ref fields) = entry {
                 if fields.len() >= 3 {
-                    let id = match fields.get(0) {
+                    let id = match fields.first() {
                         Some(redis::Value::BulkString(bytes)) => {
                             String::from_utf8_lossy(bytes).to_string()
                         }
@@ -74,8 +88,10 @@ pub async fn recover_pending_submissions(
 
         match last_id {
             Some(ref id) if entries.len() == batch_size => {
-                // More entries likely exist — continue from the next ID after this one
-                start_id = id.clone();
+                // More entries likely exist — advance past the last seen ID.
+                // Parse the Redis Stream ID (<timestamp>-<sequence>) and increment
+                // the sequence to produce a valid exclusive-start cursor.
+                start_id = increment_stream_id(id);
             }
             _ => break, // Last page or empty
         }

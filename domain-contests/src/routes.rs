@@ -295,6 +295,8 @@ pub async fn link_submission(
                 StatusCode::FORBIDDEN
             } else if msg.contains("not in contest") {
                 StatusCode::BAD_REQUEST
+            } else if msg.contains("already linked") {
+                StatusCode::CONFLICT
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR
             }

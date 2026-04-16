@@ -627,22 +627,43 @@ impl ContestService {
         .await?
         .ok_or_else(|| anyhow::anyhow!("Problem not in contest"))?;
 
-        // Link submission with upsolving flag (idempotent: upsert returns existing row on conflict)
+        // Link submission atomically: only upsert within the same contest_id.
+        // ON CONFLICT ... DO UPDATE WHERE limits the update to same-contest rows.
+        // If submission is already linked to a DIFFERENT contest, the WHERE fails,
+        // no row is returned, and we detect the conflict below.
         let contest_submission = sqlx::query_as::<_, ContestSubmission>(
             r#"
             INSERT INTO contest_submissions (contest_id, submission_id, is_upsolving)
             VALUES ($1, $2, $3)
-            ON CONFLICT (contest_id, submission_id)
+            ON CONFLICT (submission_id)
             DO UPDATE SET is_upsolving = EXCLUDED.is_upsolving
+            WHERE contest_submissions.contest_id = EXCLUDED.contest_id
             RETURNING *
             "#,
         )
         .bind(contest_id)
         .bind(submission_id)
         .bind(is_upsolving)
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await?;
 
-        Ok(contest_submission)
+        match contest_submission {
+            Some(cs) => Ok(cs),
+            None => {
+                // ON CONFLICT fired but WHERE didn't match → different contest_id
+                let existing: (i64,) = sqlx::query_as(
+                    "SELECT contest_id FROM contest_submissions WHERE submission_id = $1",
+                )
+                .bind(submission_id)
+                .fetch_one(&self.pool)
+                .await
+                .map_err(|_| anyhow::anyhow!("Failed to resolve submission contest conflict"))?;
+
+                Err(anyhow::anyhow!(
+                    "Submission already linked to contest {}",
+                    existing.0
+                ))
+            }
+        }
     }
 }

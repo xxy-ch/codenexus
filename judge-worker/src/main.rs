@@ -80,30 +80,33 @@ async fn main() -> Result<()> {
                     let result = processor::service::process_submission(&submission).await;
                     match result {
                         Ok(judge_result) => {
-                            match send_result_with_retry(&api_url, &judge_result, &conn).await {
-                                Ok(()) => {
-                                    // Only ACK after successful processing AND delivery
-                                    let mut locked_conn = conn.lock().await;
-                                    if let Err(e) = consumer::acknowledge_submission(
-                                        &mut locked_conn,
-                                        &stream_name,
-                                        &group_name,
-                                        &message_id,
-                                    )
-                                    .await
-                                    {
-                                        error!(
-                                            "Failed to ACK recovered message {}: {}",
-                                            message_id, e
-                                        );
-                                    }
+                            let should_ack = match send_result_with_retry(&api_url, &judge_result, &conn).await {
+                                Ok(DeliveryOutcome::Delivered) => true,
+                                Ok(DeliveryOutcome::StoredInDlq) => {
+                                    warn!(
+                                        "Recovered submission {} stored in DLQ (API unreachable)",
+                                        submission.submission_id
+                                    );
+                                    true
                                 }
                                 Err(e) => {
-                                    // API delivery failed (already retried + DLQ attempted).
-                                    // Do NOT ACK — message will be recovered on next startup.
+                                    // Both API and DLQ failed — do NOT ACK, retry on next startup.
                                     error!(
-                                        "Recovered submission {} processed but delivery failed (will retry on next startup): {}",
+                                        "Recovered submission {} delivery AND DLQ failed (will retry on next startup): {}",
                                         submission.submission_id, e
+                                    );
+                                    false
+                                }
+                            };
+
+                            if should_ack {
+                                if let Err(e) = acknowledge_with_retry(
+                                    &conn, &stream_name, &group_name, &message_id,
+                                ).await {
+                                    error!(
+                                        "Recovered message {} ACK failed after retries: {}. \
+                                         Message stays in PEL for next recovery cycle.",
+                                        message_id, e
                                     );
                                 }
                             }
@@ -222,39 +225,45 @@ async fn consume_and_process(
 
             match result {
                 Ok(judge_result) => {
-                    if let Err(e) = send_result_with_retry(&api_url, &judge_result, &conn).await {
-                        error!(
-                            "Failed to send result for submission {} after retries: {}",
-                            submission.submission_id, e
-                        );
-                        // Result was written to DLQ by send_result_with_retry.
-                        // Still ack to avoid reprocessing.
-                    }
-
-                    // Always acknowledge — DLQ captures any permanently failed results
-                    let mut locked_conn = conn.lock().await;
-                    match consumer::acknowledge_submission(
-                        &mut locked_conn,
-                        &stream_name,
-                        &group_name,
-                        &message_id,
-                    )
-                    .await
-                    {
-                        Ok(_) => {
-                            info!(
-                                "Submission {} completed and acknowledged",
+                    // Only ACK when the result is safely stored (delivered to API or DLQ).
+                    // If both delivery and DLQ fail, do NOT ACK — recover on next startup.
+                    let should_ack = match send_result_with_retry(&api_url, &judge_result, &conn).await {
+                        Ok(DeliveryOutcome::Delivered) => true,
+                        Ok(DeliveryOutcome::StoredInDlq) => {
+                            warn!(
+                                "Submission {} stored in DLQ (API unreachable)",
                                 submission.submission_id
                             );
                             true
                         }
                         Err(e) => {
-                            warn!(
-                                "Failed to acknowledge submission {}: {}",
+                            error!(
+                                "Submission {} delivery AND DLQ write failed (will retry on next startup): {}",
                                 submission.submission_id, e
                             );
                             false
                         }
+                    };
+
+                    if should_ack {
+                        match acknowledge_with_retry(
+                            &conn, &stream_name, &group_name, &message_id,
+                        ).await {
+                            Ok(_) => {
+                                info!(
+                                    "Submission {} completed and acknowledged",
+                                    submission.submission_id
+                                );
+                                true
+                            }
+                            Err(_) => {
+                                // ACK retries exhausted — message stays in PEL.
+                                // Will be recovered on next startup; API callback is idempotent.
+                                false
+                            }
+                        }
+                    } else {
+                        false
                     }
                 }
                 Err(e) => {
@@ -262,15 +271,7 @@ async fn consume_and_process(
                         "Failed to process submission {}: {}",
                         submission.submission_id, e
                     );
-                    // Still acknowledge to avoid infinite retries
-                    let mut locked_conn = conn.lock().await;
-                    let _ = consumer::acknowledge_submission(
-                        &mut locked_conn,
-                        &stream_name,
-                        &group_name,
-                        &message_id,
-                    )
-                    .await;
+                    // Do NOT ACK — let recovery scan pick it up on next startup.
                     false
                 }
             }
@@ -287,6 +288,49 @@ async fn consume_and_process(
     }
 
     Ok(processed)
+}
+
+/// Acknowledge a Redis Stream message with short retries.
+/// Retries up to 3 times with 200ms delay to handle transient Redis errors.
+/// If all retries fail, the message stays in the PEL and will be recovered
+/// on next startup — the downstream API callback is idempotent (UPSERT).
+async fn acknowledge_with_retry(
+    conn: &Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
+    stream_name: &str,
+    group_name: &str,
+    message_id: &str,
+) -> Result<()> {
+    let max_retries: u32 = 3;
+    for attempt in 0..max_retries {
+        let mut locked_conn = conn.lock().await;
+        match consumer::acknowledge_submission(
+            &mut locked_conn,
+            stream_name,
+            group_name,
+            message_id,
+        )
+        .await
+        {
+            Ok(_) => return Ok(()),
+            Err(e) if attempt + 1 < max_retries => {
+                warn!(
+                    "ACK attempt {}/{} failed for message {}: {}, retrying",
+                    attempt + 1, max_retries, message_id, e
+                );
+                drop(locked_conn); // release lock before sleeping
+                tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+            }
+            Err(e) => {
+                error!(
+                    "All {} ACK attempts failed for message {}: {}. \
+                     Message stays in PEL — will be retried on next startup.",
+                    max_retries, message_id, e
+                );
+                return Err(e);
+            }
+        }
+    }
+    Ok(())
 }
 
 async fn send_result_to_api(api_url: &str, result: &queue::JudgeResult) -> Result<()> {
@@ -315,17 +359,26 @@ async fn send_result_to_api(api_url: &str, result: &queue::JudgeResult) -> Resul
     }
 }
 
+/// Outcome of attempting to deliver a judge result.
+/// Used to determine whether the Redis Stream message can be safely ACKed.
+enum DeliveryOutcome {
+    /// API accepted the result — safe to ACK.
+    Delivered,
+    /// API rejected but result was written to DLQ — safe to ACK.
+    StoredInDlq,
+}
+
 async fn send_result_with_retry(
     api_url: &str,
     result: &queue::JudgeResult,
     conn: &Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
-) -> Result<()> {
+) -> Result<DeliveryOutcome> {
     let max_retries: u32 = 3;
     let mut attempt: u32 = 0;
 
     loop {
         match send_result_to_api(api_url, result).await {
-            Ok(()) => return Ok(()),
+            Ok(()) => return Ok(DeliveryOutcome::Delivered),
             Err(e) => {
                 attempt += 1;
                 if attempt >= max_retries {
@@ -334,15 +387,17 @@ async fn send_result_with_retry(
                         max_retries, result.submission_id, e
                     );
                     let mut locked_conn = conn.lock().await;
-                    if let Err(dlq_err) =
-                        queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string()).await
+                    match queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string()).await
                     {
-                        error!(
-                            "Failed to write submission {} to DLQ: {}",
-                            result.submission_id, dlq_err
-                        );
+                        Ok(()) => return Ok(DeliveryOutcome::StoredInDlq),
+                        Err(dlq_err) => {
+                            error!(
+                                "Failed to write submission {} to DLQ: {}",
+                                result.submission_id, dlq_err
+                            );
+                            return Err(e);
+                        }
                     }
-                    return Err(e);
                 }
                 let delay = std::time::Duration::from_secs(1 << attempt.min(3));
                 warn!(
