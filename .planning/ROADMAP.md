@@ -1,7 +1,7 @@
 # Roadmap: AlgoMaster Online Judge Modernization
 
 **Created:** 2026-04-13
-**Revised:** 2026-04-15 (Phase 7 planned)
+**Revised:** 2026-04-16 (Phase 8 planned)
 **Phases:** 10
 **v1 Requirements:** 43 (all mapped)
 
@@ -202,6 +202,13 @@ Plans:
 - IMEX-04: User CSV export — export user list with roles and status
 - IMEX-05: Import validation — validate archive/CSV structure before processing
 
+**Plans:** 3 plans in 3 waves
+
+Plans:
+- [ ] 08-01-PLAN.md — domain-imex crate: models, security, problem/user import/export services (Wave 1)
+- [ ] 08-02-PLAN.md — API routes + AppState integration + frontend service layer (Wave 2)
+- [ ] 08-03-PLAN.md — BatchOperations page + sidebar entry + route registration (Wave 3)
+
 **Success Criteria:**
 1. Teacher uploads a problem ZIP, sees imported problem with correct description, test cases, and config
 2. Teacher exports a problem and re-imports the ZIP successfully (round-trip)
@@ -318,4 +325,4 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 
 ---
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-15 Phase 7 planned*
+*Last updated: 2026-04-16 Phase 8 planned*
