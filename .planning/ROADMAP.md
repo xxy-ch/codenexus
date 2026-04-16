@@ -206,7 +206,7 @@ Plans:
 
 Plans:
 - [x] 08-01-PLAN.md — domain-imex crate: models, security, problem/user import/export services (Wave 1)
-- [ ] 08-02-PLAN.md — API routes + AppState integration + frontend service layer (Wave 2)
+- [x] 08-02-PLAN.md — API routes + AppState integration + frontend service layer (Wave 2)
 - [ ] 08-03-PLAN.md — BatchOperations page + sidebar entry + route registration (Wave 3)
 
 **Success Criteria:**

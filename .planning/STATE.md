@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 8
 status: executing
-last_updated: "2026-04-16T11:27:21Z"
+last_updated: "2026-04-16T11:50:34Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 10
   completed_phases: 4
   total_plans: 30
-  completed_plans: 24
-  percent: 80
+  completed_plans: 25
+  percent: 83
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -31,7 +31,7 @@ progress:
 | 5 | Security & Technical Debt Clearance | Executed | 2 plans | 100% |
 | 6 | Full CI/CD + Observability | Executed | 3 plans in 2 waves | 100% (3/3 plans) |
 | 7 | Test Coverage + Contest Enhancement | Executing | 7 plans (3 waves) | 57% (4/7 plans) |
-| 8 | Import/Export | Executing | 3 plans | 33% (1/3 plans) |
+| 8 | Import/Export | Executing | 3 plans | 67% (2/3 plans) |
 | 9 | Judge Concurrency + Fault Tolerance | Not Started | - | 0% |
 | 10 | Data Migration + Final Delivery | Not Started | - | 0% |
 
@@ -44,8 +44,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 ---
 *State initialized: 2026-04-13*
-*Last updated: 2026-04-16 after 08-01-PLAN.md execution*
-*Stopped at: Completed 08-01-PLAN.md*
+*Last updated: 2026-04-16 after 08-02-PLAN.md execution*
+*Stopped at: Completed 08-02-PLAN.md*
 
 ## Decisions
 
@@ -61,6 +61,9 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 08 P01]: HashMap-based ZIP content extraction avoids ZipArchive borrow checker issues
 - [Phase 08 P01]: Manual CSV header writing ensures header present even for empty user lists
 - [Phase 08 P01]: Local ExportProblem/ExportTestCase types keep domain-imex decoupled from DB structs
+- [Phase 08 P02]: Box<dyn Any + Send + Sync> preview cache avoids circular dep between api-infra and domain-imex
+- [Phase 08 P02]: spawn_blocking for CPU-bound ZIP/CSV parsing to avoid blocking async runtime
+- [Phase 08 P02]: Auto-expiring preview tokens via tokio::spawn with 10-minute sleep as best-effort cleanup
 
 ## Performance Metrics
 
@@ -72,3 +75,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 07 P01 | 14min | 3 tasks | 16 files |
 | Phase 07 P04 | 13min | 1 tasks | 5 files |
 | Phase 08 P01 | 20min | 3 tasks | 9 files |
+| Phase 08 P02 | 12min | 2 tasks | 18 files |
