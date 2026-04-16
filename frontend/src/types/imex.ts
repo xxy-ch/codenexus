@@ -25,6 +25,15 @@ export interface ImportPreview {
   preview_items: PreviewItem[]
 }
 
+export interface UserImportPreview {
+  token: string
+  total: number
+  valid: number
+  warnings: ImportWarning[]
+  errors: ImportError[]
+  preview_items: UserPreviewItem[]
+}
+
 export interface CreatedItem {
   title: string
   id: number

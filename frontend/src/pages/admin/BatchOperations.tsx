@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/Dialog'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Separator } from '@/components/ui/separator'
-import type { ImportPreview, ImportResult, PreviewItem, UserPreviewItem } from '@/types/imex'
+import type { ImportPreview, ImportResult, PreviewItem, UserImportPreview } from '@/types/imex'
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -475,7 +475,7 @@ function UserImportTab() {
   const [file, setFile] = useState<File | null>(null)
   const [defaultPassword, setDefaultPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [preview, setPreview] = useState<ImportPreview | null>(null)
+  const [preview, setPreview] = useState<UserImportPreview | null>(null)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -641,14 +641,6 @@ function UserImportTab() {
   }
 
   if (importState === 'previewing' && preview) {
-    // Use UserPreviewItem columns for user import preview
-    const userItems = (preview as ImportPreview & { preview_items?: UserPreviewItem[] }).preview_items
-      ? (preview as ImportPreview & { preview_items: UserPreviewItem[] }).preview_items
-      : []
-
-    // If backend returns generic PreviewItem[], adapt to table
-    const hasUserColumns = userItems.length > 0 && 'username' in userItems[0]
-
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3 text-sm">
@@ -664,7 +656,7 @@ function UserImportTab() {
           <p className="text-sm text-muted-foreground">
             No valid items found in the uploaded file. Please fix the errors and try again.
           </p>
-        ) : hasUserColumns ? (
+        ) : (
           <div className="max-h-80 overflow-y-auto">
             <Table>
               <TableHeader>
@@ -678,34 +670,13 @@ function UserImportTab() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(userItems as UserPreviewItem[]).map((item, idx) => (
+                {preview.preview_items.map((item, idx) => (
                   <TableRow key={idx}>
                     <TableCell>{item.username}</TableCell>
                     <TableCell>{item.role}</TableCell>
                     <TableCell>{item.campus_id}</TableCell>
                     <TableCell>{item.display_name}</TableCell>
                     <TableCell>{item.email ?? '--'}</TableCell>
-                    <TableCell>
-                      <StatusBadge status={item.status} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="max-h-80 overflow-y-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {preview.preview_items.map((item, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell>{item.title}</TableCell>
                     <TableCell>
                       <StatusBadge status={item.status} />
                     </TableCell>

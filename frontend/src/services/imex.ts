@@ -1,5 +1,5 @@
 import api from './api'
-import type { ImportPreview, ImportResult } from '@/types/imex'
+import type { ImportPreview, ImportResult, UserImportPreview } from '@/types/imex'
 
 export const imexService = {
   async validateProblemImport(file: File): Promise<ImportPreview> {
@@ -23,7 +23,7 @@ export const imexService = {
     return response.data
   },
 
-  async validateUserImport(file: File, defaultPassword: string): Promise<ImportPreview> {
+  async validateUserImport(file: File, defaultPassword: string): Promise<UserImportPreview> {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('default_password', defaultPassword)

@@ -22,12 +22,13 @@ use uuid::Uuid;
 use crate::models::{
     CachedPreview, CreatedItem, ErrorItem, ImportExecuteRequest, ImportError,
     ImportItemStatus, ImportPreviewResponse, ImportResultResponse, ImportWarning, PreviewItem,
-    ProblemImportPreview, SkippedItem, UserImportPreview,
+    ProblemImportPreview, SkippedItem, UserImportPreview, UserImportPreviewResponse,
+    UserPreviewItem,
 };
 use crate::problem_export::{build_problem_zip, ExportProblem, ExportTestCase};
 use crate::problem_import::{convert_to_create_request, convert_to_test_cases, parse_problem_zip};
 use crate::user_export::{build_user_csv, UserExportRow};
-use crate::user_import::parse_user_csv;
+use crate::user_import::{parse_user_csv, RolePolicy};
 
 // ---------------------------------------------------------------------------
 // Router
@@ -80,39 +81,47 @@ fn require_admin(role: &str) -> Result<(), StatusCode> {
     }
 }
 
-/// Extract file bytes from a multipart field named `field_name`.
-async fn extract_file_bytes(multipart: &mut Multipart, field_name: &str) -> Result<Vec<u8>, StatusCode> {
+/// Collect all fields from a multipart request into a name→bytes map.
+///
+/// Single-pass traversal avoids field-order dependency.
+async fn collect_multipart_fields(
+    multipart: &mut Multipart,
+) -> Result<std::collections::HashMap<String, Vec<u8>>, StatusCode> {
+    let mut fields = std::collections::HashMap::new();
     while let Some(field) = multipart
         .next_field()
         .await
         .map_err(|_| StatusCode::BAD_REQUEST)?
     {
-        if field.name() == Some(field_name) {
-            return field
+        if let Some(name) = field.name().map(|s| s.to_string()) {
+            let bytes = field
                 .bytes()
                 .await
                 .map(|b| b.to_vec())
-                .map_err(|_| StatusCode::BAD_REQUEST);
+                .map_err(|_| StatusCode::BAD_REQUEST)?;
+            fields.insert(name, bytes);
         }
     }
-    Err(StatusCode::BAD_REQUEST)
+    Ok(fields)
 }
 
-/// Extract a text field from multipart.
-async fn extract_text_field(multipart: &mut Multipart, field_name: &str) -> Result<String, StatusCode> {
-    while let Some(field) = multipart
-        .next_field()
-        .await
-        .map_err(|_| StatusCode::BAD_REQUEST)?
-    {
-        if field.name() == Some(field_name) {
-            return field
-                .text()
-                .await
-                .map_err(|_| StatusCode::BAD_REQUEST);
-        }
-    }
-    Err(StatusCode::BAD_REQUEST)
+/// Get a required file field from the collected map.
+fn get_file_field(
+    fields: &std::collections::HashMap<String, Vec<u8>>,
+    name: &str,
+) -> Result<Vec<u8>, StatusCode> {
+    fields.get(name).cloned().ok_or(StatusCode::BAD_REQUEST)
+}
+
+/// Get a required text field from the collected map.
+fn get_text_field(
+    fields: &std::collections::HashMap<String, Vec<u8>>,
+    name: &str,
+) -> Result<String, StatusCode> {
+    fields
+        .get(name)
+        .map(|b| String::from_utf8_lossy(b).to_string())
+        .ok_or(StatusCode::BAD_REQUEST)
 }
 
 /// Build an import preview response from parsed problem items.
@@ -167,8 +176,8 @@ fn build_problem_preview_response(items: &[crate::models::ProblemImportItem], to
     }
 }
 
-/// Build an import preview response from parsed user rows.
-fn build_user_preview_response(rows: &[crate::models::UserImportRow], token: Uuid) -> ImportPreviewResponse {
+/// Build a user-specific preview response from parsed user rows.
+fn build_user_preview_response(rows: &[crate::models::UserImportRow], token: Uuid) -> UserImportPreviewResponse {
     let total = rows.len();
     let mut valid = 0;
     let mut warnings = Vec::new();
@@ -200,16 +209,18 @@ fn build_user_preview_response(rows: &[crate::models::UserImportRow], token: Uui
             });
         }
 
-        preview_items.push(PreviewItem {
-            title: row.username.clone(),
-            difficulty: row.role.clone(),
-            test_case_count: 0,
+        preview_items.push(UserPreviewItem {
+            username: row.username.clone(),
+            role: row.role.clone(),
+            campus_id: row.campus_id,
+            display_name: row.display_name.clone(),
+            email: row.email.clone(),
             status: status_str.to_string(),
             warning: row.warning.clone(),
         });
     }
 
-    ImportPreviewResponse {
+    UserImportPreviewResponse {
         token,
         total,
         valid,
@@ -234,7 +245,8 @@ pub async fn validate_problem_import(
 ) -> Result<Json<ImportPreviewResponse>, StatusCode> {
     require_teacher_plus(&claims.role)?;
 
-    let file_bytes = extract_file_bytes(&mut multipart, "file").await?;
+    let fields = collect_multipart_fields(&mut multipart).await?;
+    let file_bytes = get_file_field(&fields, "file")?;
 
     // Query existing problem titles for the organization to detect duplicates
     let existing_titles: Vec<String> = sqlx::query_scalar(
@@ -326,9 +338,24 @@ pub async fn execute_problem_import(
                 });
             }
             ImportItemStatus::Valid => {
-                // Insert problem
+                // Insert problem + test cases in a transaction
                 let create_req = convert_to_create_request(item, claims.school_id);
-                let result = sqlx::query_scalar::<_, i64>(
+                let tc_req = convert_to_test_cases(item);
+
+                let tx_result = state.db_pool.begin().await;
+                let mut tx = match tx_result {
+                    Ok(tx) => tx,
+                    Err(e) => {
+                        tracing::warn!("Failed to begin transaction: {}", e);
+                        error_items.push(ErrorItem {
+                            item: item.config.title.clone(),
+                            reason: "Failed to start database transaction".to_string(),
+                        });
+                        continue;
+                    }
+                };
+
+                let problem_result = sqlx::query_scalar::<_, i64>(
                     r#"
                     INSERT INTO problems (
                         title, description, difficulty, time_limit, memory_limit,
@@ -349,13 +376,12 @@ pub async fn execute_problem_import(
                 .bind(&create_req.tags)
                 .bind(&create_req.source_url)
                 .bind(&create_req.author_note)
-                .fetch_one(&state.db_pool)
+                .fetch_one(&mut *tx)
                 .await;
 
-                match result {
+                match problem_result {
                     Ok(problem_id) => {
-                        // Insert test cases
-                        let tc_req = convert_to_test_cases(item);
+                        let mut tc_ok = true;
                         for (idx, tc) in tc_req.test_cases.iter().enumerate() {
                             if let Err(e) = sqlx::query(
                                 r#"
@@ -371,25 +397,45 @@ pub async fn execute_problem_import(
                             .bind(tc.is_hidden.unwrap_or(false))
                             .bind(tc.score.unwrap_or(10))
                             .bind(tc.order.unwrap_or(idx as i32))
-                            .execute(&state.db_pool)
+                            .execute(&mut *tx)
                             .await
                             {
                                 tracing::warn!(
-                                    "Failed to insert test case {} for problem {}: {}",
+                                    "Failed to insert test case {} for problem '{}': {}",
                                     idx,
-                                    problem_id,
+                                    item.config.title,
                                     e
                                 );
+                                tc_ok = false;
+                                error_items.push(ErrorItem {
+                                    item: format!("{} (test case {})", item.config.title, idx),
+                                    reason: format!("Test case insert failed: {}", e),
+                                });
+                                break;
                             }
                         }
 
-                        created_items.push(CreatedItem {
-                            title: item.config.title.clone(),
-                            id: problem_id,
-                        });
+                        if tc_ok {
+                            if let Err(e) = tx.commit().await {
+                                tracing::warn!("Failed to commit problem '{}': {}", item.config.title, e);
+                                error_items.push(ErrorItem {
+                                    item: item.config.title.clone(),
+                                    reason: format!("Transaction commit failed: {}", e),
+                                });
+                            } else {
+                                created_items.push(CreatedItem {
+                                    title: item.config.title.clone(),
+                                    id: problem_id,
+                                });
+                            }
+                        } else {
+                            // Test case insertion failed — rollback
+                            let _ = tx.rollback().await;
+                        }
                     }
                     Err(e) => {
                         tracing::warn!("Failed to insert problem '{}': {}", item.config.title, e);
+                        let _ = tx.rollback().await;
                         error_items.push(ErrorItem {
                             item: item.config.title.clone(),
                             reason: format!("Database error: {}", e),
@@ -516,11 +562,12 @@ pub async fn validate_user_import(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
     mut multipart: Multipart,
-) -> Result<Json<ImportPreviewResponse>, StatusCode> {
+) -> Result<Json<UserImportPreviewResponse>, StatusCode> {
     require_admin(&claims.role)?;
 
-    let file_bytes = extract_file_bytes(&mut multipart, "file").await?;
-    let default_password = extract_text_field(&mut multipart, "default_password").await?;
+    let fields = collect_multipart_fields(&mut multipart).await?;
+    let file_bytes = get_file_field(&fields, "file")?;
+    let default_password = get_text_field(&fields, "default_password")?;
 
     if default_password.len() < 6 {
         return Err(StatusCode::BAD_REQUEST);
@@ -534,8 +581,15 @@ pub async fn validate_user_import(
 
     let skip_usernames: HashSet<String> = existing_usernames.into_iter().collect();
 
+    // Determine role policy: only root may assign orgAdmin/campusAdmin
+    let caller_role: Role = claims.role.parse().map_err(|_| StatusCode::FORBIDDEN)?;
+    let allow_root_roles = caller_role == Role::Root;
+    let role_policy = RolePolicy { allow_root_roles };
+
     // Parse CSV in a blocking task (CPU-bound)
-    let rows = tokio::task::spawn_blocking(move || parse_user_csv(&file_bytes, &skip_usernames))
+    let rows = tokio::task::spawn_blocking(move || {
+        parse_user_csv(&file_bytes, &skip_usernames, &role_policy)
+    })
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
         .map_err(|e| {
@@ -629,8 +683,21 @@ pub async fn execute_user_import(
                     }
                 };
 
-                // Insert user
-                let result = sqlx::query_scalar::<_, uuid::Uuid>(
+                // Insert user + role in a transaction
+                let tx_result = state.db_pool.begin().await;
+                let mut tx = match tx_result {
+                    Ok(tx) => tx,
+                    Err(e) => {
+                        tracing::warn!("Failed to begin transaction for '{}': {}", row.username, e);
+                        error_items.push(ErrorItem {
+                            item: row.username.clone(),
+                            reason: "Failed to start database transaction".to_string(),
+                        });
+                        continue;
+                    }
+                };
+
+                let user_result = sqlx::query_scalar::<_, uuid::Uuid>(
                     r#"
                     INSERT INTO users (username, email, password_hash, display_name, organization_id, campus_id)
                     VALUES ($1, $2, $3, $4, $5, $6)
@@ -643,36 +710,49 @@ pub async fn execute_user_import(
                 .bind(&row.display_name)
                 .bind(claims.school_id)
                 .bind(row.campus_id)
-                .fetch_one(&state.db_pool)
+                .fetch_one(&mut *tx)
                 .await;
 
-                match result {
+                match user_result {
                     Ok(user_id) => {
-                        // Insert role
-                        if let Err(e) = sqlx::query(
+                        let role_result = sqlx::query(
                             "INSERT INTO user_roles (user_id, organization_id, campus_id, role) VALUES ($1, $2, $3, $4)",
                         )
                         .bind(user_id)
                         .bind(claims.school_id)
                         .bind(row.campus_id)
                         .bind(&row.role)
-                        .execute(&state.db_pool)
-                        .await
-                        {
-                            tracing::warn!(
-                                "Failed to insert role for user '{}': {}",
-                                row.username,
-                                e
-                            );
-                        }
+                        .execute(&mut *tx)
+                        .await;
 
-                        created_items.push(CreatedItem {
-                            title: row.username.clone(),
-                            id: user_id.as_bytes()[..8].iter().fold(0i64, |acc, &b| acc.wrapping_shl(8).wrapping_add(b as i64)),
-                        });
+                        match role_result {
+                            Ok(_) => {
+                                if let Err(e) = tx.commit().await {
+                                    tracing::warn!("Failed to commit user '{}': {}", row.username, e);
+                                    error_items.push(ErrorItem {
+                                        item: row.username.clone(),
+                                        reason: format!("Transaction commit failed: {}", e),
+                                    });
+                                } else {
+                                    created_items.push(CreatedItem {
+                                        title: row.username.clone(),
+                                        id: user_id.as_bytes()[..8].iter().fold(0i64, |acc, &b| acc.wrapping_shl(8).wrapping_add(b as i64)),
+                                    });
+                                }
+                            }
+                            Err(e) => {
+                                tracing::warn!("Failed to insert role for '{}': {}", row.username, e);
+                                let _ = tx.rollback().await;
+                                error_items.push(ErrorItem {
+                                    item: row.username.clone(),
+                                    reason: format!("Role insertion failed: {}", e),
+                                });
+                            }
+                        }
                     }
                     Err(e) => {
                         tracing::warn!("Failed to insert user '{}': {}", row.username, e);
+                        let _ = tx.rollback().await;
                         error_items.push(ErrorItem {
                             item: row.username.clone(),
                             reason: format!("Database error: {}", e),

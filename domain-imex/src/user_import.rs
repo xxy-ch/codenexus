@@ -9,18 +9,30 @@ use domain_users::models::{BatchCreateUserInput, BatchCreateUsersRequest};
 /// UTF-8 BOM prefix bytes.
 const BOM: &[u8; 3] = b"\xEF\xBB\xBF";
 
-/// Valid role values accepted in CSV import.
-const VALID_ROLES: &[&str] = &[
-    "student",
-    "teacher",
-    "admin",
-    "organizationAdmin",
-    "campusAdmin",
-    "root",
-];
+/// Role values always allowed in CSV import.
+const IMPORTABLE_ROLES: &[&str] = &["student", "teacher", "admin"];
+
+/// Roles that only a root user may assign via CSV import.
+const ROOT_ONLY_ROLES: &[&str] = &["organizationAdmin", "campusAdmin"];
+
+/// The `root` role must never be assigned through CSV import.
+const FORBIDDEN_ROLES: &[&str] = &["root"];
 
 /// Required column headers in the CSV file.
 const REQUIRED_HEADERS: &[&str] = &["username", "role", "campus_id", "display_name"];
+
+/// Whether the caller is allowed to assign high-privilege roles (orgAdmin, campusAdmin).
+pub struct RolePolicy {
+    pub allow_root_roles: bool,
+}
+
+impl Default for RolePolicy {
+    fn default() -> Self {
+        Self {
+            allow_root_roles: false,
+        }
+    }
+}
 
 /// Parse a CSV file containing user definitions.
 ///
@@ -28,10 +40,11 @@ const REQUIRED_HEADERS: &[&str] = &["username", "role", "campus_id", "display_na
 ///
 /// Returns a Vec of UserImportRow. Rows with validation errors get
 /// `ImportItemStatus::Error`. Rows whose username matches an entry in
-/// `skip_usernames` get `ImportItemStatus::Duplicate`.
+/// `skip_usernames` or appears earlier in the same CSV get `ImportItemStatus::Duplicate`.
 pub fn parse_user_csv(
     csv_bytes: &[u8],
     skip_usernames: &HashSet<String>,
+    role_policy: &RolePolicy,
 ) -> Result<Vec<UserImportRow>> {
     // Strip UTF-8 BOM if present
     let data = if csv_bytes.starts_with(BOM) {
@@ -58,6 +71,7 @@ pub fn parse_user_csv(
     }
 
     let mut rows = Vec::new();
+    let mut seen_usernames: HashSet<String> = HashSet::new();
 
     for record_result in reader.records() {
         let record = match record_result {
@@ -104,9 +118,23 @@ pub fn parse_user_csv(
             continue;
         }
 
-        // Validate role
-        if !VALID_ROLES.contains(&role.as_str()) {
-            let warning = format!("Invalid role: '{}'", role);
+        // Validate role — enforce role policy
+        let role_error = if FORBIDDEN_ROLES.contains(&role.as_str()) {
+            Some(format!("Role '{}' cannot be assigned via import", role))
+        } else if ROOT_ONLY_ROLES.contains(&role.as_str()) && !role_policy.allow_root_roles {
+            Some(format!(
+                "Role '{}' requires root privileges to assign",
+                role
+            ))
+        } else if !IMPORTABLE_ROLES.contains(&role.as_str())
+            && !ROOT_ONLY_ROLES.contains(&role.as_str())
+        {
+            Some(format!("Invalid role: '{}'", role))
+        } else {
+            None
+        };
+
+        if let Some(warning) = role_error {
             rows.push(UserImportRow {
                 username,
                 role,
@@ -138,15 +166,22 @@ pub fn parse_user_csv(
 
         let email_opt = if email.is_empty() { None } else { Some(email) };
 
-        // Check duplicate username
+        // Check duplicate username (database + intra-CSV)
         let (status, warning) = if skip_usernames.contains(&username) {
             (
                 ImportItemStatus::Duplicate,
-                Some("Username already exists".to_string()),
+                Some("Username already exists in database".to_string()),
+            )
+        } else if seen_usernames.contains(&username) {
+            (
+                ImportItemStatus::Duplicate,
+                Some("Duplicate username within CSV".to_string()),
             )
         } else {
             (ImportItemStatus::Valid, None)
         };
+
+        seen_usernames.insert(username.clone());
 
         rows.push(UserImportRow {
             username,
@@ -222,7 +257,7 @@ mod tests {
         );
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
 
         assert_eq!(rows.len(), 3);
         assert_eq!(rows[0].username, "alice");
@@ -246,7 +281,7 @@ mod tests {
         let csv_bytes = make_csv("role,campus_id,display_name,email", &["student,1,Alice,"]);
 
         let skip = HashSet::new();
-        let result = parse_user_csv(&csv_bytes, &skip);
+        let result = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default());
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Missing required column: 'username'"));
     }
@@ -256,7 +291,7 @@ mod tests {
         let csv_bytes = make_csv("username,campus_id,display_name,email", &["alice,1,Alice,"]);
 
         let skip = HashSet::new();
-        let result = parse_user_csv(&csv_bytes, &skip);
+        let result = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default());
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Missing required column: 'role'"));
     }
@@ -269,7 +304,7 @@ mod tests {
         );
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Error);
@@ -284,7 +319,7 @@ mod tests {
         );
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Error);
@@ -301,10 +336,10 @@ mod tests {
         let mut skip = HashSet::new();
         skip.insert("alice".to_string());
 
-        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Duplicate);
-        assert!(rows[0].warning.as_ref().unwrap().contains("already exists"));
+        assert!(rows[0].warning.as_ref().unwrap().contains("already exists in database"));
     }
 
     #[test]
@@ -314,7 +349,7 @@ mod tests {
         csv_bytes.extend_from_slice(b"username,role,campus_id,display_name,email\nalice,student,1,Alice,");
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].username, "alice");
@@ -329,7 +364,7 @@ mod tests {
         );
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].username, "CMD(...)");
@@ -344,11 +379,73 @@ mod tests {
         );
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Error);
         assert!(rows[0].warning.as_ref().unwrap().contains("Invalid campus_id"));
+    }
+
+    #[test]
+    fn rejects_root_role_even_for_root_caller() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["alice,root,0,Root User,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy { allow_root_roles: true }).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Error);
+        assert!(rows[0].warning.as_ref().unwrap().contains("cannot be assigned via import"));
+    }
+
+    #[test]
+    fn rejects_org_admin_without_root_policy() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["alice,organizationAdmin,1,Org Admin,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy { allow_root_roles: false }).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Error);
+        assert!(rows[0].warning.as_ref().unwrap().contains("requires root privileges"));
+    }
+
+    #[test]
+    fn allows_org_admin_with_root_policy() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["alice,organizationAdmin,1,Org Admin,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy { allow_root_roles: true }).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Valid);
+        assert_eq!(rows[0].role, "organizationAdmin");
+    }
+
+    #[test]
+    fn detects_intra_csv_duplicate_usernames() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &[
+                "alice,student,1,Alice One,",
+                "bob,teacher,1,Bob,",
+                "alice,student,2,Alice Two,",
+            ],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
+        assert_eq!(rows.len(), 3);
+        assert_eq!(rows[0].status, ImportItemStatus::Valid);
+        assert_eq!(rows[1].status, ImportItemStatus::Valid);
+        assert_eq!(rows[2].status, ImportItemStatus::Duplicate);
+        assert!(rows[2].warning.as_ref().unwrap().contains("within CSV"));
     }
 
     #[test]

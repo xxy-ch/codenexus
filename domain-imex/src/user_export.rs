@@ -47,7 +47,7 @@ pub fn build_user_csv(users: &[UserExportRow]) -> Result<Vec<u8>> {
 mod tests {
     use super::*;
     use crate::models::ImportItemStatus;
-    use crate::user_import::parse_user_csv;
+    use crate::user_import::{parse_user_csv, RolePolicy};
     use std::collections::HashSet;
 
     #[test]
@@ -123,7 +123,7 @@ mod tests {
         let csv_bytes = build_user_csv(&users).unwrap();
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip).unwrap();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
 
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].username, "alice");

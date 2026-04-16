@@ -102,6 +102,18 @@ pub struct PreviewItem {
     pub warning: Option<String>,
 }
 
+/// User-specific item shown in the user import preview.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserPreviewItem {
+    pub username: String,
+    pub role: String,
+    pub campus_id: i64,
+    pub display_name: String,
+    pub email: Option<String>,
+    pub status: String,
+    pub warning: Option<String>,
+}
+
 /// Warning raised during import parsing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ImportWarning {
@@ -125,6 +137,17 @@ pub struct ImportPreviewResponse {
     pub warnings: Vec<ImportWarning>,
     pub errors: Vec<ImportError>,
     pub preview_items: Vec<PreviewItem>,
+}
+
+/// Response returned when the user previews a user CSV import (before confirming).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserImportPreviewResponse {
+    pub token: Uuid,
+    pub total: usize,
+    pub valid: usize,
+    pub warnings: Vec<ImportWarning>,
+    pub errors: Vec<ImportError>,
+    pub preview_items: Vec<UserPreviewItem>,
 }
 
 /// Item successfully created during import execution.
