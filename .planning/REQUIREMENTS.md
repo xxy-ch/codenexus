@@ -40,8 +40,8 @@
 ### Test Coverage
 
 - [ ] **TEST-01**: Integration tests per domain module using sqlx::test + testcontainers (PostgreSQL, Redis)
-- [ ] **TEST-02**: API handler tests using tower::ServiceExt::oneshot (no HTTP server needed)
-- [ ] **TEST-03**: Multi-tenant isolation test suite — verify every endpoint respects tenant boundaries
+- [x] **TEST-02**: API handler tests using tower::ServiceExt::oneshot (no HTTP server needed)
+- [x] **TEST-03**: Multi-tenant isolation test suite — verify every endpoint respects tenant boundaries
 - [ ] **TEST-04**: Frontend unit tests via Vitest for hooks and utility functions
 - [ ] **TEST-05**: E2E test suite via Playwright covering critical flows (login, submit code, view result, contest participation)
 
@@ -147,8 +147,8 @@
 | OBS-02 | Phase 6: Full CI/CD + Obs | Complete |
 | OBS-03 | Phase 6: Full CI/CD + Obs | Complete |
 | TEST-01 | Phase 7: Test + Contest | Pending |
-| TEST-02 | Phase 7: Test + Contest | Pending |
-| TEST-03 | Phase 7: Test + Contest | Pending |
+| TEST-02 | Phase 7: Test + Contest | Complete |
+| TEST-03 | Phase 7: Test + Contest | Complete |
 | TEST-04 | Phase 7: Test + Contest | Pending |
 | TEST-05 | Phase 7: Test + Contest | Pending |
 | CONT-01 | Phase 7: Test + Contest | Pending |
