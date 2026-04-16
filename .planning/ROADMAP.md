@@ -202,12 +202,12 @@ Plans:
 - IMEX-04: User CSV export — export user list with roles and status
 - IMEX-05: Import validation — validate archive/CSV structure before processing
 
-**Plans:** 3 plans in 3 waves
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 08-01-PLAN.md — domain-imex crate: models, security, problem/user import/export services (Wave 1)
 - [x] 08-02-PLAN.md — API routes + AppState integration + frontend service layer (Wave 2)
-- [ ] 08-03-PLAN.md — BatchOperations page + sidebar entry + route registration (Wave 3)
+- [x] 08-03-PLAN.md — BatchOperations page + sidebar entry + route registration (Wave 3)
 
 **Success Criteria:**
 1. Teacher uploads a problem ZIP, sees imported problem with correct description, test cases, and config
