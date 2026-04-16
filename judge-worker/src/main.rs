@@ -55,6 +55,64 @@ async fn main() -> Result<()> {
     );
     consumer::ensure_consumer_group(&mut *conn.lock().await, &stream_name, &group_name).await?;
 
+    // Recover pending submissions from crashed workers (per D-05)
+    let recovery_idle_ms: u64 = env::var("RECOVERY_IDLE_MS")
+        .unwrap_or_else(|_| "300000".to_string())
+        .parse()
+        .unwrap_or(300000);
+
+    match queue::recovery::recover_pending_submissions(
+        &mut *conn.lock().await,
+        &stream_name,
+        &group_name,
+        &consumer_name,
+        recovery_idle_ms,
+    )
+    .await
+    {
+        Ok(recovered) => {
+            if !recovered.is_empty() {
+                info!(
+                    "Recovered {} pending submissions, processing them now",
+                    recovered.len()
+                );
+                for (message_id, submission) in recovered {
+                    let result = processor::service::process_submission(&submission).await;
+                    match result {
+                        Ok(judge_result) => {
+                            if let Err(e) =
+                                send_result_with_retry(&api_url, &judge_result, &conn).await
+                            {
+                                error!(
+                                    "Failed to send recovered result for {}: {}",
+                                    submission.submission_id, e
+                                );
+                            }
+                        }
+                        Err(e) => {
+                            error!(
+                                "Failed to process recovered submission {}: {}",
+                                submission.submission_id, e
+                            );
+                        }
+                    }
+                    // Acknowledge the recovered message
+                    let mut locked_conn = conn.lock().await;
+                    let _ = consumer::acknowledge_submission(
+                        &mut locked_conn,
+                        &stream_name,
+                        &group_name,
+                        &message_id,
+                    )
+                    .await;
+                }
+            }
+        }
+        Err(e) => {
+            warn!("Recovery scan failed (non-fatal, continuing): {}", e);
+        }
+    }
+
     info!("Judge worker ready with consumer name: {}", consumer_name);
     info!("Connected to API at: {}", api_url);
 

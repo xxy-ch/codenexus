@@ -1806,6 +1806,8 @@ dependencies = [
  "serde_json",
  "shared",
  "sqlx",
+ "testcontainers",
+ "testcontainers-modules",
  "tokio",
  "tracing",
  "tracing-subscriber",
