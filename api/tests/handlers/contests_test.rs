@@ -36,6 +36,7 @@ async fn build_contest_app(pool: PgPool) -> (
         websocket_server: std::sync::Arc::new(api::websocket::WebSocketServer::new()),
         class_membership_checker: std::sync::Arc::new(NoopClassMembershipChecker),
         prometheus_handle: setup_metrics_recorder(),
+        preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
     };
 
     // Mirror create_router's protected_router structure: auth -> tenant -> contest routes

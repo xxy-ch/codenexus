@@ -83,6 +83,7 @@ fn build_state(pool: PgPool) -> AppState {
             api_infra::traits::class_repo::NoopClassMembershipChecker,
         ),
         prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
+        preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
     }
 }
 

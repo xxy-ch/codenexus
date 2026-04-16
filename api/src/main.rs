@@ -62,6 +62,7 @@ async fn main() -> anyhow::Result<()> {
     > = std::sync::Arc::new(domain_classes::service::ClassService::new(db_pool.clone()));
 
     let prometheus_handle = setup_metrics_recorder();
+    let preview_cache = std::sync::Arc::new(dashmap::DashMap::new());
 
     let state = AppState {
         db_pool,
@@ -73,6 +74,7 @@ async fn main() -> anyhow::Result<()> {
         websocket_server,
         class_membership_checker,
         prometheus_handle,
+        preview_cache,
     };
 
     let app = create_router(state, config.clone());
@@ -176,6 +178,7 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .nest("/search", domain_search::search_router())
         .nest("/notifications", notifications::notifications_router())
         .nest("/messages", domain_community::messages_router())
+        .nest("/imex", domain_imex::imex_router())
         .nest("/admin/plagiarism", plagiarism::plagiarism_router())
         // Apply auth/tenant middleware only to protected routes
         .route_layer(axum::middleware::from_fn(
@@ -301,6 +304,7 @@ mod tests {
                     api_infra::traits::class_repo::NoopClassMembershipChecker,
                 ),
                 prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
+                preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
             })
     }
 

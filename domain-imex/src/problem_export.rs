@@ -128,7 +128,7 @@ pub fn build_problem_zip(
 
 /// Convert a slug from a problem title: lowercase, replace spaces with hyphens,
 /// strip non-alphanumeric characters (except hyphens).
-fn slugify(title: &str) -> String {
+pub fn slugify(title: &str) -> String {
     title
         .to_lowercase()
         .chars()

@@ -21,6 +21,7 @@ domain-classes = { path = "../domain-classes" }
 domain-contests = { path = "../domain-contests" }
 domain-leaderboard = { path = "../domain-leaderboard" }
 domain-submissions = { path = "../domain-submissions" }
+domain-imex = { path = "../domain-imex" }
 sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "migrate"] }
 dotenvy = "0.15"
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
@@ -47,6 +48,8 @@ async-trait = "0.1"
 regex = "1.11"
 # Prometheus metrics
 metrics = "0.24"
+# Preview cache for import/export
+dashmap = "6"
 # utoipa = { version = "5", features = ["axum_extras"] }
 # utoipa-swagger-ui = { version = "8", features = ["axum"] }
 

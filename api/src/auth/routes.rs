@@ -232,6 +232,7 @@ mod tests {
                 api_infra::traits::class_repo::NoopClassMembershipChecker,
             ),
             prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
+            preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
         };
 
         Router::new()
@@ -406,6 +407,7 @@ mod tests {
                 api_infra::traits::class_repo::NoopClassMembershipChecker,
             ),
             prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
+            preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
         };
         let response = logout(Extension(claims), State(state)).await;
         assert_eq!(response, StatusCode::OK);

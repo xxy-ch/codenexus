@@ -3,12 +3,20 @@
 //! Moved from the `api` crate to `api-infra` so that domain crates can
 //! reference `AppState` without depending on the `api` crate.
 
+use std::any::Any;
 use std::sync::Arc;
 
 use crate::traits::class_repo::ClassMembershipChecker;
 use crate::traits::token_service::TokenService;
+use dashmap::DashMap;
 use metrics_exporter_prometheus::PrometheusHandle;
 use sqlx::PgPool;
+use uuid::Uuid;
+
+/// In-memory preview cache keyed by UUID token.
+/// Values are `Box<dyn Any + Send + Sync>` so domain-imex can store its
+/// concrete `CachedPreview` type without api-infra depending on domain-imex.
+pub type PreviewCache = DashMap<Uuid, Box<dyn Any + Send + Sync>>;
 
 /// Shared application state accessible to all route handlers.
 ///
@@ -27,4 +35,6 @@ pub struct AppState {
     pub class_membership_checker: Arc<dyn ClassMembershipChecker>,
     /// Prometheus handle for rendering metrics at /metrics endpoint.
     pub prometheus_handle: PrometheusHandle,
+    /// In-memory cache for import preview tokens (single-use, short-lived).
+    pub preview_cache: Arc<PreviewCache>,
 }

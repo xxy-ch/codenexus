@@ -353,10 +353,14 @@ mod tests {
         let items = parse_problem_zip(&zip_bytes, &skip).unwrap();
 
         assert_eq!(items.len(), 2);
-        assert_eq!(items[0].slug, "two-sum");
-        assert_eq!(items[0].status, ImportItemStatus::Valid);
-        assert_eq!(items[1].slug, "add-two");
-        assert_eq!(items[1].status, ImportItemStatus::Valid);
+
+        let two_sum = items.iter().find(|i| i.slug == "two-sum").expect("two-sum item");
+        assert_eq!(two_sum.status, ImportItemStatus::Valid);
+        assert_eq!(two_sum.config.title, "Two Sum");
+
+        let add_two = items.iter().find(|i| i.slug == "add-two").expect("add-two item");
+        assert_eq!(add_two.status, ImportItemStatus::Valid);
+        assert_eq!(add_two.config.title, "Add Two Numbers");
     }
 
     #[test]

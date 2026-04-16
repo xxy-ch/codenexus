@@ -34,6 +34,7 @@ async fn build_users_app(pool: PgPool) -> (
         websocket_server: std::sync::Arc::new(api::websocket::WebSocketServer::new()),
         class_membership_checker: std::sync::Arc::new(NoopClassMembershipChecker),
         prometheus_handle: setup_metrics_recorder(),
+        preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
     };
 
     let protected_router = axum::Router::new()

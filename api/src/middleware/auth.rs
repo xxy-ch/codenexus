@@ -140,6 +140,7 @@ mod tests {
                 api_infra::traits::class_repo::NoopClassMembershipChecker,
             ),
             prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
+            preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
         };
         Router::new()
             .route("/protected", get(protected_handler))

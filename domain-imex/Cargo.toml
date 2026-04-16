@@ -20,6 +20,7 @@ zip = "8.5"
 csv = "1.4"
 tempfile = "3"
 tokio = { workspace = true, features = ["full"] }
+bcrypt = "0.16"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["full"] }
