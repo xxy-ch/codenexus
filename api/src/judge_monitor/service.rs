@@ -2,6 +2,10 @@
 //!
 //! Uses XINFO/XLEN for stream depth, SCAN for heartbeat discovery,
 //! XRANGE/XADD/XDEL for DLQ management.
+//!
+//! Tenant isolation: All DLQ operations filter by school_id.
+//! Legacy entries (pre-fix, no school_id field) are visible to all admins.
+//! Atomic retry: Lua script ensures concurrent retries produce exactly one re-enqueue.
 
 use anyhow::Result;
 use std::collections::HashMap;
@@ -92,13 +96,15 @@ impl JudgeMonitorService {
         Ok(workers)
     }
 
-    /// List DLQ entries using XRANGE with pagination.
+    /// List DLQ entries using XRANGE with pagination, filtered by tenant.
     ///
     /// Per D-11: Returns entry ID and field map for each DLQ item.
+    /// Legacy entries without school_id are visible to all tenants.
     pub async fn list_dlq_entries(
         redis_pool: &deadpool_redis::Pool,
         count: i64,
         start_id: Option<&str>,
+        school_id: i64,
     ) -> Result<Vec<(String, HashMap<String, String>)>> {
         let mut conn = redis_pool.get().await?;
         let start = start_id.unwrap_or("-");
@@ -111,19 +117,88 @@ impl JudgeMonitorService {
             .query_async(&mut conn)
             .await
             .map_err(|e| anyhow::anyhow!("XRANGE on DLQ failed: {}", e))?;
-        Ok(entries)
+
+        // Filter by tenant: entries with matching school_id, or legacy entries without school_id
+        let filtered: Vec<_> = entries
+            .into_iter()
+            .filter(|(_, fields)| {
+                match fields.get("school_id").map(|s| s.parse::<i64>()) {
+                    Some(Ok(sid)) => sid == school_id,
+                    _ => true, // Legacy entries without school_id are visible to all admins
+                }
+            })
+            .collect();
+
+        Ok(filtered)
     }
 
-    /// Retry a DLQ entry: read it, re-enqueue to original stream, delete from DLQ.
+    /// Retry a DLQ entry atomically using a Redis Lua script.
     ///
+    /// The Lua script performs XRANGE + tenant check + XADD + XDEL in a single EVAL,
+    /// ensuring concurrent retries for the same entry produce exactly one re-enqueue.
     /// Per D-13: Defaults to "submissions" stream for backward compat if source_stream missing.
     pub async fn retry_dlq_entry(
         redis_pool: &deadpool_redis::Pool,
         entry_id: &str,
+        school_id: i64,
     ) -> Result<String> {
         let mut conn = redis_pool.get().await?;
 
-        // 1. Read the DLQ entry
+        let lua_script = r#"
+            local entry = redis.call('XRANGE', KEYS[1], ARGV[1], ARGV[1])
+            if #entry == 0 then
+                return {err='DLQ entry not found'}
+            end
+            local fields = entry[1][2]
+            local data = ''
+            local submission_id = ''
+            local source_stream = 'submissions'
+            local submitted_at = ''
+            local entry_school_id = ''
+            for i = 1, #fields, 2 do
+                if fields[i] == 'original_message' then data = fields[i+1] end
+                if fields[i] == 'submission_id' then submission_id = fields[i+1] end
+                if fields[i] == 'source_stream' then source_stream = fields[i+1] end
+                if fields[i] == 'submitted_at' then submitted_at = fields[i+1] end
+                if fields[i] == 'school_id' then entry_school_id = fields[i+1] end
+            end
+            if data == '' then
+                return {err='Missing original_message -- cannot retry'}
+            end
+            if entry_school_id ~= '' and entry_school_id ~= ARGV[2] then
+                return {err='DLQ entry does not belong to your organization'}
+            end
+            local new_id = redis.call('XADD', source_stream, '*',
+                'submission_id', submission_id,
+                'data', data,
+                'source_stream', source_stream,
+                'submitted_at', submitted_at)
+            redis.call('XDEL', KEYS[1], ARGV[1])
+            return {source_stream, new_id}
+        "#;
+
+        let result: (String, String) = deadpool_redis::redis::cmd("EVAL")
+            .arg(lua_script)
+            .arg(1) // number of keys
+            .arg("submissions:dlq") // KEYS[1]
+            .arg(entry_id) // ARGV[1]
+            .arg(school_id.to_string()) // ARGV[2]
+            .query_async(&mut conn)
+            .await
+            .map_err(|e| anyhow::anyhow!("Atomic DLQ retry failed: {}", e))?;
+
+        Ok(result.0) // source_stream
+    }
+
+    /// Delete a DLQ entry permanently, with tenant ownership validation.
+    pub async fn delete_dlq_entry(
+        redis_pool: &deadpool_redis::Pool,
+        entry_id: &str,
+        school_id: i64,
+    ) -> Result<()> {
+        let mut conn = redis_pool.get().await?;
+
+        // Read entry to validate tenant ownership
         let entries: Vec<(String, HashMap<String, String>)> = deadpool_redis::redis::cmd("XRANGE")
             .arg("submissions:dlq")
             .arg(entry_id)
@@ -137,61 +212,16 @@ impl JudgeMonitorService {
             .next()
             .ok_or_else(|| anyhow::anyhow!("DLQ entry not found"))?;
 
-        // 2. Determine original stream (per D-13, default "submissions" for backward compat)
-        let original_stream = fields
-            .get("source_stream")
-            .map(|s| s.as_str())
-            .unwrap_or("submissions");
-
-        let submission_id = fields
-            .get("submission_id")
-            .ok_or_else(|| anyhow::anyhow!("Missing submission_id in DLQ entry"))?;
-
-        // Read the original SubmissionMessage (NOT result_json) so the worker consumer
-        // can parse the re-enqueued message. Old entries created before the fix will have
-        // an empty original_message and cannot be safely retried.
-        let data = fields
-            .get("original_message")
-            .ok_or_else(|| anyhow::anyhow!("Missing original_message in DLQ entry -- entry cannot be retried (created before fix)"))?;
-        if data.is_empty() {
-            return Err(anyhow::anyhow!(
-                "DLQ entry lacks original submission data -- cannot retry. Use re-submit via submission API instead."
-            ));
+        // Validate tenant: legacy entries without school_id are deletable by any admin
+        let entry_school_id = fields.get("school_id").and_then(|s| s.parse::<i64>().ok());
+        if let Some(sid) = entry_school_id {
+            if sid != school_id {
+                return Err(anyhow::anyhow!(
+                    "DLQ entry does not belong to your organization"
+                ));
+            }
         }
 
-        // 3. Re-enqueue to original stream
-        let _new_id: String = deadpool_redis::redis::cmd("XADD")
-            .arg(original_stream)
-            .arg("*")
-            .arg("submission_id")
-            .arg(submission_id)
-            .arg("data")
-            .arg(data)
-            .arg("source_stream")
-            .arg(original_stream)
-            .arg("submitted_at")
-            .arg(fields.get("submitted_at").map(|s| s.as_str()).unwrap_or(""))
-            .query_async(&mut conn)
-            .await
-            .map_err(|e| anyhow::anyhow!("XADD to original stream failed: {}", e))?;
-
-        // 4. Delete from DLQ
-        deadpool_redis::redis::cmd("XDEL")
-            .arg("submissions:dlq")
-            .arg(entry_id)
-            .query_async::<()>(&mut conn)
-            .await
-            .map_err(|e| anyhow::anyhow!("XDEL from DLQ failed: {}", e))?;
-
-        Ok(original_stream.to_string())
-    }
-
-    /// Delete a DLQ entry permanently.
-    pub async fn delete_dlq_entry(
-        redis_pool: &deadpool_redis::Pool,
-        entry_id: &str,
-    ) -> Result<()> {
-        let mut conn = redis_pool.get().await?;
         deadpool_redis::redis::cmd("XDEL")
             .arg("submissions:dlq")
             .arg(entry_id)
