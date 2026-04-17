@@ -23,7 +23,7 @@ use super::service::JudgeMonitorService;
 /// All /admin/judge/* endpoints require elevated privileges.
 fn ensure_admin(role: &str) -> Result<(), AppError> {
     if role != "admin" && role != "root" {
-        return Err(AppError::Auth("Admin access required".into()));
+        return Err(AppError::Forbidden("Admin access required".into()));
     }
     Ok(())
 }
@@ -115,8 +115,9 @@ async fn list_dlq(
         .as_ref()
         .ok_or_else(|| AppError::Internal("Redis not configured".into()))?;
 
-    let count = query.count.unwrap_or(50).min(200);
-    let entries = JudgeMonitorService::list_dlq_entries(redis_pool, count, query.start_id.as_deref())
+    let count = query.count.unwrap_or(50).max(1).min(200);
+    let school_id = claims.school_id;
+    let entries = JudgeMonitorService::list_dlq_entries(redis_pool, count, query.start_id.as_deref(), school_id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
@@ -154,7 +155,8 @@ async fn retry_dlq(
         .as_ref()
         .ok_or_else(|| AppError::Internal("Redis not configured".into()))?;
 
-    let target_stream = JudgeMonitorService::retry_dlq_entry(redis_pool, &id)
+    let school_id = claims.school_id;
+    let target_stream = JudgeMonitorService::retry_dlq_entry(redis_pool, &id, school_id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
@@ -179,7 +181,8 @@ async fn delete_dlq(
         .as_ref()
         .ok_or_else(|| AppError::Internal("Redis not configured".into()))?;
 
-    JudgeMonitorService::delete_dlq_entry(redis_pool, &id)
+    let school_id = claims.school_id;
+    JudgeMonitorService::delete_dlq_entry(redis_pool, &id, school_id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
 
