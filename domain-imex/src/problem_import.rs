@@ -33,10 +33,10 @@ pub fn parse_problem_zip(
     let mut archive = ZipArchive::new(cursor)?;
 
     let entry_count = archive.len();
-    validate_zip_archive(entry_count, zip_bytes.len())?;
 
     // First pass: validate all entries for security issues and read all contents
     let mut file_contents: HashMap<String, Vec<u8>> = HashMap::new();
+    let mut total_raw_size: usize = 0;
     for i in 0..entry_count {
         let mut file = archive.by_index(i)?;
         let name = file.name().to_string();
@@ -46,8 +46,12 @@ pub fn parse_problem_zip(
 
         let mut buf = Vec::new();
         file.read_to_end(&mut buf)?;
+        total_raw_size += buf.len();
         file_contents.insert(name, buf);
     }
+
+    // Validate total uncompressed size (not compressed) to prevent zip bombs
+    validate_zip_archive(entry_count, total_raw_size)?;
 
     // Find all config.json entries matching problems/*/config.json
     let config_paths: Vec<String> = file_contents

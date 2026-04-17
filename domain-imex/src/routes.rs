@@ -26,7 +26,7 @@ use crate::models::{
     UserPreviewItem,
 };
 use crate::problem_export::{build_problem_zip, ExportProblem, ExportTestCase};
-use crate::problem_import::{convert_to_create_request, convert_to_test_cases, parse_problem_zip};
+use crate::problem_import::{convert_to_test_cases, parse_problem_zip};
 use crate::user_export::{build_user_csv, UserExportRow};
 use crate::user_import::{parse_user_csv, RolePolicy};
 
@@ -79,6 +79,11 @@ fn require_admin(role: &str) -> Result<(), StatusCode> {
         Role::Root | Role::OrganizationAdmin | Role::CampusAdmin => Ok(()),
         _ => Err(StatusCode::FORBIDDEN),
     }
+}
+
+/// Check if the caller is specifically a CampusAdmin (requires campus scoping).
+fn is_campus_admin(role: &str) -> bool {
+    role.parse::<Role>().ok() == Some(Role::CampusAdmin)
 }
 
 /// Collect all fields from a multipart request into a name→bytes map.
@@ -363,8 +368,14 @@ pub async fn execute_problem_import(
             }
             ImportItemStatus::Valid => {
                 // Insert problem + test cases in a transaction
-                let create_req = convert_to_create_request(item, claims.school_id);
                 let tc_req = convert_to_test_cases(item);
+
+                // Derive visibility: is_public=true → 'public', else use config visibility
+                let visibility = if item.config.is_public {
+                    "public".to_string()
+                } else {
+                    item.config.visibility.clone()
+                };
 
                 let tx_result = state.db_pool.begin().await;
                 let mut tx = match tx_result {
@@ -382,24 +393,21 @@ pub async fn execute_problem_import(
                 let problem_result = sqlx::query_scalar::<_, i64>(
                     r#"
                     INSERT INTO problems (
-                        title, description, difficulty, time_limit, memory_limit,
-                        organization_id, is_public, visibility, tags, source_url, author_note
+                        title, description, difficulty, time_limit_ms, memory_limit_kb,
+                        organization_id, author_id, visibility
                     )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                     RETURNING id
                     "#,
                 )
-                .bind(&create_req.title)
-                .bind(&create_req.description)
-                .bind(&create_req.difficulty)
-                .bind(create_req.time_limit)
-                .bind(create_req.memory_limit)
-                .bind(create_req.organization_id)
-                .bind(create_req.is_public)
-                .bind(&create_req.visibility)
-                .bind(&create_req.tags)
-                .bind(&create_req.source_url)
-                .bind(&create_req.author_note)
+                .bind(&item.config.title)
+                .bind(&item.description)
+                .bind(&item.config.difficulty)
+                .bind(item.config.time_limit)
+                .bind(item.config.memory_limit * 1024)  // MB → KB
+                .bind(claims.school_id)
+                .bind(claims.sub)                        // author_id (NOT NULL)
+                .bind(&visibility)
                 .fetch_one(&mut *tx)
                 .await;
 
@@ -499,8 +507,8 @@ pub async fn export_problem(
     let row = sqlx::query(
         r#"
         SELECT
-            id, title, description, difficulty, time_limit, memory_limit,
-            organization_id, is_public, visibility, tags, source_url, author_note
+            id, title, description, difficulty, time_limit_ms, memory_limit_kb,
+            organization_id, visibility
         FROM problems
         WHERE id = $1 AND organization_id = $2
         "#,
@@ -512,20 +520,18 @@ pub async fn export_problem(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
     .ok_or(StatusCode::NOT_FOUND)?;
 
+    let visibility_str: String = row.get("visibility");
     let problem = ExportProblem {
         title: row.get("title"),
         description: row.get("description"),
         difficulty: row.get("difficulty"),
-        time_limit: row.get("time_limit"),
-        memory_limit: row.get("memory_limit"),
-        is_public: row.get("is_public"),
-        visibility: row.get("visibility"),
-        tags: row
-            .try_get::<Option<Vec<String>>, _>("tags")
-            .unwrap_or(None)
-            .unwrap_or_default(),
-        source_url: row.try_get("source_url").unwrap_or(None),
-        author_note: row.try_get("author_note").unwrap_or(None),
+        time_limit: row.get::<i32, _>("time_limit_ms"),
+        memory_limit: row.get::<i32, _>("memory_limit_kb") / 1024,  // KB → MB
+        is_public: visibility_str == "public",
+        visibility: visibility_str,
+        tags: vec![],        // not stored in DB
+        source_url: None,    // not stored in DB
+        author_note: None,   // not stored in DB
     };
 
     // Fetch test cases
@@ -716,6 +722,28 @@ pub async fn execute_user_import(
                 });
             }
             ImportItemStatus::Valid => {
+                // CampusAdmin can only import users into their own campus
+                if is_campus_admin(&claims.role) {
+                    let caller_campus = match claims.campus_id {
+                        Some(c) => c,
+                        None => {
+                            error_items.push(ErrorItem {
+                                item: row.username.clone(),
+                                reason: "Campus admin has no campus assignment".to_string(),
+                            });
+                            continue;
+                        }
+                    };
+                    if row.campus_id != caller_campus {
+                        skipped_items.push(SkippedItem {
+                            item: row.username.clone(),
+                            reason: "Campus admin can only import users for their own campus"
+                                .to_string(),
+                        });
+                        continue;
+                    }
+                }
+
                 // Hash the default password
                 let password_hash = match bcrypt::hash(&default_password, bcrypt::DEFAULT_COST) {
                     Ok(h) => h,
@@ -833,18 +861,36 @@ pub async fn export_users(
 ) -> Result<Response, StatusCode> {
     require_admin(&claims.role)?;
 
-    let rows = sqlx::query(
-        r#"
-        SELECT u.username, r.role, u.campus_id, u.display_name, u.email
-        FROM users u
-        JOIN user_roles r ON u.id = r.user_id
-        WHERE u.organization_id = $1
-        ORDER BY u.username ASC
-        "#,
-    )
-    .bind(claims.school_id)
-    .fetch_all(&state.db_pool)
-    .await
+    // CampusAdmin can only export users from their own campus
+    let rows = if is_campus_admin(&claims.role) {
+        let campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
+        sqlx::query(
+            r#"
+            SELECT u.username, r.role, u.campus_id, u.display_name, u.email
+            FROM users u
+            JOIN user_roles r ON u.id = r.user_id
+            WHERE u.organization_id = $1 AND u.campus_id = $2
+            ORDER BY u.username ASC
+            "#,
+        )
+        .bind(claims.school_id)
+        .bind(campus_id)
+        .fetch_all(&state.db_pool)
+        .await
+    } else {
+        sqlx::query(
+            r#"
+            SELECT u.username, r.role, u.campus_id, u.display_name, u.email
+            FROM users u
+            JOIN user_roles r ON u.id = r.user_id
+            WHERE u.organization_id = $1
+            ORDER BY u.username ASC
+            "#,
+        )
+        .bind(claims.school_id)
+        .fetch_all(&state.db_pool)
+        .await
+    }
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let export_rows: Vec<UserExportRow> = rows

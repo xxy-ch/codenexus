@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/Dialog'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { Separator } from '@/components/ui/separator'
+import { useAuth } from '@/hooks/useAuth'
+import { isAdmin } from '@/types/auth'
 import type { ImportPreview, ImportResult, PreviewItem, UserImportPreview } from '@/types/imex'
 
 // ---------------------------------------------------------------------------
@@ -932,6 +934,9 @@ asmith,teacher,1,Alice Smith,asmith@example.com`}
 // ---------------------------------------------------------------------------
 
 export function BatchOperations() {
+  const { user } = useAuth()
+  const showUserTabs = user?.role ? isAdmin(user.role) : false
+
   return (
     <div className="space-y-6 p-6">
       {/* Page title section */}
@@ -951,8 +956,8 @@ export function BatchOperations() {
         <TabsList>
           <TabsTrigger value="problem-import">Problem Import</TabsTrigger>
           <TabsTrigger value="problem-export">Problem Export</TabsTrigger>
-          <TabsTrigger value="user-import">User Import</TabsTrigger>
-          <TabsTrigger value="user-export">User Export</TabsTrigger>
+          {showUserTabs && <TabsTrigger value="user-import">User Import</TabsTrigger>}
+          {showUserTabs && <TabsTrigger value="user-export">User Export</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="problem-import">
@@ -963,13 +968,17 @@ export function BatchOperations() {
           <ProblemExportTab />
         </TabsContent>
 
-        <TabsContent value="user-import">
-          <UserImportTab />
-        </TabsContent>
+        {showUserTabs && (
+          <TabsContent value="user-import">
+            <UserImportTab />
+          </TabsContent>
+        )}
 
-        <TabsContent value="user-export">
-          <UserExportTab />
-        </TabsContent>
+        {showUserTabs && (
+          <TabsContent value="user-export">
+            <UserExportTab />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )
