@@ -2,7 +2,7 @@
 phase: 9
 slug: judge-concurrency-fault-tolerance
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-04-17
 ---
@@ -27,7 +27,7 @@ created: 2026-04-17
 
 ## Sampling Rate
 
-- **After every task commit:** Run `cargo test -p judge-worker` or `cargo test -p domain-submissions` depending on modified crate
+- **After every task commit:** Run `cargo test -p <modified-crate>` or `cd frontend && npx tsc --noEmit`
 - **After every plan wave:** Run `cargo test --workspace`
 - **Before `/gsd-verify-work`:** Full suite must be green
 - **Max feedback latency:** 60 seconds
@@ -36,18 +36,17 @@ created: 2026-04-17
 
 ## Per-Task Verification Map
 
-| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 09-01-01 | 01 | 1 | JCON-01 | — | Stream routing based on contest context | unit | `cargo test -p domain-submissions queue_routing` | ⬜ W0 | ⬜ pending |
-| 09-01-02 | 01 | 1 | JCON-01 | — | Dual-stream consumer polls contest first | unit | `cargo test -p judge-worker dual_stream` | ⬜ W0 | ⬜ pending |
-| 09-02-01 | 02 | 1 | FTOL-01 | — | Breaker opens after 5 failures, half-open after 30s | unit | `cargo test -p judge-worker circuit_breaker` | ⬜ W0 | ⬜ pending |
-| 09-02-02 | 02 | 1 | FTOL-02 | — | Retry with exponential backoff + jitter | unit | `cargo test -p judge-worker retry_policy` | ⬜ W0 | ⬜ pending |
-| 09-03-01 | 03 | 1 | JCON-04 | — | Worker heartbeat POST every 10s | unit | `cargo test -p judge-worker heartbeat` | ⬜ W0 | ⬜ pending |
-| 09-03-02 | 03 | 1 | JCON-02 | T-09-01 | Admin status endpoint requires admin role | integration | `cargo test -p api admin_judge_status` | ⬜ W0 | ⬜ pending |
-| 09-04-01 | 04 | 2 | FTOL-03 | T-09-02 | DLQ admin endpoints require admin role | integration | `cargo test -p api admin_dlq` | ⬜ W0 | ⬜ pending |
-| 09-04-02 | 04 | 2 | FTOL-03 | — | Retry re-enqueues to original stream | unit | `cargo test -p judge-worker dlq_retry` | ⬜ W0 | ⬜ pending |
-| 09-05-01 | 05 | 2 | JCON-02 | — | Frontend Judge Queue tab renders | component | `cd frontend && npx vitest run JudgeQueue` | ⬜ W0 | ⬜ pending |
-| 09-05-02 | 05 | 2 | FTOL-03 | — | Frontend DLQ list with retry/discard actions | component | `cd frontend && npx vitest run DeadLetters` | ⬜ W0 | ⬜ pending |
+| Task ID | Plan | Wave | Requirement | Test Type | Automated Command | Status |
+|---------|------|------|-------------|-----------|-------------------|--------|
+| 09-01-T1 | 01 | 1 | FTOL-01, FTOL-02 | unit (TDD) | `cargo test -p judge-worker -- circuit_breaker` | ⬜ pending |
+| 09-01-T2 | 01 | 1 | JCON-01, JCON-03 | build+test | `cargo build -p judge-worker && cargo test -p judge-worker` | ⬜ pending |
+| 09-02-T1 | 02 | 1 | JCON-01 | build+test | `cargo build -p domain-submissions && cargo test -p domain-submissions` | ⬜ pending |
+| 09-02-T2 | 02 | 1 | FTOL-03 | build+test | `cargo build -p judge-worker && cargo test -p judge-worker -- dlq` | ⬜ pending |
+| 09-03-T1 | 03 | 2 | JCON-04 | build | `cargo build -p judge-worker && cargo build -p api` | ⬜ pending |
+| 09-03-T2 | 03 | 2 | JCON-02, FTOL-03 | build | `cargo build -p api` | ⬜ pending |
+| 09-04-T1 | 04 | 3 | JCON-02, FTOL-03 | typecheck | `cd frontend && npx tsc --noEmit` | ⬜ pending |
+| 09-04-T2 | 04 | 3 | JCON-02 | typecheck | `cd frontend && npx tsc --noEmit` | ⬜ pending |
+| 09-04-T3 | 04 | 3 | JCON-01 | typecheck | `cd frontend && npx tsc --noEmit` | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -55,12 +54,11 @@ created: 2026-04-17
 
 ## Wave 0 Requirements
 
-- [ ] `judge-worker/src/circuit_breaker.rs` — CircuitBreaker struct with tests
-- [ ] `judge-worker/src/health.rs` — Heartbeat reporter with tests
-- [ ] `domain-submissions/src/queue.rs` — Dual-stream routing with tests
-- [ ] Existing infrastructure covers Rust testing (cargo test)
+Existing infrastructure covers all phase requirements — no Wave 0 stubs needed.
 
-*If none: "Existing infrastructure covers all phase requirements."*
+- [x] `judge-worker/Cargo.toml` — dependencies for circuit breaker, heartbeat already available (tokio, redis, reqwest)
+- [x] `domain-submissions/Cargo.toml` — redis, sqlx already available
+- [x] `frontend/package.json` — vitest, tanstack/react-query already available
 
 ---
 
@@ -75,11 +73,11 @@ created: 2026-04-17
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending

@@ -627,17 +627,15 @@ Add "Judge Queue" navigation item to `AdminLayout.tsx` (line 13 area) and a new 
 | A4 | `ensure_consumer_group` on non-existent stream with MKSTREAM is safe to call repeatedly | Architecture Patterns | Low -- already done in existing code with error suppression |
 | A5 | Worker heartbeat Redis keys (`worker:heartbeat:*`) won't conflict with existing keys | Code Examples | Low -- namespace is unique; verified no existing keys use this prefix |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Frontend contest submission flow**
-   - What we know: The API has `link_submission_to_contest` as a separate endpoint. The frontend does not currently appear to pass `contest_id` when creating submissions.
-   - What's unclear: Whether the frontend contest problem page creates submissions with a `contest_id` parameter already, or if this needs to be added.
-   - Recommendation: Planner should include a task to verify and potentially update the frontend contest submission flow to pass `contest_id`. If the frontend does not currently do this, both the `CreateSubmissionRequest` type and the frontend submission service need updates.
+1. **Frontend contest submission flow** (RESOLVED)
+   - What we know: The API has `link_submission_to_contest` as a separate endpoint. The frontend does NOT pass `contest_id` when creating submissions.
+   - Resolution: Confirmed via code inspection — `CreateSubmissionRequest` in `domain-submissions/src/models.rs` has only `problem_id`, `code`, `language`. Frontend `problemsService.submitCode` sends `{ problemId, code, language }` with no contest context. Both backend and frontend need updates. Plan 02 adds `contest_id` to `CreateSubmissionRequest`; Plan 04 must update the frontend submission service and contest problem page to pass `contestId` when submitting from a contest context.
 
-2. **Recovery on contest stream**
+2. **Recovery on contest stream** (RESOLVED)
    - What we know: The existing `recover_pending_submissions` in `recovery.rs` operates on a single stream.
-   - What's unclear: Whether recovery should also run on the contest stream at startup.
-   - Recommendation: Yes, recovery should run on both streams at startup. The planner should include this as a task.
+   - Resolution: Yes, recovery must run on both `submissions` and `submissions:contest` at startup. Plan 01 Task 2 step 2d calls `recover_pending_submissions` for both streams.
 
 ## Sources
 
