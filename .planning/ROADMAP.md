@@ -1,7 +1,7 @@
 # Roadmap: AlgoMaster Online Judge Modernization
 
 **Created:** 2026-04-13
-**Revised:** 2026-04-16 (Phase 1 + 8 verified)
+**Revised:** 2026-04-17 (Phase 1 + 8 verified, Phase 9 planned)
 **Phases:** 10
 **v1 Requirements:** 43 (all mapped)
 
@@ -240,6 +240,14 @@ Plans:
 4. Circuit breaker opens after N consecutive Redis failures and transitions to half-open after timeout
 5. DLQ endpoint lists failed items with metadata; manual retry succeeds for recoverable items
 
+**Plans:** 4 plans in 3 waves
+
+Plans:
+- [ ] 09-01-PLAN.md — Priority queue + configurable concurrency + circuit breaker + retry (Wave 1)
+- [ ] 09-02-PLAN.md — API queue routing + DLQ metadata (Wave 1)
+- [ ] 09-03-PLAN.md — Worker heartbeat + admin monitoring API + DLQ endpoints (Wave 2)
+- [ ] 09-04-PLAN.md — Frontend admin Judge Queue dashboard (Wave 3)
+
 **Dependency:** Phase 7 complete (independent of Phase 8 — can run in parallel)
 
 ---
@@ -325,4 +333,4 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 
 ---
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-16 Phase 8 planned*
+*Last updated: 2026-04-17 Phase 9 planned*
