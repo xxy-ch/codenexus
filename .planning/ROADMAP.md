@@ -247,8 +247,8 @@ Plans:
 - [x] 09-02-PLAN.md — API queue routing + DLQ metadata (Wave 1)
 - [x] 09-03-PLAN.md — Worker heartbeat + admin monitoring API + DLQ endpoints (Wave 2)
 - [x] 09-04-PLAN.md — Frontend admin Judge Queue dashboard (Wave 3)
-- [ ] 09-05-PLAN.md — GAP: DLQ retry type fix + admin RBAC + DLQ metadata threading (Wave 1)
-- [ ] 09-06-PLAN.md — GAP: Contest participant validation + circuit breaker probe + WORKER_SECRET fix (Wave 2)
+- [x] 09-05-PLAN.md — GAP: DLQ retry type fix + admin RBAC + DLQ metadata threading (Wave 1)
+- [x] 09-06-PLAN.md — GAP: Contest participant validation + circuit breaker probe + WORKER_SECRET fix (Wave 2)
 
 **Dependency:** Phase 7 complete (independent of Phase 8 — can run in parallel)
 
