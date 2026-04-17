@@ -215,6 +215,31 @@ export const adminService = {
   },
 }
 
+export const judgeQueueService = {
+  async getStatus() {
+    const response = await api.get('/admin/judge/status')
+    return response.data
+  },
+
+  async getDlqEntries(count = 50, startId?: string) {
+    const params = new URLSearchParams()
+    params.append('count', String(count))
+    if (startId) params.append('start_id', startId)
+    const response = await api.get(`/admin/judge/dlq?${params}`)
+    return response.data
+  },
+
+  async retryDlqEntry(entryId: string) {
+    const response = await api.post(`/admin/judge/dlq/${entryId}/retry`)
+    return response.data
+  },
+
+  async deleteDlqEntry(entryId: string) {
+    const response = await api.delete(`/admin/judge/dlq/${entryId}`)
+    return response.data
+  },
+}
+
 function getMockStats(): AdminStats {
   return {
     total_users: 1250,
