@@ -70,7 +70,7 @@
 
 - [x] **FTOL-01**: Circuit breaker for external dependencies (Redis, judge worker callback) — open after N consecutive failures, half-open after timeout, close on success
 - [x] **FTOL-02**: Configurable retry policies — exponential backoff with jitter for all retry-able operations; max retries configurable
-- [ ] **FTOL-03**: DLQ monitoring — API endpoint listing dead letter queue items with metadata; manual retry capability for individual items
+- [x] **FTOL-03**: DLQ monitoring — API endpoint listing dead letter queue items with metadata; manual retry capability for individual items
 
 ### Data Migration
 
@@ -165,7 +165,7 @@
 | JCON-04 | Phase 9: Judge + FT | Pending |
 | FTOL-01 | Phase 9: Judge + FT | Complete |
 | FTOL-02 | Phase 9: Judge + FT | Complete |
-| FTOL-03 | Phase 9: Judge + FT | Pending |
+| FTOL-03 | Phase 9: Judge + FT | Complete |
 | MIGR-01 | Phase 10: Migration + Delivery | Pending |
 | MIGR-02 | Phase 10: Migration + Delivery | Pending |
 | MIGR-03 | Phase 10: Migration + Delivery | Pending |
