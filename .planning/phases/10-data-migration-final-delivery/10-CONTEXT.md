@@ -233,6 +233,30 @@ UOJ `problems` table has no time_limit or memory_limit columns. These are stored
 
 If not present in extra_config, use defaults: `time_limit_ms=1000`, `memory_limit_kb=256000`.
 
+### D-10-8: Language Constraint — Skip Unsupported Languages
+
+**Decision:** Java/Go/Python2 submissions are skipped with a warning log during migration.
+
+**Why:** Relaxing the CHECK constraint affects production judge worker behavior. Skipping is simpler and avoids schema changes for a one-time tool. Most UOJ submissions are C/C++/Python3 anyway.
+
+### D-10-9: Score Preservation — Drop Non-Contest Score
+
+**Decision:** `submissions.score` is dropped for non-contest submissions. Contest scores are mapped to `contest_submissions` table.
+
+**Why:** AlgoMaster uses verdict-based judging (AC/WA/TLE), not IOI-style partial scoring. Adding a score column would be a schema change for legacy data only.
+
+### D-10-10: Usergroup Mapping — U/S→student, B→skip
+
+**Decision:** UOJ `usergroup` values mapped as: 'U'→student, 'S'→student, 'B'→skip (banned users not migrated).
+
+**Why:** UOJ's 'U' and 'S' are both regular user tiers. Banned users ('B') should not be carried over.
+
+### D-10-11: Problem Authorship — System Migration User
+
+**Decision:** Create a system user `uoj_migration` during migration. All migrated problems assigned to this user as author.
+
+**Why:** UOJ has no problem author concept. A dedicated migration user makes ownership clear and doesn't pollute any real user's profile.
+
 ## Deferred Ideas
 
 - Contest questions/announcements migration (`contests_asks`, `contests_notice`) — no AlgoMaster equivalent
