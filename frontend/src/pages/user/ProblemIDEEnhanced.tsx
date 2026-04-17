@@ -20,7 +20,7 @@ function difficultyBadge(difficulty: string) {
 }
 
 export function ProblemIDEEnhanced() {
-  const { problemId } = useParams<{ problemId: string }>()
+  const { problemId, contestId } = useParams<{ problemId: string; contestId?: string }>()
   const navigate = useNavigate()
   const [problem, setProblem] = useState<Problem | null>(null)
   const [examples, setExamples] = useState<TestCase[]>([])
@@ -90,6 +90,7 @@ export function ProblemIDEEnhanced() {
         problemId: String(problem.id),
         code,
         language: selectedLanguage,
+        ...(contestId ? { contestId } : {}),
       })
       toast.success('提交成功，正在跳转到判题详情')
       navigate(`/submissions/${submission.id}`)
