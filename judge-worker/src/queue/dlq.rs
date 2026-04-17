@@ -4,13 +4,18 @@ use tracing::info;
 
 const DLQ_STREAM: &str = "submissions:dlq";
 
-/// Write a failed judge result to the dead letter queue
+/// Write a failed judge result to the dead letter queue.
+///
+/// Stores both `result_json` (for admin inspection) and `original_message` (serialized
+/// SubmissionMessage, for safe re-enqueue via retry endpoint). Without `original_message`,
+/// the retry endpoint cannot reconstruct a valid worker-consumable message.
 pub async fn write_to_dlq(
     conn: &mut MultiplexedConnection,
     result: &crate::queue::JudgeResult,
     error_reason: &str,
     source_stream: Option<&str>,
     submitted_at: Option<&str>,
+    original_message: Option<&str>,
 ) -> Result<()> {
     let result_json =
         serde_json::to_string(result).context("Failed to serialize judge result for DLQ")?;
@@ -22,6 +27,7 @@ pub async fn write_to_dlq(
         ("failed_at", chrono::Utc::now().to_rfc3339()),
         ("source_stream", source_stream.unwrap_or("submissions").to_string()),
         ("submitted_at", submitted_at.unwrap_or("").to_string()),
+        ("original_message", original_message.unwrap_or("").to_string()),
     ];
 
     let mut pipe = redis::pipe();

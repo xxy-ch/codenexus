@@ -146,9 +146,18 @@ impl JudgeMonitorService {
         let submission_id = fields
             .get("submission_id")
             .ok_or_else(|| anyhow::anyhow!("Missing submission_id in DLQ entry"))?;
+
+        // Read the original SubmissionMessage (NOT result_json) so the worker consumer
+        // can parse the re-enqueued message. Old entries created before the fix will have
+        // an empty original_message and cannot be safely retried.
         let data = fields
-            .get("result_json")
-            .ok_or_else(|| anyhow::anyhow!("Missing result_json in DLQ entry"))?;
+            .get("original_message")
+            .ok_or_else(|| anyhow::anyhow!("Missing original_message in DLQ entry -- entry cannot be retried (created before fix)"))?;
+        if data.is_empty() {
+            return Err(anyhow::anyhow!(
+                "DLQ entry lacks original submission data -- cannot retry. Use re-submit via submission API instead."
+            ));
+        }
 
         // 3. Re-enqueue to original stream
         let _new_id: String = deadpool_redis::redis::cmd("XADD")

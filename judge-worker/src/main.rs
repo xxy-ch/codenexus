@@ -373,10 +373,24 @@ async fn consume_and_process(
 
             let result = processor::service::process_submission(&submission).await;
 
+            // Serialize submission for DLQ storage so retry endpoint can re-enqueue
+            // a worker-consumable SubmissionMessage (not a JudgeResult).
+            let original_msg_json = serde_json::to_string(&submission).unwrap_or_default();
+
             match result {
                 Ok(judge_result) => {
                     let should_ack =
-                        match send_result_with_retry_breaker(&api_url, &judge_result, &conn, &api_breaker).await {
+                        match send_result_with_retry_breaker(
+                            &api_url,
+                            &judge_result,
+                            &conn,
+                            &api_breaker,
+                            &origin_stream,
+                            None,
+                            &original_msg_json,
+                        )
+                        .await
+                        {
                             Ok(DeliveryOutcome::Delivered) => true,
                             Ok(DeliveryOutcome::StoredInDlq) => {
                                 warn!(
@@ -584,11 +598,18 @@ enum DeliveryOutcome {
 }
 
 /// Send result to API with retry, circuit breaker protection, and jitter.
+///
+/// `origin_stream` and `submitted_at` are stored in the DLQ entry so the retry
+/// endpoint can route back to the correct stream. `original_message` is the
+/// serialized `SubmissionMessage` so retry re-enqueues a worker-consumable payload.
 async fn send_result_with_retry_breaker(
     api_url: &str,
     result: &queue::JudgeResult,
     conn: &Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
     api_breaker: &Arc<CircuitBreaker>,
+    origin_stream: &str,
+    submitted_at: Option<&str>,
+    original_message: &str,
 ) -> Result<DeliveryOutcome> {
     let max_retries: u32 = 3;
     let mut attempt: u32 = 0;
@@ -605,8 +626,9 @@ async fn send_result_with_retry_breaker(
                 &mut locked_conn,
                 result,
                 "API circuit breaker open",
-                None,
-                None,
+                Some(origin_stream),
+                submitted_at,
+                Some(original_message),
             )
             .await
             {
@@ -635,7 +657,15 @@ async fn send_result_with_retry_breaker(
                         max_retries, result.submission_id, e
                     );
                     let mut locked_conn = conn.lock().await;
-                    match queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string(), None, None).await
+                    match queue::dlq::write_to_dlq(
+                        &mut locked_conn,
+                        result,
+                        &e.to_string(),
+                        Some(origin_stream),
+                        submitted_at,
+                        Some(original_message),
+                    )
+                    .await
                     {
                         Ok(()) => return Ok(DeliveryOutcome::StoredInDlq),
                         Err(dlq_err) => {
@@ -666,6 +696,10 @@ async fn send_result_with_retry_breaker(
 }
 
 /// Send result with retry (no circuit breaker). Used during startup recovery.
+///
+/// Recovery lacks origin stream metadata and original SubmissionMessage, so DLQ entries
+/// from this path are not retriable with correct routing data. This is an acceptable
+/// limitation -- recovery is rare and these entries should be re-submitted via the API.
 async fn send_result_with_retry(
     api_url: &str,
     result: &queue::JudgeResult,
@@ -685,7 +719,17 @@ async fn send_result_with_retry(
                         max_retries, result.submission_id, e
                     );
                     let mut locked_conn = conn.lock().await;
-                    match queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string(), None, None).await
+                    // Recovery path: no origin stream/submitted_at/original_message available.
+                    // DLQ entries from recovery will lack retriable data (acceptable limitation).
+                    match queue::dlq::write_to_dlq(
+                        &mut locked_conn,
+                        result,
+                        &e.to_string(),
+                        Some("submissions"),
+                        None,
+                        None,
+                    )
+                    .await
                     {
                         Ok(()) => return Ok(DeliveryOutcome::StoredInDlq),
                         Err(dlq_err) => {
