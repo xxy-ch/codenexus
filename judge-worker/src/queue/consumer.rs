@@ -89,6 +89,41 @@ pub async fn ensure_consumer_group(
     Ok(())
 }
 
+/// Dual-stream priority consumer: drains contest stream first (non-blocking),
+/// then falls back to normal stream (5s blocking read).
+///
+/// Returns tuples of (message_id, SubmissionMessage, origin_stream_name).
+/// The origin stream name is needed for correct ACK (per Pitfall 3 in RESEARCH.md).
+pub async fn consume_priority(
+    conn: &mut MultiplexedConnection,
+    contest_stream: &str,
+    normal_stream: &str,
+    group_name: &str,
+    consumer_name: &str,
+) -> Result<Vec<(String, SubmissionMessage, String)>> {
+    // Try contest stream first (non-blocking, per D-03)
+    let contest_msgs = consume_submission(conn, contest_stream, group_name, consumer_name, None).await?;
+    if !contest_msgs.is_empty() {
+        return Ok(contest_msgs
+            .into_iter()
+            .map(|(id, msg)| (id, msg, contest_stream.to_string()))
+            .collect());
+    }
+    // Fall back to normal stream (5s block, same as current)
+    let normal_msgs = consume_submission(
+        conn,
+        normal_stream,
+        group_name,
+        consumer_name,
+        Some(5000),
+    )
+    .await?;
+    Ok(normal_msgs
+        .into_iter()
+        .map(|(id, msg)| (id, msg, normal_stream.to_string()))
+        .collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
