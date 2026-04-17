@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 09
 status: executing
-last_updated: "2026-04-17T06:21:52.808Z"
+last_updated: "2026-04-17T06:35:03Z"
 last_activity: 2026-04-17
 progress:
   total_phases: 10
   completed_phases: 5
   total_plans: 34
-  completed_plans: 28
-  percent: 82
+  completed_plans: 29
+  percent: 85
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -32,7 +32,7 @@ progress:
 | 6 | Full CI/CD + Observability | Executed | 3 plans in 2 waves | 100% (3/3 plans) |
 | 7 | Test Coverage + Contest Enhancement | Executing | 7 plans (3 waves) | 57% (4/7 plans) |
 | 8 | Import/Export | Executed | 3 plans | 100% (3/3 plans) |
-| 9 | Judge Concurrency + Fault Tolerance | Executing | 4 plans | 50% (2/4 plans) |
+| 9 | Judge Concurrency + Fault Tolerance | Executing | 4 plans | 75% (3/4 plans) |
 | 10 | Data Migration + Final Delivery | Not Started | - | 0% |
 
 ## Project Reference
@@ -49,6 +49,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 9 context gathered: 2026-04-17*
 *Phase 9 plan 01 executed: 2026-04-17*
 *Phase 9 plan 02 executed: 2026-04-17*
+*Phase 9 plan 03 executed: 2026-04-17*
 
 ## Decisions
 
@@ -75,6 +76,10 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 09 P02]: queue_submission uses dynamic stream_name parameter rather than QueueConfig for per-call routing
 - [Phase 09 P02]: Contest active status verified via SQL query before routing to priority stream (T-09-03 mitigation)
 - [Phase 09 P02]: DLQ write_to_dlq uses Option<&str> for new params for backward compat during cross-plan intermediate states
+- [Phase 09 P03]: Heartbeat uses Redis hash with 30s TTL for auto-cleanup of stale worker entries
+- [Phase 09 P03]: ActiveGuard RAII struct ensures active_count is always decremented even if spawned task panics
+- [Phase 09 P03]: EMA (alpha=0.3) for avg_wait_ms smooths per-submission spikes in heartbeat reporting
+- [Phase 09 P03]: DLQ retry reads result_json field (not data) to match Plan 02 write_to_dlq format
 
 ## Performance Metrics
 
@@ -90,3 +95,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 08 P03 | 8min | 2 tasks | 3 files |
 | Phase 09 P01 | 8min | 2 tasks | 3 files |
 | Phase 09 P02 | 8min | 2 tasks | 6 files |
+| Phase 09 P03 | 11min | 2 tasks | 7 files |

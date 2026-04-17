@@ -240,12 +240,12 @@ Plans:
 4. Circuit breaker opens after N consecutive Redis failures and transitions to half-open after timeout
 5. DLQ endpoint lists failed items with metadata; manual retry succeeds for recoverable items
 
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [x] 09-01-PLAN.md — Priority queue + configurable concurrency + circuit breaker + retry (Wave 1)
 - [x] 09-02-PLAN.md — API queue routing + DLQ metadata (Wave 1)
-- [ ] 09-03-PLAN.md — Worker heartbeat + admin monitoring API + DLQ endpoints (Wave 2)
+- [x] 09-03-PLAN.md — Worker heartbeat + admin monitoring API + DLQ endpoints (Wave 2)
 - [ ] 09-04-PLAN.md — Frontend admin Judge Queue dashboard (Wave 3)
 
 **Dependency:** Phase 7 complete (independent of Phase 8 — can run in parallel)
