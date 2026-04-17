@@ -43,13 +43,13 @@ impl fmt::Display for SecurityError {
 impl std::error::Error for SecurityError {}
 
 /// Maximum individual file size within a ZIP archive (10 MB).
-const MAX_FILE_SIZE: u64 = 10_000_000;
+pub const MAX_FILE_SIZE: u64 = 10_000_000;
 
 /// Maximum number of entries in a ZIP archive.
 const MAX_ARCHIVE_ENTRIES: usize = 500;
 
 /// Maximum total raw size of a ZIP archive (50 MB).
-const MAX_ARCHIVE_SIZE: usize = 50_000_000;
+pub const MAX_ARCHIVE_SIZE: usize = 50_000_000;
 
 /// Validate a single ZIP entry for security issues.
 ///

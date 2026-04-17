@@ -4,7 +4,7 @@ use std::io::Read;
 use crate::models::{
     ImportItemStatus, ProblemConfig, ProblemImportItem, TestCaseFile,
 };
-use crate::security::{validate_zip_archive, validate_zip_entry};
+use crate::security::{validate_zip_archive, validate_zip_entry, MAX_ARCHIVE_SIZE, MAX_FILE_SIZE};
 
 use domain_problems::models::CreateProblemRequest;
 use domain_problems::test_cases::{BatchImportTestCasesRequest, CreateTestCaseRequest};
@@ -34,23 +34,40 @@ pub fn parse_problem_zip(
 
     let entry_count = archive.len();
 
-    // First pass: validate all entries for security issues and read all contents
+    // First pass: validate all entries for security issues and read all contents.
+    // Pre-check declared sizes from ZIP metadata BEFORE reading content to
+    // prevent zip bombs from consuming memory. Also hard-cap each file read.
     let mut file_contents: HashMap<String, Vec<u8>> = HashMap::new();
     let mut total_raw_size: usize = 0;
     for i in 0..entry_count {
-        let mut file = archive.by_index(i)?;
+        let file = archive.by_index(i)?;
         let name = file.name().to_string();
-        let size = file.size();
+        let declared_size = file.size() as usize;
         let is_symlink = file.is_symlink();
-        validate_zip_entry(&name, size, is_symlink)?;
+        validate_zip_entry(&name, file.size(), is_symlink)?;
 
-        let mut buf = Vec::new();
-        file.read_to_end(&mut buf)?;
-        total_raw_size += buf.len();
+        // Pre-check: reject early if declared sizes already exceed total limit
+        total_raw_size += declared_size;
+        if total_raw_size > MAX_ARCHIVE_SIZE {
+            return Err(anyhow::anyhow!(
+                "Archive uncompressed size exceeds limit ({} bytes)",
+                total_raw_size
+            ));
+        }
+
+        // Hard-cap read at per-file limit +1 to catch metadata-lies zip bombs
+        let mut buf = Vec::with_capacity(declared_size.min(MAX_FILE_SIZE as usize));
+        file.take(MAX_FILE_SIZE + 1).read_to_end(&mut buf)?;
+        if buf.len() > MAX_FILE_SIZE as usize {
+            return Err(anyhow::anyhow!(
+                "File '{}' exceeded declared size limit",
+                name
+            ));
+        }
         file_contents.insert(name, buf);
     }
 
-    // Validate total uncompressed size (not compressed) to prevent zip bombs
+    // Final validation with actual entry count
     validate_zip_archive(entry_count, total_raw_size)?;
 
     // Find all config.json entries matching problems/*/config.json

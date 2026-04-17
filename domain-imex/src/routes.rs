@@ -30,6 +30,9 @@ use crate::problem_import::{convert_to_test_cases, parse_problem_zip};
 use crate::user_export::{build_user_csv, UserExportRow};
 use crate::user_import::{parse_user_csv, RolePolicy};
 
+/// Maximum number of concurrent preview tokens in the cache.
+const MAX_PREVIEW_CACHE_SIZE: usize = 1000;
+
 // ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
@@ -277,6 +280,9 @@ pub async fn validate_problem_import(
     let response = build_problem_preview_response(&items, token);
 
     // Cache the parsed items for the execute step
+    if state.preview_cache.len() >= MAX_PREVIEW_CACHE_SIZE {
+        return Err(StatusCode::SERVICE_UNAVAILABLE);
+    }
     state.preview_cache.insert(
         token,
         Box::new(CachedPreview::Problem(ProblemImportPreview {
@@ -631,6 +637,9 @@ pub async fn validate_user_import(
     let response = build_user_preview_response(&rows, token);
 
     // Cache the parsed rows for the execute step
+    if state.preview_cache.len() >= MAX_PREVIEW_CACHE_SIZE {
+        return Err(StatusCode::SERVICE_UNAVAILABLE);
+    }
     state.preview_cache.insert(
         token,
         Box::new(CachedPreview::User(UserImportPreview {
@@ -744,11 +753,33 @@ pub async fn execute_user_import(
                     }
                 }
 
-                // Hash the default password
-                let password_hash = match bcrypt::hash(&default_password, bcrypt::DEFAULT_COST) {
-                    Ok(h) => h,
+                // Hash the default password in a blocking task to avoid starving the runtime
+                let pw = default_password.clone();
+                let username_for_hash = row.username.clone();
+                let password_hash = match tokio::task::spawn_blocking(move || {
+                    bcrypt::hash(&pw, bcrypt::DEFAULT_COST)
+                })
+                .await
+                {
+                    Ok(Ok(h)) => h,
+                    Ok(Err(e)) => {
+                        tracing::warn!(
+                            "Failed to hash password for '{}': {}",
+                            username_for_hash,
+                            e
+                        );
+                        error_items.push(ErrorItem {
+                            item: row.username.clone(),
+                            reason: "Password hashing failed".to_string(),
+                        });
+                        continue;
+                    }
                     Err(e) => {
-                        tracing::warn!("Failed to hash password for '{}': {}", row.username, e);
+                        tracing::warn!(
+                            "spawn_blocking panicked for '{}': {}",
+                            username_for_hash,
+                            e
+                        );
                         error_items.push(ErrorItem {
                             item: row.username.clone(),
                             reason: "Password hashing failed".to_string(),
