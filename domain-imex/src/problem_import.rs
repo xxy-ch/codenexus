@@ -33,10 +33,10 @@ pub fn parse_problem_zip(
     let mut archive = ZipArchive::new(cursor)?;
 
     let entry_count = archive.len();
+    validate_zip_archive(entry_count, 0)?; // check entry count only
 
-    // First pass: validate all entries for security issues and read all contents.
-    // Pre-check declared sizes from ZIP metadata BEFORE reading content to
-    // prevent zip bombs from consuming memory. Also hard-cap each file read.
+    // Single pass: validate entries, read contents, and track actual sizes.
+    // Incremental size checks bail early before more memory is consumed.
     let mut file_contents: HashMap<String, Vec<u8>> = HashMap::new();
     let mut total_raw_size: usize = 0;
     for i in 0..entry_count {
@@ -46,29 +46,33 @@ pub fn parse_problem_zip(
         let is_symlink = file.is_symlink();
         validate_zip_entry(&name, file.size(), is_symlink)?;
 
-        // Pre-check: reject early if declared sizes already exceed total limit
-        total_raw_size += declared_size;
-        if total_raw_size > MAX_ARCHIVE_SIZE {
+        // Pre-check: if declared sizes already exceed budget, skip reading
+        if total_raw_size.saturating_add(declared_size) > MAX_ARCHIVE_SIZE {
             return Err(anyhow::anyhow!(
-                "Archive uncompressed size exceeds limit ({} bytes)",
-                total_raw_size
+                "Archive uncompressed size exceeds limit ({} + {} bytes)",
+                total_raw_size, declared_size
             ));
         }
 
-        // Hard-cap read at per-file limit +1 to catch metadata-lies zip bombs
+        // Hard-cap per-file read to catch metadata-lies zip bombs
         let mut buf = Vec::with_capacity(declared_size.min(MAX_FILE_SIZE as usize));
         file.take(MAX_FILE_SIZE + 1).read_to_end(&mut buf)?;
         if buf.len() > MAX_FILE_SIZE as usize {
             return Err(anyhow::anyhow!(
-                "File '{}' exceeded declared size limit",
-                name
+                "File '{}' exceeded per-file size limit", name
+            ));
+        }
+
+        // Incremental actual-size check: bail immediately if budget exceeded
+        total_raw_size += buf.len();
+        if total_raw_size > MAX_ARCHIVE_SIZE {
+            return Err(anyhow::anyhow!(
+                "Archive actual uncompressed size exceeds limit ({} bytes)",
+                total_raw_size
             ));
         }
         file_contents.insert(name, buf);
     }
-
-    // Final validation with actual entry count
-    validate_zip_archive(entry_count, total_raw_size)?;
 
     // Find all config.json entries matching problems/*/config.json
     let config_paths: Vec<String> = file_contents

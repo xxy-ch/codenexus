@@ -4,6 +4,7 @@
 //! All routes require teacher or higher role (admin for user operations).
 
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use api_infra::middleware::auth::AuthExtractor;
 use api_infra::state::AppState;
@@ -32,6 +33,10 @@ use crate::user_import::{parse_user_csv, RolePolicy};
 
 /// Maximum number of concurrent preview tokens in the cache.
 const MAX_PREVIEW_CACHE_SIZE: usize = 1000;
+
+/// Atomic counter for preview cache admission control.
+/// Tracks the number of active (not yet consumed or expired) preview tokens.
+static ACTIVE_PREVIEWS: AtomicUsize = AtomicUsize::new(0);
 
 // ---------------------------------------------------------------------------
 // Router
@@ -279,8 +284,10 @@ pub async fn validate_problem_import(
     let token = Uuid::new_v4();
     let response = build_problem_preview_response(&items, token);
 
-    // Cache the parsed items for the execute step
-    if state.preview_cache.len() >= MAX_PREVIEW_CACHE_SIZE {
+    // Cache the parsed items for the execute step (atomic admission)
+    let current = ACTIVE_PREVIEWS.fetch_add(1, Ordering::Relaxed);
+    if current >= MAX_PREVIEW_CACHE_SIZE {
+        ACTIVE_PREVIEWS.fetch_sub(1, Ordering::Relaxed);
         return Err(StatusCode::SERVICE_UNAVAILABLE);
     }
     state.preview_cache.insert(
@@ -296,7 +303,9 @@ pub async fn validate_problem_import(
     let cache = state.preview_cache.clone();
     tokio::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(600)).await;
-        cache.remove(&token);
+        if cache.remove(&token).is_some() {
+            ACTIVE_PREVIEWS.fetch_sub(1, Ordering::Relaxed);
+        }
     });
 
     Ok(Json(response))
@@ -337,6 +346,7 @@ pub async fn execute_problem_import(
         .preview_cache
         .remove(&req.token)
         .ok_or(StatusCode::BAD_REQUEST)?;
+    ACTIVE_PREVIEWS.fetch_sub(1, Ordering::Relaxed);
 
     let preview = cached
         .downcast_ref::<CachedPreview>()
@@ -636,8 +646,10 @@ pub async fn validate_user_import(
     let token = Uuid::new_v4();
     let response = build_user_preview_response(&rows, token);
 
-    // Cache the parsed rows for the execute step
-    if state.preview_cache.len() >= MAX_PREVIEW_CACHE_SIZE {
+    // Cache the parsed rows for the execute step (atomic admission)
+    let current = ACTIVE_PREVIEWS.fetch_add(1, Ordering::Relaxed);
+    if current >= MAX_PREVIEW_CACHE_SIZE {
+        ACTIVE_PREVIEWS.fetch_sub(1, Ordering::Relaxed);
         return Err(StatusCode::SERVICE_UNAVAILABLE);
     }
     state.preview_cache.insert(
@@ -654,7 +666,9 @@ pub async fn validate_user_import(
     let cache = state.preview_cache.clone();
     tokio::spawn(async move {
         tokio::time::sleep(std::time::Duration::from_secs(600)).await;
-        cache.remove(&token);
+        if cache.remove(&token).is_some() {
+            ACTIVE_PREVIEWS.fetch_sub(1, Ordering::Relaxed);
+        }
     });
 
     Ok(Json(response))
@@ -695,6 +709,7 @@ pub async fn execute_user_import(
         .preview_cache
         .remove(&req.token)
         .ok_or(StatusCode::BAD_REQUEST)?;
+    ACTIVE_PREVIEWS.fetch_sub(1, Ordering::Relaxed);
 
     let preview = cached
         .downcast_ref::<CachedPreview>()
@@ -892,16 +907,27 @@ pub async fn export_users(
 ) -> Result<Response, StatusCode> {
     require_admin(&claims.role)?;
 
-    // CampusAdmin can only export users from their own campus
+    // CampusAdmin can only export users from their own campus.
+    // DISTINCT ON ensures one row per user, picking the highest-privilege role.
     let rows = if is_campus_admin(&claims.role) {
         let campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
         sqlx::query(
             r#"
-            SELECT u.username, r.role, u.campus_id, u.display_name, u.email
+            SELECT DISTINCT ON (u.id)
+                u.username, r.role, u.campus_id, u.display_name, u.email
             FROM users u
             JOIN user_roles r ON u.id = r.user_id
             WHERE u.organization_id = $1 AND u.campus_id = $2
-            ORDER BY u.username ASC
+            ORDER BY u.id,
+                CASE r.role
+                    WHEN 'root' THEN 0
+                    WHEN 'organizationadmin' THEN 1
+                    WHEN 'campusadmin' THEN 2
+                    WHEN 'teacher' THEN 3
+                    WHEN 'teachingassistant' THEN 4
+                    WHEN 'student' THEN 5
+                    ELSE 6
+                END ASC
             "#,
         )
         .bind(claims.school_id)
@@ -911,11 +937,21 @@ pub async fn export_users(
     } else {
         sqlx::query(
             r#"
-            SELECT u.username, r.role, u.campus_id, u.display_name, u.email
+            SELECT DISTINCT ON (u.id)
+                u.username, r.role, u.campus_id, u.display_name, u.email
             FROM users u
             JOIN user_roles r ON u.id = r.user_id
             WHERE u.organization_id = $1
-            ORDER BY u.username ASC
+            ORDER BY u.id,
+                CASE r.role
+                    WHEN 'root' THEN 0
+                    WHEN 'organizationadmin' THEN 1
+                    WHEN 'campusadmin' THEN 2
+                    WHEN 'teacher' THEN 3
+                    WHEN 'teachingassistant' THEN 4
+                    WHEN 'student' THEN 5
+                    ELSE 6
+                END ASC
             "#,
         )
         .bind(claims.school_id)
@@ -924,7 +960,7 @@ pub async fn export_users(
     }
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let export_rows: Vec<UserExportRow> = rows
+    let mut export_rows: Vec<UserExportRow> = rows
         .iter()
         .map(|r| UserExportRow {
             username: r.get("username"),
@@ -934,6 +970,9 @@ pub async fn export_users(
             email: r.try_get("email").unwrap_or(None),
         })
         .collect();
+
+    // Sort by username for deterministic CSV output
+    export_rows.sort_by(|a, b| a.username.cmp(&b.username));
 
     // Build CSV in blocking task (CPU-bound)
     let csv_bytes = tokio::task::spawn_blocking(move || build_user_csv(&export_rows))
