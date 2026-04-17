@@ -98,6 +98,7 @@ async fn test_create_and_get_submission() {
         problem_id,
         code: r#"print("hello world")"#.to_string(),
         language: "python3".to_string(),
+        contest_id: None,
     };
 
     let submission = service

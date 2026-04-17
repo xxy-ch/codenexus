@@ -80,11 +80,11 @@ async fn add_message(
 }
 
 /// Sends a submission to the judge queue
-pub async fn queue_submission(pool: &Pool, message: &SubmissionMessage) -> Result<String> {
+pub async fn queue_submission(pool: &Pool, message: &SubmissionMessage, stream_name: &str) -> Result<String> {
     let config = QueueConfig::default();
 
     // Ensure stream exists (ignore error if already exists)
-    let _ = create_stream(pool, &config.stream_name).await;
+    let _ = create_stream(pool, stream_name).await;
 
     // Create consumer group if it doesn't exist
     {
@@ -92,7 +92,7 @@ pub async fn queue_submission(pool: &Pool, message: &SubmissionMessage) -> Resul
         let _: Result<String, deadpool_redis::redis::RedisError> =
             deadpool_redis::redis::cmd("XGROUP")
                 .arg("CREATE")
-                .arg(&config.stream_name)
+                .arg(stream_name)
                 .arg(&config.group_name)
                 .arg("0")
                 .arg("MKSTREAM")
@@ -103,16 +103,18 @@ pub async fn queue_submission(pool: &Pool, message: &SubmissionMessage) -> Resul
     // Serialize message to JSON
     let message_json = serde_json::to_string(message)?;
 
-    // Add to stream
+    // Add to stream with metadata for DLQ retry routing and wait time calculation
     let fields = vec![
         (
             "submission_id".to_string(),
             message.submission_id.to_string(),
         ),
         ("data".to_string(), message_json),
+        ("submitted_at".to_string(), chrono::Utc::now().to_rfc3339()),
+        ("source_stream".to_string(), stream_name.to_string()),
     ];
 
-    let message_id = add_message(pool, &config.stream_name, &fields).await?;
+    let message_id = add_message(pool, stream_name, &fields).await?;
 
     Ok(message_id)
 }

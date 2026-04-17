@@ -92,6 +92,7 @@ impl SubmissionService {
             user_id,
             &req.code,
             normalized_language,
+            req.contest_id,
         )
         .await?;
 
@@ -393,6 +394,7 @@ impl SubmissionService {
         user_id: Uuid,
         code: &str,
         language: &str,
+        contest_id: Option<i64>,
     ) -> Result<()> {
         // Update status to "queued"
         sqlx::query("UPDATE submissions SET status = 'queued', updated_at = NOW() WHERE id = $1")
@@ -421,7 +423,22 @@ impl SubmissionService {
                     memory_limit_mb: ((memory_limit_kb as u64) / 1024).max(1),
                 };
 
-                match queue::queue_submission(redis_pool, &message).await {
+                // Determine target stream based on contest_id and contest active status (T-09-03)
+                let stream_name = match contest_id {
+                    Some(cid) => {
+                        let contest_active = sqlx::query_scalar::<_, bool>(
+                            "SELECT EXISTS(SELECT 1 FROM contests WHERE id = $1 AND start_time <= NOW() AND end_time >= NOW())"
+                        )
+                        .bind(cid)
+                        .fetch_one(&self.pool)
+                        .await
+                        .unwrap_or(false);
+                        if contest_active { "submissions:contest" } else { "submissions" }
+                    }
+                    None => "submissions",
+                };
+
+                match queue::queue_submission(redis_pool, &message, stream_name).await {
                     Ok(message_id) => {
                         tracing::info!(
                             "Submission {} queued with message ID {}",

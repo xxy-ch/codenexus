@@ -23,6 +23,8 @@ pub struct CreateSubmissionRequest {
     pub problem_id: i64,
     pub code: String,
     pub language: String,
+    #[serde(default)]
+    pub contest_id: Option<i64>,
 }
 
 #[derive(Debug, Serialize)]
