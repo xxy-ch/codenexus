@@ -5,8 +5,8 @@
 //! Per D-12: POST /dlq/:id/retry re-enqueues item to original stream.
 //! Per D-13: DELETE /dlq/:id permanently removes entry.
 //!
-//! All endpoints are protected by the existing auth+tenant middleware layer
-//! that wraps the protected_router. Only authenticated admin users can access them.
+//! All endpoints require admin or root role via AuthExtractor + ensure_admin.
+//! Non-admin authenticated users receive 403 Forbidden.
 
 use api_infra::error::AppError;
 use api_infra::state::AppState;
@@ -15,7 +15,18 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 
+use crate::middleware::auth::AuthExtractor;
+
 use super::service::JudgeMonitorService;
+
+/// Verify that the requesting user has admin or root role.
+/// All /admin/judge/* endpoints require elevated privileges.
+fn ensure_admin(role: &str) -> Result<(), AppError> {
+    if role != "admin" && role != "root" {
+        return Err(AppError::Auth("Admin access required".into()));
+    }
+    Ok(())
+}
 
 /// Build the judge monitor router with status and DLQ management endpoints.
 pub fn judge_monitor_router() -> axum::Router<AppState> {
@@ -37,7 +48,9 @@ struct DlqQuery {
 /// Per D-09: Returns queue depths, active workers, average wait time, circuit breaker states.
 async fn get_judge_status(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
 ) -> Result<impl IntoResponse, AppError> {
+    ensure_admin(&claims.role)?;
     let redis_pool = state
         .redis_pool
         .as_ref()
@@ -93,8 +106,10 @@ async fn get_judge_status(
 /// Per D-11: Lists DLQ entries with optional pagination.
 async fn list_dlq(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Query(query): Query<DlqQuery>,
 ) -> Result<impl IntoResponse, AppError> {
+    ensure_admin(&claims.role)?;
     let redis_pool = state
         .redis_pool
         .as_ref()
@@ -130,8 +145,10 @@ async fn list_dlq(
 /// Per D-12: Re-enqueues DLQ entry to its original stream and removes it from DLQ.
 async fn retry_dlq(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
+    ensure_admin(&claims.role)?;
     let redis_pool = state
         .redis_pool
         .as_ref()
@@ -153,8 +170,10 @@ async fn retry_dlq(
 /// Per D-13: Permanently removes a DLQ entry.
 async fn delete_dlq(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(id): Path<String>,
 ) -> Result<impl IntoResponse, AppError> {
+    ensure_admin(&claims.role)?;
     let redis_pool = state
         .redis_pool
         .as_ref()
