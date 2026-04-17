@@ -350,7 +350,7 @@ async fn consume_and_process(
     // Process messages concurrently
     let mut handles = Vec::with_capacity(messages.len());
 
-    for (message_id, submission, origin_stream) in messages {
+    for (message_id, submission, origin_stream, school_id) in messages {
         let permit = semaphore.clone().acquire_owned().await?;
         let conn = Arc::clone(conn);
         let group_name = group_name.to_string();
@@ -388,6 +388,7 @@ async fn consume_and_process(
                             &origin_stream,
                             None,
                             &original_msg_json,
+                            school_id,
                         )
                         .await
                         {
@@ -610,6 +611,7 @@ async fn send_result_with_retry_breaker(
     origin_stream: &str,
     submitted_at: Option<&str>,
     original_message: &str,
+    school_id: Option<i64>,
 ) -> Result<DeliveryOutcome> {
     let max_retries: u32 = 3;
     let mut attempt: u32 = 0;
@@ -629,6 +631,7 @@ async fn send_result_with_retry_breaker(
                 Some(origin_stream),
                 submitted_at,
                 Some(original_message),
+                school_id,
             )
             .await
             {
@@ -664,6 +667,7 @@ async fn send_result_with_retry_breaker(
                         Some(origin_stream),
                         submitted_at,
                         Some(original_message),
+                        school_id,
                     )
                     .await
                     {
@@ -726,6 +730,7 @@ async fn send_result_with_retry(
                         result,
                         &e.to_string(),
                         Some("submissions"),
+                        None,
                         None,
                         None,
                     )

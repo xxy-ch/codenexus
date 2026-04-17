@@ -80,7 +80,7 @@ async fn add_message(
 }
 
 /// Sends a submission to the judge queue
-pub async fn queue_submission(pool: &Pool, message: &SubmissionMessage, stream_name: &str) -> Result<String> {
+pub async fn queue_submission(pool: &Pool, message: &SubmissionMessage, stream_name: &str, school_id: i64) -> Result<String> {
     let config = QueueConfig::default();
 
     // Ensure stream exists (ignore error if already exists)
@@ -112,6 +112,7 @@ pub async fn queue_submission(pool: &Pool, message: &SubmissionMessage, stream_n
         ("data".to_string(), message_json),
         ("submitted_at".to_string(), chrono::Utc::now().to_rfc3339()),
         ("source_stream".to_string(), stream_name.to_string()),
+        ("school_id".to_string(), school_id.to_string()),
     ];
 
     let message_id = add_message(pool, stream_name, &fields).await?;

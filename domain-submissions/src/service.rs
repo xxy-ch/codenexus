@@ -450,7 +450,7 @@ impl SubmissionService {
                     None => "submissions",
                 };
 
-                match queue::queue_submission(redis_pool, &message, stream_name).await {
+                match queue::queue_submission(redis_pool, &message, stream_name, school_id).await {
                     Ok(message_id) => {
                         tracing::info!(
                             "Submission {} queued with message ID {}",

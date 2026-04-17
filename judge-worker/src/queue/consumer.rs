@@ -2,13 +2,20 @@ use super::SubmissionMessage;
 use anyhow::{Context, Result};
 use redis::aio::MultiplexedConnection;
 
+/// Parsed result from consuming a submission from a Redis stream.
+pub struct ConsumedMessage {
+    pub message_id: String,
+    pub submission: SubmissionMessage,
+    pub school_id: Option<i64>,
+}
+
 pub async fn consume_submission(
     conn: &mut MultiplexedConnection,
     stream_name: &str,
     group_name: &str,
     consumer_name: &str,
     block_ms: Option<u64>,
-) -> Result<Vec<(String, SubmissionMessage)>> {
+) -> Result<Vec<ConsumedMessage>> {
     let mut cmd = redis::cmd("XREADGROUP");
     cmd.arg("GROUP")
         .arg(group_name)
@@ -42,7 +49,19 @@ pub async fn consume_submission(
                 .context("Failed to decode Redis stream payload")?;
             let submission: SubmissionMessage =
                 serde_json::from_str(&data_json).context("Failed to parse submission message")?;
-            messages.push((message_id, submission));
+
+            // Extract school_id for DLQ tenant isolation
+            let school_id = stream_entry
+                .map
+                .get("school_id")
+                .and_then(|v| redis::from_redis_value::<String>(v).ok())
+                .and_then(|s| s.parse::<i64>().ok());
+
+            messages.push(ConsumedMessage {
+                message_id,
+                submission,
+                school_id,
+            });
         }
     }
 
@@ -92,21 +111,22 @@ pub async fn ensure_consumer_group(
 /// Dual-stream priority consumer: drains contest stream first (non-blocking),
 /// then falls back to normal stream (5s blocking read).
 ///
-/// Returns tuples of (message_id, SubmissionMessage, origin_stream_name).
+/// Returns tuples of (message_id, SubmissionMessage, origin_stream_name, school_id).
 /// The origin stream name is needed for correct ACK (per Pitfall 3 in RESEARCH.md).
+/// The school_id is needed for DLQ tenant isolation.
 pub async fn consume_priority(
     conn: &mut MultiplexedConnection,
     contest_stream: &str,
     normal_stream: &str,
     group_name: &str,
     consumer_name: &str,
-) -> Result<Vec<(String, SubmissionMessage, String)>> {
+) -> Result<Vec<(String, SubmissionMessage, String, Option<i64>)>> {
     // Try contest stream first (non-blocking, per D-03)
     let contest_msgs = consume_submission(conn, contest_stream, group_name, consumer_name, None).await?;
     if !contest_msgs.is_empty() {
         return Ok(contest_msgs
             .into_iter()
-            .map(|(id, msg)| (id, msg, contest_stream.to_string()))
+            .map(|m| (m.message_id, m.submission, contest_stream.to_string(), m.school_id))
             .collect());
     }
     // Fall back to normal stream (5s block, same as current)
@@ -120,7 +140,7 @@ pub async fn consume_priority(
     .await?;
     Ok(normal_msgs
         .into_iter()
-        .map(|(id, msg)| (id, msg, normal_stream.to_string()))
+        .map(|m| (m.message_id, m.submission, normal_stream.to_string(), m.school_id))
         .collect())
 }
 

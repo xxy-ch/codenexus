@@ -9,6 +9,8 @@ const DLQ_STREAM: &str = "submissions:dlq";
 /// Stores both `result_json` (for admin inspection) and `original_message` (serialized
 /// SubmissionMessage, for safe re-enqueue via retry endpoint). Without `original_message`,
 /// the retry endpoint cannot reconstruct a valid worker-consumable message.
+///
+/// `school_id` is stored for tenant isolation in DLQ management endpoints.
 pub async fn write_to_dlq(
     conn: &mut MultiplexedConnection,
     result: &crate::queue::JudgeResult,
@@ -16,11 +18,12 @@ pub async fn write_to_dlq(
     source_stream: Option<&str>,
     submitted_at: Option<&str>,
     original_message: Option<&str>,
+    school_id: Option<i64>,
 ) -> Result<()> {
     let result_json =
         serde_json::to_string(result).context("Failed to serialize judge result for DLQ")?;
 
-    let fields = &[
+    let mut fields_vec = vec![
         ("submission_id", result.submission_id.to_string()),
         ("result_json", result_json),
         ("error_reason", error_reason.to_string()),
@@ -30,8 +33,27 @@ pub async fn write_to_dlq(
         ("original_message", original_message.unwrap_or("").to_string()),
     ];
 
+    // Include school_id for tenant isolation if available
+    if let Some(sid) = school_id {
+        fields_vec.push(("school_id", sid.to_string()));
+    }
+
+    let fields: Vec<(&str, String)> = fields_vec;
+
+    // Build XADD command with all field key-value pairs
+    let mut xadd_args: Vec<String> = Vec::with_capacity(fields.len() * 2);
+    for (key, value) in &fields {
+        xadd_args.push(key.to_string());
+        xadd_args.push(value.clone());
+    }
+
     let mut pipe = redis::pipe();
-    pipe.cmd("XADD").arg(DLQ_STREAM).arg("*").arg(fields);
+    let mut cmd = redis::cmd("XADD");
+    cmd.arg(DLQ_STREAM).arg("*");
+    for arg in &xadd_args {
+        cmd.arg(arg);
+    }
+    pipe.add_command(cmd);
 
     pipe.query_async::<()>(conn)
         .await
