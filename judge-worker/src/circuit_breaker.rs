@@ -30,6 +30,7 @@ pub enum BreakerState {
 pub struct CircuitBreaker {
     failure_count: AtomicUsize,
     is_open: AtomicBool,
+    half_open_in_progress: AtomicBool,
     last_failure_time: Mutex<Option<Instant>>,
     failure_threshold: usize,
     half_open_timeout_secs: u64,
@@ -44,6 +45,7 @@ impl CircuitBreaker {
         Self {
             failure_count: AtomicUsize::new(0),
             is_open: AtomicBool::new(false),
+            half_open_in_progress: AtomicBool::new(false),
             last_failure_time: Mutex::new(None),
             failure_threshold,
             half_open_timeout_secs,
@@ -57,8 +59,13 @@ impl CircuitBreaker {
     /// - HalfOpen: true (probing)
     pub fn allow_request(&self) -> bool {
         if !self.is_open.load(Ordering::Relaxed) {
-            // Closed or HalfOpen (is_open = false for both)
-            return true;
+            // Closed or HalfOpen (is_open = false for both).
+            // If in HalfOpen, check if a probe is already in flight.
+            if self.half_open_in_progress.load(Ordering::Relaxed) {
+                // A probe is already in flight -- reject additional requests
+                return false;
+            }
+            return true; // Closed state or first HalfOpen probe
         }
 
         // Open state -- check if enough time has elapsed for half-open
@@ -66,9 +73,15 @@ impl CircuitBreaker {
             if let Some(last) = *guard {
                 let elapsed = last.elapsed().as_secs();
                 if elapsed >= self.half_open_timeout_secs {
-                    // Transition to HalfOpen
-                    self.is_open.store(false, Ordering::Relaxed);
-                    return true;
+                    // Transition to HalfOpen -- only one caller wins the race
+                    let won = self.half_open_in_progress.compare_exchange(
+                        false, true, Ordering::Relaxed, Ordering::Relaxed
+                    ).is_ok();
+                    if won {
+                        self.is_open.store(false, Ordering::Relaxed);
+                        return true;
+                    }
+                    return false; // Another caller already probing
                 }
             }
         }
@@ -77,10 +90,14 @@ impl CircuitBreaker {
         false
     }
 
-    /// Record a successful call. Resets failure count and closes the breaker.
+    /// Record a successful call. Resets failure count, closes the breaker, clears half-open gate.
     pub fn record_success(&self) {
         self.failure_count.store(0, Ordering::Relaxed);
         self.is_open.store(false, Ordering::Relaxed);
+        self.half_open_in_progress.store(false, Ordering::Relaxed);
+        if let Ok(mut guard) = self.last_failure_time.lock() {
+            *guard = None;
+        }
     }
 
     /// Record a failed call. Opens the breaker once the threshold is reached.
@@ -88,6 +105,7 @@ impl CircuitBreaker {
         let count = self.failure_count.fetch_add(1, Ordering::Relaxed) + 1;
         if count >= self.failure_threshold {
             self.is_open.store(true, Ordering::Relaxed);
+            self.half_open_in_progress.store(false, Ordering::Relaxed);
             if let Ok(mut guard) = self.last_failure_time.lock() {
                 *guard = Some(Instant::now());
             }
@@ -96,18 +114,12 @@ impl CircuitBreaker {
 
     /// Read the current state for monitoring / heartbeat reporting.
     pub fn state(&self) -> BreakerState {
-        if !self.is_open.load(Ordering::Relaxed) {
-            // Could be Closed or HalfOpen. Distinguish by checking failure count
-            // and last_failure_time. If we were ever opened (last_failure_time set)
-            // and is_open is now false, we are in HalfOpen.
-            if let Ok(guard) = self.last_failure_time.lock() {
-                if guard.is_some() && self.failure_count.load(Ordering::Relaxed) > 0 {
-                    return BreakerState::HalfOpen;
-                }
-            }
-            BreakerState::Closed
-        } else {
+        if self.is_open.load(Ordering::Relaxed) {
             BreakerState::Open
+        } else if self.half_open_in_progress.load(Ordering::Relaxed) {
+            BreakerState::HalfOpen
+        } else {
+            BreakerState::Closed
         }
     }
 

@@ -111,7 +111,7 @@ async fn main() -> Result<()> {
 
     // Spawn heartbeat background task (per D-08, D-10)
     let worker_secret =
-        env::var("WORKER_SECRET").unwrap_or_else(|_| "default_worker_secret_change_me".to_string());
+        env::var("WORKER_SECRET").unwrap_or_else(|_| "dev-only-insecure-worker-secret-do-not-use-in-production".to_string());
     let _heartbeat_handle = heartbeat::spawn_heartbeat_task(
         api_url.clone(),
         worker_secret,

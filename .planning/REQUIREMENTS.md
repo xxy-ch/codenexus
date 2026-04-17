@@ -62,9 +62,9 @@
 ### Judge Concurrency
 
 - [x] **JCON-01**: Priority submission queue — contest submissions routed to `submissions:contest` Redis stream with higher priority; workers consume from contest stream first, then normal stream
-- [ ] **JCON-02**: Queue monitoring API endpoint — returns current queue depth (contest + normal), active judge count, average wait time
+- [x] **JCON-02**: Queue monitoring API endpoint — returns current queue depth (contest + normal), active judge count, average wait time
 - [x] **JCON-03**: Configurable worker concurrency — max concurrent judgements per worker configurable via environment variable
-- [ ] **JCON-04**: Judge Worker health reporting — workers periodically report alive status, consumption progress, and queue lag to API endpoint
+- [x] **JCON-04**: Judge Worker health reporting — workers periodically report alive status, consumption progress, and queue lag to API endpoint
 
 ### Fault Tolerance
 
@@ -160,9 +160,9 @@
 | IMEX-04 | Phase 8: Import/Export | Complete |
 | IMEX-05 | Phase 8: Import/Export | Complete |
 | JCON-01 | Phase 9: Judge + FT | Complete |
-| JCON-02 | Phase 9: Judge + FT | Pending |
+| JCON-02 | Phase 9: Judge + FT | Complete |
 | JCON-03 | Phase 9: Judge + FT | Complete |
-| JCON-04 | Phase 9: Judge + FT | Pending |
+| JCON-04 | Phase 9: Judge + FT | Complete |
 | FTOL-01 | Phase 9: Judge + FT | Complete |
 | FTOL-02 | Phase 9: Judge + FT | Complete |
 | FTOL-03 | Phase 9: Judge + FT | Complete |
