@@ -8,6 +8,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[allow(dead_code)]
 mod compiler;
+mod circuit_breaker;
 #[allow(dead_code)]
 mod db;
 mod processor;
