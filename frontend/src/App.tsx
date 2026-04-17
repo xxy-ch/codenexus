@@ -55,6 +55,7 @@ const SimilarityScanConfig = lazyNamed(() => import('./pages/admin/SimilaritySca
 const PlagiarismReportList = lazyNamed(() => import('./pages/admin/PlagiarismReportList'), 'PlagiarismReportList')
 const PlagiarismReportDetail = lazyNamed(() => import('./pages/admin/PlagiarismReportDetail'), 'PlagiarismReportDetail')
 const BatchOperations = lazyNamed(() => import('./pages/admin/BatchOperations'), 'BatchOperations')
+const JudgeQueue = lazyNamed(() => import('./pages/admin/JudgeQueue'), 'JudgeQueue')
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -161,6 +162,7 @@ function App() {
             <Route path="users" element={renderLazy(UserManagement)} />
             <Route path="problems" element={renderLazy(ProblemManagement)} />
             <Route path="judge-settings" element={renderLazy(JudgeSettings)} />
+            <Route path="judge-queue" element={renderLazy(JudgeQueue)} />
             <Route path="problem-content" element={renderLazy(ProblemContentConfig)} />
             {FEATURE_FLAGS.plagiarism && (
               <Route path="similarity-scan" element={renderLazy(SimilarityScanConfig)} />

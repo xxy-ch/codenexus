@@ -10,6 +10,7 @@ export function AdminLayout() {
     { name: '用户管理', href: '/admin/users', icon: 'group' },
     { name: '题目管理', href: '/admin/problems', icon: 'library_books' },
     { name: '判题设置', href: '/admin/judge-settings', icon: 'tune' },
+    { name: '判题队列', href: '/admin/judge-queue', icon: 'dns' },
     { name: '题面配置', href: '/admin/problem-content', icon: 'edit_document' },
     ...(FEATURE_FLAGS.plagiarism
       ? [
