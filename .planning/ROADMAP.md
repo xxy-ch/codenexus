@@ -1,7 +1,7 @@
 # Roadmap: AlgoMaster Online Judge Modernization
 
 **Created:** 2026-04-13
-**Revised:** 2026-04-17 (Phase 1 + 8 verified, Phase 9 planned)
+**Revised:** 2026-04-17 (Phase 10 planned)
 **Phases:** 10
 **v1 Requirements:** 43 (all mapped)
 
@@ -266,6 +266,15 @@ Plans:
 - MIGR-05: Blog migration — migrate UOJ blog posts to AlgoMaster blog_* tables
 - MIGR-06: Migration CLI tool — standalone binary, reads UOJ MySQL dump, writes to PostgreSQL, idempotent
 
+**Plans:** 5 plans in 4 waves
+
+Plans:
+- [ ] 10-01-PLAN.md — migration-tool crate shell + CLI + SQL parser + UOJ models (Wave 1)
+- [ ] 10-02-PLAN.md — ID mapping + mapper + password prefix + org/user migration (Wave 2)
+- [ ] 10-03-PLAN.md — Problem + test cases + submission + contest migration (Wave 3)
+- [ ] 10-04-PLAN.md — Blog + likes + messages migration (Wave 3, parallel with 03)
+- [ ] 10-05-PLAN.md — Production: domain-users MD5-to-bcrypt transparent login hook (Wave 4)
+
 **Success Criteria:**
 1. Migration CLI tool compiles and runs against the UOJ MySQL dump at `references/app_uoj233.sql`
 2. Migrated users exist in PostgreSQL with correct roles and default organization assignment
@@ -335,4 +344,4 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 
 ---
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-17 Phase 9 complete*
+*Last updated: 2026-04-17 Phase 10 planned*
