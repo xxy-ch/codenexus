@@ -90,6 +90,7 @@ impl SubmissionService {
             submission.id,
             req.problem_id,
             user_id,
+            school_id,
             &req.code,
             normalized_language,
             req.contest_id,
@@ -392,6 +393,7 @@ impl SubmissionService {
         submission_id: i64,
         problem_id: i64,
         user_id: Uuid,
+        school_id: i64,
         code: &str,
         language: &str,
         contest_id: Option<i64>,
@@ -423,13 +425,23 @@ impl SubmissionService {
                     memory_limit_mb: ((memory_limit_kb as u64) / 1024).max(1),
                 };
 
-                // Determine target stream based on contest_id and contest active status (T-09-03)
+                // Determine target stream based on contest_id, participant registration, and tenant ownership (T-09-03, T-09-06-01, T-09-06-02)
                 let stream_name = match contest_id {
                     Some(cid) => {
                         let contest_active = sqlx::query_scalar::<_, bool>(
-                            "SELECT EXISTS(SELECT 1 FROM contests WHERE id = $1 AND start_time <= NOW() AND end_time >= NOW())"
+                            "SELECT EXISTS(
+                                SELECT 1 FROM contest_participants cp
+                                JOIN contests c ON c.id = cp.contest_id
+                                WHERE cp.contest_id = $1
+                                  AND cp.user_id = $2
+                                  AND c.organization_id = $3
+                                  AND c.start_time <= NOW()
+                                  AND c.end_time >= NOW()
+                            )"
                         )
                         .bind(cid)
+                        .bind(user_id)
+                        .bind(school_id)
                         .fetch_one(&self.pool)
                         .await
                         .unwrap_or(false);
