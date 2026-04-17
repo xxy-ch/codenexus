@@ -243,7 +243,7 @@ Plans:
 **Plans:** 4 plans in 3 waves
 
 Plans:
-- [ ] 09-01-PLAN.md — Priority queue + configurable concurrency + circuit breaker + retry (Wave 1)
+- [x] 09-01-PLAN.md — Priority queue + configurable concurrency + circuit breaker + retry (Wave 1)
 - [ ] 09-02-PLAN.md — API queue routing + DLQ metadata (Wave 1)
 - [ ] 09-03-PLAN.md — Worker heartbeat + admin monitoring API + DLQ endpoints (Wave 2)
 - [ ] 09-04-PLAN.md — Frontend admin Judge Queue dashboard (Wave 3)

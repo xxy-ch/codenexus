@@ -61,15 +61,15 @@
 
 ### Judge Concurrency
 
-- [ ] **JCON-01**: Priority submission queue — contest submissions routed to `submissions:contest` Redis stream with higher priority; workers consume from contest stream first, then normal stream
+- [x] **JCON-01**: Priority submission queue — contest submissions routed to `submissions:contest` Redis stream with higher priority; workers consume from contest stream first, then normal stream
 - [ ] **JCON-02**: Queue monitoring API endpoint — returns current queue depth (contest + normal), active judge count, average wait time
-- [ ] **JCON-03**: Configurable worker concurrency — max concurrent judgements per worker configurable via environment variable
+- [x] **JCON-03**: Configurable worker concurrency — max concurrent judgements per worker configurable via environment variable
 - [ ] **JCON-04**: Judge Worker health reporting — workers periodically report alive status, consumption progress, and queue lag to API endpoint
 
 ### Fault Tolerance
 
-- [ ] **FTOL-01**: Circuit breaker for external dependencies (Redis, judge worker callback) — open after N consecutive failures, half-open after timeout, close on success
-- [ ] **FTOL-02**: Configurable retry policies — exponential backoff with jitter for all retry-able operations; max retries configurable
+- [x] **FTOL-01**: Circuit breaker for external dependencies (Redis, judge worker callback) — open after N consecutive failures, half-open after timeout, close on success
+- [x] **FTOL-02**: Configurable retry policies — exponential backoff with jitter for all retry-able operations; max retries configurable
 - [ ] **FTOL-03**: DLQ monitoring — API endpoint listing dead letter queue items with metadata; manual retry capability for individual items
 
 ### Data Migration
@@ -159,12 +159,12 @@
 | IMEX-03 | Phase 8: Import/Export | Complete |
 | IMEX-04 | Phase 8: Import/Export | Complete |
 | IMEX-05 | Phase 8: Import/Export | Complete |
-| JCON-01 | Phase 9: Judge + FT | Pending |
+| JCON-01 | Phase 9: Judge + FT | Complete |
 | JCON-02 | Phase 9: Judge + FT | Pending |
-| JCON-03 | Phase 9: Judge + FT | Pending |
+| JCON-03 | Phase 9: Judge + FT | Complete |
 | JCON-04 | Phase 9: Judge + FT | Pending |
-| FTOL-01 | Phase 9: Judge + FT | Pending |
-| FTOL-02 | Phase 9: Judge + FT | Pending |
+| FTOL-01 | Phase 9: Judge + FT | Complete |
+| FTOL-02 | Phase 9: Judge + FT | Complete |
 | FTOL-03 | Phase 9: Judge + FT | Pending |
 | MIGR-01 | Phase 10: Migration + Delivery | Pending |
 | MIGR-02 | Phase 10: Migration + Delivery | Pending |
