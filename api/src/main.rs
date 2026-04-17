@@ -1,6 +1,7 @@
 mod auth;
 mod db;
 mod error;
+mod judge_monitor;
 mod middleware;
 mod notifications;
 mod plagiarism;
@@ -183,6 +184,7 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .nest("/messages", domain_community::messages_router())
         .nest("/imex", domain_imex::imex_router())
         .nest("/admin/plagiarism", plagiarism::plagiarism_router())
+        .nest("/admin/judge", judge_monitor::judge_monitor_router())
         // Apply auth/tenant middleware only to protected routes
         .route_layer(axum::middleware::from_fn(
             middleware::tenant::tenant_middleware,
