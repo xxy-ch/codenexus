@@ -6,6 +6,7 @@ mod notifications;
 mod plagiarism;
 mod redis;
 mod websocket;
+mod worker_heartbeat;
 
 use api_infra::state::AppState;
 use api_infra::metrics::setup_metrics_recorder;
@@ -163,7 +164,9 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .route("/auth/register", post(auth::register))
         .route("/auth/logout", post(auth::logout))
         // WebSocket route (public, auth handled in handler)
-        .route("/ws", get(websocket::handler::websocket_upgrade_handler));
+        .route("/ws", get(websocket::handler::websocket_upgrade_handler))
+        // Internal worker heartbeat endpoint (auth via X-Worker-Secret, not JWT)
+        .route("/internal/worker/heartbeat", post(worker_heartbeat::handle_heartbeat));
 
     let protected_router = Router::new()
         // Protected routes

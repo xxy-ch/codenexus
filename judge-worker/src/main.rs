@@ -2,6 +2,7 @@ use anyhow::Result;
 use redis::Client;
 use std::env;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use tokio::sync::Semaphore;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -11,6 +12,7 @@ mod compiler;
 mod circuit_breaker;
 #[allow(dead_code)]
 mod db;
+mod heartbeat;
 mod processor;
 #[allow(dead_code)]
 mod queue;
@@ -71,6 +73,11 @@ async fn main() -> Result<()> {
     let redis_breaker = Arc::new(CircuitBreaker::new(5, 30));
     let api_breaker = Arc::new(CircuitBreaker::new(5, 30));
 
+    // Shared atomic counters for heartbeat reporting (per D-08, D-10)
+    let active_count = Arc::new(AtomicUsize::new(0));
+    let total_processed = Arc::new(AtomicUsize::new(0));
+    let avg_wait_ms = Arc::new(AtomicUsize::new(0));
+
     // Recover pending submissions from crashed workers on both streams
     let recovery_idle_ms: u64 = env::var("RECOVERY_IDLE_MS")
         .unwrap_or_else(|_| "300000".to_string())
@@ -102,6 +109,20 @@ async fn main() -> Result<()> {
     info!("Judge worker ready with consumer name: {}", consumer_name);
     info!("Connected to API at: {}", api_url);
 
+    // Spawn heartbeat background task (per D-08, D-10)
+    let worker_secret =
+        env::var("WORKER_SECRET").unwrap_or_else(|_| "default_worker_secret_change_me".to_string());
+    let _heartbeat_handle = heartbeat::spawn_heartbeat_task(
+        api_url.clone(),
+        worker_secret,
+        consumer_name.clone(),
+        active_count.clone(),
+        total_processed.clone(),
+        avg_wait_ms.clone(),
+        redis_breaker.clone(),
+        api_breaker.clone(),
+    );
+
     // Enter main processing loop
     run_processing_loop(
         conn,
@@ -113,6 +134,9 @@ async fn main() -> Result<()> {
         max_concurrent,
         redis_breaker,
         api_breaker,
+        active_count,
+        total_processed,
+        avg_wait_ms,
     )
     .await
 }
@@ -201,6 +225,27 @@ async fn recover_stream(
     }
 }
 
+/// RAII guard that increments active_count on creation and decrements on drop.
+/// Used to track the number of concurrently active judging tasks for heartbeat reporting.
+struct ActiveGuard {
+    active_count: Arc<AtomicUsize>,
+}
+
+impl ActiveGuard {
+    fn new(active_count: &Arc<AtomicUsize>) -> Self {
+        active_count.fetch_add(1, Ordering::Relaxed);
+        Self {
+            active_count: Arc::clone(active_count),
+        }
+    }
+}
+
+impl Drop for ActiveGuard {
+    fn drop(&mut self) {
+        self.active_count.fetch_sub(1, Ordering::Relaxed);
+    }
+}
+
 async fn run_processing_loop(
     conn: Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
     stream_name: &str,
@@ -211,6 +256,9 @@ async fn run_processing_loop(
     max_concurrent: usize,
     redis_breaker: Arc<CircuitBreaker>,
     api_breaker: Arc<CircuitBreaker>,
+    active_count: Arc<AtomicUsize>,
+    total_processed: Arc<AtomicUsize>,
+    avg_wait_ms: Arc<AtomicUsize>,
 ) -> Result<()> {
     info!("Starting main processing loop (max concurrent: {})", max_concurrent);
 
@@ -228,6 +276,9 @@ async fn run_processing_loop(
             &semaphore,
             &redis_breaker,
             &api_breaker,
+            &active_count,
+            &total_processed,
+            &avg_wait_ms,
         )
         .await
         {
@@ -260,6 +311,9 @@ async fn consume_and_process(
     semaphore: &Arc<Semaphore>,
     redis_breaker: &Arc<CircuitBreaker>,
     api_breaker: &Arc<CircuitBreaker>,
+    active_count: &Arc<AtomicUsize>,
+    total_processed: &Arc<AtomicUsize>,
+    avg_wait_ms: &Arc<AtomicUsize>,
 ) -> Result<usize> {
     // Use dual-stream priority consumer (contest first, then normal)
     let messages = {
@@ -303,9 +357,14 @@ async fn consume_and_process(
         let api_url = api_url.to_string();
         let redis_breaker = Arc::clone(redis_breaker);
         let api_breaker = Arc::clone(api_breaker);
+        let active_count = Arc::clone(active_count);
+        let total_processed = Arc::clone(total_processed);
+        let avg_wait_ms = Arc::clone(avg_wait_ms);
 
         let handle = tokio::spawn(async move {
             let _permit = permit;
+            let _guard = ActiveGuard::new(&active_count);
+            let start = std::time::Instant::now();
 
             info!(
                 "Processing submission {} (message ID: {}, stream: {})",
@@ -351,6 +410,13 @@ async fn consume_and_process(
                                     "Submission {} completed and acknowledged",
                                     submission.submission_id
                                 );
+                                // Update heartbeat metrics
+                                total_processed.fetch_add(1, Ordering::Relaxed);
+                                let elapsed_ms = start.elapsed().as_millis() as usize;
+                                // Simple exponential moving average for avg_wait_ms
+                                let prev = avg_wait_ms.load(Ordering::Relaxed);
+                                let new_avg = if prev == 0 { elapsed_ms } else { (prev * 7 + elapsed_ms * 3) / 10 };
+                                avg_wait_ms.store(new_avg, Ordering::Relaxed);
                                 true
                             }
                             Err(_) => false,
