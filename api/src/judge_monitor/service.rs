@@ -4,7 +4,7 @@
 //! XRANGE/XADD/XDEL for DLQ management.
 //!
 //! Tenant isolation: All DLQ operations filter by school_id.
-//! Legacy entries (pre-fix, no school_id field) are visible to all admins.
+//! Legacy entries (pre-fix, no school_id field) are blocked — not visible, deletable, or retriable.
 //! Atomic retry: Lua script ensures concurrent retries produce exactly one re-enqueue.
 
 use anyhow::Result;
@@ -99,7 +99,7 @@ impl JudgeMonitorService {
     /// List DLQ entries using XRANGE with pagination, filtered by tenant.
     ///
     /// Per D-11: Returns entry ID and field map for each DLQ item.
-    /// Legacy entries without school_id are visible to all tenants.
+    /// Legacy entries without school_id are filtered out.
     pub async fn list_dlq_entries(
         redis_pool: &deadpool_redis::Pool,
         count: i64,
@@ -118,13 +118,13 @@ impl JudgeMonitorService {
             .await
             .map_err(|e| anyhow::anyhow!("XRANGE on DLQ failed: {}", e))?;
 
-        // Filter by tenant: entries with matching school_id, or legacy entries without school_id
+        // Filter by tenant: only entries with matching school_id are returned
         let filtered: Vec<_> = entries
             .into_iter()
             .filter(|(_, fields)| {
                 match fields.get("school_id").map(|s| s.parse::<i64>()) {
                     Some(Ok(sid)) => sid == school_id,
-                    _ => true, // Legacy entries without school_id are visible to all admins
+                    _ => false, // Legacy entries without school_id are not shown
                 }
             })
             .collect();
@@ -165,14 +165,18 @@ impl JudgeMonitorService {
             if data == '' then
                 return {err='Missing original_message -- cannot retry'}
             end
-            if entry_school_id ~= '' and entry_school_id ~= ARGV[2] then
+            if entry_school_id == '' then
+                return {err='Legacy DLQ entry without tenant information cannot be retried'}
+            end
+            if entry_school_id ~= ARGV[2] then
                 return {err='DLQ entry does not belong to your organization'}
             end
             local new_id = redis.call('XADD', source_stream, '*',
                 'submission_id', submission_id,
                 'data', data,
                 'source_stream', source_stream,
-                'submitted_at', submitted_at)
+                'submitted_at', submitted_at,
+                'school_id', entry_school_id)
             redis.call('XDEL', KEYS[1], ARGV[1])
             return {source_stream, new_id}
         "#;
@@ -212,12 +216,18 @@ impl JudgeMonitorService {
             .next()
             .ok_or_else(|| anyhow::anyhow!("DLQ entry not found"))?;
 
-        // Validate tenant: legacy entries without school_id are deletable by any admin
+        // Validate tenant: reject entries without school_id (legacy) and mismatched tenants
         let entry_school_id = fields.get("school_id").and_then(|s| s.parse::<i64>().ok());
-        if let Some(sid) = entry_school_id {
-            if sid != school_id {
+        match entry_school_id {
+            Some(sid) if sid == school_id => { /* tenant match, proceed */ }
+            Some(_) => {
                 return Err(anyhow::anyhow!(
                     "DLQ entry does not belong to your organization"
+                ));
+            }
+            None => {
+                return Err(anyhow::anyhow!(
+                    "Legacy DLQ entry without tenant information cannot be deleted"
                 ));
             }
         }

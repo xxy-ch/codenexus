@@ -143,34 +143,41 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
             .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
     };
 
-    // Rate limit: 30 requests per minute per IP (covers all endpoints including internal worker)
-    let governor_config = GovernorConfigBuilder::default()
-        .per_second(1)
-        .burst_size(30)
-        .finish()
-        .unwrap();
+    // Rate limit: 30 requests per minute per IP (user-facing endpoints only)
+    let governor_config = std::sync::Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(1)
+            .burst_size(30)
+            .finish()
+            .unwrap(),
+    );
 
-    let public_router = Router::new()
-        // New Kubernetes-style health endpoints
+    // Unrestricted endpoints: health probes, metrics, worker heartbeat
+    // These must not be rate-limited to avoid breaking infrastructure
+    let unrestricted_router = Router::new()
+        // Kubernetes-style health endpoints
         .route("/health/live", get(health_live))
         .route("/health/ready", get(health_ready))
-        // Backward-compatible redirects for old endpoints
+        // Backward-compatible redirects
         .route("/health", get(health_redirect))
         .route("/status", get(status_redirect))
-        // Prometheus metrics endpoint (public, no auth required)
+        // Prometheus metrics endpoint
         .route("/metrics", get(metrics_handler))
-        // Public auth routes
+        // Internal worker heartbeat (auth via X-Worker-Secret, not JWT)
+        .route("/internal/worker/heartbeat", post(worker_heartbeat::handle_heartbeat));
+
+    // Rate-limited public endpoints (auth, websocket)
+    let rate_limited_public = Router::new()
         .route("/auth/login", post(auth::login))
         .route("/auth/refresh", post(auth::refresh))
         .route("/auth/register", post(auth::register))
         .route("/auth/logout", post(auth::logout))
-        // WebSocket route (public, auth handled in handler)
         .route("/ws", get(websocket::handler::websocket_upgrade_handler))
-        // Internal worker heartbeat endpoint (auth via X-Worker-Secret, not JWT)
-        .route("/internal/worker/heartbeat", post(worker_heartbeat::handle_heartbeat));
+        .layer(GovernorLayer {
+            config: governor_config.clone(),
+        });
 
     let protected_router = Router::new()
-        // Protected routes
         .nest("/users", domain_users::user_router())
         .nest("/problems", domain_problems::problems_router())
         .nest("/contests", domain_contests::contests_router())
@@ -185,29 +192,28 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .nest("/imex", domain_imex::imex_router())
         .nest("/admin/plagiarism", plagiarism::plagiarism_router())
         .nest("/admin/judge", judge_monitor::judge_monitor_router())
-        // Apply auth/tenant middleware only to protected routes
         .route_layer(axum::middleware::from_fn(
             middleware::tenant::tenant_middleware,
         ))
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
             middleware::auth::auth_middleware,
-        ));
+        ))
+        .layer(GovernorLayer {
+            config: governor_config,
+        });
 
-    // Layer ordering (outermost to innermost): CORS -> rate limit -> request id -> metrics -> auth -> tenant -> handler
-    public_router
+    // Layer ordering: CORS -> request id -> metrics -> handler
+    // Rate limiting applied per-router above (not on unrestricted routes)
+    unrestricted_router
+        .merge(rate_limited_public)
         .merge(protected_router)
-        // Metrics layer: records http_requests_total and http_request_duration_seconds
-        // Skips /metrics endpoint internally to avoid self-referential noise
         .route_layer(axum::middleware::from_fn(
             middleware::metrics::track_metrics,
         ))
         .route_layer(axum::middleware::from_fn(
             middleware::request_id::request_id_middleware,
         ))
-        .layer(GovernorLayer {
-            config: std::sync::Arc::new(governor_config),
-        })
         .layer(cors)
         .with_state(state)
 }

@@ -119,7 +119,7 @@ async fn list_dlq(
     let school_id = claims.school_id;
     let entries = JudgeMonitorService::list_dlq_entries(redis_pool, count, query.start_id.as_deref(), school_id)
         .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+        .map_err(map_dlq_error)?;
 
     let items: Vec<serde_json::Value> = entries
         .into_iter()
@@ -158,7 +158,7 @@ async fn retry_dlq(
     let school_id = claims.school_id;
     let target_stream = JudgeMonitorService::retry_dlq_entry(redis_pool, &id, school_id)
         .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+        .map_err(map_dlq_error)?;
 
     Ok(Json(serde_json::json!({
         "message": "DLQ entry retried",
@@ -184,10 +184,22 @@ async fn delete_dlq(
     let school_id = claims.school_id;
     JudgeMonitorService::delete_dlq_entry(redis_pool, &id, school_id)
         .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+        .map_err(map_dlq_error)?;
 
     Ok(Json(serde_json::json!({
         "message": "DLQ entry discarded",
         "entry_id": id,
     })))
+}
+
+/// Map DLQ service errors to appropriate HTTP status codes.
+fn map_dlq_error(err: anyhow::Error) -> AppError {
+    let msg = err.to_string();
+    if msg.contains("not found") || msg.contains("Legacy DLQ entry") {
+        AppError::NotFound(msg)
+    } else if msg.contains("does not belong") {
+        AppError::Forbidden(msg)
+    } else {
+        AppError::Internal(msg)
+    }
 }
