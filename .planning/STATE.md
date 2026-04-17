@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 10
-status: planning
-last_updated: "2026-04-17T13:09:54.508Z"
+status: context_gathered
+last_updated: "2026-04-17T22:30:00.000Z"
 last_activity: 2026-04-17
 progress:
   total_phases: 10
@@ -16,7 +16,7 @@ progress:
 
 # Project State: AlgoMaster Online Judge
 
-**Status:** Ready to plan
+**Status:** Context gathered, ready to plan
 **Current Phase:** 10
 **Last Activity:** 2026-04-17
 
@@ -32,15 +32,15 @@ progress:
 | 6 | Full CI/CD + Observability | Executed | 3 plans in 2 waves | 100% (3/3 plans) |
 | 7 | Test Coverage + Contest Enhancement | Executing | 7 plans (3 waves) | 57% (4/7 plans) |
 | 8 | Import/Export | Executed | 3 plans | 100% (3/3 plans) |
-| 9 | Judge Concurrency + Fault Tolerance | Executed | 4 plans | 100% (4/4 plans) |
-| 10 | Data Migration + Final Delivery | Not Started | - | 0% |
+| 9 | Judge Concurrency + Fault Tolerance | Executed | 7 plans (4 initial + 3 gap closure) | 100% |
+| 10 | Data Migration + Final Delivery | Context Gathered | - | 0% |
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Reliable, secure code judging with multi-tenancy
-**Current focus:** Phase 09 — judge-concurrency-fault-tolerance
+**Current focus:** Phase 10 — data-migration-final-delivery
 
 ---
 *State initialized: 2026-04-13*
@@ -51,6 +51,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 9 plan 02 executed: 2026-04-17*
 *Phase 9 plan 04 executed: 2026-04-17*
 *Stopped at: Completed 09-04-PLAN.md*
+*Phase 9 gap closure plans 05-07 executed: 2026-04-17*
+*Phase 10 context gathered: 2026-04-17*
 
 ## Decisions
 
@@ -83,6 +85,13 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 09 P03]: DLQ retry reads result_json field (not data) to match Plan 02 write_to_dlq format
 - [Phase 09 P04]: Tab navigation uses simple useState over shadcn Tabs for lighter weight
 - [Phase 09 P04]: contestId extracted from URL params via useParams for contest/standalone dual use
+- [Phase 10]: Test cases sourced from filesystem via --test-case-dir CLI flag (D-10-1)
+- [Phase 10]: Transparent MD5→bcrypt migration with {MD5} prefix marker on first login (D-10-2)
+- [Phase 10]: Full scope: Users, Problems, Submissions, Blogs, Contests, Best AC, Likes, Messages (D-10-3)
+- [Phase 10]: --org-id or --create-default-org CLI flags for organization assignment (D-10-4)
+- [Phase 10]: Persistent migration_mappings table + in-memory HashMap for ID tracking (D-10-5)
+- [Phase 10]: New migration-tool/ workspace crate, standalone binary (D-10-6)
+- [Phase 10]: Skip-if-exists idempotency via mapping table lookup (D-10-7)
 
 ## Performance Metrics
 
