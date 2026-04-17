@@ -539,6 +539,8 @@ async fn send_result_with_retry_breaker(
                 &mut locked_conn,
                 result,
                 "API circuit breaker open",
+                None,
+                None,
             )
             .await
             {
@@ -567,7 +569,7 @@ async fn send_result_with_retry_breaker(
                         max_retries, result.submission_id, e
                     );
                     let mut locked_conn = conn.lock().await;
-                    match queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string()).await
+                    match queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string(), None, None).await
                     {
                         Ok(()) => return Ok(DeliveryOutcome::StoredInDlq),
                         Err(dlq_err) => {
@@ -617,7 +619,7 @@ async fn send_result_with_retry(
                         max_retries, result.submission_id, e
                     );
                     let mut locked_conn = conn.lock().await;
-                    match queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string()).await
+                    match queue::dlq::write_to_dlq(&mut locked_conn, result, &e.to_string(), None, None).await
                     {
                         Ok(()) => return Ok(DeliveryOutcome::StoredInDlq),
                         Err(dlq_err) => {

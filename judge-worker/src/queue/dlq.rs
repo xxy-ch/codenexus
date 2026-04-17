@@ -9,6 +9,8 @@ pub async fn write_to_dlq(
     conn: &mut MultiplexedConnection,
     result: &crate::queue::JudgeResult,
     error_reason: &str,
+    source_stream: Option<&str>,
+    submitted_at: Option<&str>,
 ) -> Result<()> {
     let result_json =
         serde_json::to_string(result).context("Failed to serialize judge result for DLQ")?;
@@ -18,6 +20,8 @@ pub async fn write_to_dlq(
         ("result_json", result_json),
         ("error_reason", error_reason.to_string()),
         ("failed_at", chrono::Utc::now().to_rfc3339()),
+        ("source_stream", source_stream.unwrap_or("submissions").to_string()),
+        ("submitted_at", submitted_at.unwrap_or("").to_string()),
     ];
 
     let mut pipe = redis::pipe();
