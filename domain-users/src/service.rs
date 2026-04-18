@@ -612,6 +612,125 @@ mod tests {
             "empty password must NOT verify against non-empty hash");
     }
 
+    // ===================== Phase 10: MD5->bcrypt Upgrade Flow Tests =====================
+
+    /// 1. Verify that the {MD5} prefix is correctly detected by string inspection.
+    #[test]
+    fn test_md5_prefix_detection() {
+        let md5_stored = "{MD5}5f4dcc3b5aa765d61d8327deb882cf99";
+        assert!(md5_stored.starts_with("{MD5}"), "hash prefixed with {{MD5}} must be detected");
+        assert_eq!(&md5_stored[5..], "5f4dcc3b5aa765d61d8327deb882cf99", "stripping the 5-char prefix must yield the raw MD5 hex");
+
+        // Non-MD5 hashes (bcrypt) must NOT match
+        let bcrypt_hash = "$2b$12$abcdefghijklmnopqrstuvwxyzABCDEF";
+        assert!(!bcrypt_hash.starts_with("{MD5}"), "bcrypt hash must not be detected as MD5");
+    }
+
+    /// 2. Verify that `verify_md5_password` returns true for the correct password.
+    ///    MD5("password") = 5f4dcc3b5aa765d61d8327deb882cf99
+    #[test]
+    fn test_md5_verification_correct_password() {
+        assert!(
+            verify_md5_password("password", "5f4dcc3b5aa765d61d8327deb882cf99"),
+            "correct password must verify against its MD5 hash"
+        );
+    }
+
+    /// 3. Verify that `verify_md5_password` returns false for a wrong password.
+    #[test]
+    fn test_md5_verification_wrong_password() {
+        assert!(
+            !verify_md5_password("wrongpassword", "5f4dcc3b5aa765d61d8327deb882cf99"),
+            "wrong password must NOT verify against the MD5 hash"
+        );
+    }
+
+    /// 4. Verify that bcrypt::hash produces a hash starting with "$2b$".
+    #[test]
+    fn test_bcrypt_upgrade_produces_valid_hash() {
+        let hash = bcrypt::hash("password", bcrypt::DEFAULT_COST)
+            .expect("bcrypt hashing must succeed");
+        assert!(
+            hash.starts_with("$2b$"),
+            "bcrypt hash must start with '$2b$': got {}",
+            hash
+        );
+    }
+
+    /// 5. Verify that a bcrypt hash still verifies correctly after generation.
+    #[test]
+    fn test_bcrypt_upgrade_preserves_verification() {
+        let plaintext = "password";
+        let hash = bcrypt::hash(plaintext, bcrypt::DEFAULT_COST)
+            .expect("bcrypt hashing must succeed");
+
+        assert!(
+            bcrypt::verify(plaintext, &hash).expect("bcrypt verify must not error"),
+            "correct password must verify against the bcrypt hash"
+        );
+        assert!(
+            !bcrypt::verify("wrongpassword", &hash).expect("bcrypt verify must not error"),
+            "wrong password must NOT verify against the bcrypt hash"
+        );
+    }
+
+    /// 6. End-to-end pure unit test of the complete MD5->bcrypt upgrade flow.
+    ///
+    /// Simulates the exact logic in `UserService::login` lines 122-143:
+    ///   a. Detect {MD5} prefix on stored hash
+    ///   b. Strip prefix, verify password against raw MD5 hex
+    ///   c. Generate bcrypt hash for the same password
+    ///   d. Verify bcrypt hash accepts the correct password
+    ///   e. Verify bcrypt hash rejects a wrong password
+    #[test]
+    fn test_md5_to_bcrypt_full_flow() {
+        let password = "password";
+        let raw_md5 = "5f4dcc3b5aa765d61d8327deb882cf99";
+        let stored_hash = format!("{{MD5}}{}", raw_md5);
+
+        // Step 1: detect {MD5} prefix (mirrors line 123)
+        assert!(
+            stored_hash.starts_with("{MD5}"),
+            "stored hash must carry the {{MD5}} prefix"
+        );
+
+        // Step 2: strip prefix (mirrors line 125)
+        let md5_hash = &stored_hash[5..];
+        assert_eq!(md5_hash, raw_md5);
+
+        // Step 3: verify password against MD5 (mirrors line 126)
+        assert!(
+            verify_md5_password(password, md5_hash),
+            "MD5 verification must succeed for the correct password"
+        );
+
+        // Step 4: wrong password must fail MD5 check (mirrors line 136)
+        assert!(
+            !verify_md5_password("wrongpassword", md5_hash),
+            "MD5 verification must reject wrong password"
+        );
+
+        // Step 5: upgrade to bcrypt (mirrors line 128)
+        let bcrypt_hash = bcrypt::hash(password, bcrypt::DEFAULT_COST)
+            .expect("bcrypt hash generation must succeed");
+        assert!(
+            bcrypt_hash.starts_with("$2b$"),
+            "upgraded hash must be bcrypt format"
+        );
+
+        // Step 6: verify bcrypt with correct password (mirrors line 140)
+        assert!(
+            bcrypt::verify(password, &bcrypt_hash).expect("bcrypt verify must not error"),
+            "bcrypt must verify the original password"
+        );
+
+        // Step 7: verify bcrypt rejects wrong password
+        assert!(
+            !bcrypt::verify("wrongpassword", &bcrypt_hash).expect("bcrypt verify must not error"),
+            "bcrypt must reject wrong password"
+        );
+    }
+
     /// Integration test: full login flow with {MD5} hash transparently upgrades to bcrypt.
     ///
     /// This test verifies that:

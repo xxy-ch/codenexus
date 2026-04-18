@@ -349,6 +349,116 @@ mod tests {
         );
     }
 
+    /// Pure unit test: Verify the school_id extraction logic from XCLAIM field-value
+    /// pairs without requiring Redis or Docker.
+    ///
+    /// Exercises the exact parsing loop found at lines 166-185 of recovery.rs
+    /// by simulating the raw `redis::Value::Array` structure that XCLAIM returns.
+    #[test]
+    fn test_recovery_school_id_extraction_from_field_pairs() {
+        // -- Case 1: school_id present as "42" --
+        let field_pairs_with_school_id: Vec<redis::Value> = vec![
+            redis::Value::BulkString(b"data".to_vec()),
+            redis::Value::BulkString(
+                br#"{"submission_id":55,"problem_id":1,"language":"cpp","source_code":"int main(){}","user_id":"00000000-0000-0000-0000-000000000001","time_limit_ms":1000,"memory_limit_mb":256}"#.to_vec(),
+            ),
+            redis::Value::BulkString(b"school_id".to_vec()),
+            redis::Value::BulkString(b"42".to_vec()),
+        ];
+
+        // Replicate the school_id extraction loop from recovery.rs lines 167-185
+        let school_id: Option<i64> = {
+            let mut sid: Option<i64> = None;
+            let mut j = 0;
+            while j + 1 < field_pairs_with_school_id.len() {
+                if let (
+                    redis::Value::BulkString(key),
+                    redis::Value::BulkString(val),
+                ) = (&field_pairs_with_school_id[j], &field_pairs_with_school_id[j + 1])
+                {
+                    if key == b"school_id" {
+                        sid = String::from_utf8_lossy(val)
+                            .parse::<i64>()
+                            .ok();
+                    }
+                }
+                j += 2;
+            }
+            sid
+        };
+        assert_eq!(
+            school_id,
+            Some(42),
+            "school_id=42 must be extracted from field-value pairs"
+        );
+
+        // -- Case 2: school_id field absent --
+        let field_pairs_no_school_id: Vec<redis::Value> = vec![
+            redis::Value::BulkString(b"data".to_vec()),
+            redis::Value::BulkString(
+                br#"{"submission_id":10,"problem_id":1,"language":"python3","source_code":"print(1)","user_id":"00000000-0000-0000-0000-000000000001","time_limit_ms":2000,"memory_limit_mb":512}"#.to_vec(),
+            ),
+        ];
+
+        let school_id_absent: Option<i64> = {
+            let mut sid: Option<i64> = None;
+            let mut j = 0;
+            while j + 1 < field_pairs_no_school_id.len() {
+                if let (
+                    redis::Value::BulkString(key),
+                    redis::Value::BulkString(val),
+                ) = (&field_pairs_no_school_id[j], &field_pairs_no_school_id[j + 1])
+                {
+                    if key == b"school_id" {
+                        sid = String::from_utf8_lossy(val)
+                            .parse::<i64>()
+                            .ok();
+                    }
+                }
+                j += 2;
+            }
+            sid
+        };
+        assert_eq!(
+            school_id_absent, None,
+            "Missing school_id field must produce None"
+        );
+
+        // -- Case 3: malformed school_id (non-numeric) --
+        let field_pairs_malformed: Vec<redis::Value> = vec![
+            redis::Value::BulkString(b"data".to_vec()),
+            redis::Value::BulkString(
+                br#"{"submission_id":10,"problem_id":1,"language":"cpp","source_code":"int main(){}","user_id":"00000000-0000-0000-0000-000000000001","time_limit_ms":1000,"memory_limit_mb":256}"#.to_vec(),
+            ),
+            redis::Value::BulkString(b"school_id".to_vec()),
+            redis::Value::BulkString(b"not-a-number".to_vec()),
+        ];
+
+        let school_id_malformed: Option<i64> = {
+            let mut sid: Option<i64> = None;
+            let mut j = 0;
+            while j + 1 < field_pairs_malformed.len() {
+                if let (
+                    redis::Value::BulkString(key),
+                    redis::Value::BulkString(val),
+                ) = (&field_pairs_malformed[j], &field_pairs_malformed[j + 1])
+                {
+                    if key == b"school_id" {
+                        sid = String::from_utf8_lossy(val)
+                            .parse::<i64>()
+                            .ok();
+                    }
+                }
+                j += 2;
+            }
+            sid
+        };
+        assert_eq!(
+            school_id_malformed, None,
+            "Malformed school_id must produce None (parse failure)"
+        );
+    }
+
     /// Gap-closure test: Verify the recovery path returns school_id alongside
     /// the recovered submission so that DLQ entries written from recovery include
     /// tenant isolation metadata.

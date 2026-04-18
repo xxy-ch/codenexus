@@ -387,4 +387,79 @@ mod tests {
     fn visible_maps_to_public() {
         assert_eq!(map_visibility(false), "public");
     }
+
+    // --- Phase 10 evidence gap: migration_mapping_preserves_critical_fields ---
+
+    #[test]
+    fn test_migration_mapping_preserves_critical_fields() {
+        // 1. map_usergroup_to_role: "U" -> "student"
+        assert_eq!(
+            map_usergroup_to_role("U"),
+            Some("student"),
+            "UOJ usergroup 'U' must map to AlgoMaster role 'student'"
+        );
+
+        // 2. map_usergroup_to_role: "B" -> None (banned users are skipped during migration)
+        assert_eq!(
+            map_usergroup_to_role("B"),
+            None,
+            "UOJ usergroup 'B' (banned) must return None so migration skips it"
+        );
+
+        // 3. generate_synthetic_email: must contain @ sign
+        let email = generate_synthetic_email("testuser");
+        assert!(
+            email.contains('@'),
+            "synthetic email must contain '@': got {email}"
+        );
+        assert!(
+            email.starts_with("testuser@"),
+            "synthetic email must start with the username: got {email}"
+        );
+
+        // 4. map_language: supported and unsupported languages
+        // Supported: C, C++, Python3
+        assert_eq!(map_language("C"), Some("c"), "C must map to 'c'");
+        assert_eq!(
+            map_language("C++"),
+            Some("cpp"),
+            "C++ must map to 'cpp'"
+        );
+        assert_eq!(
+            map_language("C++17"),
+            Some("cpp"),
+            "C++17 must map to 'cpp'"
+        );
+        assert_eq!(
+            map_language("Python3"),
+            Some("python3"),
+            "Python3 must map to 'python3'"
+        );
+
+        // Unsupported: Java, Go, JavaScript -> None (skipped during migration)
+        assert_eq!(
+            map_language("Java8"),
+            None,
+            "Java must return None (not supported)"
+        );
+        assert_eq!(
+            map_language("Go"),
+            None,
+            "Go must return None (not supported)"
+        );
+        assert_eq!(
+            map_language("JavaScript"),
+            None,
+            "JavaScript must return None (not supported)"
+        );
+
+        // 5. map_status_verdict: Accepted and Wrong Answer
+        let (status, verdict) = map_status_verdict(Some("Accepted"));
+        assert_eq!(status, "judged");
+        assert_eq!(verdict, Some("ac"));
+
+        let (status, verdict) = map_status_verdict(Some("Wrong Answer"));
+        assert_eq!(status, "judged");
+        assert_eq!(verdict, Some("wa"));
+    }
 }

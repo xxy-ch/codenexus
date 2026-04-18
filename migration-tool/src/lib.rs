@@ -184,8 +184,34 @@ mod tests {
     }
 
     #[test]
-    fn cli_org_id_and_create_default_org_both_allowed() {
-        // D-10-4: Both flags are allowed; --org-id takes precedence at runtime.
+    fn test_cli_org_id_takes_integer() {
+        // --org-id accepts a valid i64 value
+        let cli = Cli::try_parse_from([
+            "uoj-migrate",
+            "--dump-file", "/path/to/dump.sql",
+            "--database-url", "postgres://localhost/db",
+            "--org-id", "42",
+        ]).unwrap();
+        assert_eq!(cli.org_id, Some(42));
+    }
+
+    #[test]
+    fn test_cli_create_default_org_flag() {
+        // --create-default-org is a boolean flag (no value required)
+        let cli = Cli::try_parse_from([
+            "uoj-migrate",
+            "--dump-file", "/path/to/dump.sql",
+            "--database-url", "postgres://localhost/db",
+            "--create-default-org",
+        ]).unwrap();
+        assert!(cli.create_default_org);
+        assert!(cli.org_id.is_none());
+    }
+
+    #[test]
+    fn test_cli_both_flags_accepted() {
+        // Both --org-id and --create-default-org can be provided together.
+        // Per D-10-4, --org-id takes precedence at runtime.
         let cli = Cli::try_parse_from([
             "uoj-migrate",
             "--dump-file", "/path/to/dump.sql",
@@ -193,7 +219,6 @@ mod tests {
             "--org-id", "1",
             "--create-default-org",
         ]).unwrap();
-
         assert_eq!(cli.org_id, Some(1));
         assert!(cli.create_default_org);
     }

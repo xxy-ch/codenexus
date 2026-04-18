@@ -200,6 +200,45 @@ mod tests {
         assert_eq!(map2.len(), 1);
     }
 
+    #[tokio::test]
+    async fn test_idempotent_lookup_returns_none_for_new_key() {
+        // A key that was never inserted must return None from the in-memory map.
+        let map = IdMap {
+            pool: PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+            mappings: HashMap::new(),
+        };
+        assert_eq!(map.get("user", "never_inserted"), None);
+        assert_eq!(map.get("problem", "999"), None);
+    }
+
+    #[tokio::test]
+    async fn test_idempotent_insert_then_lookup() {
+        // After caching a mapping, lookup must return the exact value that was inserted.
+        let mut map = IdMap {
+            pool: PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+            mappings: HashMap::new(),
+        };
+        map.cache("user", "old_42", "new_uuid_42".to_string());
+        assert_eq!(map.get("user", "old_42"), Some("new_uuid_42".to_string()));
+    }
+
+    #[tokio::test]
+    async fn test_idempotent_duplicate_insert_does_not_overwrite() {
+        // Inserting the same (entity_type, old_id) twice must keep the first value.
+        // This verifies the or_insert semantics of cache() (D-10-7 idempotency).
+        let mut map = IdMap {
+            pool: PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+            mappings: HashMap::new(),
+        };
+        map.cache("submission", "1001", "uuid-first".to_string());
+        map.cache("submission", "1001", "uuid-second".to_string());
+        assert_eq!(
+            map.get("submission", "1001"),
+            Some("uuid-first".to_string()),
+            "duplicate cache() must not overwrite the original mapping"
+        );
+    }
+
     // Integration tests that need a real database are marked #[ignore].
     // Run with: cargo test -p migration-tool --lib -- --ignored
     #[tokio::test]
