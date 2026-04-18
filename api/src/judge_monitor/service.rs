@@ -1,7 +1,7 @@
 //! Judge monitor service -- Redis queries for queue monitoring.
 //!
-//! Uses XINFO/XLEN for stream depth, SCAN for heartbeat discovery,
-//! XRANGE/XADD/XDEL for DLQ management.
+//! Uses XPENDING for true backlog depth (un-ACKed messages only),
+//! SCAN for heartbeat discovery, XRANGE/XADD/XDEL for DLQ management.
 //!
 //! Tenant isolation: All DLQ operations filter by school_id.
 //! Legacy entries (pre-fix, no school_id field) are blocked — not visible, deletable, or retriable.
@@ -13,53 +13,52 @@ use std::collections::HashMap;
 pub struct JudgeMonitorService;
 
 impl JudgeMonitorService {
-    /// Get stream depth using XINFO STREAM command.
+    /// Get the true backlog depth (pending/un-ACKed messages) using XPENDING.
     ///
-    /// Falls back to XLEN if XINFO parsing fails (per RESEARCH.md Pattern).
+    /// Redis Streams are append-only: XADD grows the stream, XACK marks messages
+    /// as processed, but messages are never removed. XINFO/XLEN returns the total
+    /// stream length including already-processed messages -- useless for monitoring.
+    ///
+    /// XPENDING <stream> <group> returns the count of messages delivered to the
+    /// consumer group but not yet acknowledged. This is the real backlog.
+    ///
+    /// Returns 0 if the stream or consumer group does not exist (no pending messages).
     pub async fn get_stream_depth(
         redis_pool: &deadpool_redis::Pool,
         stream: &str,
     ) -> Result<usize> {
         let mut conn = redis_pool.get().await?;
 
-        // Try XINFO STREAM first -- returns array of key-value pairs
-        let result: deadpool_redis::redis::Value = deadpool_redis::redis::cmd("XINFO")
-            .arg("STREAM")
+        // XPENDING <stream> <group> returns an array:
+        //   [count, min_id, max_id, [[consumer, count], ...]]
+        // The first element is the total pending message count.
+        // If the stream or group does not exist, Redis returns an error
+        // (e.g. "NOGROUP No such key" or similar).
+        let result: deadpool_redis::redis::Value = deadpool_redis::redis::cmd("XPENDING")
             .arg(stream)
+            .arg("judge_workers")
             .query_async(&mut conn)
             .await
-            .map_err(|e| anyhow::anyhow!("XINFO STREAM failed for '{}': {}", stream, e))?;
+            .unwrap_or(deadpool_redis::redis::Value::Nil);
 
-        if let deadpool_redis::redis::Value::Array(pairs) = result {
-            let mut i = 0;
-            while i + 1 < pairs.len() {
-                if let (
-                    deadpool_redis::redis::Value::BulkString(key),
-                    deadpool_redis::redis::Value::Int(val),
-                ) = (&pairs[i], &pairs[i + 1])
-                {
-                    if key == b"length" {
-                        return Ok(*val as usize);
+        match result {
+            deadpool_redis::redis::Value::Array(ref items) if !items.is_empty() => {
+                // First element is the pending count as an integer
+                match &items[0] {
+                    deadpool_redis::redis::Value::Int(count) => Ok(*count as usize),
+                    _ => {
+                        tracing::warn!(
+                            "XPENDING for '{}' returned unexpected first element: {:?}",
+                            stream,
+                            items[0]
+                        );
+                        Ok(0)
                     }
                 }
-                i += 2;
             }
+            // Nil or error means stream/group doesn't exist → no pending messages
+            _ => Ok(0),
         }
-
-        // Fallback: XLEN
-        let len: i64 = deadpool_redis::redis::cmd("XLEN")
-            .arg(stream)
-            .query_async(&mut conn)
-            .await
-            .map_err(|e| {
-                tracing::warn!(
-                    "XLEN fallback failed for stream '{}': {}",
-                    stream,
-                    e
-                );
-                anyhow::anyhow!("XLEN fallback failed for stream '{}': {}", stream, e)
-            })?;
-        Ok(len as usize)
     }
 
     /// Scan for all worker heartbeat keys using SCAN (production-safe, per T-09-08).

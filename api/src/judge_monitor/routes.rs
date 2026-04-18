@@ -74,7 +74,8 @@ async fn get_judge_status(
         .as_ref()
         .ok_or_else(|| AppError::Internal("Redis not configured".into()))?;
 
-    // Get stream depths -- propagate Redis errors instead of silently returning 0
+    // Get stream depths (XPENDING-based true backlog).
+    // Connection pool errors are propagated; missing stream/group returns 0.
     let normal_depth = JudgeMonitorService::get_stream_depth(redis_pool, "submissions")
         .await
         .map_err(|e| AppError::Internal(format!("Failed to query normal queue depth: {}", e)))?;
@@ -269,7 +270,7 @@ mod tests {
     /// `.unwrap_or(0)` and `.unwrap_or_default()` hid real Redis failures.
     #[test]
     fn redis_error_produces_internal_error_not_zero() {
-        let redis_err = anyhow::anyhow!("XINFO STREAM failed for 'submissions': connection refused");
+        let redis_err = anyhow::anyhow!("connection pool exhausted for 'submissions'");
         let app_error: AppError = AppError::Internal(format!(
             "Failed to query normal queue depth: {}",
             redis_err
