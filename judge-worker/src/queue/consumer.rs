@@ -761,7 +761,7 @@ mod tests {
     fn test_priority_parks_normal_when_contest_arrives_during_read() {
         // Step 4 recheck finds contest messages -> park the normal message
         let contest_messages_on_recheck = 1;
-        let normal_messages_read = 1;
+        let _normal_messages_read = 1; // tracked for documentation; parks occur based on contest recheck
 
         // When contest is non-empty on recheck, normal is parked
         let should_park_normal = contest_messages_on_recheck > 0;
