@@ -153,14 +153,22 @@ pub async fn ensure_consumer_group(
     Ok(())
 }
 
-/// Dual-stream priority consumer using a single XREADGROUP that reads from
-/// both contest (priority) and normal streams simultaneously.
+/// Two-phase priority consumer that guarantees strict contest-priority ordering.
 ///
-/// Redis XREADGROUP with multiple STREAMS reads from all listed streams and
-/// returns messages from whichever has data first. By listing the contest
-/// stream first, Redis gives it natural preference when both have messages.
-/// A 200ms BLOCK keeps latency low for contest submissions (the priority
-/// stream is checked every loop iteration without a long blocking window).
+/// Phase 1 (Contest drain): Non-blocking reads from the contest stream in a loop
+/// until it is empty. Each contest message is returned immediately for processing.
+///
+/// Phase 2 (Normal with quick check): Only when the contest stream is empty, read
+/// ONE message from the normal stream with a short 200ms BLOCK. After the caller
+/// processes it, the next call to this function will drain any new contest messages
+/// first before touching normal again.
+///
+/// This guarantees:
+/// - Contest messages are ALWAYS processed before any normal message.
+/// - Normal messages are processed only when the contest queue is empty.
+/// - The 200ms block on normal means we check contest again at least every 200ms.
+/// - New contest submissions arriving during normal processing are picked up within
+///   200ms on the next call.
 ///
 /// Returns tuples of (message_id, SubmissionMessage, origin_stream_name, school_id, submitted_at).
 /// The origin stream name is needed for correct ACK (per Pitfall 3 in RESEARCH.md).
@@ -173,10 +181,40 @@ pub async fn consume_priority(
     group_name: &str,
     consumer_name: &str,
 ) -> Result<Vec<(String, SubmissionMessage, String, Option<i64>, Option<String>)>> {
-    // Single XREADGROUP reading from both streams simultaneously.
-    // Contest stream is listed first so Redis returns its messages preferentially.
-    // Short BLOCK (200ms) minimizes the window where contest messages could arrive
-    // but not be seen — the previous 5s BLOCK caused up to 5s extra latency.
+    // Phase 1: Drain contest stream completely (non-blocking).
+    // Keep reading until the contest stream returns no messages.
+    loop {
+        let mut cmd = redis::cmd("XREADGROUP");
+        cmd.arg("GROUP")
+            .arg(group_name)
+            .arg(consumer_name)
+            .arg("COUNT")
+            .arg(1)
+            .arg("STREAMS")
+            .arg(contest_stream)
+            .arg(">");
+
+        let result: redis::streams::StreamReadReply = cmd
+            .query_async(conn)
+            .await
+            .context("Failed to read from contest stream")?;
+
+        if result.keys.is_empty() {
+            // Contest stream is empty — break to Phase 2
+            break;
+        }
+
+        // Parse and return the first contest message immediately
+        let messages = parse_stream_reply(result)?;
+        if !messages.is_empty() {
+            return Ok(messages);
+        }
+        // If all entries were malformed (no data field), loop again
+    }
+
+    // Phase 2: Contest stream is empty. Read one message from normal stream
+    // with a short 200ms BLOCK. The short timeout ensures we check contest
+    // again quickly on the next call.
     let mut cmd = redis::cmd("XREADGROUP");
     cmd.arg("GROUP")
         .arg(group_name)
@@ -186,16 +224,21 @@ pub async fn consume_priority(
         .arg("COUNT")
         .arg(1)
         .arg("STREAMS")
-        .arg(contest_stream)
         .arg(normal_stream)
-        .arg(">")
         .arg(">");
 
     let result: redis::streams::StreamReadReply = cmd
         .query_async(conn)
         .await
-        .context("Failed to read from priority/normal streams")?;
+        .context("Failed to read from normal stream")?;
 
+    parse_stream_reply(result)
+}
+
+/// Parse a StreamReadReply into the tuple format used by consume_priority.
+fn parse_stream_reply(
+    result: redis::streams::StreamReadReply,
+) -> Result<Vec<(String, SubmissionMessage, String, Option<i64>, Option<String>)>> {
     let mut messages = Vec::new();
 
     for stream_key in result.keys {
@@ -331,68 +374,122 @@ mod tests {
         );
     }
 
-    /// Regression test (Issue 2): The consume_priority function must use a short
-    /// BLOCK timeout (200ms), not the previous 5-second block. The old approach
-    /// did a sequential read: non-blocking on contest, then 5s blocking on normal.
-    /// During the 5s block, contest submissions would be delayed.
-    ///
-    /// The fix uses a single XREADGROUP reading both streams with 200ms BLOCK.
-    /// This test verifies the command structure for the dual-stream approach.
+    /// Regression test: Phase 1 (contest drain) uses a NON-BLOCKING XREADGROUP.
+    /// This ensures contest messages are always drained immediately without waiting.
     #[test]
-    fn test_consume_priority_uses_short_block_timeout() {
-        // Build the dual-stream XREADGROUP command args as consume_priority does
-        let mut cmd = redis::cmd("XREADGROUP");
-        cmd.arg("GROUP")
-            .arg("judge_workers")
-            .arg("w1")
-            .arg("BLOCK")
-            .arg(200)
-            .arg("COUNT")
-            .arg(1)
-            .arg("STREAMS")
-            .arg("submissions:contest")
-            .arg("submissions")
-            .arg(">")
-            .arg(">");
+    fn test_contest_drain_phase_is_nonblocking() {
+        let args = build_xreadgroup_args("submissions:contest", "judge_workers", "w1", None);
 
-        let args: Vec<String> = cmd
-            .args_iter()
-            .map(|arg| match arg {
-                redis::Arg::Simple(data) => String::from_utf8_lossy(data).to_string(),
-                redis::Arg::Cursor => "<cursor>".to_string(),
-            })
-            .collect();
+        // Contest phase must NOT have a BLOCK argument
+        assert!(
+            !args.iter().any(|a| a == "BLOCK"),
+            "Contest drain phase should be non-blocking (no BLOCK arg), got: {:?}",
+            args,
+        );
 
-        // Verify BLOCK value is 200 (not 5000)
+        assert_eq!(
+            args,
+            vec!["XREADGROUP", "GROUP", "judge_workers", "w1", "COUNT", "1", "STREAMS", "submissions:contest", ">"]
+        );
+    }
+
+    /// Regression test: Phase 2 (normal read) uses a short BLOCK (200ms).
+    /// The short block ensures we re-check the contest stream within 200ms,
+    /// keeping contest latency low even during normal processing.
+    #[test]
+    fn test_normal_phase_uses_short_block() {
+        let args = build_xreadgroup_args("submissions", "judge_workers", "w1", Some(200));
+
         let block_pos = args.iter().position(|a| a == "BLOCK").expect("BLOCK not found");
         let block_val: u64 = args[block_pos + 1].parse().expect("BLOCK value not a number");
         assert!(
             block_val <= 500,
-            "BLOCK timeout should be short (<=500ms) for priority responsiveness, got {}ms",
+            "Normal phase BLOCK should be short (<=500ms) for priority responsiveness, got {}ms",
             block_val
         );
 
-        // Verify both streams are present in a single command
-        assert!(
-            args.iter().any(|a| a == "submissions:contest"),
-            "Contest stream must be listed in dual-stream command"
-        );
-        let streams_pos = args.iter().position(|a| a == "STREAMS").expect("STREAMS not found");
-        let after_streams = &args[streams_pos + 1..];
-        // After STREAMS: contest_stream, normal_stream, ">", ">"
-        assert!(
-            after_streams.contains(&"submissions:contest".to_string()),
-            "Contest stream should be listed first (priority)"
-        );
-        assert!(
-            after_streams.contains(&"submissions".to_string()),
-            "Normal stream should be listed second"
-        );
         assert_eq!(
-            after_streams.iter().filter(|a| **a == ">").count(),
-            2,
-            "Both streams should use '>' (new messages) ID"
+            args,
+            vec!["XREADGROUP", "GROUP", "judge_workers", "w1", "BLOCK", "200", "COUNT", "1", "STREAMS", "submissions", ">"]
         );
+    }
+
+    /// Regression test: verify parse_stream_reply correctly extracts message fields
+    /// from a StreamReadReply, including origin_stream tracking.
+    #[test]
+    fn test_parse_stream_reply_extracts_fields() {
+        use redis::streams::{StreamId, StreamKey, StreamReadReply};
+
+        let reply = StreamReadReply {
+            keys: vec![StreamKey {
+                key: "submissions:contest".to_string(),
+                ids: vec![StreamId {
+                    id: "1234567890-0".to_string(),
+                    map: {
+                        let mut m = std::collections::HashMap::new();
+                        m.insert(
+                            "data".to_string(),
+                            redis::Value::BulkString(
+                                br#"{"submission_id":42,"problem_id":1,"user_id":"550e8400-e29b-41d4-a716-446655440000","language":"cpp","source_code":"int main(){}","time_limit_ms":1000,"memory_limit_mb":256,"contest_id":7}"#.to_vec(),
+                            ),
+                        );
+                        m.insert("school_id".to_string(), redis::Value::BulkString(b"100".to_vec()));
+                        m.insert(
+                            "submitted_at".to_string(),
+                            redis::Value::BulkString(b"2026-01-15T12:00:00.000Z".to_vec()),
+                        );
+                        m
+                    },
+                }],
+            }],
+        };
+
+        let messages = parse_stream_reply(reply).unwrap();
+
+        assert_eq!(messages.len(), 1, "Should parse exactly one message");
+        let (msg_id, submission, origin, school_id, submitted_at) = &messages[0];
+        assert_eq!(msg_id, "1234567890-0");
+        assert_eq!(submission.submission_id, 42);
+        assert_eq!(submission.contest_id, Some(7));
+        assert_eq!(origin, "submissions:contest");
+        assert_eq!(*school_id, Some(100));
+        assert_eq!(
+            submitted_at.as_deref(),
+            Some("2026-01-15T12:00:00.000Z")
+        );
+    }
+
+    /// Regression test: parse_stream_reply with empty reply returns no messages.
+    #[test]
+    fn test_parse_stream_reply_empty() {
+        let reply = redis::streams::StreamReadReply {
+            keys: vec![],
+        };
+
+        let messages = parse_stream_reply(reply).unwrap();
+        assert!(messages.is_empty(), "Empty reply should produce no messages");
+    }
+
+    /// Regression test: parse_stream_reply skips entries with missing data field.
+    #[test]
+    fn test_parse_stream_reply_skips_missing_data() {
+        let reply = redis::streams::StreamReadReply {
+            keys: vec![redis::streams::StreamKey {
+                key: "submissions".to_string(),
+                ids: vec![redis::streams::StreamId {
+                    id: "123-0".to_string(),
+                    map: {
+                        let mut m = std::collections::HashMap::new();
+                        // No "data" field — should be skipped
+                        m.insert("foo".to_string(), redis::Value::BulkString(b"bar".to_vec()));
+                        m
+                    },
+                }],
+            }],
+        };
+
+        let messages = parse_stream_reply(reply).unwrap();
+        assert!(messages.is_empty(), "Entry without data field should be skipped");
     }
 
     #[tokio::test]
