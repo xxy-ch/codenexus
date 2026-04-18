@@ -275,7 +275,9 @@ mod tests {
         message_id
     }
 
+    /// Requires Docker. Run with: cargo test -p judge-worker -- --ignored
     #[tokio::test]
+    #[ignore = "requires Docker -- run with `cargo test -p judge-worker -- --ignored`"]
     async fn test_recover_empty_stream() {
         let (mut conn, _container) = setup_redis().await;
         let stream = "test_stream_empty";
@@ -298,7 +300,9 @@ mod tests {
         assert!(result.unwrap().is_empty());
     }
 
+    /// Requires Docker. Run with: cargo test -p judge-worker -- --ignored
     #[tokio::test]
+    #[ignore = "requires Docker -- run with `cargo test -p judge-worker -- --ignored`"]
     async fn test_recover_pending_submission() {
         let (mut conn, _container) = setup_redis().await;
         let stream = "test_stream_recover";
@@ -319,7 +323,9 @@ mod tests {
         assert_eq!(recovered[0].1.submission_id, 42);
     }
 
+    /// Requires Docker. Run with: cargo test -p judge-worker -- --ignored
     #[tokio::test]
+    #[ignore = "requires Docker -- run with `cargo test -p judge-worker -- --ignored`"]
     async fn test_recover_no_timed_out_messages() {
         let (mut conn, _container) = setup_redis().await;
         let stream = "test_stream_no_timeout";

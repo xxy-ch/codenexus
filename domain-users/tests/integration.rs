@@ -37,6 +37,7 @@ async fn seed_org_and_campus(pool: &PgPool) -> (i64, i64) {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker -- run with `cargo test -p domain-users --test integration -- --ignored`"]
 async fn test_create_and_get_user() {
     let fixture = setup_fixture().await;
     let (org_id, campus_id) = seed_org_and_campus(&fixture.db_pool).await;
@@ -70,6 +71,7 @@ async fn test_create_and_get_user() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker -- run with `cargo test -p domain-users --test integration -- --ignored`"]
 async fn test_list_users_by_organization() {
     let fixture = setup_fixture().await;
     let org1_id = seed_org(&fixture.db_pool).await;
@@ -125,6 +127,7 @@ async fn test_list_users_by_organization() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker -- run with `cargo test -p domain-users --test integration -- --ignored`"]
 async fn test_user_email_uniqueness() {
     let fixture = setup_fixture().await;
     let org_id = seed_org(&fixture.db_pool).await;
@@ -171,6 +174,7 @@ fn verify_md5_password(password: &str, md5_hash: &str) -> bool {
 /// 4. Verify the new hash is bcrypt format (starts with "$2b$")
 /// 5. Verify the same password still works via bcrypt verification
 #[tokio::test]
+#[ignore = "requires Docker -- run with `cargo test -p domain-users --test integration -- --ignored`"]
 async fn test_md5_login_upgrade_integration() {
     let fixture = setup_fixture().await;
     let (org_id, campus_id) = seed_org_and_campus(&fixture.db_pool).await;

@@ -172,6 +172,7 @@ async fn run_full_migration(pool: &PgPool) -> Result<(i64, Option<i64>)> {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
+#[ignore = "requires Docker -- run with `cargo test -p migration-tool --test e2e_migration -- --ignored`"]
 async fn test_full_e2e_migration() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://localhost/migration_test".to_string());
@@ -434,6 +435,7 @@ async fn test_full_e2e_migration() {
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
+#[ignore = "requires Docker -- run with `cargo test -p migration-tool --test e2e_migration -- --ignored`"]
 async fn test_double_run_idempotent() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://localhost/migration_test".to_string());

@@ -1,7 +1,8 @@
 //! Judge monitor service -- Redis queries for queue monitoring.
 //!
-//! Uses XPENDING for true backlog depth (un-ACKed messages only),
-//! SCAN for heartbeat discovery, XRANGE/XADD/XDEL for DLQ management.
+//! Uses XINFO GROUPS for full backlog depth (pending + lag), covering both
+//! in-flight and never-delivered messages. SCAN for heartbeat discovery,
+//! XRANGE/XADD/XDEL for DLQ management.
 //!
 //! Tenant isolation: All DLQ operations filter by school_id.
 //! Legacy entries (pre-fix, no school_id field) are blocked — not visible, deletable, or retriable.
@@ -12,52 +13,78 @@ use std::collections::HashMap;
 
 pub struct JudgeMonitorService;
 
+/// Check if a Redis error is a "NOGROUP" or "no such key" error, indicating
+/// the stream or consumer group simply doesn't exist yet (legitimate 0 pending).
+/// All other errors (connection, timeout, auth) are real infrastructure failures.
+fn is_no_group_error(err: &deadpool_redis::redis::RedisError) -> bool {
+    let msg = err.to_string().to_lowercase();
+    msg.contains("nogroup") || msg.contains("no such key") || msg.contains("doesn't exist")
+}
+
 impl JudgeMonitorService {
-    /// Get the true backlog depth (pending/un-ACKed messages) using XPENDING.
+    /// Get the true backlog depth for a stream + consumer group.
     ///
-    /// Redis Streams are append-only: XADD grows the stream, XACK marks messages
-    /// as processed, but messages are never removed. XINFO/XLEN returns the total
-    /// stream length including already-processed messages -- useless for monitoring.
+    /// Returns the count of messages that are either:
+    /// - **In-flight**: delivered to a consumer but not yet ACKed (`pending`)
+    /// - **Unconsumed**: exist in the stream but never delivered to the group (`lag`)
     ///
-    /// XPENDING <stream> <group> returns the count of messages delivered to the
-    /// consumer group but not yet acknowledged. This is the real backlog.
+    /// Uses `XINFO GROUPS` which provides both `pending` and `lag` fields in
+    /// Redis 7.0+. The project uses `redis:7-alpine`, so `lag` is always available.
     ///
-    /// Returns 0 if the stream or consumer group does not exist (no pending messages).
+    /// When `lag` is nil (consumer group freshly created, no reads yet), falls back
+    /// to `XLEN` for the total stream length (all entries are unconsumed).
+    ///
+    /// Error handling:
+    /// - Stream/group doesn't exist → legitimate 0
+    /// - Any other Redis error → propagated (returns 500 from the endpoint)
     pub async fn get_stream_depth(
         redis_pool: &deadpool_redis::Pool,
         stream: &str,
     ) -> Result<usize> {
         let mut conn = redis_pool.get().await?;
 
-        // XPENDING <stream> <group> returns an array:
-        //   [count, min_id, max_id, [[consumer, count], ...]]
-        // The first element is the total pending message count.
-        // If the stream or group does not exist, Redis returns an error
-        // (e.g. "NOGROUP No such key" or similar).
-        let result: deadpool_redis::redis::Value = deadpool_redis::redis::cmd("XPENDING")
-            .arg(stream)
-            .arg("judge_workers")
-            .query_async(&mut conn)
-            .await
-            .unwrap_or(deadpool_redis::redis::Value::Nil);
+        // XINFO GROUPS returns one entry per consumer group with key-value pairs:
+        //   [name, <val>, consumers, <val>, pending, <val>, last-delivered-id, <val>, lag, <val>, ...]
+        let info_result: Result<deadpool_redis::redis::Value, deadpool_redis::redis::RedisError> =
+            deadpool_redis::redis::cmd("XINFO")
+                .arg("GROUPS")
+                .arg(stream)
+                .query_async(&mut conn)
+                .await;
 
-        match result {
-            deadpool_redis::redis::Value::Array(ref items) if !items.is_empty() => {
-                // First element is the pending count as an integer
-                match &items[0] {
-                    deadpool_redis::redis::Value::Int(count) => Ok(*count as usize),
-                    _ => {
-                        tracing::warn!(
-                            "XPENDING for '{}' returned unexpected first element: {:?}",
-                            stream,
-                            items[0]
+        match info_result {
+            Ok(info) => {
+                let (pending, lag) = parse_group_depth(&info, "judge_workers");
+                match lag {
+                    Some(lag_val) => Ok(pending + lag_val),
+                    None => {
+                        // lag is nil: consumer group hasn't read anything yet.
+                        // All entries in the stream are unconsumed — use XLEN.
+                        tracing::debug!(
+                            "Consumer group 'judge_workers' on '{}' has nil lag, falling back to XLEN",
+                            stream
                         );
-                        Ok(0)
+                        let total_len: i64 = deadpool_redis::redis::cmd("XLEN")
+                            .arg(stream)
+                            .query_async(&mut conn)
+                            .await
+                            .unwrap_or(0);
+                        Ok(pending + total_len as usize)
                     }
                 }
             }
-            // Nil or error means stream/group doesn't exist → no pending messages
-            _ => Ok(0),
+            Err(ref e) if is_no_group_error(e) => {
+                tracing::debug!(
+                    "Stream '{}' has no consumer groups, returning 0 backlog",
+                    stream
+                );
+                Ok(0)
+            }
+            Err(e) => Err(anyhow::anyhow!(
+                "XINFO GROUPS for stream '{}' failed: {}",
+                stream,
+                e
+            )),
         }
     }
 
@@ -312,6 +339,86 @@ impl JudgeMonitorService {
     }
 }
 
+/// Parse XINFO GROUPS output to extract `pending` and `lag` for a specific consumer group.
+///
+/// XINFO GROUPS returns a list of groups, each as alternating key-value pairs:
+/// ```
+/// [[name, <val>, consumers, <val>, pending, <val>, last-delivered-id, <val>, lag, <val>, ...], ...]
+/// ```
+///
+/// Returns `(pending, Some(lag))` if the group was found and `lag` is a number.
+/// Returns `(pending, None)` if `lag` is nil (group hasn't consumed yet) or absent (pre-Redis 7).
+/// Returns `(0, None)` if the target group is not found.
+fn parse_group_depth(info: &deadpool_redis::redis::Value, target_group: &str) -> (usize, Option<usize>) {
+    let groups = match info {
+        deadpool_redis::redis::Value::Array(groups) => groups,
+        _ => return (0, None),
+    };
+
+    for group in groups {
+        let fields = match group {
+            deadpool_redis::redis::Value::Array(fields) => fields,
+            _ => continue,
+        };
+
+        let mut found = false;
+        let mut pending: usize = 0;
+        let mut lag: Option<usize> = None;
+
+        let mut i = 0;
+        while i + 1 < fields.len() {
+            let key = match &fields[i] {
+                deadpool_redis::redis::Value::BulkString(b) => {
+                    String::from_utf8_lossy(b).to_string()
+                }
+                _ => { i += 2; continue; }
+            };
+
+            match key.as_str() {
+                "name" => {
+                    let val = match &fields[i + 1] {
+                        deadpool_redis::redis::Value::BulkString(b) => {
+                            String::from_utf8_lossy(b).to_string()
+                        }
+                        _ => String::new(),
+                    };
+                    found = val == target_group;
+                }
+                "pending" if found => {
+                    pending = match &fields[i + 1] {
+                        deadpool_redis::redis::Value::Int(n) => *n as usize,
+                        deadpool_redis::redis::Value::BulkString(b) => {
+                            String::from_utf8_lossy(b).parse().unwrap_or(0)
+                        }
+                        _ => 0,
+                    };
+                }
+                "lag" if found => {
+                    lag = match &fields[i + 1] {
+                        deadpool_redis::redis::Value::Int(n) => Some(*n as usize),
+                        deadpool_redis::redis::Value::BulkString(b) => {
+                            let s = String::from_utf8_lossy(b);
+                            if s.contains("nil") { None } else { s.parse().ok() }
+                        }
+                        // Nil value: group hasn't consumed anything yet
+                        deadpool_redis::redis::Value::Nil => None,
+                        _ => None,
+                    };
+                }
+                _ => {}
+            }
+
+            i += 2;
+        }
+
+        if found {
+            return (pending, lag);
+        }
+    }
+
+    (0, None)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -329,6 +436,111 @@ mod tests {
     }
 
     // ---- Tenant matching predicate tests ----
+
+    /// Regression test: is_no_group_error correctly identifies NOGROUP / no-such-key
+    /// errors as "stream doesn't exist" (legitimate 0), while rejecting all other
+    /// Redis errors (connection, timeout, auth) which must propagate up.
+    #[test]
+    fn test_is_no_group_error_classifies_correctly() {
+        // Should match: NOGROUP
+        let err = deadpool_redis::redis::RedisError::from((
+            deadpool_redis::redis::ErrorKind::ResponseError,
+            "NOGROUP No such key 'submissions' or consumer group 'judge_workers'",
+        ));
+        assert!(is_no_group_error(&err), "NOGROUP should be classified as non-existent");
+
+        // Should NOT match: connection refused
+        let conn_err = deadpool_redis::redis::RedisError::from((
+            deadpool_redis::redis::ErrorKind::IoError,
+            "connection refused",
+        ));
+        assert!(
+            !is_no_group_error(&conn_err),
+            "Connection errors must NOT be swallowed as 0"
+        );
+
+        // Should NOT match: timeout
+        let timeout_err = deadpool_redis::redis::RedisError::from((
+            deadpool_redis::redis::ErrorKind::ResponseError,
+            "Timeout waiting for response",
+        ));
+        assert!(
+            !is_no_group_error(&timeout_err),
+            "Timeout errors must NOT be swallowed as 0"
+        );
+    }
+
+    // ---- parse_group_depth tests ----
+
+    /// Helper: build XINFO GROUPS response for a single group.
+    fn build_xinfo_response(group_name: &str, pending: i64, lag: Option<i64>) -> deadpool_redis::redis::Value {
+        let mut fields: Vec<deadpool_redis::redis::Value> = vec![
+            deadpool_redis::redis::Value::BulkString(b"name".to_vec()),
+            deadpool_redis::redis::Value::BulkString(group_name.as_bytes().to_vec()),
+            deadpool_redis::redis::Value::BulkString(b"consumers".to_vec()),
+            deadpool_redis::redis::Value::Int(2),
+            deadpool_redis::redis::Value::BulkString(b"pending".to_vec()),
+            deadpool_redis::redis::Value::Int(pending),
+            deadpool_redis::redis::Value::BulkString(b"last-delivered-id".to_vec()),
+            deadpool_redis::redis::Value::BulkString(b"1700000000000-0".to_vec()),
+        ];
+        match lag {
+            Some(n) => {
+                fields.push(deadpool_redis::redis::Value::BulkString(b"lag".to_vec()));
+                fields.push(deadpool_redis::redis::Value::Int(n));
+            }
+            None => {
+                fields.push(deadpool_redis::redis::Value::BulkString(b"lag".to_vec()));
+                fields.push(deadpool_redis::redis::Value::Nil);
+            }
+        }
+        deadpool_redis::redis::Value::Array(vec![
+            deadpool_redis::redis::Value::Array(fields),
+        ])
+    }
+
+    #[test]
+    fn test_parse_group_depth_with_pending_and_lag() {
+        let info = build_xinfo_response("judge_workers", 3, Some(7));
+        let (pending, lag) = parse_group_depth(&info, "judge_workers");
+        assert_eq!(pending, 3, "Should parse pending count");
+        assert_eq!(lag, Some(7), "Should parse lag count");
+        // Total backlog = 3 + 7 = 10
+        assert_eq!(pending + lag.unwrap(), 10, "Total backlog should be pending + lag");
+    }
+
+    #[test]
+    fn test_parse_group_depth_with_zero_lag() {
+        let info = build_xinfo_response("judge_workers", 2, Some(0));
+        let (pending, lag) = parse_group_depth(&info, "judge_workers");
+        assert_eq!(pending, 2);
+        assert_eq!(lag, Some(0));
+        assert_eq!(pending + lag.unwrap(), 2, "No unconsumed messages, only in-flight");
+    }
+
+    #[test]
+    fn test_parse_group_depth_nil_lag_means_unconsumed_unknown() {
+        let info = build_xinfo_response("judge_workers", 0, None);
+        let (pending, lag) = parse_group_depth(&info, "judge_workers");
+        assert_eq!(pending, 0);
+        assert_eq!(lag, None, "Nil lag means caller must fall back to XLEN");
+    }
+
+    #[test]
+    fn test_parse_group_depth_wrong_group_returns_zero() {
+        let info = build_xinfo_response("other_group", 5, Some(10));
+        let (pending, lag) = parse_group_depth(&info, "judge_workers");
+        assert_eq!(pending, 0, "Should return 0 for non-matching group");
+        assert_eq!(lag, None);
+    }
+
+    #[test]
+    fn test_parse_group_depth_empty_info() {
+        let info = deadpool_redis::redis::Value::Array(vec![]);
+        let (pending, lag) = parse_group_depth(&info, "judge_workers");
+        assert_eq!(pending, 0);
+        assert_eq!(lag, None);
+    }
 
     #[test]
     fn test_entry_matches_tenant_with_matching_school_id() {
