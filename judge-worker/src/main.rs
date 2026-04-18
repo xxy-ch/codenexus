@@ -20,7 +20,7 @@ mod queue;
 mod sandbox;
 
 use circuit_breaker::CircuitBreaker;
-use queue::consumer;
+use queue::consumer::{self, PriorityMessage};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -330,6 +330,7 @@ async fn run_processing_loop(
 
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
     let mut error_count: u32 = 0;
+    let mut parked_normal: Option<PriorityMessage> = None;
 
     loop {
         match consume_and_process(
@@ -346,11 +347,13 @@ async fn run_processing_loop(
             &active_count,
             &total_processed,
             &avg_wait_ms,
+            parked_normal.take(),
         )
         .await
         {
-            Ok(count) => {
+            Ok((count, parked)) => {
                 error_count = 0;
+                parked_normal = parked;
                 if count > 0 {
                     info!("Dispatched {} submission(s) for concurrent processing", count);
                 }
@@ -382,13 +385,14 @@ async fn consume_and_process(
     active_count: &Arc<AtomicUsize>,
     total_processed: &Arc<AtomicUsize>,
     avg_wait_ms: &Arc<AtomicUsize>,
-) -> Result<usize> {
+    parked_normal: Option<PriorityMessage>,
+) -> Result<(usize, Option<PriorityMessage>)> {
     // Use dual-stream priority consumer (contest first, then normal)
-    let messages = {
+    let (messages, parked) = {
         if !redis_breaker.allow_request() {
             warn!("Redis circuit breaker open, skipping consume");
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-            return Ok(0);
+            return Ok((0, parked_normal));
         }
         let mut locked_conn = conn.lock().await;
         match consumer::consume_priority(
@@ -397,12 +401,13 @@ async fn consume_and_process(
             stream_name,
             group_name,
             consumer_name,
+            parked_normal,
         )
         .await
         {
-            Ok(msgs) => {
+            Ok((msgs, parked)) => {
                 redis_breaker.record_success();
-                msgs
+                (msgs, parked)
             }
             Err(e) => {
                 redis_breaker.record_failure();
@@ -412,7 +417,7 @@ async fn consume_and_process(
     };
 
     if messages.is_empty() {
-        return Ok(0);
+        return Ok((0, parked));
     }
 
     let dispatched_count = messages.len();
@@ -540,7 +545,7 @@ async fn consume_and_process(
     // Return count of messages dispatched (not completed -- tasks run asynchronously).
     // The caller logs this for observability. Actual completion is tracked via
     // total_processed counter and ACK status.
-    Ok(dispatched_count)
+    Ok((dispatched_count, parked))
 }
 
 /// Acknowledge a Redis Stream message with short retries and circuit breaker.

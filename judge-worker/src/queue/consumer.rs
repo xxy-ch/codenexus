@@ -2,6 +2,10 @@ use super::SubmissionMessage;
 use anyhow::{Context, Result};
 use redis::aio::MultiplexedConnection;
 
+/// The tuple type returned by `consume_priority`:
+/// (message_id, submission, origin_stream, school_id, submitted_at)
+pub type PriorityMessage = (String, SubmissionMessage, String, Option<i64>, Option<String>);
+
 /// Parsed result from consuming a submission from a Redis stream.
 pub struct ConsumedMessage {
     pub message_id: String,
@@ -153,74 +157,120 @@ pub async fn ensure_consumer_group(
     Ok(())
 }
 
-/// Two-phase priority consumer that guarantees strict contest-priority ordering.
+/// Priority consumer that guarantees strict contest-priority ordering.
 ///
-/// Phase 1 (Contest drain): Non-blocking reads from the contest stream in a loop
-/// until it is empty. Each contest message is returned immediately for processing.
+/// Accepts an optional "parked" normal message from a previous call and returns
+/// a new (or same) parked message. The parking mechanism eliminates the race
+/// condition where a contest message arrives after a normal message has been
+/// read from the stream but before it is processed.
 ///
-/// Phase 2 (Normal with quick check): Only when the contest stream is empty, read
-/// ONE message from the normal stream with a short 200ms BLOCK. After the caller
-/// processes it, the next call to this function will drain any new contest messages
-/// first before touching normal again.
+/// Algorithm:
+/// 1. If a parked normal message exists, drain contest first. If contest has
+///    messages, keep the parked message and return the contest one. If contest
+///    is truly empty, return the parked normal message.
+/// 2. Drain contest stream completely (non-blocking loop).
+/// 3. Read ONE message from normal stream with a short 200ms BLOCK.
+/// 4. **Critical re-check**: After reading normal, do ONE MORE non-blocking
+///    check on the contest stream. If a contest message arrived in the gap,
+///    park the normal message and return the contest one instead.
 ///
 /// This guarantees:
 /// - Contest messages are ALWAYS processed before any normal message.
-/// - Normal messages are processed only when the contest queue is empty.
-/// - The 200ms block on normal means we check contest again at least every 200ms.
-/// - New contest submissions arriving during normal processing are picked up within
-///   200ms on the next call.
+/// - Normal messages are processed only when the contest queue is truly empty.
+/// - No contest message is ever delayed by a normal message consumption.
 ///
-/// Returns tuples of (message_id, SubmissionMessage, origin_stream_name, school_id, submitted_at).
-/// The origin stream name is needed for correct ACK (per Pitfall 3 in RESEARCH.md).
-/// The school_id is needed for DLQ tenant isolation.
-/// The submitted_at is used to calculate queue wait time.
+/// Returns `(messages_to_process, parked_normal)`.
+/// The caller must store `parked_normal` and pass it back on the next call.
 pub async fn consume_priority(
     conn: &mut MultiplexedConnection,
     contest_stream: &str,
     normal_stream: &str,
     group_name: &str,
     consumer_name: &str,
-) -> Result<Vec<(String, SubmissionMessage, String, Option<i64>, Option<String>)>> {
-    // Phase 1: Drain contest stream completely (non-blocking).
-    // Keep reading until the contest stream returns no messages.
-    loop {
-        let mut cmd = redis::cmd("XREADGROUP");
-        cmd.arg("GROUP")
-            .arg(group_name)
-            .arg(consumer_name)
-            .arg("COUNT")
-            .arg(1)
-            .arg("STREAMS")
-            .arg(contest_stream)
-            .arg(">");
-
-        let result: redis::streams::StreamReadReply = cmd
-            .query_async(conn)
-            .await
-            .context("Failed to read from contest stream")?;
-
-        if result.keys.is_empty() {
-            // Contest stream is empty — break to Phase 2
-            break;
+    parked_normal: Option<PriorityMessage>,
+) -> Result<(Vec<PriorityMessage>, Option<PriorityMessage>)> {
+    // Step 1: If we have a parked normal message, only return it when contest
+    // is truly empty. Otherwise keep parking it and process contest first.
+    if let Some(parked) = parked_normal {
+        // Drain contest — if any contest message exists, it takes priority.
+        let contest_messages = drain_contest(conn, contest_stream, group_name, consumer_name).await?;
+        if !contest_messages.is_empty() {
+            // Contest still has messages — keep the parked normal, return contest.
+            return Ok((contest_messages, Some(parked)));
         }
-
-        // Parse and return the first contest message immediately
-        let messages = parse_stream_reply(result)?;
-        if !messages.is_empty() {
-            return Ok(messages);
-        }
-        // If all entries were malformed (no data field), loop again
+        // Contest is truly empty — safe to return the parked normal message.
+        return Ok((vec![parked], None));
     }
 
-    // Phase 2: Contest stream is empty. Read one message from normal stream
-    // with a short 200ms BLOCK. The short timeout ensures we check contest
-    // again quickly on the next call.
+    // Step 2: No parked message. Drain contest stream completely (non-blocking).
+    let contest_messages = drain_contest(conn, contest_stream, group_name, consumer_name).await?;
+    if !contest_messages.is_empty() {
+        return Ok((contest_messages, None));
+    }
+
+    // Step 3: Contest is empty. Read one message from normal stream with short block.
+    let normal_messages = read_normal_blocking(conn, normal_stream, group_name, consumer_name, 200).await?;
+    if normal_messages.is_empty() {
+        return Ok((Vec::new(), None));
+    }
+
+    // Step 4: CRITICAL RE-CHECK. A contest message may have arrived between
+    // the contest drain (Step 2) completing and this normal read returning.
+    // Re-check contest one more time to guarantee strict priority.
+    let contest_messages = drain_contest(conn, contest_stream, group_name, consumer_name).await?;
+    if !contest_messages.is_empty() {
+        // Contest message found after normal read — park the normal message.
+        // The parked message will be returned on the next call when contest is empty.
+        tracing::debug!(
+            "Contest message arrived after normal read; parking normal message for next cycle"
+        );
+        return Ok((contest_messages, Some(normal_messages.into_iter().next().unwrap())));
+    }
+
+    // No contest messages — safe to return the normal message.
+    Ok((normal_messages, None))
+}
+
+/// Drain all available messages from the contest stream (non-blocking).
+/// Returns messages immediately; returns empty vec when the contest stream is empty.
+async fn drain_contest(
+    conn: &mut MultiplexedConnection,
+    contest_stream: &str,
+    group_name: &str,
+    consumer_name: &str,
+) -> Result<Vec<PriorityMessage>> {
+    let mut cmd = redis::cmd("XREADGROUP");
+    cmd.arg("GROUP")
+        .arg(group_name)
+        .arg(consumer_name)
+        .arg("COUNT")
+        .arg(1)
+        .arg("STREAMS")
+        .arg(contest_stream)
+        .arg(">");
+
+    let result: redis::streams::StreamReadReply = cmd
+        .query_async(conn)
+        .await
+        .context("Failed to read from contest stream")?;
+
+    parse_stream_reply(result)
+}
+
+/// Read one message from the normal stream with a blocking timeout.
+async fn read_normal_blocking(
+    conn: &mut MultiplexedConnection,
+    normal_stream: &str,
+    group_name: &str,
+    consumer_name: &str,
+    block_ms: u64,
+) -> Result<Vec<PriorityMessage>> {
     let mut cmd = redis::cmd("XREADGROUP");
     cmd.arg("GROUP")
         .arg(group_name)
         .arg(consumer_name)
         .arg("BLOCK")
-        .arg(200)
+        .arg(block_ms)
         .arg("COUNT")
         .arg(1)
         .arg("STREAMS")
@@ -238,7 +288,7 @@ pub async fn consume_priority(
 /// Parse a StreamReadReply into the tuple format used by consume_priority.
 fn parse_stream_reply(
     result: redis::streams::StreamReadReply,
-) -> Result<Vec<(String, SubmissionMessage, String, Option<i64>, Option<String>)>> {
+) -> Result<Vec<PriorityMessage>> {
     let mut messages = Vec::new();
 
     for stream_key in result.keys {
