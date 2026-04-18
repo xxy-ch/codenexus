@@ -100,6 +100,9 @@ impl JudgeMonitorService {
     ///
     /// Per D-11: Returns entry ID and field map for each DLQ item.
     /// Legacy entries without school_id are filtered out.
+    ///
+    /// Fetches in batches and accumulates tenant-matching entries to avoid
+    /// returning empty pages when the first N entries belong to other tenants.
     pub async fn list_dlq_entries(
         redis_pool: &deadpool_redis::Pool,
         count: i64,
@@ -107,29 +110,50 @@ impl JudgeMonitorService {
         school_id: i64,
     ) -> Result<Vec<(String, HashMap<String, String>)>> {
         let mut conn = redis_pool.get().await?;
-        let start = start_id.unwrap_or("-");
-        let entries: Vec<(String, HashMap<String, String>)> = deadpool_redis::redis::cmd("XRANGE")
-            .arg("submissions:dlq")
-            .arg(start)
-            .arg("+")
-            .arg("COUNT")
-            .arg(count)
-            .query_async(&mut conn)
-            .await
-            .map_err(|e| anyhow::anyhow!("XRANGE on DLQ failed: {}", e))?;
+        let mut results = Vec::new();
+        let target = count as usize;
+        let batch_size = count.max(50);
 
-        // Filter by tenant: only entries with matching school_id are returned
-        let filtered: Vec<_> = entries
-            .into_iter()
-            .filter(|(_, fields)| {
-                match fields.get("school_id").map(|s| s.parse::<i64>()) {
-                    Some(Ok(sid)) => sid == school_id,
-                    _ => false, // Legacy entries without school_id are not shown
+        // XRANGE is inclusive on both ends. For pagination after a given ID
+        // we use "(" (exclusive lower bound) so the already-seen entry is
+        // not returned again. The first call uses "-" (earliest ID).
+        let mut cursor = start_id.map_or_else(|| "-".to_string(), |id| {
+            format!("({}", id)
+        });
+
+        while results.len() < target {
+            let entries: Vec<(String, HashMap<String, String>)> =
+                deadpool_redis::redis::cmd("XRANGE")
+                    .arg("submissions:dlq")
+                    .arg(&cursor)
+                    .arg("+")
+                    .arg("COUNT")
+                    .arg(batch_size)
+                    .query_async(&mut conn)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("XRANGE on DLQ failed: {}", e))?;
+
+            if entries.is_empty() {
+                break;
+            }
+
+            // Remember the last ID so the next iteration continues past it.
+            let last_id = entries.last().unwrap().0.clone();
+
+            for entry in entries {
+                if Self::entry_matches_tenant(&entry.1, school_id) {
+                    results.push(entry);
+                    if results.len() >= target {
+                        break;
+                    }
                 }
-            })
-            .collect();
+            }
 
-        Ok(filtered)
+            // Prepare next cursor — exclusive lower bound after last_id
+            cursor = format!("({}", last_id);
+        }
+
+        Ok(results)
     }
 
     /// Retry a DLQ entry atomically using a Redis Lua script.
@@ -239,5 +263,159 @@ impl JudgeMonitorService {
             .await
             .map_err(|e| anyhow::anyhow!("XDEL from DLQ failed: {}", e))?;
         Ok(())
+    }
+
+    /// Predicate: does this entry's school_id match the requested tenant?
+    /// Legacy entries without a school_id field never match.
+    fn entry_matches_tenant(fields: &HashMap<String, String>, school_id: i64) -> bool {
+        match fields.get("school_id").map(|s| s.parse::<i64>()) {
+            Some(Ok(sid)) => sid == school_id,
+            _ => false,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    /// Helper to build a DLQ entry field map with a given school_id.
+    fn make_entry(school_id: Option<i64>) -> HashMap<String, String> {
+        let mut fields = HashMap::new();
+        fields.insert("submission_id".into(), "42".into());
+        fields.insert("error_reason".into(), "timeout".into());
+        if let Some(sid) = school_id {
+            fields.insert("school_id".into(), sid.to_string());
+        }
+        fields
+    }
+
+    // ---- Tenant matching predicate tests ----
+
+    #[test]
+    fn test_entry_matches_tenant_with_matching_school_id() {
+        let fields = make_entry(Some(10));
+        assert!(JudgeMonitorService::entry_matches_tenant(&fields, 10));
+    }
+
+    #[test]
+    fn test_entry_matches_tenant_rejects_wrong_school_id() {
+        let fields = make_entry(Some(20));
+        assert!(!JudgeMonitorService::entry_matches_tenant(&fields, 10));
+    }
+
+    #[test]
+    fn test_entry_matches_tenant_rejects_legacy_entry_without_school_id() {
+        let fields = make_entry(None);
+        assert!(!JudgeMonitorService::entry_matches_tenant(&fields, 10));
+    }
+
+    #[test]
+    fn test_entry_matches_tenant_rejects_malformed_school_id() {
+        let mut fields = make_entry(None);
+        fields.insert("school_id".into(), "not_a_number".into());
+        assert!(!JudgeMonitorService::entry_matches_tenant(&fields, 10));
+    }
+
+    // ---- Regression test: batch accumulation logic ----
+    //
+    // Simulates the core loop of `list_dlq_entries` without Redis.
+    // Verifies that when entries from other tenants appear first, the
+    // accumulation loop still collects entries belonging to the target tenant.
+
+    #[test]
+    fn test_batch_accumulation_finds_entries_past_other_tenants() {
+        // Simulate a stream where the first 5 entries belong to school 99,
+        // then 3 entries belong to school 10.
+        let all_entries: Vec<(String, HashMap<String, String>)> = vec![
+            ("1-0".into(), make_entry(Some(99))),
+            ("2-0".into(), make_entry(Some(99))),
+            ("3-0".into(), make_entry(Some(99))),
+            ("4-0".into(), make_entry(Some(99))),
+            ("5-0".into(), make_entry(Some(99))),
+            ("6-0".into(), make_entry(Some(10))),
+            ("7-0".into(), make_entry(Some(10))),
+            ("8-0".into(), make_entry(Some(10))),
+        ];
+
+        let school_id: i64 = 10;
+        let count = 3_usize;
+
+        // Simulate what the batched loop does: iterate all entries,
+        // accumulate only those matching the tenant.
+        let mut results = Vec::new();
+        for entry in all_entries {
+            if JudgeMonitorService::entry_matches_tenant(&entry.1, school_id) {
+                results.push(entry);
+                if results.len() >= count {
+                    break;
+                }
+            }
+        }
+
+        // Before the fix, a naive XRANGE+filter would have returned 0 results
+        // because COUNT=5 would fetch entries 1-5, all filtered out.
+        // With the batched approach, we correctly get 3 entries for school 10.
+        assert_eq!(results.len(), 3, "Should find all 3 entries for school 10");
+        assert_eq!(results[0].0, "6-0");
+        assert_eq!(results[1].0, "7-0");
+        assert_eq!(results[2].0, "8-0");
+    }
+
+    #[test]
+    fn test_batch_accumulation_returns_nothing_when_no_matching_entries() {
+        let all_entries: Vec<(String, HashMap<String, String>)> = vec![
+            ("1-0".into(), make_entry(Some(99))),
+            ("2-0".into(), make_entry(Some(99))),
+        ];
+
+        let school_id: i64 = 10;
+        let count = 5_usize;
+
+        let mut results = Vec::new();
+        for entry in all_entries {
+            if JudgeMonitorService::entry_matches_tenant(&entry.1, school_id) {
+                results.push(entry);
+                if results.len() >= count {
+                    break;
+                }
+            }
+        }
+
+        assert!(
+            results.is_empty(),
+            "Should return empty when no entries match the tenant"
+        );
+    }
+
+    #[test]
+    fn test_batch_accumulation_respects_count_limit() {
+        let all_entries: Vec<(String, HashMap<String, String>)> = vec![
+            ("1-0".into(), make_entry(Some(10))),
+            ("2-0".into(), make_entry(Some(10))),
+            ("3-0".into(), make_entry(Some(10))),
+            ("4-0".into(), make_entry(Some(10))),
+            ("5-0".into(), make_entry(Some(10))),
+        ];
+
+        let school_id: i64 = 10;
+        let count = 2_usize;
+
+        let mut results = Vec::new();
+        for entry in all_entries {
+            if JudgeMonitorService::entry_matches_tenant(&entry.1, school_id) {
+                results.push(entry);
+                if results.len() >= count {
+                    break;
+                }
+            }
+        }
+
+        assert_eq!(
+            results.len(),
+            2,
+            "Should stop after reaching requested count"
+        );
     }
 }
