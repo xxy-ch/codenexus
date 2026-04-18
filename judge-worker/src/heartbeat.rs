@@ -12,6 +12,9 @@ use serde::Serialize;
 
 use crate::circuit_breaker::CircuitBreaker;
 
+/// Number of consecutive heartbeat failures before escalating log level to error.
+const HEARTBEAT_FAILURE_THRESHOLD: usize = 3;
+
 /// Payload sent to the API heartbeat endpoint every 10 seconds.
 #[derive(Serialize)]
 pub struct HeartbeatPayload {
@@ -48,6 +51,11 @@ pub async fn handle_heartbeat_response(
             } else {
                 let status = response.status();
                 let body = response.text().await.unwrap_or_else(|e| {
+                    tracing::warn!(
+                        "Heartbeat: failed to read error response body (status={}): {}",
+                        status,
+                        e
+                    );
                     format!("(failed to read response body: {})", e)
                 });
                 tracing::warn!(
@@ -85,6 +93,7 @@ pub fn spawn_heartbeat_task(
             .build()
             .unwrap();
         let mut interval = tokio::time::interval(Duration::from_secs(10));
+        let mut consecutive_failures: usize = 0;
 
         loop {
             interval.tick().await;
@@ -106,7 +115,38 @@ pub fn spawn_heartbeat_task(
                 .await;
 
             // handle_heartbeat_response logs warnings for non-2xx / network errors
-            handle_heartbeat_response(result).await;
+            let status = handle_heartbeat_response(result).await;
+            match status {
+                HeartbeatStatus::Success => {
+                    if consecutive_failures > 0 {
+                        tracing::info!(
+                            "Heartbeat recovered after {} consecutive failure(s)",
+                            consecutive_failures
+                        );
+                    }
+                    consecutive_failures = 0;
+                }
+                HeartbeatStatus::HttpError(code) => {
+                    consecutive_failures += 1;
+                    if consecutive_failures >= HEARTBEAT_FAILURE_THRESHOLD {
+                        tracing::error!(
+                            "Heartbeat has failed {} consecutive time(s) (last: HTTP {}). \
+                             Worker may be missing from admin monitoring.",
+                            consecutive_failures, code
+                        );
+                    }
+                }
+                HeartbeatStatus::NetworkError => {
+                    consecutive_failures += 1;
+                    if consecutive_failures >= HEARTBEAT_FAILURE_THRESHOLD {
+                        tracing::error!(
+                            "Heartbeat has failed {} consecutive time(s) (network error). \
+                             API may be unreachable. Worker is missing from admin monitoring.",
+                            consecutive_failures
+                        );
+                    }
+                }
+            }
         }
     })
 }

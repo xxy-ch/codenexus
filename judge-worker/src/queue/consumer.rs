@@ -7,6 +7,9 @@ pub struct ConsumedMessage {
     pub message_id: String,
     pub submission: SubmissionMessage,
     pub school_id: Option<i64>,
+    /// Enqueue timestamp (RFC3339) from the `submitted_at` stream field.
+    /// Used to calculate true queue wait time (dequeue_time - enqueue_time).
+    pub submitted_at: Option<String>,
 }
 
 pub async fn consume_submission(
@@ -48,8 +51,18 @@ pub async fn consume_submission(
 
             let data_json: String = redis::from_redis_value(data_value)
                 .context("Failed to decode Redis stream payload")?;
-            let submission: SubmissionMessage =
+            let mut submission: SubmissionMessage =
                 serde_json::from_str(&data_json).context("Failed to parse submission message")?;
+
+            // If contest_id is missing from the JSON but present as a top-level stream field,
+            // merge it in. This handles legacy messages where contest_id was only in XADD fields.
+            if submission.contest_id.is_none() {
+                submission.contest_id = stream_entry
+                    .map
+                    .get("contest_id")
+                    .and_then(|v| redis::from_redis_value::<String>(v).ok())
+                    .and_then(|s| s.parse::<i64>().ok());
+            }
 
             // Extract school_id for DLQ tenant isolation
             let school_id = stream_entry
@@ -58,10 +71,18 @@ pub async fn consume_submission(
                 .and_then(|v| redis::from_redis_value::<String>(v).ok())
                 .and_then(|s| s.parse::<i64>().ok());
 
+            // Extract submitted_at for queue wait time calculation
+            let submitted_at = stream_entry
+                .map
+                .get("submitted_at")
+                .and_then(|v| redis::from_redis_value::<String>(v).ok())
+                .filter(|s| !s.is_empty());
+
             messages.push(ConsumedMessage {
                 message_id,
                 submission,
                 school_id,
+                submitted_at,
             });
         }
     }
@@ -91,7 +112,7 @@ pub async fn ensure_consumer_group(
     stream_name: &str,
     group_name: &str,
 ) -> Result<()> {
-    let _: Result<String, redis::RedisError> = redis::cmd("XGROUP")
+    let result: Result<String, redis::RedisError> = redis::cmd("XGROUP")
         .arg("CREATE")
         .arg(stream_name)
         .arg(group_name)
@@ -100,11 +121,34 @@ pub async fn ensure_consumer_group(
         .query_async(conn)
         .await;
 
-    tracing::info!(
-        "Consumer group '{}' ready for stream '{}'",
-        group_name,
-        stream_name
-    );
+    match result {
+        Ok(_) => {
+            tracing::info!(
+                "Consumer group '{}' created for stream '{}'",
+                group_name,
+                stream_name
+            );
+        }
+        Err(err) => {
+            let err_msg = err.to_string();
+            // BUSYGROUP means the group already exists — that's fine, not an error.
+            if err_msg.contains("BUSYGROUP") {
+                tracing::info!(
+                    "Consumer group '{}' already exists for stream '{}'",
+                    group_name,
+                    stream_name
+                );
+            } else {
+                tracing::error!(
+                    "Failed to create consumer group '{}' for stream '{}': {}",
+                    group_name,
+                    stream_name,
+                    err
+                );
+                return Err(err).context("Failed to create consumer group")?;
+            }
+        }
+    }
 
     Ok(())
 }
@@ -112,22 +156,23 @@ pub async fn ensure_consumer_group(
 /// Dual-stream priority consumer: drains contest stream first (non-blocking),
 /// then falls back to normal stream (5s blocking read).
 ///
-/// Returns tuples of (message_id, SubmissionMessage, origin_stream_name, school_id).
+/// Returns tuples of (message_id, SubmissionMessage, origin_stream_name, school_id, submitted_at).
 /// The origin stream name is needed for correct ACK (per Pitfall 3 in RESEARCH.md).
 /// The school_id is needed for DLQ tenant isolation.
+/// The submitted_at is used to calculate queue wait time.
 pub async fn consume_priority(
     conn: &mut MultiplexedConnection,
     contest_stream: &str,
     normal_stream: &str,
     group_name: &str,
     consumer_name: &str,
-) -> Result<Vec<(String, SubmissionMessage, String, Option<i64>)>> {
+) -> Result<Vec<(String, SubmissionMessage, String, Option<i64>, Option<String>)>> {
     // Try contest stream first (non-blocking, per D-03)
     let contest_msgs = consume_submission(conn, contest_stream, group_name, consumer_name, None).await?;
     if !contest_msgs.is_empty() {
         return Ok(contest_msgs
             .into_iter()
-            .map(|m| (m.message_id, m.submission, contest_stream.to_string(), m.school_id))
+            .map(|m| (m.message_id, m.submission, contest_stream.to_string(), m.school_id, m.submitted_at))
             .collect());
     }
     // Fall back to normal stream (5s block, same as current)
@@ -141,7 +186,7 @@ pub async fn consume_priority(
     .await?;
     Ok(normal_msgs
         .into_iter()
-        .map(|m| (m.message_id, m.submission, normal_stream.to_string(), m.school_id))
+        .map(|m| (m.message_id, m.submission, normal_stream.to_string(), m.school_id, m.submitted_at))
         .collect())
 }
 

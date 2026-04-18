@@ -22,7 +22,8 @@ async fn test_judge_worker_memory_tracking() {
         language: "python3".to_string(),
         source_code: "print('Hello, World!')".to_string(),
         time_limit_ms: 1000,
-        memory_limit_kb: 128000,
+        memory_limit_mb: 128,
+        contest_id: None,
     };
 
     // Process submission (will fail without real problem/test cases, but that's ok)

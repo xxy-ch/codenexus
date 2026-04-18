@@ -17,6 +17,7 @@ fn create_test_submission(submission_id: i64, problem_id: i64) -> SubmissionMess
         source_code: "print('Hello, World!')".to_string(),
         time_limit_ms: 1000,
         memory_limit_mb: 256,
+        contest_id: None,
     }
 }
 

@@ -423,12 +423,13 @@ impl SubmissionService {
                     source_code: code.to_string(),
                     time_limit_ms: time_limit_ms as u64,
                     memory_limit_mb: ((memory_limit_kb as u64) / 1024).max(1),
+                    contest_id,
                 };
 
                 // Determine target stream based on contest_id, participant registration, and tenant ownership (T-09-03, T-09-06-01, T-09-06-02)
                 let stream_name = match contest_id {
                     Some(cid) => {
-                        let contest_active = sqlx::query_scalar::<_, bool>(
+                        let contest_active_result = sqlx::query_scalar::<_, bool>(
                             "SELECT EXISTS(
                                 SELECT 1 FROM contest_participants cp
                                 JOIN contests c ON c.id = cp.contest_id
@@ -443,8 +444,17 @@ impl SubmissionService {
                         .bind(user_id)
                         .bind(school_id)
                         .fetch_one(&self.pool)
-                        .await
-                        .unwrap_or(false);
+                        .await;
+                        let contest_active = match contest_active_result {
+                            Ok(active) => active,
+                            Err(err) => {
+                                tracing::warn!(
+                                    "Contest status check failed for contest_id={}: {}. Falling back to normal queue",
+                                    cid, err
+                                );
+                                false
+                            }
+                        };
                         if contest_active { "submissions:contest" } else { "submissions" }
                     }
                     None => "submissions",

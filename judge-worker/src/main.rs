@@ -51,6 +51,9 @@ async fn main() -> Result<()> {
         .unwrap_or_else(|_| "4".to_string())
         .parse()
         .unwrap_or(4);
+    if max_concurrent == 0 {
+        panic!("MAX_CONCURRENT_JUDGES must be >= 1, got 0. A value of 0 would cause the semaphore to have zero permits, permanently blocking all judging.");
+    }
     info!("Max concurrent judges: {}", max_concurrent);
 
     info!("Connecting to Redis at {}", redis_url);
@@ -246,6 +249,39 @@ impl Drop for ActiveGuard {
     }
 }
 
+/// Calculate queue wait time from the `submitted_at` enqueue timestamp.
+///
+/// Returns `(dequeue_timestamp - submitted_at)` in milliseconds, which represents
+/// how long the submission waited in the queue before being picked up by this worker.
+/// Falls back to 0 if `submitted_at` is missing or cannot be parsed (e.g., legacy
+/// messages that lack the field).
+fn compute_wait_ms(submitted_at: &Option<String>, dequeue_timestamp: &chrono::DateTime<chrono::Utc>) -> usize {
+    match submitted_at {
+        Some(ts) => {
+            match chrono::DateTime::parse_from_rfc3339(ts) {
+                Ok(enqueue_time) => {
+                    let wait = *dequeue_timestamp - enqueue_time.with_timezone(&chrono::Utc);
+                    let ms = wait.num_milliseconds();
+                    if ms < 0 {
+                        warn!(
+                            "Negative queue wait time ({}ms), clamping to 0. submitted_at={}, dequeue={}",
+                            ms, ts, dequeue_timestamp.to_rfc3339()
+                        );
+                        0
+                    } else {
+                        ms as usize
+                    }
+                }
+                Err(e) => {
+                    warn!("Failed to parse submitted_at '{}': {}", ts, e);
+                    0
+                }
+            }
+        }
+        None => 0,
+    }
+}
+
 async fn run_processing_loop(
     conn: Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
     stream_name: &str,
@@ -350,7 +386,7 @@ async fn consume_and_process(
     // Process messages concurrently
     let mut handles = Vec::with_capacity(messages.len());
 
-    for (message_id, submission, origin_stream, school_id) in messages {
+    for (message_id, submission, origin_stream, school_id, submitted_at) in messages {
         let permit = semaphore.clone().acquire_owned().await?;
         let conn = Arc::clone(conn);
         let group_name = group_name.to_string();
@@ -364,7 +400,8 @@ async fn consume_and_process(
         let handle = tokio::spawn(async move {
             let _permit = permit;
             let _guard = ActiveGuard::new(&active_count);
-            let start = std::time::Instant::now();
+            // Record dequeue timestamp for queue wait time calculation
+            let dequeue_timestamp = chrono::Utc::now();
 
             info!(
                 "Processing submission {} (message ID: {}, stream: {})",
@@ -386,7 +423,7 @@ async fn consume_and_process(
                             &conn,
                             &api_breaker,
                             &origin_stream,
-                            None,
+                            submitted_at.as_deref(),
                             &original_msg_json,
                             school_id,
                         )
@@ -427,10 +464,12 @@ async fn consume_and_process(
                                 );
                                 // Update heartbeat metrics
                                 total_processed.fetch_add(1, Ordering::Relaxed);
-                                let elapsed_ms = start.elapsed().as_millis() as usize;
+                                // Calculate queue wait time: dequeue - enqueue
+                                // Falls back to processing time if submitted_at is unavailable
+                                let wait_ms = compute_wait_ms(&submitted_at, &dequeue_timestamp);
                                 // Simple exponential moving average for avg_wait_ms
                                 let prev = avg_wait_ms.load(Ordering::Relaxed);
-                                let new_avg = if prev == 0 { elapsed_ms } else { (prev * 7 + elapsed_ms * 3) / 10 };
+                                let new_avg = if prev == 0 { wait_ms } else { (prev * 7 + wait_ms * 3) / 10 };
                                 avg_wait_ms.store(new_avg, Ordering::Relaxed);
                                 true
                             }

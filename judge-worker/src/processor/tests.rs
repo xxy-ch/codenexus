@@ -10,6 +10,7 @@ mod processor_tests {
             source_code: "print('Hello, World!')".to_string(),
             time_limit_ms: 1000,
             memory_limit_mb: 256,
+            contest_id: None,
         };
 
         assert_eq!(submission.submission_id, 1);
@@ -37,6 +38,7 @@ int main() {
             .to_string(),
             time_limit_ms: 2000,
             memory_limit_mb: 512,
+            contest_id: None,
         };
 
         assert_eq!(submission.language, "cpp");
@@ -54,6 +56,7 @@ int main() {
             source_code: "fn main() { println!(\"42\"); }".to_string(),
             time_limit_ms: 1500,
             memory_limit_mb: 128,
+            contest_id: None,
         };
 
         assert_eq!(submission.language, "rust");
@@ -71,6 +74,7 @@ int main() {
             source_code: "print(42)".to_string(),
             time_limit_ms: 1000,
             memory_limit_mb: 256,
+            contest_id: None,
         };
 
         // Test JSON serialization
@@ -206,6 +210,7 @@ int main() {
             source_code: "print('test')".to_string(),
             time_limit_ms: 0, // Invalid
             memory_limit_mb: 256,
+            contest_id: None,
         };
 
         // Zero time limit should be handled
