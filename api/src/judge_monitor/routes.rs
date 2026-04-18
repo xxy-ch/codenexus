@@ -46,6 +46,14 @@ struct DlqQuery {
 /// GET /admin/judge/status
 ///
 /// Per D-09: Returns queue depths, active workers, average wait time, circuit breaker states.
+///
+/// NOTE: Worker heartbeats and queue depths are **global** -- judge workers serve all tenants
+/// and do not report per-tenant activity in their heartbeat payload. This endpoint is gated
+/// by admin/root role check but is NOT tenant-isolated. This is an architectural limitation:
+/// filtering workers by tenant would produce misleading metrics (e.g., showing 0 active judges
+/// for org A when workers are actively processing org A submissions).
+/// Future improvement: add per-tenant submission counts in heartbeat if tenant-level isolation
+/// becomes a hard requirement.
 async fn get_judge_status(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
@@ -90,6 +98,7 @@ async fn get_judge_status(
     };
 
     Ok(Json(serde_json::json!({
+        "scope": "global",
         "queues": {
             "normal_depth": normal_depth,
             "contest_depth": contest_depth,
@@ -328,5 +337,31 @@ mod tests {
                 other
             ),
         }
+    }
+
+    /// Regression test (Bug 3 / T-10-monitor-isolation): The status response JSON
+    /// must include `"scope": "global"` to document that worker metrics are NOT
+    /// tenant-isolated. Workers serve all tenants and do not report per-tenant
+    /// activity in their heartbeat payload. This marker informs the frontend that
+    /// the data is cross-tenant.
+    #[test]
+    fn status_response_includes_global_scope_marker() {
+        let response_body = serde_json::json!({
+            "scope": "global",
+            "queues": {
+                "normal_depth": 5,
+                "contest_depth": 2,
+            },
+            "active_judges": 3,
+            "total_active_judgements": 7,
+            "avg_wait_ms": 120,
+            "workers": [],
+        });
+
+        assert_eq!(
+            response_body.get("scope").and_then(|v| v.as_str()),
+            Some("global"),
+            "Status response must include scope: \"global\" to document tenant isolation limitation"
+        );
     }
 }

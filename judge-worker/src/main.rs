@@ -81,6 +81,16 @@ async fn main() -> Result<()> {
     let total_processed = Arc::new(AtomicUsize::new(0));
     let avg_wait_ms = Arc::new(AtomicUsize::new(0));
 
+    // Create a single shared HTTP client for all result callbacks.
+    // reqwest::Client maintains an internal connection pool; creating one per request
+    // would lose keep-alive and require a new TCP+TLS handshake each time (Bug 4 fix).
+    let http_client = Arc::new(
+        reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()
+            .map_err(|e| anyhow::anyhow!("Failed to create HTTP client: {}", e))?,
+    );
+
     // Recover pending submissions from crashed workers on both streams
     let recovery_idle_ms: u64 = env::var("RECOVERY_IDLE_MS")
         .unwrap_or_else(|_| "300000".to_string())
@@ -89,6 +99,7 @@ async fn main() -> Result<()> {
 
     // Recover from normal stream
     recover_stream(
+        &http_client,
         &conn,
         &stream_name,
         &group_name,
@@ -100,6 +111,7 @@ async fn main() -> Result<()> {
 
     // Recover from contest stream
     recover_stream(
+        &http_client,
         &conn,
         &contest_stream,
         &group_name,
@@ -129,6 +141,7 @@ async fn main() -> Result<()> {
     // Enter main processing loop
     run_processing_loop(
         conn,
+        http_client,
         &stream_name,
         &contest_stream,
         &group_name,
@@ -146,6 +159,7 @@ async fn main() -> Result<()> {
 
 /// Recover pending submissions from a single stream.
 async fn recover_stream(
+    http_client: &Arc<reqwest::Client>,
     conn: &Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
     stream_name: &str,
     group_name: &str,
@@ -180,6 +194,7 @@ async fn recover_stream(
                         Ok(judge_result) => {
                             let should_ack =
                                 match send_result_with_retry(
+                                    http_client,
                                     api_url,
                                     &judge_result,
                                     conn,
@@ -298,6 +313,7 @@ fn compute_wait_ms(submitted_at: &Option<String>, dequeue_timestamp: &chrono::Da
 
 async fn run_processing_loop(
     conn: Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
+    http_client: Arc<reqwest::Client>,
     stream_name: &str,
     contest_stream: &str,
     group_name: &str,
@@ -318,6 +334,7 @@ async fn run_processing_loop(
     loop {
         match consume_and_process(
             &conn,
+            &http_client,
             stream_name,
             contest_stream,
             group_name,
@@ -353,6 +370,7 @@ async fn run_processing_loop(
 
 async fn consume_and_process(
     conn: &Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
+    http_client: &Arc<reqwest::Client>,
     stream_name: &str,
     contest_stream: &str,
     group_name: &str,
@@ -408,6 +426,7 @@ async fn consume_and_process(
     for (message_id, submission, origin_stream, school_id, submitted_at) in messages {
         let permit = semaphore.clone().acquire_owned().await?;
         let conn = Arc::clone(conn);
+        let http_client = Arc::clone(http_client);
         let group_name = group_name.to_string();
         let api_url = api_url.to_string();
         let redis_breaker = Arc::clone(redis_breaker);
@@ -439,6 +458,7 @@ async fn consume_and_process(
                 Ok(judge_result) => {
                     let should_ack =
                         match send_result_with_retry_breaker(
+                            &http_client,
                             &api_url,
                             &judge_result,
                             &conn,
@@ -623,14 +643,11 @@ async fn acknowledge_with_retry(
     Ok(())
 }
 
-async fn send_result_to_api(api_url: &str, result: &queue::JudgeResult) -> Result<()> {
-    use reqwest::Client;
-
-    let client = Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-        .map_err(|e| anyhow::anyhow!("Failed to create HTTP client: {}", e))?;
-
+async fn send_result_to_api(
+    client: &reqwest::Client,
+    api_url: &str,
+    result: &queue::JudgeResult,
+) -> Result<()> {
     let url = format!("{}/submissions/{}/results", api_url, result.submission_id);
 
     let response = client
@@ -664,6 +681,7 @@ enum DeliveryOutcome {
 /// endpoint can route back to the correct stream. `original_message` is the
 /// serialized `SubmissionMessage` so retry re-enqueues a worker-consumable payload.
 async fn send_result_with_retry_breaker(
+    http_client: &reqwest::Client,
     api_url: &str,
     result: &queue::JudgeResult,
     conn: &Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
@@ -706,7 +724,7 @@ async fn send_result_with_retry_breaker(
             }
         }
 
-        match send_result_to_api(api_url, result).await {
+        match send_result_to_api(http_client, api_url, result).await {
             Ok(()) => {
                 api_breaker.record_success();
                 return Ok(DeliveryOutcome::Delivered);
@@ -765,6 +783,7 @@ async fn send_result_with_retry_breaker(
 /// so that DLQ entries written from the recovery path include full metadata for
 /// admin retry and tenant isolation.
 async fn send_result_with_retry(
+    http_client: &reqwest::Client,
     api_url: &str,
     result: &queue::JudgeResult,
     conn: &Arc<tokio::sync::Mutex<redis::aio::MultiplexedConnection>>,
@@ -776,7 +795,7 @@ async fn send_result_with_retry(
     let mut attempt: u32 = 0;
 
     loop {
-        match send_result_to_api(api_url, result).await {
+        match send_result_to_api(http_client, api_url, result).await {
             Ok(()) => return Ok(DeliveryOutcome::Delivered),
             Err(e) => {
                 attempt += 1;
