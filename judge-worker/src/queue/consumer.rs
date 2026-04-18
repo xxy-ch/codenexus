@@ -19,16 +19,17 @@ pub async fn consume_submission(
     let mut cmd = redis::cmd("XREADGROUP");
     cmd.arg("GROUP")
         .arg(group_name)
-        .arg(consumer_name)
-        .arg("COUNT")
-        .arg(1)
-        .arg("STREAMS")
-        .arg(stream_name)
-        .arg(">");
+        .arg(consumer_name);
 
     if let Some(ms) = block_ms {
         cmd.arg("BLOCK").arg(ms);
     }
+
+    cmd.arg("COUNT")
+        .arg(1)
+        .arg("STREAMS")
+        .arg(stream_name)
+        .arg(">");
 
     let result: redis::streams::StreamReadReply = cmd
         .query_async(conn)
@@ -148,6 +149,83 @@ pub async fn consume_priority(
 mod tests {
     use super::*;
     use redis::Client;
+
+    /// Helper: build the same XREADGROUP command as `consume_submission` and return
+    /// its args as a Vec<String> for inspection.
+    fn build_xreadgroup_args(
+        stream_name: &str,
+        group_name: &str,
+        consumer_name: &str,
+        block_ms: Option<u64>,
+    ) -> Vec<String> {
+        let mut cmd = redis::cmd("XREADGROUP");
+        cmd.arg("GROUP")
+            .arg(group_name)
+            .arg(consumer_name);
+
+        if let Some(ms) = block_ms {
+            cmd.arg("BLOCK").arg(ms);
+        }
+
+        cmd.arg("COUNT")
+            .arg(1)
+            .arg("STREAMS")
+            .arg(stream_name)
+            .arg(">");
+
+        cmd.args_iter()
+            .map(|arg| match arg {
+                redis::Arg::Simple(data) => {
+                    String::from_utf8_lossy(data).to_string()
+                }
+                redis::Arg::Cursor => "<cursor>".to_string(),
+            })
+            .collect()
+    }
+
+    /// Regression test: BLOCK must come BEFORE STREAMS in the XREADGROUP command.
+    /// Before the fix, BLOCK was appended *after* STREAMS, which is invalid Redis
+    /// syntax and caused normal-queue consumption to fail silently.
+    #[test]
+    fn test_xreadgroup_blocking_args_order() {
+        let args = build_xreadgroup_args("submissions", "workers", "w1", Some(5000));
+
+        // Expected: GROUP workers w1 BLOCK 5000 COUNT 1 STREAMS submissions >
+        let streams_pos = args.iter().position(|a| a == "STREAMS").expect("STREAMS not found");
+        let block_pos = args.iter().position(|a| a == "BLOCK").expect("BLOCK not found");
+
+        assert!(
+            block_pos < streams_pos,
+            "BLOCK (index {}) must come before STREAMS (index {}), got args: {:?}",
+            block_pos,
+            streams_pos,
+            args,
+        );
+
+        // Full argument verification (includes command name from args_iter)
+        assert_eq!(
+            args,
+            vec!["XREADGROUP", "GROUP", "workers", "w1", "BLOCK", "5000", "COUNT", "1", "STREAMS", "submissions", ">"]
+        );
+    }
+
+    /// Non-blocking (contest priority) path: no BLOCK arg at all.
+    #[test]
+    fn test_xreadgroup_nonblocking_args_order() {
+        let args = build_xreadgroup_args("contest_submissions", "workers", "w1", None);
+
+        assert!(
+            !args.iter().any(|a| a == "BLOCK"),
+            "BLOCK should not appear in non-blocking command, got: {:?}",
+            args,
+        );
+
+        // Expected: XREADGROUP GROUP workers w1 COUNT 1 STREAMS contest_submissions >
+        assert_eq!(
+            args,
+            vec!["XREADGROUP", "GROUP", "workers", "w1", "COUNT", "1", "STREAMS", "contest_submissions", ">"]
+        );
+    }
 
     #[tokio::test]
     #[ignore = "requires Redis"]
