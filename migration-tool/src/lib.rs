@@ -27,7 +27,7 @@ pub struct Cli {
     pub test_case_dir: Option<String>,
 
     /// Existing organization ID to assign migrated data to (D-10-4)
-    #[arg(long, conflicts_with = "create_default_org")]
+    #[arg(long)]
     pub org_id: Option<i64>,
 
     /// Create a default organization for migrated data (D-10-4)
@@ -41,6 +41,15 @@ pub async fn run(cli: Cli) -> Result<()> {
     if cli.org_id.is_none() && !cli.create_default_org {
         eprintln!("Error: either --org-id or --create-default-org must be provided");
         process::exit(1);
+    }
+
+    // D-10-4: When both --org-id and --create-default-org are provided,
+    // --org-id takes precedence (--create-default-org is ignored).
+    if cli.org_id.is_some() && cli.create_default_org {
+        tracing::info!(
+            "Both --org-id and --create-default-org provided. Using --org-id={}",
+            cli.org_id.unwrap()
+        );
     }
 
     // Initialize tracing
@@ -175,14 +184,17 @@ mod tests {
     }
 
     #[test]
-    fn cli_org_id_and_create_default_org_conflict() {
-        let result = Cli::try_parse_from([
+    fn cli_org_id_and_create_default_org_both_allowed() {
+        // D-10-4: Both flags are allowed; --org-id takes precedence at runtime.
+        let cli = Cli::try_parse_from([
             "uoj-migrate",
             "--dump-file", "/path/to/dump.sql",
             "--database-url", "postgres://localhost/db",
             "--org-id", "1",
             "--create-default-org",
-        ]);
-        assert!(result.is_err());
+        ]).unwrap();
+
+        assert_eq!(cli.org_id, Some(1));
+        assert!(cli.create_default_org);
     }
 }

@@ -113,7 +113,7 @@
 - `--org-id 1`: All migrated entities assigned to organization with id=1. Error if org doesn't exist.
 - `--create-default-org`: Creates organization named "Imported from UOJ" with a default campus "Main Campus". All entities assigned there.
 - Neither flag: Print usage error and exit.
-- Both flags: `--org-id` takes precedence (ignore `--create-default-org`).
+- Both flags: `--org-id` takes precedence (ignore `--create-default-org`). No error is raised; both flags are accepted simultaneously.
 
 **Why:** Flexible for different deployment scenarios. Single-tenant migration uses auto-create. Existing deployment uses `--org-id` to import into specific org.
 
@@ -253,9 +253,9 @@ If not present in extra_config, use defaults: `time_limit_ms=1000`, `memory_limi
 
 ### D-10-11: Problem Authorship — System Migration User
 
-**Decision:** Create a system user `uoj_migration` during migration. All migrated problems assigned to this user as author.
+**Decision:** Create a system user `uoj_migration_{org_id}` during migration. All migrated problems assigned to this user as author. The per-org suffix prevents cross-tenant username collision when migrating into a non-empty database.
 
-**Why:** UOJ has no problem author concept. A dedicated migration user makes ownership clear and doesn't pollute any real user's profile.
+**Why:** UOJ has no problem author concept. A dedicated migration user makes ownership clear and doesn't pollute any real user's profile. The per-org suffix ensures each organization gets its own system user, preventing conflicts when multiple migrations target the same database.
 
 ## Deferred Ideas
 

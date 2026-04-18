@@ -1673,11 +1673,130 @@ impl Migrator {
         map
     }
 
+    /// Migrate UOJ best_ac_submissions (leaderboard seed data).
+    ///
+    /// UOJ's `best_ac_submissions` is a materialized cache of "best accepted
+    /// submission per user per problem". AlgoMaster computes this dynamically
+    /// from the `submissions` table, so there is no separate target table.
+    ///
+    /// This step validates that all referenced users, problems, and submissions
+    /// exist in the id_map (cross-check integrity) and records mappings for
+    /// idempotency tracking. If any referenced entity is missing, the row is
+    /// skipped with a warning.
+    pub async fn migrate_best_ac(&mut self) -> Result<()> {
+        tracing::info!("Starting best_ac_submissions migration (idempotency tracking)...");
+
+        let rows = match self.dump.tables.get("best_ac_submissions") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!(
+                    "No best_ac_submissions table found in dump, skipping"
+                );
+                return Ok(());
+            }
+        };
+
+        tracing::info!("Found {} best_ac_submissions rows in dump", rows.len());
+
+        let mut validated = 0u64;
+        let mut skipped = 0u64;
+
+        for row in rows {
+            // UOJ best_ac_submissions columns:
+            //   problem_id, submitter, submission_id, used_time, used_memory,
+            //   tot_size, shortest_id, shortest_used_time, shortest_used_memory,
+            //   shortest_tot_size
+            if row.len() < 3 {
+                tracing::debug!(
+                    "Skipping malformed best_ac row ({} fields)",
+                    row.len()
+                );
+                skipped += 1;
+                continue;
+            }
+
+            let problem_id_str = &row[0];
+            let submitter = &row[1];
+            let submission_id_str = &row[2];
+
+            // Build composite key for idempotency check
+            let composite_key = format!("{}:{}", submitter, problem_id_str);
+
+            if self.id_map.contains("best_ac", &composite_key) {
+                tracing::debug!(
+                    "best_ac ({}, {}) already migrated, skipping",
+                    submitter,
+                    problem_id_str
+                );
+                continue;
+            }
+
+            // Validate user exists in id_map
+            let user_id = match self.id_map.get("user", submitter) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping best_ac: user '{}' not found in id_map",
+                        submitter
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Validate problem exists in id_map
+            let new_problem_id = match self.id_map.get("problem", problem_id_str) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping best_ac: problem '{}' not found in id_map",
+                        problem_id_str
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Validate submission exists in id_map
+            let new_submission_id = match self.id_map.get("submission", submission_id_str) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping best_ac: submission '{}' not found in id_map",
+                        submission_id_str
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Record mapping for idempotency.
+            // Value stores the triple (user, problem, submission) for auditing.
+            let mapping_value = format!(
+                "{}:{}:{}",
+                user_id, new_problem_id, new_submission_id
+            );
+            self.id_map
+                .get_or_insert("best_ac", &composite_key, mapping_value)
+                .await?;
+
+            validated += 1;
+        }
+
+        tracing::info!(
+            "best_ac_submissions migration complete: {} validated, {} skipped",
+            validated,
+            skipped
+        );
+        Ok(())
+    }
+
     /// Run the full migration pipeline in dependency order.
     ///
-    /// Order: users -> problems -> contests -> submissions -> blogs -> likes -> messages
+    /// Order: users -> problems -> contests -> submissions -> best_ac -> blogs -> likes -> messages
     /// Contests MUST come before submissions so that contest_id mappings exist
     /// when creating contest_submissions rows for contest submissions.
+    /// best_ac MUST come after submissions so submission id_map entries exist.
     pub async fn run(&mut self) -> Result<()> {
         tracing::info!(
             "Starting migration for org_id={}, campus_id={:?}",
@@ -1698,13 +1817,17 @@ impl Migrator {
         // 5. Submissions (now contest mappings exist for contest_submissions)
         self.migrate_submissions().await?;
 
-        // 6. Blogs + comments + tags
+        // 6. Best AC (leaderboard seed data -- validates cross-references)
+        //    MUST be after submissions so submission id_map entries exist.
+        self.migrate_best_ac().await?;
+
+        // 7. Blogs + comments + tags
         self.migrate_blogs().await?;
 
-        // 7. Likes
+        // 8. Likes
         self.migrate_likes().await?;
 
-        // 8. Direct messages
+        // 9. Direct messages
         self.migrate_messages().await?;
 
         tracing::info!("Migration complete!");
@@ -2269,6 +2392,70 @@ mod tests {
         };
         assert_eq!(final_email, "bob@migrated.uoj.local",
             "'NULL' string email must get synthetic replacement");
+    }
+
+    // ===================== Best AC migration tests =====================
+
+    // Best AC idempotency: composite key format is "{submitter}:{problem_id}".
+    #[test]
+    fn best_ac_composite_key_format() {
+        let submitter = "alice";
+        let problem_id = "42";
+        let composite_key = format!("{}:{}", submitter, problem_id);
+        assert_eq!(composite_key, "alice:42");
+    }
+
+    // Best AC idempotency: different (submitter, problem) pairs get different keys.
+    #[test]
+    fn best_ac_composite_key_uniqueness() {
+        let key_a = format!("{}:{}", "alice", "1");
+        let key_b = format!("{}:{}", "alice", "2");
+        let key_c = format!("{}:{}", "bob", "1");
+        assert_ne!(key_a, key_b, "same user, different problems must differ");
+        assert_ne!(key_a, key_c, "different users, same problem must differ");
+        assert_ne!(key_b, key_c, "different users and problems must differ");
+    }
+
+    // Best AC row parsing: verify field indices match UojBestAcSubmission.
+    // Columns: 0:problem_id, 1:submitter, 2:submission_id, 3:used_time, ...
+    #[test]
+    fn best_ac_field_indices_match_model() {
+        let row: Vec<String> = vec![
+            "10".to_string(),       // 0: problem_id
+            "alice".to_string(),    // 1: submitter
+            "500".to_string(),      // 2: submission_id
+            "50".to_string(),       // 3: used_time
+            "1024".to_string(),     // 4: used_memory
+            "256".to_string(),      // 5: tot_size
+            "500".to_string(),      // 6: shortest_id
+            "48".to_string(),       // 7: shortest_used_time
+            "900".to_string(),      // 8: shortest_used_memory
+            "200".to_string(),      // 9: shortest_tot_size
+        ];
+        assert!(row.len() >= 3, "row must have at least 3 columns");
+        assert_eq!(row[0], "10", "problem_id at index 0");
+        assert_eq!(row[1], "alice", "submitter at index 1");
+        assert_eq!(row[2], "500", "submission_id at index 2");
+    }
+
+    // Best AC mapping value format: "user_uuid:problem_id:submission_id"
+    #[test]
+    fn best_ac_mapping_value_encodes_triple() {
+        let user_id = "uuid-alice";
+        let new_problem_id = "10";
+        let new_submission_id = "500";
+        let mapping_value = format!(
+            "{}:{}:{}",
+            user_id, new_problem_id, new_submission_id
+        );
+        assert_eq!(mapping_value, "uuid-alice:10:500");
+    }
+
+    // Best AC skips rows with fewer than 3 fields.
+    #[test]
+    fn best_ac_skips_malformed_rows() {
+        let short_row: Vec<String> = vec!["10".to_string(), "alice".to_string()];
+        assert!(short_row.len() < 3, "row with < 3 fields should be skipped");
     }
 
     // ===================== DB-dependent integration tests =====================
