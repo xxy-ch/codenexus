@@ -8,9 +8,9 @@ use sqlx::PgPool;
 /// Uses an in-memory HashMap for fast lookups during the hot path, backed by a
 /// PostgreSQL `migration_mappings` table for persistence across re-runs (D-10-5).
 pub struct IdMap {
-    pool: PgPool,
+    pub(crate) pool: PgPool,
     /// Key: (entity_type, old_id) -> Value: new_id
-    mappings: HashMap<(String, String), String>,
+    pub(crate) mappings: HashMap<(String, String), String>,
 }
 
 impl IdMap {

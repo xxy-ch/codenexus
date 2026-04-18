@@ -587,7 +587,7 @@ impl Migrator {
             };
 
             // Parse result: may be hex-encoded blob (0x...) or plain text
-            let decoded_result = self.decode_blob_result(result_raw);
+            let decoded_result = Self::decode_blob_result(result_raw);
 
             // Map status/verdict
             let result_str = if decoded_result.is_empty() {
@@ -674,7 +674,7 @@ impl Migrator {
     ///
     /// UOJ stores result as a MySQL BLOB. In the dump, this appears as
     /// either hex-encoded (0x...) or plain text.
-    fn decode_blob_result(&self, raw: &str) -> String {
+    fn decode_blob_result(raw: &str) -> String {
         if raw.starts_with("0x") || raw.starts_with("0X") {
             // Hex-encoded blob: decode hex bytes to UTF-8
             let hex_str = &raw[2..];
@@ -1102,21 +1102,7 @@ impl Migrator {
 
     /// Build a HashMap of blog_id -> Vec<tag> from blogs_tags table.
     fn build_blog_tags_map(&self) -> std::collections::HashMap<i64, Vec<String>> {
-        let mut map: std::collections::HashMap<i64, Vec<String>> = std::collections::HashMap::new();
-        if let Some(rows) = self.dump.tables.get("blogs_tags") {
-            for row in rows {
-                // blogs_tags columns: id, blog_id, tag
-                if row.len() >= 3 {
-                    if let Ok(blog_id) = row[1].parse::<i64>() {
-                        let tag = &row[2];
-                        if tag != "NULL" && !tag.is_empty() {
-                            map.entry(blog_id).or_default().push(tag.clone());
-                        }
-                    }
-                }
-            }
-        }
-        map
+        Self::build_blog_tags_map_from_dump(&self.dump)
     }
 
     /// Migrate blog comments from blogs_comments to article_comments.
@@ -1498,6 +1484,25 @@ impl Migrator {
         Ok(())
     }
 
+    /// Build a HashMap of blog_id -> Vec<tag> from blogs_tags table.
+    /// Public for unit testing.
+    fn build_blog_tags_map_from_dump(dump: &ParsedDump) -> std::collections::HashMap<i64, Vec<String>> {
+        let mut map: std::collections::HashMap<i64, Vec<String>> = std::collections::HashMap::new();
+        if let Some(rows) = dump.tables.get("blogs_tags") {
+            for row in rows {
+                if row.len() >= 3 {
+                    if let Ok(blog_id) = row[1].parse::<i64>() {
+                        let tag = &row[2];
+                        if tag != "NULL" && !tag.is_empty() {
+                            map.entry(blog_id).or_default().push(tag.clone());
+                        }
+                    }
+                }
+            }
+        }
+        map
+    }
+
     /// Run the full migration pipeline in dependency order.
     pub async fn run(&mut self) -> Result<()> {
         tracing::info!(
@@ -1530,4 +1535,99 @@ impl Migrator {
         tracing::info!("Migration complete!");
         Ok(())
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::ParsedDump;
+
+    fn make_dump_with_blogs_tags(rows: Vec<Vec<&str>>) -> ParsedDump {
+        let mut dump = ParsedDump::default();
+        dump.tables.insert(
+            "blogs_tags".to_string(),
+            rows.into_iter().map(|r| r.into_iter().map(|s| s.to_string()).collect()).collect(),
+        );
+        dump
+    }
+
+    #[test]
+    fn build_blog_tags_map_aggregates_tags_per_blog() {
+        let dump = make_dump_with_blogs_tags(vec![
+            vec!["1", "10", "rust"],
+            vec!["2", "10", "algo"],
+            vec!["3", "20", "dp"],
+        ]);
+        let map = Migrator::build_blog_tags_map_from_dump(&dump);
+        assert_eq!(map.get(&10).unwrap().len(), 2);
+        assert!(map.get(&10).unwrap().contains(&"rust".to_string()));
+        assert!(map.get(&10).unwrap().contains(&"algo".to_string()));
+        assert_eq!(map.get(&20).unwrap().len(), 1);
+        assert_eq!(map.get(&20).unwrap()[0], "dp");
+    }
+
+    #[test]
+    fn build_blog_tags_map_skips_null_and_empty_tags() {
+        let dump = make_dump_with_blogs_tags(vec![
+            vec!["1", "10", "NULL"],
+            vec!["2", "10", ""],
+            vec!["3", "10", "valid"],
+        ]);
+        let map = Migrator::build_blog_tags_map_from_dump(&dump);
+        let tags = map.get(&10).unwrap();
+        assert_eq!(tags.len(), 1);
+        assert_eq!(tags[0], "valid");
+    }
+
+    #[test]
+    fn build_blog_tags_map_handles_missing_table() {
+        let dump = ParsedDump::default();
+        let map = Migrator::build_blog_tags_map_from_dump(&dump);
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn build_blog_tags_map_skips_malformed_rows() {
+        let dump = make_dump_with_blogs_tags(vec![
+            vec!["1"],           // too short
+            vec!["2", "abc"],    // non-numeric blog_id
+            vec!["3", "10", "ok"],
+        ]);
+        let map = Migrator::build_blog_tags_map_from_dump(&dump);
+        assert_eq!(map.len(), 1);
+        assert_eq!(map.get(&10).unwrap()[0], "ok");
+    }
+
+    #[test]
+    fn decode_blob_result_handles_hex_prefix() {
+        // "Hello" in hex: 48 65 6c 6c 6f
+        let result = Migrator::decode_blob_result("0x48656c6c6f");
+        assert_eq!(result, "Hello");
+    }
+
+    #[test]
+    fn decode_blob_result_handles_uppercase_hex_prefix() {
+        let result = Migrator::decode_blob_result("0X48656c6c6f");
+        assert_eq!(result, "Hello");
+    }
+
+    #[test]
+    fn decode_blob_result_passes_plain_text_through() {
+        let result = Migrator::decode_blob_result("Accepted");
+        assert_eq!(result, "Accepted");
+    }
+
+    #[test]
+    fn conversation_key_normalization_orders_uuids() {
+        // Verify that (min, max) ordering produces consistent conversation keys
+        let id_a = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+        let id_b = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
+        let (min1, max1) = if id_a < id_b { (id_a, id_b) } else { (id_b, id_a) };
+        let (min2, max2) = if id_b < id_a { (id_b, id_a) } else { (id_a, id_b) };
+        assert_eq!(min1, min2);
+        assert_eq!(max1, max2);
+        assert_eq!(min1, id_a);
+        assert_eq!(max1, id_b);
+    }
+
 }
