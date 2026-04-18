@@ -78,7 +78,7 @@
 - [ ] **MIGR-02**: User migration — map UOJ users (varchar username) to AlgoMaster users (UUID); generate new passwords; assign to default organization
 - [ ] **MIGR-03**: Problem migration — migrate UOJ problems with test cases; map integer IDs to UUIDs via mapping table
 - [ ] **MIGR-04**: Submission migration — migrate historical submissions with status, score, runtime; map all foreign key IDs
-- [ ] **MIGR-05**: Blog migration — migrate UOJ blog posts to AlgoMaster blog_* tables
+- [x] **MIGR-05**: Blog migration — migrate UOJ blog posts to AlgoMaster blog_* tables
 - [x] **MIGR-06**: Migration CLI tool — standalone binary that reads UOJ MySQL dump, transforms, writes to PostgreSQL; idempotent, re-runnable
 
 ## v2 Requirements
@@ -170,7 +170,7 @@
 | MIGR-02 | Phase 10: Migration + Delivery | Pending |
 | MIGR-03 | Phase 10: Migration + Delivery | Pending |
 | MIGR-04 | Phase 10: Migration + Delivery | Pending |
-| MIGR-05 | Phase 10: Migration + Delivery | Pending |
+| MIGR-05 | Phase 10: Migration + Delivery | Complete |
 | MIGR-06 | Phase 10: Migration + Delivery | Complete |
 
 **Coverage:**

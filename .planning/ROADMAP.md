@@ -266,13 +266,13 @@ Plans:
 - MIGR-05: Blog migration — migrate UOJ blog posts to AlgoMaster blog_* tables
 - MIGR-06: Migration CLI tool — standalone binary, reads UOJ MySQL dump, writes to PostgreSQL, idempotent
 
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [x] 10-01-PLAN.md — migration-tool crate shell + CLI + SQL parser + UOJ models (Wave 1)
 - [x] 10-02-PLAN.md — ID mapping + mapper + password prefix + org/user migration (Wave 2)
 - [x] 10-03-PLAN.md — Problem + test cases + submission + contest migration (Wave 3)
-- [ ] 10-04-PLAN.md — Blog + likes + messages migration (Wave 3, parallel with 03)
+- [x] 10-04-PLAN.md — Blog + likes + messages migration (Wave 3, parallel with 03)
 - [x] 10-05-PLAN.md — Production: domain-users MD5-to-bcrypt transparent login hook (Wave 4)
 
 **Success Criteria:**
