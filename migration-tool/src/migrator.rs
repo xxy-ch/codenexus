@@ -285,6 +285,672 @@ impl Migrator {
         Ok(new_id)
     }
 
+    /// Migrate UOJ problems and their test cases to AlgoMaster.
+    ///
+    /// - Creates a system migration user as author (D-10-11)
+    /// - Parses extra_config for time_limit/memory_limit
+    /// - Reads test cases from filesystem if test_case_dir is set (D-10-1)
+    /// - Maps visibility from is_hidden
+    pub async fn migrate_problems(&mut self) -> Result<()> {
+        tracing::info!("Starting problem migration...");
+
+        // Get system migration user UUID (D-10-11)
+        let author_id = self
+            .id_map
+            .get("user", "uoj_migration")
+            .ok_or_else(|| anyhow::anyhow!("System migration user not found. Run migrate_users first."))?;
+        tracing::info!("Using system migration user as author: {}", author_id);
+
+        // Parse problem rows
+        let problem_rows = match self.dump.tables.get("problems") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!("No problems table found in dump, skipping problem migration");
+                return Ok(());
+            }
+        };
+
+        // Build lookup maps for problem contents and tags
+        let contents_map = self.build_problem_contents_map();
+        let tags_map = self.build_problem_tags_map();
+
+        tracing::info!("Found {} problem rows in dump", problem_rows.len());
+
+        let mut migrated = 0u64;
+        let mut skipped = 0u64;
+
+        for row in problem_rows {
+            // UOJ problems columns: id, title, is_hidden, submission_requirement,
+            // hackable, extra_config, zan, ac_num, submit_num
+            if row.len() < 9 {
+                tracing::warn!("Skipping malformed problems row ({} fields)", row.len());
+                skipped += 1;
+                continue;
+            }
+
+            let old_id = &row[0];
+            let title = &row[1];
+            let is_hidden = &row[2];
+            let extra_config = &row[5];
+
+            // Skip if already migrated (idempotency D-10-7)
+            if self.id_map.contains("problem", old_id) {
+                tracing::debug!("Problem {} already migrated, skipping", old_id);
+                continue;
+            }
+
+            // Parse extra_config for time/memory limits
+            let extra_config_opt = if extra_config == "NULL" || extra_config.is_empty() {
+                None
+            } else {
+                Some(extra_config.clone())
+            };
+            let (time_limit_ms, memory_limit_kb) =
+                crate::mapper::parse_extra_config(&extra_config_opt);
+
+            // Map visibility
+            let is_hidden_bool = is_hidden != "0";
+            let visibility = crate::mapper::map_visibility(is_hidden_bool);
+
+            // Get statement_md from contents map
+            let description = contents_map
+                .get(&old_id.parse::<i64>().unwrap_or(0))
+                .cloned()
+                .unwrap_or_else(|| {
+                    tracing::warn!("No content found for problem {}, using placeholder", old_id);
+                    "No description available.".to_string()
+                });
+
+            // Use old ID as new ID (BIGSERIAL allows explicit IDs)
+            let new_id: i64 = old_id.parse().unwrap_or_else(|_| {
+                tracing::warn!("Cannot parse problem id '{}', skipping", old_id);
+                skipped += 1;
+                0
+            });
+
+            if new_id == 0 {
+                skipped += 1;
+                continue;
+            }
+
+            // Get tags for this problem
+            let tags = tags_map.get(&new_id).cloned().unwrap_or_default();
+
+            // Insert problem
+            sqlx::query(
+                r#"
+                INSERT INTO problems (id, organization_id, campus_id, author_id, title, description, difficulty, visibility, time_limit_ms, memory_limit_kb)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                ON CONFLICT (id) DO NOTHING
+                "#,
+            )
+            .bind(new_id)
+            .bind(self.org_id)
+            .bind(self.campus_id)
+            .bind(&author_id)
+            .bind(title)
+            .bind(&description)
+            .bind(None::<&str>) // difficulty = NULL (UOJ has no difficulty)
+            .bind(visibility)
+            .bind(time_limit_ms)
+            .bind(memory_limit_kb)
+            .execute(&self.pool)
+            .await?;
+
+            // Update tags if present: add to description as a note (no dedicated tags column)
+            if !tags.is_empty() {
+                let tags_note = format!("\n\n**Tags:** {}", tags.join(", "));
+                sqlx::query("UPDATE problems SET description = description || $1 WHERE id = $2")
+                    .bind(&tags_note)
+                    .bind(new_id)
+                    .execute(&self.pool)
+                    .await?;
+            }
+
+            // Read and insert test cases if test_case_dir is set
+            if let Some(ref tc_dir) = self.test_case_dir {
+                let tc_path = std::path::Path::new(tc_dir);
+                let test_cases = crate::test_cases::read_test_cases(tc_path, new_id)?;
+
+                for tc in &test_cases {
+                    sqlx::query(
+                        r#"
+                        INSERT INTO test_cases (problem_id, input, output, is_secret, points, order_index)
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                        "#,
+                    )
+                    .bind(new_id)
+                    .bind(&tc.input)
+                    .bind(&tc.output)
+                    .bind(false) // is_secret = false per D-10-1
+                    .bind(1)     // points = 1
+                    .bind(tc.order_index)
+                    .execute(&self.pool)
+                    .await?;
+                }
+
+                if !test_cases.is_empty() {
+                    tracing::debug!(
+                        "Inserted {} test cases for problem {}",
+                        test_cases.len(),
+                        new_id
+                    );
+                }
+            }
+
+            // Store mapping
+            self.id_map
+                .get_or_insert("problem", old_id, new_id.to_string())
+                .await?;
+
+            migrated += 1;
+        }
+
+        tracing::info!(
+            "Problem migration complete: {} migrated, {} skipped",
+            migrated,
+            skipped
+        );
+        Ok(())
+    }
+
+    /// Build a HashMap of problem_id -> statement_md from problems_contents table.
+    fn build_problem_contents_map(&self) -> std::collections::HashMap<i64, String> {
+        let mut map = std::collections::HashMap::new();
+        if let Some(rows) = self.dump.tables.get("problems_contents") {
+            for row in rows {
+                // problems_contents columns: id, statement, statement_md
+                if row.len() >= 3 {
+                    if let Ok(id) = row[0].parse::<i64>() {
+                        let md = &row[2];
+                        if md != "NULL" && !md.is_empty() {
+                            map.insert(id, md.clone());
+                        }
+                    }
+                }
+            }
+        }
+        tracing::info!("Loaded {} problem content entries", map.len());
+        map
+    }
+
+    /// Build a HashMap of problem_id -> Vec<tag> from problems_tags table.
+    fn build_problem_tags_map(&self) -> std::collections::HashMap<i64, Vec<String>> {
+        let mut map: std::collections::HashMap<i64, Vec<String>> = std::collections::HashMap::new();
+        if let Some(rows) = self.dump.tables.get("problems_tags") {
+            for row in rows {
+                // problems_tags columns: id, problem_id, tag
+                if row.len() >= 3 {
+                    if let Ok(problem_id) = row[1].parse::<i64>() {
+                        let tag = &row[2];
+                        if tag != "NULL" && !tag.is_empty() {
+                            map.entry(problem_id).or_default().push(tag.clone());
+                        }
+                    }
+                }
+            }
+        }
+        map
+    }
+
+    /// Migrate UOJ submissions to AlgoMaster.
+    ///
+    /// - Skips Java/Go/Python2 submissions (D-10-8)
+    /// - Skips submissions with unmapped user or problem
+    /// - No score column in target (D-10-9)
+    /// - Creates contest_submissions rows for contest submissions
+    pub async fn migrate_submissions(&mut self) -> Result<()> {
+        tracing::info!("Starting submission migration...");
+
+        let submission_rows = match self.dump.tables.get("submissions") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!("No submissions table found in dump, skipping submission migration");
+                return Ok(());
+            }
+        };
+
+        tracing::info!("Found {} submission rows in dump", submission_rows.len());
+
+        let mut migrated = 0u64;
+        let mut skipped_language = 0u64;
+        let mut skipped_no_user = 0u64;
+        let mut skipped_no_problem = 0u64;
+
+        for row in submission_rows {
+            // UOJ submissions columns: id, problem_id, contest_id, submit_time,
+            // submitter, content, language, tot_size, judge_time, result,
+            // status, result_error, score, used_time, used_memory,
+            // is_hidden, status_details
+            if row.len() < 16 {
+                tracing::warn!("Skipping malformed submissions row ({} fields)", row.len());
+                continue;
+            }
+
+            let old_id = &row[0];
+            let problem_id_str = &row[1];
+            let contest_id_str = &row[2];
+            let submit_time = &row[3];
+            let submitter = &row[4];
+            let content = &row[5];
+            let language = &row[6];
+            let result_raw = &row[9];
+            let used_time = &row[12];
+            let used_memory = &row[13];
+
+            // Skip if already migrated
+            if self.id_map.contains("submission", old_id) {
+                tracing::debug!("Submission {} already migrated, skipping", old_id);
+                continue;
+            }
+
+            // Map language (D-10-8)
+            let mapped_lang = match crate::mapper::map_language(language) {
+                Some(l) => l,
+                None => {
+                    tracing::debug!(
+                        "Skipping submission {} with unsupported language '{}'",
+                        old_id,
+                        language
+                    );
+                    skipped_language += 1;
+                    continue;
+                }
+            };
+
+            // Look up user_id from id_map
+            let user_id = match self.id_map.get("user", submitter) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping submission {}: user '{}' not found in id_map",
+                        old_id,
+                        submitter
+                    );
+                    skipped_no_user += 1;
+                    continue;
+                }
+            };
+
+            // Look up problem_id from id_map
+            let new_problem_id = match self.id_map.get("problem", problem_id_str) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping submission {}: problem '{}' not found in id_map",
+                        old_id,
+                        problem_id_str
+                    );
+                    skipped_no_problem += 1;
+                    continue;
+                }
+            };
+
+            // Parse result: may be hex-encoded blob (0x...) or plain text
+            let decoded_result = self.decode_blob_result(result_raw);
+
+            // Map status/verdict
+            let result_str = if decoded_result.is_empty() {
+                None
+            } else {
+                Some(decoded_result.as_str())
+            };
+            let (status, verdict) = crate::mapper::map_status_verdict(result_str);
+
+            // Parse numeric fields
+            let time_ms: Option<i32> = used_time.parse().ok();
+            let memory_kb: Option<i32> = used_memory.parse().ok();
+
+            // Use old ID as new ID
+            let new_id: i64 = match old_id.parse() {
+                Ok(id) => id,
+                Err(_) => {
+                    tracing::warn!("Cannot parse submission id '{}', skipping", old_id);
+                    continue;
+                }
+            };
+
+            // Insert submission (no score column per D-10-9)
+            sqlx::query(
+                r#"
+                INSERT INTO submissions (id, organization_id, user_id, problem_id, language, code, status, verdict, time_ms, memory_kb, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                ON CONFLICT (id) DO NOTHING
+                "#,
+            )
+            .bind(new_id)
+            .bind(self.org_id)
+            .bind(&user_id)
+            .bind(new_problem_id.parse::<i64>().unwrap_or(0))
+            .bind(mapped_lang)
+            .bind(content)
+            .bind(status)
+            .bind(verdict)
+            .bind(time_ms)
+            .bind(memory_kb)
+            .bind(submit_time)
+            .execute(&self.pool)
+            .await?;
+
+            // If contest_id is set, create contest_submissions row
+            if contest_id_str != "NULL" && !contest_id_str.is_empty() {
+                if let Some(new_contest_id_str) = self.id_map.get("contest", contest_id_str) {
+                    if let Ok(new_contest_id) = new_contest_id_str.parse::<i64>() {
+                        sqlx::query(
+                            r#"
+                            INSERT INTO contest_submissions (contest_id, submission_id, penalty_time)
+                            VALUES ($1, $2, $3)
+                            ON CONFLICT DO NOTHING
+                            "#,
+                        )
+                        .bind(new_contest_id)
+                        .bind(new_id)
+                        .bind(0i32) // penalty_time = 0 (no penalty data in UOJ)
+                        .execute(&self.pool)
+                        .await?;
+                    }
+                }
+            }
+
+            // Store mapping
+            self.id_map
+                .get_or_insert("submission", old_id, new_id.to_string())
+                .await?;
+
+            migrated += 1;
+        }
+
+        tracing::info!(
+            "Submission migration complete: {} migrated, {} skipped (language), {} skipped (no user), {} skipped (no problem)",
+            migrated,
+            skipped_language,
+            skipped_no_user,
+            skipped_no_problem
+        );
+        Ok(())
+    }
+
+    /// Decode a UOJ result blob value.
+    ///
+    /// UOJ stores result as a MySQL BLOB. In the dump, this appears as
+    /// either hex-encoded (0x...) or plain text.
+    fn decode_blob_result(&self, raw: &str) -> String {
+        if raw.starts_with("0x") || raw.starts_with("0X") {
+            // Hex-encoded blob: decode hex bytes to UTF-8
+            let hex_str = &raw[2..];
+            let bytes: Vec<u8> = (0..hex_str.len())
+                .step_by(2)
+                .filter_map(|i| {
+                    u8::from_str_radix(&hex_str[i..i + 2.min(hex_str.len() - i)], 16).ok()
+                })
+                .collect();
+            String::from_utf8_lossy(&bytes).to_string()
+        } else {
+            raw.to_string()
+        }
+    }
+
+    /// Migrate UOJ contests and related junction tables to AlgoMaster.
+    ///
+    /// - Calculates end_time from start_time + last_min
+    /// - Migrates contest_problems with ID remapping
+    /// - Migrates contest_participants with username->UUID lookup
+    /// - UNIQUE constraints handled via ON CONFLICT DO NOTHING
+    pub async fn migrate_contests(&mut self) -> Result<()> {
+        tracing::info!("Starting contest migration...");
+
+        let contest_rows = match self.dump.tables.get("contests") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!("No contests table found in dump, skipping contest migration");
+                return Ok(());
+            }
+        };
+
+        tracing::info!("Found {} contest rows in dump", contest_rows.len());
+
+        let mut migrated = 0u64;
+        let mut skipped = 0u64;
+
+        for row in contest_rows {
+            // UOJ contests columns: id, name, start_time, last_min, player_num,
+            // status, extra_config, zan
+            if row.len() < 8 {
+                tracing::warn!("Skipping malformed contests row ({} fields)", row.len());
+                skipped += 1;
+                continue;
+            }
+
+            let old_id = &row[0];
+            let name = &row[1];
+            let start_time = &row[2];
+            let last_min = &row[3];
+
+            // Skip if already migrated
+            if self.id_map.contains("contest", old_id) {
+                tracing::debug!("Contest {} already migrated, skipping", old_id);
+                continue;
+            }
+
+            // Parse end_time = start_time + last_min minutes
+            let last_min_val: i64 = last_min.parse().unwrap_or(180);
+            let end_time = match chrono::NaiveDateTime::parse_from_str(start_time, "%Y-%m-%d %H:%M:%S") {
+                Ok(dt) => (dt + chrono::Duration::minutes(last_min_val)).format("%Y-%m-%d %H:%M:%S").to_string(),
+                Err(_) => {
+                    tracing::warn!(
+                        "Cannot parse start_time '{}' for contest {}, skipping",
+                        start_time,
+                        old_id
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Use old ID as new ID
+            let new_id: i64 = match old_id.parse() {
+                Ok(id) => id,
+                Err(_) => {
+                    tracing::warn!("Cannot parse contest id '{}', skipping", old_id);
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Insert contest
+            sqlx::query(
+                r#"
+                INSERT INTO contests (id, organization_id, campus_id, name, rules, start_time, end_time)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (id) DO NOTHING
+                "#,
+            )
+            .bind(new_id)
+            .bind(self.org_id)
+            .bind(self.campus_id)
+            .bind(name)
+            .bind("acm") // default rules
+            .bind(start_time)
+            .bind(&end_time)
+            .execute(&self.pool)
+            .await?;
+
+            // Store mapping
+            self.id_map
+                .get_or_insert("contest", old_id, new_id.to_string())
+                .await?;
+
+            migrated += 1;
+        }
+
+        tracing::info!(
+            "Contest migration complete: {} migrated, {} skipped",
+            migrated,
+            skipped
+        );
+
+        // Migrate contest_problems
+        self.migrate_contest_problems().await?;
+
+        // Migrate contest_participants
+        self.migrate_contest_participants().await?;
+
+        Ok(())
+    }
+
+    /// Migrate contest_problems junction table with ID remapping.
+    async fn migrate_contest_problems(&mut self) -> Result<()> {
+        tracing::info!("Starting contest_problems migration...");
+
+        let rows = match self.dump.tables.get("contests_problems") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!("No contests_problems table found in dump, skipping");
+                return Ok(());
+            }
+        };
+
+        let mut migrated = 0u64;
+        let mut skipped = 0u64;
+        let mut order = std::collections::HashMap::<i64, i32>::new();
+
+        for row in rows {
+            // contests_problems columns: problem_id, contest_id
+            if row.len() < 2 {
+                continue;
+            }
+
+            let problem_id_str = &row[0];
+            let contest_id_str = &row[1];
+
+            // Look up remapped IDs
+            let new_problem_id = match self.id_map.get("problem", problem_id_str) {
+                Some(id) => id.parse::<i64>().unwrap_or(0),
+                None => {
+                    tracing::debug!(
+                        "Skipping contest_problem: problem {} not mapped",
+                        problem_id_str
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            let new_contest_id = match self.id_map.get("contest", contest_id_str) {
+                Some(id) => id.parse::<i64>().unwrap_or(0),
+                None => {
+                    tracing::debug!(
+                        "Skipping contest_problem: contest {} not mapped",
+                        contest_id_str
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Track order per contest
+            let idx = order.entry(new_contest_id).or_insert(0);
+            *idx += 1;
+
+            sqlx::query(
+                r#"
+                INSERT INTO contest_problems (contest_id, problem_id, points, order_index)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (contest_id, problem_id) DO NOTHING
+                "#,
+            )
+            .bind(new_contest_id)
+            .bind(new_problem_id)
+            .bind(100) // default points
+            .bind(*idx)
+            .execute(&self.pool)
+            .await?;
+
+            migrated += 1;
+        }
+
+        tracing::info!(
+            "contest_problems migration complete: {} migrated, {} skipped",
+            migrated,
+            skipped
+        );
+        Ok(())
+    }
+
+    /// Migrate contest_participants from contests_registrants with username->UUID lookup.
+    async fn migrate_contest_participants(&mut self) -> Result<()> {
+        tracing::info!("Starting contest_participants migration...");
+
+        let rows = match self.dump.tables.get("contests_registrants") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!("No contests_registrants table found in dump, skipping");
+                return Ok(());
+            }
+        };
+
+        let mut migrated = 0u64;
+        let mut skipped = 0u64;
+
+        for row in rows {
+            // contests_registrants columns: username, user_rating, contest_id,
+            // has_participated, rank
+            if row.len() < 3 {
+                continue;
+            }
+
+            let username = &row[0];
+            let contest_id_str = &row[2];
+
+            // Look up user UUID
+            let user_id = match self.id_map.get("user", username) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping contest_participant: user '{}' not mapped",
+                        username
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Look up contest ID
+            let new_contest_id = match self.id_map.get("contest", contest_id_str) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping contest_participant: contest {} not mapped",
+                        contest_id_str
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            sqlx::query(
+                r#"
+                INSERT INTO contest_participants (contest_id, user_id)
+                VALUES ($1, $2)
+                ON CONFLICT (contest_id, user_id) DO NOTHING
+                "#,
+            )
+            .bind(new_contest_id.parse::<i64>().unwrap_or(0))
+            .bind(&user_id)
+            .execute(&self.pool)
+            .await?;
+
+            migrated += 1;
+        }
+
+        tracing::info!(
+            "contest_participants migration complete: {} migrated, {} skipped",
+            migrated,
+            skipped
+        );
+        Ok(())
+    }
+
     /// Run the full migration pipeline in dependency order.
     pub async fn run(&mut self) -> Result<()> {
         tracing::info!(
@@ -296,10 +962,16 @@ impl Migrator {
         // 2. Users
         self.migrate_users().await?;
 
-        // 3-9. Placeholders for subsequent plans
-        tracing::info!("TODO: migrate_problems (plan 10-03)");
-        tracing::info!("TODO: migrate_submissions (plan 10-04)");
-        tracing::info!("TODO: migrate_contests (plan 10-04)");
+        // 3. Problems + test cases
+        self.migrate_problems().await?;
+
+        // 4. Submissions
+        self.migrate_submissions().await?;
+
+        // 5. Contests + contest_problems + contest_participants
+        self.migrate_contests().await?;
+
+        // 6-9. Placeholders for subsequent plans
         tracing::info!("TODO: migrate_blogs (plan 10-05)");
         tracing::info!("TODO: migrate_likes (plan 10-05)");
         tracing::info!("TODO: migrate_messages (plan 10-05)");

@@ -4,6 +4,7 @@ pub mod migrator;
 pub mod models;
 pub mod parser;
 pub mod password;
+pub mod test_cases;
 
 use anyhow::Result;
 use clap::Parser;
