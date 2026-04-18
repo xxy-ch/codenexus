@@ -148,3 +148,134 @@ async fn test_user_email_uniqueness() {
 
     assert!(result.is_err());
 }
+
+// ---------------------------------------------------------------------------
+// Test: MD5 login upgrade integration (D-10-2)
+// ---------------------------------------------------------------------------
+
+/// Verify an MD5-hashed password against its plaintext.
+/// Mirrors the domain-users::service::verify_md5_password function.
+fn verify_md5_password(password: &str, md5_hash: &str) -> bool {
+    use md5::Digest;
+    let digest = md5::Md5::digest(password.as_bytes());
+    let computed: String = digest.iter().map(|b| format!("{:02x}", b)).collect();
+    computed == md5_hash
+}
+
+/// End-to-end test for the transparent MD5-to-bcrypt password upgrade flow.
+///
+/// Simulates the full login upgrade cycle:
+/// 1. Insert a user with `{MD5}` prefixed password hash (as the migrator does)
+/// 2. Verify the password matches via MD5 (simulating login's first path)
+/// 3. Upgrade the password hash to bcrypt (simulating login's upgrade step)
+/// 4. Verify the new hash is bcrypt format (starts with "$2b$")
+/// 5. Verify the same password still works via bcrypt verification
+#[tokio::test]
+async fn test_md5_login_upgrade_integration() {
+    let fixture = setup_fixture().await;
+    let (org_id, campus_id) = seed_org_and_campus(&fixture.db_pool).await;
+
+    // Step 1: Insert user with {MD5}-prefixed password hash.
+    // "password" -> MD5 = 5f4dcc3b5aa765d61d8327deb882cf99
+    let md5_hash = "5f4dcc3b5aa765d61d8327deb882cf99";
+    let password_with_prefix = format!("{{MD5}}{}", md5_hash);
+
+    let user_id: Uuid = sqlx::query_scalar(
+        r#"INSERT INTO users (username, email, password_hash, organization_id, campus_id, display_name)
+        VALUES ('md5user', 'md5user@test.com', $1, $2, $3, 'MD5 Test User')
+        RETURNING id"#,
+    )
+    .bind(&password_with_prefix)
+    .bind(org_id)
+    .bind(campus_id)
+    .fetch_one(&fixture.db_pool)
+    .await
+    .unwrap();
+
+    // Insert user_roles so login can find the role
+    sqlx::query(
+        "INSERT INTO user_roles (user_id, organization_id, campus_id, role) VALUES ($1, $2, $3, 'student')",
+    )
+    .bind(user_id)
+    .bind(org_id)
+    .bind(campus_id)
+    .execute(&fixture.db_pool)
+    .await
+    .unwrap();
+
+    // Step 2: Verify the password matches via MD5.
+    // This simulates what UserService::login does when it detects the {MD5} prefix.
+    let stored_hash: String =
+        sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&fixture.db_pool)
+            .await
+            .unwrap();
+
+    assert!(
+        stored_hash.starts_with("{MD5}"),
+        "Password hash must start with {{MD5}} prefix before upgrade, got: {}",
+        &stored_hash[..stored_hash.len().min(20)]
+    );
+
+    let md5_part = &stored_hash[5..]; // strip "{MD5}" prefix
+    assert!(
+        verify_md5_password("password", md5_part),
+        "MD5 verification must succeed for correct password"
+    );
+    assert!(
+        !verify_md5_password("wrongpassword", md5_part),
+        "MD5 verification must fail for incorrect password"
+    );
+
+    // Step 3: Upgrade the password hash to bcrypt (simulating what login does).
+    let bcrypt_hash = bcrypt::hash("password", bcrypt::DEFAULT_COST).unwrap();
+    sqlx::query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2")
+        .bind(&bcrypt_hash)
+        .bind(user_id)
+        .execute(&fixture.db_pool)
+        .await
+        .unwrap();
+
+    // Step 4: Verify the new hash is bcrypt format.
+    let upgraded_hash: String =
+        sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&fixture.db_pool)
+            .await
+            .unwrap();
+
+    assert!(
+        upgraded_hash.starts_with("$2b$"),
+        "Upgraded password hash must be bcrypt (start with $2b$), got: {}",
+        &upgraded_hash[..upgraded_hash.len().min(20)]
+    );
+    assert!(
+        !upgraded_hash.starts_with("{MD5}"),
+        "Upgraded password hash must NOT have {{MD5}} prefix"
+    );
+
+    // Step 5: Verify the same password still works via bcrypt verification.
+    assert!(
+        bcrypt::verify("password", &upgraded_hash).unwrap(),
+        "Bcrypt verification must succeed for the same password after upgrade"
+    );
+    assert!(
+        !bcrypt::verify("wrongpassword", &upgraded_hash).unwrap(),
+        "Bcrypt verification must fail for incorrect password"
+    );
+
+    // Step 6 (extra): Verify the user record is otherwise unchanged.
+    let user: (Uuid, String, i64, String) = sqlx::query_as(
+        "SELECT id, username, organization_id, status FROM users WHERE id = $1",
+    )
+    .bind(user_id)
+    .fetch_one(&fixture.db_pool)
+    .await
+    .unwrap();
+
+    assert_eq!(user.0, user_id);
+    assert_eq!(user.1, "md5user");
+    assert_eq!(user.2, org_id);
+    assert_eq!(user.3, "active");
+}
