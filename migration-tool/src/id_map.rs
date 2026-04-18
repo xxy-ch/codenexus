@@ -102,6 +102,15 @@ impl IdMap {
         Ok(actual_new_id)
     }
 
+    /// Update the in-memory HashMap only, without writing to the database.
+    ///
+    /// Use after a transaction has already persisted the mapping to
+    /// migration_mappings. This avoids a second DB round-trip.
+    pub fn cache(&mut self, entity_type: &str, old_id: &str, new_id: String) {
+        let key = (entity_type.to_string(), old_id.to_string());
+        self.mappings.entry(key).or_insert(new_id);
+    }
+
     /// Return the number of mappings currently held in memory.
     pub fn len(&self) -> usize {
         self.mappings.len()
@@ -148,6 +157,25 @@ mod tests {
         };
         assert_eq!(map.get("user", "alice"), Some("uuid-123".to_string()));
         assert!(map.contains("user", "alice"));
+    }
+
+    #[tokio::test]
+    async fn cache_updates_in_memory_without_db() {
+        let mut map = IdMap {
+            pool: PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+            mappings: HashMap::new(),
+        };
+        assert!(!map.contains("problem", "42"));
+
+        // cache() writes to in-memory HashMap only
+        map.cache("problem", "42", "99".to_string());
+        assert!(map.contains("problem", "42"));
+        assert_eq!(map.get("problem", "42"), Some("99".to_string()));
+
+        // cache() does not overwrite an existing entry (or_insert semantics)
+        map.cache("problem", "42", "100".to_string());
+        assert_eq!(map.get("problem", "42"), Some("99".to_string()),
+            "cache must keep the first value for an existing key");
     }
 
     #[tokio::test]

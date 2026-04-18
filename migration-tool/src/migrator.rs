@@ -449,6 +449,11 @@ impl Migrator {
             // Get tags for this problem
             let tags = tags_map.get(&new_id).cloned().unwrap_or_default();
 
+            // Atomic transaction: business INSERT + mapping write commit together.
+            // If the process crashes between these two operations, neither is
+            // persisted, so a re-run cleanly retries both (crash-safe idempotency).
+            let mut tx = self.pool.begin().await?;
+
             // Insert problem WITHOUT ON CONFLICT -- if the ID is already taken
             // by a different entity (different org, different data), this MUST
             // fail loudly rather than silently binding to the wrong row (Bug 1).
@@ -468,11 +473,12 @@ impl Migrator {
             .bind(visibility)
             .bind(time_limit_ms)
             .bind(memory_limit_kb)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await
             {
                 Ok(_) => {},
                 Err(e) => {
+                    // Roll back the transaction — nothing is persisted
                     tracing::error!(
                         "Failed to insert problem {}: ID {} may already be taken by different data. Error: {}",
                         old_id, new_id, e
@@ -481,6 +487,22 @@ impl Migrator {
                     continue;
                 }
             }
+
+            // Write mapping within the same transaction
+            sqlx::query(
+                "INSERT INTO migration_mappings (entity_type, old_id, new_id) VALUES ($1, $2, $3) ON CONFLICT (entity_type, old_id) DO NOTHING",
+            )
+            .bind("problem")
+            .bind(old_id)
+            .bind(new_id.to_string())
+            .execute(&mut *tx)
+            .await?;
+
+            // Commit both operations atomically
+            tx.commit().await?;
+
+            // Update in-memory cache after successful commit
+            self.id_map.cache("problem", old_id, new_id.to_string());
 
             // Update tags if present: add to description as a note (no dedicated tags column)
             if !tags.is_empty() {
@@ -522,11 +544,6 @@ impl Migrator {
                     );
                 }
             }
-
-            // Store mapping
-            self.id_map
-                .get_or_insert("problem", old_id, new_id.to_string())
-                .await?;
 
             migrated += 1;
         }
@@ -695,6 +712,9 @@ impl Migrator {
                 }
             };
 
+            // Atomic transaction: business INSERT + mapping write commit together.
+            let mut tx = self.pool.begin().await?;
+
             // Insert submission WITHOUT ON CONFLICT (Bug 1 fix).
             // Surrogate-key entities must not silently bind to wrong data.
             match sqlx::query(
@@ -714,7 +734,7 @@ impl Migrator {
             .bind(time_ms)
             .bind(memory_kb)
             .bind(submit_time)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await
             {
                 Ok(_) => {},
@@ -727,7 +747,23 @@ impl Migrator {
                 }
             }
 
-            // If contest_id is set, create contest_submissions row
+            // Write mapping within the same transaction
+            sqlx::query(
+                "INSERT INTO migration_mappings (entity_type, old_id, new_id) VALUES ($1, $2, $3) ON CONFLICT (entity_type, old_id) DO NOTHING",
+            )
+            .bind("submission")
+            .bind(old_id)
+            .bind(new_id.to_string())
+            .execute(&mut *tx)
+            .await?;
+
+            // Commit both operations atomically
+            tx.commit().await?;
+
+            // Update in-memory cache after successful commit
+            self.id_map.cache("submission", old_id, new_id.to_string());
+
+            // If contest_id is set, create contest_submissions row (after commit)
             if contest_id_str != "NULL" && !contest_id_str.is_empty() {
                 if let Some(new_contest_id_str) = self.id_map.get("contest", contest_id_str) {
                     if let Ok(new_contest_id) = new_contest_id_str.parse::<i64>() {
@@ -746,11 +782,6 @@ impl Migrator {
                     }
                 }
             }
-
-            // Store mapping
-            self.id_map
-                .get_or_insert("submission", old_id, new_id.to_string())
-                .await?;
 
             migrated += 1;
         }
@@ -852,6 +883,9 @@ impl Migrator {
                 }
             };
 
+            // Atomic transaction: business INSERT + mapping write commit together.
+            let mut tx = self.pool.begin().await?;
+
             // Insert contest WITHOUT ON CONFLICT (Bug 1 fix).
             match sqlx::query(
                 r#"
@@ -866,7 +900,7 @@ impl Migrator {
             .bind("acm") // default rules
             .bind(start_time)
             .bind(&end_time)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await
             {
                 Ok(_) => {},
@@ -880,10 +914,21 @@ impl Migrator {
                 }
             }
 
-            // Store mapping
-            self.id_map
-                .get_or_insert("contest", old_id, new_id.to_string())
-                .await?;
+            // Write mapping within the same transaction
+            sqlx::query(
+                "INSERT INTO migration_mappings (entity_type, old_id, new_id) VALUES ($1, $2, $3) ON CONFLICT (entity_type, old_id) DO NOTHING",
+            )
+            .bind("contest")
+            .bind(old_id)
+            .bind(new_id.to_string())
+            .execute(&mut *tx)
+            .await?;
+
+            // Commit both operations atomically
+            tx.commit().await?;
+
+            // Update in-memory cache after successful commit
+            self.id_map.cache("contest", old_id, new_id.to_string());
 
             migrated += 1;
         }
@@ -1147,6 +1192,9 @@ impl Migrator {
             // Parse like_count from zan
             let like_count: i64 = zan.parse().unwrap_or(0);
 
+            // Atomic transaction: business INSERT + mapping write commit together.
+            let mut tx = self.pool.begin().await?;
+
             // Insert article WITHOUT ON CONFLICT (Bug 1 fix).
             match sqlx::query(
                 r#"
@@ -1169,7 +1217,7 @@ impl Migrator {
             .bind(0i64)  // comment_count (updated after comments)
             .bind(_post_time) // created_at
             .bind(published_at.as_deref())
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await
             {
                 Ok(_) => {},
@@ -1183,10 +1231,21 @@ impl Migrator {
                 }
             }
 
-            // Store mapping
-            self.id_map
-                .get_or_insert("blog", old_id, old_id_num.to_string())
-                .await?;
+            // Write mapping within the same transaction
+            sqlx::query(
+                "INSERT INTO migration_mappings (entity_type, old_id, new_id) VALUES ($1, $2, $3) ON CONFLICT (entity_type, old_id) DO NOTHING",
+            )
+            .bind("blog")
+            .bind(old_id)
+            .bind(old_id_num.to_string())
+            .execute(&mut *tx)
+            .await?;
+
+            // Commit both operations atomically
+            tx.commit().await?;
+
+            // Update in-memory cache after successful commit
+            self.id_map.cache("blog", old_id, old_id_num.to_string());
 
             migrated += 1;
         }
@@ -1310,6 +1369,9 @@ impl Migrator {
                 }
             };
 
+            // Atomic transaction: business INSERT + mapping write commit together.
+            let mut tx = self.pool.begin().await?;
+
             // Insert comment WITHOUT ON CONFLICT (Bug 1 fix).
             match sqlx::query(
                 r#"
@@ -1323,7 +1385,7 @@ impl Migrator {
             .bind(content)
             .bind(&author_id)
             .bind(post_time)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await
             {
                 Ok(_) => {},
@@ -1337,10 +1399,21 @@ impl Migrator {
                 }
             }
 
-            // Store mapping
-            self.id_map
-                .get_or_insert("blog_comment", old_id, new_id.to_string())
-                .await?;
+            // Write mapping within the same transaction
+            sqlx::query(
+                "INSERT INTO migration_mappings (entity_type, old_id, new_id) VALUES ($1, $2, $3) ON CONFLICT (entity_type, old_id) DO NOTHING",
+            )
+            .bind("blog_comment")
+            .bind(old_id)
+            .bind(new_id.to_string())
+            .execute(&mut *tx)
+            .await?;
+
+            // Commit both operations atomically
+            tx.commit().await?;
+
+            // Update in-memory cache after successful commit
+            self.id_map.cache("blog_comment", old_id, new_id.to_string());
 
             migrated += 1;
         }
@@ -1614,8 +1687,10 @@ impl Migrator {
                 real_id
             };
 
-            // Insert message
+            // Atomic transaction: message INSERT + mapping writes commit together.
             let msg_id = uuid::Uuid::new_v4();
+            let mut tx = self.pool.begin().await?;
+
             sqlx::query(
                 r#"
                 INSERT INTO direct_messages (id, conversation_id, sender_id, content, created_at)
@@ -1627,19 +1702,35 @@ impl Migrator {
             .bind(&sender_id)
             .bind(message)
             .bind(send_time)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await?;
 
-            // Store mapping for idempotency on re-run
-            self.id_map
-                .get_or_insert("message", &stable_key, msg_id.to_string())
-                .await?;
+            // Write stable_key mapping within the same transaction
+            sqlx::query(
+                "INSERT INTO migration_mappings (entity_type, old_id, new_id) VALUES ($1, $2, $3) ON CONFLICT (entity_type, old_id) DO NOTHING",
+            )
+            .bind("message")
+            .bind(&stable_key)
+            .bind(msg_id.to_string())
+            .execute(&mut *tx)
+            .await?;
 
-            // Also store by old_id for legacy lookup
-            let _ = self
-                .id_map
-                .get_or_insert("message", old_id, msg_id.to_string())
-                .await;
+            // Also write old_id mapping within the same transaction
+            sqlx::query(
+                "INSERT INTO migration_mappings (entity_type, old_id, new_id) VALUES ($1, $2, $3) ON CONFLICT (entity_type, old_id) DO NOTHING",
+            )
+            .bind("message")
+            .bind(old_id)
+            .bind(msg_id.to_string())
+            .execute(&mut *tx)
+            .await?;
+
+            // Commit all operations atomically
+            tx.commit().await?;
+
+            // Update in-memory cache after successful commit
+            self.id_map.cache("message", &stable_key, msg_id.to_string());
+            self.id_map.cache("message", old_id, msg_id.to_string());
 
             msg_count += 1;
         }
