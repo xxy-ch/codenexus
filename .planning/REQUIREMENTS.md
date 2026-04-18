@@ -75,9 +75,9 @@
 ### Data Migration
 
 - [x] **MIGR-01**: UOJ schema mapping — complete mapping table from UOJ MySQL tables to AlgoMaster PostgreSQL schema
-- [ ] **MIGR-02**: User migration — map UOJ users (varchar username) to AlgoMaster users (UUID); generate new passwords; assign to default organization
-- [ ] **MIGR-03**: Problem migration — migrate UOJ problems with test cases; map integer IDs to UUIDs via mapping table
-- [ ] **MIGR-04**: Submission migration — migrate historical submissions with status, score, runtime; map all foreign key IDs
+- [ ] **MIGR-02**: User migration — map UOJ users (varchar username) to AlgoMaster users (UUID); generate new passwords; assign to default organization *(implemented: `migrator::migrate_users`, pending Docker E2E verification)*
+- [ ] **MIGR-03**: Problem migration — migrate UOJ problems with test cases; map integer IDs to UUIDs via mapping table *(implemented: `migrator::migrate_problems`, pending Docker E2E verification)*
+- [ ] **MIGR-04**: Submission migration — migrate historical submissions with status, score, runtime; map all foreign key IDs *(implemented: `migrator::migrate_submissions` + `migrate_contest_submissions_from_source`, pending Docker E2E verification)*
 - [x] **MIGR-05**: Blog migration — migrate UOJ blog posts to AlgoMaster blog_* tables
 - [x] **MIGR-06**: Migration CLI tool — standalone binary that reads UOJ MySQL dump, transforms, writes to PostgreSQL; idempotent, re-runnable
 
@@ -167,9 +167,9 @@
 | FTOL-02 | Phase 9: Judge + FT | Complete |
 | FTOL-03 | Phase 9: Judge + FT | Complete |
 | MIGR-01 | Phase 10: Migration + Delivery | Complete |
-| MIGR-02 | Phase 10: Migration + Delivery | Pending |
-| MIGR-03 | Phase 10: Migration + Delivery | Pending |
-| MIGR-04 | Phase 10: Migration + Delivery | Pending |
+| MIGR-02 | Phase 10: Migration + Delivery | Implemented (pending E2E) |
+| MIGR-03 | Phase 10: Migration + Delivery | Implemented (pending E2E) |
+| MIGR-04 | Phase 10: Migration + Delivery | Implemented (pending E2E) |
 | MIGR-05 | Phase 10: Migration + Delivery | Complete |
 | MIGR-06 | Phase 10: Migration + Delivery | Complete |
 
