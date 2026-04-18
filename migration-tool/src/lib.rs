@@ -1,5 +1,9 @@
+pub mod id_map;
+pub mod mapper;
+pub mod migrator;
 pub mod models;
 pub mod parser;
+pub mod password;
 
 use anyhow::Result;
 use clap::Parser;
@@ -72,7 +76,20 @@ pub async fn run(cli: Cli) -> Result<()> {
     let row: (i64,) = sqlx::query_as("SELECT 1").fetch_one(&pool).await?;
     tracing::info!("Database ping successful: {}", row.0);
 
-    tracing::info!("TODO: implement migration");
+    // Migrate or validate organization (D-10-4)
+    let (org_id, campus_id) = migrator::Migrator::migrate_organization(&cli, &pool).await?;
+
+    // Create migrator and run full pipeline
+    let mut migrator = migrator::Migrator::new(
+        pool,
+        dump,
+        org_id,
+        campus_id,
+        cli.test_case_dir.clone(),
+    )
+    .await?;
+
+    migrator.run().await?;
 
     Ok(())
 }
