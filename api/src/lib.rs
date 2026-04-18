@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod db;
 pub mod error;
+pub mod judge_monitor;
 pub mod middleware;
 pub mod notifications;
 pub mod plagiarism;

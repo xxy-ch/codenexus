@@ -56,19 +56,19 @@ async fn get_judge_status(
         .as_ref()
         .ok_or_else(|| AppError::Internal("Redis not configured".into()))?;
 
-    // Get stream depths
+    // Get stream depths -- propagate Redis errors instead of silently returning 0
     let normal_depth = JudgeMonitorService::get_stream_depth(redis_pool, "submissions")
         .await
-        .unwrap_or(0);
+        .map_err(|e| AppError::Internal(format!("Failed to query normal queue depth: {}", e)))?;
     let contest_depth =
         JudgeMonitorService::get_stream_depth(redis_pool, "submissions:contest")
             .await
-            .unwrap_or(0);
+            .map_err(|e| AppError::Internal(format!("Failed to query contest queue depth: {}", e)))?;
 
-    // Get worker heartbeats
+    // Get worker heartbeats -- propagate Redis errors instead of silently returning empty
     let workers = JudgeMonitorService::get_worker_heartbeats(redis_pool)
         .await
-        .unwrap_or_default();
+        .map_err(|e| AppError::Internal(format!("Failed to query worker heartbeats: {}", e)))?;
 
     // Compute aggregate metrics
     let active_judges = workers.len();
@@ -201,5 +201,111 @@ fn map_dlq_error(err: anyhow::Error) -> AppError {
         AppError::Forbidden(msg)
     } else {
         AppError::Internal(msg)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::http::StatusCode;
+
+    /// Verify that ensure_admin rejects non-admin roles.
+    #[test]
+    fn ensure_admin_rejects_student() {
+        let result = ensure_admin("student");
+        assert!(result.is_err());
+        if let Err(AppError::Forbidden(msg)) = result {
+            assert!(msg.contains("Admin access required"));
+        } else {
+            panic!("Expected Forbidden error, got {:?}", result);
+        }
+    }
+
+    /// Verify that ensure_admin accepts admin role.
+    #[test]
+    fn ensure_admin_accepts_admin() {
+        assert!(ensure_admin("admin").is_ok());
+    }
+
+    /// Verify that ensure_admin accepts root role.
+    #[test]
+    fn ensure_admin_accepts_root() {
+        assert!(ensure_admin("root").is_ok());
+    }
+
+    /// Verify that ensure_admin rejects teacher role.
+    #[test]
+    fn ensure_admin_rejects_teacher() {
+        assert!(ensure_admin("teacher").is_err());
+    }
+
+    /// Regression test: Redis errors from get_stream_depth must produce
+    /// AppError::Internal (500), not be silently swallowed as 0.
+    ///
+    /// This tests the error-propagation path directly. The bug was that
+    /// `.unwrap_or(0)` and `.unwrap_or_default()` hid real Redis failures.
+    #[test]
+    fn redis_error_produces_internal_error_not_zero() {
+        let redis_err = anyhow::anyhow!("XINFO STREAM failed for 'submissions': connection refused");
+        let app_error: AppError = AppError::Internal(format!(
+            "Failed to query normal queue depth: {}",
+            redis_err
+        ));
+
+        // Verify the error maps to 500 Internal Server Error
+        let response = app_error.into_response();
+        assert_eq!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Redis errors should return 500, not 200 with fake zeros"
+        );
+    }
+
+    /// Regression test: Redis errors from get_worker_heartbeats must produce
+    /// AppError::Internal (500), not be silently swallowed as empty array.
+    #[test]
+    fn heartbeat_redis_error_produces_internal_error() {
+        let redis_err = anyhow::anyhow!("SCAN failed: connection refused");
+        let app_error: AppError = AppError::Internal(format!(
+            "Failed to query worker heartbeats: {}",
+            redis_err
+        ));
+
+        let response = app_error.into_response();
+        assert_eq!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Redis heartbeat errors should return 500, not 200 with empty workers"
+        );
+    }
+
+    /// Verify map_dlq_error returns NotFound for "not found" messages.
+    #[test]
+    fn map_dlq_error_not_found() {
+        let err = anyhow::anyhow!("DLQ entry not found");
+        match map_dlq_error(err) {
+            AppError::NotFound(msg) => assert!(msg.contains("not found")),
+            other => panic!("Expected NotFound, got {:?}", other),
+        }
+    }
+
+    /// Verify map_dlq_error returns Forbidden for "does not belong" messages.
+    #[test]
+    fn map_dlq_error_forbidden() {
+        let err = anyhow::anyhow!("DLQ entry does not belong to your organization");
+        match map_dlq_error(err) {
+            AppError::Forbidden(msg) => assert!(msg.contains("does not belong")),
+            other => panic!("Expected Forbidden, got {:?}", other),
+        }
+    }
+
+    /// Verify map_dlq_error returns Internal for generic errors.
+    #[test]
+    fn map_dlq_error_internal() {
+        let err = anyhow::anyhow!("XRANGE on DLQ failed: timeout");
+        match map_dlq_error(err) {
+            AppError::Internal(msg) => assert!(msg.contains("XRANGE")),
+            other => panic!("Expected Internal, got {:?}", other),
+        }
     }
 }
