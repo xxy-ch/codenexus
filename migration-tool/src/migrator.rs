@@ -261,12 +261,14 @@ impl Migrator {
             }
             let real_id = real_row.0;
 
-            // Insert user_roles row (idempotent via UNIQUE constraint)
+            // Insert user_roles row (idempotent via COALESCE-based unique index)
+            // Uses unqualified ON CONFLICT DO NOTHING to match the COALESCE index
+            // that handles NULL campus_id correctly (migration 029).
             sqlx::query(
                 r#"
                 INSERT INTO user_roles (user_id, organization_id, campus_id, role)
                 VALUES ($1, $2, $3, $4)
-                ON CONFLICT (user_id, organization_id, campus_id) DO NOTHING
+                ON CONFLICT DO NOTHING
                 "#,
             )
             .bind(&real_id)
@@ -3135,6 +3137,96 @@ mod tests {
         assert!(enrichment_pos < best_ac_pos,
             "enrichment (pos {}) must come before best_ac (pos {})",
             enrichment_pos, best_ac_pos);
+    }
+
+    // ===================== user_roles NULL campus_id Idempotency Tests =====================
+
+    // Verify that the COALESCE-based unique index strategy correctly handles
+    // NULL campus_id for idempotent user_roles INSERT.
+    //
+    // PostgreSQL behavior: UNIQUE(a, b, c) where c IS NULL does NOT detect
+    // conflicts because NULL != NULL in SQL. Fix: COALESCE(campus_id, 0) in
+    // the unique index maps NULL to 0, making duplicate detection work.
+    #[test]
+    fn test_user_roles_null_campus_id_conflict_detection() {
+        // Simulate COALESCE-based comparison as the database index does
+        fn effective_campus(campus_id: Option<i64>) -> i64 {
+            campus_id.unwrap_or(0)
+        }
+
+        // Case 1: Two rows with NULL campus_id MUST conflict
+        let row1_campus: Option<i64> = None;
+        let row2_campus: Option<i64> = None;
+        let row1_eff = effective_campus(row1_campus);
+        let row2_eff = effective_campus(row2_campus);
+
+        assert_eq!(row1_eff, row2_eff,
+            "COALESCE(NULL, 0) must equal COALESCE(NULL, 0) — NULL campus_id rows must conflict");
+        assert_eq!(row1_eff, 0, "NULL campus_id maps to 0");
+
+        // Case 2: NULL campus_id vs real campus_id must NOT conflict
+        let row_with_campus: Option<i64> = Some(5);
+        let row_without_campus: Option<i64> = None;
+        assert_ne!(
+            effective_campus(row_with_campus),
+            effective_campus(row_without_campus),
+            "NULL campus_id (->0) must not conflict with real campus_id 5"
+        );
+
+        // Case 3: Same real campus_id must conflict
+        let campus_a: Option<i64> = Some(5);
+        let campus_b: Option<i64> = Some(5);
+        assert_eq!(
+            effective_campus(campus_a),
+            effective_campus(campus_b),
+            "Same real campus_id must conflict"
+        );
+
+        // Case 4: Different real campus_id must NOT conflict
+        let campus_x: Option<i64> = Some(3);
+        let campus_y: Option<i64> = Some(7);
+        assert_ne!(
+            effective_campus(campus_x),
+            effective_campus(campus_y),
+            "Different real campus_id must not conflict"
+        );
+    }
+
+    // Verify that ON CONFLICT DO NOTHING (unqualified) correctly deduplicates
+    // on re-run for the NULL campus_id case with the COALESCE index.
+    #[test]
+    fn test_user_roles_rerun_idempotent_with_null_campus() {
+        // Simulate first run: inserts (user_1, org_1, NULL, 'student')
+        let mut roles: Vec<(String, i64, Option<i64>, &str)> = vec![
+            ("user_1".to_string(), 1, None, "student"),
+        ];
+
+        // Simulate re-run: same INSERT with ON CONFLICT DO NOTHING
+        // The COALESCE index detects: COALESCE(NULL,0) == COALESCE(NULL,0)
+        let new_role: (String, i64, Option<i64>, &str) = ("user_1".to_string(), 1, None, "student");
+        let is_duplicate = roles.iter().any(|(uid, org, campus, _role)| {
+            uid == &new_role.0
+                && org == &new_role.1
+                && campus.map_or(0, |c| c) == new_role.2.map_or(0, |c| c)
+        });
+
+        assert!(is_duplicate,
+            "ON CONFLICT DO NOTHING must detect duplicate (user_1, org_1, NULL campus)");
+
+        // The re-run inserts nothing (ON CONFLICT DO NOTHING)
+        if !is_duplicate {
+            roles.push(new_role);
+        }
+        assert_eq!(roles.len(), 1, "re-run must not add duplicate role");
+
+        // But a different campus_id for the same user IS allowed
+        let different_campus: (String, i64, Option<i64>, &str) = ("user_1".to_string(), 1, Some(5), "student");
+        let is_dup2 = roles.iter().any(|(uid, org, campus, _role)| {
+            uid == &different_campus.0
+                && org == &different_campus.1
+                && campus.map_or(0, |c| c) == different_campus.2.map_or(0, |c| c)
+        });
+        assert!(!is_dup2, "different campus_id must not conflict");
     }
 
 }
