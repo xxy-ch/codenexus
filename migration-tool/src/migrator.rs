@@ -951,6 +951,553 @@ impl Migrator {
         Ok(())
     }
 
+    /// Migrate UOJ blogs, blog comments, and blog tags to AlgoMaster.
+    ///
+    /// - Aggregates tags from blogs_tags into a HashMap per blog_id
+    /// - Maps blog -> article with slug generation, visibility inversion
+    /// - Maps blogs_comments -> article_comments with flat structure
+    /// - Updates article comment counts after all comments are inserted
+    pub async fn migrate_blogs(&mut self) -> Result<()> {
+        tracing::info!("Starting blog migration...");
+
+        // Pre-processing: aggregate tags per blog_id
+        let tags_map = self.build_blog_tags_map();
+        tracing::info!("Aggregated tags for {} blogs", tags_map.len());
+
+        // Migrate articles from blogs table
+        let blog_rows = match self.dump.tables.get("blogs") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!("No blogs table found in dump, skipping blog migration");
+                return Ok(());
+            }
+        };
+
+        tracing::info!("Found {} blog rows in dump", blog_rows.len());
+
+        let mut migrated = 0u64;
+        let mut skipped = 0u64;
+
+        for row in blog_rows {
+            // UOJ blogs columns: id, title, content, post_time, poster,
+            // content_md, zan, is_hidden, blog_type, is_draft
+            if row.len() < 10 {
+                tracing::warn!("Skipping malformed blogs row ({} fields)", row.len());
+                skipped += 1;
+                continue;
+            }
+
+            let old_id = &row[0];
+            let title = &row[1];
+            // row[2] is HTML content, we use content_md instead
+            let _post_time = &row[3];
+            let poster = &row[4];
+            let content_md = &row[5];
+            let zan = &row[6];
+            let is_hidden = &row[7];
+
+            // Skip if already migrated (idempotency D-10-7)
+            if self.id_map.contains("blog", old_id) {
+                tracing::debug!("Blog {} already migrated, skipping", old_id);
+                continue;
+            }
+
+            // Look up author_id from id_map
+            let author_id = match self.id_map.get("user", poster) {
+                Some(id) => id,
+                None => {
+                    tracing::warn!(
+                        "Skipping blog {}: poster '{}' not found in id_map",
+                        old_id,
+                        poster
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Generate slug via mapper::generate_slug
+            let old_id_num: i64 = match old_id.parse() {
+                Ok(id) => id,
+                Err(_) => {
+                    tracing::warn!("Cannot parse blog id '{}', skipping", old_id);
+                    skipped += 1;
+                    continue;
+                }
+            };
+            let slug = crate::mapper::generate_slug(title, old_id_num);
+
+            // Look up tags from aggregated HashMap
+            let tags = tags_map.get(&old_id_num).cloned().unwrap_or_default();
+
+            // Determine published state
+            let is_published = is_hidden == "0";
+            let published_at: Option<String> = if is_published {
+                Some(_post_time.clone())
+            } else {
+                None
+            };
+
+            // Parse like_count from zan
+            let like_count: i64 = zan.parse().unwrap_or(0);
+
+            // Insert article with explicit id
+            sqlx::query(
+                r#"
+                INSERT INTO articles (id, title, slug, content, author_id, tags, category,
+                    is_published, is_featured, view_count, like_count, comment_count, created_at, published_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                ON CONFLICT (id) DO NOTHING
+                "#,
+            )
+            .bind(old_id_num)
+            .bind(title)
+            .bind(&slug)
+            .bind(content_md)
+            .bind(&author_id)
+            .bind(&tags)
+            .bind("general")
+            .bind(is_published)
+            .bind(false) // is_featured
+            .bind(0i64)  // view_count
+            .bind(like_count)
+            .bind(0i64)  // comment_count (updated after comments)
+            .bind(_post_time) // created_at
+            .bind(published_at.as_deref())
+            .execute(&self.pool)
+            .await?;
+
+            // Store mapping
+            self.id_map
+                .get_or_insert("blog", old_id, old_id_num.to_string())
+                .await?;
+
+            migrated += 1;
+        }
+
+        tracing::info!(
+            "Article migration complete: {} migrated, {} skipped",
+            migrated,
+            skipped
+        );
+
+        // Migrate article_comments from blogs_comments
+        self.migrate_blog_comments().await?;
+
+        // Update article comment counts
+        sqlx::query(
+            r#"
+            UPDATE articles SET comment_count = (
+                SELECT COUNT(*) FROM article_comments WHERE article_comments.article_id = articles.id
+            )
+            "#,
+        )
+        .execute(&self.pool)
+        .await?;
+
+        tracing::info!("Updated article comment counts");
+
+        Ok(())
+    }
+
+    /// Build a HashMap of blog_id -> Vec<tag> from blogs_tags table.
+    fn build_blog_tags_map(&self) -> std::collections::HashMap<i64, Vec<String>> {
+        let mut map: std::collections::HashMap<i64, Vec<String>> = std::collections::HashMap::new();
+        if let Some(rows) = self.dump.tables.get("blogs_tags") {
+            for row in rows {
+                // blogs_tags columns: id, blog_id, tag
+                if row.len() >= 3 {
+                    if let Ok(blog_id) = row[1].parse::<i64>() {
+                        let tag = &row[2];
+                        if tag != "NULL" && !tag.is_empty() {
+                            map.entry(blog_id).or_default().push(tag.clone());
+                        }
+                    }
+                }
+            }
+        }
+        map
+    }
+
+    /// Migrate blog comments from blogs_comments to article_comments.
+    ///
+    /// UOJ comments are flat (no parent/child), so parent_id is always NULL.
+    async fn migrate_blog_comments(&mut self) -> Result<()> {
+        tracing::info!("Starting blog comments migration...");
+
+        let rows = match self.dump.tables.get("blogs_comments") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!("No blogs_comments table found in dump, skipping");
+                return Ok(());
+            }
+        };
+
+        tracing::info!("Found {} blog comment rows in dump", rows.len());
+
+        let mut migrated = 0u64;
+        let mut skipped = 0u64;
+
+        for row in rows {
+            // UOJ blogs_comments columns: id, blog_id, content, post_time,
+            // poster, zan, reply_id
+            if row.len() < 7 {
+                tracing::warn!("Skipping malformed blogs_comments row ({} fields)", row.len());
+                skipped += 1;
+                continue;
+            }
+
+            let old_id = &row[0];
+            let blog_id_str = &row[1];
+            let content = &row[2];
+            let post_time = &row[3];
+            let poster = &row[4];
+
+            // Skip if already migrated
+            if self.id_map.contains("blog_comment", old_id) {
+                tracing::debug!("Blog comment {} already migrated, skipping", old_id);
+                continue;
+            }
+
+            // Look up article_id from id_map
+            let article_id = match self.id_map.get("blog", blog_id_str) {
+                Some(id) => match id.parse::<i64>() {
+                    Ok(id) => id,
+                    Err(_) => {
+                        tracing::debug!(
+                            "Skipping blog comment {}: article id '{}' not numeric",
+                            old_id,
+                            id
+                        );
+                        skipped += 1;
+                        continue;
+                    }
+                },
+                None => {
+                    tracing::debug!(
+                        "Skipping blog comment {}: blog '{}' not found in id_map",
+                        old_id,
+                        blog_id_str
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Look up author_id from id_map
+            let author_id = match self.id_map.get("user", poster) {
+                Some(id) => id,
+                None => {
+                    tracing::warn!(
+                        "Skipping blog comment {}: poster '{}' not found in id_map",
+                        old_id,
+                        poster
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Use old ID as new ID
+            let new_id: i64 = match old_id.parse() {
+                Ok(id) => id,
+                Err(_) => {
+                    tracing::warn!("Cannot parse blog comment id '{}', skipping", old_id);
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Insert comment (flat structure, parent_id = NULL)
+            sqlx::query(
+                r#"
+                INSERT INTO article_comments (id, article_id, parent_id, content, author_id, created_at)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT (id) DO NOTHING
+                "#,
+            )
+            .bind(new_id)
+            .bind(article_id)
+            .bind(None::<i64>) // parent_id = NULL (flat comments)
+            .bind(content)
+            .bind(&author_id)
+            .bind(post_time)
+            .execute(&self.pool)
+            .await?;
+
+            // Store mapping
+            self.id_map
+                .get_or_insert("blog_comment", old_id, new_id.to_string())
+                .await?;
+
+            migrated += 1;
+        }
+
+        tracing::info!(
+            "Blog comments migration complete: {} migrated, {} skipped",
+            migrated,
+            skipped
+        );
+        Ok(())
+    }
+
+    /// Migrate UOJ click_zans (likes) to AlgoMaster likes table.
+    ///
+    /// - "B" (blog) -> target_type = "article", target_id from id_map
+    /// - "P" (problem) -> target_type = "problem", target_id from id_map
+    /// - Only migrate positive likes (zan_val > 0)
+    /// - ON CONFLICT DO NOTHING for UNIQUE(user_id, target_type, target_id)
+    pub async fn migrate_likes(&mut self) -> Result<()> {
+        tracing::info!("Starting likes migration...");
+
+        let rows = match self.dump.tables.get("click_zans") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!("No click_zans table found in dump, skipping likes migration");
+                return Ok(());
+            }
+        };
+
+        tracing::info!("Found {} click_zan rows in dump", rows.len());
+
+        let mut migrated = 0u64;
+        let mut skipped_type = 0u64;
+        let mut skipped_no_user = 0u64;
+        let mut skipped_no_target = 0u64;
+        let mut skipped_negative = 0u64;
+
+        for row in rows {
+            // UOJ click_zans columns: type, username, target_id, zan_val
+            if row.len() < 4 {
+                continue;
+            }
+
+            let zan_type = &row[0];
+            let username = &row[1];
+            let target_id_str = &row[2];
+            let zan_val_str = &row[3];
+
+            // Only migrate positive likes
+            let zan_val: i32 = match zan_val_str.parse() {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+            if zan_val <= 0 {
+                skipped_negative += 1;
+                continue;
+            }
+
+            // Map type to target_type and look up new target_id
+            let (target_type, new_target_id) = match zan_type.as_str() {
+                "B" => {
+                    let new_id = match self.id_map.get("blog", target_id_str) {
+                        Some(id) => id,
+                        None => {
+                            tracing::debug!(
+                                "Skipping like: blog target '{}' not found in id_map",
+                                target_id_str
+                            );
+                            skipped_no_target += 1;
+                            continue;
+                        }
+                    };
+                    ("article", new_id)
+                }
+                "P" => {
+                    let new_id = match self.id_map.get("problem", target_id_str) {
+                        Some(id) => id,
+                        None => {
+                            tracing::debug!(
+                                "Skipping like: problem target '{}' not found in id_map",
+                                target_id_str
+                            );
+                            skipped_no_target += 1;
+                            continue;
+                        }
+                    };
+                    ("problem", new_id)
+                }
+                other => {
+                    tracing::debug!("Skipping like with unsupported type '{}'", other);
+                    skipped_type += 1;
+                    continue;
+                }
+            };
+
+            // Look up user_id from id_map
+            let user_id = match self.id_map.get("user", username) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping like: user '{}' not found in id_map",
+                        username
+                    );
+                    skipped_no_user += 1;
+                    continue;
+                }
+            };
+
+            // Parse target_id to i64 for the likes table
+            let target_id_i64: i64 = match new_target_id.parse() {
+                Ok(id) => id,
+                Err(_) => {
+                    tracing::debug!(
+                        "Skipping like: target_id '{}' not numeric",
+                        new_target_id
+                    );
+                    skipped_no_target += 1;
+                    continue;
+                }
+            };
+
+            // Insert with ON CONFLICT DO NOTHING (UNIQUE constraint)
+            sqlx::query(
+                r#"
+                INSERT INTO likes (user_id, target_type, target_id)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (user_id, target_type, target_id) DO NOTHING
+                "#,
+            )
+            .bind(&user_id)
+            .bind(target_type)
+            .bind(target_id_i64)
+            .execute(&self.pool)
+            .await?;
+
+            migrated += 1;
+        }
+
+        tracing::info!(
+            "Likes migration complete: {} migrated, {} skipped (unsupported type), {} skipped (no user), {} skipped (no target), {} skipped (negative)",
+            migrated,
+            skipped_type,
+            skipped_no_user,
+            skipped_no_target,
+            skipped_negative
+        );
+        Ok(())
+    }
+
+    /// Migrate UOJ user_msg to AlgoMaster direct_conversations + direct_messages.
+    ///
+    /// UOJ has no conversation concept -- create direct_conversations per unique
+    /// (sender, receiver) pair. Uses a conversation cache to avoid duplicates.
+    pub async fn migrate_messages(&mut self) -> Result<()> {
+        tracing::info!("Starting messages migration...");
+
+        let rows = match self.dump.tables.get("user_msg") {
+            Some(rows) => rows,
+            None => {
+                tracing::warn!("No user_msg table found in dump, skipping message migration");
+                return Ok(());
+            }
+        };
+
+        tracing::info!("Found {} user_msg rows in dump", rows.len());
+
+        // Conversation cache: (min_user, max_user) -> conversation_id
+        let mut conv_cache: std::collections::HashMap<(String, String), uuid::Uuid> =
+            std::collections::HashMap::new();
+
+        let mut msg_count = 0u64;
+        let mut skipped = 0u64;
+
+        for row in rows {
+            // UOJ user_msg columns: id, sender, receiver, message, send_time, read_time
+            if row.len() < 6 {
+                continue;
+            }
+
+            let _old_id = &row[0];
+            let sender = &row[1];
+            let receiver = &row[2];
+            let message = &row[3];
+            let send_time = &row[4];
+
+            // Look up sender_id and receiver_id from id_map
+            let sender_id = match self.id_map.get("user", sender) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping message: sender '{}' not found in id_map",
+                        sender
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            let receiver_id = match self.id_map.get("user", receiver) {
+                Some(id) => id,
+                None => {
+                    tracing::debug!(
+                        "Skipping message: receiver '{}' not found in id_map",
+                        receiver
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Create conversation key: (min, max) to normalize pair ordering
+            let (min_user, max_user) = if sender_id < receiver_id {
+                (sender_id.clone(), receiver_id.clone())
+            } else {
+                (receiver_id.clone(), sender_id.clone())
+            };
+
+            // Get or create conversation
+            let conversation_id = if let Some(conv_id) = conv_cache.get(&(min_user.clone(), max_user.clone())) {
+                *conv_id
+            } else {
+                // Insert new conversation
+                let conv_id = uuid::Uuid::new_v4();
+                sqlx::query(
+                    r#"
+                    INSERT INTO direct_conversations (id, user1_id, user2_id)
+                    VALUES ($1, $2, $3)
+                    ON CONFLICT DO NOTHING
+                    "#,
+                )
+                .bind(conv_id)
+                .bind(&min_user)
+                .bind(&max_user)
+                .execute(&self.pool)
+                .await?;
+
+                conv_cache.insert((min_user, max_user), conv_id);
+                conv_id
+            };
+
+            // Insert message
+            let msg_id = uuid::Uuid::new_v4();
+            sqlx::query(
+                r#"
+                INSERT INTO direct_messages (id, conversation_id, sender_id, content, created_at)
+                VALUES ($1, $2, $3, $4, $5)
+                "#,
+            )
+            .bind(msg_id)
+            .bind(conversation_id)
+            .bind(&sender_id)
+            .bind(message)
+            .bind(send_time)
+            .execute(&self.pool)
+            .await?;
+
+            msg_count += 1;
+        }
+
+        let conv_count = conv_cache.len();
+        tracing::info!(
+            "Migrated {} messages in {} conversations ({} skipped)",
+            msg_count,
+            conv_count,
+            skipped
+        );
+        Ok(())
+    }
+
     /// Run the full migration pipeline in dependency order.
     pub async fn run(&mut self) -> Result<()> {
         tracing::info!(
@@ -971,12 +1518,16 @@ impl Migrator {
         // 5. Contests + contest_problems + contest_participants
         self.migrate_contests().await?;
 
-        // 6-9. Placeholders for subsequent plans
-        tracing::info!("TODO: migrate_blogs (plan 10-05)");
-        tracing::info!("TODO: migrate_likes (plan 10-05)");
-        tracing::info!("TODO: migrate_messages (plan 10-05)");
+        // 6. Blogs + comments + tags
+        self.migrate_blogs().await?;
 
-        tracing::info!("Migration complete");
+        // 7. Likes
+        self.migrate_likes().await?;
+
+        // 8. Direct messages
+        self.migrate_messages().await?;
+
+        tracing::info!("Migration complete!");
         Ok(())
     }
 }
