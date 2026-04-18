@@ -601,4 +601,120 @@ mod tests {
             "When some heartbeats are readable, should return them, not error"
         );
     }
+
+    /// Gap-closure test: Verify that list_dlq_entries tenant filtering correctly
+    /// isolates entries across multiple tenants, including edge cases:
+    /// - Entries from different tenants are filtered out
+    /// - Legacy entries (no school_id) are excluded
+    /// - Malformed school_id entries are excluded
+    /// - Only exact school_id matches are included
+    ///
+    /// This test exercises entry_matches_tenant against a realistic mixed dataset
+    /// without requiring Redis.
+    #[test]
+    fn test_dlq_tenant_isolation_filters_correctly() {
+        // Build a realistic DLQ entry set with mixed tenants
+        let entries: Vec<(String, HashMap<String, String>)> = vec![
+            // Entry 1: school_id=10, valid
+            {
+                let mut fields = HashMap::new();
+                fields.insert("submission_id".into(), "1".into());
+                fields.insert("school_id".into(), "10".into());
+                fields.insert("error_reason".into(), "timeout".into());
+                fields.insert("original_message".into(), r#"{"submission_id":1}"#.into());
+                ("100-0".into(), fields)
+            },
+            // Entry 2: school_id=20, different tenant
+            {
+                let mut fields = HashMap::new();
+                fields.insert("submission_id".into(), "2".into());
+                fields.insert("school_id".into(), "20".into());
+                fields.insert("error_reason".into(), "circuit open".into());
+                ("101-0".into(), fields)
+            },
+            // Entry 3: no school_id (legacy)
+            {
+                let mut fields = HashMap::new();
+                fields.insert("submission_id".into(), "3".into());
+                fields.insert("error_reason".into(), "timeout".into());
+                ("102-0".into(), fields)
+            },
+            // Entry 4: school_id=10, valid (second match)
+            {
+                let mut fields = HashMap::new();
+                fields.insert("submission_id".into(), "4".into());
+                fields.insert("school_id".into(), "10".into());
+                fields.insert("error_reason".into(), "API error".into());
+                ("103-0".into(), fields)
+            },
+            // Entry 5: malformed school_id
+            {
+                let mut fields = HashMap::new();
+                fields.insert("submission_id".into(), "5".into());
+                fields.insert("school_id".into(), "abc".into());
+                fields.insert("error_reason".into(), "sandbox error".into());
+                ("104-0".into(), fields)
+            },
+            // Entry 6: school_id=10, valid (third match)
+            {
+                let mut fields = HashMap::new();
+                fields.insert("submission_id".into(), "6".into());
+                fields.insert("school_id".into(), "10".into());
+                fields.insert("error_reason".into(), "OOM".into());
+                ("105-0".into(), fields)
+            },
+            // Entry 7: school_id=30, yet another tenant
+            {
+                let mut fields = HashMap::new();
+                fields.insert("submission_id".into(), "7".into());
+                fields.insert("school_id".into(), "30".into());
+                fields.insert("error_reason".into(), "timeout".into());
+                ("106-0".into(), fields)
+            },
+        ];
+
+        // Filter for school_id=10
+        let target_school_id: i64 = 10;
+        let filtered: Vec<_> = entries
+            .into_iter()
+            .filter(|(_, fields)| {
+                JudgeMonitorService::entry_matches_tenant(fields, target_school_id)
+            })
+            .collect();
+
+        // Should get exactly entries 1, 4, 6 (school_id=10)
+        assert_eq!(filtered.len(), 3, "Should find exactly 3 entries for school_id=10");
+
+        let filtered_ids: Vec<&str> = filtered.iter().map(|(id, _)| id.as_str()).collect();
+        assert!(
+            filtered_ids.contains(&"100-0"),
+            "Entry 1 (school_id=10) should be included"
+        );
+        assert!(
+            filtered_ids.contains(&"103-0"),
+            "Entry 4 (school_id=10) should be included"
+        );
+        assert!(
+            filtered_ids.contains(&"105-0"),
+            "Entry 6 (school_id=10) should be included"
+        );
+
+        // Verify excluded entries
+        assert!(
+            !filtered_ids.contains(&"101-0"),
+            "Entry 2 (school_id=20) should be excluded"
+        );
+        assert!(
+            !filtered_ids.contains(&"102-0"),
+            "Entry 3 (legacy, no school_id) should be excluded"
+        );
+        assert!(
+            !filtered_ids.contains(&"104-0"),
+            "Entry 5 (malformed school_id) should be excluded"
+        );
+        assert!(
+            !filtered_ids.contains(&"106-0"),
+            "Entry 7 (school_id=30) should be excluded"
+        );
+    }
 }

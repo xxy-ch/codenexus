@@ -342,4 +342,74 @@ mod tests {
             "Should not recover messages below idle threshold"
         );
     }
+
+    /// Gap-closure test: Verify the recovery path returns school_id alongside
+    /// the recovered submission so that DLQ entries written from recovery include
+    /// tenant isolation metadata.
+    ///
+    /// Seeds a message with school_id as a top-level stream field (matching the
+    /// XADD format used by the API), then verifies recovery extracts school_id
+    /// from the XCLAIM response and returns it in the tuple.
+    ///
+    /// Requires Redis (testcontainers).
+    #[tokio::test]
+    #[ignore = "requires Redis -- run with `cargo test -p judge-worker -- --ignored`"]
+    async fn test_recovery_writes_school_id_to_dlq() {
+        let (mut conn, _container) = setup_redis().await;
+        let stream = "test_stream_school_id";
+        let group = "test_group";
+        let original_consumer = "crashed_worker";
+
+        // Create consumer group
+        let _: redis::Value = redis::cmd("XGROUP")
+            .arg("CREATE")
+            .arg(stream)
+            .arg(group)
+            .arg("0")
+            .arg("MKSTREAM")
+            .query_async(&mut conn)
+            .await
+            .unwrap();
+
+        // Add message WITH school_id as a top-level field (matching API XADD format)
+        let test_data = r#"{"submission_id":55,"problem_id":1,"language":"cpp","source_code":"int main(){}","user_id":"00000000-0000-0000-0000-000000000001","time_limit_ms":1000,"memory_limit_mb":256}"#;
+        let _msg_id: String = redis::cmd("XADD")
+            .arg(stream)
+            .arg("*")
+            .arg("data")
+            .arg(test_data)
+            .arg("school_id")
+            .arg("42")
+            .query_async(&mut conn)
+            .await
+            .unwrap();
+
+        // Read the message with the original consumer (makes it pending)
+        let _: redis::Value = redis::cmd("XREADGROUP")
+            .arg("GROUP")
+            .arg(group)
+            .arg(original_consumer)
+            .arg("COUNT")
+            .arg(1)
+            .arg("STREAMS")
+            .arg(stream)
+            .arg(">")
+            .query_async(&mut conn)
+            .await
+            .unwrap();
+
+        // Recover with min_idle_ms=0
+        let result =
+            recover_pending_submissions(&mut conn, stream, group, "recovery_worker", 0).await;
+        assert!(result.is_ok());
+        let recovered = result.unwrap();
+        assert_eq!(recovered.len(), 1, "Should recover exactly 1 message");
+
+        let (_msg_id, submission, school_id) = &recovered[0];
+        assert_eq!(submission.submission_id, 55);
+        assert_eq!(
+            *school_id, Some(42),
+            "Recovery must extract school_id from stream fields for DLQ tenant isolation"
+        );
+    }
 }
