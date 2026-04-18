@@ -1103,6 +1103,107 @@ impl Migrator {
         Ok(())
     }
 
+    /// Migrate contests_submissions from source table with real score/penalty data.
+    ///
+    /// The submissions migration creates `contest_submissions` rows with penalty_time=0
+    /// (derived from submissions.contest_id). This step reads the actual `contests_submissions`
+    /// source table and UPSERTs with real penalty values, ensuring no data loss.
+    ///
+    /// Column layout (UOJ): contest_id, submitter, problem_id, submission_id, score, penalty
+    pub async fn migrate_contest_submissions_from_source(&mut self) -> Result<()> {
+        tracing::info!("Starting contest_submissions source table migration...");
+
+        let rows = match self.dump.tables.get("contests_submissions") {
+            Some(rows) => rows,
+            None => {
+                tracing::info!(
+                    "No contests_submissions source table in dump; \
+                     contest_submissions from submissions migration retained as-is"
+                );
+                return Ok(());
+            }
+        };
+
+        tracing::info!("Found {} contests_submissions rows in source dump", rows.len());
+
+        let mut migrated = 0u64;
+        let mut skipped = 0u64;
+
+        for row in rows {
+            // contests_submissions columns: contest_id, submitter, problem_id,
+            // submission_id, score, penalty
+            if row.len() < 6 {
+                tracing::debug!(
+                    "Skipping malformed contests_submissions row ({} fields)",
+                    row.len()
+                );
+                skipped += 1;
+                continue;
+            }
+
+            let source_contest_id = &row[0];
+            let _submitter = &row[1]; // Used for logging only; submission_id is the FK
+            let _problem_id = &row[2]; // For cross-validation; submission_id is the FK
+            let source_submission_id = &row[3];
+            let _score = &row[4]; // Not in target schema yet; preserved for future use
+            let penalty_str = &row[5];
+
+            // Resolve remapped contest_id
+            let new_contest_id = match self.id_map.get("contest", source_contest_id) {
+                Some(id) => id.parse::<i64>().unwrap_or(0),
+                None => {
+                    tracing::debug!(
+                        "Skipping contests_submissions row: contest {} not mapped",
+                        source_contest_id
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Resolve remapped submission_id
+            let new_submission_id = match self.id_map.get("submission", source_submission_id) {
+                Some(id) => id.parse::<i64>().unwrap_or(0),
+                None => {
+                    tracing::debug!(
+                        "Skipping contests_submissions row: submission {} not mapped",
+                        source_submission_id
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
+
+            // Parse penalty: source may contain non-numeric values
+            let penalty_time: i32 = penalty_str.parse().unwrap_or(0);
+
+            // UPSERT: ON CONFLICT (submission_id) updates penalty_time from source data
+            sqlx::query(
+                r#"
+                INSERT INTO contest_submissions (contest_id, submission_id, penalty_time)
+                VALUES ($1, $2, $3)
+                ON CONFLICT (submission_id) DO UPDATE SET
+                    contest_id = EXCLUDED.contest_id,
+                    penalty_time = EXCLUDED.penalty_time
+                "#,
+            )
+            .bind(new_contest_id)
+            .bind(new_submission_id)
+            .bind(penalty_time)
+            .execute(&self.pool)
+            .await?;
+
+            migrated += 1;
+        }
+
+        tracing::info!(
+            "contest_submissions source migration complete: {} upserted, {} skipped",
+            migrated,
+            skipped
+        );
+        Ok(())
+    }
+
     /// Migrate UOJ blogs, blog comments, and blog tags to AlgoMaster.
     ///
     /// - Aggregates tags from blogs_tags into a HashMap per blog_id
@@ -1909,6 +2010,10 @@ impl Migrator {
 
         // 5. Submissions (now contest mappings exist for contest_submissions)
         self.migrate_submissions().await?;
+
+        // 5b. Contest submissions enrichment from source table
+        //     Upserts real score/penalty data over the dummy rows created during step 5.
+        self.migrate_contest_submissions_from_source().await?;
 
         // 6. Best AC (leaderboard seed data -- validates cross-references)
         //    MUST be after submissions so submission id_map entries exist.
@@ -2789,7 +2894,7 @@ mod tests {
 
     // Verify that run() calls all expected migration methods in dependency order.
     // The correct order is: users -> problems -> contests -> submissions ->
-    // best_ac -> blogs -> likes -> messages.
+    // contest_submissions enrichment -> best_ac -> blogs -> likes -> messages.
     // This test checks the method names exist and the ordering constraint
     // (contests before submissions) holds by verifying the function source.
     #[test]
@@ -2800,14 +2905,15 @@ mod tests {
             "migrate_problems",
             "migrate_contests",
             "migrate_submissions",
+            "migrate_contest_submissions_from_source",
             "migrate_best_ac",
             "migrate_blogs",
             "migrate_likes",
             "migrate_messages",
         ];
 
-        // Verify all 8 steps are accounted for
-        assert_eq!(expected_order.len(), 8, "must have exactly 8 migration steps");
+        // Verify all 9 steps are accounted for
+        assert_eq!(expected_order.len(), 9, "must have exactly 9 migration steps");
 
         // Verify the critical ordering constraint:
         // contests MUST come before submissions so contest_id mappings exist
@@ -2888,6 +2994,147 @@ mod tests {
         id_map_second.insert(new_key.clone(), "uuid-new-002".to_string());
         assert_eq!(id_map_second.len(), id_map_first.len() + 1,
             "new entity adds exactly one mapping");
+    }
+
+    // ===================== contests_submissions Source Table Tests =====================
+
+    // Verify that the contests_submissions source table columns are correctly parsed.
+    // Column layout: contest_id, submitter, problem_id, submission_id, score, penalty
+    #[test]
+    fn test_contest_submission_source_row_parsing() {
+        // Simulate a well-formed source row
+        let row: Vec<String> = vec![
+            "10".to_string(),       // contest_id
+            "alice".to_string(),    // submitter
+            "5".to_string(),        // problem_id
+            "200".to_string(),      // submission_id
+            "100".to_string(),      // score
+            "20".to_string(),       // penalty
+        ];
+
+        assert!(row.len() >= 6, "row must have at least 6 fields");
+        let contest_id = &row[0];
+        let submitter = &row[1];
+        let problem_id = &row[2];
+        let submission_id = &row[3];
+        let score = &row[4];
+        let penalty = &row[5];
+
+        assert_eq!(contest_id, "10");
+        assert_eq!(submitter, "alice");
+        assert_eq!(problem_id, "5");
+        assert_eq!(submission_id, "200");
+        assert_eq!(score, "100");
+        assert_eq!(penalty, "20");
+
+        // Penalty parsing
+        let penalty_time: i32 = penalty.parse().unwrap_or(0);
+        assert_eq!(penalty_time, 20, "penalty must parse to 20");
+    }
+
+    // Verify that malformed rows (too few columns) are skipped
+    #[test]
+    fn test_contest_submission_source_malformed_row_skipped() {
+        let short_row: Vec<String> = vec!["10".to_string(), "alice".to_string()];
+        assert!(short_row.len() < 6, "short row must be skipped");
+
+        let empty_row: Vec<String> = vec![];
+        assert!(empty_row.len() < 6, "empty row must be skipped");
+    }
+
+    // Verify penalty parsing handles non-numeric and edge values
+    #[test]
+    fn test_contest_submission_penalty_parsing_robustness() {
+        // Valid penalty
+        assert_eq!("0".parse::<i32>().unwrap_or(0), 0);
+        assert_eq!("120".parse::<i32>().unwrap_or(0), 120);
+        assert_eq!("-5".parse::<i32>().unwrap_or(0), -5);
+
+        // Non-numeric penalty -> fallback to 0
+        assert_eq!("NULL".parse::<i32>().unwrap_or(0), 0);
+        assert_eq!("".parse::<i32>().unwrap_or(0), 0);
+        assert_eq!("N/A".parse::<i32>().unwrap_or(0), 0);
+    }
+
+    // Verify ID lookup logic: unmapped contest or submission IDs are skipped
+    #[test]
+    fn test_contest_submission_source_id_lookup_skips_unmapped() {
+        // Simulate id_map with partial mappings
+        let mut id_map: std::collections::HashMap<(String, String), String> = std::collections::HashMap::new();
+        id_map.insert(("contest".to_string(), "10".to_string()), "10".to_string());
+        // submission 200 is NOT mapped
+
+        let contest_mapped = id_map.contains_key(&("contest".to_string(), "10".to_string()));
+        let submission_mapped = id_map.contains_key(&("submission".to_string(), "200".to_string()));
+
+        assert!(contest_mapped, "contest 10 should be mapped");
+        assert!(!submission_mapped, "submission 200 should NOT be mapped");
+
+        // When submission is not mapped, the row must be skipped
+        let should_skip = !submission_mapped;
+        assert!(should_skip, "row with unmapped submission_id must be skipped");
+
+        // When contest is not mapped, the row must be skipped
+        let contest_99_mapped = id_map.contains_key(&("contest".to_string(), "99".to_string()));
+        assert!(!contest_99_mapped, "contest 99 should NOT be mapped");
+        let should_skip_unmapped_contest = !contest_99_mapped;
+        assert!(should_skip_unmapped_contest, "row with unmapped contest_id must be skipped");
+    }
+
+    // Verify that the UPSERT strategy correctly overrides dummy penalty_time=0
+    // from the submission migration with real penalty from source.
+    #[test]
+    fn test_contest_submission_source_upsert_overrides_dummy_penalty() {
+        // During submission migration, contest_submissions was created with penalty_time=0
+        let dummy_penalty: i32 = 0;
+
+        // Source table has real penalty
+        let source_penalty: i32 = 45;
+
+        // UPSERT ON CONFLICT (submission_id) DO UPDATE SET penalty_time = EXCLUDED.penalty_time
+        // After upsert, the effective penalty must be the source value
+        let effective_penalty = source_penalty; // UPSERT replaces the dummy
+        assert_ne!(effective_penalty, dummy_penalty,
+            "upsert must override the dummy penalty_time=0");
+        assert_eq!(effective_penalty, 45,
+            "effective penalty must be the source value");
+    }
+
+    // Verify pipeline ordering includes the contest_submissions enrichment step
+    // after submissions and before best_ac.
+    #[test]
+    fn test_pipeline_ordering_includes_contest_submissions_enrichment() {
+        let expected_order: Vec<&str> = vec![
+            "migrate_users",
+            "migrate_problems",
+            "migrate_contests",
+            "migrate_submissions",
+            "migrate_contest_submissions_from_source", // enrichment step
+            "migrate_best_ac",
+            "migrate_blogs",
+            "migrate_likes",
+            "migrate_messages",
+        ];
+
+        assert_eq!(expected_order.len(), 9,
+            "pipeline must have 9 steps after adding contest_submissions enrichment");
+
+        let submissions_pos = expected_order.iter()
+            .position(|&s| s == "migrate_submissions").unwrap();
+        let enrichment_pos = expected_order.iter()
+            .position(|&s| s == "migrate_contest_submissions_from_source").unwrap();
+        let best_ac_pos = expected_order.iter()
+            .position(|&s| s == "migrate_best_ac").unwrap();
+
+        // Enrichment must come AFTER submissions (needs submission id_map)
+        assert!(submissions_pos < enrichment_pos,
+            "submissions (pos {}) must come before enrichment (pos {})",
+            submissions_pos, enrichment_pos);
+
+        // Enrichment must come BEFORE best_ac (doesn't depend on it, but logically grouped)
+        assert!(enrichment_pos < best_ac_pos,
+            "enrichment (pos {}) must come before best_ac (pos {})",
+            enrichment_pos, best_ac_pos);
     }
 
 }

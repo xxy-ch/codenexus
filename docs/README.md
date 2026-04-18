@@ -1,19 +1,24 @@
 # Docs Index
 
-## 当前目录结构
+Project documentation is organized as follows:
 
-- `delivery/`
-  - 正式交付、发布、验收、范围、缺口文档
-- `architecture/`
-  - 项目总手册、前端 reference 动态化矩阵
-- `api/`
-  - 历史 API 专项说明
-- `archive/`
-  - 历史文档、阶段文档、归档资产与脚本
+## Root-Level Documentation
 
-## 正式入口
+| File | Description |
+|------|-------------|
+| [README.md](../README.md) | Project overview, quick start, features |
+| [ARCHITECTURE.md](../ARCHITECTURE.md) | System architecture and component overview |
+| [GETTING-STARTED.md](../GETTING-STARTED.md) | Prerequisites and setup guide |
+| [DEVELOPMENT.md](../DEVELOPMENT.md) | Local development workflow and patterns |
+| [TESTING.md](../TESTING.md) | Test frameworks, patterns, and conventions |
+| [API.md](../API.md) | REST API endpoint reference |
+| [CONFIGURATION.md](../CONFIGURATION.md) | Environment variables and config reference |
+| [DEPLOYMENT.md](../DEPLOYMENT.md) | Deployment guide (Docker Compose) |
 
-1. [项目完整开发与维护手册](/Users/xiexingyu/Documents/项目/Online_Judge/docs/architecture/PROJECT_HANDBOOK_2026-03-07.md)
-2. [交付文档集入口](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/DELIVERY_DOCUMENT_SET_2026-03-07.md)
-3. [发布与回滚 Runbook](/Users/xiexingyu/Documents/项目/Online_Judge/docs/delivery/RELEASE_RUNBOOK_2026-03-06.md)
-4. [历史文档归档索引](/Users/xiexingyu/Documents/项目/Online_Judge/docs/archive/ARCHIVE_INDEX.md)
+## Domain API Docs
+
+Specific API documentation for individual domains:
+
+- [Contest API](api/CONTEST_API.md)
+- [Leaderboard API](api/LEADERBOARD_API.md)
+- [Problems API](api/PROBLEMS_API.md)
