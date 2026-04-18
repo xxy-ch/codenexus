@@ -62,6 +62,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 10 complete — all 5 plans executed*
 *Phase 9 UAT executed: 2026-04-19 — 20/22 pass, blocked by Docker + priority decision*
 *Phase 9/10 formal acceptance blocked: Docker env required for ignored tests, priority semantics decision pending*
+*Phase 10 UAT executed: 2026-04-19 — 20/22 pass, blocked by Docker E2E*
+*D-12 decision recorded: accept bounded priority guarantee for v1.0*
 
 ## Decisions
 
