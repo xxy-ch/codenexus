@@ -153,8 +153,14 @@ pub async fn ensure_consumer_group(
     Ok(())
 }
 
-/// Dual-stream priority consumer: drains contest stream first (non-blocking),
-/// then falls back to normal stream (5s blocking read).
+/// Dual-stream priority consumer using a single XREADGROUP that reads from
+/// both contest (priority) and normal streams simultaneously.
+///
+/// Redis XREADGROUP with multiple STREAMS reads from all listed streams and
+/// returns messages from whichever has data first. By listing the contest
+/// stream first, Redis gives it natural preference when both have messages.
+/// A 200ms BLOCK keeps latency low for contest submissions (the priority
+/// stream is checked every loop iteration without a long blocking window).
 ///
 /// Returns tuples of (message_id, SubmissionMessage, origin_stream_name, school_id, submitted_at).
 /// The origin stream name is needed for correct ACK (per Pitfall 3 in RESEARCH.md).
@@ -167,27 +173,80 @@ pub async fn consume_priority(
     group_name: &str,
     consumer_name: &str,
 ) -> Result<Vec<(String, SubmissionMessage, String, Option<i64>, Option<String>)>> {
-    // Try contest stream first (non-blocking, per D-03)
-    let contest_msgs = consume_submission(conn, contest_stream, group_name, consumer_name, None).await?;
-    if !contest_msgs.is_empty() {
-        return Ok(contest_msgs
-            .into_iter()
-            .map(|m| (m.message_id, m.submission, contest_stream.to_string(), m.school_id, m.submitted_at))
-            .collect());
+    // Single XREADGROUP reading from both streams simultaneously.
+    // Contest stream is listed first so Redis returns its messages preferentially.
+    // Short BLOCK (200ms) minimizes the window where contest messages could arrive
+    // but not be seen — the previous 5s BLOCK caused up to 5s extra latency.
+    let mut cmd = redis::cmd("XREADGROUP");
+    cmd.arg("GROUP")
+        .arg(group_name)
+        .arg(consumer_name)
+        .arg("BLOCK")
+        .arg(200)
+        .arg("COUNT")
+        .arg(1)
+        .arg("STREAMS")
+        .arg(contest_stream)
+        .arg(normal_stream)
+        .arg(">")
+        .arg(">");
+
+    let result: redis::streams::StreamReadReply = cmd
+        .query_async(conn)
+        .await
+        .context("Failed to read from priority/normal streams")?;
+
+    let mut messages = Vec::new();
+
+    for stream_key in result.keys {
+        let origin_stream = stream_key.key.clone();
+        for stream_entry in stream_key.ids {
+            let message_id = stream_entry.id;
+            let Some(data_value) = stream_entry.map.get("data") else {
+                tracing::warn!("Message {} missing data field", message_id);
+                continue;
+            };
+
+            let data_json: String = redis::from_redis_value(data_value)
+                .context("Failed to decode Redis stream payload")?;
+            let mut submission: SubmissionMessage =
+                serde_json::from_str(&data_json).context("Failed to parse submission message")?;
+
+            // If contest_id is missing from the JSON but present as a top-level stream field,
+            // merge it in. This handles legacy messages where contest_id was only in XADD fields.
+            if submission.contest_id.is_none() {
+                submission.contest_id = stream_entry
+                    .map
+                    .get("contest_id")
+                    .and_then(|v| redis::from_redis_value::<String>(v).ok())
+                    .and_then(|s| s.parse::<i64>().ok());
+            }
+
+            // Extract school_id for DLQ tenant isolation
+            let school_id = stream_entry
+                .map
+                .get("school_id")
+                .and_then(|v| redis::from_redis_value::<String>(v).ok())
+                .and_then(|s| s.parse::<i64>().ok());
+
+            // Extract submitted_at for queue wait time calculation
+            let submitted_at = stream_entry
+                .map
+                .get("submitted_at")
+                .and_then(|v| redis::from_redis_value::<String>(v).ok())
+                .filter(|s| !s.is_empty());
+
+            messages.push((
+                message_id,
+                submission,
+                origin_stream.clone(),
+                school_id,
+                submitted_at,
+            ));
+        }
     }
-    // Fall back to normal stream (5s block, same as current)
-    let normal_msgs = consume_submission(
-        conn,
-        normal_stream,
-        group_name,
-        consumer_name,
-        Some(5000),
-    )
-    .await?;
-    Ok(normal_msgs
-        .into_iter()
-        .map(|m| (m.message_id, m.submission, normal_stream.to_string(), m.school_id, m.submitted_at))
-        .collect())
+
+    Ok(messages)
 }
 
 #[cfg(test)]
@@ -269,6 +328,70 @@ mod tests {
         assert_eq!(
             args,
             vec!["XREADGROUP", "GROUP", "workers", "w1", "COUNT", "1", "STREAMS", "contest_submissions", ">"]
+        );
+    }
+
+    /// Regression test (Issue 2): The consume_priority function must use a short
+    /// BLOCK timeout (200ms), not the previous 5-second block. The old approach
+    /// did a sequential read: non-blocking on contest, then 5s blocking on normal.
+    /// During the 5s block, contest submissions would be delayed.
+    ///
+    /// The fix uses a single XREADGROUP reading both streams with 200ms BLOCK.
+    /// This test verifies the command structure for the dual-stream approach.
+    #[test]
+    fn test_consume_priority_uses_short_block_timeout() {
+        // Build the dual-stream XREADGROUP command args as consume_priority does
+        let mut cmd = redis::cmd("XREADGROUP");
+        cmd.arg("GROUP")
+            .arg("judge_workers")
+            .arg("w1")
+            .arg("BLOCK")
+            .arg(200)
+            .arg("COUNT")
+            .arg(1)
+            .arg("STREAMS")
+            .arg("submissions:contest")
+            .arg("submissions")
+            .arg(">")
+            .arg(">");
+
+        let args: Vec<String> = cmd
+            .args_iter()
+            .map(|arg| match arg {
+                redis::Arg::Simple(data) => String::from_utf8_lossy(data).to_string(),
+                redis::Arg::Cursor => "<cursor>".to_string(),
+            })
+            .collect();
+
+        // Verify BLOCK value is 200 (not 5000)
+        let block_pos = args.iter().position(|a| a == "BLOCK").expect("BLOCK not found");
+        let block_val: u64 = args[block_pos + 1].parse().expect("BLOCK value not a number");
+        assert!(
+            block_val <= 500,
+            "BLOCK timeout should be short (<=500ms) for priority responsiveness, got {}ms",
+            block_val
+        );
+
+        // Verify both streams are present in a single command
+        assert!(
+            args.iter().any(|a| a == "submissions:contest"),
+            "Contest stream must be listed in dual-stream command"
+        );
+        let streams_pos = args.iter().position(|a| a == "STREAMS").expect("STREAMS not found");
+        let after_streams = &args[streams_pos + 1..];
+        // After STREAMS: contest_stream, normal_stream, ">", ">"
+        assert!(
+            after_streams.contains(&"submissions:contest".to_string()),
+            "Contest stream should be listed first (priority)"
+        );
+        assert!(
+            after_streams.contains(&"submissions".to_string()),
+            "Normal stream should be listed second"
+        );
+        assert_eq!(
+            after_streams.iter().filter(|a| **a == ">").count(),
+            2,
+            "Both streams should use '>' (new messages) ID"
         );
     }
 

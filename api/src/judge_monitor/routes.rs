@@ -28,6 +28,18 @@ fn ensure_admin(role: &str) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Verify that the requesting user has root (superadmin) role.
+/// Used for endpoints that expose global infrastructure data that
+/// cannot be tenant-isolated (e.g., judge worker metrics).
+fn ensure_root(role: &str) -> Result<(), AppError> {
+    if role != "root" {
+        return Err(AppError::Forbidden(
+            "Root access required for global infrastructure data".into(),
+        ));
+    }
+    Ok(())
+}
+
 /// Build the judge monitor router with status and DLQ management endpoints.
 pub fn judge_monitor_router() -> axum::Router<AppState> {
     axum::Router::new()
@@ -49,16 +61,14 @@ struct DlqQuery {
 ///
 /// NOTE: Worker heartbeats and queue depths are **global** -- judge workers serve all tenants
 /// and do not report per-tenant activity in their heartbeat payload. This endpoint is gated
-/// by admin/root role check but is NOT tenant-isolated. This is an architectural limitation:
-/// filtering workers by tenant would produce misleading metrics (e.g., showing 0 active judges
-/// for org A when workers are actively processing org A submissions).
-/// Future improvement: add per-tenant submission counts in heartbeat if tenant-level isolation
-/// becomes a hard requirement.
+/// by root-only role check to prevent cross-tenant information leakage. Admin users from
+/// one organization must not see worker counts or queue pressure from other tenants.
+/// Root role is system-wide by design, so global data exposure is appropriate.
 async fn get_judge_status(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
 ) -> Result<impl IntoResponse, AppError> {
-    ensure_admin(&claims.role)?;
+    ensure_root(&claims.role)?;
     let redis_pool = state
         .redis_pool
         .as_ref()
@@ -363,5 +373,45 @@ mod tests {
             Some("global"),
             "Status response must include scope: \"global\" to document tenant isolation limitation"
         );
+    }
+
+    // ---- Tenant isolation regression tests (Issue 1) ----
+    // Judge status endpoint returns global infrastructure data (worker heartbeats,
+    // queue depths) that cannot be filtered by tenant. To prevent cross-tenant
+    // information leakage, the endpoint is restricted to root role only.
+
+    /// Regression test: ensure_root accepts root role.
+    #[test]
+    fn ensure_root_accepts_root() {
+        assert!(ensure_root("root").is_ok());
+    }
+
+    /// Regression test: ensure_root rejects admin role.
+    /// Admins from org A must not see org B's worker metrics.
+    #[test]
+    fn ensure_root_rejects_admin() {
+        let result = ensure_root("admin");
+        assert!(result.is_err(), "Admin should not access global infrastructure data");
+        if let Err(AppError::Forbidden(msg)) = result {
+            assert!(
+                msg.contains("Root access required"),
+                "Error message should explain root-only requirement, got: {}",
+                msg
+            );
+        } else {
+            panic!("Expected Forbidden error, got {:?}", result);
+        }
+    }
+
+    /// Regression test: ensure_root rejects teacher role.
+    #[test]
+    fn ensure_root_rejects_teacher() {
+        assert!(ensure_root("teacher").is_err());
+    }
+
+    /// Regression test: ensure_root rejects student role.
+    #[test]
+    fn ensure_root_rejects_student() {
+        assert!(ensure_root("student").is_err());
     }
 }
