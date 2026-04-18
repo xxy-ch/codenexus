@@ -68,7 +68,11 @@ impl JudgeMonitorService {
                             .arg(stream)
                             .query_async(&mut conn)
                             .await
-                            .unwrap_or(0);
+                            .map_err(|e| anyhow::anyhow!(
+                                "XLEN for stream '{}' failed during nil-lag fallback: {}",
+                                stream,
+                                e
+                            ))?;
                         Ok(pending + total_len as usize)
                     }
                 }
