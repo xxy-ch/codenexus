@@ -25,7 +25,7 @@ pub async fn recover_pending_submissions(
     group_name: &str,
     consumer_name: &str,
     min_idle_ms: u64,
-) -> Result<Vec<(String, SubmissionMessage)>> {
+) -> Result<Vec<(String, SubmissionMessage, Option<i64>)>> {
     info!(
         "Scanning for pending submissions older than {}ms on stream '{}'",
         min_idle_ms, stream_name
@@ -163,10 +163,30 @@ pub async fn recover_pending_submissions(
                     }
 
                     if let Some(json) = data_json {
+                        // Extract school_id for DLQ tenant isolation
+                        let school_id: Option<i64> = {
+                            let mut sid: Option<i64> = None;
+                            let mut j = 0;
+                            while j + 1 < field_pairs.len() {
+                                if let (
+                                    redis::Value::BulkString(key),
+                                    redis::Value::BulkString(val),
+                                ) = (&field_pairs[j], &field_pairs[j + 1])
+                                {
+                                    if key == b"school_id" {
+                                        sid = String::from_utf8_lossy(val)
+                                            .parse::<i64>()
+                                            .ok();
+                                    }
+                                }
+                                j += 2;
+                            }
+                            sid
+                        };
                         match serde_json::from_str::<SubmissionMessage>(&json) {
                             Ok(msg) => {
                                 info!("Recovered submission {}", msg.submission_id);
-                                recovered.push((message_id, msg));
+                                recovered.push((message_id, msg, school_id));
                             }
                             Err(e) => {
                                 warn!("Failed to parse recovered message {}: {}", message_id, e);
