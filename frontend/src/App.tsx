@@ -120,6 +120,7 @@ function App() {
             <Route path="problems" element={renderLazy(ProblemSet)} />
             <Route path="problems/:problemId" element={renderLazy(ProblemDetail)} />
             <Route path="problems/:problemId/solve" element={renderLazy(ProblemIDEEnhanced)} />
+            <Route path="contests/:contestId/problems/:problemId/solve" element={renderLazy(ProblemIDEEnhanced)} />
             <Route path="submissions" element={renderLazy(SubmissionHistory)} />
             <Route path="submissions/:submissionId" element={renderLazy(SubmissionDetail)} />
             <Route path="contests" element={renderLazy(ContestList)} />

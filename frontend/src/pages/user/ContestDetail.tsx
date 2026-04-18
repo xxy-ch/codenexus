@@ -103,9 +103,9 @@ export function ContestDetail() {
   const enterMutation = useMutation({
     mutationFn: () => contestsService.enterContest(contestId!),
     onSuccess: () => {
-      // 进入竞赛页面或跳转到第一个题目
+      // 进入竞赛页面或跳转到第一个题目（包含 contestId 以启用优先队列）
       if (contest?.problems && contest.problems.length > 0) {
-        navigate(`/problems/${contest.problems[0].id}/solve`)
+        navigate(`/contests/${contestId}/problems/${contest.problems[0].id}/solve`)
       }
     },
   })
@@ -433,7 +433,7 @@ export function ContestDetail() {
             return (
               <Link
                 key={problem.id}
-                to={`/problems/${problem.id}`}
+                to={`/contests/${contestId}/problems/${problem.id}/solve`}
                 className="block border border-slate-200 dark:border-slate-800 rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all"
               >
                 <div className="flex items-center justify-between">
