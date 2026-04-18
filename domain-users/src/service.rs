@@ -1,8 +1,10 @@
 use super::models::*;
 use anyhow::Result;
 use api_infra::traits::token_service::TokenService;
+use md5::Digest;
 use sqlx::PgPool;
 use std::sync::Arc;
+use tracing::info;
 use uuid::Uuid;
 
 pub struct UserService {
@@ -117,10 +119,28 @@ impl UserService {
 
         let user = user.ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
 
-        // Verify password
-        bcrypt::verify(&req.password, &user.password_hash)?
-            .then_some(())
-            .ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
+        // Verify password (with transparent MD5→bcrypt migration per D-10-2)
+        if user.password_hash.starts_with("{MD5}") {
+            // Transparent MD5 migration path
+            let md5_hash = &user.password_hash[5..]; // strip "{MD5}" prefix
+            if verify_md5_password(&req.password, md5_hash) {
+                // Upgrade to bcrypt
+                let new_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)?;
+                sqlx::query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2")
+                    .bind(&new_hash)
+                    .bind(user.id)
+                    .execute(&self.pool)
+                    .await?;
+                info!("MD5 password upgraded to bcrypt for user: {}", user.username);
+            } else {
+                return Err(anyhow::anyhow!("Invalid credentials"));
+            }
+        } else {
+            // Normal bcrypt verification
+            bcrypt::verify(&req.password, &user.password_hash)?
+                .then_some(())
+                .ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
+        }
 
         // Get user role (canonical role from DB)
         let role = sqlx::query_scalar::<_, String>(
@@ -530,5 +550,40 @@ impl UserService {
         }
 
         Ok(())
+    }
+}
+
+/// Check if a password matches an {MD5}-prefixed hash (without the prefix).
+/// Used for transparent MD5→bcrypt migration on first login (D-10-2).
+fn verify_md5_password(password: &str, md5_hash: &str) -> bool {
+    let digest = md5::Md5::digest(password.as_bytes());
+    let computed: String = digest.iter().map(|b| format!("{:02x}", b)).collect();
+    computed == md5_hash
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn verify_md5_password_correct() {
+        // MD5("test123") == cc03e747a6afbbcbf8be7668acfebee5
+        assert!(verify_md5_password("test123", "cc03e747a6afbbcbf8be7668acfebee5"));
+    }
+
+    #[test]
+    fn verify_md5_password_wrong() {
+        assert!(!verify_md5_password("wrong", "cc03e747a6afbbcbf8be7668acfebee5"));
+    }
+
+    #[test]
+    fn verify_md5_password_empty_string() {
+        // MD5("") == d41d8cd98f00b204e9800998ecf8427e
+        assert!(verify_md5_password("", "d41d8cd98f00b204e9800998ecf8427e"));
+    }
+
+    #[test]
+    fn verify_md5_password_empty_hash_mismatch() {
+        assert!(!verify_md5_password("", "cc03e747a6afbbcbf8be7668acfebee5"));
     }
 }
