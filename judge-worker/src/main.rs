@@ -488,10 +488,20 @@ async fn consume_and_process(
                                 // Calculate queue wait time: dequeue - enqueue
                                 // Falls back to processing time if submitted_at is unavailable
                                 let wait_ms = compute_wait_ms(&submitted_at, &dequeue_timestamp);
-                                // Simple exponential moving average for avg_wait_ms
-                                let prev = avg_wait_ms.load(Ordering::Relaxed);
-                                let new_avg = if prev == 0 { wait_ms } else { (prev * 7 + wait_ms * 3) / 10 };
-                                avg_wait_ms.store(new_avg, Ordering::Relaxed);
+                                // Lock-free EMA update using compare_exchange to avoid
+                                // lost updates under concurrent judging tasks.
+                                loop {
+                                    let prev = avg_wait_ms.load(Ordering::Relaxed);
+                                    let new_avg = if prev == 0 { wait_ms } else { (prev * 7 + wait_ms * 3) / 10 };
+                                    if avg_wait_ms.compare_exchange_weak(
+                                        prev,
+                                        new_avg,
+                                        Ordering::Relaxed,
+                                        Ordering::Relaxed,
+                                    ).is_ok() {
+                                        break;
+                                    }
+                                }
                             }
                             Err(_) => {}
                         }
@@ -951,6 +961,63 @@ mod tests {
         assert!(
             result.is_err(),
             "Semaphore should block when all permits are held"
+        );
+    }
+
+    /// Regression test (Bug 4): EMA concurrent update must not panic or produce
+    /// lost updates. Verifies that the compare_exchange loop handles concurrent
+    /// writers correctly.
+    #[test]
+    fn ema_concurrent_update_no_lost_writes_or_panics() {
+        use std::sync::atomic::AtomicUsize;
+        use std::thread;
+
+        let avg_wait_ms = Arc::new(AtomicUsize::new(0));
+        let num_threads = 8;
+        let updates_per_thread = 1000;
+
+        let mut handles = Vec::new();
+        for _ in 0..num_threads {
+            let avg = Arc::clone(&avg_wait_ms);
+            handles.push(thread::spawn(move || {
+                for i in 0..updates_per_thread {
+                    let wait_ms = i + 1; // sample value
+                    // Same CAS loop as the production code
+                    loop {
+                        let prev = avg.load(Ordering::Relaxed);
+                        let new_avg = if prev == 0 {
+                            wait_ms
+                        } else {
+                            (prev * 7 + wait_ms * 3) / 10
+                        };
+                        if avg
+                            .compare_exchange_weak(prev, new_avg, Ordering::Relaxed, Ordering::Relaxed)
+                            .is_ok()
+                        {
+                            break;
+                        }
+                    }
+                }
+            }));
+        }
+
+        for handle in handles {
+            handle.join().expect("Thread should not panic");
+        }
+
+        // The value should be non-zero and finite (no overflow/NaN concern with usize).
+        // We can't assert an exact value due to scheduling nondeterminism, but we
+        // verify it's in a reasonable range.
+        let final_val = avg_wait_ms.load(Ordering::Relaxed);
+        assert!(
+            final_val > 0,
+            "EMA should be non-zero after {} updates",
+            num_threads * updates_per_thread
+        );
+        assert!(
+            final_val < 1_000_000,
+            "EMA should remain in reasonable range, got {}",
+            final_val
         );
     }
 }

@@ -199,6 +199,10 @@ fn map_dlq_error(err: anyhow::Error) -> AppError {
         AppError::NotFound(msg)
     } else if msg.contains("does not belong") {
         AppError::Forbidden(msg)
+    } else if msg.contains("Missing original_message") {
+        // Client data is incomplete -- this is a business error, not a server bug.
+        // 422 would be ideal but we map to Validation (400) for consistency.
+        AppError::Validation(msg)
     } else {
         AppError::Internal(msg)
     }
@@ -306,6 +310,23 @@ mod tests {
         match map_dlq_error(err) {
             AppError::Internal(msg) => assert!(msg.contains("XRANGE")),
             other => panic!("Expected Internal, got {:?}", other),
+        }
+    }
+
+    /// Regression test (Bug 3): "Missing original_message" DLQ retry error
+    /// must map to Validation (400), not Internal (500). The Lua retry script
+    /// returns this error when the DLQ entry lacks the original_message field.
+    #[test]
+    fn map_dlq_error_missing_original_message_returns_validation() {
+        let err = anyhow::anyhow!("Missing original_message -- cannot retry");
+        match map_dlq_error(err) {
+            AppError::Validation(msg) => {
+                assert!(msg.contains("Missing original_message"), "msg: {}", msg);
+            }
+            other => panic!(
+                "Expected AppError::Validation (400) for missing original_message, got {:?}",
+                other
+            ),
         }
     }
 }

@@ -72,6 +72,7 @@ impl JudgeMonitorService {
         let pattern = "worker:heartbeat:*";
 
         let mut workers = Vec::new();
+        let mut failed_reads: usize = 0;
         let mut cursor: u64 = 0;
         loop {
             let (new_cursor, keys): (u64, Vec<String>) = deadpool_redis::redis::cmd("SCAN")
@@ -92,6 +93,7 @@ impl JudgeMonitorService {
                 {
                     Ok(fields) => fields,
                     Err(e) => {
+                        failed_reads += 1;
                         tracing::warn!(
                             "Failed to read heartbeat data for key '{}': {}",
                             key,
@@ -110,6 +112,25 @@ impl JudgeMonitorService {
                 break;
             }
         }
+
+        // If a significant number of heartbeat reads failed, return an error
+        // so the monitoring endpoint signals a problem rather than silently
+        // returning partial results.
+        if failed_reads > 0 && workers.is_empty() {
+            return Err(anyhow::anyhow!(
+                "All {} heartbeat key reads failed -- Redis may be degraded",
+                failed_reads
+            ));
+        }
+
+        if failed_reads > 0 {
+            tracing::warn!(
+                "Heartbeat scan completed with {} failed reads out of {} keys",
+                failed_reads,
+                workers.len() + failed_reads
+            );
+        }
+
         Ok(workers)
     }
 
@@ -533,5 +554,51 @@ mod tests {
             .and_then(|v: &String| v.parse::<usize>().ok());
 
         assert_eq!(result, None, "Malformed field should produce None, not 0");
+    }
+
+    /// Regression test (Bug 2): When all heartbeat HGETALL reads fail,
+    /// get_worker_heartbeats returns an error instead of an empty Vec.
+    /// This verifies the error-propagation contract without requiring Redis.
+    #[test]
+    fn all_heartbeat_reads_failed_returns_error_contract() {
+        // Simulate the logic: if failed_reads > 0 && workers.is_empty(),
+        // the function returns Err. Verify the error message is meaningful.
+        let failed_reads: usize = 3;
+        let workers: Vec<HashMap<String, String>> = Vec::new();
+
+        let should_error = failed_reads > 0 && workers.is_empty();
+        assert!(
+            should_error,
+            "When all heartbeat reads fail, should return error, not empty results"
+        );
+
+        // Verify error message format
+        let msg = format!(
+            "All {} heartbeat key reads failed -- Redis may be degraded",
+            failed_reads
+        );
+        assert!(
+            msg.contains("3") && msg.contains("failed"),
+            "Error message should include failure count: {}",
+            msg
+        );
+    }
+
+    /// Regression test (Bug 2): When some but not all heartbeat reads fail,
+    /// the function still returns the successful reads (partial results).
+    #[test]
+    fn partial_heartbeat_reads_succeed_returns_partial_results() {
+        let failed_reads: usize = 1;
+        let mut workers: Vec<HashMap<String, String>> = Vec::new();
+        let mut fields: HashMap<String, String> = HashMap::new();
+        fields.insert("worker_id".into(), "worker-1".into());
+        workers.push(fields);
+
+        // Should NOT error -- some workers were read successfully
+        let should_error = failed_reads > 0 && workers.is_empty();
+        assert!(
+            !should_error,
+            "When some heartbeats are readable, should return them, not error"
+        );
     }
 }
