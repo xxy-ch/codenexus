@@ -194,7 +194,7 @@ passed: 20
 issues: 0
 pending: 0
 skipped: 0
-blocked: 2
+blocked: 1
 
 ## Gaps
 
@@ -203,11 +203,11 @@ blocked: 2
 - 4 ignored tests ready to execute in CI or on Linux host
 - Pure unit tests (school_id extraction, field validation) pass
 
-### Gap 2: Priority Bounded Guarantee (Blocked — pending decision)
-- Test 2 note: `consume_priority` has a bounded 1-cycle reordering window
-- Eliminating it requires heavier mechanism (e.g., Redis-stream-level priority)
-- Code documents this as intentional architectural tradeoff
-- Needs project-level acceptance decision: accept bounded guarantee or refactor
+### Gap 2: Priority Bounded Guarantee (RESOLVED — D-12 accepted)
+- Decision D-12: Accept bounded 1-cycle reordering window for v1.0
+- Rationale: Window is microseconds (Redis response → Rust return), not 200ms; no data loss; zero practical impact for educational platform
+- Strict priority (dual-stream XREADGROUP BLOCK) deferred to v2
+- Code documents this as intentional tradeoff at consumer.rs:230-239
 
 ### Gap 3: EMA Alpha Value (Low — no smoothing curve test)
 - Test 8 note: Alpha=0.3 verified in code but no test validates the smoothing curve
@@ -228,7 +228,7 @@ blocked: 2
 | Severity | Item | Status |
 |----------|------|--------|
 | Critical | Docker environment unavailable — ignored integration/E2E tests cannot execute (phase 9/10 common blocker) | Blocked |
-| High | Priority queue "bounded guarantee" semantics — accept 1-cycle window or refactor for strict priority — no decision recorded | Pending |
+| High | Priority queue "bounded guarantee" semantics — accept 1-cycle window or refactor for strict priority — no decision recorded | **RESOLVED (D-12): accepted** |
 | Medium | CI does not execute ignored tests — no continuous acceptance evidence pipeline | Pending |
 
 ### Minimum Closure Path
@@ -245,4 +245,7 @@ blocked: 2
 3. **Wire ignored tests into CI (Linux runner):**
    - Makes acceptance evidence reproducible on every push
 
-Steps 1 + 2 close Phase 10 formally. Phase 9 formal acceptance depends on step 2 decision outcome.
+Steps 1 + 2 close Phase 10 formally. Phase 9 formal acceptance now only depends on step 1 (Docker execution).
+
+**Update (D-12):** Decision recorded — bounded guarantee accepted for v1.0. Strict priority deferred to v2.
+Phase 9 blocking items reduced from 3 to 2 (Docker env + CI pipeline).

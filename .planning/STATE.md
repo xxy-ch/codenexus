@@ -110,6 +110,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 10 P03]: Tags appended to problem description as inline note since problems table has no dedicated tags column
 - [Phase 10 P03]: Contest rules default to 'acm'; penalty_time defaults to 0 for contest_submissions
 - [Phase 10]: decode_blob_result refactored from &self to associated function for testability
+- D-12: Accept bounded 1-cycle priority reordering window for v1.0; strict priority deferred to v2
 
 ## Performance Metrics
 

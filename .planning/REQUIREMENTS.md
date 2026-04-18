@@ -97,6 +97,7 @@
 ### Resilience
 
 - **FTOL-04**: Graceful shutdown — drain in-flight requests before terminating process
+- **FTOL-05**: Strict priority queue — eliminate bounded 1-cycle reordering window via dual-stream XREADGROUP BLOCK (deferred from v1.0 per D-12)
 
 ### Documentation
 
