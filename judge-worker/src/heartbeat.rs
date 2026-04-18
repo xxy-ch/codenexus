@@ -292,6 +292,41 @@ mod tests {
         assert_eq!(status, HeartbeatStatus::HttpError(403));
     }
 
+    /// Verify that reading the response body after a non-2xx status does not panic.
+    /// Regression test: response body read failures should be logged, not silently ignored
+    /// or cause a panic.
+    #[tokio::test]
+    async fn non_2xx_response_body_read_does_not_panic() {
+        // Use axum or a real HTTP server to produce a response where the body
+        // may be read. Since we use a raw TCP mock, the response body is always
+        // readable here. The key assertion is that handle_heartbeat_response
+        // handles the body read gracefully (it uses unwrap_or_else for errors).
+        let addr = spawn_mock_server(503, "service unavailable").await;
+        let url = format!("http://{}", addr);
+
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(5))
+            .build()
+            .unwrap();
+
+        let result = client
+            .post(format!("{}/internal/worker/heartbeat", url))
+            .json(&HeartbeatPayload {
+                worker_id: "test".into(),
+                active_judgements: 0,
+                total_processed: 0,
+                avg_wait_ms: 0,
+                redis_breaker_state: "Closed".into(),
+                api_breaker_state: "Closed".into(),
+            })
+            .send()
+            .await;
+
+        // This should succeed without panic — the response body is read and logged
+        let status = handle_heartbeat_response(result).await;
+        assert_eq!(status, HeartbeatStatus::HttpError(503));
+    }
+
     /// Verify that a network error (connection refused) is reported as NetworkError.
     #[tokio::test]
     async fn network_error_returns_network_error() {

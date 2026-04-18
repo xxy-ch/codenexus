@@ -795,3 +795,67 @@ async fn send_result_with_retry(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Regression test: compute_wait_ms measures queue wait (dequeue - enqueue),
+    /// NOT processing time (result - dequeue).
+    #[test]
+    fn compute_wait_ms_measures_queue_wait_not_processing_time() {
+        // Enqueue happened 5 seconds ago
+        let enqueue_time = chrono::Utc::now() - chrono::Duration::seconds(5);
+        let dequeue_timestamp = chrono::Utc::now();
+
+        let submitted_at = Some(enqueue_time.to_rfc3339());
+        let wait_ms = compute_wait_ms(&submitted_at, &dequeue_timestamp);
+
+        // Should be approximately 5000ms (queue wait), not 0 (processing time)
+        assert!(
+            wait_ms >= 4500 && wait_ms <= 5500,
+            "Expected ~5000ms queue wait, got {}ms",
+            wait_ms
+        );
+    }
+
+    /// Verify compute_wait_ms returns 0 when submitted_at is missing.
+    #[test]
+    fn compute_wait_ms_returns_zero_when_submitted_at_missing() {
+        let dequeue_timestamp = chrono::Utc::now();
+        let wait_ms = compute_wait_ms(&None, &dequeue_timestamp);
+        assert_eq!(wait_ms, 0, "Expected 0 when submitted_at is None");
+    }
+
+    /// Verify compute_wait_ms returns 0 for unparseable timestamps.
+    #[test]
+    fn compute_wait_ms_returns_zero_for_invalid_timestamp() {
+        let dequeue_timestamp = chrono::Utc::now();
+        let wait_ms = compute_wait_ms(&Some("not-a-timestamp".to_string()), &dequeue_timestamp);
+        assert_eq!(wait_ms, 0, "Expected 0 for unparseable timestamp");
+    }
+
+    /// Verify compute_wait_ms clamps negative wait to 0 (clock skew scenario).
+    #[test]
+    fn compute_wait_ms_clamps_negative_to_zero() {
+        // Dequeue is BEFORE enqueue (clock skew)
+        let enqueue_time = chrono::Utc::now() + chrono::Duration::seconds(10);
+        let dequeue_timestamp = chrono::Utc::now();
+
+        let submitted_at = Some(enqueue_time.to_rfc3339());
+        let wait_ms = compute_wait_ms(&submitted_at, &dequeue_timestamp);
+        assert_eq!(wait_ms, 0, "Expected 0 for negative (clock-skewed) wait");
+    }
+
+    /// Verify compute_wait_ms with a precisely known duration.
+    #[test]
+    fn compute_wait_ms_with_exact_known_duration() {
+        let dequeue_timestamp = chrono::DateTime::parse_from_rfc3339("2026-01-15T12:00:10.000Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        let submitted_at = Some("2026-01-15T12:00:00.000Z".to_string());
+
+        let wait_ms = compute_wait_ms(&submitted_at, &dequeue_timestamp);
+        assert_eq!(wait_ms, 10_000, "Expected exactly 10000ms");
+    }
+}
