@@ -84,6 +84,7 @@ pub struct UserImportRow {
     pub username: String,
     pub role: String,
     pub campus_id: i64,
+    pub grade_id: Option<i64>,
     pub display_name: String,
     pub email: Option<String>,
     pub status: ImportItemStatus,

@@ -6,6 +6,7 @@ pub struct UserExportRow {
     pub username: String,
     pub role: String,
     pub campus_id: Option<i64>,
+    pub grade_id: Option<i64>,
     pub display_name: Option<String>,
     pub email: Option<String>,
 }
@@ -14,8 +15,8 @@ pub struct UserExportRow {
 ///
 /// Output format:
 /// ```text
-/// username,role,campus_id,display_name,email
-/// alice,student,1,Alice Smith,alice@example.com
+/// username,role,campus_id,grade_id,display_name,email
+/// alice,student,1,2,Alice Smith,alice@example.com
 /// ```
 pub fn build_user_csv(users: &[UserExportRow]) -> Result<Vec<u8>> {
     let mut wtr = csv::WriterBuilder::new()
@@ -23,13 +24,17 @@ pub fn build_user_csv(users: &[UserExportRow]) -> Result<Vec<u8>> {
         .from_writer(Vec::<u8>::new());
 
     // Write header explicitly to ensure it's always present
-    wtr.write_record(&["username", "role", "campus_id", "display_name", "email"])?;
+    wtr.write_record(&["username", "role", "campus_id", "grade_id", "display_name", "email"])?;
 
     for user in users {
         wtr.write_record(&[
             user.username.as_str(),
             user.role.as_str(),
             user.campus_id
+                .map(|id| id.to_string())
+                .as_deref()
+                .unwrap_or(""),
+            user.grade_id
                 .map(|id| id.to_string())
                 .as_deref()
                 .unwrap_or(""),
@@ -56,6 +61,7 @@ mod tests {
             username: "alice".to_string(),
             role: "student".to_string(),
             campus_id: Some(1),
+            grade_id: Some(2),
             display_name: Some("Alice Smith".to_string()),
             email: Some("alice@example.com".to_string()),
         }];
@@ -67,6 +73,7 @@ mod tests {
         assert!(lines[0].starts_with("username"));
         assert!(lines[0].contains("role"));
         assert!(lines[0].contains("campus_id"));
+        assert!(lines[0].contains("grade_id"));
         assert!(lines[0].contains("display_name"));
         assert!(lines[0].contains("email"));
     }
@@ -78,6 +85,7 @@ mod tests {
                 username: "alice".to_string(),
                 role: "student".to_string(),
                 campus_id: Some(1),
+                grade_id: Some(2),
                 display_name: Some("Alice Smith".to_string()),
                 email: Some("alice@example.com".to_string()),
             },
@@ -85,6 +93,7 @@ mod tests {
                 username: "bob".to_string(),
                 role: "teacher".to_string(),
                 campus_id: None,
+                grade_id: None,
                 display_name: None,
                 email: None,
             },
@@ -108,6 +117,7 @@ mod tests {
                 username: "alice".to_string(),
                 role: "student".to_string(),
                 campus_id: Some(1),
+                grade_id: Some(2),
                 display_name: Some("Alice Smith".to_string()),
                 email: Some("alice@example.com".to_string()),
             },
@@ -115,6 +125,7 @@ mod tests {
                 username: "bob".to_string(),
                 role: "teacher".to_string(),
                 campus_id: Some(2),
+                grade_id: None,
                 display_name: Some("Bob Jones".to_string()),
                 email: None,
             },

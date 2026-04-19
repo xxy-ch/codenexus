@@ -83,6 +83,7 @@ pub fn parse_user_csv(
                     username: String::new(),
                     role: String::new(),
                     campus_id: 0,
+                    grade_id: None,
                     display_name: String::new(),
                     email: None,
                     status: ImportItemStatus::Error,
@@ -98,6 +99,7 @@ pub fn parse_user_csv(
         let display_name_raw =
             get_column(&record, &headers, "display_name").unwrap_or_default();
         let email_raw = get_column(&record, &headers, "email").unwrap_or_default();
+        let grade_id_raw = get_column(&record, &headers, "grade_id").unwrap_or_default();
 
         // Sanitize all cell values
         let username = sanitize_csv_cell(&username_raw);
@@ -105,6 +107,7 @@ pub fn parse_user_csv(
         let campus_id_str = sanitize_csv_cell(&campus_id_raw);
         let display_name = sanitize_csv_cell(&display_name_raw);
         let email = sanitize_csv_cell(&email_raw);
+        let grade_id_str = sanitize_csv_cell(&grade_id_raw);
 
         // Validate username
         if username.is_empty() {
@@ -112,6 +115,7 @@ pub fn parse_user_csv(
                 username: String::new(),
                 role,
                 campus_id: 0,
+                grade_id: None,
                 display_name,
                 email: if email.is_empty() { None } else { Some(email) },
                 status: ImportItemStatus::Error,
@@ -143,6 +147,7 @@ pub fn parse_user_csv(
                 username,
                 role,
                 campus_id: 0,
+                grade_id: None,
                 display_name,
                 email: if email.is_empty() { None } else { Some(email) },
                 status: ImportItemStatus::Error,
@@ -165,6 +170,7 @@ pub fn parse_user_csv(
                     username,
                     role,
                     campus_id: 0,
+                    grade_id: None,
                     display_name,
                     email: if email.is_empty() { None } else { Some(email) },
                     status: ImportItemStatus::Error,
@@ -175,6 +181,28 @@ pub fn parse_user_csv(
         };
 
         let email_opt = if email.is_empty() { None } else { Some(email) };
+
+        // Parse optional grade_id (empty or absent means None)
+        let grade_id_opt: Option<i64> = if grade_id_str.is_empty() {
+            None
+        } else {
+            match grade_id_str.parse() {
+                Ok(id) => Some(id),
+                Err(_) => {
+                    rows.push(UserImportRow {
+                        username,
+                        role,
+                        campus_id,
+                        grade_id: None,
+                        display_name,
+                        email: email_opt,
+                        status: ImportItemStatus::Error,
+                        warning: Some(format!("Invalid grade_id: '{}'", grade_id_str)),
+                    });
+                    continue;
+                }
+            }
+        };
 
         // Tentatively mark as Valid; will be updated in second pass for intra-CSV dupes
         let (status, warning) = if skip_usernames.contains(&username) {
@@ -193,6 +221,7 @@ pub fn parse_user_csv(
             username,
             role,
             campus_id,
+            grade_id: grade_id_opt,
             display_name,
             email: email_opt,
             status,
@@ -227,7 +256,7 @@ pub fn convert_to_batch_request(
             display_name: Some(r.display_name.clone()),
             email: r.email.clone(),
             campus_id: Some(r.campus_id),
-            grade_id: None,
+            grade_id: r.grade_id,
             password: None,
             role: Some(r.role.clone()),
         })
@@ -503,6 +532,7 @@ mod tests {
                 username: "alice".to_string(),
                 role: "student".to_string(),
                 campus_id: 1,
+                grade_id: None,
                 display_name: "Alice".to_string(),
                 email: Some("alice@example.com".to_string()),
                 status: ImportItemStatus::Valid,
@@ -512,6 +542,7 @@ mod tests {
                 username: "bob".to_string(),
                 role: "student".to_string(),
                 campus_id: 1,
+                grade_id: None,
                 display_name: "Bob".to_string(),
                 email: None,
                 status: ImportItemStatus::Duplicate,
@@ -521,6 +552,7 @@ mod tests {
                 username: "charlie".to_string(),
                 role: "student".to_string(),
                 campus_id: 2,
+                grade_id: None,
                 display_name: "Charlie".to_string(),
                 email: None,
                 status: ImportItemStatus::Valid,

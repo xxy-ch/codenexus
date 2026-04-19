@@ -914,7 +914,7 @@ pub async fn export_users(
         sqlx::query(
             r#"
             SELECT DISTINCT ON (u.id)
-                u.username, r.role, u.campus_id, u.display_name, u.email
+                u.username, r.role, u.campus_id, u.grade_id, u.display_name, u.email
             FROM users u
             JOIN user_roles r ON u.id = r.user_id
             WHERE u.organization_id = $1 AND u.campus_id = $2
@@ -938,7 +938,7 @@ pub async fn export_users(
         sqlx::query(
             r#"
             SELECT DISTINCT ON (u.id)
-                u.username, r.role, u.campus_id, u.display_name, u.email
+                u.username, r.role, u.campus_id, u.grade_id, u.display_name, u.email
             FROM users u
             JOIN user_roles r ON u.id = r.user_id
             WHERE u.organization_id = $1
@@ -966,6 +966,7 @@ pub async fn export_users(
             username: r.get("username"),
             role: r.get("role"),
             campus_id: r.try_get("campus_id").unwrap_or(None),
+            grade_id: r.try_get("grade_id").unwrap_or(None),
             display_name: r.try_get("display_name").unwrap_or(None),
             email: r.try_get("email").unwrap_or(None),
         })
