@@ -217,7 +217,6 @@ cargo run --bin migration-tool -- \
 
 | 变量名 | 必填 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `VITE_ENABLE_MOCK_DATA` | 否 | `false` | 设为 `true` 启用 Mock 数据模式，跳过真实 API 调用 |
 | `VITE_ENABLE_DIRECT_MESSAGES` | 否 | `true`（启用） | 设为 `false` 禁用私信功能 |
 | `VITE_ENABLE_PLAGIARISM` | 否 | `true`（启用） | 设为 `false` 禁用查重模块 |
 | `VITE_ENABLE_WEBSOCKET` | 否 | `true` | WebSocket 功能开关 |
@@ -640,7 +639,6 @@ Judge Worker 使用内存熔断器（`judge-worker/src/circuit_breaker.rs`）防
 | `VITE_WS_BASE_URL` | 否 | 自动检测 |
 | `VITE_API_PROXY_TARGET` | 否 | `http://localhost:3000` |
 | `VITE_WS_PROXY_TARGET` | 否 | `ws://localhost:3000` |
-| `VITE_ENABLE_MOCK_DATA` | 否 | `false` |
 | `VITE_ENABLE_DIRECT_MESSAGES` | 否 | `true` |
 | `VITE_ENABLE_PLAGIARISM` | 否 | `true` |
 | `VITE_ENABLE_WEBSOCKET` | 否 | `true` |

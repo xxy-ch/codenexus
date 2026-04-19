@@ -10,10 +10,6 @@ vi.mock('@/services/api', () => ({
   default: mockApi,
 }))
 
-vi.mock('@/services/config', () => ({
-  USE_MOCK_DATA: false,
-}))
-
 import { adminService } from '@/services/admin'
 
 describe('adminService.getProblems', () => {

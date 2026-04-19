@@ -46,9 +46,6 @@ export const API_CONFIG = {
     adminPlagiarismReports: '/admin/plagiarism/reports',
   },
 }
-// Mock data flag
-export const USE_MOCK_DATA = import.meta.env.VITE_ENABLE_MOCK_DATA === 'true'
-
 // Feature toggles for backend-dependent modules.
 // Default: enabled for release completeness; allow explicit disable via env=false.
 export const FEATURE_FLAGS = {

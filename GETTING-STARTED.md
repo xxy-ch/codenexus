@@ -179,7 +179,6 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/online_judge
 | `VITE_WS_BASE_URL` | 可选 | 自动检测 | WebSocket URL |
 | `VITE_API_PROXY_TARGET` | 可选 | `http://localhost:3000` | Vite 开发代理目标（仅开发时） |
 | `VITE_WS_PROXY_TARGET` | 可选 | `ws://localhost:3000` | WebSocket 代理目标 |
-| `VITE_ENABLE_MOCK_DATA` | 可选 | `false` | 启用模拟数据模式（不连接真实 API） |
 | `VITE_ENABLE_WEBSOCKET` | 可选 | `true` | 启用 WebSocket 实时通知 |
 
 前端 Vite 配置（`frontend/vite.config.ts`）已设置代理规则：
@@ -514,8 +513,7 @@ docker compose logs redis
    ```
 2. 检查浏览器开发者工具的 Console 面板，查看是否有 JavaScript 错误
 3. 检查 Network 面板，确认 `/api` 请求是否正常返回
-4. 如果使用了 `VITE_ENABLE_MOCK_DATA=true`，改为 `false` 以连接真实 API
-5. 确认 `VITE_API_BASE_URL` 设置正确，默认 `/api` 配合 Vite 代理即可正常工作
+4. 确认 `VITE_API_BASE_URL` 设置正确，默认 `/api` 配合 Vite 代理即可正常工作
 
 ### 7.6 数据库迁移失败
 
