@@ -1,22 +1,30 @@
 # Multi-stage build for Rust judge-worker
-# Stage 1: Build
+# Build context: ./backend (from docker-compose.yml)
 FROM rust:1.88-alpine AS builder
 
-# Install build dependencies
 RUN apk add --no-cache \
     musl-dev \
     pkgconf \
     openssl-dev
 
-# Set working directory
 WORKDIR /app
 
-# Copy workspace sources required by judge-worker
+# Layer 1: Copy Cargo.toml files for dependency caching
 COPY Cargo.toml Cargo.lock ./
-COPY api/Cargo.toml ./api/Cargo.toml
+COPY judge-worker/Cargo.toml ./judge-worker/Cargo.toml
+COPY shared/Cargo.toml ./shared/Cargo.toml
+
+# Create dummy source files
+RUN mkdir -p judge-worker/src shared/src && \
+    printf 'fn main() {}\n' > judge-worker/src/main.rs && \
+    printf '' > shared/src/lib.rs
+
+# Build dependencies only (cached layer)
+RUN cargo build --release -p judge-worker 2>/dev/null || true
+
+# Layer 2: Copy actual source code
 COPY judge-worker ./judge-worker
 COPY shared ./shared
-RUN mkdir -p api/src && printf 'fn main() {}\n' > api/src/main.rs
 
 # Build the actual application
 RUN cargo build --release -p judge-worker
@@ -24,7 +32,6 @@ RUN cargo build --release -p judge-worker
 # Stage 2: Runtime with Docker
 FROM alpine:3.19
 
-# Install runtime dependencies
 RUN apk add --no-cache \
     docker \
     ca-certificates \
@@ -41,22 +48,16 @@ RUN apk add --no-cache \
     rust \
     cargo
 
-# Create app user
 RUN addgroup -g 1000 appuser && \
     adduser -D -u 1000 -G appuser appuser && \
     addgroup appuser docker
 
-# Set working directory
 WORKDIR /app
 
-# Copy binary from builder
 COPY --from=builder /app/target/release/judge-worker /app/judge-worker
 
-# Change ownership
 RUN chown -R appuser:appuser /app
 
-# Switch to non-root user
 USER appuser
 
-# Run the application (requires privileged mode for Docker-in-Docker)
 CMD ["/app/judge-worker"]

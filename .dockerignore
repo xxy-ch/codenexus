@@ -11,6 +11,13 @@
 **/test-results
 **/.playwright
 **/.playwright-cli
-frontend/.env*
-api/.env*
-judge-worker/.env*
+frontend/
+backend/api/.env*
+backend/judge-worker/.env*
+.planning/
+docs/
+.claude/
+.omc/
+.omx/
+.sc/
+.references/
