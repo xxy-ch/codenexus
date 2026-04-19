@@ -41,6 +41,7 @@ export interface User {
   display_name?: string | null
   organization_id: number
   campus_id?: number | null
+  grade_id?: number | null
   role: Role
   status: string
   created_at: string
@@ -60,6 +61,7 @@ export interface RegisterRequest {
   display_name?: string
   organization_id: number
   campus_id?: number | null
+  grade_id?: number | null
 }
 
 export interface AuthResponse {
