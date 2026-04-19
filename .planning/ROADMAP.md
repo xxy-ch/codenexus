@@ -353,23 +353,23 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 
 ### Phase 11: Feature Gateway Infrastructure
 
-**Goal:** Build a unified runtime feature gateway that supports three-ring flag model (global / tenant / capability), enabling granular module activation for both existing features and future AI analysis. Teachers and admins get a dashboard to toggle features per organization, class, or assignment without code changes.
+**Goal:** Build a unified runtime feature gateway that supports a three-ring flag model (global master control / scoped hierarchy resolution / capability-level slugs), enabling granular module activation for both existing features and future AI analysis. Teachers and admins get scoped control surfaces to toggle features per campus, grade, or class with inherited-state visibility.
 
 **Requirements:**
 - FGW-01: `feature_registry` table — canonical feature catalog (id, slug, name, description, default_enabled, category)
-- FGW-02: `feature_flags` table — runtime overrides at global / tenant / class / assignment scope with precedence resolution
-- FGW-03: Feature Gateway service — query API that resolves flag state for a given context (feature_slug + org_id + optional class_id/assignment_id), respecting the 3-ring precedence model
-- FGW-04: Admin API endpoints — CRUD for feature flags at each scope level (global requires root, tenant requires campusAdmin, class requires teacher+)
-- FGW-05: Teacher dashboard page — UI to browse features and toggle them per class/assignment with clear inherited-from indicators
+- FGW-02: `feature_flags` table — runtime overrides at global / campus / grade / class scope with precedence resolution (`class > grade > campus > global > default`)
+- FGW-03: Feature Gateway service — query API that resolves flag state for a given context (feature_slug + campus_id + optional grade_id/class_id), respecting the 3-ring precedence model
+- FGW-04: Admin API endpoints — CRUD for feature flags at each scope level (global requires root, campus/grade requires campusAdmin, grade requires gradeAdmin, class requires teacher+)
+- FGW-05: Teacher dashboard page — UI to browse features and toggle them per class with clear inherited-from indicators (teachers view inherited state but only mutate class-level overrides)
 - FGW-06: Application-side guard macro/trait — lightweight `FeatureGate` checker injected into route handlers; returns 404 when feature is disabled (not 403, to avoid revealing existence)
 - FGW-07: Emergency-off path — single env var `FEATURE_GATEWAY_ENABLED=false` bypasses all flag checks and treats everything as disabled; no DB queries
 
 **Success Criteria:**
 1. Feature registry seeded with at least 5 features (direct_messages, plagiarism, discussions, blog, leaderboard)
 2. Admin can toggle plagiarism off for one class while it remains on globally — submissions in that class hide plagiarism tab
-3. Teacher dashboard renders feature list with current state (enabled/disabled/inherited) and allows toggling
+3. Teacher dashboard renders feature list with current state (enabled/disabled/inherited source) and allows class-level toggling
 4. Emergency-off env var immediately disables all feature-gated routes without restart
-5. Feature resolution completes in <1ms with cache (no DB hit on hot path)
+5. Feature resolution completes in <1ms with in-process cache + write-triggered invalidation (no DB hit on hot path)
 
 **Depends on:** Phase 10
 **Plans:** 0 plans (run /gsd-plan-phase 11 to break down)
@@ -388,7 +388,7 @@ Plans:
 - AIA-02: Event-driven shadow pipeline — on submission judged, emit analysis event to new Redis stream or DB-backed job table; never invoke analysis from judge-worker directly
 - AIA-03: Five-layer analysis stack — (1) structural feature extraction, (2) embedding index, (3) rerank, (4) base LLM generation, (5) nightly batch refresh
 - AIA-04: Additive persistence — new tables only (analysis_jobs, analysis_submission_features, analysis_solution_clusters, analysis_cluster_members, analysis_teaching_cards, analysis_class_snapshots, analysis_flags); no mutation of existing tables
-- AIA-05: Three-ring feature flags via Phase 11 Feature Gateway — Ring A: global (AI_ANALYSIS_ENABLED), Ring B: tenant/class scope, Ring C: capability flags (multi_solution_detection, plagiarism_graph, teaching_cards, class_cognition_snapshot)
+- AIA-05: Three-ring feature flags via Phase 11 Feature Gateway — Ring A: global (AI_ANALYSIS_ENABLED), Ring B: campus/grade/class scope, Ring C: capability flags (multi_solution_detection, plagiarism_graph, teaching_cards, class_cognition_snapshot)
 - AIA-06: Online path — lightweight feature extraction, candidate retrieval, artifact lookup; no large model on request path
 - AIA-07: Nightly batch — full reclustering, cluster naming, teaching-card refresh, class-level cognition snapshot, stale artifact invalidation
 - AIA-08: UI enrichment hooks — teacher report page gets optional AI blocks; plagiarism report upgraded with pseudo-diversity; all panels empty-state safe behind flags
@@ -396,7 +396,7 @@ Plans:
 **Success Criteria:**
 1. Judge submission flow unchanged when AI analysis is disabled
 2. All new AI paths are asynchronous and can fail without affecting submission creation, queueing, judging, or result callbacks
-3. Feature flags at three levels (global, tenant/class, per-analysis-type) exist and are functional
+3. Feature flags at three levels (global, campus/grade/class, per-analysis-type) exist and are functional
 4. Teacher/admin UI renders current reports without AI data and enriches when AI data exists
 5. System supports immediate hard-off without schema or service breakage
 
