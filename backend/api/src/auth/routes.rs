@@ -59,6 +59,7 @@ pub async fn login(
                 role: response.user.role,
                 school_id: response.user.organization_id,
                 campus_id: response.user.campus_id,
+                grade_id: response.user.grade_id,
             },
         }),
     ))
@@ -155,6 +156,7 @@ pub async fn register(
         role: profile.role.clone(),
         school_id: profile.organization_id,
         campus_id: profile.campus_id,
+        grade_id: None,
     };
 
     let token = state
@@ -391,6 +393,7 @@ mod tests {
             role: "student".to_string(),
             school_id: 1,
             campus_id: None,
+            grade_id: None,
             iat: chrono::Utc::now().timestamp(),
             exp: chrono::Utc::now().timestamp() + 3600,
             jti: uuid::Uuid::new_v4(),

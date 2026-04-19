@@ -11,6 +11,7 @@ pub fn build_test_user(id: Uuid, username: &str, role: &str, school_id: i64) -> 
         role: role.to_string(),
         school_id,
         campus_id: None,
+        grade_id: None,
     }
 }
 
@@ -30,6 +31,7 @@ pub fn build_test_user_with_campus(
         role: role.to_string(),
         school_id,
         campus_id: Some(campus_id),
+        grade_id: None,
     }
 }
 

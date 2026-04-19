@@ -98,6 +98,7 @@ mod tests {
             role: role.to_string(),
             school_id,
             campus_id: None,
+            grade_id: None,
             iat: 0,
             exp: 1,
             jti: Uuid::from_u128(2),
@@ -230,6 +231,7 @@ mod tests {
             sub: Uuid::from_u128(99),
             ..claims("teacher", 7)
         };
+        assert_eq!(same_tenant_non_owner.grade_id, None);
         let cross_tenant_grade_admin = claims("gradeadmin", 9);
         let owned_problem = problem(7, 1, "private");
 

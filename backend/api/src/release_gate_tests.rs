@@ -57,6 +57,7 @@ fn build_user(id: Uuid, username: &str, role: &str, school_id: i64) -> shared::m
         role: role.to_string(),
         school_id,
         campus_id: None,
+        grade_id: None,
     }
 }
 

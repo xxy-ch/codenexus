@@ -10,6 +10,7 @@ pub struct User {
     pub role: String,
     pub school_id: i64,
     pub campus_id: Option<i64>,
+    pub grade_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,6 +21,7 @@ pub struct UserPublic {
     pub role: String,
     pub school_id: i64,
     pub campus_id: Option<i64>,
+    pub grade_id: Option<i64>,
 }
 
 impl From<User> for UserPublic {
@@ -31,6 +33,7 @@ impl From<User> for UserPublic {
             role: user.role,
             school_id: user.school_id,
             campus_id: user.campus_id,
+            grade_id: user.grade_id,
         }
     }
 }

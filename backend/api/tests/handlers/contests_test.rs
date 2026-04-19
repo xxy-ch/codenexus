@@ -111,6 +111,7 @@ fn make_token(jwt_service: &api::auth::JwtService, user_id: Uuid, role: &str, sc
         role: role.to_string(),
         school_id,
         campus_id: None,
+        grade_id: None,
     };
     jwt_service.generate_access_token(&user).unwrap()
 }

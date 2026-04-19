@@ -201,6 +201,7 @@ mod tests {
             role: "root".to_string(),
             school_id: 1,
             campus_id: Some(1),
+            grade_id: None,
         };
 
         let jwt_service = JwtService::new("test_secret_key");

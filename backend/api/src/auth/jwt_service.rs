@@ -35,6 +35,7 @@ impl JwtService {
             role: user.role.clone(),
             school_id: user.school_id,
             campus_id: user.campus_id,
+            grade_id: user.grade_id,
             iat: now.timestamp(),
             exp: exp.timestamp(),
             jti: Uuid::new_v4(),
@@ -56,6 +57,7 @@ impl JwtService {
             role: user.role.clone(),
             school_id: user.school_id,
             campus_id: user.campus_id,
+            grade_id: user.grade_id,
             iat: now.timestamp(),
             exp: exp.timestamp(),
             jti: Uuid::new_v4(),
@@ -116,6 +118,7 @@ mod tests {
             role: "root".to_string(),
             school_id: 123,
             campus_id: Some(456),
+            grade_id: None,
         };
 
         let token = service
@@ -130,6 +133,7 @@ mod tests {
         assert_eq!(claims.role, user.role);
         assert_eq!(claims.school_id, user.school_id);
         assert_eq!(claims.campus_id, user.campus_id);
+        assert_eq!(claims.grade_id, user.grade_id);
     }
 
     #[test]
@@ -154,6 +158,7 @@ mod tests {
             role: "root".to_string(),
             school_id: 123,
             campus_id: Some(456),
+            grade_id: None,
         };
 
         let token = service1

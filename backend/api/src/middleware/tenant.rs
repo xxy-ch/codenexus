@@ -8,13 +8,17 @@ use shared::models::Claims;
 
 /// Tenant context stored in request extensions.
 ///
-/// Carries tenant (organization) ID from JWT claims through the middleware
-/// pipeline. Handlers can extract this via `Extension<TenantContext>` to
-/// access the authenticated tenant scope.
+/// Carries tenant (organization) ID, campus ID, and grade ID from JWT claims
+/// through the middleware pipeline. Handlers can extract this via
+/// `Extension<TenantContext>` to access the authenticated tenant scope.
 #[derive(Debug, Clone, Copy)]
 pub struct TenantContext {
     /// Tenant (organization) ID from JWT claims.
     pub tenant_id: i64,
+    /// Optional campus ID from JWT claims.
+    pub campus_id: Option<i64>,
+    /// Optional grade ID from JWT claims (set for GradeAdmin, students, teachers).
+    pub grade_id: Option<i64>,
 }
 
 /// Tenant isolation middleware
@@ -27,12 +31,14 @@ pub async fn tenant_middleware(
     mut request: axum::http::Request<axum::body::Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {
-    let tenant_id = extract_tenant_id_from_request(&request);
+    let ctx = extract_tenant_context_from_request(&request);
 
-    match tenant_id {
-        Some(id) => {
-            let ctx = TenantContext { tenant_id: id };
-            tracing::trace!("Tenant context established for org {}", ctx.tenant_id);
+    match ctx {
+        Some(ctx) => {
+            tracing::trace!(
+                "Tenant context established for org {}, campus {:?}, grade {:?}",
+                ctx.tenant_id, ctx.campus_id, ctx.grade_id
+            );
             request.extensions_mut().insert(ctx);
             Ok(next.run(request).await)
         }
@@ -40,10 +46,16 @@ pub async fn tenant_middleware(
     }
 }
 
-fn extract_tenant_id_from_request(request: &axum::http::Request<axum::body::Body>) -> Option<i64> {
+fn extract_tenant_context_from_request(
+    request: &axum::http::Request<axum::body::Body>,
+) -> Option<TenantContext> {
     // SECURITY: Only use JWT claims as source of tenant identity.
     // Never trust client-supplied headers for tenant isolation.
-    request.extensions().get::<Claims>().map(|c| c.school_id)
+    request.extensions().get::<Claims>().map(|c| TenantContext {
+        tenant_id: c.school_id,
+        campus_id: c.campus_id,
+        grade_id: c.grade_id,
+    })
 }
 
 #[cfg(test)]
@@ -96,6 +108,7 @@ mod tests {
             role: "root".to_string(),
             school_id: 123,
             campus_id: None,
+            grade_id: None,
             iat: chrono::Utc::now().timestamp(),
             exp: chrono::Utc::now().timestamp() + 3600,
             jti: Uuid::new_v4(),
@@ -152,6 +165,7 @@ mod tests {
             role: "student".to_string(),
             school_id: 456,
             campus_id: None,
+            grade_id: None,
             iat: chrono::Utc::now().timestamp(),
             exp: chrono::Utc::now().timestamp() + 3600,
             jti: Uuid::new_v4(),
@@ -198,6 +212,7 @@ mod tests {
             role: "root".to_string(),
             school_id: 999,
             campus_id: None,
+            grade_id: None,
             iat: chrono::Utc::now().timestamp(),
             exp: chrono::Utc::now().timestamp() + 3600,
             jti: Uuid::new_v4(),

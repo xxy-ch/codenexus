@@ -15,6 +15,9 @@ pub struct Claims {
     /// Optional campus ID
     #[serde(skip_serializing_if = "Option::is_none")]
     pub campus_id: Option<i64>,
+    /// Optional grade ID (set for GradeAdmin, students, teachers)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub grade_id: Option<i64>,
     /// Issued at (UTC timestamp)
     pub iat: i64,
     /// Expiration (UTC timestamp)

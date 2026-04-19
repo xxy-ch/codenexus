@@ -159,6 +159,7 @@ impl UserService {
             display_name: user.display_name.clone(),
             organization_id: user.organization_id,
             campus_id: user.campus_id,
+            grade_id: user.grade_id,
             role: role.clone(),
             status: user.status.clone(),
             created_at: user.created_at,
@@ -174,6 +175,7 @@ impl UserService {
             role,
             school_id: user.organization_id,
             campus_id: user.campus_id,
+            grade_id: user.grade_id,
         };
 
         let token = self.jwt_service.generate_access_token(&shared_user)?;
@@ -217,6 +219,7 @@ impl UserService {
             display_name: user.display_name.clone(),
             organization_id: user.organization_id,
             campus_id: user.campus_id,
+            grade_id: user.grade_id,
             role: role.clone(),
             status: user.status.clone(),
             created_at: user.created_at,
@@ -232,6 +235,7 @@ impl UserService {
             role,
             school_id: user.organization_id,
             campus_id: user.campus_id,
+            grade_id: user.grade_id,
         };
 
         let token = self.jwt_service.generate_access_token(&shared_user)?;
@@ -266,6 +270,7 @@ impl UserService {
             display_name: user.display_name,
             organization_id: user.organization_id,
             campus_id: user.campus_id,
+            grade_id: user.grade_id,
             role,
             status: user.status,
             created_at: user.created_at,
