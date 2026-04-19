@@ -227,6 +227,7 @@ pub fn convert_to_batch_request(
             display_name: Some(r.display_name.clone()),
             email: r.email.clone(),
             campus_id: Some(r.campus_id),
+            grade_id: None,
             password: None,
             role: Some(r.role.clone()),
         })

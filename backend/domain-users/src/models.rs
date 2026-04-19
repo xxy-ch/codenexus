@@ -44,6 +44,7 @@ pub struct RegisterRequest {
     pub display_name: Option<String>,
     pub organization_id: i64,
     pub campus_id: Option<i64>,
+    pub grade_id: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -139,6 +140,7 @@ pub struct BatchCreateUserInput {
     pub display_name: Option<String>,
     pub email: Option<String>,
     pub campus_id: Option<i64>,
+    pub grade_id: Option<i64>,
     pub password: Option<String>,
     pub role: Option<String>,
 }

@@ -82,8 +82,8 @@ impl UserService {
         // Create user
         let user_id = sqlx::query_scalar::<_, Uuid>(
             r#"
-            INSERT INTO users (user_code, username, email, password_hash, display_name, organization_id, campus_id)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO users (user_code, username, email, password_hash, display_name, organization_id, campus_id, grade_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id
             "#
         )
@@ -94,6 +94,7 @@ impl UserService {
         .bind(&display_name)
         .bind(req.organization_id)
         .bind(req.campus_id)
+        .bind(req.grade_id)
         .fetch_one(&self.pool)
         .await?;
 
@@ -142,15 +143,18 @@ impl UserService {
                 .ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
         }
 
-        // Get user role (canonical role from DB)
-        let role = sqlx::query_scalar::<_, String>(
-            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1",
+        // Get user role and authorization grade_id from user_roles (D-07/D-08)
+        // Role and grade_id come from user_roles (authorization scope),
+        // not from users table (identity).
+        let role_row = sqlx::query_as::<_, (String, Option<i64>)>(
+            "SELECT role, grade_id FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1",
         )
         .bind(user.id)
         .fetch_one(&self.pool)
         .await?;
+        let (role, auth_grade_id) = role_row;
 
-        // Create user profile
+        // Create user profile - grade_id from users table (identity)
         let user_profile = UserProfile {
             id: user.id,
             user_code: user.user_code.clone(),
@@ -166,7 +170,7 @@ impl UserService {
             updated_at: user.updated_at,
         };
 
-        // Generate tokens - convert to shared User model
+        // Generate tokens - grade_id from user_roles (authorization scope per D-07/D-08)
         let shared_user = shared::models::User {
             id: user.id,
             username: user.username.clone(),
@@ -175,7 +179,7 @@ impl UserService {
             role,
             school_id: user.organization_id,
             campus_id: user.campus_id,
-            grade_id: user.grade_id,
+            grade_id: auth_grade_id,
         };
 
         let token = self.jwt_service.generate_access_token(&shared_user)?;
@@ -202,15 +206,16 @@ impl UserService {
             .fetch_one(&self.pool)
             .await?;
 
-        // Get user role (canonical role from DB)
-        let role = sqlx::query_scalar::<_, String>(
-            "SELECT role FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1",
+        // Get user role and authorization grade_id from user_roles (D-07/D-08)
+        let role_row = sqlx::query_as::<_, (String, Option<i64>)>(
+            "SELECT role, grade_id FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1",
         )
         .bind(user.id)
         .fetch_one(&self.pool)
         .await?;
+        let (role, auth_grade_id) = role_row;
 
-        // Create user profile
+        // Create user profile - grade_id from users table (identity)
         let user_profile = UserProfile {
             id: user.id,
             user_code: user.user_code.clone(),
@@ -226,7 +231,7 @@ impl UserService {
             updated_at: user.updated_at,
         };
 
-        // Generate new tokens - convert to shared User model
+        // Generate new tokens - grade_id from user_roles (authorization scope per D-07/D-08)
         let shared_user = shared::models::User {
             id: user.id,
             username: user.username.clone(),
@@ -235,7 +240,7 @@ impl UserService {
             role,
             school_id: user.organization_id,
             campus_id: user.campus_id,
-            grade_id: user.grade_id,
+            grade_id: auth_grade_id,
         };
 
         let token = self.jwt_service.generate_access_token(&shared_user)?;
@@ -532,6 +537,7 @@ impl UserService {
                         .or_else(|| Some(user_code.clone())),
                     organization_id: request.organization_id,
                     campus_id: entry.campus_id.or(request.campus_id),
+                    grade_id: entry.grade_id,
                 })
                 .await?;
 

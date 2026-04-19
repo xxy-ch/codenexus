@@ -156,7 +156,7 @@ pub async fn register(
         role: profile.role.clone(),
         school_id: profile.organization_id,
         campus_id: profile.campus_id,
-        grade_id: None,
+        grade_id: profile.grade_id,
     };
 
     let token = state
