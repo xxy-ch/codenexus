@@ -78,7 +78,7 @@ pub async fn recover_pending_submissions(
                         }
                         _ => continue,
                     };
-                    if idle_ms > min_idle_ms {
+                    if idle_ms >= min_idle_ms {
                         ids_to_claim.push(id.clone());
                     }
                     last_id = Some(id);
