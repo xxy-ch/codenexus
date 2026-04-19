@@ -47,6 +47,7 @@ export const adminService = {
     default_password?: string
     organization_id: number
     campus_id?: number | null
+    grade_id?: number | null
   }) {
     const response = await api.post('/users/admin/batch-create', payload)
     return response.data

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, BadgeCheck, ChevronRight, KeyRound, ShieldPlus, UserCog, Users } from 'lucide-react'
 import { adminService } from '@/services/admin'
+import { gradesService } from '@/services/grades'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
@@ -21,6 +22,19 @@ export function UserManagement() {
   const [page, setPage] = useState(1)
   const [bulkInput, setBulkInput] = useState('')
   const [defaultPassword, setDefaultPassword] = useState('ChangeMe123')
+  const [selectedGradeId, setSelectedGradeId] = useState<string>('')
+
+  // Campus ID for grade filtering — hardcoded to 1 for now (matches batch create)
+  // TODO: derive from logged-in admin's campus when multi-campus UI is implemented
+  const gradeCampusId = 1
+
+  const { data: gradesData } = useQuery({
+    queryKey: ['grades', gradeCampusId],
+    queryFn: () => gradesService.listGrades(gradeCampusId),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const activeGrades = (gradesData?.grades || []).filter((g) => g.is_active)
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['adminUsers', search, role, status, sortBy, page],
@@ -56,6 +70,7 @@ export function UserManagement() {
         default_password: defaultPassword,
         organization_id: 1,
         campus_id: 1,
+        grade_id: selectedGradeId ? Number(selectedGradeId) : undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['adminUsers'] })
@@ -90,6 +105,15 @@ export function UserManagement() {
 
     return { adminCount, teacherCount, activeCount, codedCount }
   }, [users])
+
+  // Build a grade name lookup from the grades query data
+  const gradeNameMap = useMemo(() => {
+    const map = new Map<number, string>()
+    for (const g of activeGrades) {
+      map.set(g.id, g.name)
+    }
+    return map
+  }, [activeGrades])
 
   const getRoleBadge = (roleValue: RoleType) => {
     const config: Record<string, { label: string; color: string }> = {
@@ -322,6 +346,25 @@ export function UserManagement() {
                 />
               </div>
 
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">指定年级</label>
+                <select
+                  value={selectedGradeId}
+                  onChange={(e) => setSelectedGradeId(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                >
+                  <option value="">不指定年级</option>
+                  {activeGrades.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name} ({g.academic_year})
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-slate-500">
+                  学生和教师角色需要指定年级；管理员角色无需指定。
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3 text-sm text-slate-600">
                 <div className="rounded-xl border border-slate-200 bg-white px-3 py-2">
                   待创建 <span className="font-semibold text-slate-950">{parsedBulkUsers.length}</span>
@@ -359,6 +402,7 @@ export function UserManagement() {
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Identity</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Grade</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Status</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Activity</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Created</th>
@@ -396,6 +440,9 @@ export function UserManagement() {
                         <option value="root">管理员</option>
                       </select>
                     </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-slate-700">
+                    {user.grade_id ? (gradeNameMap.get(Number(user.grade_id)) || `#${user.grade_id}`) : '—'}
                   </td>
                   <td className="px-6 py-4">
                     {getStatusBadge(user.status)}

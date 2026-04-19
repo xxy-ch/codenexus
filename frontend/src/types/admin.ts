@@ -34,6 +34,7 @@ export interface BatchCreateAdminUser {
   campus_id?: number
   password?: string
   role?: Role
+  grade_id?: number | null
 }
 
 export interface ProblemManagement {
