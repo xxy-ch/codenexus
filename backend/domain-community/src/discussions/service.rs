@@ -23,68 +23,84 @@ impl DiscussionService {
         let limit = filters.limit.unwrap_or(20);
         let offset = (page - 1) * limit;
 
-        // Build query
-        let mut query = String::from("SELECT d.* FROM discussions d WHERE 1=1");
-        let mut count_query = String::from("SELECT COUNT(*) FROM discussions d WHERE 1=1");
+        // Build parameterized query (SECURITY: no string interpolation with user input)
+        let mut conditions = Vec::new();
+        let mut param_count = 0;
 
-        // Apply filters
-        if let Some(problem_id) = filters.problem_id {
-            query.push_str(&format!(" AND d.problem_id = {}", problem_id));
-            count_query.push_str(&format!(" AND problem_id = {}", problem_id));
+        if filters.problem_id.is_some() {
+            param_count += 1;
+            conditions.push(format!("d.problem_id = ${}", param_count));
         }
-
-        if let Some(contest_id) = filters.contest_id {
-            query.push_str(&format!(" AND d.contest_id = {}", contest_id));
-            count_query.push_str(&format!(" AND contest_id = {}", contest_id));
+        if filters.contest_id.is_some() {
+            param_count += 1;
+            conditions.push(format!("d.contest_id = ${}", param_count));
         }
-
-        if let Some(is_pinned) = filters.is_pinned {
-            query.push_str(&format!(" AND d.is_pinned = {}", is_pinned));
+        if filters.is_pinned.is_some() {
+            param_count += 1;
+            conditions.push(format!("d.is_pinned = ${}", param_count));
         }
-
-        if let Some(is_solved) = filters.is_solved {
-            query.push_str(&format!(" AND d.is_solved = {}", is_solved));
+        if filters.is_solved.is_some() {
+            param_count += 1;
+            conditions.push(format!("d.is_solved = ${}", param_count));
         }
-
-        if let Some(search) = &filters.search {
-            query.push_str(&format!(
-                " AND (d.title ILIKE '%{}%' OR d.content ILIKE '%{}%')",
-                search.replace('\'', "''"),
-                search.replace('\'', "''")
-            ));
-            count_query.push_str(&format!(
-                " AND (title ILIKE '%{}%' OR content ILIKE '%{}%')",
-                search.replace('\'', "''"),
-                search.replace('\'', "''")
+        let search_pattern = filters.search.as_ref().map(|s| format!("%{}%", s));
+        if search_pattern.is_some() {
+            param_count += 1;
+            conditions.push(format!(
+                "(d.title ILIKE ${} OR d.content ILIKE ${})",
+                param_count, param_count
             ));
         }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
 
         // Sorting
-        match filters.sort.as_deref() {
-            Some("popular") => {
-                query.push_str(" ORDER BY d.like_count DESC, d.created_at DESC");
-            }
-            Some("unanswered") => {
-                query.push_str(" ORDER BY d.reply_count ASC, d.created_at DESC");
-            }
-            _ => {
-                // Default: pinned first, then by created_at
-                query.push_str(" ORDER BY d.is_pinned DESC, d.created_at DESC");
-            }
+        let order_clause = match filters.sort.as_deref() {
+            Some("popular") => "ORDER BY d.like_count DESC, d.created_at DESC",
+            Some("unanswered") => "ORDER BY d.reply_count ASC, d.created_at DESC",
+            _ => "ORDER BY d.is_pinned DESC, d.created_at DESC",
+        };
+
+        let query_str = format!(
+            "SELECT d.* FROM discussions d {} {} LIMIT ${} OFFSET ${}",
+            where_clause,
+            order_clause,
+            param_count + 1,
+            param_count + 2
+        );
+        let count_query_str = format!("SELECT COUNT(*) FROM discussions d {}", where_clause);
+
+        let mut query_builder = sqlx::query_as::<_, Discussion>(&query_str);
+        let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query_str);
+
+        if let Some(problem_id) = filters.problem_id {
+            query_builder = query_builder.bind(problem_id);
+            count_builder = count_builder.bind(problem_id);
+        }
+        if let Some(contest_id) = filters.contest_id {
+            query_builder = query_builder.bind(contest_id);
+            count_builder = count_builder.bind(contest_id);
+        }
+        if let Some(is_pinned) = filters.is_pinned {
+            query_builder = query_builder.bind(is_pinned);
+            count_builder = count_builder.bind(is_pinned);
+        }
+        if let Some(is_solved) = filters.is_solved {
+            query_builder = query_builder.bind(is_solved);
+            count_builder = count_builder.bind(is_solved);
+        }
+        if let Some(ref pattern) = search_pattern {
+            query_builder = query_builder.bind(pattern.clone());
+            count_builder = count_builder.bind(pattern);
         }
 
-        // Add pagination
-        query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
-
-        // Get total count
-        let total: i64 = sqlx::query_scalar(&count_query)
-            .fetch_one(&self.pool)
-            .await?;
-
-        // Get discussions
-        let discussions = sqlx::query_as::<_, Discussion>(&query)
-            .fetch_all(&self.pool)
-            .await?;
+        query_builder = query_builder.bind(limit).bind(offset);
+        let total = count_builder.fetch_one(&self.pool).await?;
+        let discussions = query_builder.fetch_all(&self.pool).await?;
 
         let pages = (total + limit - 1) / limit;
 
@@ -301,7 +317,7 @@ impl DiscussionService {
                 _ => return Ok(false),
             };
             sqlx::query(&format!(
-                "UPDATE {} SET like_count = like_count - 1 WHERE id = $2",
+                "UPDATE {} SET like_count = like_count - 1 WHERE id = $1",
                 table
             ))
             .bind(target_id)
@@ -325,7 +341,7 @@ impl DiscussionService {
                 _ => return Ok(true),
             };
             sqlx::query(&format!(
-                "UPDATE {} SET like_count = like_count + 1 WHERE id = $2",
+                "UPDATE {} SET like_count = like_count + 1 WHERE id = $1",
                 table
             ))
             .bind(target_id)

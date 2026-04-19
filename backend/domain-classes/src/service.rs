@@ -162,15 +162,16 @@ impl ClassService {
         .await?;
 
         // Clear grade_id for users in this grade
-        let affected: i64 = sqlx::query_scalar(
+        let affected = sqlx::query(
             r#"
             UPDATE users SET grade_id = NULL
             WHERE grade_id = $1
             "#,
         )
         .bind(grade_id)
-        .fetch_one(&self.pool)
-        .await?;
+        .execute(&self.pool)
+        .await?
+        .rows_affected() as i64;
 
         // Optionally deactivate classes in this grade
         sqlx::query(

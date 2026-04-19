@@ -133,9 +133,11 @@ async fn verify_grade_tenant(
 async fn create_grade(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
-    Json(request): Json<CreateGradeRequest>,
+    Json(mut request): Json<CreateGradeRequest>,
 ) -> Result<Json<Grade>, StatusCode> {
     require_campus_admin(&claims.role)?;
+    // SECURITY: Force campus_id from JWT claims, never trust client input
+    request.campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
     let service = ClassService::new(state.db_pool);
     let grade = service
         .create_grade(&request)
@@ -168,11 +170,10 @@ async fn list_grades(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    // GradeAdmin: filter to only their own grade
+    // GradeAdmin: must have a grade_id; reject if missing
     if claims.role == "gradeadmin" {
-        if let Some(gid) = tenant_ctx.grade_id {
-            response.grades.retain(|g| g.id == gid);
-        }
+        let gid = tenant_ctx.grade_id.ok_or(StatusCode::FORBIDDEN)?;
+        response.grades.retain(|g| g.id == gid);
     }
 
     Ok(Json(response))
@@ -370,12 +371,11 @@ async fn get_class(
 ) -> Result<Json<Class>, StatusCode> {
     let service = ClassService::new(state.db_pool);
     let class = verify_class_tenant(&service, class_id, claims.school_id).await?;
-    // GradeAdmin grade scoping (D-08): verify class belongs to their grade
+    // GradeAdmin grade scoping: must have grade_id; verify class belongs to their grade
     if claims.role == "gradeadmin" {
-        if let Some(gid) = tenant_ctx.grade_id {
-            if class.grade_id != Some(gid) {
-                return Err(StatusCode::NOT_FOUND);
-            }
+        let gid = tenant_ctx.grade_id.ok_or(StatusCode::FORBIDDEN)?;
+        if class.grade_id != Some(gid) {
+            return Err(StatusCode::NOT_FOUND);
         }
     }
     Ok(Json(class))
@@ -389,11 +389,10 @@ async fn list_classes(
 ) -> Result<Json<ClassesListResponse>, StatusCode> {
     // Tenant: force organization_id from claims
     query.organization_id = Some(claims.school_id);
-    // GradeAdmin grade scoping (D-08): only GradeAdmin gets grade filtering
+    // GradeAdmin grade scoping: must have grade_id; reject if missing
     if claims.role == "gradeadmin" {
-        if let Some(gid) = tenant_ctx.grade_id {
-            query.grade_id = Some(gid);
-        }
+        let gid = tenant_ctx.grade_id.ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+        query.grade_id = Some(gid);
     }
     let service = ClassService::new(state.db_pool);
     let response = service

@@ -34,69 +34,87 @@ impl BlogService {
         let limit = filters.limit.unwrap_or(20);
         let offset = (page - 1) * limit;
 
-        let mut query = String::from("SELECT a.* FROM articles a WHERE 1=1");
-        let mut count_query = String::from("SELECT COUNT(*) FROM articles a WHERE 1=1");
+        // Build parameterized query (SECURITY: no string interpolation with user input)
+        let mut conditions = Vec::new();
+        let mut param_count = 0;
 
-        // Apply filters
-        if let Some(author_id) = filters.author_id {
-            query.push_str(&format!(" AND a.author_id = '{}'", author_id));
-            count_query.push_str(&format!(" AND author_id = '{}'", author_id));
+        if filters.author_id.is_some() {
+            param_count += 1;
+            conditions.push(format!("a.author_id = ${}", param_count));
         }
-
-        if let Some(category) = &filters.category {
-            query.push_str(&format!(" AND a.category = '{}'", category));
-            count_query.push_str(&format!(" AND category = '{}'", category));
+        if filters.category.is_some() {
+            param_count += 1;
+            conditions.push(format!("a.category = ${}", param_count));
         }
-
-        if let Some(is_published) = filters.is_published {
-            query.push_str(&format!(" AND a.is_published = {}", is_published));
-            count_query.push_str(&format!(" AND is_published = {}", is_published));
+        if filters.is_published.is_some() {
+            param_count += 1;
+            conditions.push(format!("a.is_published = ${}", param_count));
         }
-
-        if let Some(is_featured) = filters.is_featured {
-            query.push_str(&format!(" AND a.is_featured = {}", is_featured));
+        if filters.is_featured.is_some() {
+            param_count += 1;
+            conditions.push(format!("a.is_featured = ${}", param_count));
         }
-
-        if let Some(search) = &filters.search {
-            let search_escaped = search.replace('\'', "''");
-            query.push_str(&format!(
-                " AND (a.title ILIKE '%{}%' OR a.summary ILIKE '%{}%')",
-                search_escaped, search_escaped
-            ));
-            count_query.push_str(&format!(
-                " AND (title ILIKE '%{}%' OR summary ILIKE '%{}%')",
-                search_escaped, search_escaped
+        let search_pattern = filters.search.as_ref().map(|s| format!("%{}%", s));
+        if search_pattern.is_some() {
+            param_count += 1;
+            conditions.push(format!(
+                "(a.title ILIKE ${} OR a.summary ILIKE ${})",
+                param_count, param_count
             ));
         }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
 
         // Sorting
-        match filters.sort.as_deref() {
-            Some("popular") => {
-                query.push_str(" ORDER BY a.view_count DESC, a.created_at DESC");
-            }
+        let order_clause = match filters.sort.as_deref() {
+            Some("popular") => "ORDER BY a.view_count DESC, a.created_at DESC",
             Some("trending") => {
-                query.push_str(
-                    " ORDER BY (a.view_count * 0.5 + a.like_count) DESC, a.created_at DESC",
-                );
+                "ORDER BY (a.view_count * 0.5 + a.like_count) DESC, a.created_at DESC"
             }
-            _ => {
-                query.push_str(
-                    " ORDER BY a.is_featured DESC, a.published_at DESC, a.created_at DESC",
-                );
-            }
+            _ => "ORDER BY a.is_featured DESC, a.published_at DESC, a.created_at DESC",
+        };
+
+        let query_str = format!(
+            "SELECT a.* FROM articles a {} {} LIMIT ${} OFFSET ${}",
+            where_clause,
+            order_clause,
+            param_count + 1,
+            param_count + 2
+        );
+        let count_query_str = format!("SELECT COUNT(*) FROM articles a {}", where_clause);
+
+        let mut query_builder = sqlx::query_as::<_, Article>(&query_str);
+        let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query_str);
+
+        if let Some(ref author_id) = filters.author_id {
+            let aid = author_id.to_string();
+            query_builder = query_builder.bind(aid.clone());
+            count_builder = count_builder.bind(aid);
+        }
+        if let Some(ref category) = filters.category {
+            query_builder = query_builder.bind(category.clone());
+            count_builder = count_builder.bind(category.clone());
+        }
+        if let Some(is_published) = filters.is_published {
+            query_builder = query_builder.bind(is_published);
+            count_builder = count_builder.bind(is_published);
+        }
+        if let Some(is_featured) = filters.is_featured {
+            query_builder = query_builder.bind(is_featured);
+            count_builder = count_builder.bind(is_featured);
+        }
+        if let Some(ref pattern) = search_pattern {
+            query_builder = query_builder.bind(pattern.clone());
+            count_builder = count_builder.bind(pattern);
         }
 
-        query.push_str(&format!(" LIMIT {} OFFSET {}", limit, offset));
-
-        // Get total count
-        let total: i64 = sqlx::query_scalar(&count_query)
-            .fetch_one(&self.pool)
-            .await?;
-
-        // Get articles
-        let articles = sqlx::query_as::<_, Article>(&query)
-            .fetch_all(&self.pool)
-            .await?;
+        query_builder = query_builder.bind(limit).bind(offset);
+        let total = count_builder.fetch_one(&self.pool).await?;
+        let articles = query_builder.fetch_all(&self.pool).await?;
 
         let pages = (total + limit - 1) / limit;
 
@@ -345,7 +363,7 @@ impl BlogService {
                 _ => return Ok(false),
             };
             sqlx::query(&format!(
-                "UPDATE {} SET like_count = like_count - 1 WHERE id = $2",
+                "UPDATE {} SET like_count = like_count - 1 WHERE id = $1",
                 table
             ))
             .bind(target_id)
@@ -369,7 +387,7 @@ impl BlogService {
                 _ => return Ok(true),
             };
             sqlx::query(&format!(
-                "UPDATE {} SET like_count = like_count + 1 WHERE id = $2",
+                "UPDATE {} SET like_count = like_count + 1 WHERE id = $1",
                 table
             ))
             .bind(target_id)

@@ -349,7 +349,7 @@ impl UserService {
         self.get_user_profile(user_id).await
     }
 
-    pub async fn list_admin_users(&self, query: AdminUserQuery) -> Result<AdminUserListResponse> {
+    pub async fn list_admin_users(&self, query: AdminUserQuery, organization_id: i64) -> Result<AdminUserListResponse> {
         let page = query.page.unwrap_or(1).max(1);
         let limit = query.limit.unwrap_or(20).clamp(1, 100);
         let offset = (page - 1) * limit;
@@ -391,6 +391,7 @@ impl UserService {
                 WHERE ($1::TEXT IS NULL OR u.username ILIKE $1 OR COALESCE(u.email, '') ILIKE $1 OR COALESCE(u.user_code, '') ILIKE $1)
                   AND ($2::TEXT IS NULL OR ur.role = $2)
                   AND ($3::TEXT IS NULL OR u.status = $3)
+                  AND u.organization_id = $6
                 GROUP BY u.id, u.user_code, u.username, u.email, u.display_name, u.status, u.organization_id, o.name, u.created_at, ur.role
             )
             SELECT *
@@ -406,6 +407,7 @@ impl UserService {
             .bind(status)
             .bind(limit)
             .bind(offset)
+            .bind(organization_id)
             .fetch_all(&self.pool)
             .await?;
 
@@ -417,11 +419,13 @@ impl UserService {
             WHERE ($1::TEXT IS NULL OR u.username ILIKE $1 OR COALESCE(u.email, '') ILIKE $1 OR COALESCE(u.user_code, '') ILIKE $1)
               AND ($2::TEXT IS NULL OR ur.role = $2)
               AND ($3::TEXT IS NULL OR u.status = $3)
+              AND u.organization_id = $4
             "#,
         )
         .bind(search.as_deref())
         .bind(role)
         .bind(status)
+        .bind(organization_id)
         .fetch_one(&self.pool)
         .await?;
 
@@ -433,7 +437,7 @@ impl UserService {
         })
     }
 
-    pub async fn update_user_role(&self, user_id: Uuid, role: &str) -> Result<()> {
+    pub async fn update_user_role(&self, user_id: Uuid, role: &str, caller_org_id: i64) -> Result<()> {
         // Validate and normalize to canonical role
         let normalized_role = role
             .parse::<shared::models::Role>()
@@ -444,6 +448,11 @@ impl UserService {
             .bind(user_id)
             .fetch_one(&self.pool)
             .await?;
+
+        // SECURITY: Verify target user belongs to the same organization
+        if user.organization_id != caller_org_id {
+            return Err(anyhow::anyhow!("Cannot modify users outside your organization"));
+        }
 
         sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
             .bind(user_id)
@@ -463,7 +472,7 @@ impl UserService {
         Ok(())
     }
 
-    pub async fn update_user_status(&self, user_id: Uuid) -> Result<String> {
+    pub async fn update_user_status(&self, user_id: Uuid, caller_org_id: i64) -> Result<String> {
         let next_status: String = sqlx::query_scalar(
             r#"
             UPDATE users
@@ -473,11 +482,12 @@ impl UserService {
                 ELSE 'active'
             END,
             updated_at = NOW()
-            WHERE id = $1
+            WHERE id = $1 AND organization_id = $2
             RETURNING status
             "#,
         )
         .bind(user_id)
+        .bind(caller_org_id)
         .fetch_one(&self.pool)
         .await?;
 
@@ -543,7 +553,7 @@ impl UserService {
 
             if let Some(role) = entry.role.as_deref() {
                 if role != "student" {
-                    self.update_user_role(profile.id, role).await?;
+                    self.update_user_role(profile.id, role, request.organization_id).await?;
                 }
             }
 
