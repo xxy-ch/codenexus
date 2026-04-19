@@ -252,10 +252,10 @@
 | TeachingAssistant | `teachingassistant` / `ta` | 助教 -- 辅助批改，受限权限 |
 | Teacher | `teacher` | 教师 -- 创建题目、管理班级、批改 |
 | CampusAdmin | `campusadmin` | 校区管理员 -- 校区级别管理 |
-| OrganizationAdmin | `organizationadmin` | 组织管理员 -- 组织级别管理 |
+| GradeAdmin | `gradeadmin` | 年级管理员 -- 管理年级内的班级和学生 |
 | Root | `root` | 超级管理员 -- 系统全局访问，跨租户 |
 
-角色层级检查：`Root >= OrganizationAdmin >= CampusAdmin >= Teacher >= TeachingAssistant >= Student`
+角色层级检查：`Root >= CampusAdmin >= GradeAdmin >= Teacher >= TeachingAssistant >= Student`
 
 ### 2.4 权限定义
 

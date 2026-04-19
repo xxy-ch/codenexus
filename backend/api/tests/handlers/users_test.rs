@@ -161,10 +161,10 @@ async fn test_admin_list_users_returns_200() {
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
 
     let (org_id, _campus_id, admin_id) =
-        seed_user_with_role(&fixture.db_pool, "Admin Org", "admin1", "organizationadmin").await;
+        seed_user_with_role(&fixture.db_pool, "Grade Admin", "admin1", "gradeadmin").await;
 
     let (app, jwt_service) = build_users_app(fixture.db_pool.clone()).await;
-    let token = make_token(&jwt_service, admin_id, "organizationadmin", org_id);
+    let token = make_token(&jwt_service, admin_id, "gradeadmin", org_id);
 
     let response = app
         .oneshot(

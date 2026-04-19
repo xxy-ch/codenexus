@@ -52,7 +52,7 @@ impl RbacService {
                 perms.insert(Permission::ManageApiKeys);
                 perms
             }
-            Role::OrganizationAdmin => {
+            Role::GradeAdmin => {
                 let mut perms = HashSet::new();
                 perms.insert(Permission::ManageUsers);
                 perms.insert(Permission::ViewUsers);
@@ -61,7 +61,8 @@ impl RbacService {
                 perms.insert(Permission::ManageContests);
                 perms.insert(Permission::ManageClasses);
                 perms.insert(Permission::ManageAssignments);
-                perms.insert(Permission::ManageOrganization);
+                perms.insert(Permission::GradeSubmissions);
+                perms.insert(Permission::ViewClassStats);
                 perms.insert(Permission::ViewLeaderboard);
                 perms.insert(Permission::ViewStatistics);
                 perms.insert(Permission::ManageTags);

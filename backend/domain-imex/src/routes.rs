@@ -84,7 +84,7 @@ fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
 fn require_admin(role: &str) -> Result<(), StatusCode> {
     let parsed = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
     match parsed {
-        Role::Root | Role::OrganizationAdmin | Role::CampusAdmin => Ok(()),
+        Role::Root | Role::CampusAdmin | Role::GradeAdmin => Ok(()),
         _ => Err(StatusCode::FORBIDDEN),
     }
 }
@@ -627,7 +627,7 @@ pub async fn validate_user_import(
 
     let skip_usernames: HashSet<String> = existing_usernames.into_iter().collect();
 
-    // Determine role policy: only root may assign orgAdmin/campusAdmin
+    // Determine role policy: only root may assign campusAdmin/gradeAdmin
     let caller_role: Role = claims.role.parse().map_err(|_| StatusCode::FORBIDDEN)?;
     let allow_root_roles = caller_role == Role::Root;
     let role_policy = RolePolicy { allow_root_roles };
@@ -920,13 +920,13 @@ pub async fn export_users(
             WHERE u.organization_id = $1 AND u.campus_id = $2
             ORDER BY u.id,
                 CASE r.role
-                    WHEN 'root' THEN 0
-                    WHEN 'organizationadmin' THEN 1
+                    WHEN 'root' THEN 1
                     WHEN 'campusadmin' THEN 2
-                    WHEN 'teacher' THEN 3
-                    WHEN 'teachingassistant' THEN 4
-                    WHEN 'student' THEN 5
-                    ELSE 6
+                    WHEN 'gradeadmin' THEN 3
+                    WHEN 'teacher' THEN 4
+                    WHEN 'teachingassistant' THEN 5
+                    WHEN 'student' THEN 6
+                    ELSE 7
                 END ASC
             "#,
         )
@@ -944,13 +944,13 @@ pub async fn export_users(
             WHERE u.organization_id = $1
             ORDER BY u.id,
                 CASE r.role
-                    WHEN 'root' THEN 0
-                    WHEN 'organizationadmin' THEN 1
+                    WHEN 'root' THEN 1
                     WHEN 'campusadmin' THEN 2
-                    WHEN 'teacher' THEN 3
-                    WHEN 'teachingassistant' THEN 4
-                    WHEN 'student' THEN 5
-                    ELSE 6
+                    WHEN 'gradeadmin' THEN 3
+                    WHEN 'teacher' THEN 4
+                    WHEN 'teachingassistant' THEN 5
+                    WHEN 'student' THEN 6
+                    ELSE 7
                 END ASC
             "#,
         )

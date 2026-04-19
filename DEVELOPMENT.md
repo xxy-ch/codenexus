@@ -553,7 +553,7 @@ pub struct AppState {
 ### RBAC 角色层级
 
 ```
-Root > OrganizationAdmin > CampusAdmin > Teacher > Student
+Root > CampusAdmin > GradeAdmin > Teacher > Student
 ```
 
 定义在 `shared/src/models/role.rs` 中，包含 21 种权限（定义在 `shared/src/models/permission.rs` 中）。

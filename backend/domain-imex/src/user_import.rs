@@ -12,7 +12,7 @@ use std::str::FromStr;
 const BOM: &[u8; 3] = b"\xEF\xBB\xBF";
 
 /// Roles that only a root user may assign via CSV import (canonical lowercase).
-const ROOT_ONLY_ROLES: &[&str] = &["organizationadmin", "campusadmin"];
+const ROOT_ONLY_ROLES: &[&str] = &["campusadmin", "gradeadmin"];
 
 /// The `root` role must never be assigned through CSV import.
 const FORBIDDEN_ROLE: &str = "root";
@@ -20,7 +20,7 @@ const FORBIDDEN_ROLE: &str = "root";
 /// Required column headers in the CSV file.
 const REQUIRED_HEADERS: &[&str] = &["username", "role", "campus_id", "display_name"];
 
-/// Whether the caller is allowed to assign high-privilege roles (orgAdmin, campusAdmin).
+/// Whether the caller is allowed to assign high-privilege roles (campusAdmin, gradeAdmin).
 pub struct RolePolicy {
     pub allow_root_roles: bool,
 }
@@ -417,10 +417,10 @@ mod tests {
     }
 
     #[test]
-    fn rejects_org_admin_without_root_policy() {
+    fn rejects_grade_admin_without_root_policy() {
         let csv_bytes = make_csv(
             "username,role,campus_id,display_name,email",
-            &["alice,organizationAdmin,1,Org Admin,"],
+            &["alice,gradeAdmin,1,Grade Admin,"],
         );
 
         let skip = HashSet::new();
@@ -431,10 +431,10 @@ mod tests {
     }
 
     #[test]
-    fn allows_org_admin_with_root_policy() {
+    fn allows_grade_admin_with_root_policy() {
         let csv_bytes = make_csv(
             "username,role,campus_id,display_name,email",
-            &["alice,organizationAdmin,1,Org Admin,"],
+            &["alice,gradeAdmin,1,Grade Admin,"],
         );
 
         let skip = HashSet::new();
@@ -442,7 +442,7 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Valid);
         // Role should be normalized to canonical lowercase
-        assert_eq!(rows[0].role, "organizationadmin");
+        assert_eq!(rows[0].role, "gradeadmin");
     }
 
     #[test]

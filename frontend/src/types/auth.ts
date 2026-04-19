@@ -1,17 +1,17 @@
 /** Canonical runtime roles — must match shared/src/models/role.rs with camelCase serialization */
 export type Role =
   | 'root'
-  | 'organizationAdmin'
+  | 'gradeAdmin'
   | 'campusAdmin'
   | 'teacher'
   | 'teachingAssistant'
   | 'student'
 
 /** Roles that grant admin panel access */
-export const ADMIN_ROLES: readonly Role[] = ['root', 'organizationAdmin', 'campusAdmin']
+export const ADMIN_ROLES: readonly Role[] = ['root', 'campusAdmin', 'gradeAdmin']
 
 /** Roles that grant teacher-level feature access */
-export const TEACHER_ROLES: readonly Role[] = ['root', 'organizationAdmin', 'campusAdmin', 'teacher']
+export const TEACHER_ROLES: readonly Role[] = ['root', 'campusAdmin', 'gradeAdmin', 'teacher']
 
 export function isAdmin(role: Role): boolean {
   return (ADMIN_ROLES as readonly string[]).includes(role)
@@ -25,7 +25,7 @@ export function isTeacherOrAbove(role: Role): boolean {
 export function roleLabel(role: Role): string {
   switch (role) {
     case 'root': return '超级管理员'
-    case 'organizationAdmin': return '机构管理员'
+    case 'gradeAdmin': return '年级管理员'
     case 'campusAdmin': return '校区管理员'
     case 'teacher': return '教师'
     case 'teachingAssistant': return '助教'

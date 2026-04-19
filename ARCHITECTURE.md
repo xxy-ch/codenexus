@@ -572,7 +572,7 @@ HalfOpen（试探） → 失败 → Open（重新拒绝）
 ### 8.1 角色层次体系
 
 ```
-Root > OrganizationAdmin > CampusAdmin > Teacher > TeachingAssistant > Student
+Root > CampusAdmin > GradeAdmin > Teacher > TeachingAssistant > Student
 ```
 
 `Role` 枚举（定义在 `shared/src/models/role.rs`）实现 `is_higher_or_equal()` 方法用于层次比较。`Root` 拥有系统全局访问权限并跳过所有租户检查。
@@ -595,7 +595,7 @@ Root > OrganizationAdmin > CampusAdmin > Teacher > TeachingAssistant > Student
 | 角色 | 权限数 | 关键权限 |
 |------|--------|---------|
 | Root | 21 | 全部权限 |
-| OrganizationAdmin | 11 | 用户/题目/比赛/班级/组织管理 + 排行榜/统计/标签 |
+| GradeAdmin | 12 | 用户/题目/比赛/班级/评分管理 + 排行榜/统计/标签 |
 | CampusAdmin | 10 | 用户/题目/比赛/班级/校区管理 + 排行榜/统计 |
 | Teacher | 11 | 题目/比赛/班级管理 + 提交/评分 + 排行榜/统计 |
 | TeachingAssistant | 6 | 查看题目/提交/评分/班级统计 + 排行榜 |

@@ -5,20 +5,20 @@ use std::str::FromStr;
 ///
 /// Roles are hierarchical in terms of permissions:
 /// - Root: Has all permissions across all tenants (super admin)
-/// - OrganizationAdmin: Has admin permissions for their organization
 /// - CampusAdmin: Has admin permissions for their campus
+/// - GradeAdmin: Manages classes and students within specific grade(s)
 /// - Teacher: Can create problems, manage classes, grade submissions
-/// - Student: Can submit solutions, view problems, view leaderboard
 /// - TeachingAssistant: Can help grade submissions but limited permissions
+/// - Student: Can submit solutions, view problems, view leaderboard
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum Role {
     /// Root administrator with system-wide access
     Root,
-    /// Organization-level administrator
-    OrganizationAdmin,
     /// Campus-level administrator
     CampusAdmin,
+    /// Grade-level administrator managing classes within specific grade(s)
+    GradeAdmin,
     /// Teacher with problem creation and grading permissions
     Teacher,
     /// Teaching assistant with limited grading permissions
@@ -32,8 +32,8 @@ impl Role {
     pub fn as_str(&self) -> &'static str {
         match self {
             Role::Root => "root",
-            Role::OrganizationAdmin => "organizationadmin",
             Role::CampusAdmin => "campusadmin",
+            Role::GradeAdmin => "gradeadmin",
             Role::Teacher => "teacher",
             Role::TeachingAssistant => "teachingassistant",
             Role::Student => "student",
@@ -46,8 +46,8 @@ impl Role {
             Role::Student,
             Role::TeachingAssistant,
             Role::Teacher,
+            Role::GradeAdmin,
             Role::CampusAdmin,
-            Role::OrganizationAdmin,
             Role::Root,
         ];
 
@@ -64,8 +64,8 @@ impl FromStr for Role {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "root" => Ok(Role::Root),
-            "organizationadmin" | "orgadmin" => Ok(Role::OrganizationAdmin),
             "campusadmin" => Ok(Role::CampusAdmin),
+            "gradeadmin" | "organizationadmin" | "orgadmin" => Ok(Role::GradeAdmin),
             "teacher" => Ok(Role::Teacher),
             "teachingassistant" | "ta" => Ok(Role::TeachingAssistant),
             "student" => Ok(Role::Student),
@@ -83,8 +83,13 @@ mod tests {
         assert_eq!(Role::from_str("root"), Ok(Role::Root));
         assert_eq!(Role::from_str("ROOT"), Ok(Role::Root));
         assert_eq!(
+            Role::from_str("gradeadmin"),
+            Ok(Role::GradeAdmin)
+        );
+        // Backward compat: old role string still resolves
+        assert_eq!(
             Role::from_str("organizationadmin"),
-            Ok(Role::OrganizationAdmin)
+            Ok(Role::GradeAdmin)
         );
         assert_eq!(Role::from_str("campusadmin"), Ok(Role::CampusAdmin));
         assert_eq!(Role::from_str("teacher"), Ok(Role::Teacher));
@@ -100,7 +105,7 @@ mod tests {
     #[test]
     fn test_role_as_str() {
         assert_eq!(Role::Root.as_str(), "root");
-        assert_eq!(Role::OrganizationAdmin.as_str(), "organizationadmin");
+        assert_eq!(Role::GradeAdmin.as_str(), "gradeadmin");
         assert_eq!(Role::CampusAdmin.as_str(), "campusadmin");
         assert_eq!(Role::Teacher.as_str(), "teacher");
         assert_eq!(Role::TeachingAssistant.as_str(), "teachingassistant");
@@ -113,6 +118,9 @@ mod tests {
         assert!(Role::Root.is_higher_or_equal(Role::Teacher));
         assert!(Role::Teacher.is_higher_or_equal(Role::Student));
         assert!(Role::CampusAdmin.is_higher_or_equal(Role::Teacher));
+        assert!(Role::CampusAdmin.is_higher_or_equal(Role::GradeAdmin));
+        assert!(Role::GradeAdmin.is_higher_or_equal(Role::Teacher));
+        assert!(!Role::GradeAdmin.is_higher_or_equal(Role::CampusAdmin));
         assert!(!Role::Student.is_higher_or_equal(Role::Teacher));
         assert!(!Role::Teacher.is_higher_or_equal(Role::Root));
     }
@@ -121,8 +129,8 @@ mod tests {
     fn test_role_roundtrip() {
         let roles = [
             Role::Root,
-            Role::OrganizationAdmin,
             Role::CampusAdmin,
+            Role::GradeAdmin,
             Role::Teacher,
             Role::TeachingAssistant,
             Role::Student,
@@ -136,9 +144,9 @@ mod tests {
 
     #[test]
     fn test_role_serialization() {
-        let role = Role::OrganizationAdmin;
+        let role = Role::GradeAdmin;
         let serialized = serde_json::to_string(&role).unwrap();
-        assert_eq!(serialized, "\"organizationAdmin\"");
+        assert_eq!(serialized, "\"gradeAdmin\"");
 
         let deserialized: Role = serde_json::from_str(&serialized).unwrap();
         assert_eq!(deserialized, role);
