@@ -14,8 +14,8 @@ vi.mock('@/services/api', () => ({
 
 import { authService } from '@/services/auth'
 import { problemsService } from '@/services/problems'
-import { discussionsService } from '@/services/discussions'
-import { blogService } from '@/services/blog'
+import { discussionsApi } from '@/services/discussionsApi'
+import { blogApi } from '@/services/articlesApi'
 import { messagesService } from '@/services/messages'
 import { plagiarismService } from '@/services/plagiarism'
 
@@ -56,31 +56,31 @@ describe('core smoke flows', () => {
   it('community flow: discussion detail reachable', async () => {
     mockApi.get.mockResolvedValueOnce({
       data: {
-        id: 'd1',
-        title: 't',
-        content: 'c',
-        author_id: 'u1',
-        author_username: 'alice',
-        category: 'question',
-        tags: [],
-        likes_count: 0,
-        replies_count: 0,
-        views_count: 0,
-        is_pinned: false,
-        is_locked: false,
-        created_at: '2026-03-06T00:00:00Z',
-        updated_at: '2026-03-06T00:00:00Z',
+        discussion: {
+          id: 1,
+          title: 't',
+          content: 'c',
+          author_id: 'u1',
+          author_username: 'alice',
+          tags: [],
+          is_pinned: false,
+          is_solved: false,
+          is_locked: false,
+          view_count: 0,
+          reply_count: 0,
+          like_count: 0,
+          created_at: '2026-03-06T00:00:00Z',
+          updated_at: '2026-03-06T00:00:00Z',
+        },
         replies: [],
-        is_liked: false,
-        can_edit: false,
-        can_delete: false,
+        author: { id: 'u1', username: 'alice' },
       },
     })
 
-    const data = await discussionsService.getDiscussionDetail('d1')
+    const data = await discussionsApi.getDiscussion(1)
 
-    expect(mockApi.get).toHaveBeenCalledWith('/discussions/d1')
-    expect(data.id).toBe('d1')
+    expect(mockApi.get).toHaveBeenCalledWith('/discussions/1')
+    expect(data.discussion.id).toBe(1)
   })
 
   it('blog flow: post list reachable', async () => {
@@ -88,14 +88,19 @@ describe('core smoke flows', () => {
       data: {
         articles: [
           {
-            id: 'b1',
+            id: 1,
             title: 'hello',
+            slug: 'hello',
             content: 'content',
             author_id: 'u1',
             author_username: 'alice',
             category: 'tutorial',
             tags: [],
             is_published: true,
+            is_featured: false,
+            view_count: 0,
+            like_count: 0,
+            comment_count: 0,
             created_at: '2026-03-06T00:00:00Z',
             updated_at: '2026-03-06T00:00:00Z',
           },
@@ -106,10 +111,10 @@ describe('core smoke flows', () => {
       },
     })
 
-    const data = await blogService.getPosts(1, 10)
+    const data = await blogApi.getArticles({ page: 1, limit: 10 })
 
     expect(mockApi.get).toHaveBeenCalledWith('/blog?page=1&limit=10')
-    expect(data.posts[0].id).toBe('b1')
+    expect(data.articles[0].id).toBe(1)
   })
 
   it('message flow: conversation messages reachable', async () => {
