@@ -343,7 +343,8 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 | 11 | FGW-01..07 | 7 |
 | 12 | AIA-01..08 | 8 |
 | 13 | THR-01..08 | 8 |
-| **Total** | | **73** |
+| 14 | GSD-01..08 | 8 |
+| **Total** | | **81** |
 
 > Note: ARCH-04 and ARCH-05 span Phases 2-4. CICD-01..03 are split across Phases 2 and 6. CICD-05 deferred per D-03.
 
@@ -439,6 +440,37 @@ Plans:
 
 ---
 
+### Phase 14: Grade-Scoped Data Model
+
+**Goal:** Build the data model and access control infrastructure to support grade-scoped administration. Phase 13 renamed the role, but GradeAdmin cannot actually scope authority to specific grades without a `grades` entity, `grade_id` in user profiles and role assignments, JWT claims propagation, and grade-level query filtering. This phase makes `grade` a first-class concept in the data model and access control layer.
+
+**Requirements:**
+- GSD-01: `grades` table — entity representing a grade within a campus (id, campus_id, name, year, created_at). Grades are campus-scoped, not org-scoped, since different campuses may have different grade structures
+- GSD-02: `users.grade_id` — user profile field indicating primary grade membership (nullable; campusadmin/root have no grade, students/teachers belong to a grade, gradeadmin manages a specific grade)
+- GSD-03: `user_roles.grade_id` — role scope field indicating which grade a role assignment covers (nullable; only gradeadmin uses this to define their management scope; other roles leave null)
+- GSD-04: JWT `grade_id` claim — propagate grade_id from user_roles into JWT claims at login; tenant middleware extracts it alongside school_id and campus_id
+- GSD-05: Grade-scoped query filtering — all domain queries that filter by tenant/campus must also respect grade_id when the requesting user is a gradeadmin; GradeAdmin sees only data within their assigned grade
+- GSD-06: User management UI — admin UI supports grade assignment when creating/editing users; gradeadmin dropdown shows only grades in their campus
+- GSD-07: Migration — populate grades table from existing class/grade naming conventions; assign existing users to grades based on their class enrollments or teaching assignments
+- GSD-08: Import/export — CSV import/export updated to include grade_id column; gradeadmin import scoped to their grade
+
+**Success Criteria:**
+1. `grades` table exists with at least test data linking grades to campuses
+2. Students and teachers have `grade_id` populated; gradeadmins have `user_roles.grade_id` matching their management scope
+3. JWT token contains `grade_id` for users with grade-level roles
+4. GradeAdmin API queries return only data within their assigned grade — cross-grade data is invisible
+5. CampusAdmin sees all grades within their campus; Root sees all grades
+6. Admin UI allows grade assignment and gradeadmin management
+7. Existing users migrated without data loss — grade assignments inferred from class enrollments
+
+**Depends on:** Phase 13 (Tenant Hierarchy Restructure — GradeAdmin role must exist)
+**Plans:** 0 plans (run /gsd-plan-phase 14 to break down)
+
+Plans:
+- [ ] TBD
+
+---
+
 ## Dependency Graph
 
 ```
@@ -473,11 +505,17 @@ Phase 7 (Test Coverage + Contest Enhancement)
           |
           v
         Phase 12 (AI Analysis Bounded Context)
+              |
+              v
+            Phase 13 (Tenant Hierarchy Restructure)
+              |
+              v
+            Phase 14 (Grade-Scoped Data Model)
 ```
 
-Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each other and can execute in parallel after Phase 7 completes. Phase 11 depends on Phase 10. Phase 12 depends on Phase 11.
+Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each other and can execute in parallel after Phase 7 completes. Phase 11 depends on Phase 10. Phase 12 depends on Phase 11. Phase 13 depends on Phase 10. Phase 14 depends on Phase 13.
 
 ---
 
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-19 Phases 11-12 added*
+*Last updated: 2026-04-19 Phase 14 added (Grade-Scoped Data Model)*
