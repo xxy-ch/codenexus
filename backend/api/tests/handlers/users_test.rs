@@ -61,17 +61,19 @@ async fn seed_user_with_role(
     role: &str,
 ) -> (i64, i64, Uuid) {
     let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name) VALUES ($1) RETURNING id",
+        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
     )
     .bind(org_name)
+    .bind(org_name.to_lowercase().replace(' ', "-"))
     .fetch_one(pool)
     .await
     .unwrap();
 
     let campus_id: i64 = sqlx::query_scalar(
-        "INSERT INTO campuses (organization_id, name) VALUES ($1, 'Main Campus') RETURNING id",
+        "INSERT INTO campuses (organization_id, name, slug) VALUES ($1, 'Main Campus', $2) RETURNING id",
     )
     .bind(org_id)
+    .bind(format!("main-{}", org_id))
     .fetch_one(pool)
     .await
     .unwrap();
@@ -159,10 +161,10 @@ async fn test_admin_list_users_returns_200() {
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
 
     let (org_id, _campus_id, admin_id) =
-        seed_user_with_role(&fixture.db_pool, "Admin Org", "admin1", "admin").await;
+        seed_user_with_role(&fixture.db_pool, "Admin Org", "admin1", "organizationadmin").await;
 
     let (app, jwt_service) = build_users_app(fixture.db_pool.clone()).await;
-    let token = make_token(&jwt_service, admin_id, "admin", org_id);
+    let token = make_token(&jwt_service, admin_id, "organizationadmin", org_id);
 
     let response = app
         .oneshot(

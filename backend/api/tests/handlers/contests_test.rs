@@ -60,16 +60,19 @@ async fn build_contest_app(pool: PgPool) -> (
 /// Returns (org_id, campus_id, user_id).
 async fn seed_org_campus_user(pool: &PgPool, org_name: &str) -> (i64, i64, Uuid) {
     let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name) VALUES ($1) RETURNING id",
+        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
     )
     .bind(org_name)
+    .bind(org_name.to_lowercase().replace(' ', "-"))
     .fetch_one(pool)
     .await
     .unwrap();
 
     let campus_id: i64 = sqlx::query_scalar(
-        "INSERT INTO campuses (organization_id, name) VALUES ($1, 'Main Campus') RETURNING id",
+        "INSERT INTO campuses (organization_id, name, slug) VALUES ($1, 'Main Campus', $2) RETURNING id",
     )
+    .bind(org_id)
+    .bind(format!("main-{}", org_id))
     .bind(org_id)
     .fetch_one(pool)
     .await

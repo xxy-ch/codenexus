@@ -1,5 +1,6 @@
 use anyhow::Result;
 use deadpool_redis::Pool as RedisPool;
+use testcontainers::core::IntoContainerPort;
 use testcontainers::runners::AsyncRunner;
 
 /// A Redis test container managed by testcontainers.
@@ -11,6 +12,7 @@ impl RedisTestContainer {
     /// Start a new Redis test container.
     pub async fn start() -> Result<Self> {
         let container = testcontainers::GenericImage::new("redis", "7-alpine")
+            .with_exposed_port(6379_u16.tcp())
             .start()
             .await?;
         Ok(Self { container })
