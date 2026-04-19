@@ -4,12 +4,12 @@ import { Input } from '@/components/ui/Input'
 import { Loading } from '@/components/ui/Loading'
 
 describe('ui primitives', () => {
-  it('renders primary button with project styling classes', () => {
-    render(<Button variant="primary">Sign In</Button>)
+  it('renders default button with project styling classes', () => {
+    render(<Button>Sign In</Button>)
 
     const button = screen.getByRole('button', { name: 'Sign In' })
     expect(button).toHaveClass('bg-primary')
-    expect(button).toHaveClass('text-white')
+    expect(button).toHaveClass('text-primary-foreground')
     expect(button).toHaveClass('rounded-lg')
   })
 

@@ -115,9 +115,13 @@ human_verification:
 
 ### Anti-Patterns Found
 
-| File | Line | Pattern | Severity | Impact |
+| File | Line | Pattern | Severity | Status |
 |------|------|---------|----------|--------|
-| `domain-search/tests/integration.rs` | 119 | `assert!(response.total_count >= 0)` on unsigned type | Info | Compiler warning only; assertion is always true due to type. Not a functional issue. |
+| `domain-search/tests/integration.rs` | 119 | `assert!(response.total_count >= 0)` on unsigned type | Info | **FIXED 2026-04-19**: replaced with meaningful assertion `assert_eq!(response.results.len(), 0)` |
+| `frontend/vitest.config.ts` | 7-10 | Missing `exclude: ['e2e/**']` causes Vitest to pick up Playwright specs | Critical | **FIXED 2026-04-19**: added `exclude: ['e2e/**', 'node_modules/**']` |
+| `backend/api-infra/src/config.rs` | 159-292 | `std::env::set_var` race condition in parallel tests | High | **FIXED 2026-04-19**: added `EnvGuard` with `Mutex` serialization and env var save/restore |
+| `backend/api-infra/src/middleware/tenant.rs` | 57 | Unused `HeaderMap` import | Low | **FIXED 2026-04-19**: removed unused import |
+| `backend/api/src/judge_monitor/service.rs` | 938 | Unused `retry1_school_id` variable | Low | **FIXED 2026-04-19**: removed unused variable |
 
 No TODO, FIXME, PLACEHOLDER, or stub patterns found in any implementation or test file.
 

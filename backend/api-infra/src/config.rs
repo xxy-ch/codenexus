@@ -159,30 +159,70 @@ impl AppConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    /// Global lock to serialize config tests that mutate environment variables.
+    /// std::env::set_var/remove_var are not thread-safe; without this lock,
+    /// parallel test execution causes random failures due to cross-test
+    /// env var interference.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    /// Save relevant env vars before a test and restore them after.
+    /// This avoids polluting other tests and the parent process.
+    struct EnvGuard {
+        saved_vars: Vec<(&'static str, Option<String>)>,
+        _lock: std::sync::MutexGuard<'static, ()>,
+    }
+
+    impl EnvGuard {
+        fn new(vars: &[&'static str]) -> Self {
+            let lock = ENV_LOCK.lock().unwrap();
+            let saved_vars = vars
+                .iter()
+                .map(|&k| (k, std::env::var(k).ok()))
+                .collect();
+            Self {
+                saved_vars,
+                _lock: lock,
+            }
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            for (key, value) in &self.saved_vars {
+                match value {
+                    Some(v) => std::env::set_var(key, v),
+                    None => std::env::remove_var(key),
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_app_env_from_env_default() {
-        // Without setting APP_ENV, defaults to Development
+        let _guard = EnvGuard::new(&["APP_ENV"]);
         std::env::remove_var("APP_ENV");
         assert_eq!(AppEnv::from_env(), AppEnv::Development);
     }
 
     #[test]
     fn test_app_env_from_env_production() {
+        let _guard = EnvGuard::new(&["APP_ENV"]);
         std::env::set_var("APP_ENV", "production");
         assert_eq!(AppEnv::from_env(), AppEnv::Production);
-        std::env::remove_var("APP_ENV");
     }
 
     #[test]
     fn test_app_env_from_env_test() {
+        let _guard = EnvGuard::new(&["APP_ENV"]);
         std::env::set_var("APP_ENV", "test");
         assert_eq!(AppEnv::from_env(), AppEnv::Test);
-        std::env::remove_var("APP_ENV");
     }
 
     #[test]
     fn test_missing_secret_in_production() {
+        let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::set_var("APP_ENV", "production");
         std::env::remove_var("JWT_SECRET");
         std::env::remove_var("WORKER_SECRET");
@@ -197,13 +237,11 @@ mod tests {
             "Expected JWT_SECRET error, got: {}",
             msg
         );
-
-        std::env::remove_var("APP_ENV");
-        std::env::remove_var("DATABASE_URL");
     }
 
     #[test]
     fn test_missing_worker_secret_in_production() {
+        let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::set_var("APP_ENV", "production");
         std::env::set_var("JWT_SECRET", "a-real-secret");
         std::env::remove_var("WORKER_SECRET");
@@ -217,14 +255,11 @@ mod tests {
             "Expected WORKER_SECRET error, got: {}",
             msg
         );
-
-        std::env::remove_var("APP_ENV");
-        std::env::remove_var("JWT_SECRET");
-        std::env::remove_var("DATABASE_URL");
     }
 
     #[test]
     fn test_empty_secret_treated_as_unset_in_production() {
+        let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::set_var("APP_ENV", "production");
         std::env::set_var("JWT_SECRET", ""); // empty string
         std::env::set_var("WORKER_SECRET", "real-secret");
@@ -235,15 +270,11 @@ mod tests {
             result.is_err(),
             "Empty JWT_SECRET should be treated as unset"
         );
-
-        std::env::remove_var("APP_ENV");
-        std::env::remove_var("JWT_SECRET");
-        std::env::remove_var("WORKER_SECRET");
-        std::env::remove_var("DATABASE_URL");
     }
 
     #[test]
     fn test_development_allows_missing_secrets() {
+        let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::remove_var("APP_ENV");
         std::env::remove_var("JWT_SECRET");
         std::env::remove_var("WORKER_SECRET");
@@ -254,12 +285,11 @@ mod tests {
         let config = result.unwrap();
         assert!(!config.jwt_secret.is_empty());
         assert!(config.jwt_secret.contains("dev-only-insecure"));
-
-        std::env::remove_var("DATABASE_URL");
     }
 
     #[test]
     fn test_production_cors_defaults_empty() {
+        let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL", "CORS_ORIGINS"]);
         std::env::set_var("APP_ENV", "production");
         std::env::set_var("JWT_SECRET", "real-secret");
         std::env::set_var("WORKER_SECRET", "real-secret");
@@ -272,26 +302,21 @@ mod tests {
             "Production CORS should be empty when CORS_ORIGINS unset"
         );
         assert!(config.cors_origins.iter().all(|o| o != "*"));
-
-        std::env::remove_var("APP_ENV");
-        std::env::remove_var("JWT_SECRET");
-        std::env::remove_var("WORKER_SECRET");
-        std::env::remove_var("DATABASE_URL");
     }
 
     #[test]
     fn test_development_cors_allows_all() {
+        let _guard = EnvGuard::new(&["APP_ENV", "DATABASE_URL"]);
         std::env::remove_var("APP_ENV");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
 
         let config = AppConfig::from_env().unwrap();
         assert_eq!(config.cors_origins, vec!["*"]);
-
-        std::env::remove_var("DATABASE_URL");
     }
 
     #[test]
     fn test_production_cors_from_env() {
+        let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL", "CORS_ORIGINS"]);
         std::env::set_var("APP_ENV", "production");
         std::env::set_var("JWT_SECRET", "real-secret");
         std::env::set_var("WORKER_SECRET", "real-secret");
@@ -309,12 +334,6 @@ mod tests {
         assert!(config
             .cors_origins
             .contains(&"https://app.example.com".to_string()));
-
-        std::env::remove_var("APP_ENV");
-        std::env::remove_var("JWT_SECRET");
-        std::env::remove_var("WORKER_SECRET");
-        std::env::remove_var("DATABASE_URL");
-        std::env::remove_var("CORS_ORIGINS");
     }
 
     #[test]

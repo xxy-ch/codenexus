@@ -2,8 +2,8 @@
 
 **Created:** 2026-04-13
 **Revised:** 2026-04-17 (Phase 10 planned)
-**Phases:** 10
-**v1 Requirements:** 43 (all mapped)
+**Phases:** 12
+**v1 Requirements:** 50 (all mapped)
 
 ---
 
@@ -334,14 +334,112 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 | 8 | IMEX-01..05 | 5 |
 | 9 | JCON-01..04, FTOL-01..03 | 7 |
 | 10 | MIGR-01..06 | 6 |
-| **Total** | | **50** |
+| 11 | FGW-01..07 | 7 |
+| 12 | AIA-01..08 | 8 |
+| **Total** | | **65** |
 
 > Note: ARCH-04 and ARCH-05 span Phases 2-4. CICD-01..03 are split across Phases 2 and 6. CICD-05 deferred per D-03.
 
-**v1 requirements mapped:** 43
+**v1 requirements mapped:** 50
 **v2 requirements (not in scope):** 11
 **Unmapped:** 0
 
+### Phase 11: Feature Gateway Infrastructure
+
+**Goal:** Build a unified runtime feature gateway that supports three-ring flag model (global / tenant / capability), enabling granular module activation for both existing features and future AI analysis. Teachers and admins get a dashboard to toggle features per organization, class, or assignment without code changes.
+
+**Requirements:**
+- FGW-01: `feature_registry` table — canonical feature catalog (id, slug, name, description, default_enabled, category)
+- FGW-02: `feature_flags` table — runtime overrides at global / tenant / class / assignment scope with precedence resolution
+- FGW-03: Feature Gateway service — query API that resolves flag state for a given context (feature_slug + org_id + optional class_id/assignment_id), respecting the 3-ring precedence model
+- FGW-04: Admin API endpoints — CRUD for feature flags at each scope level (global requires root, tenant requires orgadmin, class requires teacher+)
+- FGW-05: Teacher dashboard page — UI to browse features and toggle them per class/assignment with clear inherited-from indicators
+- FGW-06: Application-side guard macro/trait — lightweight `FeatureGate` checker injected into route handlers; returns 404 when feature is disabled (not 403, to avoid revealing existence)
+- FGW-07: Emergency-off path — single env var `FEATURE_GATEWAY_ENABLED=false` bypasses all flag checks and treats everything as disabled; no DB queries
+
+**Success Criteria:**
+1. Feature registry seeded with at least 5 features (direct_messages, plagiarism, discussions, blog, leaderboard)
+2. Admin can toggle plagiarism off for one class while it remains on globally — submissions in that class hide plagiarism tab
+3. Teacher dashboard renders feature list with current state (enabled/disabled/inherited) and allows toggling
+4. Emergency-off env var immediately disables all feature-gated routes without restart
+5. Feature resolution completes in <1ms with cache (no DB hit on hot path)
+
+**Depends on:** Phase 10
+**Plans:** 0 plans (run /gsd-plan-phase 11 to break down)
+
+Plans:
+- [ ] TBD
+
 ---
+
+### Phase 12: AI Analysis Bounded Context
+
+**Goal:** Introduce a toggleable AI analysis architecture as a separate bounded context. Uses structural features + embeddings + rerank + base LLM + nightly batch processing. Completely dormant by default, activated via Feature Gateway flags from Phase 11.
+
+**Requirements:**
+- AIA-01: `analysis` bounded context — separate workspace crate under `backend/`, not extending judge-worker
+- AIA-02: Event-driven shadow pipeline — on submission judged, emit analysis event to new Redis stream or DB-backed job table; never invoke analysis from judge-worker directly
+- AIA-03: Five-layer analysis stack — (1) structural feature extraction, (2) embedding index, (3) rerank, (4) base LLM generation, (5) nightly batch refresh
+- AIA-04: Additive persistence — new tables only (analysis_jobs, analysis_submission_features, analysis_solution_clusters, analysis_cluster_members, analysis_teaching_cards, analysis_class_snapshots, analysis_flags); no mutation of existing tables
+- AIA-05: Three-ring feature flags via Phase 11 Feature Gateway — Ring A: global (AI_ANALYSIS_ENABLED), Ring B: tenant/class scope, Ring C: capability flags (multi_solution_detection, plagiarism_graph, teaching_cards, class_cognition_snapshot)
+- AIA-06: Online path — lightweight feature extraction, candidate retrieval, artifact lookup; no large model on request path
+- AIA-07: Nightly batch — full reclustering, cluster naming, teaching-card refresh, class-level cognition snapshot, stale artifact invalidation
+- AIA-08: UI enrichment hooks — teacher report page gets optional AI blocks; plagiarism report upgraded with pseudo-diversity; all panels empty-state safe behind flags
+
+**Success Criteria:**
+1. Judge submission flow unchanged when AI analysis is disabled
+2. All new AI paths are asynchronous and can fail without affecting submission creation, queueing, judging, or result callbacks
+3. Feature flags at three levels (global, tenant/class, per-analysis-type) exist and are functional
+4. Teacher/admin UI renders current reports without AI data and enriches when AI data exists
+5. System supports immediate hard-off without schema or service breakage
+
+**Depends on:** Phase 11 (Feature Gateway)
+**Plans:** 0 plans (run /gsd-plan-phase 12 to break down)
+
+Plans:
+- [ ] TBD
+
+---
+
+## Dependency Graph
+
+```
+Phase 1 (Architecture + Secrets)
+  |
+  v
+Phase 2 (Basic CI + Core Extraction)
+  |
+  v
+Phase 3 (Extended Extraction)
+  |
+  v
+Phase 4 (Complex Extraction + Leaderboard Fix)
+  |
+  v
+Phase 5 (Security & Debt Clearance)
+  |
+  v
+Phase 6 (Full CI/CD + Observability)
+  |
+  v
+Phase 7 (Test Coverage + Contest Enhancement)
+  |
+  +---> Phase 8 (Import/Export)
+  |       |
+  +---> Phase 9 (Judge Concurrency + Fault Tolerance)  [parallel with 8, 10]
+  |       |
+  +---> Phase 10 (Data Migration)                       [parallel with 8, 9]
+          |
+          v
+        Phase 11 (Feature Gateway Infrastructure)
+          |
+          v
+        Phase 12 (AI Analysis Bounded Context)
+```
+
+Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each other and can execute in parallel after Phase 7 completes. Phase 11 depends on Phase 10. Phase 12 depends on Phase 11.
+
+---
+
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-17 Phase 10 planned*
+*Last updated: 2026-04-19 Phases 11-12 added*

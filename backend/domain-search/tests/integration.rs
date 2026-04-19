@@ -115,6 +115,7 @@ async fn test_search_empty_query_returns_empty() {
         .search_tenant_aware(query, Some(_org_id), false)
         .await
         .unwrap();
-    // The search should succeed (not error), even if results are returned
-    assert!(response.total_count >= 0);
+    // The search should succeed (not error), even if results are returned.
+    // Verify we got a valid response object back (not an error).
+    assert_eq!(response.results.len(), 0, "Empty DB should return zero results");
 }

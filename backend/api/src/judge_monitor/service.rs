@@ -935,7 +935,6 @@ mod tests {
 
         // === First concurrent retry ===
         let retry1_entry_id = "123-0";
-        let retry1_school_id: i64 = 10;
 
         // Step 1: XRANGE — entry exists
         let entry1 = dlq_entries.get(retry1_entry_id).cloned();

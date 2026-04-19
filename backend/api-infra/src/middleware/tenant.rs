@@ -54,7 +54,7 @@ mod tests {
     use super::*;
     use axum::{
         body::Body,
-        http::{HeaderMap, Request, StatusCode},
+        http::{Request, StatusCode},
         middleware,
         routing::get,
         Extension, Router,
