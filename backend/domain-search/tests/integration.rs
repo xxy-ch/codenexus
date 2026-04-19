@@ -18,9 +18,10 @@ async fn setup_fixture() -> TestFixture {
 /// Returns (org_id, user_id, problem_id).
 async fn seed_org_with_problem(pool: &PgPool, org_name: &str, problem_title: &str) -> (i64, Uuid, i64) {
     let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name) VALUES ($1) RETURNING id",
+        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
     )
     .bind(org_name)
+    .bind(format!("{}", org_name.to_lowercase().replace(' ', "-")))
     .fetch_one(pool)
     .await
     .unwrap();
@@ -74,7 +75,7 @@ async fn test_search_returns_tenant_results_only() {
 
     // Search scoped to org1 -- should only see org1's problem
     let response = service
-        .search_tenant_aware(query.clone(), Some(org1_id), false)
+        .search_tenant_aware(query.clone(), Some(org1_id), false, false)
         .await
         .unwrap();
     assert_eq!(response.problem_count, 1);
@@ -83,7 +84,7 @@ async fn test_search_returns_tenant_results_only() {
 
     // Search scoped to org2 -- should only see org2's problem
     let response = service
-        .search_tenant_aware(query.clone(), Some(_org2_id), false)
+        .search_tenant_aware(query.clone(), Some(_org2_id), false, false)
         .await
         .unwrap();
     assert_eq!(response.problem_count, 1);
@@ -112,7 +113,7 @@ async fn test_search_empty_query_returns_empty() {
     // Empty query should return results (empty query matches everything in the LIKE)
     // This verifies the service handles empty queries without error
     let response = service
-        .search_tenant_aware(query, Some(_org_id), false)
+        .search_tenant_aware(query, Some(_org_id), false, false)
         .await
         .unwrap();
     // The search should succeed (not error), even if results are returned.

@@ -17,9 +17,10 @@ async fn setup_fixture() -> TestFixture {
 /// Seed a user with an AC submission. Returns (org_id, user_id, problem_id).
 async fn seed_user_with_ac_submission(pool: &PgPool, email_suffix: &str) -> (i64, Uuid) {
     let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name) VALUES ($1) RETURNING id",
+        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
     )
     .bind(format!("Org for {}", email_suffix))
+    .bind(format!("org-for-{}", email_suffix))
     .fetch_one(pool)
     .await
     .unwrap();

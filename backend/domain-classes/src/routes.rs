@@ -304,8 +304,23 @@ async fn get_assignment(
         .get_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
+
     // Tenant: verify assignment's class belongs to user's org
-    verify_class_tenant(&service, assignment.class_id, claims.school_id).await?;
+    let class = verify_class_tenant(&service, assignment.class_id, claims.school_id).await?;
+
+    // Authorization: only class members (enrolled students, teacher, or admins) can read assignments
+    if !is_admin(&claims.role) && class.teacher_id != claims.sub {
+        // Check if user is enrolled in the class
+        let students = service
+            .get_class_students(assignment.class_id)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let is_enrolled = students.iter().any(|s| s.student_id == claims.sub);
+        if !is_enrolled {
+            return Err(StatusCode::FORBIDDEN);
+        }
+    }
+
     Ok(Json(assignment))
 }
 

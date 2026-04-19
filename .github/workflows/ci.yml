@@ -74,6 +74,66 @@ jobs:
       - name: Build
         run: npm run build
 
+  integration:
+    name: Rust Integration (#[ignore] tests with PostgreSQL + Redis)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: onlinejudge_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: "${{ runner.os }}-cargo-integration-${{ hashFiles('**/Cargo.lock') }}"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config
+
+      - name: Run migrations on test database
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/onlinejudge_test
+        run: |
+          cargo run -p api -- --migrate-only 2>/dev/null || true
+          # Also create migration_mappings table for migration-tool tests
+          PGPASSWORD=postgres psql -h localhost -U postgres -d onlinejudge_test -c \
+            "CREATE TABLE IF NOT EXISTS migration_mappings (entity_type TEXT NOT NULL, old_id TEXT NOT NULL, new_id TEXT NOT NULL, PRIMARY KEY (entity_type, old_id));" || true
+
+      - name: Run ignored integration tests
+        run: cargo test --workspace -- --ignored
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/onlinejudge_test
+          REDIS_URL: redis://127.0.0.1:6379
+          JWT_SECRET: test-jwt-secret-for-ci
+          WORKER_SECRET: test-worker-secret-for-ci
+
   docker:
     name: Docker Build Verification
     runs-on: ubuntu-latest

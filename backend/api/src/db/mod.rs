@@ -40,15 +40,6 @@ mod tests {
         assert!(result.is_err(), "Expected error for invalid DATABASE_URL");
     }
 
-    #[test]
-    fn test_create_pool_missing_env() {
-        let env_var = std::env::var("DATABASE_URL");
-        assert!(
-            env_var.is_err() || !env_var.unwrap().is_empty(),
-            "DATABASE_URL should be set for application to start"
-        );
-    }
-
     #[ignore = "requires a running PostgreSQL database; set DATABASE_URL environment variable"]
     #[tokio::test]
     async fn test_connection() {
@@ -70,16 +61,5 @@ mod tests {
             .expect("Failed to execute query");
 
         assert_eq!(result, 1, "Database connection test query should return 1");
-    }
-}
-
-#[cfg(test)]
-mod schema_tests {
-    use super::schema;
-
-    #[ignore]
-    #[tokio::test]
-    async fn test_schema_tables_exist() {
-        let _ = schema::MIGRATOR;
     }
 }

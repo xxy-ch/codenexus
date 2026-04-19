@@ -346,7 +346,7 @@ impl JudgeMonitorService {
 /// Parse XINFO GROUPS output to extract `pending` and `lag` for a specific consumer group.
 ///
 /// XINFO GROUPS returns a list of groups, each as alternating key-value pairs:
-/// ```
+/// ```text
 /// [[name, <val>, consumers, <val>, pending, <val>, last-delivered-id, <val>, lag, <val>, ...], ...]
 /// ```
 ///

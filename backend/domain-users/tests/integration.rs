@@ -17,7 +17,7 @@ async fn setup_fixture() -> TestFixture {
 
 /// Seed an organization. Returns org_id.
 async fn seed_org(pool: &PgPool) -> i64 {
-    sqlx::query_scalar("INSERT INTO organizations (name) VALUES ('Test Org') RETURNING id")
+    sqlx::query_scalar("INSERT INTO organizations (name, slug) VALUES ('Test Org', 'test-org') RETURNING id")
         .fetch_one(pool)
         .await
         .unwrap()
@@ -27,7 +27,7 @@ async fn seed_org(pool: &PgPool) -> i64 {
 async fn seed_org_and_campus(pool: &PgPool) -> (i64, i64) {
     let org_id = seed_org(pool).await;
     let campus_id: i64 = sqlx::query_scalar(
-        "INSERT INTO campuses (organization_id, name) VALUES ($1, 'Main Campus') RETURNING id",
+        "INSERT INTO campuses (organization_id, name, slug) VALUES ($1, 'Main Campus', 'main-campus') RETURNING id",
     )
     .bind(org_id)
     .fetch_one(pool)
@@ -76,7 +76,7 @@ async fn test_list_users_by_organization() {
     let fixture = setup_fixture().await;
     let org1_id = seed_org(&fixture.db_pool).await;
     let org2_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name) VALUES ('Test Org 2') RETURNING id",
+        "INSERT INTO organizations (name, slug) VALUES ('Test Org 2', 'test-org-2') RETURNING id",
     )
     .fetch_one(&fixture.db_pool)
     .await

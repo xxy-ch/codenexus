@@ -29,6 +29,10 @@ use websocket::WebSocketServer;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    // Check for --migrate-only flag before initializing logging
+    let args: Vec<String> = std::env::args().collect();
+    let migrate_only = args.len() > 1 && args[1] == "--migrate-only";
+
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -48,6 +52,12 @@ async fn main() -> anyhow::Result<()> {
     info!("Running embedded database migrations...");
     MIGRATOR.run(&db_pool).await?;
     info!("Database migrations complete");
+
+    // If --migrate-only flag is set, exit successfully after migrations
+    if migrate_only {
+        println!("Migrations completed successfully");
+        return Ok(());
+    }
 
     let redis_pool = if let Ok(pool) = redis::create_pool(&config.redis_url).await {
         info!("Redis connection pool created");

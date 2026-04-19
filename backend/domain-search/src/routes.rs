@@ -14,6 +14,12 @@ fn is_teacher_plus(role: &str) -> bool {
         .unwrap_or(false)
 }
 
+fn is_root(role: &str) -> bool {
+    role.parse::<Role>()
+        .map(|r| r == Role::Root)
+        .unwrap_or(false)
+}
+
 pub async fn search(
     State(state): State<AppState>,
     Query(query): Query<SearchQuery>,
@@ -24,10 +30,16 @@ pub async fn search(
         .unwrap_or_else(|_| SearchService::new(pool));
 
     // Extract tenant info from claims if authenticated
-    let (school_id, teacher_plus) = auth
+    let (school_id, teacher_plus, root) = auth
         .as_ref()
-        .map(|AuthExtractor(claims)| (Some(claims.school_id), is_teacher_plus(&claims.role)))
-        .unwrap_or((None, false));
+        .map(|AuthExtractor(claims)| {
+            (
+                Some(claims.school_id),
+                is_teacher_plus(&claims.role),
+                is_root(&claims.role),
+            )
+        })
+        .unwrap_or((None, false, false));
 
     // Save recent search for authenticated users
     if let (Some(AuthExtractor(claims)), Some(q)) = (auth, query.q.as_ref()) {
@@ -37,7 +49,7 @@ pub async fn search(
     }
 
     service
-        .search_tenant_aware(query, school_id, teacher_plus)
+        .search_tenant_aware(query, school_id, teacher_plus, root)
         .await
         .map(Json)
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)

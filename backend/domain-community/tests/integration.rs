@@ -18,7 +18,7 @@ async fn setup_fixture() -> TestFixture {
 /// Seed org, user, and a problem. Returns (org_id, user_id, problem_id).
 async fn seed_org_user_problem(pool: &PgPool) -> (i64, Uuid, i64) {
     let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name) VALUES ('Test Org') RETURNING id",
+        "INSERT INTO organizations (name, slug) VALUES ('Test Org', 'test-org') RETURNING id",
     )
     .fetch_one(pool)
     .await

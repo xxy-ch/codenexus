@@ -123,7 +123,8 @@ impl CircuitBreaker {
         }
     }
 
-    /// Read current failure count for monitoring.
+    /// Read current failure count for monitoring (test-only).
+    #[cfg(test)]
     pub fn failure_count(&self) -> usize {
         self.failure_count.load(Ordering::Relaxed)
     }

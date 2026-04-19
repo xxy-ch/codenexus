@@ -29,13 +29,15 @@ impl SearchService {
     }
 
     /// Search with tenant-aware filtering.
-    /// `school_id`: if Some, restrict results to that organization.
+    /// `school_id`: if Some, restrict results to that organization (unless is_root is true).
     /// `is_teacher_plus`: if true, include private problems from the org.
+    /// `is_root`: if true, show all problems across all organizations.
     pub async fn search_tenant_aware(
         &self,
         query: SearchQuery,
         school_id: Option<i64>,
         is_teacher_plus: bool,
+        is_root: bool,
     ) -> Result<SearchResponse> {
         let query_text = query.q.clone().unwrap_or_default().trim().to_string();
         let normalized_type = query.r#type.to_lowercase();
@@ -46,13 +48,13 @@ impl SearchService {
         let offset = ((page - 1) * limit) as usize;
 
         let problem_results = if include_problems {
-            self.search_problems(&query_text, school_id, is_teacher_plus)
+            self.search_problems(&query_text, school_id, is_teacher_plus, is_root)
                 .await?
         } else {
             Vec::new()
         };
         let discussion_results = if include_discussions {
-            self.search_discussions(&query_text, school_id).await?
+            self.search_discussions(&query_text, school_id, is_root).await?
         } else {
             Vec::new()
         };
@@ -172,11 +174,16 @@ impl SearchService {
         query_text: &str,
         school_id: Option<i64>,
         is_teacher_plus: bool,
+        is_root: bool,
     ) -> Result<Vec<SearchResultItem>> {
         // Build visibility clause:
-        // - Public problems are always visible
-        // - Private problems are only visible to teachers/admins in the same org
-        let (visibility_clause, extra_bind) = if let Some(org_id) = school_id {
+        // - Root users see all problems (public + private from all orgs)
+        // - Authenticated non-root users see public problems + private problems from their org (if teacher_plus)
+        // - Unauthenticated users see only public problems
+        let (visibility_clause, extra_bind) = if is_root {
+            // Root: see all problems from all organizations
+            ("(p.visibility = 'public' OR p.visibility = 'private')".to_string(), None)
+        } else if let Some(org_id) = school_id {
             if is_teacher_plus {
                 ("(p.visibility = 'public' OR (p.visibility = 'private' AND p.organization_id = $3))".to_string(), Some(org_id))
             } else {
@@ -256,9 +263,13 @@ impl SearchService {
         &self,
         query_text: &str,
         school_id: Option<i64>,
+        is_root: bool,
     ) -> Result<Vec<SearchResultItem>> {
-        // Tenant filter: if authenticated, only show discussions from same org
-        let (tenant_clause, extra_bind) = if let Some(org_id) = school_id {
+        // Tenant filter: Root users see all discussions, others only see from their org
+        let (tenant_clause, extra_bind) = if is_root {
+            // Root: no tenant filter
+            (String::new(), None)
+        } else if let Some(org_id) = school_id {
             ("AND p.organization_id = $3".to_string(), Some(org_id))
         } else {
             (String::new(), None)
