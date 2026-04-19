@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 14
 status: executing
-last_updated: "2026-04-19T12:03:07.002Z"
+last_updated: "2026-04-19T14:05:30.639Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 15
   completed_phases: 7
   total_plans: 53
-  completed_plans: 40
-  percent: 75
+  completed_plans: 41
+  percent: 77
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -37,7 +37,7 @@ progress:
 | 11 | Feature Gateway Infrastructure | Planned | 0 plans | 0% |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
 | 13 | Tenant Hierarchy Restructure | Executed | 5 plans | 100% |
-| 14 | Grade-Scoped Data Model | Executing | 6 plans (4 waves) | 17% (1/6 plans) |
+| 14 | Grade-Scoped Data Model | Executing | 6 plans (4 waves) | 33% (2/6 plans) |
 
 ## Project Reference
 
@@ -72,6 +72,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 12 added to roadmap: 2026-04-19 (AI Analysis Bounded Context)*
 *Phase 13 added to roadmap: 2026-04-19 (Tenant Hierarchy Restructure — 6-level role hierarchy)*
 *Phase 14 planned: 2026-04-19 — 6 plans in 4 waves (grades table, auth flow, grade filtering, data migration, frontend, verification)*
+*Phase 14 plan 02 executed: 2026-04-19 — auth flow grade_id from user_roles*
+*Stopped at: Completed 14-02-PLAN.md*
 
 ## Decisions
 
@@ -124,6 +126,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 13]: Contest/leaderboard admin checks raised to CampusAdmin; class management stays at GradeAdmin level
 - [Phase 14]: D-14-01: Combined 4 tasks into single commit -- adding grade_id to shared structs breaks all construction sites simultaneously
 - [Phase 14]: D-14-02: Propagated grade_id from DB through JWT in login/refresh flows for downstream plan consumption
+- [Phase 14 P02]: D-14-03: JWT grade_id sourced from user_roles (authorization scope) not users (identity) per D-07/D-08
 
 ## Performance Metrics
 
@@ -148,3 +151,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 10 P04 | 3min | 2 tasks | 2 files |
 | Phase 13 P02 | 3min | 1 tasks | 9 files |
 | Phase 14 P01 | 15 | 4 tasks | 15 files |
+| Phase 14 P02 | 10min | 6 tasks | 4 files |

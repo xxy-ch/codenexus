@@ -464,7 +464,7 @@ Plans:
 7. Existing users migrated without data loss — grade assignments inferred from class enrollments
 
 **Depends on:** Phase 13 (Tenant Hierarchy Restructure — GradeAdmin role must exist)
-**Plans:** 1/6 plans executed
+**Plans:** 2/6 plans executed
 
 Plans:
 - [ ] TBD
