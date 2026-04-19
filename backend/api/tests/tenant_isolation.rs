@@ -375,7 +375,7 @@ async fn test_leaderboard_global_tenant_isolated() {
 
     // Query leaderboard scoped to org A
     let lb_a = service
-        .get_global_leaderboard(make_query(), Some(org_a))
+        .get_global_leaderboard(make_query(), Some(org_a), None)
         .await
         .unwrap();
 
@@ -392,7 +392,7 @@ async fn test_leaderboard_global_tenant_isolated() {
 
     // Query leaderboard scoped to org B
     let lb_b = service
-        .get_global_leaderboard(make_query(), Some(org_b))
+        .get_global_leaderboard(make_query(), Some(org_b), None)
         .await
         .unwrap();
 

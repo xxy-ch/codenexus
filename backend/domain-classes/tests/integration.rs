@@ -82,6 +82,7 @@ async fn test_create_and_get_class() {
         campus_id: Some(campus_id),
         name: "Data Structures 101".to_string(),
         semester: Some("2026-Spring".to_string()),
+        grade_id: None,
     };
 
     let class = service.create_class(&req, teacher_id).await.unwrap();
@@ -111,6 +112,7 @@ async fn test_enroll_student_in_class() {
         campus_id: None,
         name: "Algorithms".to_string(),
         semester: None,
+        grade_id: None,
     };
     let class = service.create_class(&req, teacher_id).await.unwrap();
 
@@ -171,18 +173,21 @@ async fn test_list_classes_by_teacher() {
         campus_id: None,
         name: "Teacher1 Class A".to_string(),
         semester: None,
+        grade_id: None,
     };
     let req2 = domain_classes::models::CreateClassRequest {
         organization_id: org_id,
         campus_id: None,
         name: "Teacher1 Class B".to_string(),
         semester: None,
+        grade_id: None,
     };
     let req3 = domain_classes::models::CreateClassRequest {
         organization_id: org_id,
         campus_id: None,
         name: "Teacher2 Class A".to_string(),
         semester: None,
+        grade_id: None,
     };
 
     service.create_class(&req1, teacher1_id).await.unwrap();
@@ -195,6 +200,7 @@ async fn test_list_classes_by_teacher() {
         campus_id: None,
         teacher_id: Some(teacher1_id),
         is_active: None,
+        grade_id: None,
         page: Some(1),
         limit: Some(20),
     };
@@ -208,6 +214,7 @@ async fn test_list_classes_by_teacher() {
         campus_id: None,
         teacher_id: Some(teacher2_id),
         is_active: None,
+        grade_id: None,
         page: Some(1),
         limit: Some(20),
     };

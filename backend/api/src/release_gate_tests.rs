@@ -422,7 +422,7 @@ fn community_message_search_scope_filters_private_and_cross_tenant_content() {
         };
 
         let student_results = service
-            .search_tenant_aware(query.clone(), Some(1), false, false)
+            .search_tenant_aware(query.clone(), Some(1), false, false, None)
             .await
             .expect("student search should succeed");
         let student_titles: Vec<&str> = student_results
@@ -453,7 +453,7 @@ fn community_message_search_scope_filters_private_and_cross_tenant_content() {
             .any(|content| content.contains("alpha foreign discussion")));
 
         let teacher_results = service
-            .search_tenant_aware(query, Some(1), true, false)
+            .search_tenant_aware(query, Some(1), true, false, None)
             .await
             .expect("teacher search should succeed");
         let teacher_titles: Vec<&str> = teacher_results

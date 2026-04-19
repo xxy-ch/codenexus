@@ -83,7 +83,7 @@ async fn test_global_leaderboard_tenant_isolated() {
 
     // Query org1 leaderboard -- should only see org1 user
     let response = service
-        .get_global_leaderboard(make_query(), Some(org1_id))
+        .get_global_leaderboard(make_query(), Some(org1_id), None)
         .await
         .unwrap();
     assert_eq!(response.entries.len(), 1);
@@ -91,7 +91,7 @@ async fn test_global_leaderboard_tenant_isolated() {
 
     // Query org2 leaderboard -- should only see org2 user
     let response = service
-        .get_global_leaderboard(make_query(), Some(org2_id))
+        .get_global_leaderboard(make_query(), Some(org2_id), None)
         .await
         .unwrap();
     assert_eq!(response.entries.len(), 1);

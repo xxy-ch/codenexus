@@ -75,7 +75,7 @@ async fn test_search_returns_tenant_results_only() {
 
     // Search scoped to org1 -- should only see org1's problem
     let response = service
-        .search_tenant_aware(query.clone(), Some(org1_id), false, false)
+        .search_tenant_aware(query.clone(), Some(org1_id), false, false, None)
         .await
         .unwrap();
     assert_eq!(response.problem_count, 1);
@@ -84,7 +84,7 @@ async fn test_search_returns_tenant_results_only() {
 
     // Search scoped to org2 -- should only see org2's problem
     let response = service
-        .search_tenant_aware(query.clone(), Some(_org2_id), false, false)
+        .search_tenant_aware(query.clone(), Some(_org2_id), false, false, None)
         .await
         .unwrap();
     assert_eq!(response.problem_count, 1);
@@ -113,7 +113,7 @@ async fn test_search_empty_query_returns_empty() {
     // Empty query should return results (empty query matches everything in the LIKE)
     // This verifies the service handles empty queries without error
     let response = service
-        .search_tenant_aware(query, Some(_org_id), false, false)
+        .search_tenant_aware(query, Some(_org_id), false, false, None)
         .await
         .unwrap();
     // The search should succeed (not error), even if results are returned.
