@@ -390,7 +390,7 @@ AlgoMaster is a multi-tenant, multi-role competitive programming platform (Onlin
 - JWT in `Authorization: Bearer <token>` header or `access_token` cookie.
 - Refresh tokens in `refresh_token` cookie (HttpOnly, SameSite=Strict).
 - Token blacklist in Redis (`bl:{jti}`) on logout.
-- Claims contain: `sub` (UUID), `username`, `email`, `role`, `school_id`, `campus_id`, `exp`, `jti`.
+- Claims contain: `sub` (UUID), `username`, `email`, `role`, `school_id`, `campus_id`, `grade_id`, `exp`, `jti`.
 ## Database Query Patterns
 ### Connection Pool
 ### Migrations
@@ -581,7 +581,8 @@ AlgoMaster is a multi-tenant, multi-role competitive programming platform (Onlin
 - **Utility**: `utils/errorHandler.ts` for centralized error formatting
 ## 7. Database Architecture
 - `organizations`, `campuses` -- multi-tenant structure
-- `users` -- user accounts with role, school_id, campus_id
+- `grades` -- grade levels per campus (name, level, year, status); grade_id links users to their grade
+- `users` -- user accounts with role, school_id, campus_id, grade_id
 - `problems` -- problem definitions with difficulty, tags, visibility
 - `test_cases` -- input/output pairs per problem
 - `submissions` -- user code submissions with status, score, runtime, memory
@@ -594,7 +595,8 @@ AlgoMaster is a multi-tenant, multi-role competitive programming platform (Onlin
 - `plagiarism_reports`, `plagiarism_scan` -- code similarity detection
 - `notifications` -- in-app notification queue
 ## 8. Multi-Tenancy
-- JWT claims include `school_id` and optional `campus_id`
+- JWT claims include `school_id`, optional `campus_id`, and optional `grade_id`
+- TenantContext carries `tenant_id`, optional `campus_id`, and optional `grade_id` for query filtering
 - Tenant middleware extracts from claims (never from client headers)
 - All domain queries filter by tenant context (e.g., `WHERE organization_id = $1`)
 - WebSocket broadcasts can be scoped to a tenant

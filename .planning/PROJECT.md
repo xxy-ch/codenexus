@@ -36,6 +36,7 @@ Reliable, secure code judging with multi-tenancy — every student submission mu
 - Test coverage — 83 tests: 29 domain integration + 6 handler + 5 tenant isolation + 3 recovery + 35 frontend + 5 E2E (Phase 7)
 - Contest: leaderboard freeze (snapshot-style, lazy compute) + post-contest upsolving (auto-tagged, excluded from rankings) (Phase 7)
 - Submission recovery — judge worker XPENDING/XCLAIM self-healing on startup (Phase 7)
+- Grade-scoped data model — grades table, grade_id on users/Claims/TenantContext, grade filtering in classes/leaderboard/search, Grade CRUD + academic year transitions, frontend grade types + admin UI (Phase 14)
 
 ### Active
 
@@ -114,4 +115,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after Phase 7 completion*
+*Last updated: 2026-04-19 after Phase 14 completion*
