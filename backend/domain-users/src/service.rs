@@ -730,39 +730,4 @@ mod tests {
             "bcrypt must reject wrong password"
         );
     }
-
-    /// Integration test: full login flow with {MD5} hash transparently upgrades to bcrypt.
-    ///
-    /// This test verifies that:
-    /// 1. Login detects the {MD5} prefix in password_hash
-    /// 2. MD5 verification succeeds for the correct password
-    /// 3. The password_hash is updated to a bcrypt hash after successful login
-    ///
-    /// Requires a running PostgreSQL instance with the AlgoMaster schema.
-    // cargo test -p domain-users --lib -- --ignored  (requires PostgreSQL)
-    #[tokio::test]
-    #[ignore]
-    async fn test_md5_login_upgrade_flow() {
-        let pool = sqlx::PgPool::connect(
-            &std::env::var("DATABASE_URL").unwrap_or_else(|_| "postgres://localhost/migration_test".to_string()),
-        )
-        .await
-        .expect("Need PostgreSQL");
-
-        // Verify DB is reachable -- the actual login/upgrade flow is tested
-        // via the UserService::login() method which requires a user row with
-        // a {MD5}-prefixed password_hash.
-        //
-        // Full test scenario (manual):
-        //   1. INSERT a user with password_hash = '{MD5}482c811da5d5b4bc6d497ffa98491e38'
-        //   2. Call login(username, "password123")
-        //   3. Assert: login succeeds (returns AuthResponse)
-        //   4. Assert: password_hash now starts with '$2b$' (bcrypt format)
-        //   5. Call login(username, "password123") again
-        //   6. Assert: login succeeds via normal bcrypt path
-        let _: (i64,) = sqlx::query_as("SELECT 1")
-            .fetch_one(&pool)
-            .await
-            .expect("DB must be reachable for MD5 upgrade test");
-    }
 }

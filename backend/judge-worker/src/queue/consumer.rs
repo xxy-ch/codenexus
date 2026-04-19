@@ -707,54 +707,6 @@ mod tests {
     /// Bounded-race-window pure unit test.
     ///
     /// Validates the priority consumption invariant documented in Step 4 of
-    /// `consume_next()`: between the final contest drain returning empty and the
-    /// function returning a normal message, a contest message MAY arrive. The
-    /// guarantee is that the contest message is picked up within at most ONE
-    /// additional consumption cycle.
-    ///
-    /// This test verifies the logical invariant without requiring Redis or Docker.
-    #[test]
-    fn test_priority_race_window_is_bounded_to_one_cycle() {
-        // Simulate the four-step priority consumption state machine:
-        //
-        // Step 1: Check parked message -> None
-        // Step 2: Drain contest -> empty
-        // Step 3: Read normal -> got 1 message
-        // Step 4: Re-check contest -> empty (but race: contest arrives RIGHT AFTER)
-        //
-        // At this point, the normal message is returned. The contest message
-        // that arrived in the race window will be processed on the next call.
-
-        let contest_empty_after_recheck = true;
-        let normal_message_available = true;
-
-        // The function returns the normal message
-        let returns_normal = contest_empty_after_recheck && normal_message_available;
-        assert!(returns_normal, "when contest is empty after recheck, normal is returned");
-
-        // Simulate: contest message arrives AFTER the recheck but BEFORE return
-        let contest_arrived_in_race_window = true;
-
-        // On the NEXT call to consume_next():
-        // Step 1: No parked message
-        // Step 2: Drain contest -> got the message from the race window
-        let contest_picked_up_next_cycle = contest_arrived_in_race_window;
-        assert!(contest_picked_up_next_cycle,
-            "contest message from race window MUST be picked up on next cycle");
-
-        // The maximum delay for any contest message is exactly ONE cycle:
-        // - Cycle N: recheck empty -> returns normal -> contest arrives (race)
-        // - Cycle N+1: drain contest -> returns contest message immediately
-        let max_delay_cycles: u32 = 1;
-        assert_eq!(max_delay_cycles, 1,
-            "priority race window must be bounded to exactly 1 cycle");
-
-        // No data loss: every contest message is eventually consumed
-        let contest_eventually_consumed = contest_picked_up_next_cycle;
-        assert!(contest_eventually_consumed,
-            "contest messages from race window are never lost, just delayed by one cycle");
-    }
-
     /// Verify that the four-step priority algorithm handles the "contest arrives
     /// during normal read" case correctly by parking the normal message.
     #[test]

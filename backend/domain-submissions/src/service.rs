@@ -324,11 +324,22 @@ impl SubmissionService {
             limit, offset
         ));
 
-        // Execute count query
-        let total: i64 = sqlx::query_scalar(&count_query)
-            .bind(user_id)
-            .fetch_one(&self.pool)
-            .await?;
+        // Execute count query (must bind the same filter parameters as the main query)
+        let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query);
+        count_builder = count_builder.bind(user_id);
+        if let Some(problem_id) = problem_id {
+            count_builder = count_builder.bind(problem_id);
+        }
+        if let Some(status) = status_filter {
+            count_builder = count_builder.bind(status);
+        }
+        if let Some(verdict) = verdict_filter {
+            count_builder = count_builder.bind(verdict);
+        }
+        if let Some(language) = &language {
+            count_builder = count_builder.bind(language);
+        }
+        let total: i64 = count_builder.fetch_one(&self.pool).await?;
 
         // Execute main query with parameters
         let mut query_builder = sqlx::query_as::<_, Submission>(&query);
