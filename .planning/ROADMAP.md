@@ -359,7 +359,7 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 - FGW-01: `feature_registry` table — canonical feature catalog (id, slug, name, description, default_enabled, category)
 - FGW-02: `feature_flags` table — runtime overrides at global / tenant / class / assignment scope with precedence resolution
 - FGW-03: Feature Gateway service — query API that resolves flag state for a given context (feature_slug + org_id + optional class_id/assignment_id), respecting the 3-ring precedence model
-- FGW-04: Admin API endpoints — CRUD for feature flags at each scope level (global requires root, tenant requires orgadmin, class requires teacher+)
+- FGW-04: Admin API endpoints — CRUD for feature flags at each scope level (global requires root, tenant requires campusAdmin, class requires teacher+)
 - FGW-05: Teacher dashboard page — UI to browse features and toggle them per class/assignment with clear inherited-from indicators
 - FGW-06: Application-side guard macro/trait — lightweight `FeatureGate` checker injected into route handlers; returns 404 when feature is disabled (not 403, to avoid revealing existence)
 - FGW-07: Emergency-off path — single env var `FEATURE_GATEWAY_ENABLED=false` bypasses all flag checks and treats everything as disabled; no DB queries

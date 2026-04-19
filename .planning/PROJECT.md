@@ -13,7 +13,7 @@ Reliable, secure code judging with multi-tenancy — every student submission mu
 ### Validated
 
 - Auth system with JWT (access + refresh tokens), Redis blacklist, HttpOnly cookies — existing
-- 6-level role hierarchy (Student → TA → Teacher → CampusAdmin → OrgAdmin → Root) — existing
+- 6-level role hierarchy (Student → TA → Teacher → GradeAdmin → CampusAdmin → Root) — existing
 - 21 granular permissions mapped to roles — existing
 - Multi-tenant isolation via JWT claims (school_id) enforced at middleware and query level — existing
 - Problem CRUD with visibility control (public/private), tag-based categorization — existing
