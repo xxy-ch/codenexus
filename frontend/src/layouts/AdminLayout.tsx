@@ -8,6 +8,7 @@ export function AdminLayout() {
   const navigation = [
     { name: '仪表板', href: '/admin', icon: 'dashboard' },
     { name: '用户管理', href: '/admin/users', icon: 'group' },
+    { name: '年级管理', href: '/admin/grades', icon: 'school' },
     { name: '题目管理', href: '/admin/problems', icon: 'library_books' },
     { name: '判题设置', href: '/admin/judge-settings', icon: 'tune' },
     { name: '判题队列', href: '/admin/judge-queue', icon: 'dns' },
