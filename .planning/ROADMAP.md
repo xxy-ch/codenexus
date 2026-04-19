@@ -2,7 +2,7 @@
 
 **Created:** 2026-04-13
 **Revised:** 2026-04-17 (Phase 10 planned)
-**Phases:** 12
+**Phases:** 13
 **v1 Requirements:** 50 (all mapped)
 
 ---
@@ -314,9 +314,15 @@ Phase 7 (Test Coverage + Contest Enhancement)
   +---> Phase 9 (Judge Concurrency + Fault Tolerance)  [parallel with 8, 10]
   |       |
   +---> Phase 10 (Data Migration)                       [parallel with 8, 9]
+  |       |
+  +---> Phase 11 (Feature Gateway)                      [after 10]
+  |       |
+  |       +---> Phase 12 (AI Analysis)                   [after 11]
+  |
+  +---> Phase 13 (Tenant Hierarchy Restructure)         [after 10, parallel with 11-12]
 ```
 
-Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each other and can execute in parallel after Phase 7 completes.
+Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each other and can execute in parallel after Phase 7 completes. Phase 13 depends on Phase 10 but can run in parallel with Phases 11-12.
 
 ---
 
@@ -336,7 +342,8 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 | 10 | MIGR-01..06 | 6 |
 | 11 | FGW-01..07 | 7 |
 | 12 | AIA-01..08 | 8 |
-| **Total** | | **65** |
+| 13 | THR-01..08 | 8 |
+| **Total** | | **73** |
 
 > Note: ARCH-04 and ARCH-05 span Phases 2-4. CICD-01..03 are split across Phases 2 and 6. CICD-05 deferred per D-03.
 
@@ -395,6 +402,37 @@ Plans:
 
 **Depends on:** Phase 11 (Feature Gateway)
 **Plans:** 0 plans (run /gsd-plan-phase 12 to break down)
+
+Plans:
+- [ ] TBD
+
+---
+
+### Phase 13: Tenant Hierarchy Restructure
+
+**Goal:** Restructure the role hierarchy from the flat 4-level model (root/admin/teacher/student) to a 6-level organizational hierarchy: root > campusadmin > gradeadmin > teacher > teachingassistant > student. Each level has scoped administrative authority matching real school organizational structure — campus admins manage an entire campus, grade admins manage specific grades, teachers manage their classes, and teaching assistants have limited grading capabilities.
+
+**Requirements:**
+- THR-01: Expanded role enum — new `Role` variants in `shared/src/models/role.rs`: `Root`, `CampusAdmin`, `GradeAdmin`, `Teacher`, `TeachingAssistant`, `Student` with strict hierarchy ordering and `min_role` / `can_act_as` predicates
+- THR-02: Campus-scoped administration — campusadmin manages all users, teachers, classes, and settings within their assigned campus; cannot cross campus boundaries
+- THR-03: Grade-scoped administration — gradeadmin manages classes and students within assigned grade(s); can create/edit assignments and view grade-level analytics but not manage teachers
+- THR-04: Teaching assistant role — teachingassistant can review submissions, grade assignments, and view class analytics within assigned classes; cannot create/edit assignments, manage class membership, or access admin panels
+- THR-05: Hierarchical RBAC middleware — permission checks respect the new hierarchy; `require_min_role(Role::GradeAdmin)` grants access to GradeAdmin, CampusAdmin, and Root; existing permission-based checks updated to map to new roles
+- THR-06: Role migration path — database migration converting existing `admin` → `campusadmin` (with campus assignment), `teacher` → `teacher`, `student` → `student`; migration-tool updated for new hierarchy; backward-compatible JWT claims during transition
+- THR-07: Frontend role routing — all role-based UI guards (ProtectedRoute, AdminRoute, sidebar visibility, feature visibility) updated to reflect new hierarchy; new admin panels for campusadmin and gradeadmin roles
+- THR-08: Role assignment admin UI — campusadmin can assign gradeadmin/teacher/teachingassistant roles within their campus; gradeadmin can assign teachingassistant roles within their grade's classes
+
+**Success Criteria:**
+1. All 6 roles exist in the Role enum with correct hierarchy ordering — `Role::Root > Role::CampusAdmin > Role::GradeAdmin > Role::Teacher > Role::TeachingAssistant > Role::Student`
+2. Campusadmin can only see/manage users and resources within their campus; cross-campus data is invisible
+3. Gradeadmin can create assignments and view analytics for their grade but cannot modify teacher accounts or campus settings
+4. Teachingassistant can grade and review submissions but assignment creation buttons are hidden
+5. Existing admin users are migrated to campusadmin without data loss; login still works with migrated roles
+6. All role-based frontend routing renders correct navigation and access levels for each role
+7. JWT tokens contain the new role string and existing token validation remains backward-compatible during migration window
+
+**Depends on:** Phase 10 (Data Migration — migration-tool must support new roles)
+**Plans:** 1/5 plans executed
 
 Plans:
 - [ ] TBD

@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 11
 status: planning
-last_updated: "2026-04-19T14:00:00.000Z"
+last_updated: "2026-04-19T10:38:52.108Z"
 last_activity: 2026-04-19
 progress:
-  total_phases: 12
-  completed_phases: 8
-  total_plans: 42
-  completed_plans: 42
-  percent: 100
+  total_phases: 14
+  completed_phases: 7
+  total_plans: 47
+  completed_plans: 39
+  percent: 83
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -36,6 +36,7 @@ progress:
 | 10 | Data Migration + Final Delivery | Executed (UAT Blocked) | 5 plans (4 waves) | 100% execution, UAT blocked |
 | 11 | Feature Gateway Infrastructure | Planned | 0 plans | 0% |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
+| 13 | Tenant Hierarchy Restructure | Planned | 0 plans | 0% |
 
 ## Project Reference
 
@@ -68,6 +69,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *D-12 decision recorded: accept bounded priority guarantee for v1.0*
 *Phase 11 added to roadmap: 2026-04-19 (Feature Gateway Infrastructure)*
 *Phase 12 added to roadmap: 2026-04-19 (AI Analysis Bounded Context)*
+*Phase 13 added to roadmap: 2026-04-19 (Tenant Hierarchy Restructure — 6-level role hierarchy)*
 
 ## Decisions
 
@@ -117,6 +119,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 10 P03]: Contest rules default to 'acm'; penalty_time defaults to 0 for contest_submissions
 - [Phase 10]: decode_blob_result refactored from &self to associated function for testability
 - D-12: Accept bounded 1-cycle priority reordering window for v1.0; strict priority deferred to v2
+- [Phase 13]: Contest/leaderboard admin checks raised to CampusAdmin; class management stays at GradeAdmin level
 
 ## Performance Metrics
 
@@ -139,3 +142,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 10 P05 | 3min | 1 tasks | 3 files |
 | Phase 10 P03 | 4min | 2 tasks | 4 files |
 | Phase 10 P04 | 3min | 2 tasks | 2 files |
+| Phase 13 P02 | 3min | 1 tasks | 9 files |
