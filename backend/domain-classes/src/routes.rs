@@ -21,6 +21,14 @@ fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
     Ok(role)
 }
 
+fn require_campus_admin(role: &str) -> Result<(), StatusCode> {
+    let role = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    if !role.is_higher_or_equal(Role::CampusAdmin) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+    Ok(())
+}
+
 fn is_admin(role: &str) -> bool {
     role.parse::<Role>()
         .map(|r| r.is_higher_or_equal(Role::GradeAdmin))
@@ -68,6 +76,14 @@ async fn verify_class_access(
 
 pub fn classes_router() -> Router<AppState> {
     Router::new()
+        // Grade routes (CampusAdmin+)
+        .route("/grades", post(create_grade))
+        .route("/grades", get(list_grades))
+        .route("/grades/:grade_id", put(update_grade))
+        .route("/grades/:grade_id/deactivate", post(deactivate_grade))
+        .route("/grades/batch/graduate", post(batch_graduate))
+        .route("/grades/batch/promote", post(batch_promote))
+        .route("/grades/batch/create-year", post(batch_create_year))
         // Class routes
         .route("/", post(create_class))
         .route("/", get(list_classes))
@@ -94,6 +110,237 @@ pub fn classes_router() -> Router<AppState> {
             "/assignments/:assignment_id/submissions",
             get(get_assignment_submissions),
         )
+}
+
+/// Verify grade belongs to user's campus scope.
+async fn verify_grade_tenant(
+    service: &ClassService,
+    grade_id: i64,
+    campus_id: i64,
+) -> Result<Grade, StatusCode> {
+    let grade = service
+        .get_grade(grade_id)
+        .await
+        .map_err(|_| StatusCode::NOT_FOUND)?;
+    if grade.campus_id != campus_id {
+        return Err(StatusCode::NOT_FOUND);
+    }
+    Ok(grade)
+}
+
+// ========== Grade Routes ==========
+
+async fn create_grade(
+    State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
+    Json(request): Json<CreateGradeRequest>,
+) -> Result<Json<Grade>, StatusCode> {
+    require_campus_admin(&claims.role)?;
+    let service = ClassService::new(state.db_pool);
+    let grade = service
+        .create_grade(&request)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to create grade: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(Json(grade))
+}
+
+async fn list_grades(
+    State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    Query(mut query): Query<ListGradesQuery>,
+) -> Result<Json<GradesListResponse>, StatusCode> {
+    // CampusAdmin+: campus_id from query; others: use claims campus
+    if query.campus_id.is_none() {
+        query.campus_id = claims.campus_id;
+    }
+    // Default to active only
+    if query.is_active.is_none() {
+        query.is_active = Some(true);
+    }
+
+    let service = ClassService::new(state.db_pool);
+    let mut response = service
+        .list_grades(&query)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    // GradeAdmin: filter to only their own grade
+    if claims.role == "gradeadmin" {
+        if let Some(gid) = tenant_ctx.grade_id {
+            response.grades.retain(|g| g.id == gid);
+        }
+    }
+
+    Ok(Json(response))
+}
+
+async fn update_grade(
+    State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
+    Path(grade_id): Path<i64>,
+    Json(request): Json<UpdateGradeRequest>,
+) -> Result<Json<Grade>, StatusCode> {
+    require_campus_admin(&claims.role)?;
+    let service = ClassService::new(state.db_pool);
+
+    // Verify grade belongs to user's campus
+    let campus_id = claims
+        .campus_id
+        .ok_or(StatusCode::FORBIDDEN)?;
+    verify_grade_tenant(&service, grade_id, campus_id).await?;
+
+    let grade = service
+        .update_grade(grade_id, &request)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to update grade: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(Json(grade))
+}
+
+async fn deactivate_grade(
+    State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
+    Path(grade_id): Path<i64>,
+    Json(request): Json<GraduateGradeRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    require_campus_admin(&claims.role)?;
+    let service = ClassService::new(state.db_pool);
+
+    let campus_id = claims
+        .campus_id
+        .ok_or(StatusCode::FORBIDDEN)?;
+    verify_grade_tenant(&service, grade_id, campus_id).await?;
+
+    let (grade, affected) = service
+        .deactivate_grade(grade_id, request.suspend_students)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to deactivate grade: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    Ok(Json(serde_json::json!({
+        "grade": grade,
+        "affected_users": affected,
+    })))
+}
+
+async fn batch_graduate(
+    State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
+    Json(request): Json<GraduateGradeRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    require_campus_admin(&claims.role)?;
+    let campus_id = claims
+        .campus_id
+        .ok_or(StatusCode::FORBIDDEN)?;
+
+    // Graduate the highest year_level grade in the campus
+    let service = ClassService::new(state.db_pool);
+    let query = ListGradesQuery {
+        campus_id: Some(campus_id),
+        is_active: Some(true),
+        academic_year: None,
+    };
+    let grades = service.list_grades(&query).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let highest = grades.grades.iter().max_by_key(|g| g.year_level);
+
+    match highest {
+        Some(grade) => {
+            let (grade, affected) = service
+                .deactivate_grade(grade.id, request.suspend_students)
+                .await
+                .map_err(|e| {
+                    tracing::error!("Failed to graduate grade: {}", e);
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?;
+            Ok(Json(serde_json::json!({
+                "graduated_grade": grade,
+                "affected_users": affected,
+            })))
+        }
+        None => Ok(Json(serde_json::json!({
+            "graduated_grade": null,
+            "affected_users": 0,
+            "message": "No active grades found for graduation",
+        }))),
+    }
+}
+
+async fn batch_promote(
+    State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
+    Json(request): Json<PromoteGradeRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    require_campus_admin(&claims.role)?;
+    let campus_id = claims
+        .campus_id
+        .ok_or(StatusCode::FORBIDDEN)?;
+
+    // Determine current academic year from active grades
+    let service = ClassService::new(state.db_pool);
+    let query = ListGradesQuery {
+        campus_id: Some(campus_id),
+        is_active: Some(true),
+        academic_year: None,
+    };
+    let current_grades = service.list_grades(&query).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let current_year = current_grades
+        .grades
+        .first()
+        .map(|g| g.academic_year.clone())
+        .unwrap_or_else(|| "2025-2026".to_string());
+
+    let new_grades = service
+        .promote_grades(campus_id, &current_year, &request.new_academic_year)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to promote grades: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    Ok(Json(serde_json::json!({
+        "promoted_count": new_grades.len(),
+        "new_grades": new_grades,
+    })))
+}
+
+async fn batch_create_year(
+    State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
+    Json(request): Json<CreateAcademicYearRequest>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    require_campus_admin(&claims.role)?;
+    let campus_id = claims
+        .campus_id
+        .ok_or(StatusCode::FORBIDDEN)?;
+
+    let service = ClassService::new(state.db_pool);
+    let grades = service
+        .create_academic_year_grades(
+            campus_id,
+            &request.academic_year,
+            &request.year_levels,
+            &request.name_templates,
+        )
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to create academic year grades: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    Ok(Json(serde_json::json!({
+        "created_count": grades.len(),
+        "grades": grades,
+    })))
 }
 
 // ========== Class Routes ==========

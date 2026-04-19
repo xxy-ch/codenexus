@@ -16,6 +16,344 @@ impl ClassService {
         Self { pool }
     }
 
+    // ========== Grade Management ==========
+
+    /// Create a new grade for a campus
+    pub async fn create_grade(&self, request: &CreateGradeRequest) -> Result<Grade> {
+        let grade = sqlx::query_as::<_, Grade>(
+            r#"
+            INSERT INTO grades (campus_id, name, year_level, academic_year)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id, campus_id, name, year_level, academic_year, is_active, created_at, updated_at
+            "#,
+        )
+        .bind(request.campus_id)
+        .bind(&request.name)
+        .bind(request.year_level)
+        .bind(&request.academic_year)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(grade)
+    }
+
+    /// Get grade by ID
+    pub async fn get_grade(&self, grade_id: i64) -> Result<Grade> {
+        let grade = sqlx::query_as::<_, Grade>(
+            r#"
+            SELECT id, campus_id, name, year_level, academic_year, is_active, created_at, updated_at
+            FROM grades
+            WHERE id = $1
+            "#,
+        )
+        .bind(grade_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(grade)
+    }
+
+    /// List grades with filters
+    pub async fn list_grades(&self, query: &ListGradesQuery) -> Result<GradesListResponse> {
+        let mut conditions = Vec::new();
+        let mut param_count = 0;
+
+        if query.campus_id.is_some() {
+            param_count += 1;
+            conditions.push(format!("campus_id = ${}", param_count));
+        }
+        if query.is_active.is_some() {
+            param_count += 1;
+            conditions.push(format!("is_active = ${}", param_count));
+        }
+        if query.academic_year.is_some() {
+            param_count += 1;
+            conditions.push(format!("academic_year = ${}", param_count));
+        }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
+
+        let query_str = format!(
+            r#"
+            SELECT id, campus_id, name, year_level, academic_year, is_active, created_at, updated_at
+            FROM grades
+            {}
+            ORDER BY year_level ASC, name ASC
+            "#,
+            where_clause,
+        );
+
+        let count_query_str = format!("SELECT COUNT(*) FROM grades {}", where_clause);
+
+        let mut query_builder = sqlx::query_as::<_, Grade>(&query_str);
+        let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query_str);
+
+        if let Some(campus_id) = query.campus_id {
+            query_builder = query_builder.bind(campus_id);
+            count_builder = count_builder.bind(campus_id);
+        }
+        if let Some(is_active) = query.is_active {
+            query_builder = query_builder.bind(is_active);
+            count_builder = count_builder.bind(is_active);
+        }
+        if let Some(ref academic_year) = query.academic_year {
+            query_builder = query_builder.bind(academic_year);
+            count_builder = count_builder.bind(academic_year);
+        }
+
+        let grades = query_builder.fetch_all(&self.pool).await?;
+        let total = count_builder.fetch_one(&self.pool).await?;
+
+        Ok(GradesListResponse { grades, total })
+    }
+
+    /// Update grade
+    pub async fn update_grade(&self, grade_id: i64, request: &UpdateGradeRequest) -> Result<Grade> {
+        let grade = sqlx::query_as::<_, Grade>(
+            r#"
+            UPDATE grades
+            SET name = COALESCE($1, name),
+                year_level = COALESCE($2, year_level),
+                academic_year = COALESCE($3, academic_year),
+                is_active = COALESCE($4, is_active),
+                updated_at = NOW()
+            WHERE id = $5
+            RETURNING id, campus_id, name, year_level, academic_year, is_active, created_at, updated_at
+            "#,
+        )
+        .bind(&request.name)
+        .bind(request.year_level)
+        .bind(&request.academic_year)
+        .bind(request.is_active)
+        .bind(grade_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(grade)
+    }
+
+    /// Deactivate a grade (graduate). Sets is_active = false and optionally suspends students.
+    /// Returns the count of affected users.
+    pub async fn deactivate_grade(
+        &self,
+        grade_id: i64,
+        suspend_students: bool,
+    ) -> Result<(Grade, i64)> {
+        let grade = self.get_grade(grade_id).await?;
+
+        if !grade.is_active {
+            return Err(anyhow::anyhow!("Grade is already inactive"));
+        }
+
+        // Deactivate the grade
+        let grade = sqlx::query_as::<_, Grade>(
+            r#"
+            UPDATE grades SET is_active = false, updated_at = NOW()
+            WHERE id = $1
+            RETURNING id, campus_id, name, year_level, academic_year, is_active, created_at, updated_at
+            "#,
+        )
+        .bind(grade_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        // Clear grade_id for users in this grade
+        let affected: i64 = sqlx::query_scalar(
+            r#"
+            UPDATE users SET grade_id = NULL
+            WHERE grade_id = $1
+            "#,
+        )
+        .bind(grade_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        // Optionally deactivate classes in this grade
+        sqlx::query(
+            r#"
+            UPDATE classes SET is_active = false, updated_at = NOW()
+            WHERE grade_id = $1
+            "#,
+        )
+        .bind(grade_id)
+        .execute(&self.pool)
+        .await?;
+
+        // Optionally suspend student accounts
+        if suspend_students && affected > 0 {
+            sqlx::query(
+                r#"
+                UPDATE users SET is_active = false
+                WHERE grade_id IS NULL
+                  AND id IN (
+                    SELECT ur.user_id FROM user_roles ur
+                    WHERE ur.role = 'student' AND ur.organization_id IN (
+                        SELECT c.organization_id FROM campuses c WHERE c.id = $1
+                    )
+                  )
+                  AND id NOT IN (
+                    SELECT DISTINCT user_id FROM user_roles
+                    WHERE role NOT IN ('student')
+                  )
+                "#,
+            )
+            .bind(grade.campus_id)
+            .execute(&self.pool)
+            .await?;
+        }
+
+        Ok((grade, affected))
+    }
+
+    /// Promote students: move all students in active grades to the next year_level
+    /// by creating new grade rows with incremented year_level and new academic year.
+    /// Returns count of new grades created.
+    pub async fn promote_grades(
+        &self,
+        campus_id: i64,
+        old_academic_year: &str,
+        new_academic_year: &str,
+    ) -> Result<Vec<Grade>> {
+        // Get current active grades for this campus
+        let current_grades = sqlx::query_as::<_, Grade>(
+            r#"
+            SELECT id, campus_id, name, year_level, academic_year, is_active, created_at, updated_at
+            FROM grades
+            WHERE campus_id = $1 AND academic_year = $2 AND is_active = true
+            ORDER BY year_level ASC
+            "#,
+        )
+        .bind(campus_id)
+        .bind(old_academic_year)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut new_grades = Vec::new();
+        for old_grade in &current_grades {
+            // Determine new name and year_level
+            let new_year_level = old_grade.year_level + 1;
+            let new_name = Self::promote_grade_name(&old_grade.name, new_year_level);
+
+            let new_grade = sqlx::query_as::<_, Grade>(
+                r#"
+                INSERT INTO grades (campus_id, name, year_level, academic_year)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (campus_id, name, academic_year) DO NOTHING
+                RETURNING id, campus_id, name, year_level, academic_year, is_active, created_at, updated_at
+                "#,
+            )
+            .bind(campus_id)
+            .bind(&new_name)
+            .bind(new_year_level)
+            .bind(new_academic_year)
+            .fetch_optional(&self.pool)
+            .await?;
+
+            if let Some(g) = new_grade {
+                // Move students from old grade to new grade
+                sqlx::query(
+                    r#"
+                    UPDATE users SET grade_id = $1
+                    WHERE grade_id = $2
+                    "#,
+                )
+                .bind(g.id)
+                .bind(old_grade.id)
+                .execute(&self.pool)
+                .await?;
+
+                // Deactivate old grade
+                sqlx::query(
+                    r#"
+                    UPDATE grades SET is_active = false, updated_at = NOW()
+                    WHERE id = $1
+                    "#,
+                )
+                .bind(old_grade.id)
+                .execute(&self.pool)
+                .await?;
+
+                new_grades.push(g);
+            }
+        }
+
+        Ok(new_grades)
+    }
+
+    /// Create new grades for an incoming academic year at a campus
+    pub async fn create_academic_year_grades(
+        &self,
+        campus_id: i64,
+        academic_year: &str,
+        year_levels: &[i32],
+        name_templates: &[String],
+    ) -> Result<Vec<Grade>> {
+        // Default to Chinese high school patterns if no templates provided
+        let defaults = vec![
+            "高一".to_string(),
+            "高二".to_string(),
+            "高三".to_string(),
+        ];
+        let templates = if name_templates.is_empty() {
+            &defaults
+        } else {
+            name_templates
+        };
+
+        let mut grades = Vec::new();
+        for (i, &year_level) in year_levels.iter().enumerate() {
+            let name = templates
+                .get(i)
+                .cloned()
+                .unwrap_or_else(|| format!("Grade {}", year_level));
+
+            let grade = sqlx::query_as::<_, Grade>(
+                r#"
+                INSERT INTO grades (campus_id, name, year_level, academic_year)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (campus_id, name, academic_year) DO NOTHING
+                RETURNING id, campus_id, name, year_level, academic_year, is_active, created_at, updated_at
+                "#,
+            )
+            .bind(campus_id)
+            .bind(&name)
+            .bind(year_level)
+            .bind(academic_year)
+            .fetch_optional(&self.pool)
+            .await?;
+
+            if let Some(g) = grade {
+                grades.push(g);
+            }
+        }
+
+        Ok(grades)
+    }
+
+    /// Infer promoted grade name from current name
+    fn promote_grade_name(current_name: &str, new_year_level: i32) -> String {
+        match current_name {
+            "高一" => "高二".to_string(),
+            "高二" => "高三".to_string(),
+            _ => {
+                // For "Grade N" or "grade N" patterns, replace the trailing number
+                let lower = current_name.to_lowercase();
+                if lower.starts_with("grade ") {
+                    format!("Grade {}", new_year_level)
+                } else if lower.starts_with("year ") {
+                    format!("Year {}", new_year_level)
+                } else {
+                    // Fallback: keep the name as-is (admin can update)
+                    current_name.to_string()
+                }
+            }
+        }
+    }
+
     // ========== Class Management ==========
 
     /// Create a new class

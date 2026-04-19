@@ -2,6 +2,77 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+// ========== Grade Models ==========
+
+/// Grade model — campus-scoped grouping of classes by academic year level
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Grade {
+    pub id: i64,
+    pub campus_id: i64,
+    pub name: String,
+    pub year_level: i32,
+    pub academic_year: String,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateGradeRequest {
+    pub campus_id: i64,
+    pub name: String,
+    pub year_level: i32,
+    pub academic_year: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateGradeRequest {
+    pub name: Option<String>,
+    pub year_level: Option<i32>,
+    pub academic_year: Option<String>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ListGradesQuery {
+    pub campus_id: Option<i64>,
+    pub is_active: Option<bool>,
+    pub academic_year: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GradesListResponse {
+    pub grades: Vec<Grade>,
+    pub total: i64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GraduateGradeRequest {
+    /// Whether to suspend graduated student accounts
+    #[serde(default)]
+    pub suspend_students: bool,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct PromoteGradeRequest {
+    /// Academic year for the promoted grades
+    pub new_academic_year: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateAcademicYearRequest {
+    /// Academic year label (e.g., '2026-2027')
+    pub academic_year: String,
+    /// Year levels to create (e.g., [1, 2, 3])
+    pub year_levels: Vec<i32>,
+    /// Name templates indexed by year_level position
+    /// If empty, defaults to Chinese high school pattern: [高一, 高二, 高三]
+    #[serde(default)]
+    pub name_templates: Vec<String>,
+}
+
+// ========== Class Models ==========
+
 /// Class (course) model
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct Class {
