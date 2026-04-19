@@ -22,7 +22,7 @@ use super::service::JudgeMonitorService;
 /// Verify that the requesting user has admin or root role.
 /// All /admin/judge/* endpoints require elevated privileges.
 fn ensure_admin(role: &str) -> Result<(), AppError> {
-    if matches!(role, "root" | "organizationadmin" | "campusadmin") {
+    if matches!(role, "root" | "campusadmin" | "gradeadmin") {
         Ok(())
     } else {
         Err(AppError::Forbidden("Admin access required".into()))
@@ -246,10 +246,10 @@ mod tests {
         }
     }
 
-    /// Verify that ensure_admin accepts organizationadmin role.
+    /// Verify that ensure_admin accepts gradeadmin role.
     #[test]
     fn ensure_admin_accepts_admin() {
-        assert!(ensure_admin("organizationadmin").is_ok());
+        assert!(ensure_admin("gradeadmin").is_ok());
     }
 
     /// Verify that ensure_admin accepts root role.

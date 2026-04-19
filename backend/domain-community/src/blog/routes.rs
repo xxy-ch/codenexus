@@ -258,7 +258,7 @@ async fn delete_article_handler(
 
     let is_admin = matches!(
         claims.role.parse::<Role>(),
-        Ok(Role::Root | Role::OrganizationAdmin | Role::CampusAdmin)
+        Ok(Role::Root | Role::CampusAdmin | Role::GradeAdmin)
     );
 
     let service = BlogService::new(state.db_pool);

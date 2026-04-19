@@ -121,7 +121,7 @@ async fn delete_discussion_handler(
 ) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
     let is_admin = matches!(
         claims.role.parse::<Role>(),
-        Ok(Role::Root | Role::OrganizationAdmin | Role::CampusAdmin)
+        Ok(Role::Root | Role::CampusAdmin | Role::GradeAdmin)
     );
 
     let service = DiscussionService::new(state.db_pool);

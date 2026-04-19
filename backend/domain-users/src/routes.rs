@@ -103,7 +103,7 @@ async fn toggle_user_status(
 }
 
 fn ensure_admin(role: &str) -> Result<(), AppError> {
-    if matches!(role, "root" | "organizationadmin" | "campusadmin") {
+    if matches!(role, "root" | "campusadmin" | "gradeadmin") {
         Ok(())
     } else {
         Err(AppError::Auth("Admin access required".to_string()))

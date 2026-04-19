@@ -59,7 +59,7 @@ pub fn can_mutate_problem(role: Role, claims: &Claims, problem: &ProblemAccessRe
     }
 
     match role {
-        Role::OrganizationAdmin | Role::CampusAdmin => true,
+        Role::CampusAdmin | Role::GradeAdmin => true,
         Role::Teacher => problem.author_id == Some(claims.sub),
         _ => false,
     }
@@ -195,8 +195,8 @@ mod tests {
             &private_problem
         ));
         assert!(can_read_problem(
-            Role::OrganizationAdmin,
-            &claims("organizationadmin", 9),
+            Role::GradeAdmin,
+            &claims("gradeadmin", 9),
             &private_problem
         ));
     }
@@ -230,7 +230,7 @@ mod tests {
             sub: Uuid::from_u128(99),
             ..claims("teacher", 7)
         };
-        let cross_tenant_admin = claims("organizationadmin", 9);
+        let cross_tenant_grade_admin = claims("gradeadmin", 9);
         let owned_problem = problem(7, 1, "private");
 
         assert!(can_mutate_problem(
@@ -249,8 +249,8 @@ mod tests {
             &owned_problem
         ));
         assert!(!can_mutate_problem(
-            Role::OrganizationAdmin,
-            &cross_tenant_admin,
+            Role::GradeAdmin,
+            &cross_tenant_grade_admin,
             &owned_problem
         ));
         assert!(can_mutate_problem(

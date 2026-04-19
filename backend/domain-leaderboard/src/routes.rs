@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 fn is_admin(role: &str) -> bool {
     role.parse::<Role>()
-        .map(|r| r.is_higher_or_equal(Role::OrganizationAdmin))
+        .map(|r| r.is_higher_or_equal(Role::CampusAdmin))
         .unwrap_or(false)
 }
 

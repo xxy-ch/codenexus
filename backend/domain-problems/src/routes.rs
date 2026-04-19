@@ -25,7 +25,7 @@ fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
 fn require_admin(role: &str) -> Result<Role, StatusCode> {
     let parsed = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
     match parsed {
-        Role::Root | Role::OrganizationAdmin | Role::CampusAdmin => Ok(parsed),
+        Role::Root | Role::CampusAdmin | Role::GradeAdmin => Ok(parsed),
         _ => Err(StatusCode::FORBIDDEN),
     }
 }
