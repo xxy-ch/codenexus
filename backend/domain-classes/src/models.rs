@@ -8,6 +8,7 @@ pub struct Class {
     pub id: i64,
     pub organization_id: i64,
     pub campus_id: Option<i64>,
+    pub grade_id: Option<i64>,
     pub name: String,
     pub description: Option<String>,
     pub teacher_id: Uuid,
@@ -25,6 +26,7 @@ pub struct CreateClassRequest {
     pub campus_id: Option<i64>,
     pub name: String,
     pub semester: Option<String>,
+    pub grade_id: Option<i64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -32,6 +34,7 @@ pub struct UpdateClassRequest {
     pub name: Option<String>,
     pub campus_id: Option<i64>,
     pub semester: Option<String>,
+    pub grade_id: Option<i64>,
 }
 
 /// Student enrollment in class
@@ -121,6 +124,7 @@ pub struct ListClassesQuery {
     pub campus_id: Option<i64>,
     pub teacher_id: Option<Uuid>,
     pub is_active: Option<bool>,
+    pub grade_id: Option<i64>,
     pub page: Option<i64>,
     pub limit: Option<i64>,
 }

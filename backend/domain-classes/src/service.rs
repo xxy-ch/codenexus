@@ -32,12 +32,13 @@ impl ClassService {
 
         let class = sqlx::query_as::<_, Class>(
             r#"
-            INSERT INTO classes (organization_id, campus_id, name, teacher_id, semester, code, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+            INSERT INTO classes (organization_id, campus_id, grade_id, name, teacher_id, semester, code, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
             RETURNING
                 id,
                 organization_id,
                 campus_id,
+                grade_id,
                 name,
                 NULL::TEXT AS description,
                 teacher_id,
@@ -51,6 +52,7 @@ impl ClassService {
         )
         .bind(request.organization_id)
         .bind(request.campus_id)
+        .bind(request.grade_id)
         .bind(&request.name)
         .bind(teacher_id)
         .bind(&request.semester)
@@ -70,6 +72,7 @@ impl ClassService {
                 id,
                 organization_id,
                 campus_id,
+                grade_id,
                 name,
                 NULL::TEXT AS description,
                 teacher_id,
@@ -98,6 +101,7 @@ impl ClassService {
                 id,
                 organization_id,
                 campus_id,
+                grade_id,
                 name,
                 NULL::TEXT AS description,
                 teacher_id,
@@ -143,6 +147,10 @@ impl ClassService {
             param_count += 1;
             conditions.push(format!("${}::BOOLEAN = true", param_count));
         }
+        if query.grade_id.is_some() {
+            param_count += 1;
+            conditions.push(format!("grade_id = ${}", param_count));
+        }
 
         let where_clause = if conditions.is_empty() {
             String::new()
@@ -157,6 +165,7 @@ impl ClassService {
                 id,
                 organization_id,
                 campus_id,
+                grade_id,
                 name,
                 NULL::TEXT AS description,
                 teacher_id,
@@ -197,6 +206,10 @@ impl ClassService {
             query_builder = query_builder.bind(is_active);
             count_builder = count_builder.bind(is_active);
         }
+        if let Some(grade_id) = query.grade_id {
+            query_builder = query_builder.bind(grade_id);
+            count_builder = count_builder.bind(grade_id);
+        }
 
         query_builder = query_builder.bind(limit).bind(offset);
         let classes = query_builder.fetch_all(&self.pool).await?;
@@ -221,12 +234,14 @@ impl ClassService {
             SET name = COALESCE($1, name),
                 campus_id = COALESCE($2, campus_id),
                 semester = COALESCE($3, semester),
-                updated_at = $4
-            WHERE id = $5
+                grade_id = COALESCE($4, grade_id),
+                updated_at = $5
+            WHERE id = $6
             RETURNING
                 id,
                 organization_id,
                 campus_id,
+                grade_id,
                 name,
                 NULL::TEXT AS description,
                 teacher_id,
@@ -241,6 +256,7 @@ impl ClassService {
         .bind(&request.name)
         .bind(request.campus_id)
         .bind(&request.semester)
+        .bind(request.grade_id)
         .bind(now)
         .bind(class_id)
         .fetch_one(&self.pool)

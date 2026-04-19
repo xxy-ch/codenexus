@@ -1,13 +1,14 @@
 use crate::models::*;
 use crate::service::ClassService;
 use api_infra::middleware::auth::AuthExtractor;
+use api_infra::middleware::tenant::TenantContext;
 use api_infra::state::AppState;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
     routing::{delete, get, post, put},
-    Router,
+    Extension, Router,
 };
 use shared::models::role::Role;
 use uuid::Uuid;
@@ -117,20 +118,36 @@ async fn create_class(
 async fn get_class(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(class_id): Path<i64>,
 ) -> Result<Json<Class>, StatusCode> {
     let service = ClassService::new(state.db_pool);
     let class = verify_class_tenant(&service, class_id, claims.school_id).await?;
+    // GradeAdmin grade scoping (D-08): verify class belongs to their grade
+    if claims.role == "gradeadmin" {
+        if let Some(gid) = tenant_ctx.grade_id {
+            if class.grade_id != Some(gid) {
+                return Err(StatusCode::NOT_FOUND);
+            }
+        }
+    }
     Ok(Json(class))
 }
 
 async fn list_classes(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Query(mut query): Query<ListClassesQuery>,
 ) -> Result<Json<ClassesListResponse>, StatusCode> {
     // Tenant: force organization_id from claims
     query.organization_id = Some(claims.school_id);
+    // GradeAdmin grade scoping (D-08): only GradeAdmin gets grade filtering
+    if claims.role == "gradeadmin" {
+        if let Some(gid) = tenant_ctx.grade_id {
+            query.grade_id = Some(gid);
+        }
+    }
     let service = ClassService::new(state.db_pool);
     let response = service
         .list_classes(&query)
