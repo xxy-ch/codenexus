@@ -32,12 +32,14 @@ impl SearchService {
     /// `school_id`: if Some, restrict results to that organization (unless is_root is true).
     /// `is_teacher_plus`: if true, include private problems from the org.
     /// `is_root`: if true, show all problems across all organizations.
+    /// `grade_id`: if Some, further restrict to users in that grade (D-08 GradeAdmin).
     pub async fn search_tenant_aware(
         &self,
         query: SearchQuery,
         school_id: Option<i64>,
         is_teacher_plus: bool,
         is_root: bool,
+        grade_id: Option<i64>,
     ) -> Result<SearchResponse> {
         let query_text = query.q.clone().unwrap_or_default().trim().to_string();
         let normalized_type = query.r#type.to_lowercase();
@@ -48,13 +50,13 @@ impl SearchService {
         let offset = ((page - 1) * limit) as usize;
 
         let problem_results = if include_problems {
-            self.search_problems(&query_text, school_id, is_teacher_plus, is_root)
+            self.search_problems(&query_text, school_id, is_teacher_plus, is_root, grade_id)
                 .await?
         } else {
             Vec::new()
         };
         let discussion_results = if include_discussions {
-            self.search_discussions(&query_text, school_id, is_root).await?
+            self.search_discussions(&query_text, school_id, is_root, grade_id).await?
         } else {
             Vec::new()
         };
@@ -175,6 +177,7 @@ impl SearchService {
         school_id: Option<i64>,
         is_teacher_plus: bool,
         is_root: bool,
+        _grade_id: Option<i64>,
     ) -> Result<Vec<SearchResultItem>> {
         // Build visibility clause:
         // - Root users see all problems (public + private from all orgs)
@@ -264,15 +267,22 @@ impl SearchService {
         query_text: &str,
         school_id: Option<i64>,
         is_root: bool,
+        grade_id: Option<i64>,
     ) -> Result<Vec<SearchResultItem>> {
         // Tenant filter: Root users see all discussions, others only see from their org
-        let (tenant_clause, extra_bind) = if is_root {
+        let (tenant_clause, tenant_bind) = if is_root {
             // Root: no tenant filter
             (String::new(), None)
         } else if let Some(org_id) = school_id {
             ("AND p.organization_id = $3".to_string(), Some(org_id))
         } else {
             (String::new(), None)
+        };
+
+        // D-08: GradeAdmin grade scoping on discussion author
+        let (grade_clause, grade_bind) = match grade_id {
+            Some(gid) => ("AND u.grade_id = $4".to_string(), Some(gid)),
+            None => (String::new(), None),
         };
 
         let query_str = format!(
@@ -290,19 +300,22 @@ impl SearchService {
             JOIN users u ON u.id = d.user_id
             JOIN problems p ON p.id = d.problem_id
             WHERE ($1 = '' OR d.content ILIKE $2 OR p.title ILIKE $2)
-            {}
+            {} {}
             ORDER BY d.is_pinned DESC, d.created_at DESC
             LIMIT 100
             "#,
-            tenant_clause
+            tenant_clause, grade_clause
         );
 
         let mut q = sqlx::query(&query_str)
             .bind(query_text)
             .bind(format!("%{}%", query_text));
 
-        if let Some(org_id) = extra_bind {
+        if let Some(org_id) = tenant_bind {
             q = q.bind(org_id);
+        }
+        if let Some(gid) = grade_bind {
+            q = q.bind(gid);
         }
 
         let rows = q.fetch_all(&self.pool).await?;

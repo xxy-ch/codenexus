@@ -1,10 +1,11 @@
 use super::models::*;
 use super::service::SearchService;
 use api_infra::middleware::auth::AuthExtractor;
+use api_infra::middleware::tenant::TenantContext;
 use api_infra::state::AppState;
 use axum::{
     extract::{Query, State},
-    Json, Router,
+    Extension, Json, Router,
 };
 use shared::models::role::Role;
 
@@ -24,6 +25,7 @@ pub async fn search(
     State(state): State<AppState>,
     Query(query): Query<SearchQuery>,
     auth: Option<AuthExtractor>,
+    tenant_ctx: Option<Extension<TenantContext>>,
 ) -> Result<Json<SearchResponse>, axum::http::StatusCode> {
     let pool = state.db_pool.clone();
     let service = SearchService::with_redis(pool.clone(), &state.redis_url)
@@ -41,6 +43,18 @@ pub async fn search(
         })
         .unwrap_or((None, false, false));
 
+    // D-08: GradeAdmin grade scoping
+    let grade_id = auth
+        .as_ref()
+        .and_then(|AuthExtractor(claims)| {
+            if claims.role == "gradeadmin" {
+                tenant_ctx.as_ref().map(|Extension(ctx)| ctx.grade_id)
+            } else {
+                None
+            }
+        })
+        .flatten();
+
     // Save recent search for authenticated users
     if let (Some(AuthExtractor(claims)), Some(q)) = (auth, query.q.as_ref()) {
         if !q.is_empty() {
@@ -49,7 +63,7 @@ pub async fn search(
     }
 
     service
-        .search_tenant_aware(query, school_id, teacher_plus, root)
+        .search_tenant_aware(query, school_id, teacher_plus, root, grade_id)
         .await
         .map(Json)
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)
