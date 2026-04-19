@@ -1,13 +1,14 @@
 use crate::models::*;
 use crate::service::LeaderboardService;
 use api_infra::middleware::auth::AuthExtractor;
+use api_infra::middleware::tenant::TenantContext;
 use api_infra::state::AppState;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::Json,
     routing::get,
-    Router,
+    Extension, Router,
 };
 use shared::models::role::Role;
 use uuid::Uuid;
@@ -36,9 +37,11 @@ pub fn leaderboard_router() -> Router<AppState> {
 
 /// Get global leaderboard.
 /// SEC-03: Non-admin users see only their organization's leaderboard.
+/// D-08: GradeAdmin sees only users in their grade.
 pub async fn get_global_leaderboard(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
     // SEC-03: scope to user's organization unless admin
@@ -48,11 +51,18 @@ pub async fn get_global_leaderboard(
         Some(claims.school_id)
     };
 
+    // D-08: GradeAdmin grade scoping
+    let grade_id = if claims.role == "gradeadmin" {
+        tenant_ctx.grade_id
+    } else {
+        None
+    };
+
     let service = LeaderboardService::new(state.db_pool.clone(), state.redis_pool.clone())
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let leaderboard = service
-        .get_global_leaderboard(query, school_id)
+        .get_global_leaderboard(query, school_id, grade_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
@@ -83,9 +93,11 @@ pub async fn get_school_leaderboard(
 }
 
 /// Get campus leaderboard -- claims.campus_id must match AND same org, or admin
+/// D-08: GradeAdmin sees only users in their grade within the campus.
 pub async fn get_campus_leaderboard(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(campus_id): Path<i64>,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
@@ -107,11 +119,18 @@ pub async fn get_campus_leaderboard(
         }
     }
 
+    // D-08: GradeAdmin grade scoping
+    let grade_id = if claims.role == "gradeadmin" {
+        tenant_ctx.grade_id
+    } else {
+        None
+    };
+
     let service = LeaderboardService::new(state.db_pool.clone(), state.redis_pool.clone())
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let leaderboard = service
-        .get_campus_leaderboard(campus_id, query)
+        .get_campus_leaderboard(campus_id, query, grade_id)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

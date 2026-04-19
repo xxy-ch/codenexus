@@ -18,10 +18,12 @@ impl LeaderboardService {
     /// Get global leaderboard.
     /// SEC-03: `school_id` scopes results to a single organization.
     /// When `None` (admin), all organizations are included.
+    /// `grade_id`: when Some, further scopes to users in that grade (D-08 GradeAdmin).
     pub async fn get_global_leaderboard(
         &self,
         query: LeaderboardQuery,
         school_id: Option<i64>,
+        grade_id: Option<i64>,
     ) -> Result<LeaderboardResponse> {
         let limit = query.limit.unwrap_or(100).min(1000);
         let offset = query.offset.unwrap_or(0);
@@ -31,11 +33,15 @@ impl LeaderboardService {
             Some(id) => format!(":org:{}", id),
             None => String::new(),
         };
+        let grade_suffix = match grade_id {
+            Some(gid) => format!(":grade:{}", gid),
+            None => String::new(),
+        };
         let timeframe_key = query.timeframe.as_deref().unwrap_or("all");
         let min_problems_key = query.min_problems.unwrap_or(0);
         let cache_key = format!(
-            "leaderboard:global{}:tf={}:min={}:{}:{}",
-            org_suffix, timeframe_key, min_problems_key, limit, offset
+            "leaderboard:global{}{}:tf={}:min={}:{}:{}",
+            org_suffix, grade_suffix, timeframe_key, min_problems_key, limit, offset
         );
 
         // Try to get from Redis cache first
@@ -72,9 +78,26 @@ impl LeaderboardService {
             None => "",
         };
 
+        // D-08: GradeAdmin grade scoping
+        let grade_filter = match grade_id {
+            Some(_) => "AND u.grade_id = $5",
+            None => "",
+        };
+
         // SEC-03: count query uses independent parameter numbering ($1, $2)
         let count_tenant_filter = match school_id {
             Some(_) => "AND u.organization_id = $2",
+            None => "",
+        };
+        let count_grade_filter = match grade_id {
+            Some(_) => {
+                // When school_id is present, grade_id is $3 in count query; else $2
+                if school_id.is_some() {
+                    "AND u.grade_id = $3"
+                } else {
+                    "AND u.grade_id = $2"
+                }
+            }
             None => "",
         };
 
@@ -111,7 +134,7 @@ impl LeaderboardService {
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id {time_filter}
                 LEFT JOIN problems p ON p.id = s.problem_id
-                WHERE 1=1 {tenant_filter}
+                WHERE 1=1 {tenant_filter} {grade_filter}
                 GROUP BY u.id, u.username, u.organization_id, u.campus_id
                 HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
             )
@@ -131,22 +154,17 @@ impl LeaderboardService {
         "#
         );
 
-        let entries = if school_id.is_some() {
-            sqlx::query_as::<_, LeaderboardEntry>(&query_str)
-                .bind(min_problems_filter)
-                .bind(limit)
-                .bind(offset)
-                .bind(school_id)
-                .fetch_all(&self.pool)
-                .await?
-        } else {
-            sqlx::query_as::<_, LeaderboardEntry>(&query_str)
-                .bind(min_problems_filter)
-                .bind(limit)
-                .bind(offset)
-                .fetch_all(&self.pool)
-                .await?
-        };
+        let mut entries_builder = sqlx::query_as::<_, LeaderboardEntry>(&query_str)
+            .bind(min_problems_filter)
+            .bind(limit)
+            .bind(offset);
+        if school_id.is_some() {
+            entries_builder = entries_builder.bind(school_id);
+        }
+        if grade_id.is_some() {
+            entries_builder = entries_builder.bind(grade_id);
+        }
+        let entries = entries_builder.fetch_all(&self.pool).await?;
 
         // Get total count (uses independent $1, $2 placeholders)
         let count_query = format!(
@@ -157,33 +175,28 @@ impl LeaderboardService {
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id {time_filter}
                 LEFT JOIN problems p ON p.id = s.problem_id
-                WHERE 1=1 {count_tenant_filter}
+                WHERE 1=1 {count_tenant_filter} {count_grade_filter}
                 GROUP BY u.id
                 HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
             ) qualified_users
         "#
         );
 
-        let total: i64 = if school_id.is_some() {
-            sqlx::query_scalar(&count_query)
-                .bind(min_problems_filter)
-                .bind(school_id)
-                .fetch_one(&self.pool)
-                .await
-                .map_err(|e| {
-                    tracing::error!("Failed to count global leaderboard entries (tenant mode): {}", e);
-                    anyhow::anyhow!("Database error: {}", e)
-                })?
-        } else {
-            sqlx::query_scalar(&count_query)
-                .bind(min_problems_filter)
-                .fetch_one(&self.pool)
-                .await
-                .map_err(|e| {
-                    tracing::error!("Failed to count global leaderboard entries (global mode): {}", e);
-                    anyhow::anyhow!("Database error: {}", e)
-                })?
-        };
+        let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query)
+            .bind(min_problems_filter);
+        if school_id.is_some() {
+            count_builder = count_builder.bind(school_id);
+        }
+        if grade_id.is_some() {
+            count_builder = count_builder.bind(grade_id);
+        }
+        let total: i64 = count_builder
+            .fetch_one(&self.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to count global leaderboard entries: {}", e);
+                anyhow::anyhow!("Database error: {}", e)
+            })?;
 
         // Cache result
         if let Some(pool) = &self.redis_pool {
@@ -282,15 +295,23 @@ impl LeaderboardService {
     }
 
     /// Get campus leaderboard
+    /// `grade_id`: when Some, further scopes to users in that grade (D-08 GradeAdmin).
     pub async fn get_campus_leaderboard(
         &self,
         campus_id: i64,
         query: LeaderboardQuery,
+        grade_id: Option<i64>,
     ) -> Result<LeaderboardResponse> {
         let limit = query.limit.unwrap_or(100).min(1000);
         let offset = query.offset.unwrap_or(0);
 
-        let entries = sqlx::query_as::<_, LeaderboardEntry>(
+        // D-08: GradeAdmin grade scoping
+        let grade_filter = match grade_id {
+            Some(_) => "AND u.grade_id = $4",
+            None => "",
+        };
+
+        let query_str = format!(
             r#"
             WITH user_stats AS (
                 SELECT
@@ -321,7 +342,7 @@ impl LeaderboardService {
                 FROM users u
                 LEFT JOIN submissions s ON s.user_id = u.id
                 LEFT JOIN problems p ON p.id = s.problem_id
-                WHERE u.campus_id = $1
+                WHERE u.campus_id = $1 {grade_filter}
                 GROUP BY u.id, u.username, u.organization_id, u.campus_id
             )
             SELECT
@@ -337,18 +358,30 @@ impl LeaderboardService {
             FROM user_stats
             ORDER BY score DESC, problems_solved DESC, username ASC
             LIMIT $2 OFFSET $3
-            "#,
-        )
-        .bind(campus_id)
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(&self.pool)
-        .await?;
+            "#
+        );
 
-        let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE campus_id = $1")
+        let mut entries_builder = sqlx::query_as::<_, LeaderboardEntry>(&query_str)
             .bind(campus_id)
-            .fetch_one(&self.pool)
-            .await?;
+            .bind(limit)
+            .bind(offset);
+        if grade_id.is_some() {
+            entries_builder = entries_builder.bind(grade_id);
+        }
+        let entries = entries_builder.fetch_all(&self.pool).await?;
+
+        let total: i64 = if let Some(gid) = grade_id {
+            sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE campus_id = $1 AND grade_id = $2")
+                .bind(campus_id)
+                .bind(gid)
+                .fetch_one(&self.pool)
+                .await?
+        } else {
+            sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE campus_id = $1")
+                .bind(campus_id)
+                .fetch_one(&self.pool)
+                .await?
+        };
 
         Ok(LeaderboardResponse {
             total,
