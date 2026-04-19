@@ -29,7 +29,7 @@ export function AdminLayout() {
             <div className="flex items-center gap-8">
               <Link to="/" className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-2xl text-primary">code</span>
-                <span className="font-bold text-lg">Online Judge</span>
+                <span className="font-bold text-lg">CodeNexus</span>
               </Link>
               <nav className="hidden md:flex gap-1">
                 {navigation.map((item) => {

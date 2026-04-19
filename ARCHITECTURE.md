@@ -4,7 +4,7 @@
 
 ## 1. 系统架构概览
 
-AlgoMaster 是一个面向教育机构的多租户在线评测平台（Online Judge）。系统支持六种编程语言（C、C++、Java、Python、Go、JavaScript），提供基于 cgroups/seccomp 的沙箱化代码执行环境，为学生、教师和管理员提供跨学校/校区的隔离服务。
+CodeNexus 是一个面向教育机构的多租户在线评测平台。系统支持六种编程语言（C、C++、Java、Python、Go、JavaScript），提供基于 cgroups/seccomp 的沙箱化代码执行环境，为学生、教师和管理员提供跨学校/校区的隔离服务。
 
 系统采用分布式三服务架构，通过 REST API、Redis Streams 和 WebSocket 三种通信机制协同工作：
 

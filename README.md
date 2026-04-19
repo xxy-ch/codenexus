@@ -1,7 +1,7 @@
 
-# AlgoMaster Online Judge
+# CodeNexus
 
-AlgoMaster 在线判题系统是一个面向教育机构的多租户、多角色竞赛编程平台，支持 C/C++/Java/Python/Go/JavaScript 六种编程语言的沙箱安全评测，为学生、教师和管理员提供完整的在线编程教学与竞赛体验。
+CodeNexus 在线判题系统是一个面向教育机构的多租户、多角色竞赛编程平台，支持 C/C++/Java/Python/Go/JavaScript 六种编程语言的沙箱安全评测，为学生、教师和管理员提供完整的在线编程教学与竞赛体验。
 
 ## 架构概览
 

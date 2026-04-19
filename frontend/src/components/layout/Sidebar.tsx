@@ -65,7 +65,7 @@ export function Sidebar() {
           <span className="material-symbols-outlined text-lg">code</span>
         </div>
         <span className="ml-2.5 text-sm font-semibold tracking-tight text-sidebar-foreground">
-          AlgoMaster
+          CodeNexus
         </span>
       </div>
 

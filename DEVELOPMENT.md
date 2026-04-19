@@ -1,9 +1,9 @@
 
 # 开发指南
 
-本指南详细说明 AlgoMaster Online Judge 的本地开发环境搭建、项目结构、前后端开发工作流、数据库开发、代码风格规范及 Git 工作流。
+本指南详细说明 CodeNexus 的本地开发环境搭建、项目结构、前后端开发工作流、数据库开发、代码风格规范及 Git 工作流。
 
-AlgoMaster 是一个多租户的在线评测平台，采用 Rust (Axum) 构建后端 API、React 19 + TypeScript 构建前端、PostgreSQL + Redis 作为数据层。
+CodeNexus 是一个多租户的在线评测平台，采用 Rust (Axum) 构建后端 API、React 19 + TypeScript 构建前端、PostgreSQL + Redis 作为数据层。
 
 ## 目录
 

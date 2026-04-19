@@ -1,5 +1,5 @@
 /**
- * Online Judge Design Tokens
+ * CodeNexus Design Tokens
  * Single source of truth for all design values.
  *
  * Architecture: Linear base layer + scene overlays per module.

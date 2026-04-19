@@ -1,4 +1,4 @@
-# AlgoMaster Online Judge -- API 参考文档
+# CodeNexus -- API 参考文档
 
 ## 1. 概览
 

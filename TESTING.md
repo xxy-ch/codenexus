@@ -1,5 +1,5 @@
 
-# AlgoMaster Online Judge — 测试指南
+# CodeNexus — 测试指南
 
 ## 目录
 
@@ -34,7 +34,7 @@
 
 ## 1. 测试策略概览
 
-AlgoMaster 采用经典测试金字塔策略，覆盖三个层次：
+CodeNexus 采用经典测试金字塔策略，覆盖三个层次：
 
 ```
        ╱  E2E (Playwright)  ╲        — 关键用户流程

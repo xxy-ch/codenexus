@@ -1,4 +1,4 @@
-# Online Judge Frontend
+# CodeNexus Frontend
 
 前端应用基于 Vite + React 18 + TypeScript 构建，集成了Gemini设计的30个高质量界面。
 

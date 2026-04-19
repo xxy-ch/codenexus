@@ -1,10 +1,10 @@
-# AlgoMaster Online Judge 配置指南
+# CodeNexus 配置指南
 
-本文档详细描述 AlgoMaster 在线判题平台的全部配置项，涵盖 API 服务、判题 Worker、迁移工具、前端、Docker Compose 编排、数据库、Redis、安全策略及日志系统。
+本文档详细描述 CodeNexus 在线判题平台的全部配置项，涵盖 API 服务、判题 Worker、迁移工具、前端、Docker Compose 编排、数据库、Redis、安全策略及日志系统。
 
 ## 1. 配置概览
 
-AlgoMaster 采用 **环境变量 + `.env` 文件** 的方式管理配置，各服务独立读取自身所需的环境变量：
+CodeNexus 采用 **环境变量 + `.env` 文件** 的方式管理配置，各服务独立读取自身所需的环境变量：
 
 - **Rust 后端**使用 `dotenvy` 库在启动时加载 `.env` 文件，并通过 `std::env::var` 读取环境变量。
 - **React 前端**使用 Vite 的 `import.meta.env` 机制读取以 `VITE_` 前缀开头的环境变量。
@@ -165,7 +165,7 @@ volumes:
 
 ## 4. 迁移工具 (migration-tool) 配置
 
-迁移工具用于将 UOJ（Universal Online Judge）的 MySQL 数据迁移到 AlgoMaster 的 PostgreSQL 数据库。它是一个一次性命令行工具，使用 `clap` 解析参数。
+迁移工具用于将 UOJ（Universal Online Judge）的 MySQL 数据迁移到 CodeNexus 的 PostgreSQL 数据库。它是一个一次性命令行工具，使用 `clap` 解析参数。
 
 ### 4.1 命令行参数
 
@@ -236,7 +236,7 @@ export const FEATURE_FLAGS = {
 
 | 变量名 | 必填 | 默认值 | 说明 |
 |--------|------|--------|------|
-| `VITE_APP_NAME` | 否 | `Online Judge` | 应用名称 |
+| `VITE_APP_NAME` | 否 | `CodeNexus` | 应用名称 |
 | `VITE_APP_VERSION` | 否 | `1.0.0` | 应用版本号 |
 
 ### 5.4 Vite 开发代理
@@ -464,7 +464,7 @@ Judge Worker 与 API 之间的认证通过 `X-Worker-Secret` 请求头实现：
 
 ### 9.6 多租户隔离
 
-AlgoMaster 通过中间件强制执行组织级数据隔离：
+CodeNexus 通过中间件强制执行组织级数据隔离：
 
 1. **Auth 中间件**：验证 JWT 并将 `Claims`（包含 `school_id`）注入请求扩展
 2. **Tenant 中间件**：从 JWT Claims 提取 `school_id` 创建 `TenantContext`。**从不信任客户端请求头中的租户标识**
@@ -644,5 +644,5 @@ Judge Worker 使用内存熔断器（`judge-worker/src/circuit_breaker.rs`）防
 | `VITE_ENABLE_DIRECT_MESSAGES` | 否 | `true` |
 | `VITE_ENABLE_PLAGIARISM` | 否 | `true` |
 | `VITE_ENABLE_WEBSOCKET` | 否 | `true` |
-| `VITE_APP_NAME` | 否 | `Online Judge` |
+| `VITE_APP_NAME` | 否 | `CodeNexus` |
 | `VITE_APP_VERSION` | 否 | `1.0.0` |

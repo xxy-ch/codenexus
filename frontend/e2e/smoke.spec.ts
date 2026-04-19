@@ -17,7 +17,7 @@ async function loginAsAdmin(page: import('@playwright/test').Page) {
 test.describe('delivery smoke', () => {
   test('login page renders and supports demo credentials', async ({ page }) => {
     await page.goto(`${baseURL}/login`)
-    await expect(page.getByRole('heading', { name: /welcome to algomaster/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /welcome to codenexus/i })).toBeVisible()
     await expect(page.getByLabel(/username/i)).toBeVisible()
     await expect(page.getByLabel(/password/i)).toBeVisible()
   })

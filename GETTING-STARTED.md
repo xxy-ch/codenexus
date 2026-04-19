@@ -1,7 +1,7 @@
 
 # 快速上手指南
 
-本指南将帮助你在本地搭建 AlgoMaster Online Judge 开发环境。你可以选择 Docker Compose 一键部署所有服务，也可以仅用 Docker 运行基础设施（PostgreSQL、Redis），然后本地启动后端和前端进行开发。
+本指南将帮助你在本地搭建 CodeNexus 开发环境。你可以选择 Docker Compose 一键部署所有服务，也可以仅用 Docker 运行基础设施（PostgreSQL、Redis），然后本地启动后端和前端进行开发。
 
 ---
 

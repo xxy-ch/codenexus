@@ -1,7 +1,7 @@
 
-# AlgoMaster Online Judge 部署指南
+# CodeNexus 部署指南
 
-本文档详细描述 AlgoMaster 在线判题平台的部署流程，包括 Docker Compose 编排、镜像构建、数据库管理、安全加固、监控运维以及故障排查等内容。
+本文档详细描述 CodeNexus 在线判题平台的部署流程，包括 Docker Compose 编排、镜像构建、数据库管理、安全加固、监控运维以及故障排查等内容。
 
 ---
 
