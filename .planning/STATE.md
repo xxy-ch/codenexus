@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 14
 status: executing
-last_updated: "2026-04-19T14:29:33Z"
+last_updated: "2026-04-19T14:57:08.832Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 15
   completed_phases: 7
   total_plans: 53
-  completed_plans: 42
-  percent: 79
+  completed_plans: 43
+  percent: 81
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -129,6 +129,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 14]: D-14-02: Propagated grade_id from DB through JWT in login/refresh flows for downstream plan consumption
 - [Phase 14 P02]: D-14-03: JWT grade_id sourced from user_roles (authorization scope) not users (identity) per D-07/D-08
 - [Phase 14 P03]: D-14-04: GradeAdmin grade filtering in domain-classes (grade_id column), leaderboard (users.grade_id), search (author grade); problems/contests/community deferred
+- [Phase 14]: D-14-05: Grade CRUD added to domain-classes (not new crate); CampusAdmin+ for mutations, GradeAdmin sees only their grade
+- [Phase 14]: D-14-06: Academic year transitions are admin-triggered batch ops (graduate/promote/create-year), not automated cron (D-02)
 
 ## Performance Metrics
 
@@ -155,3 +157,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 14 P01 | 15 | 4 tasks | 15 files |
 | Phase 14 P02 | 10min | 6 tasks | 4 files |
 | Phase 14 P03 | 21min | 7 tasks | 12 files |
+| Phase 14 P04 | 19min | 4 tasks | 5 files |
