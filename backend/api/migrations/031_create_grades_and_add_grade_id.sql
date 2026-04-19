@@ -59,7 +59,7 @@ CREATE UNIQUE INDEX idx_one_gradeadmin_per_grade
 -- Default academic_year is '2025-2026' (current year context at migration time).
 INSERT INTO grades (campus_id, name, year_level, academic_year)
 SELECT DISTINCT
-    c.campus_id,
+    cl.campus_id,
     CASE
         WHEN cl.name ~ '高一' THEN '高一'
         WHEN cl.name ~ '高二' THEN '高二'
@@ -132,14 +132,19 @@ WHERE u.id = ce.student_id
   );
 
 -- 7d. Backfill users.grade_id for teachers via primary class (most students taught)
+-- Use a subquery to find the class with the most active enrollments per teacher
 UPDATE users u
 SET grade_id = sub.grade_id
 FROM (
     SELECT DISTINCT ON (cl.teacher_id) cl.teacher_id, cl.grade_id
     FROM classes cl
-    JOIN class_enrollments ce ON ce.class_id = cl.id AND ce.status = 'active'
+    LEFT JOIN LATERAL (
+        SELECT COUNT(*) AS cnt
+        FROM class_enrollments ce
+        WHERE ce.class_id = cl.id AND ce.status = 'active'
+    ) en ON true
     WHERE cl.grade_id IS NOT NULL
-    ORDER BY cl.teacher_id, COUNT(ce.id) DESC
+    ORDER BY cl.teacher_id, en.cnt DESC NULLS LAST
 ) sub
 WHERE u.id = sub.teacher_id
   AND u.grade_id IS NULL
