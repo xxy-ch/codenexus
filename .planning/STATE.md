@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 14
 status: executing
-last_updated: "2026-04-19T14:57:08.832Z"
+last_updated: "2026-04-19T23:00:41.484Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 15
   completed_phases: 7
   total_plans: 53
-  completed_plans: 43
-  percent: 81
+  completed_plans: 44
+  percent: 83
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -37,7 +37,7 @@ progress:
 | 11 | Feature Gateway Infrastructure | Planned | 0 plans | 0% |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
 | 13 | Tenant Hierarchy Restructure | Executed | 5 plans | 100% |
-| 14 | Grade-Scoped Data Model | Executing | 6 plans (4 waves) | 50% (3/6 plans) |
+| 14 | Grade-Scoped Data Model | Executing | 6 plans (4 waves) | 67% (4/6 plans) |
 
 ## Project Reference
 
@@ -75,6 +75,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 14 plan 02 executed: 2026-04-19 — auth flow grade_id from user_roles*
 *Phase 14 plan 03 executed: 2026-04-19 — grade filtering for classes, leaderboard, search*
 *Stopped at: Completed 14-03-PLAN.md*
+*Phase 14 plan 05 executed: 2026-04-19 — frontend grade types + admin UI*
+*Stopped at: Completed 14-05-PLAN.md*
 
 ## Decisions
 
@@ -131,6 +133,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 14 P03]: D-14-04: GradeAdmin grade filtering in domain-classes (grade_id column), leaderboard (users.grade_id), search (author grade); problems/contests/community deferred
 - [Phase 14]: D-14-05: Grade CRUD added to domain-classes (not new crate); CampusAdmin+ for mutations, GradeAdmin sees only their grade
 - [Phase 14]: D-14-06: Academic year transitions are admin-triggered batch ops (graduate/promote/create-year), not automated cron (D-02)
+- [Phase 14]: D-14-07: Frontend grade types, grades service, grade dropdown in user management, GradeManagement admin page with batch operations
 
 ## Performance Metrics
 
@@ -158,3 +161,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 14 P02 | 10min | 6 tasks | 4 files |
 | Phase 14 P03 | 21min | 7 tasks | 12 files |
 | Phase 14 P04 | 19min | 4 tasks | 5 files |
+| Phase 14 P05 | 6min | 5 tasks | 9 files |
