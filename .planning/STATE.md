@@ -2,22 +2,22 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_phase: 11
-status: planning
-last_updated: "2026-04-19T12:00:00.000Z"
+current_phase: 14
+status: executing
+last_updated: "2026-04-19T12:03:07.002Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 15
-  completed_phases: 8
-  total_plans: 47
-  completed_plans: 47
-  percent: 85
+  completed_phases: 7
+  total_plans: 53
+  completed_plans: 40
+  percent: 75
 ---
 
 # Project State: AlgoMaster Online Judge
 
-**Status:** Phase 11-12 Planning
-**Current Phase:** 11
+**Status:** Executing Phase 14
+**Current Phase:** 14
 **Last Activity:** 2026-04-19
 
 ## Phase Status
@@ -37,14 +37,14 @@ progress:
 | 11 | Feature Gateway Infrastructure | Planned | 0 plans | 0% |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
 | 13 | Tenant Hierarchy Restructure | Executed | 5 plans | 100% |
-| 14 | Grade-Scoped Data Model | Planned | 0 plans | 0% |
+| 14 | Grade-Scoped Data Model | Executing | 6 plans (4 waves) | 17% (1/6 plans) |
 
 ## Project Reference
 
 See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Reliable, secure code judging with multi-tenancy
-**Current focus:** Phase 11 — feature-gateway-infrastructure
+**Current focus:** Phase 14 — grade-scoped-data-model
 
 ---
 *State initialized: 2026-04-13*
@@ -71,6 +71,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 11 added to roadmap: 2026-04-19 (Feature Gateway Infrastructure)*
 *Phase 12 added to roadmap: 2026-04-19 (AI Analysis Bounded Context)*
 *Phase 13 added to roadmap: 2026-04-19 (Tenant Hierarchy Restructure — 6-level role hierarchy)*
+*Phase 14 planned: 2026-04-19 — 6 plans in 4 waves (grades table, auth flow, grade filtering, data migration, frontend, verification)*
 
 ## Decisions
 
@@ -121,6 +122,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 10]: decode_blob_result refactored from &self to associated function for testability
 - D-12: Accept bounded 1-cycle priority reordering window for v1.0; strict priority deferred to v2
 - [Phase 13]: Contest/leaderboard admin checks raised to CampusAdmin; class management stays at GradeAdmin level
+- [Phase 14]: D-14-01: Combined 4 tasks into single commit -- adding grade_id to shared structs breaks all construction sites simultaneously
+- [Phase 14]: D-14-02: Propagated grade_id from DB through JWT in login/refresh flows for downstream plan consumption
 
 ## Performance Metrics
 
@@ -144,3 +147,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 10 P03 | 4min | 2 tasks | 4 files |
 | Phase 10 P04 | 3min | 2 tasks | 2 files |
 | Phase 13 P02 | 3min | 1 tasks | 9 files |
+| Phase 14 P01 | 15 | 4 tasks | 15 files |
