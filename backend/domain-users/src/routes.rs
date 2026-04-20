@@ -63,8 +63,19 @@ async fn list_admin_users(
     Query(query): Query<AdminUserQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     ensure_admin(&claims.role)?;
+    let caller_role = claims.role.parse::<shared::models::Role>()
+        .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
+    // SECURITY: Scope campus_id/grade_id based on caller role
+    let scope_campus_id = match caller_role {
+        shared::models::Role::Root => None,
+        _ => claims.campus_id, // CampusAdmin/GradeAdmin: restrict to their campus
+    };
+    let scope_grade_id = match caller_role {
+        shared::models::Role::Root | shared::models::Role::CampusAdmin => None,
+        _ => claims.grade_id, // GradeAdmin: restrict to their grade
+    };
     let service = UserService::new(state.db_pool, state.jwt_service.clone());
-    let response = service.list_admin_users(query, claims.school_id).await?;
+    let response = service.list_admin_users(query, claims.school_id, scope_campus_id, scope_grade_id).await?;
     Ok(Json(response))
 }
 
@@ -169,8 +180,16 @@ async fn toggle_user_status(
     Path(user_id): Path<Uuid>,
 ) -> Result<impl IntoResponse, AppError> {
     ensure_admin(&claims.role)?;
+    let caller_role = claims.role.parse::<shared::models::Role>()
+        .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
     let service = UserService::new(state.db_pool, state.jwt_service.clone());
-    service.update_user_status(user_id, claims.school_id).await?;
+    service.update_user_status_scoped(
+        user_id,
+        claims.school_id,
+        caller_role,
+        claims.campus_id,
+        claims.grade_id,
+    ).await?;
     Ok(Json(AdminMutationResponse { success: true }))
 }
 

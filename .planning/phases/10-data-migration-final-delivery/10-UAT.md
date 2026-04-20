@@ -1,5 +1,5 @@
 ---
-status: testing
+status: env-blocked
 phase: 10-data-migration-final-delivery
 source: 10-01-SUMMARY.md, 10-02-SUMMARY.md, 10-03-SUMMARY.md, 10-04-SUMMARY.md, 10-05-SUMMARY.md
 started: 2026-04-19T08:30:00Z

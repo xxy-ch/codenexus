@@ -1,5 +1,5 @@
 ---
-status: blocked
+status: env-blocked
 phase: 09-judge-concurrency-fault-tolerance
 source: 09-01-SUMMARY.md, 09-02-SUMMARY.md, 09-03-SUMMARY.md, 09-04-SUMMARY.md, 09-05-SUMMARY.md, 09-06-SUMMARY.md, 09-07-SUMMARY.md
 started: 2026-04-19T07:30:00Z

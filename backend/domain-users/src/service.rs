@@ -344,7 +344,7 @@ impl UserService {
         self.get_user_profile(user_id).await
     }
 
-    pub async fn list_admin_users(&self, query: AdminUserQuery, organization_id: i64) -> Result<AdminUserListResponse> {
+    pub async fn list_admin_users(&self, query: AdminUserQuery, organization_id: i64, scope_campus_id: Option<i64>, scope_grade_id: Option<i64>) -> Result<AdminUserListResponse> {
         let page = query.page.unwrap_or(1).max(1);
         let limit = query.limit.unwrap_or(20).clamp(1, 100);
         let offset = (page - 1) * limit;
@@ -387,6 +387,8 @@ impl UserService {
                   AND ($2::TEXT IS NULL OR ur.role = $2)
                   AND ($3::TEXT IS NULL OR u.status = $3)
                   AND u.organization_id = $6
+                  AND ($7::BIGINT IS NULL OR u.campus_id = $7)
+                  AND ($8::BIGINT IS NULL OR u.grade_id = $8)
                 GROUP BY u.id, u.user_code, u.username, u.email, u.display_name, u.status, u.organization_id, o.name, u.created_at, ur.role
             )
             SELECT *
@@ -403,6 +405,8 @@ impl UserService {
             .bind(limit)
             .bind(offset)
             .bind(organization_id)
+            .bind(scope_campus_id)
+            .bind(scope_grade_id)
             .fetch_all(&self.pool)
             .await?;
 
@@ -415,12 +419,16 @@ impl UserService {
               AND ($2::TEXT IS NULL OR ur.role = $2)
               AND ($3::TEXT IS NULL OR u.status = $3)
               AND u.organization_id = $4
+              AND ($5::BIGINT IS NULL OR u.campus_id = $5)
+              AND ($6::BIGINT IS NULL OR u.grade_id = $6)
             "#,
         )
         .bind(search.as_deref())
         .bind(role)
         .bind(status)
         .bind(organization_id)
+        .bind(scope_campus_id)
+        .bind(scope_grade_id)
         .fetch_one(&self.pool)
         .await?;
 
@@ -447,6 +455,11 @@ impl UserService {
         // SECURITY: Verify target user belongs to the same organization
         if user.organization_id != caller_org_id {
             return Err(anyhow::anyhow!("Cannot modify users outside your organization"));
+        }
+
+        // SECURITY: GradeAdmin requires grade_id — reject if target has none
+        if normalized_role == "gradeadmin" && user.grade_id.is_none() {
+            return Err(anyhow::anyhow!("Cannot assign GradeAdmin role to user without grade_id"));
         }
 
         sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
@@ -508,6 +521,11 @@ impl UserService {
             }
         }
 
+        // SECURITY: GradeAdmin requires grade_id — reject if target has none
+        if normalized_role == "gradeadmin" && user.grade_id.is_none() {
+            return Err(anyhow::anyhow!("Cannot assign GradeAdmin role to user without grade_id"));
+        }
+
         // SECURITY (B): Wrap DELETE + INSERT in transaction for atomicity
         let mut tx = self.pool.begin().await?;
         sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
@@ -550,6 +568,51 @@ impl UserService {
         .await?;
 
         Ok(next_status)
+    }
+
+    /// Scoped variant of update_user_status with campus/grade scope enforcement.
+    pub async fn update_user_status_scoped(
+        &self,
+        user_id: Uuid,
+        caller_org_id: i64,
+        caller_role: shared::models::Role,
+        caller_campus_id: Option<i64>,
+        caller_grade_id: Option<i64>,
+    ) -> Result<String> {
+        let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&self.pool)
+            .await?;
+
+        // SECURITY: Verify target user belongs to the same organization
+        if user.organization_id != caller_org_id {
+            return Err(anyhow::anyhow!("Cannot modify users outside your organization"));
+        }
+
+        // SECURITY: CampusAdmin — verify target in same campus
+        if caller_role == shared::models::Role::CampusAdmin {
+            if let Some(cid) = caller_campus_id {
+                if user.campus_id != Some(cid) {
+                    return Err(anyhow::anyhow!("Cannot modify users outside your campus"));
+                }
+            }
+        }
+
+        // SECURITY: GradeAdmin — verify target in same campus AND grade
+        if caller_role == shared::models::Role::GradeAdmin {
+            if let Some(cid) = caller_campus_id {
+                if user.campus_id != Some(cid) {
+                    return Err(anyhow::anyhow!("Cannot modify users outside your campus"));
+                }
+            }
+            if let Some(gid) = caller_grade_id {
+                if user.grade_id != Some(gid) {
+                    return Err(anyhow::anyhow!("Cannot modify users outside your grade"));
+                }
+            }
+        }
+
+        self.update_user_status(user_id, caller_org_id).await
     }
 
     pub async fn batch_create_users(
