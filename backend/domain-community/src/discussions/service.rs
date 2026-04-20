@@ -178,6 +178,7 @@ impl DiscussionService {
         &self,
         id: i64,
         author_id: Uuid,
+        organization_id: i64,
         req: UpdateDiscussionRequest,
     ) -> Result<Discussion> {
         let mut query = String::from("UPDATE discussions SET ");
@@ -209,9 +210,10 @@ impl DiscussionService {
 
         query.push_str(&updates.join(", "));
         query.push_str(&format!(
-            " WHERE id = ${} AND author_id = ${} RETURNING *",
+            " WHERE id = ${} AND author_id = ${} AND organization_id = ${} RETURNING *",
             param_count + 1,
-            param_count + 2
+            param_count + 2,
+            param_count + 3
         ));
 
         let mut query_builder = sqlx::query_as::<_, Discussion>(&query);
@@ -226,7 +228,7 @@ impl DiscussionService {
             query_builder = query_builder.bind(tags);
         }
 
-        query_builder = query_builder.bind(id).bind(author_id);
+        query_builder = query_builder.bind(id).bind(author_id).bind(organization_id);
 
         let discussion = query_builder.fetch_one(&self.pool).await?;
 
@@ -234,16 +236,18 @@ impl DiscussionService {
     }
 
     /// Delete discussion
-    pub async fn delete_discussion(&self, id: i64, user_id: Uuid, is_admin: bool) -> Result<bool> {
+    pub async fn delete_discussion(&self, id: i64, user_id: Uuid, is_admin: bool, organization_id: i64) -> Result<bool> {
         let result = if is_admin {
-            sqlx::query("DELETE FROM discussions WHERE id = $1")
+            sqlx::query("DELETE FROM discussions WHERE id = $1 AND organization_id = $2")
                 .bind(id)
+                .bind(organization_id)
                 .execute(&self.pool)
                 .await?
         } else {
-            sqlx::query("DELETE FROM discussions WHERE id = $1 AND author_id = $2")
+            sqlx::query("DELETE FROM discussions WHERE id = $1 AND author_id = $2 AND organization_id = $3")
                 .bind(id)
                 .bind(user_id)
+                .bind(organization_id)
                 .execute(&self.pool)
                 .await?
         };
@@ -256,18 +260,28 @@ impl DiscussionService {
         &self,
         discussion_id: i64,
         author_id: Uuid,
+        organization_id: i64,
         req: CreateReplyRequest,
     ) -> Result<DiscussionReply> {
-        // Check if discussion is locked
-        let discussion = self.get_discussion_by_id(discussion_id).await?;
+        let mut tx = self.pool.begin().await?;
+
+        // Verify discussion belongs to the caller's organization and check if locked
+        let discussion = sqlx::query_as::<_, Discussion>(
+            "SELECT * FROM discussions WHERE id = $1 AND organization_id = $2",
+        )
+        .bind(discussion_id)
+        .bind(organization_id)
+        .fetch_one(&mut *tx)
+        .await?;
+
         if discussion.is_locked {
             anyhow::bail!("Discussion is locked");
         }
 
         // Increment reply count
         sqlx::query("UPDATE discussions SET reply_count = reply_count + 1 WHERE id = $1")
-            .bind(discussion_id)
-            .execute(&self.pool)
+            .bind(discussion.id)
+            .execute(&mut *tx)
             .await?;
 
         let reply = sqlx::query_as::<_, DiscussionReply>(
@@ -281,8 +295,10 @@ impl DiscussionService {
         .bind(req.parent_id)
         .bind(&req.content)
         .bind(author_id)
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *tx)
         .await?;
+
+        tx.commit().await?;
 
         Ok(reply)
     }

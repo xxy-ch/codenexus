@@ -94,11 +94,12 @@ async fn update_discussion_handler(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Json(req): axum::extract::Json<UpdateDiscussionRequest>,
 ) -> Result<Json<Discussion>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.update_discussion(id, user_id, req).await {
+    match service.update_discussion(id, user_id, claims.school_id, req).await {
         Ok(discussion) => Ok(Json(discussion)),
         Err(e) => {
             if e.to_string().contains("not found") {
@@ -128,7 +129,7 @@ async fn delete_discussion_handler(
 
     let service = DiscussionService::new(state.db_pool);
 
-    match service.delete_discussion(id, user_id, is_admin).await {
+    match service.delete_discussion(id, user_id, is_admin, claims.school_id).await {
         Ok(true) => Ok(axum::http::StatusCode::NO_CONTENT),
         Ok(false) => Err((
             axum::http::StatusCode::FORBIDDEN,
@@ -162,11 +163,12 @@ async fn create_reply_handler(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Json(req): axum::extract::Json<CreateReplyRequest>,
 ) -> Result<Json<DiscussionReply>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.create_reply(id, user_id, req).await {
+    match service.create_reply(id, user_id, claims.school_id, req).await {
         Ok(reply) => {
             // Send WebSocket notification for new reply
             let msg = WebSocketMessage::DiscussionReply {

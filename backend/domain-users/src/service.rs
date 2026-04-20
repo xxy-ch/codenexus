@@ -604,6 +604,9 @@ impl UserService {
                         .clone()
                         .or_else(|| Some(user_code.clone())),
                     organization_id: request.organization_id,
+                    // NOTE: campus_id/grade_id are validated and force-overridden at the route layer
+                    // based on caller role scope (Root/CampusAdmin/GradeAdmin). The service trusts
+                    // these values have already been sanitized.
                     campus_id: entry.campus_id.or(request.campus_id),
                     grade_id: entry.grade_id,
                 })

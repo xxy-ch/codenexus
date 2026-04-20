@@ -81,7 +81,10 @@ async fn batch_create_users(
     // does not equal or exceed the caller's role level (no same-level granting)
     let caller_role = claims.role.parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
-    for user in &request.users {
+    // SECURITY: Validate roles AND force campus_id/grade_id from caller's scope.
+    // A single mutable pass prevents CampusAdmin/GradeAdmin from passing arbitrary scope values.
+    for user in &mut request.users {
+        // Prevent privilege escalation — caller cannot assign at or above their own level
         if let Some(role_str) = &user.role {
             let target_role = role_str.parse::<shared::models::Role>()
                 .map_err(|_| AppError::Auth(format!("Invalid role: {}", role_str)))?;
@@ -91,25 +94,24 @@ async fn batch_create_users(
                 )));
             }
         }
-        // SECURITY: Scope constraints — admin can only create users in their own scope
-        let parsed_role = caller_role;
-        if parsed_role == shared::models::Role::CampusAdmin {
-            // CampusAdmin: force campus_id to caller's campus
-            if let Some(user_campus) = user.campus_id {
-                if Some(user_campus) != claims.campus_id {
-                    return Err(AppError::Auth("CampusAdmin can only create users in their own campus".to_string()));
+        // Force campus_id/grade_id based on caller role scope
+        match caller_role {
+            shared::models::Role::Root => {
+                // Root: allow any campus_id/grade_id — no override needed
+            }
+            shared::models::Role::CampusAdmin => {
+                // CampusAdmin: force campus_id to claims, allow any grade_id
+                if let Some(cid) = claims.campus_id {
+                    user.campus_id = Some(cid);
                 }
             }
-        } else if parsed_role == shared::models::Role::GradeAdmin {
-            // GradeAdmin: force campus_id and grade_id
-            if let Some(user_campus) = user.campus_id {
-                if Some(user_campus) != claims.campus_id {
-                    return Err(AppError::Auth("GradeAdmin can only create users in their own campus".to_string()));
+            _ => {
+                // GradeAdmin and below: force both campus_id and grade_id from claims
+                if let Some(cid) = claims.campus_id {
+                    user.campus_id = Some(cid);
                 }
-            }
-            if let Some(user_grade) = user.grade_id {
-                if Some(user_grade) != claims.grade_id {
-                    return Err(AppError::Auth("GradeAdmin can only create users in their own grade".to_string()));
+                if let Some(gid) = claims.grade_id {
+                    user.grade_id = Some(gid);
                 }
             }
         }

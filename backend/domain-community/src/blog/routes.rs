@@ -189,17 +189,21 @@ async fn update_article_handler(
     State(state): State<AppState>,
     Path(slug_or_id): Path<String>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Json(req): axum::extract::Json<UpdateArticleRequest>,
 ) -> Result<Json<Article>, (axum::http::StatusCode, String)> {
     // Parse slug_or_id as ID
     let id = match slug_or_id.parse::<i64>() {
         Ok(id) => id,
         Err(_) => {
-            // Try to find article by slug
-            match sqlx::query_scalar::<_, i64>("SELECT id FROM articles WHERE slug = $1")
-                .bind(&slug_or_id)
-                .fetch_one(&state.db_pool)
-                .await
+            // Try to find article by slug within caller's organization
+            match sqlx::query_scalar::<_, i64>(
+                "SELECT id FROM articles WHERE slug = $1 AND organization_id = $2",
+            )
+            .bind(&slug_or_id)
+            .bind(claims.school_id)
+            .fetch_one(&state.db_pool)
+            .await
             {
                 Ok(id) => id,
                 Err(_) => {
@@ -214,7 +218,7 @@ async fn update_article_handler(
 
     let service = BlogService::new(state.db_pool.clone());
 
-    match service.update_article(id, user_id, req).await {
+    match service.update_article(id, user_id, claims.school_id, req).await {
         Ok(article) => Ok(Json(article)),
         Err(e) => {
             if e.to_string().contains("not found") {
@@ -241,10 +245,13 @@ async fn delete_article_handler(
     let id = match slug_or_id.parse::<i64>() {
         Ok(id) => id,
         Err(_) => {
-            match sqlx::query_scalar::<_, i64>("SELECT id FROM articles WHERE slug = $1")
-                .bind(&slug_or_id)
-                .fetch_one(&state.db_pool)
-                .await
+            match sqlx::query_scalar::<_, i64>(
+                "SELECT id FROM articles WHERE slug = $1 AND organization_id = $2",
+            )
+            .bind(&slug_or_id)
+            .bind(claims.school_id)
+            .fetch_one(&state.db_pool)
+            .await
             {
                 Ok(id) => id,
                 Err(_) => {
@@ -264,7 +271,7 @@ async fn delete_article_handler(
 
     let service = BlogService::new(state.db_pool);
 
-    match service.delete_article(id, user_id, is_admin).await {
+    match service.delete_article(id, user_id, is_admin, claims.school_id).await {
         Ok(true) => Ok(axum::http::StatusCode::NO_CONTENT),
         Ok(false) => Err((
             axum::http::StatusCode::FORBIDDEN,
@@ -298,16 +305,20 @@ async fn create_comment_handler(
     State(state): State<AppState>,
     Path(slug_or_id): Path<String>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Json(req): axum::extract::Json<CreateCommentRequest>,
 ) -> Result<Json<ArticleComment>, (axum::http::StatusCode, String)> {
     // Get article ID first
     let id = match slug_or_id.parse::<i64>() {
         Ok(id) => id,
         Err(_) => {
-            match sqlx::query_scalar::<_, i64>("SELECT id FROM articles WHERE slug = $1")
-                .bind(&slug_or_id)
-                .fetch_one(&state.db_pool)
-                .await
+            match sqlx::query_scalar::<_, i64>(
+                "SELECT id FROM articles WHERE slug = $1 AND organization_id = $2",
+            )
+            .bind(&slug_or_id)
+            .bind(claims.school_id)
+            .fetch_one(&state.db_pool)
+            .await
             {
                 Ok(id) => id,
                 Err(_) => {
@@ -322,7 +333,7 @@ async fn create_comment_handler(
 
     let service = BlogService::new(state.db_pool);
 
-    match service.create_comment(id, user_id, req).await {
+    match service.create_comment(id, user_id, claims.school_id, req).await {
         Ok(comment) => {
             // Send WebSocket notification for new comment
             let msg = WebSocketMessage::ArticleComment {

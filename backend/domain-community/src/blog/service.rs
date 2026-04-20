@@ -204,6 +204,7 @@ impl BlogService {
         &self,
         id: i64,
         author_id: Uuid,
+        organization_id: i64,
         req: UpdateArticleRequest,
     ) -> Result<Article> {
         let mut query = String::from("UPDATE articles SET ");
@@ -251,9 +252,10 @@ impl BlogService {
 
         query.push_str(&updates.join(", "));
         query.push_str(&format!(
-            " WHERE id = ${} AND author_id = ${} RETURNING *",
+            " WHERE id = ${} AND author_id = ${} AND organization_id = ${} RETURNING *",
             param_count + 1,
-            param_count + 2
+            param_count + 2,
+            param_count + 3
         ));
 
         let mut query_builder = sqlx::query_as::<_, Article>(&query);
@@ -277,7 +279,7 @@ impl BlogService {
             query_builder = query_builder.bind(category);
         }
 
-        query_builder = query_builder.bind(id).bind(author_id);
+        query_builder = query_builder.bind(id).bind(author_id).bind(organization_id);
 
         let article = query_builder.fetch_one(&self.pool).await?;
 
@@ -285,16 +287,18 @@ impl BlogService {
     }
 
     /// Delete article
-    pub async fn delete_article(&self, id: i64, user_id: Uuid, is_admin: bool) -> Result<bool> {
+    pub async fn delete_article(&self, id: i64, user_id: Uuid, is_admin: bool, organization_id: i64) -> Result<bool> {
         let result = if is_admin {
-            sqlx::query("DELETE FROM articles WHERE id = $1")
+            sqlx::query("DELETE FROM articles WHERE id = $1 AND organization_id = $2")
                 .bind(id)
+                .bind(organization_id)
                 .execute(&self.pool)
                 .await?
         } else {
-            sqlx::query("DELETE FROM articles WHERE id = $1 AND author_id = $2")
+            sqlx::query("DELETE FROM articles WHERE id = $1 AND author_id = $2 AND organization_id = $3")
                 .bind(id)
                 .bind(user_id)
+                .bind(organization_id)
                 .execute(&self.pool)
                 .await?
         };
@@ -307,12 +311,24 @@ impl BlogService {
         &self,
         article_id: i64,
         author_id: Uuid,
+        organization_id: i64,
         req: CreateCommentRequest,
     ) -> Result<ArticleComment> {
+        let mut tx = self.pool.begin().await?;
+
+        // Verify article belongs to the caller's organization
+        let article = sqlx::query_as::<_, Article>(
+            "SELECT * FROM articles WHERE id = $1 AND organization_id = $2",
+        )
+        .bind(article_id)
+        .bind(organization_id)
+        .fetch_one(&mut *tx)
+        .await?;
+
         // Increment comment count
         sqlx::query("UPDATE articles SET comment_count = comment_count + 1 WHERE id = $1")
-            .bind(article_id)
-            .execute(&self.pool)
+            .bind(article.id)
+            .execute(&mut *tx)
             .await?;
 
         let comment = sqlx::query_as::<_, ArticleComment>(
@@ -326,8 +342,10 @@ impl BlogService {
         .bind(req.parent_id)
         .bind(&req.content)
         .bind(author_id)
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *tx)
         .await?;
+
+        tx.commit().await?;
 
         Ok(comment)
     }

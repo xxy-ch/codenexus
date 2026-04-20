@@ -79,7 +79,7 @@ pub async fn search(
 pub async fn search_suggestions(
     State(state): State<AppState>,
     Query(params): Query<std::collections::HashMap<String, String>>,
-    _auth: Option<AuthExtractor>,
+    auth: Option<AuthExtractor>,
 ) -> Result<Json<SearchSuggestionsResponse>, axum::http::StatusCode> {
     let query = params.get("q").map(String::as_str).unwrap_or("");
 
@@ -87,8 +87,20 @@ pub async fn search_suggestions(
     let service = SearchService::with_redis(pool.clone(), &state.redis_url)
         .unwrap_or_else(|_| SearchService::new(pool));
 
+    let (school_id, root) = auth
+        .as_ref()
+        .map(|AuthExtractor(claims)| {
+            let is_root = is_root(&claims.role);
+            if is_root {
+                (None, true)
+            } else {
+                (Some(claims.school_id), false)
+            }
+        })
+        .unwrap_or((None, false));
+
     service
-        .get_suggestions(query, None)
+        .get_suggestions(query, school_id, root)
         .await
         .map(Json)
         .map_err(|_| axum::http::StatusCode::INTERNAL_SERVER_ERROR)

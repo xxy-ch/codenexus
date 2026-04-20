@@ -109,7 +109,8 @@ impl SearchService {
     pub async fn get_suggestions(
         &self,
         query: &str,
-        _user_id: Option<&str>,
+        organization_id: Option<i64>,
+        is_root: bool,
     ) -> Result<SearchSuggestionsResponse> {
         let keyword = query.trim().to_lowercase();
         if keyword.is_empty() {
@@ -133,19 +134,40 @@ impl SearchService {
         .await
         .unwrap_or_default();
 
-        let discussion_snippets = sqlx::query_scalar::<_, String>(
-            r#"
-            SELECT LEFT(content, 32)
-            FROM discussions
-            WHERE LOWER(content) LIKE $1
-            ORDER BY created_at DESC
-            LIMIT 5
-            "#,
-        )
-        .bind(format!("%{}%", keyword))
-        .fetch_all(&self.pool)
-        .await
-        .unwrap_or_default();
+        // Tenant-aware discussion suggestions: root sees all, others see only their org
+        let discussion_snippets = if is_root {
+            sqlx::query_scalar::<_, String>(
+                r#"
+                SELECT LEFT(content, 32)
+                FROM discussions
+                WHERE LOWER(content) LIKE $1
+                ORDER BY created_at DESC
+                LIMIT 5
+                "#,
+            )
+            .bind(format!("%{}%", keyword))
+            .fetch_all(&self.pool)
+            .await
+            .unwrap_or_default()
+        } else if let Some(org_id) = organization_id {
+            sqlx::query_scalar::<_, String>(
+                r#"
+                SELECT LEFT(content, 32)
+                FROM discussions
+                WHERE LOWER(content) LIKE $1 AND organization_id = $2
+                ORDER BY created_at DESC
+                LIMIT 5
+                "#,
+            )
+            .bind(format!("%{}%", keyword))
+            .bind(org_id)
+            .fetch_all(&self.pool)
+            .await
+            .unwrap_or_default()
+        } else {
+            // Unauthenticated: no discussion suggestions (cannot verify tenant)
+            Vec::new()
+        };
 
         let mut suggestions = Vec::new();
         suggestions.extend(problem_titles.into_iter().map(|text| SearchSuggestion {
