@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AlertTriangle, ArrowLeft, FileSearch, Flag, Layers3, ShieldAlert } from 'lucide-react'
 import { plagiarismService } from '@/services/plagiarism'
-import { Loading } from '@/components/ui/Loading'
+import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 import { cn } from '@/lib/utils'
 
 export function PlagiarismReportDetail() {
@@ -32,31 +33,11 @@ export function PlagiarismReportDetail() {
   }, [data])
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[320px] items-center justify-center">
-        <Loading message="加载报告详情中..." />
-      </div>
-    )
+    return <DetailSkeleton />
   }
 
   if (error || !data) {
-    return (
-      <div className="py-16 text-center">
-        <p className="mb-4 text-slate-600 dark:text-slate-300">报告详情加载失败</p>
-        <div className="flex justify-center gap-2">
-          <button type="button" onClick={() => refetch()} className="rounded bg-primary px-4 py-2 text-white">
-            重试
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/admin/plagiarism-reports')}
-            className="rounded border border-slate-300 px-4 py-2 dark:border-slate-700"
-          >
-            返回列表
-          </button>
-        </div>
-      </div>
-    )
+    return <InlineError title="报告详情加载失败" onRetry={() => refetch()} />
   }
 
   return (

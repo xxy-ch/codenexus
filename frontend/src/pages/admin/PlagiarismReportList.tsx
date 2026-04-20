@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import { Shield } from 'lucide-react'
 import { plagiarismService } from '@/services/plagiarism'
-import { Loading } from '@/components/ui/Loading'
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 
 const RISK_COLOR: Record<string, string> = {
   low: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
@@ -27,22 +30,11 @@ export function PlagiarismReportList() {
   })
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[320px]">
-        <Loading message="加载检测报告中..." />
-      </div>
-    )
+    return <TableSkeleton rows={6} columns={4} />
   }
 
   if (error) {
-    return (
-      <div className="text-center py-16">
-        <p className="text-slate-600 dark:text-slate-300 mb-4">检测报告加载失败</p>
-        <button type="button" onClick={() => refetch()} className="px-4 py-2 rounded bg-primary text-white">
-          重试
-        </button>
-      </div>
-    )
+    return <InlineError title="检测报告加载失败" onRetry={() => refetch()} />
   }
 
   const reports = data?.reports || []
@@ -101,7 +93,9 @@ export function PlagiarismReportList() {
             ))}
             {reports.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-14 text-center text-slate-500">暂无检测报告</td>
+                <td colSpan={8} className="p-0">
+                  <EmptyState icon={Shield} title="暂无检测报告" description="还没有执行过代码相似度检测" />
+                </td>
               </tr>
             )}
           </tbody>

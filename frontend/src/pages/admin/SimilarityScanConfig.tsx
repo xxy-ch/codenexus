@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { AlertCircle, ChevronRight, Loader2, Play, Save, Shield, SlidersHorizontal } from 'lucide-react'
+import { ChevronRight, Loader2, Play, Save, Shield, SlidersHorizontal } from 'lucide-react'
 import { plagiarismService, type SimilarityScanConfig } from '@/services/plagiarism'
-import { Loading } from '@/components/ui/Loading'
+import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 
 export function SimilarityScanConfig() {
   const [form, setForm] = useState<SimilarityScanConfig | null>(null)
@@ -39,25 +40,11 @@ export function SimilarityScanConfig() {
   })
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[320px] items-center justify-center">
-        <Loading message="加载扫描配置中..." />
-      </div>
-    )
+    return <FormSkeleton rows={3} />
   }
 
   if (error || !effectiveForm) {
-    return (
-      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-rose-600">
-          <AlertCircle className="h-5 w-5" />
-        </div>
-        <h2 className="mt-4 text-lg font-semibold text-slate-950">扫描配置加载失败</h2>
-        <button type="button" onClick={() => refetch()} className="mt-5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-          重试
-        </button>
-      </div>
-    )
+    return <InlineError title="扫描配置加载失败" onRetry={() => refetch()} />
   }
 
   return (

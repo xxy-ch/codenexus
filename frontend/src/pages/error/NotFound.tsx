@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Home, SearchX, Terminal } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 export function NotFound() {
@@ -11,7 +12,7 @@ export function NotFound() {
             404
           </h1>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="material-symbols-outlined text-8xl text-primary">error_outline</span>
+            <SearchX className="h-20 w-20 text-primary" />
           </div>
         </div>
 
@@ -26,14 +27,14 @@ export function NotFound() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link to="/dashboard">
-            <Button variant="primary">
-              <span className="material-symbols-outlined mr-2">home</span>
+            <Button variant="primary" className="inline-flex items-center gap-2">
+              <Home className="h-4 w-4" />
               返回首页
             </Button>
           </Link>
           <Link to="/problems">
-            <Button variant="outline">
-              <span className="material-symbols-outlined mr-2">terminal</span>
+            <Button variant="outline" className="inline-flex items-center gap-2">
+              <Terminal className="h-4 w-4" />
               浏览题目
             </Button>
           </Link>

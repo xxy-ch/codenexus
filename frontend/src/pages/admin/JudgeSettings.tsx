@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronRight, Database, EyeOff, FileArchive, Loader2, RefreshCw, Save, Settings2, Trash2 } from 'lucide-react'
 import { judgeConfigService } from '@/services/judgeConfig'
-import { Loading } from '@/components/ui/Loading'
+import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 
 export function JudgeSettings() {
   const queryClient = useQueryClient()
@@ -233,11 +234,9 @@ export function JudgeSettings() {
 
         <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
           {isLoading ? (
-            <div className="py-16 text-center">
-              <Loading message="加载测试用例中..." />
-            </div>
+            <FormSkeleton rows={4} />
           ) : error ? (
-            <div className="px-6 py-14 text-center text-sm text-rose-600">测试用例加载失败</div>
+            <InlineError title="配置加载失败" onRetry={() => refetch()} />
           ) : (
             <>
               <div className="border-b border-slate-200 px-6 py-5">

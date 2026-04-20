@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ChevronRight, GraduationCap, Plus, RotateCcw } from 'lucide-react'
+import { ChevronRight, GraduationCap, Plus, RotateCcw } from 'lucide-react'
 import { gradesService } from '@/services/grades'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 import type { CreateGradeRequest } from '@/types/grade'
 
 export function GradeManagement() {
@@ -61,25 +62,10 @@ export function GradeManagement() {
     createMutation.mutate({ ...newGrade, campus_id: campusId })
   }
 
-  if (isLoading) return <Loading message="加载年级管理..." />
+  if (isLoading) return <TableSkeleton rows={6} columns={5} />
 
   if (error) {
-    return (
-      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-rose-600">
-          <AlertTriangle className="h-5 w-5" />
-        </div>
-        <h2 className="mt-4 text-lg font-semibold text-slate-950">年级数据加载失败</h2>
-        <p className="mt-2 text-sm text-slate-600">无法获取年级列表。</p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="mt-5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-        >
-          重试
-        </button>
-      </div>
-    )
+    return <InlineError title="年级管理加载失败" onRetry={() => refetch()} />
   }
 
   return (

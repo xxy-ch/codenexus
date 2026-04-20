@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { classesService } from '@/services/classes'
-import { Loading } from '@/components/ui/Loading'
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 
 export function ClassManagement() {
   const queryClient = useQueryClient()
@@ -145,16 +146,11 @@ export function ClassManagement() {
   })
 
   if (isLoading) {
-    return <div className="flex min-h-[400px] items-center justify-center"><Loading message="加载班级中..." /></div>
+    return <TableSkeleton rows={6} columns={5} />
   }
 
   if (error) {
-    return (
-      <div className="py-16 text-center">
-        <p className="mb-4 text-slate-600">班级加载失败</p>
-        <button type="button" onClick={() => refetch()} className="rounded bg-primary px-4 py-2 text-white">重试</button>
-      </div>
-    )
+    return <InlineError title="班级加载失败" onRetry={() => refetch()} />
   }
 
   return (

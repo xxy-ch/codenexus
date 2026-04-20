@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { BookText, ChevronRight, Eye, Loader2, Save, Search, Timer, Waypoints } from 'lucide-react'
 import { judgeConfigService, type UpdateProblemContentPayload } from '@/services/judgeConfig'
-import { Loading } from '@/components/ui/Loading'
+import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
 
 export function ProblemContentConfig() {
   const [problemId, setProblemId] = useState('')
@@ -131,9 +131,7 @@ export function ProblemContentConfig() {
       </section>
 
       {loading ? (
-        <div className="py-16 text-center">
-          <Loading message="加载题目中..." />
-        </div>
+        <FormSkeleton rows={3} />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_380px]">
           <section className="space-y-6">

@@ -1,6 +1,30 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
+import {
+  Code2,
+  Database,
+  Dashboard,
+  Edit,
+  FileSearch,
+  LibraryBooks,
+  School,
+  Settings,
+  Tune,
+  Users,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FEATURE_FLAGS } from '@/services/config'
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  dashboard: Dashboard,
+  group: Users,
+  school: School,
+  library_books: LibraryBooks,
+  tune: Tune,
+  dns: Database,
+  edit_document: Edit,
+  find_in_page: FileSearch,
+  settings: Settings,
+}
 
 export function AdminLayout() {
   const location = useLocation()
@@ -29,12 +53,13 @@ export function AdminLayout() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
               <Link to="/" className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-2xl text-primary">code</span>
+                <Code2 className="h-6 w-6 text-primary" />
                 <span className="font-bold text-lg">CodeNexus</span>
               </Link>
               <nav className="hidden md:flex gap-1">
                 {navigation.map((item) => {
                   const isActive = location.pathname === item.href
+                  const IconComponent = ICON_MAP[item.icon] ?? Dashboard
                   return (
                     <Link
                       key={item.href}
@@ -46,7 +71,7 @@ export function AdminLayout() {
                           : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
                       )}
                     >
-                      <span className="material-symbols-outlined text-lg">{item.icon}</span>
+                      <IconComponent className="h-4 w-4" />
                       {item.name}
                     </Link>
                   )

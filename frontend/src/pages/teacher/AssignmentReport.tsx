@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { AlertCircle, ArrowUpRight, BarChart3, BookOpen, ChevronRight, Download, FileSpreadsheet, GraduationCap, Search, Users } from 'lucide-react'
+import { ArrowUpRight, BarChart3, BookOpen, ChevronRight, Download, FileSpreadsheet, GraduationCap, Search, Users } from 'lucide-react'
 import { classesService } from '@/services/classes'
 import type { AssignmentItem, AssignmentSubmissionItem } from '@/services/classes'
-import { Loading } from '@/components/ui/Loading'
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 
 function formatDate(value?: string) {
   if (!value) return 'N/A'
@@ -105,30 +106,11 @@ export function AssignmentReport() {
   }, [classes, assignmentRows])
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[360px] items-center justify-center">
-        <Loading message="Loading assignment report..." />
-      </div>
-    )
+    return <TableSkeleton rows={6} columns={4} />
   }
 
   if (error) {
-    return (
-      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-rose-600">
-          <AlertCircle className="h-5 w-5" />
-        </div>
-        <h2 className="mt-4 text-lg font-semibold text-slate-950">Failed to load report</h2>
-        <p className="mt-2 text-sm text-slate-600">Unable to read class data for the assignment report.</p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="mt-5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-        >
-          Retry
-        </button>
-      </div>
-    )
+    return <InlineError title="作业报告加载失败" onRetry={() => refetch()} />
   }
 
   return (

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { AlertTriangle, Home, Info, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 export function ServerError() {
@@ -11,7 +12,7 @@ export function ServerError() {
             500
           </h1>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="material-symbols-outlined text-8xl text-red-500">report_problem</span>
+            <AlertTriangle className="h-20 w-20 text-red-500" />
           </div>
         </div>
 
@@ -28,13 +29,14 @@ export function ServerError() {
           <Button
             variant="primary"
             onClick={() => window.location.reload()}
+            className="inline-flex items-center gap-2"
           >
-            <span className="material-symbols-outlined mr-2">refresh</span>
+            <RefreshCw className="h-4 w-4" />
             刷新页面
           </Button>
           <Link to="/dashboard">
-            <Button variant="outline">
-              <span className="material-symbols-outlined mr-2">home</span>
+            <Button variant="outline" className="inline-flex items-center gap-2">
+              <Home className="h-4 w-4" />
               返回首页
             </Button>
           </Link>
@@ -43,7 +45,7 @@ export function ServerError() {
         {/* Error Info */}
         <div className="mt-12 p-6 bg-red-50 dark:bg-red-900/20 rounded-lg max-w-lg mx-auto border border-red-200 dark:border-red-800">
           <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-red-500 text-xl">info</span>
+            <Info className="h-5 w-5 text-red-500 shrink-0" />
             <div className="text-left">
               <p className="font-medium text-red-900 dark:text-red-400 mb-1">
                 如果问题持续存在

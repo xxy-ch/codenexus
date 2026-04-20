@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, BadgeCheck, ChevronRight, KeyRound, ShieldPlus, UserCog, Users } from 'lucide-react'
+import { BadgeCheck, ChevronRight, KeyRound, ShieldPlus, UserCog, Users } from 'lucide-react'
 import { adminService } from '@/services/admin'
 import { gradesService } from '@/services/grades'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/authStore'
 import type { BatchCreateAdminUser } from '@/types/admin'
@@ -145,25 +147,10 @@ export function UserManagement() {
     )
   }
 
-  if (isLoading) return <Loading message="加载用户管理视图..." />
+  if (isLoading) return <TableSkeleton rows={8} columns={7} />
 
   if (error) {
-    return (
-      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-rose-600">
-          <AlertTriangle className="h-5 w-5" />
-        </div>
-        <h2 className="mt-4 text-lg font-semibold text-slate-950">用户管理加载失败</h2>
-        <p className="mt-2 text-sm text-slate-600">当前无法读取真实用户列表。</p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="mt-5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-        >
-          重试
-        </button>
-      </div>
-    )
+    return <InlineError title="用户管理加载失败" onRetry={() => refetch()} />
   }
 
   return (
@@ -475,10 +462,7 @@ export function UserManagement() {
         </div>
 
         {users.length === 0 && (
-          <div className="px-6 py-14 text-center">
-            <div className="text-lg font-semibold text-slate-900">未找到用户</div>
-            <p className="mt-2 text-sm text-slate-600">尝试调整搜索条件，或者确认当前环境是否已导入演示账号。</p>
-          </div>
+          <EmptyState icon={Users} title="未找到用户" description="尝试调整搜索条件" />
         )}
 
         <div className="flex flex-col gap-4 border-t border-slate-200 px-6 py-5 md:flex-row md:items-center md:justify-between">

@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, ChevronRight, EyeOff, LibraryBig, Pencil, Plus, Search, ShieldCheck, SlidersHorizontal, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, ChevronRight, EyeOff, FolderOpen, LibraryBig, Pencil, Plus, Search, ShieldCheck, SlidersHorizontal, Trash2 } from 'lucide-react'
 import { adminService } from '@/services/admin'
-import { Loading } from '@/components/ui/Loading'
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 import { cn } from '@/lib/utils'
 
 type DifficultyType = 'easy' | 'medium' | 'hard'
@@ -122,26 +124,11 @@ export function ProblemManagement() {
   }
 
   if (isLoading) {
-    return <Loading message="加载题目管理视图..." />
+    return <TableSkeleton rows={8} columns={5} />
   }
 
   if (error) {
-    return (
-      <div className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white text-rose-600">
-          <AlertTriangle className="h-5 w-5" />
-        </div>
-        <h2 className="mt-4 text-lg font-semibold text-slate-950">题目管理加载失败</h2>
-        <p className="mt-2 text-sm text-slate-600">当前无法读取真实题库数据。</p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="mt-5 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
-        >
-          重试
-        </button>
-      </div>
-    )
+    return <InlineError title="题目管理加载失败" onRetry={() => refetch()} />
   }
 
   return (
@@ -491,10 +478,7 @@ export function ProblemManagement() {
         </div>
 
         {problems.length === 0 && (
-          <div className="px-6 py-14 text-center">
-            <div className="text-lg font-semibold text-slate-900">未找到题目</div>
-            <p className="mt-2 text-sm text-slate-600">尝试调整筛选条件，或者确认当前环境是否已导入演示题目。</p>
-          </div>
+          <EmptyState icon={FolderOpen} title="暂无题目" description="还没有创建任何题目" />
         )}
 
         <div className="flex flex-col gap-4 border-t border-slate-200 px-6 py-5 md:flex-row md:items-center md:justify-between">
