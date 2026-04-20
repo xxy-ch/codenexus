@@ -2,7 +2,7 @@
 
 **Created:** 2026-04-13
 **Revised:** 2026-04-17 (Phase 10 planned)
-**Phases:** 13
+**Phases:** 15
 **v1 Requirements:** 50 (all mapped)
 
 ---
@@ -344,7 +344,8 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 | 12 | AIA-01..08 | 8 |
 | 13 | THR-01..08 | 8 |
 | 14 | GSD-01..08 | 8 |
-| **Total** | | **81** |
+| 15 | D-15-01-W1, D-15-01-W2, D-15-01-W3, D-15-02, D-15-03, D-15-04 | 6 |
+| **Total** | | **87** |
 
 > Note: ARCH-04 and ARCH-05 span Phases 2-4. CICD-01..03 are split across Phases 2 and 6. CICD-05 deferred per D-03.
 
@@ -511,21 +512,55 @@ Phase 7 (Test Coverage + Contest Enhancement)
               |
               v
             Phase 14 (Grade-Scoped Data Model)
+              |
+              v
+            Phase 15 (Frontend UI Completion)
 ```
 
-Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each other and can execute in parallel after Phase 7 completes. Phase 11 depends on Phase 10. Phase 12 depends on Phase 11. Phase 13 depends on Phase 10. Phase 14 depends on Phase 13.
+Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each other and can execute in parallel after Phase 7 completes. Phase 11 depends on Phase 10. Phase 12 depends on Phase 11. Phase 13 depends on Phase 10. Phase 14 depends on Phase 13. Phase 15 depends on Phase 14.
 
 ### Phase 15: Frontend UI completion — remaining pages, polish, and integration testing
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Fix remaining TODOs in production code (UserManagement campus dropdown, Settings persistence, test format mismatches), then apply production-grade UI polish across all 42 pages (skeleton screens, empty states, error boundaries, icon migration), and evaluate optional new pages. Per D-15-01, execute in strict wave order: Wave 1 (TODO fixes), Wave 2 (UI polish), Wave 3 (evaluate new pages).
+
+**Requirements:**
+- D-15-01-W1: Fix 3 real TODOs — UserManagement campus dropdown wired to JWT campus_id, Settings preferences persisted via localStorage, 32 skipped test assertions fixed
+- D-15-01-W2: UI polish — skeleton screens replacing Loading spinner on 28 pages, EmptyState standardization on 15 list pages, InlineError standardization on all error states, icon migration from Material Symbols to Lucide in 4 files
+- D-15-01-W3: Evaluate optional new pages (DailyChallenge, Achievements) only if backend endpoints exist
+- D-15-02: Production-grade UI — every async page shows skeleton, every list has empty state, every error path has ErrorBoundary + InlineError, unified Lucide icons
+- D-15-03: TDD full coverage — vitest unit tests for every new/modified component, 80%+ target, RED-GREEN-REFACTOR
+- D-15-04: PC-only responsive (1280px+), no mobile breakpoints
+
+**Success Criteria:**
+1. UserManagement grade dropdown derives campus_id from JWT claims, not hardcoded
+2. Settings preferences round-trip through localStorage on save and reload
+3. All 32 skipped test assertions fixed or removed — 0 skipped in full test suite
+4. All 28 data-loading pages show skeleton screens instead of spinner
+5. All 15 list pages use shared EmptyState component
+6. All error states use shared InlineError component
+7. Global ErrorBoundary wraps routes in App.tsx
+8. Material Symbols replaced with Lucide in error pages and AdminLayout
+9. Frontend build succeeds with 0 errors
+10. `npx vitest --run` passes with 0 skipped tests
+
 **Depends on:** Phase 14
-**Plans:** 0 plans
+**Plans:** 12 plans in 3 waves
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 15 to break down)
+- [ ] 15-01-PLAN.md — Test infrastructure: renderWithProviders helper (Wave 1)
+- [ ] 15-02-PLAN.md — Fix 32 skipped tests in ContestDetail, ContestList, DashboardEnhanced (Wave 1)
+- [ ] 15-03-PLAN.md — Fix UserManagement campus dropdown TODO + test (Wave 1)
+- [ ] 15-04-PLAN.md — Fix Settings localStorage persistence TODO + test (Wave 1)
+- [ ] 15-05-PLAN.md — Create EmptyState + InlineError shared components + tests (Wave 2a)
+- [ ] 15-06-PLAN.md — Create ErrorBoundary + wrap App.tsx + test (Wave 2a)
+- [ ] 15-07-PLAN.md — Create 10 skeleton components + tests (Wave 2a)
+- [ ] 15-08-PLAN.md — Convert 12 user pages to skeleton/empty/error (Wave 2b)
+- [ ] 15-09-PLAN.md — Convert 7 community/search pages to skeleton/empty/error (Wave 2b)
+- [ ] 15-10-PLAN.md — Convert admin/teacher pages + icon migration (Wave 2b)
+- [ ] 15-11-PLAN.md — Wave 3: Evaluate DailyChallenge/Achievements backend endpoints (Wave 3)
+- [ ] 15-12-PLAN.md — Phase verification: full test suite + build + coverage audit (Wave 3)
 
 ---
 
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-19 Phase 14 added (Grade-Scoped Data Model)*
+*Last updated: 2026-04-20 Phase 15 planned (Frontend UI Completion)*
