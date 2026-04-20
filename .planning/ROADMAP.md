@@ -434,10 +434,14 @@ Plans:
 7. JWT tokens contain the new role string and existing token validation remains backward-compatible during migration window
 
 **Depends on:** Phase 10 (Data Migration — migration-tool must support new roles)
-**Plans:** 1/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
-- [ ] TBD
+- [x] 13-01-PLAN — Role enum expansion + hierarchy predicates
+- [x] 13-02-PLAN — Campus-scoped RBAC + admin boundary enforcement
+- [x] 13-03-PLAN — Grade-scoped RBAC + gradeadmin constraints
+- [x] 13-04-PLAN — Frontend role routing + admin panels
+- [x] 13-05-PLAN — Build verification + documentation
 
 ---
 
@@ -468,7 +472,12 @@ Plans:
 **Plans:** 6/6 plans complete
 
 Plans:
-- [ ] TBD
+- [x] 14-01-PLAN — grades table + user/role grade_id
+- [x] 14-02-PLAN — JWT grade_id propagation + auth flow
+- [x] 14-03-PLAN — Grade-scoped query filtering (classes, leaderboard, search)
+- [x] 14-04-PLAN — Grade data migration + academic year transitions
+- [x] 14-05-PLAN — Frontend grade types + admin UI
+- [x] 14-06-PLAN — Build verification + documentation
 
 ---
 
@@ -544,7 +553,7 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 10. `npx vitest --run` passes with 0 skipped tests
 
 **Depends on:** Phase 14
-**Plans:** 11/12 plans executed
+**Plans:** 12/12 plans complete
 
 Plans:
 - [x] 15-01-PLAN.md — Test infrastructure: renderWithProviders helper (Wave 1)
@@ -558,7 +567,7 @@ Plans:
 - [x] 15-09-PLAN.md — Convert 7 community/search pages to skeleton/empty/error (Wave 2b)
 - [x] 15-10-PLAN.md — Convert admin/teacher pages + icon migration (Wave 2b)
 - [x] 15-11-PLAN.md — Wave 3: Evaluate DailyChallenge/Achievements backend endpoints (Wave 3)
-- [ ] 15-12-PLAN.md — Phase verification: full test suite + build + coverage audit (Wave 3)
+- [x] 15-12-PLAN.md — Phase verification: full test suite + build + coverage audit (Wave 3)
 
 ---
 

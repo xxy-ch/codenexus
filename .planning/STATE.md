@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 15
 status: executing
-last_updated: "2026-04-20T23:05:08.454Z"
+last_updated: "2026-04-20T23:15:29.936Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 16
-  completed_phases: 11
+  completed_phases: 12
   total_plans: 65
-  completed_plans: 64
-  percent: 98
+  completed_plans: 65
+  percent: 100
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -36,8 +36,8 @@ progress:
 | 10 | Data Migration + Final Delivery | Conditionally Accepted (Env-Only Gap) | 5 plans (4 waves) | 100% execution, UAT 20/22 pass, env-only gap |
 | 11 | Feature Gateway Infrastructure | Planned | 0 plans | 0% |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
-| 13 | Tenant Hierarchy Restructure | Executed | 5 plans | 100% |
-| 14 | Grade-Scoped Data Model | Executed | 6 plans (4 waves) | 100% (6/6 plans) |
+| 13 | Tenant Hierarchy Restructure | Executed + Audit Hardened | 5 plans | 100% (5/5), is_admin tightened to Root-only, CampusAdmin campus-scoped |
+| 14 | Grade-Scoped Data Model | Executed + Audit Hardened | 6 plans (4 waves) | 100% (6/6), campus scope on problem/test_cases, grade scope centralized in verify_class_access |
 
 ## Project Reference
 
@@ -94,6 +94,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Security audit rounds 10-12: 2026-04-20 — dfffdb3 (search_discussions cross-tenant), dd006da (fail-closed admin scope), 75cc00a (sub-table tenant filter + integration test sync)*
 *Security audit round 13: 2026-04-20 — 1890e59 (deactivate_grade suspend ordering, contest cross-org guard, judge-worker test_cases schema fix)*
 *Test evidence updated: 2026-04-20 — 382 tests pass (360 unit + 22 integration), 0 failures, release gate tests verified*
+*Security audit round 14: 2026-04-21 — is_admin tightened to Root-only (CampusAdmin no longer global), campus scope added to ProblemAccessRecord, grade scope centralized in verify_class_access, is_active filter semantics fixed, ROADMAP/STATE evidence chain aligned*
 
 ### Roadmap Evolution
 
@@ -180,6 +181,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 15]: D-15-P10: AdminDashboard skipped -- static navigation page with no useQuery loading state
 - [Phase 15]: D-15-P10: AdminLayout uses ICON_MAP lookup table to map Material Symbol icon names to Lucide components
 - [Phase 15]: Wave 3 is a no-op: no DailyChallenge or Achievements backend endpoints exist
+- [Phase 15]: D-15-P12: Material Symbols in 10 page files deferred as cosmetic gap (~70+ instances)
 
 ## Performance Metrics
 
@@ -220,3 +222,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 15 P08 | 6min | 3 tasks | 11 files |
 | Phase 15 P10 | 9min | 2 tasks | 13 files |
 | Phase 15 P11 | 2min | 1 tasks | 1 files |
+| Phase 15 P12 | 8min | 1 tasks | 9 files |
