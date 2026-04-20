@@ -29,14 +29,16 @@ impl BlogService {
     }
 
     /// Get articles list with filters
-    pub async fn get_articles(&self, filters: ArticleFilters) -> Result<ArticleListResponse> {
+    /// organization_id: tenant isolation — required for SEC-03
+    pub async fn get_articles(&self, filters: ArticleFilters, organization_id: i64) -> Result<ArticleListResponse> {
         let page = filters.page.unwrap_or(1);
         let limit = filters.limit.unwrap_or(20);
         let offset = (page - 1) * limit;
 
         // Build parameterized query (SECURITY: no string interpolation with user input)
-        let mut conditions = Vec::new();
-        let mut param_count = 0;
+        // SEC-03: Always filter by organization_id as the first condition
+        let mut conditions = vec!["a.organization_id = $1".to_string()];
+        let mut param_count = 1;
 
         if filters.author_id.is_some() {
             param_count += 1;
@@ -63,11 +65,7 @@ impl BlogService {
             ));
         }
 
-        let where_clause = if conditions.is_empty() {
-            String::new()
-        } else {
-            format!("WHERE {}", conditions.join(" AND "))
-        };
+        let where_clause = format!("WHERE {}", conditions.join(" AND "));
 
         // Sorting
         let order_clause = match filters.sort.as_deref() {
@@ -89,6 +87,10 @@ impl BlogService {
 
         let mut query_builder = sqlx::query_as::<_, Article>(&query_str);
         let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query_str);
+
+        // SEC-03: Bind organization_id first
+        query_builder = query_builder.bind(organization_id);
+        count_builder = count_builder.bind(organization_id);
 
         if let Some(ref author_id) = filters.author_id {
             let aid = author_id.to_string();
@@ -161,6 +163,7 @@ impl BlogService {
     pub async fn create_article(
         &self,
         author_id: Uuid,
+        organization_id: i64,
         req: CreateArticleRequest,
     ) -> Result<Article> {
         let slug = Self::generate_slug(&req.title);
@@ -173,8 +176,8 @@ impl BlogService {
 
         let article = sqlx::query_as::<_, Article>(
             r#"
-            INSERT INTO articles (title, slug, content, summary, cover_image, author_id, tags, category, is_published, is_featured, published_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO articles (title, slug, content, summary, cover_image, author_id, organization_id, tags, category, is_published, is_featured, published_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
             RETURNING *
             "#
         )
@@ -184,6 +187,7 @@ impl BlogService {
         .bind(&req.summary)
         .bind(&req.cover_image)
         .bind(author_id)
+        .bind(organization_id)
         .bind(&req.tags)
         .bind(req.category.unwrap_or_else(|| "general".to_string()))
         .bind(req.is_published.unwrap_or(false))

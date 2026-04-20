@@ -62,7 +62,7 @@ async fn test_create_and_get_discussion() {
         tags: vec!["help".to_string()],
     };
 
-    let discussion = service.create_discussion(user_id, req).await.unwrap();
+    let discussion = service.create_discussion(user_id, _org_id, req).await.unwrap();
 
     assert_eq!(discussion.title, "How to solve Two Sum?");
     assert_eq!(discussion.content, "I am stuck on the Two Sum problem. Any hints?");
@@ -100,6 +100,7 @@ async fn test_list_discussions_by_problem() {
     service
         .create_discussion(
             user_id,
+            _org_id,
             domain_community::discussions::models::CreateDiscussionRequest {
                 title: "Help with P1".to_string(),
                 content: "Question about P1".to_string(),
@@ -113,6 +114,7 @@ async fn test_list_discussions_by_problem() {
     service
         .create_discussion(
             user_id,
+            _org_id,
             domain_community::discussions::models::CreateDiscussionRequest {
                 title: "Another P1 question".to_string(),
                 content: "Another question".to_string(),
@@ -128,6 +130,7 @@ async fn test_list_discussions_by_problem() {
     service
         .create_discussion(
             user_id,
+            _org_id,
             domain_community::discussions::models::CreateDiscussionRequest {
                 title: "Help with P2".to_string(),
                 content: "Question about P2".to_string(),
@@ -152,7 +155,7 @@ async fn test_list_discussions_by_problem() {
         limit: Some(20),
         sort: None,
     };
-    let response = service.get_discussions(filters).await.unwrap();
+    let response = service.get_discussions(filters, _org_id).await.unwrap();
     assert_eq!(response.total, 2);
 
     // List discussions for problem 2
@@ -168,7 +171,7 @@ async fn test_list_discussions_by_problem() {
         limit: Some(20),
         sort: None,
     };
-    let response = service.get_discussions(filters).await.unwrap();
+    let response = service.get_discussions(filters, _org_id).await.unwrap();
     assert_eq!(response.total, 1);
     assert_eq!(response.discussions[0].title, "Help with P2");
 }
@@ -192,7 +195,7 @@ async fn test_blog_article_crud() {
         is_featured: Some(false),
     };
 
-    let article = service.create_article(user_id, req).await.unwrap();
+    let article = service.create_article(user_id, _org_id, req).await.unwrap();
 
     assert_eq!(article.title, "Introduction to Graph Theory");
     assert_eq!(article.author_id, user_id);

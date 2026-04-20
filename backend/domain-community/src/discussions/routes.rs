@@ -34,11 +34,12 @@ pub fn discussions_router() -> Router<AppState> {
 /// Get discussions list
 async fn get_discussions_handler(
     State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Query(filters): axum::extract::Query<DiscussionFilters>,
 ) -> Result<Json<DiscussionListResponse>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.get_discussions(filters).await {
+    match service.get_discussions(filters, claims.school_id).await {
         Ok(response) => Ok(Json(response)),
         Err(e) => {
             tracing::error!("Error fetching discussions: {}", e);
@@ -74,11 +75,12 @@ async fn get_discussion_handler(
 async fn create_discussion_handler(
     State(state): State<AppState>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Json(req): axum::extract::Json<CreateDiscussionRequest>,
 ) -> Result<Json<Discussion>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.create_discussion(user_id, req).await {
+    match service.create_discussion(user_id, claims.school_id, req).await {
         Ok(discussion) => Ok(Json(discussion)),
         Err(e) => {
             tracing::error!("Error creating discussion: {}", e);

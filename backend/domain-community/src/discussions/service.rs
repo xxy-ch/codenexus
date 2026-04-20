@@ -15,17 +15,20 @@ impl DiscussionService {
     }
 
     /// Get discussions list with filters
+    /// organization_id: tenant isolation — required for SEC-03
     pub async fn get_discussions(
         &self,
         filters: DiscussionFilters,
+        organization_id: i64,
     ) -> Result<DiscussionListResponse> {
         let page = filters.page.unwrap_or(1);
         let limit = filters.limit.unwrap_or(20);
         let offset = (page - 1) * limit;
 
         // Build parameterized query (SECURITY: no string interpolation with user input)
-        let mut conditions = Vec::new();
-        let mut param_count = 0;
+        // SEC-03: Always filter by organization_id as the first condition
+        let mut conditions = vec!["d.organization_id = $1".to_string()];
+        let mut param_count = 1;
 
         if filters.problem_id.is_some() {
             param_count += 1;
@@ -52,11 +55,7 @@ impl DiscussionService {
             ));
         }
 
-        let where_clause = if conditions.is_empty() {
-            String::new()
-        } else {
-            format!("WHERE {}", conditions.join(" AND "))
-        };
+        let where_clause = format!("WHERE {}", conditions.join(" AND "));
 
         // Sorting
         let order_clause = match filters.sort.as_deref() {
@@ -76,6 +75,10 @@ impl DiscussionService {
 
         let mut query_builder = sqlx::query_as::<_, Discussion>(&query_str);
         let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query_str);
+
+        // SEC-03: Bind organization_id first
+        query_builder = query_builder.bind(organization_id);
+        count_builder = count_builder.bind(organization_id);
 
         if let Some(problem_id) = filters.problem_id {
             query_builder = query_builder.bind(problem_id);
@@ -147,18 +150,20 @@ impl DiscussionService {
     pub async fn create_discussion(
         &self,
         author_id: Uuid,
+        organization_id: i64,
         req: CreateDiscussionRequest,
     ) -> Result<Discussion> {
         let discussion = sqlx::query_as::<_, Discussion>(
             r#"
-            INSERT INTO discussions (title, content, author_id, problem_id, contest_id, tags)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO discussions (title, content, author_id, organization_id, problem_id, contest_id, tags)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *
             "#,
         )
         .bind(&req.title)
         .bind(&req.content)
         .bind(author_id)
+        .bind(organization_id)
         .bind(req.problem_id)
         .bind(req.contest_id)
         .bind(&req.tags)

@@ -36,11 +36,12 @@ pub fn blog_router() -> Router<AppState> {
 /// Get articles list
 async fn get_articles_handler(
     State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Query(filters): axum::extract::Query<ArticleFilters>,
 ) -> Result<Json<ArticleListResponse>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.get_articles(filters).await {
+    match service.get_articles(filters, claims.school_id).await {
         Ok(response) => Ok(Json(response)),
         Err(e) => {
             tracing::error!("Error fetching articles: {}", e);
@@ -156,7 +157,7 @@ async fn create_article_handler(
 ) -> Result<Json<Article>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.create_article(user_id, req).await {
+    match service.create_article(user_id, claims.school_id, req).await {
         Ok(article) => {
             // Send WebSocket notification for new article (trending update)
             // Only broadcast to users in the same tenant (school_id)
