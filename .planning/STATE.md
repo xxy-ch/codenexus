@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 15
 status: completed
-last_updated: "2026-04-20T15:45:44.164Z"
+last_updated: "2026-04-20T15:50:38.739Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 16
   completed_phases: 11
   total_plans: 65
-  completed_plans: 55
-  percent: 85
+  completed_plans: 56
+  percent: 86
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -164,6 +164,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 15]: Fresh QueryClient per renderWithProviders call prevents test cache leaking
 - [Phase 15]: Re-export testing library utilities from test-utils for single-import convenience
 - [Phase 15]: D-15-P03: Fallback to campus_id=1 when authStore user is null (defensive coding for race conditions)
+- [Phase 15]: localStorage mock via vi.stubGlobal in jsdom tests -- Map-based in-memory store
 
 ## Performance Metrics
 
@@ -195,3 +196,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 14 P06 | 5min | 5 tasks | 3 files |
 | Phase 15 P01 | 3min | 1 tasks | 2 files |
 | Phase 15 P03 | 3min | 1 tasks | 2 files |
+| Phase 15 P04 | 8min | 1 tasks | 2 files |
