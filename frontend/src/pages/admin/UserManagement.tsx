@@ -6,6 +6,7 @@ import { gradesService } from '@/services/grades'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/store/authStore'
 import type { BatchCreateAdminUser } from '@/types/admin'
 import type { Role } from '@/types/auth'
 import { isAdmin } from '@/types/auth'
@@ -24,9 +25,10 @@ export function UserManagement() {
   const [defaultPassword, setDefaultPassword] = useState('ChangeMe123')
   const [selectedGradeId, setSelectedGradeId] = useState<string>('')
 
-  // Campus ID for grade filtering — hardcoded to 1 for now (matches batch create)
-  // TODO: derive from logged-in admin's campus when multi-campus UI is implemented
-  const gradeCampusId = 1
+  const { user } = useAuthStore()
+
+  // Campus ID for grade filtering — derived from logged-in admin's JWT campus_id
+  const gradeCampusId = user?.campus_id ?? 1
 
   const { data: gradesData } = useQuery({
     queryKey: ['grades', gradeCampusId],
@@ -68,8 +70,8 @@ export function UserManagement() {
       adminService.batchCreateUsers({
         users,
         default_password: defaultPassword,
-        organization_id: 1,
-        campus_id: 1,
+        organization_id: user?.organization_id ?? 1,
+        campus_id: user?.campus_id ?? 1,
         grade_id: selectedGradeId ? Number(selectedGradeId) : undefined,
       }),
     onSuccess: () => {
