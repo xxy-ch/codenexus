@@ -78,12 +78,14 @@ describe('SubmissionDetail', () => {
       </QueryClientProvider>
     )
 
-  it('显示加载状态', () => {
+  it('显示骨架屏加载状态', () => {
     vi.mocked(problemsService.getSubmissionDetail).mockImplementation(() => new Promise(() => {}))
 
     renderComponent()
 
-    expect(screen.getByText(/加载中|loading/i)).toBeInTheDocument()
+    // After Phase 15 polish, loading state uses DetailSkeleton (animate-pulse divs)
+    const skeletons = document.querySelectorAll('[data-slot="skeleton"]')
+    expect(skeletons.length).toBeGreaterThan(0)
   })
 
   it('渲染已通过提交的核心信息', async () => {
@@ -184,7 +186,8 @@ describe('SubmissionDetail', () => {
     renderComponent()
 
     await waitFor(() => {
-      expect(screen.getByText('提交记录不存在')).toBeInTheDocument()
+      // InlineError renders error title in an h3 heading
+      expect(screen.getByRole('heading', { name: /加载失败/i })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: /重试/i })).toBeInTheDocument()
     })
   })
@@ -195,7 +198,8 @@ describe('SubmissionDetail', () => {
     renderComponent()
 
     await waitFor(() => {
-      expect(screen.getByText('加载失败')).toBeInTheDocument()
+      // InlineError renders title + message
+      expect(screen.getByRole('heading', { name: /加载失败/i })).toBeInTheDocument()
       expect(screen.getByText('boom')).toBeInTheDocument()
     })
   })

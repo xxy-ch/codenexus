@@ -333,19 +333,21 @@ describe('DashboardEnhanced', () => {
   })
 
   describe('加载状态', () => {
-    it('应该显示加载状态', () => {
+    it('应该显示骨架屏加载状态', () => {
       vi.mocked(usersService.getUserStats).mockImplementation(
         () => new Promise(() => {})
       )
 
       renderComponent()
 
-      expect(screen.getByText(/加载中|loading/i)).toBeInTheDocument()
+      // After Phase 15 polish, loading state uses DashboardSkeleton (animate-pulse divs)
+      const skeletons = document.querySelectorAll('[data-slot="skeleton"]')
+      expect(skeletons.length).toBeGreaterThan(0)
     })
   })
 
   describe('错误处理', () => {
-    it('应该显示错误消息', async () => {
+    it('应该显示InlineError错误消息', async () => {
       vi.mocked(usersService.getUserStats).mockRejectedValue(
         new Error('Failed to fetch user stats')
       )
@@ -353,7 +355,8 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('加载失败')).toBeInTheDocument()
+        // InlineError renders title in h3 heading
+        expect(screen.getByRole('heading', { name: /加载失败/i })).toBeInTheDocument()
       })
     })
 
@@ -365,7 +368,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        const retryButton = screen.getByText(/重试|retry/i)
+        const retryButton = screen.getByRole('button', { name: /重试/i })
         expect(retryButton).toBeInTheDocument()
       })
     })

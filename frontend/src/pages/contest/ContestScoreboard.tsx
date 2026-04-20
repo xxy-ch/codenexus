@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { Activity, ChevronRight, RefreshCw, TimerReset, Trophy } from 'lucide-react'
 import { scoreboardService } from '@/services/scoreboard'
-import { Loading } from '@/components/ui/Loading'
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 import { ScoreboardTable } from '@/components/contest/ScoreboardTable'
 
 export function ContestScoreboard() {
@@ -16,30 +17,16 @@ export function ContestScoreboard() {
   })
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading message="加载排行榜..." />
-      </div>
-    )
+    return <TableSkeleton rows={10} columns={6} />
   }
 
   if (error || !data) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          排行榜加载失败
-        </h3>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="px-4 py-2 rounded-lg bg-primary text-white"
-        >
-          重试
-        </button>
-      </div>
+      <InlineError
+        title="排行榜加载失败"
+        message="无法加载竞赛排行榜数据，请稍后重试"
+        onRetry={() => refetch()}
+      />
     )
   }
 

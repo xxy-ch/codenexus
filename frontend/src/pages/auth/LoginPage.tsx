@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Loading } from '@/components/ui/Loading'
+import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
 
 interface LoginRequest {
   username: string
@@ -53,7 +54,13 @@ export function LoginPage() {
   }
 
   if (isLoading) {
-    return <Loading message="Loading..." />
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <FormSkeleton />
+        </div>
+      </div>
+    )
   }
 
   return (

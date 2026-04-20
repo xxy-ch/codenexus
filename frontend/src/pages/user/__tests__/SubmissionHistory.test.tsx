@@ -98,14 +98,16 @@ describe('SubmissionHistory', () => {
   }
 
   describe('初始加载状态', () => {
-    it('应该显示加载状态', () => {
+    it('应该显示骨架屏加载状态', () => {
       vi.mocked(problemsService.getUserSubmissions).mockImplementation(
         () => new Promise(() => {}) // 永不解决的Promise来模拟加载状态
       )
 
       renderComponent()
 
-      expect(screen.getByText(/加载中|loading/i)).toBeInTheDocument()
+      // After Phase 15 polish, loading state uses TableSkeleton (animate-pulse divs) instead of text
+      const skeletons = document.querySelectorAll('[data-slot="skeleton"]')
+      expect(skeletons.length).toBeGreaterThan(0)
     })
   })
 

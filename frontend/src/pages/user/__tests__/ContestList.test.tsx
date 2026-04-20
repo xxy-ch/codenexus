@@ -84,14 +84,16 @@ describe('ContestList', () => {
   }
 
   describe('初始加载状态', () => {
-    it('应该显示加载状态', () => {
+    it('应该显示骨架屏加载状态', () => {
       vi.mocked(contestsService.getContests).mockImplementation(
         () => new Promise(() => {})
       )
 
       renderComponent()
 
-      expect(screen.getByText(/加载中|loading/i)).toBeInTheDocument()
+      // After Phase 15 polish, loading state uses CardGridSkeleton (animate-pulse divs)
+      const skeletons = document.querySelectorAll('[data-slot="skeleton"]')
+      expect(skeletons.length).toBeGreaterThan(0)
     })
   })
 
@@ -345,7 +347,8 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('加载失败')).toBeInTheDocument()
+        // InlineError component renders the title in an h3
+        expect(screen.getByRole('heading', { name: /加载失败/i })).toBeInTheDocument()
       })
     })
 

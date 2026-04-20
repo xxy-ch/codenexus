@@ -80,14 +80,16 @@ describe('ContestDetail', () => {
   }
 
   describe('初始加载状态', () => {
-    it('应该显示加载状态', () => {
+    it('应该显示骨架屏加载状态', () => {
       vi.mocked(contestsService.getContestDetail).mockImplementation(
         () => new Promise(() => {})
       )
 
       renderComponent()
 
-      expect(screen.getByText(/加载中|loading/i)).toBeInTheDocument()
+      // After Phase 15 polish, loading state uses DetailSkeleton (animate-pulse divs)
+      const skeletons = document.querySelectorAll('[data-slot="skeleton"]')
+      expect(skeletons.length).toBeGreaterThan(0)
     })
   })
 
@@ -355,7 +357,7 @@ describe('ContestDetail', () => {
   })
 
   describe('错误处理', () => {
-    it('应该显示404错误（竞赛不存在）', async () => {
+    it('应该显示InlineError（竞赛不存在）', async () => {
       vi.mocked(contestsService.getContestDetail).mockRejectedValue(
         new Error('Contest not found')
       )
@@ -363,11 +365,12 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/not found|不存在/i)).toBeInTheDocument()
+        // InlineError renders title in h3
+        expect(screen.getByRole('heading', { name: /加载失败/i })).toBeInTheDocument()
       })
     })
 
-    it('应该显示通用错误消息', async () => {
+    it('应该显示InlineError通用错误', async () => {
       vi.mocked(contestsService.getContestDetail).mockRejectedValue(
         new Error('Failed to fetch contest')
       )
@@ -375,7 +378,9 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/error|错误|failed/i)).toBeInTheDocument()
+        // InlineError renders with retry button
+        expect(screen.getByRole('heading', { name: /加载失败/i })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: /重试/i })).toBeInTheDocument()
       })
     })
   })

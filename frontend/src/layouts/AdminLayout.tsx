@@ -1,25 +1,25 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import {
+  BookOpen,
   Code2,
   Database,
-  Dashboard,
   Edit,
   FileSearch,
-  LibraryBooks,
+  LayoutDashboard,
   School,
   Settings,
-  Tune,
+  SlidersHorizontal,
   Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FEATURE_FLAGS } from '@/services/config'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  dashboard: Dashboard,
+  dashboard: LayoutDashboard,
   group: Users,
   school: School,
-  library_books: LibraryBooks,
-  tune: Tune,
+  library_books: BookOpen,
+  tune: SlidersHorizontal,
   dns: Database,
   edit_document: Edit,
   find_in_page: FileSearch,
@@ -59,7 +59,7 @@ export function AdminLayout() {
               <nav className="hidden md:flex gap-1">
                 {navigation.map((item) => {
                   const isActive = location.pathname === item.href
-                  const IconComponent = ICON_MAP[item.icon] ?? Dashboard
+                  const IconComponent = ICON_MAP[item.icon] ?? LayoutDashboard
                   return (
                     <Link
                       key={item.href}
