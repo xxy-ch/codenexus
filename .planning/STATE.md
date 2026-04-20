@@ -85,6 +85,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *14-VERIFICATION.md updated: 2026-04-20 — GSD-08 gap resolved, 7/7 truths verified, internal consistency restored*
 *Security audit round 4 fixes (ultrawork): 2026-04-20 — R1: community tenant isolation on all CRUD (blog/discussions update/delete/comment/reply), R2: transactional counting, R3: batch-create campus/grade force-override, R4: search suggestions org filter (commit 3226b65)*
 *Phase 9/10 UAT blocked by Docker E2E environment — not functional blocking. Clarified status to Env-Blocked.*
+*Security audit round 5 fixes: 2026-04-20 — community read/detail tenant isolation, comment/reply INSERT org_id, like tenant pre-check (commit 5a348d1)*
+*Security audit round 6 fixes (ultrawork): 2026-04-20 — GradeAdmin role ceiling (no Teacher+), blog aggregation tenant filter, atomic like counting, search problem suggestions org filter (commit 8ea20a6)*
 
 ## Decisions
 
