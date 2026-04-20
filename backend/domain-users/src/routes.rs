@@ -65,6 +65,8 @@ async fn list_admin_users(
     ensure_admin(&claims.role)?;
     let caller_role = claims.role.parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
+    // SECURITY: Fail-closed — non-root admins MUST have required scope fields
+    ensure_admin_scope(&caller_role, &claims)?;
     // SECURITY: Scope campus_id/grade_id based on caller role
     let scope_campus_id = match caller_role {
         shared::models::Role::Root => None,
@@ -92,6 +94,8 @@ async fn batch_create_users(
     // does not equal or exceed the caller's role level (no same-level granting)
     let caller_role = claims.role.parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
+    // SECURITY: Fail-closed — non-root admins MUST have required scope fields
+    ensure_admin_scope(&caller_role, &claims)?;
     // SECURITY: Validate roles AND force campus_id/grade_id from caller's scope.
     // A single mutable pass prevents CampusAdmin/GradeAdmin from passing arbitrary scope values.
     for user in &mut request.users {
@@ -151,6 +155,8 @@ async fn update_user_role(
     // SECURITY: Prevent privilege escalation — caller cannot assign at or above their own level
     let caller_role = claims.role.parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
+    // SECURITY: Fail-closed — non-root admins MUST have required scope fields
+    ensure_admin_scope(&caller_role, &claims)?;
     let target_role = request.role.parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid target role".to_string()))?;
     if target_role.is_higher_or_equal(caller_role) {
@@ -182,6 +188,8 @@ async fn toggle_user_status(
     ensure_admin(&claims.role)?;
     let caller_role = claims.role.parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
+    // SECURITY: Fail-closed — non-root admins MUST have required scope fields
+    ensure_admin_scope(&caller_role, &claims)?;
     let service = UserService::new(state.db_pool, state.jwt_service.clone());
     service.update_user_status_scoped(
         user_id,
@@ -199,4 +207,36 @@ fn ensure_admin(role: &str) -> Result<(), AppError> {
     } else {
         Err(AppError::Auth("Admin access required".to_string()))
     }
+}
+
+/// SECURITY: Fail-closed scope validation — non-root admins MUST have required scope fields.
+/// CampusAdmin requires campus_id. GradeAdmin requires campus_id AND grade_id.
+/// If scope is missing, the admin account is misconfigured — reject immediately (403).
+fn ensure_admin_scope(
+    role: &shared::models::Role,
+    claims: &shared::models::Claims,
+) -> Result<(), AppError> {
+    match role {
+        shared::models::Role::CampusAdmin => {
+            if claims.campus_id.is_none() {
+                return Err(AppError::Auth(
+                    "CampusAdmin account misconfigured: campus_id is required".to_string(),
+                ));
+            }
+        }
+        shared::models::Role::GradeAdmin => {
+            if claims.campus_id.is_none() {
+                return Err(AppError::Auth(
+                    "GradeAdmin account misconfigured: campus_id is required".to_string(),
+                ));
+            }
+            if claims.grade_id.is_none() {
+                return Err(AppError::Auth(
+                    "GradeAdmin account misconfigured: grade_id is required".to_string(),
+                ));
+            }
+        }
+        _ => {}
+    }
+    Ok(())
 }

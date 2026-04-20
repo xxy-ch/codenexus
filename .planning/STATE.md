@@ -92,6 +92,11 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Security audit round 9 fixes: 2026-04-20 — search_discussions d.organization_id filter, create_discussion problem_id/contest_id cross-tenant validation (commit 29c09c0)*
 *Phase 9/10 verdict updated: 2026-04-20 — changed from BLOCKED to CONDITIONALLY ACCEPTED / ENV-BLOCKED; only Docker E2E env remains*
 
+### Roadmap Evolution
+
+- Phase 15 added: 2026-04-20 — Frontend UI completion — remaining pages, polish, and integration testing
+- Phase 15 discuss-phase completed: 2026-04-20 — 4 decisions: D-15-01 (wave-based all), D-15-02 (production-grade UI), D-15-03 (TDD full coverage), D-15-04 (PC-only)
+
 ## Decisions
 
 - D-01: Docker build verification only (no push) on master branch pushes
@@ -149,6 +154,10 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 14]: D-14-06: Academic year transitions are admin-triggered batch ops (graduate/promote/create-year), not automated cron (D-02)
 - [Phase 14]: D-14-07: Frontend grade types, grades service, grade dropdown in user management, GradeManagement admin page with batch operations
 - [Phase 14]: D-14-08: Full workspace build verification — cargo build/clippy/test pass, frontend build passes; pre-existing domain-community title column failure confirmed out of scope
+- [Phase 15]: D-15-01: Wave-based execution — fix TODOs first, then polish UI, then evaluate new pages
+- [Phase 15]: D-15-02: Production-grade UI polish — skeleton screens, empty states, error boundaries, unified design tokens
+- [Phase 15]: D-15-03: TDD full coverage — every new/modified component gets vitest test, 80%+ target
+- [Phase 15]: D-15-04: PC-only responsive — guarantee 1280px+, no mobile breakpoints, deferred to future phase
 
 ## Performance Metrics
 

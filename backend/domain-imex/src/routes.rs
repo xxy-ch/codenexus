@@ -617,6 +617,14 @@ pub async fn validate_user_import(
 ) -> Result<Json<UserImportPreviewResponse>, StatusCode> {
     require_admin(&claims.role)?;
 
+    // SECURITY: Fail-closed — CampusAdmin/GradeAdmin must have required scope fields
+    if claims.role == "campusadmin" && claims.campus_id.is_none() {
+        return Err(StatusCode::FORBIDDEN);
+    }
+    if claims.role == "gradeadmin" && (claims.campus_id.is_none() || claims.grade_id.is_none()) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     let fields = collect_multipart_fields(&mut multipart).await?;
     let file_bytes = get_file_field(&fields, "file")?;
     let default_password = get_text_field(&fields, "default_password")?;
@@ -692,6 +700,14 @@ pub async fn execute_user_import(
     Json(req): Json<ImportExecuteRequest>,
 ) -> Result<Json<ImportResultResponse>, StatusCode> {
     require_admin(&claims.role)?;
+
+    // SECURITY: Fail-closed — CampusAdmin/GradeAdmin must have required scope fields
+    if claims.role == "campusadmin" && claims.campus_id.is_none() {
+        return Err(StatusCode::FORBIDDEN);
+    }
+    if claims.role == "gradeadmin" && (claims.campus_id.is_none() || claims.grade_id.is_none()) {
+        return Err(StatusCode::FORBIDDEN);
+    }
 
     // Read-only peek to validate ownership before consuming the token
     let ref_entry = state

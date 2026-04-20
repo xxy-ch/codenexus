@@ -507,16 +507,24 @@ impl UserService {
             return Err(anyhow::anyhow!("Cannot modify users outside your organization"));
         }
 
-        // SECURITY: Scope constraints for non-root admins
+        // SECURITY: Scope constraints for non-root admins — fail-closed
         if caller_role == shared::models::Role::CampusAdmin {
-            if user.campus_id != caller_campus_id {
+            // Fail-closed: CampusAdmin without campus_id cannot manage any users
+            let cid = caller_campus_id
+                .ok_or_else(|| anyhow::anyhow!("CampusAdmin account misconfigured: campus_id required"))?;
+            if user.campus_id != Some(cid) {
                 return Err(anyhow::anyhow!("CampusAdmin can only modify users in their own campus"));
             }
         } else if caller_role == shared::models::Role::GradeAdmin {
-            if user.campus_id != caller_campus_id {
+            // Fail-closed: GradeAdmin without campus_id/grade_id cannot manage any users
+            let cid = caller_campus_id
+                .ok_or_else(|| anyhow::anyhow!("GradeAdmin account misconfigured: campus_id required"))?;
+            let gid = caller_grade_id
+                .ok_or_else(|| anyhow::anyhow!("GradeAdmin account misconfigured: grade_id required"))?;
+            if user.campus_id != Some(cid) {
                 return Err(anyhow::anyhow!("GradeAdmin can only modify users in their own campus"));
             }
-            if user.grade_id != caller_grade_id {
+            if user.grade_id != Some(gid) {
                 return Err(anyhow::anyhow!("GradeAdmin can only modify users in their own grade"));
             }
         }
@@ -589,26 +597,26 @@ impl UserService {
             return Err(anyhow::anyhow!("Cannot modify users outside your organization"));
         }
 
-        // SECURITY: CampusAdmin — verify target in same campus
+        // SECURITY: CampusAdmin — fail-closed: reject if scope missing
         if caller_role == shared::models::Role::CampusAdmin {
-            if let Some(cid) = caller_campus_id {
-                if user.campus_id != Some(cid) {
-                    return Err(anyhow::anyhow!("Cannot modify users outside your campus"));
-                }
+            let cid = caller_campus_id
+                .ok_or_else(|| anyhow::anyhow!("CampusAdmin account misconfigured: campus_id required"))?;
+            if user.campus_id != Some(cid) {
+                return Err(anyhow::anyhow!("Cannot modify users outside your campus"));
             }
         }
 
-        // SECURITY: GradeAdmin — verify target in same campus AND grade
+        // SECURITY: GradeAdmin — fail-closed: reject if scope missing
         if caller_role == shared::models::Role::GradeAdmin {
-            if let Some(cid) = caller_campus_id {
-                if user.campus_id != Some(cid) {
-                    return Err(anyhow::anyhow!("Cannot modify users outside your campus"));
-                }
+            let cid = caller_campus_id
+                .ok_or_else(|| anyhow::anyhow!("GradeAdmin account misconfigured: campus_id required"))?;
+            let gid = caller_grade_id
+                .ok_or_else(|| anyhow::anyhow!("GradeAdmin account misconfigured: grade_id required"))?;
+            if user.campus_id != Some(cid) {
+                return Err(anyhow::anyhow!("Cannot modify users outside your campus"));
             }
-            if let Some(gid) = caller_grade_id {
-                if user.grade_id != Some(gid) {
-                    return Err(anyhow::anyhow!("Cannot modify users outside your grade"));
-                }
+            if user.grade_id != Some(gid) {
+                return Err(anyhow::anyhow!("Cannot modify users outside your grade"));
             }
         }
 
