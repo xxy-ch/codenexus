@@ -253,7 +253,7 @@ impl BlogService {
         }
 
         if updates.is_empty() {
-            return self.get_article_by_id(id).await;
+            return self.get_article_by_id(id, organization_id).await;
         }
 
         query.push_str(&updates.join(", "));
@@ -576,12 +576,15 @@ impl BlogService {
         Ok(articles)
     }
 
-    /// Get article by ID
-    async fn get_article_by_id(&self, id: i64) -> Result<Article> {
-        let article = sqlx::query_as::<_, Article>("SELECT * FROM articles WHERE id = $1")
-            .bind(id)
-            .fetch_one(&self.pool)
-            .await?;
+    /// Get article by ID (tenant-scoped)
+    async fn get_article_by_id(&self, id: i64, organization_id: i64) -> Result<Article> {
+        let article = sqlx::query_as::<_, Article>(
+            "SELECT * FROM articles WHERE id = $1 AND organization_id = $2",
+        )
+        .bind(id)
+        .bind(organization_id)
+        .fetch_one(&self.pool)
+        .await?;
 
         Ok(article)
     }

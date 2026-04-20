@@ -817,6 +817,16 @@ pub async fn execute_user_import(
                         continue;
                     }
                     // GradeAdmin users always get the caller's grade_id
+
+                    // SECURITY: GradeAdmin cannot import Teacher or higher roles
+                    let target_role = row.role.parse::<Role>().unwrap_or(Role::Student);
+                    if target_role.is_higher_or_equal(Role::Teacher) {
+                        error_items.push(ErrorItem {
+                            item: row.username.clone(),
+                            reason: "GradeAdmin cannot import Teacher or higher roles".to_string(),
+                        });
+                        continue;
+                    }
                 }
                 let effective_grade_id = if claims.role == "gradeadmin" {
                     claims.grade_id
