@@ -544,7 +544,7 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 10. `npx vitest --run` passes with 0 skipped tests
 
 **Depends on:** Phase 14
-**Plans:** 10/12 plans executed
+**Plans:** 11/12 plans executed
 
 Plans:
 - [x] 15-01-PLAN.md — Test infrastructure: renderWithProviders helper (Wave 1)
@@ -557,7 +557,7 @@ Plans:
 - [x] 15-08-PLAN.md — Convert 12 user pages to skeleton/empty/error (Wave 2b)
 - [x] 15-09-PLAN.md — Convert 7 community/search pages to skeleton/empty/error (Wave 2b)
 - [x] 15-10-PLAN.md — Convert admin/teacher pages + icon migration (Wave 2b)
-- [ ] 15-11-PLAN.md — Wave 3: Evaluate DailyChallenge/Achievements backend endpoints (Wave 3)
+- [x] 15-11-PLAN.md — Wave 3: Evaluate DailyChallenge/Achievements backend endpoints (Wave 3)
 - [ ] 15-12-PLAN.md — Phase verification: full test suite + build + coverage audit (Wave 3)
 
 ---

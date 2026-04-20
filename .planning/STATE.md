@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 15
 status: executing
-last_updated: "2026-04-20T23:00:49.505Z"
+last_updated: "2026-04-20T23:05:08.454Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 16
@@ -179,6 +179,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 15]: Pre-existing skeleton files committed together with new test file in single commit since implementation was already complete
 - [Phase 15]: D-15-P10: AdminDashboard skipped -- static navigation page with no useQuery loading state
 - [Phase 15]: D-15-P10: AdminLayout uses ICON_MAP lookup table to map Material Symbol icon names to Lucide components
+- [Phase 15]: Wave 3 is a no-op: no DailyChallenge or Achievements backend endpoints exist
 
 ## Performance Metrics
 
@@ -218,3 +219,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 15 P09 | 7min | 2 tasks | 7 files |
 | Phase 15 P08 | 6min | 3 tasks | 11 files |
 | Phase 15 P10 | 9min | 2 tasks | 13 files |
+| Phase 15 P11 | 2min | 1 tasks | 1 files |
