@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 15
-status: discuss-complete
-last_updated: "2026-04-20T09:00:00Z"
+status: completed
+last_updated: "2026-04-20T15:38:03.058Z"
 last_activity: 2026-04-20
 progress:
-  total_phases: 15
-  completed_phases: 10
-  total_plans: 53
-  completed_plans: 49
-  percent: 92
+  total_phases: 16
+  completed_phases: 11
+  total_plans: 65
+  completed_plans: 54
+  percent: 83
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -161,6 +161,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 15]: D-15-02: Production-grade UI polish — skeleton screens, empty states, error boundaries, unified design tokens
 - [Phase 15]: D-15-03: TDD full coverage — every new/modified component gets vitest test, 80%+ target
 - [Phase 15]: D-15-04: PC-only responsive — guarantee 1280px+, no mobile breakpoints, deferred to future phase
+- [Phase 15]: Fresh QueryClient per renderWithProviders call prevents test cache leaking
+- [Phase 15]: Re-export testing library utilities from test-utils for single-import convenience
 
 ## Performance Metrics
 
@@ -190,3 +192,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 14 P04 | 19min | 4 tasks | 5 files |
 | Phase 14 P05 | 6min | 5 tasks | 9 files |
 | Phase 14 P06 | 5min | 5 tasks | 3 files |
+| Phase 15 P01 | 3min | 1 tasks | 2 files |

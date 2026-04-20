@@ -544,10 +544,10 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 10. `npx vitest --run` passes with 0 skipped tests
 
 **Depends on:** Phase 14
-**Plans:** 12 plans in 3 waves
+**Plans:** 1/12 plans executed
 
 Plans:
-- [ ] 15-01-PLAN.md — Test infrastructure: renderWithProviders helper (Wave 1)
+- [x] 15-01-PLAN.md — Test infrastructure: renderWithProviders helper (Wave 1)
 - [ ] 15-02-PLAN.md — Fix 32 skipped tests in ContestDetail, ContestList, DashboardEnhanced (Wave 1)
 - [ ] 15-03-PLAN.md — Fix UserManagement campus dropdown TODO + test (Wave 1)
 - [ ] 15-04-PLAN.md — Fix Settings localStorage persistence TODO + test (Wave 1)
