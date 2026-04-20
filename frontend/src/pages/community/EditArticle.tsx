@@ -4,7 +4,8 @@ import { ArrowLeft, RefreshCw, Save, Send, Tags } from 'lucide-react'
 import { blogApi } from '@/services/articlesApi'
 import type { UpdateArticleRequest } from '@/types/community'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
-import { Loading } from '@/components/ui/Loading'
+import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 import { useAuth } from '@/hooks/useAuth'
 
 export function EditArticle() {
@@ -19,6 +20,7 @@ export function EditArticle() {
   const [category, setCategory] = useState('')
   const [isPublished, setIsPublished] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -26,6 +28,7 @@ export function EditArticle() {
 
     const fetchArticle = async () => {
       setLoading(true)
+      setLoadError(false)
       try {
         const detail = await blogApi.getArticle(slug)
 
@@ -41,6 +44,7 @@ export function EditArticle() {
         setIsPublished(detail.article.is_published)
       } catch (error) {
         console.error('Failed to load article for edit:', error)
+        setLoadError(true)
       } finally {
         setLoading(false)
       }
@@ -86,9 +90,13 @@ export function EditArticle() {
   if (loading) {
     return (
       <div className="flex min-h-[360px] items-center justify-center">
-        <Loading message="加载文章中..." />
+        <FormSkeleton rows={4} />
       </div>
     )
+  }
+
+  if (loadError) {
+    return <InlineError title="文章加载失败" onRetry={() => { if (slug) { const fetchArticle = async () => { setLoading(true); setLoadError(false); try { const detail = await blogApi.getArticle(slug); setTitle(detail.article.title); setContent(detail.article.content); setTags(detail.article.tags || []); setCategory(detail.article.category || ''); setIsPublished(detail.article.is_published); } catch (e) { setLoadError(true); } finally { setLoading(false); } }; fetchArticle(); } }} />
   }
 
   return (

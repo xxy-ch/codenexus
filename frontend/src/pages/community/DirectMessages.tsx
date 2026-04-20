@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { messagesService } from '@/services/messages'
-import { Loading } from '@/components/ui/Loading'
+import { ConversationSkeleton } from '@/components/skeletons/ConversationSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 import { ConversationList } from '@/components/messages/ConversationList'
 import { MessageThread } from '@/components/messages/MessageThread'
 import { MessageCircle, RefreshCw, Send, Users } from 'lucide-react'
@@ -44,24 +46,13 @@ export function DirectMessages() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loading message="加载私信中..." />
+        <ConversationSkeleton />
       </div>
     )
   }
 
   if (error) {
-    return (
-      <div className="text-center py-16">
-        <p className="text-slate-600 dark:text-slate-300 mb-4">私信加载失败</p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="px-4 py-2 rounded bg-primary text-white"
-        >
-          重试
-        </button>
-      </div>
-    )
+    return <InlineError title="私信加载失败" onRetry={() => refetch()} />
   }
 
   return (

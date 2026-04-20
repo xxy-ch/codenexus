@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { SearchX } from 'lucide-react'
 import { searchApi } from '@/services/searchApi'
 import type { SearchResponse, SearchResultItem, SearchType, SearchSort } from '@/types/search'
 import { SearchBar } from '@/components/search/SearchBar'
-import { Loading } from '@/components/ui/Loading'
+import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 
 export function SearchResults() {
   const navigate = useNavigate()
@@ -261,12 +264,9 @@ export function SearchResults() {
       {/* Results */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
-          <Loading message="Searching..." />
+          <CardGridSkeleton cards={4} />
         ) : error ? (
-          <div className="text-center py-12">
-            <span className="material-icons text-6xl text-text-muted mb-4">error_outline</span>
-            <p className="text-text-muted">{error}</p>
-          </div>
+          <InlineError title="搜索失败" onRetry={() => { const fetchResults = async () => { if (!query && !category && !tag) { setResults(null); setLoading(false); return; } setLoading(true); setError(null); try { const response = await searchApi.search({ q: query, type, category, tag, sort, page, limit: 20 }); setResults(response); } catch (err) { setError('Failed to load search results. Please try again.'); } finally { setLoading(false); } }; fetchResults(); }} />
         ) : !query && !category && !tag ? (
           <div className="text-center py-12">
             <span className="material-icons text-6xl text-text-muted mb-4">search</span>
@@ -278,23 +278,21 @@ export function SearchResults() {
             </p>
           </div>
         ) : results && results.results.length === 0 ? (
-          <div className="text-center py-12">
-            <span className="material-icons text-6xl text-text-muted mb-4">search_off</span>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No results found
-            </h2>
-            <p className="text-text-muted mb-4">
-              Try different keywords or filters
-            </p>
-            <button
-              onClick={() => {
-                setSearchParams(new URLSearchParams())
-              }}
-              className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
-            >
-              Clear filters
-            </button>
-          </div>
+          <EmptyState
+            icon={SearchX}
+            title="未找到结果"
+            description="尝试调整搜索词或清除筛选条件"
+            action={
+              <button
+                onClick={() => {
+                  setSearchParams(new URLSearchParams())
+                }}
+                className="px-6 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
+              >
+                Clear filters
+              </button>
+            }
+          />
         ) : (
           <>
             <div className="space-y-4 mb-8">
