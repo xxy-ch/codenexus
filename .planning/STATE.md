@@ -92,6 +92,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Security audit round 9 fixes: 2026-04-20 — search_discussions d.organization_id filter, create_discussion problem_id/contest_id cross-tenant validation (commit 29c09c0)*
 *Phase 9/10 verdict updated: 2026-04-20 — changed from BLOCKED to CONDITIONALLY ACCEPTED / ENV-ONLY GAP; all code verified, only Docker Redis/PostgreSQL E2E remains*
 *Security audit rounds 10-12: 2026-04-20 — dfffdb3 (search_discussions cross-tenant), dd006da (fail-closed admin scope), 75cc00a (sub-table tenant filter + integration test sync)*
+*Security audit round 13: 2026-04-20 — 1890e59 (deactivate_grade suspend ordering, contest cross-org guard, judge-worker test_cases schema fix)*
 *Test evidence updated: 2026-04-20 — 382 tests pass (360 unit + 22 integration), 0 failures, release gate tests verified*
 
 ### Roadmap Evolution

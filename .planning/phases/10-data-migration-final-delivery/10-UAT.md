@@ -247,6 +247,7 @@ Migration tool verified: cross-tenant isolation, idempotent operations, MD5→bc
 | 4-6 | 3226b65, 5a348d1, 8ea20a6 | Community full isolation, GradeAdmin role ceiling, atomic like counting |
 | 7-9 | ea10718, 5ad4718, 29c09c0 | Empty PATCH bypass, admin scope, discussion cross-org prevention |
 | 10-12 | dfffdb3, dd006da, 75cc00a | Fail-closed admin scope, sub-table tenant filter, integration test sync |
+| 13 | 1890e59 | deactivate_grade suspend ordering fix, contest cross-org guard, judge-worker test_cases schema fix |
 
 ### Test Evidence (2026-04-20)
 

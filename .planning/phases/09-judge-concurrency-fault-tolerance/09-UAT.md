@@ -252,6 +252,7 @@ All Critical/High findings resolved and verified.
 | 10 | dfffdb3 | search_discussions cross-tenant leak, discussion cross-org link validation |
 | 11 | dd006da | Fail-closed admin scope — null campus_id/grade_id rejected (403) |
 | 12 | 75cc00a | Community sub-table tenant filter (replies/comments), search tenant scope, integration test sync |
+| 13 | 1890e59 | deactivate_grade suspend ordering fix, contest cross-org guard, judge-worker test_cases schema fix |
 
 ### Test Evidence (2026-04-20)
 
