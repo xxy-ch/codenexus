@@ -468,6 +468,68 @@ impl UserService {
         Ok(())
     }
 
+    /// Scoped variant of update_user_role with campus/grade scope enforcement.
+    pub async fn update_user_role_scoped(
+        &self,
+        user_id: Uuid,
+        role: &str,
+        caller_org_id: i64,
+        caller_campus_id: Option<i64>,
+        caller_grade_id: Option<i64>,
+        caller_role: shared::models::Role,
+    ) -> Result<()> {
+        // Validate and normalize to canonical role
+        let normalized_role = role
+            .parse::<shared::models::Role>()
+            .map_err(|_| anyhow::anyhow!("Unsupported role: {}", role))?
+            .as_str();
+
+        let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&self.pool)
+            .await?;
+
+        // SECURITY: Verify target user belongs to the same organization
+        if user.organization_id != caller_org_id {
+            return Err(anyhow::anyhow!("Cannot modify users outside your organization"));
+        }
+
+        // SECURITY: Scope constraints for non-root admins
+        if caller_role == shared::models::Role::CampusAdmin {
+            if user.campus_id != caller_campus_id {
+                return Err(anyhow::anyhow!("CampusAdmin can only modify users in their own campus"));
+            }
+        } else if caller_role == shared::models::Role::GradeAdmin {
+            if user.campus_id != caller_campus_id {
+                return Err(anyhow::anyhow!("GradeAdmin can only modify users in their own campus"));
+            }
+            if user.grade_id != caller_grade_id {
+                return Err(anyhow::anyhow!("GradeAdmin can only modify users in their own grade"));
+            }
+        }
+
+        // SECURITY (B): Wrap DELETE + INSERT in transaction for atomicity
+        let mut tx = self.pool.begin().await?;
+        sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
+            .bind(user_id)
+            .execute(&mut *tx)
+            .await?;
+
+        sqlx::query(
+            "INSERT INTO user_roles (user_id, organization_id, campus_id, grade_id, role) VALUES ($1, $2, $3, $4, $5)"
+        )
+        .bind(user_id)
+        .bind(user.organization_id)
+        .bind(user.campus_id)
+        .bind(user.grade_id)
+        .bind(normalized_role)
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+        Ok(())
+    }
+
     pub async fn update_user_status(&self, user_id: Uuid, caller_org_id: i64) -> Result<String> {
         let next_status: String = sqlx::query_scalar(
             r#"

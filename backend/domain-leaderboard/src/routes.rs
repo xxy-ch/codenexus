@@ -19,6 +19,12 @@ fn is_admin(role: &str) -> bool {
         .unwrap_or(false)
 }
 
+/// SECURITY: Only Root can bypass tenant isolation for leaderboard queries.
+/// CampusAdmin/GradeAdmin see only their own organization — never cross-tenant.
+fn is_root(role: &str) -> bool {
+    role.parse::<Role>().map(|r| r == Role::Root).unwrap_or(false)
+}
+
 fn is_teacher_plus(role: &str) -> bool {
     role.parse::<Role>()
         .map(|r| r.is_higher_or_equal(Role::Teacher))
@@ -44,8 +50,8 @@ pub async fn get_global_leaderboard(
     Extension(tenant_ctx): Extension<TenantContext>,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
-    // SEC-03: scope to user's organization unless admin
-    let school_id = if is_admin(&claims.role) {
+    // SEC-03: scope to user's organization — only Root sees all orgs
+    let school_id = if is_root(&claims.role) {
         None
     } else {
         Some(claims.school_id)
@@ -76,8 +82,8 @@ pub async fn get_school_leaderboard(
     Path(school_id): Path<i64>,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
-    // Visibility: claims.school_id == school_id OR admin
-    if claims.school_id != school_id && !is_admin(&claims.role) {
+    // Visibility: claims.school_id == school_id OR Root
+    if claims.school_id != school_id && !is_root(&claims.role) {
         return Err(StatusCode::FORBIDDEN);
     }
 
@@ -101,8 +107,8 @@ pub async fn get_campus_leaderboard(
     Path(campus_id): Path<i64>,
     Query(query): Query<LeaderboardQuery>,
 ) -> Result<Json<LeaderboardResponse>, StatusCode> {
-    // Visibility: claims.campus_id == Some(campus_id) OR admin
-    if claims.campus_id != Some(campus_id) && !is_admin(&claims.role) {
+    // Visibility: claims.campus_id == Some(campus_id) OR Root
+    if claims.campus_id != Some(campus_id) && !is_root(&claims.role) {
         return Err(StatusCode::FORBIDDEN);
     }
     // Additional: verify campus belongs to user's org (prevent cross-tenant with shared campus IDs)
@@ -114,7 +120,7 @@ pub async fn get_campus_leaderboard(
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     if let Some(org_id) = campus_org {
-        if org_id != claims.school_id && !is_admin(&claims.role) {
+        if org_id != claims.school_id && !is_root(&claims.role) {
             return Err(StatusCode::FORBIDDEN);
         }
     }
@@ -153,7 +159,7 @@ pub async fn get_class_leaderboard(
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     match class_org {
-        Some(org_id) if org_id == claims.school_id || is_admin(&claims.role) => {}
+        Some(org_id) if org_id == claims.school_id || is_root(&claims.role) => {}
         Some(_) => return Err(StatusCode::FORBIDDEN),
         None => return Err(StatusCode::NOT_FOUND),
     }
@@ -202,7 +208,7 @@ pub async fn get_user_stats(
                 .await
                 .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
         match target_org {
-            Some(org_id) if org_id == claims.school_id || is_admin(&claims.role) => {}
+            Some(org_id) if org_id == claims.school_id || is_root(&claims.role) => {}
             Some(_) => return Err(StatusCode::FORBIDDEN),
             None => return Err(StatusCode::NOT_FOUND),
         }
@@ -233,8 +239,8 @@ pub async fn get_problem_leaderboard(
         .unwrap_or(10)
         .min(100);
 
-    // SEC-03: scope to user's organization unless admin
-    let school_id = if is_admin(&claims.role) {
+    // SEC-03: scope to user's organization — only Root sees all orgs
+    let school_id = if is_root(&claims.role) {
         None
     } else {
         Some(claims.school_id)

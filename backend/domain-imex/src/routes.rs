@@ -90,8 +90,14 @@ fn require_admin(role: &str) -> Result<(), StatusCode> {
 }
 
 /// Check if the caller is specifically a CampusAdmin (requires campus scoping).
+/// Check if the caller is specifically a CampusAdmin (requires campus scoping).
 fn is_campus_admin(role: &str) -> bool {
     role.parse::<Role>().ok() == Some(Role::CampusAdmin)
+}
+
+/// Check if the caller is specifically a GradeAdmin (requires grade scoping).
+fn is_grade_admin(role: &str) -> bool {
+    role.parse::<Role>().ok() == Some(Role::GradeAdmin)
 }
 
 /// Collect all fields from a multipart request into a name→bytes map.
@@ -960,6 +966,7 @@ pub async fn export_users(
     require_admin(&claims.role)?;
 
     // CampusAdmin can only export users from their own campus.
+    // GradeAdmin can only export users from their own grade.
     // DISTINCT ON ensures one row per user, picking the highest-privilege role.
     let rows = if is_campus_admin(&claims.role) {
         let campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
@@ -984,6 +991,34 @@ pub async fn export_users(
         )
         .bind(claims.school_id)
         .bind(campus_id)
+        .fetch_all(&state.db_pool)
+        .await
+    } else if is_grade_admin(&claims.role) {
+        // SECURITY: GradeAdmin exports only users in their own campus+grade
+        let campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
+        let grade_id = claims.grade_id.ok_or(StatusCode::FORBIDDEN)?;
+        sqlx::query(
+            r#"
+            SELECT DISTINCT ON (u.id)
+                u.username, r.role, u.campus_id, u.grade_id, u.display_name, u.email
+            FROM users u
+            JOIN user_roles r ON u.id = r.user_id
+            WHERE u.organization_id = $1 AND u.campus_id = $2 AND u.grade_id = $3
+            ORDER BY u.id,
+                CASE r.role
+                    WHEN 'root' THEN 1
+                    WHEN 'campusadmin' THEN 2
+                    WHEN 'gradeadmin' THEN 3
+                    WHEN 'teacher' THEN 4
+                    WHEN 'teachingassistant' THEN 5
+                    WHEN 'student' THEN 6
+                    ELSE 7
+                END ASC
+            "#,
+        )
+        .bind(claims.school_id)
+        .bind(campus_id)
+        .bind(grade_id)
         .fetch_all(&state.db_pool)
         .await
     } else {

@@ -78,24 +78,38 @@ async fn batch_create_users(
     request.organization_id = claims.school_id;
 
     // SECURITY: Prevent privilege escalation — validate each requested role
-    // does not exceed the caller's role level
+    // does not equal or exceed the caller's role level (no same-level granting)
     let caller_role = claims.role.parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
     for user in &request.users {
         if let Some(role_str) = &user.role {
             let target_role = role_str.parse::<shared::models::Role>()
                 .map_err(|_| AppError::Auth(format!("Invalid role: {}", role_str)))?;
-            if target_role.is_higher_or_equal(caller_role) && target_role != caller_role {
+            if target_role.is_higher_or_equal(caller_role) {
                 return Err(AppError::Auth(format!(
-                    "Cannot assign role '{}' — exceeds your authorization level", role_str
+                    "Cannot assign role '{}' — cannot assign at or above your own level", role_str
                 )));
             }
         }
-        // SECURITY: GradeAdmin cannot set campus_id outside their own campus
-        if claims.role == "gradeadmin" {
+        // SECURITY: Scope constraints — admin can only create users in their own scope
+        let parsed_role = caller_role;
+        if parsed_role == shared::models::Role::CampusAdmin {
+            // CampusAdmin: force campus_id to caller's campus
+            if let Some(user_campus) = user.campus_id {
+                if Some(user_campus) != claims.campus_id {
+                    return Err(AppError::Auth("CampusAdmin can only create users in their own campus".to_string()));
+                }
+            }
+        } else if parsed_role == shared::models::Role::GradeAdmin {
+            // GradeAdmin: force campus_id and grade_id
             if let Some(user_campus) = user.campus_id {
                 if Some(user_campus) != claims.campus_id {
                     return Err(AppError::Auth("GradeAdmin can only create users in their own campus".to_string()));
+                }
+            }
+            if let Some(user_grade) = user.grade_id {
+                if Some(user_grade) != claims.grade_id {
+                    return Err(AppError::Auth("GradeAdmin can only create users in their own grade".to_string()));
                 }
             }
         }
@@ -113,16 +127,23 @@ async fn update_user_role(
     Json(request): Json<UpdateUserRoleRequest>,
 ) -> Result<impl IntoResponse, AppError> {
     ensure_admin(&claims.role)?;
-    // SECURITY: Prevent privilege escalation — caller cannot assign a role higher than their own
+    // SECURITY: Prevent privilege escalation — caller cannot assign at or above their own level
     let caller_role = claims.role.parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
     let target_role = request.role.parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid target role".to_string()))?;
-    if target_role.is_higher_or_equal(caller_role) && target_role != caller_role {
-        return Err(AppError::Auth("Cannot assign a role higher than your own".to_string()));
+    if target_role.is_higher_or_equal(caller_role) {
+        return Err(AppError::Auth("Cannot assign a role at or above your own level".to_string()));
     }
     let service = UserService::new(state.db_pool, state.jwt_service.clone());
-    service.update_user_role(user_id, &request.role, claims.school_id).await?;
+    service.update_user_role_scoped(
+        user_id,
+        &request.role,
+        claims.school_id,
+        claims.campus_id,
+        claims.grade_id,
+        caller_role,
+    ).await?;
     Ok(Json(AdminMutationResponse { success: true }))
 }
 
