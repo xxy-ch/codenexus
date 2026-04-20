@@ -79,7 +79,8 @@ pub struct UserProfileUpdate {
     pub email: Option<String>,
     pub password: Option<String>,
     pub display_name: Option<String>,
-    pub campus_id: Option<i64>,
+    // SECURITY: campus_id and grade_id are NOT self-service editable.
+    // Tenant fields must only be changed by admin operations that enforce org ownership.
 }
 
 #[derive(Debug, Deserialize)]

@@ -887,11 +887,12 @@ pub async fn execute_user_import(
                 match user_result {
                     Ok(user_id) => {
                         let role_result = sqlx::query(
-                            "INSERT INTO user_roles (user_id, organization_id, campus_id, role) VALUES ($1, $2, $3, $4)",
+                            "INSERT INTO user_roles (user_id, organization_id, campus_id, grade_id, role) VALUES ($1, $2, $3, $4, $5)",
                         )
                         .bind(user_id)
                         .bind(claims.school_id)
                         .bind(row.campus_id)
+                        .bind(effective_grade_id)
                         .bind(&row.role)
                         .execute(&mut *tx)
                         .await;

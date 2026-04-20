@@ -139,6 +139,11 @@ async fn create_grade(
     // SECURITY: Force campus_id from JWT claims, never trust client input
     request.campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
     let service = ClassService::new(state.db_pool);
+    // SECURITY: Verify campus belongs to caller's organization
+    service
+        .verify_campus_org(request.campus_id, claims.school_id)
+        .await
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     let grade = service
         .create_grade(&request)
         .await
@@ -155,16 +160,35 @@ async fn list_grades(
     Extension(tenant_ctx): Extension<TenantContext>,
     Query(mut query): Query<ListGradesQuery>,
 ) -> Result<Json<GradesListResponse>, StatusCode> {
-    // CampusAdmin+: campus_id from query; others: use claims campus
-    if query.campus_id.is_none() {
-        query.campus_id = claims.campus_id;
+    // RBAC: require at least Teacher role
+    let caller_role = require_teacher_plus(&claims.role)?;
+
+    let service = ClassService::new(state.db_pool);
+
+    // Tenant scope: enforce campus_id based on role
+    match caller_role {
+        Role::Root => {
+            // Root: can query any campus (no restriction)
+        }
+        Role::CampusAdmin | Role::GradeAdmin | Role::Teacher => {
+            // SECURITY: Force campus_id to caller's own campus — never trust query param
+            query.campus_id = claims.campus_id;
+            if let Some(cid) = query.campus_id {
+                service.verify_campus_org(cid, claims.school_id)
+                    .await.map_err(|_| StatusCode::FORBIDDEN)?;
+            }
+        }
+        _ => {
+            // Students and TAs: use claims campus
+            query.campus_id = claims.campus_id;
+        }
     }
+
     // Default to active only
     if query.is_active.is_none() {
         query.is_active = Some(true);
     }
 
-    let service = ClassService::new(state.db_pool);
     let mut response = service
         .list_grades(&query)
         .await
@@ -192,6 +216,11 @@ async fn update_grade(
     let campus_id = claims
         .campus_id
         .ok_or(StatusCode::FORBIDDEN)?;
+    // SECURITY: Verify campus belongs to caller's organization
+    service
+        .verify_campus_org(campus_id, claims.school_id)
+        .await
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     verify_grade_tenant(&service, grade_id, campus_id).await?;
 
     let grade = service
@@ -216,6 +245,11 @@ async fn deactivate_grade(
     let campus_id = claims
         .campus_id
         .ok_or(StatusCode::FORBIDDEN)?;
+    // SECURITY: Verify campus belongs to caller's organization
+    service
+        .verify_campus_org(campus_id, claims.school_id)
+        .await
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     verify_grade_tenant(&service, grade_id, campus_id).await?;
 
     let (grade, affected) = service
@@ -244,6 +278,11 @@ async fn batch_graduate(
 
     // Graduate the highest year_level grade in the campus
     let service = ClassService::new(state.db_pool);
+    // SECURITY: Verify campus belongs to caller's organization
+    service
+        .verify_campus_org(campus_id, claims.school_id)
+        .await
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     let query = ListGradesQuery {
         campus_id: Some(campus_id),
         is_active: Some(true),

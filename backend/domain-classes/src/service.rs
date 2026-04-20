@@ -16,6 +16,22 @@ impl ClassService {
         Self { pool }
     }
 
+    /// SECURITY: Verify that a campus belongs to the given organization.
+    /// Defense-in-depth to prevent cross-org writes even if JWT claims are inconsistent.
+    pub async fn verify_campus_org(&self, campus_id: i64, org_id: i64) -> Result<(), anyhow::Error> {
+        let row: Option<(i64,)> = sqlx::query_as(
+            "SELECT 1 FROM campuses WHERE id = $1 AND organization_id = $2",
+        )
+        .bind(campus_id)
+        .bind(org_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        if row.is_none() {
+            anyhow::bail!("Campus {} does not belong to organization {}", campus_id, org_id);
+        }
+        Ok(())
+    }
+
     // ========== Grade Management ==========
 
     /// Create a new grade for a campus

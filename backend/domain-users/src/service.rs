@@ -100,11 +100,12 @@ impl UserService {
 
         // Assign default user role
         sqlx::query(
-            "INSERT INTO user_roles (user_id, organization_id, campus_id, role) VALUES ($1, $2, $3, 'student')"
+            "INSERT INTO user_roles (user_id, organization_id, campus_id, grade_id, role) VALUES ($1, $2, $3, $4, 'student')"
         )
         .bind(user_id)
         .bind(req.organization_id)
         .bind(req.campus_id)
+        .bind(req.grade_id)
         .execute(&self.pool)
         .await?;
 
@@ -305,10 +306,8 @@ impl UserService {
             ));
         }
 
-        if updates.campus_id.is_some() {
-            param_count += 1;
-            update_parts.push(format!("campus_id = COALESCE(${}, campus_id)", param_count));
-        }
+        // SECURITY: campus_id and grade_id are NOT updatable via /me.
+        // Tenant fields are managed exclusively through admin endpoints.
 
         // Add password update if provided
         if updates.password.is_some() {
@@ -332,10 +331,6 @@ impl UserService {
 
         if let Some(display_name) = &updates.display_name {
             query_builder = query_builder.bind(display_name);
-        }
-
-        if let Some(campus_id) = updates.campus_id {
-            query_builder = query_builder.bind(campus_id);
         }
 
         if let Some(password) = &updates.password {
@@ -460,11 +455,12 @@ impl UserService {
             .await?;
 
         sqlx::query(
-            "INSERT INTO user_roles (user_id, organization_id, campus_id, role) VALUES ($1, $2, $3, $4)"
+            "INSERT INTO user_roles (user_id, organization_id, campus_id, grade_id, role) VALUES ($1, $2, $3, $4, $5)"
         )
         .bind(user_id)
         .bind(user.organization_id)
         .bind(user.campus_id)
+        .bind(user.grade_id)
         .bind(normalized_role)
         .execute(&self.pool)
         .await?;
