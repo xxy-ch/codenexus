@@ -166,8 +166,9 @@ impl ClassService {
             return Err(anyhow::anyhow!("Grade is already inactive"));
         }
 
-        // Everything in one transaction: grade deactivation, user grade_id clear,
-        // class grade_id clear, optional student suspension. Atomic all-or-nothing.
+        // Everything in one transaction: grade deactivation, optional student suspension,
+        // user grade_id clear, class grade_id clear. Order matters — suspend must happen
+        // BEFORE grade_id is cleared so the WHERE grade_id = $1 filter still matches.
         let mut tx = self.pool.begin().await?;
 
         // Step 1: Deactivate the grade
@@ -182,19 +183,48 @@ impl ClassService {
         .fetch_one(&mut *tx)
         .await?;
 
-        // Step 2: Clear grade_id for users in this grade
-        let affected = sqlx::query(
-            r#"
-            UPDATE users SET grade_id = NULL
-            WHERE grade_id = $1
-            "#,
+        // Step 2: Count users in this grade (before clearing grade_id)
+        let affected: i64 = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM users WHERE grade_id = $1",
+        )
+        .bind(grade_id)
+        .fetch_one(&mut *tx)
+        .await?;
+
+        // Step 3: Optionally suspend student accounts BEFORE clearing grade_id.
+        // users table uses `status` column (TEXT: active/inactive/banned), not `is_active`.
+        // SECURITY: Only suspend pure-student accounts — users who hold ONLY the 'student'
+        // role and no higher role (teacher, admin, etc.). This prevents accidentally
+        // suspending admin/teacher accounts that happen to have grade_id set.
+        if suspend_students && affected > 0 {
+            sqlx::query(
+                r#"
+                UPDATE users SET status = 'inactive'
+                WHERE grade_id = $1
+                  AND id IN (
+                    SELECT ur.user_id FROM user_roles ur
+                    WHERE ur.role = 'student'
+                  )
+                  AND id NOT IN (
+                    SELECT DISTINCT user_id FROM user_roles
+                    WHERE role != 'student'
+                  )
+                "#,
+            )
+            .bind(grade_id)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        // Step 4: Clear grade_id for users in this grade
+        sqlx::query(
+            "UPDATE users SET grade_id = NULL WHERE grade_id = $1",
         )
         .bind(grade_id)
         .execute(&mut *tx)
-        .await?
-        .rows_affected() as i64;
+        .await?;
 
-        // Step 3: Clear grade_id for classes in this grade
+        // Step 5: Clear grade_id for classes in this grade
         // NOTE: classes table has no is_active column; we clear grade_id instead.
         sqlx::query(
             r#"
@@ -205,33 +235,6 @@ impl ClassService {
         .bind(grade_id)
         .execute(&mut *tx)
         .await?;
-
-        // Step 4: Optionally suspend student accounts
-        // NOTE: users table uses `status` column (TEXT: active/inactive/banned), not `is_active`.
-        // Select users who just had their grade_id cleared in this grade.
-        if suspend_students && affected > 0 {
-            sqlx::query(
-                r#"
-                UPDATE users SET status = 'inactive'
-                WHERE id IN (
-                    SELECT u.id FROM users u
-                    JOIN user_roles ur ON ur.user_id = u.id
-                    WHERE ur.role = 'student'
-                      AND u.organization_id IN (
-                        SELECT c.organization_id FROM campuses c WHERE c.id = $1
-                      )
-                      AND u.id NOT IN (
-                        SELECT DISTINCT user_id FROM user_roles
-                        WHERE role NOT IN ('student')
-                      )
-                    )
-                  AND u.status = 'active'
-                "#,
-            )
-            .bind(grade.campus_id)
-            .execute(&mut *tx)
-            .await?;
-        }
 
         tx.commit().await?;
 

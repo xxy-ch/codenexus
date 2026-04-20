@@ -199,11 +199,42 @@ impl ContestService {
     }
 
     /// Add problem to contest
+    /// SECURITY: Verifies the problem belongs to the same organization as the contest
+    /// to prevent cross-tenant data leakage via contest problem associations.
     pub async fn add_problem_to_contest(
         &self,
         contest_id: i64,
         req: AddProblemToContestRequest,
     ) -> Result<ContestProblem> {
+        // Verify problem belongs to the same organization as the contest
+        let contest_org: Option<i64> = sqlx::query_scalar(
+            "SELECT organization_id FROM contests WHERE id = $1",
+        )
+        .bind(contest_id)
+        .fetch_optional(&self.pool)
+        .await?
+        .flatten();
+
+        let problem_org: Option<i64> = sqlx::query_scalar(
+            "SELECT organization_id FROM problems WHERE id = $1",
+        )
+        .bind(req.problem_id)
+        .fetch_optional(&self.pool)
+        .await?
+        .flatten();
+
+        match (contest_org, problem_org) {
+            (Some(co), Some(po)) if co == po => {} // OK: same org
+            (None, _) => return Err(anyhow::anyhow!("Contest not found")),
+            (_, None) => return Err(anyhow::anyhow!("Problem not found")),
+            (co, po) => {
+                return Err(anyhow::anyhow!(
+                    "Cross-tenant violation: contest org {:?} != problem org {:?}",
+                    co, po
+                ));
+            }
+        }
+
         let contest_problem = sqlx::query_as::<_, ContestProblem>(
             r#"
             INSERT INTO contest_problems (contest_id, problem_id, points, order_index)

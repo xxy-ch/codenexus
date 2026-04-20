@@ -137,10 +137,10 @@ pub async fn fetch_test_cases(problem_id: i64) -> Result<Vec<TestCase>> {
 
     let test_cases = sqlx::query_as::<_, TestCase>(
         r#"
-        SELECT id, input, expected_output, is_hidden, score
-        FROM problems_test_cases
+        SELECT id, input, output AS expected_output, is_secret AS is_hidden, points AS score
+        FROM test_cases
         WHERE problem_id = $1
-        ORDER BY id ASC
+        ORDER BY order_index ASC, id ASC
         "#,
     )
     .bind(problem_id)
