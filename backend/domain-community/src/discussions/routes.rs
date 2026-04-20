@@ -52,10 +52,11 @@ async fn get_discussions_handler(
 async fn get_discussion_handler(
     State(state): State<AppState>,
     Path(id): Path<i64>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<Json<DiscussionDetail>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.get_discussion_detail(id).await {
+    match service.get_discussion_detail(id, claims.school_id).await {
         Ok(detail) => Ok(Json(detail)),
         Err(e) => {
             if e.to_string().contains("not found") {
@@ -146,10 +147,11 @@ async fn delete_discussion_handler(
 async fn get_replies_handler(
     State(state): State<AppState>,
     Path(id): Path<i64>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<Json<Vec<DiscussionReply>>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.get_discussion_detail(id).await {
+    match service.get_discussion_detail(id, claims.school_id).await {
         Ok(detail) => Ok(Json(detail.replies)),
         Err(e) => {
             tracing::error!("Error fetching replies: {}", e);
@@ -204,10 +206,11 @@ async fn like_discussion_handler(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "discussion", id).await {
+    match service.toggle_like(user_id, "discussion", id, claims.school_id).await {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);
@@ -221,10 +224,11 @@ async fn like_reply_handler(
     State(state): State<AppState>,
     Path(reply_id): Path<i64>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "reply", reply_id).await {
+    match service.toggle_like(user_id, "reply", reply_id, claims.school_id).await {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);

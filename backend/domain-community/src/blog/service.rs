@@ -129,20 +129,26 @@ impl BlogService {
         })
     }
 
-    /// Get article by slug or ID
-    pub async fn get_article_detail(&self, slug_or_id: &str) -> Result<ArticleDetail> {
-        // Increment view count
-        sqlx::query("UPDATE articles SET view_count = view_count + 1 WHERE id = $1 OR slug = $2")
+    /// Get article by slug or ID (tenant-scoped)
+    pub async fn get_article_detail(&self, slug_or_id: &str, organization_id: i64) -> Result<ArticleDetail> {
+        // Increment view count (scoped to organization)
+        sqlx::query(
+            "UPDATE articles SET view_count = view_count + 1 WHERE (id = $1 OR slug = $2) AND organization_id = $3"
+        )
             .bind(slug_or_id.parse::<i64>().unwrap_or(0))
             .bind(slug_or_id)
+            .bind(organization_id)
             .execute(&self.pool)
             .await?;
 
-        // Get article
+        // Get article (scoped to organization)
         let article =
-            sqlx::query_as::<_, Article>("SELECT * FROM articles WHERE id = $1 OR slug = $2")
+            sqlx::query_as::<_, Article>(
+                "SELECT * FROM articles WHERE (id = $1 OR slug = $2) AND organization_id = $3"
+            )
                 .bind(slug_or_id.parse::<i64>().unwrap_or(0))
                 .bind(slug_or_id)
+                .bind(organization_id)
                 .fetch_one(&self.pool)
                 .await?;
 
@@ -333,8 +339,8 @@ impl BlogService {
 
         let comment = sqlx::query_as::<_, ArticleComment>(
             r#"
-            INSERT INTO article_comments (article_id, parent_id, content, author_id)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO article_comments (article_id, parent_id, content, author_id, organization_id)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *
             "#,
         )
@@ -342,6 +348,7 @@ impl BlogService {
         .bind(req.parent_id)
         .bind(&req.content)
         .bind(author_id)
+        .bind(organization_id)
         .fetch_one(&mut *tx)
         .await?;
 
@@ -350,13 +357,35 @@ impl BlogService {
         Ok(comment)
     }
 
-    /// Toggle like on article or comment
+    /// Toggle like on article or comment (tenant-scoped)
     pub async fn toggle_like(
         &self,
         user_id: Uuid,
         target_type: &str,
         target_id: i64,
+        organization_id: i64,
     ) -> Result<bool> {
+        // Verify target belongs to the caller's organization
+        let (table, _id_column) = match target_type {
+            "article" => ("articles", "id"),
+            "comment" => ("article_comments", "id"),
+            _ => return Ok(false),
+        };
+        let exists = sqlx::query_scalar::<_, bool>(
+            &format!(
+                "SELECT EXISTS(SELECT 1 FROM {} WHERE id = $1 AND organization_id = $2)",
+                table
+            ),
+        )
+        .bind(target_id)
+        .bind(organization_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        if !exists {
+            anyhow::bail!("Target not found or access denied");
+        }
+
         // Check if already liked
         let existing = sqlx::query(
             "SELECT id FROM likes WHERE user_id = $1 AND target_type = $2 AND target_id = $3",
@@ -379,11 +408,6 @@ impl BlogService {
             .await?;
 
             // Decrement like count
-            let table = match target_type {
-                "article" => "articles",
-                "comment" => "article_comments",
-                _ => return Ok(false),
-            };
             sqlx::query(&format!(
                 "UPDATE {} SET like_count = like_count - 1 WHERE id = $1",
                 table
@@ -403,11 +427,6 @@ impl BlogService {
                 .await?;
 
             // Increment like count
-            let table = match target_type {
-                "article" => "articles",
-                "comment" => "article_comments",
-                _ => return Ok(true),
-            };
             sqlx::query(&format!(
                 "UPDATE {} SET like_count = like_count + 1 WHERE id = $1",
                 table

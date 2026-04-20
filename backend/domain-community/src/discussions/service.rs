@@ -117,18 +117,23 @@ impl DiscussionService {
     }
 
     /// Get discussion by ID with replies
-    pub async fn get_discussion_detail(&self, id: i64) -> Result<DiscussionDetail> {
-        // Increment view count
-        sqlx::query("UPDATE discussions SET view_count = view_count + 1 WHERE id = $1")
+    /// organization_id: tenant isolation — required to prevent cross-tenant reads
+    pub async fn get_discussion_detail(&self, id: i64, organization_id: i64) -> Result<DiscussionDetail> {
+        // Increment view count (scoped to organization)
+        sqlx::query("UPDATE discussions SET view_count = view_count + 1 WHERE id = $1 AND organization_id = $2")
             .bind(id)
+            .bind(organization_id)
             .execute(&self.pool)
             .await?;
 
-        // Get discussion
-        let discussion = sqlx::query_as::<_, Discussion>("SELECT * FROM discussions WHERE id = $1")
-            .bind(id)
-            .fetch_one(&self.pool)
-            .await?;
+        // Get discussion (scoped to organization)
+        let discussion = sqlx::query_as::<_, Discussion>(
+            "SELECT * FROM discussions WHERE id = $1 AND organization_id = $2",
+        )
+        .bind(id)
+        .bind(organization_id)
+        .fetch_one(&self.pool)
+        .await?;
 
         // Get replies
         let replies = sqlx::query_as::<_, DiscussionReply>(
@@ -286,8 +291,8 @@ impl DiscussionService {
 
         let reply = sqlx::query_as::<_, DiscussionReply>(
             r#"
-            INSERT INTO discussion_replies (discussion_id, parent_id, content, author_id)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO discussion_replies (discussion_id, parent_id, content, author_id, organization_id)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *
             "#,
         )
@@ -295,6 +300,7 @@ impl DiscussionService {
         .bind(req.parent_id)
         .bind(&req.content)
         .bind(author_id)
+        .bind(organization_id)
         .fetch_one(&mut *tx)
         .await?;
 
@@ -304,12 +310,41 @@ impl DiscussionService {
     }
 
     /// Like content (discussion or reply)
+    /// organization_id: tenant isolation — verifies target belongs to the user's org
     pub async fn toggle_like(
         &self,
         user_id: Uuid,
         target_type: &str,
         target_id: i64,
+        organization_id: i64,
     ) -> Result<bool> {
+        // Verify the target belongs to the caller's organization
+        let belongs_to_org = match target_type {
+            "discussion" => {
+                sqlx::query_scalar::<_, bool>(
+                    "SELECT EXISTS(SELECT 1 FROM discussions WHERE id = $1 AND organization_id = $2)",
+                )
+                .bind(target_id)
+                .bind(organization_id)
+                .fetch_one(&self.pool)
+                .await?
+            }
+            "reply" => {
+                sqlx::query_scalar::<_, bool>(
+                    "SELECT EXISTS(SELECT 1 FROM discussion_replies WHERE id = $1 AND organization_id = $2)",
+                )
+                .bind(target_id)
+                .bind(organization_id)
+                .fetch_one(&self.pool)
+                .await?
+            }
+            _ => return Ok(false),
+        };
+
+        if !belongs_to_org {
+            anyhow::bail!("Target not found");
+        }
+
         // Check if already liked
         let existing = sqlx::query(
             "SELECT id FROM likes WHERE user_id = $1 AND target_type = $2 AND target_id = $3",

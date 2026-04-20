@@ -129,10 +129,11 @@ async fn get_popular_tags_handler(
 async fn get_article_handler(
     State(state): State<AppState>,
     Path(slug_or_id): Path<String>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<Json<ArticleDetail>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.get_article_detail(&slug_or_id).await {
+    match service.get_article_detail(&slug_or_id, claims.school_id).await {
         Ok(detail) => Ok(Json(detail)),
         Err(e) => {
             if e.to_string().contains("not found") {
@@ -288,10 +289,11 @@ async fn delete_article_handler(
 async fn get_comments_handler(
     State(state): State<AppState>,
     Path(slug_or_id): Path<String>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<Json<Vec<ArticleComment>>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.get_article_detail(&slug_or_id).await {
+    match service.get_article_detail(&slug_or_id, claims.school_id).await {
         Ok(detail) => Ok(Json(detail.comments)),
         Err(e) => {
             tracing::error!("Error fetching comments: {}", e);
@@ -362,10 +364,11 @@ async fn like_article_handler(
     State(state): State<AppState>,
     Path(id): Path<i64>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "article", id).await {
+    match service.toggle_like(user_id, "article", id, claims.school_id).await {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);
@@ -379,10 +382,11 @@ async fn like_comment_handler(
     State(state): State<AppState>,
     Path(comment_id): Path<i64>,
     Extension(user_id): Extension<Uuid>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "comment", comment_id).await {
+    match service.toggle_like(user_id, "comment", comment_id, claims.school_id).await {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);
