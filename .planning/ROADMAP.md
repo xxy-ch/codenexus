@@ -515,6 +515,16 @@ Phase 7 (Test Coverage + Contest Enhancement)
 
 Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each other and can execute in parallel after Phase 7 completes. Phase 11 depends on Phase 10. Phase 12 depends on Phase 11. Phase 13 depends on Phase 10. Phase 14 depends on Phase 13.
 
+### Phase 15: Frontend UI completion — remaining pages, polish, and integration testing
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 14
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 15 to break down)
+
 ---
 
 *Roadmap created: 2026-04-13*

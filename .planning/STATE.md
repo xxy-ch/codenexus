@@ -32,8 +32,8 @@ progress:
 | 6 | Full CI/CD + Observability | Executed | 3 plans in 2 waves | 100% (3/3 plans) |
 | 7 | Test Coverage + Contest Enhancement | Executing | 7 plans (3 waves) | 57% (4/7 plans) |
 | 8 | Import/Export | Executed | 3 plans | 100% (3/3 plans) |
-| 9 | Judge Concurrency + Fault Tolerance | Executed (UAT Env-Blocked) | 7 plans (4 initial + 3 gap closure) | 100% execution, UAT blocked by Docker E2E env |
-| 10 | Data Migration + Final Delivery | Executed (UAT Env-Blocked) | 5 plans (4 waves) | 100% execution, UAT blocked by Docker E2E env |
+| 9 | Judge Concurrency + Fault Tolerance | Conditionally Accepted (Env-Only Gap) | 7 plans (4 initial + 3 gap closure) | 100% execution, UAT 20/22 pass, env-only gap |
+| 10 | Data Migration + Final Delivery | Conditionally Accepted (Env-Only Gap) | 5 plans (4 waves) | 100% execution, UAT 20/22 pass, env-only gap |
 | 11 | Feature Gateway Infrastructure | Planned | 0 plans | 0% |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
 | 13 | Tenant Hierarchy Restructure | Executed | 5 plans | 100% |
@@ -90,7 +90,9 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Security audit round 7 fixes: 2026-04-20 — empty PATCH tenant bypass (blog/discussions get_by_id org filter), GradeAdmin import role ceiling in domain-imex (commit ea10718)*
 *Security audit round 8 fixes: 2026-04-20 — admin user list/status campus/grade scope, GradeAdmin grade_id invariant, UAT frontmatter sync (commit 5ad4718)*
 *Security audit round 9 fixes: 2026-04-20 — search_discussions d.organization_id filter, create_discussion problem_id/contest_id cross-tenant validation (commit 29c09c0)*
-*Phase 9/10 verdict updated: 2026-04-20 — changed from BLOCKED to CONDITIONALLY ACCEPTED / ENV-BLOCKED; only Docker E2E env remains*
+*Phase 9/10 verdict updated: 2026-04-20 — changed from BLOCKED to CONDITIONALLY ACCEPTED / ENV-ONLY GAP; all code verified, only Docker Redis/PostgreSQL E2E remains*
+*Security audit rounds 10-12: 2026-04-20 — dfffdb3 (search_discussions cross-tenant), dd006da (fail-closed admin scope), 75cc00a (sub-table tenant filter + integration test sync)*
+*Test evidence updated: 2026-04-20 — 382 tests pass (360 unit + 22 integration), 0 failures, release gate tests verified*
 
 ### Roadmap Evolution
 

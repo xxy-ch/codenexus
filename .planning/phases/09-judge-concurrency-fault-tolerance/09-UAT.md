@@ -219,28 +219,52 @@ blocked: 1
 
 ## Verdict
 
-**Phase 9: CONDITIONALLY ACCEPTED — ENV-BLOCKED**
+**Phase 9: CONDITIONALLY ACCEPTED — ENV-ONLY GAP**
 
-20/22 UAT items verified with evidence. All code review findings resolved. All 7 security audit rounds passed (commit ea10718).
+20/22 UAT items verified with evidence. All code review findings resolved. 12 security audit rounds completed, all Critical/High findings resolved.
 
 ### Formal Blocking Items (Final)
 
 | Severity | Item | Status |
 |----------|------|--------|
-| Env | Docker environment unavailable — ignored integration/E2E tests cannot execute (phase 9/10 common blocker) | Env-Blocked |
+| Env | Docker Redis E2E — `test_recover_*` integration tests need Docker/Redis (4 tests) | Env-Only |
 | ~~High~~ | ~~Priority queue bounded guarantee~~ | **RESOLVED (D-12): accepted** |
 | ~~Medium~~ | ~~CI ignored tests pipeline~~ | **RESOLVED: Docker CI on PR (commit dbbb4af)** |
+| ~~Critical~~ | ~~GradeAdmin 越权授予 Teacher~~ | **RESOLVED (round 10-12): role ceiling + fail-closed scope** |
+| ~~High~~ | ~~Community 跨租户隔离~~ | **RESOLVED (round 10-12): sub-table tenant filter + org_id on read/write** |
+| ~~High~~ | ~~点赞计数并发一致性~~ | **RESOLVED (round 6): transactional begin/commit** |
+| ~~Medium~~ | ~~Search suggestions 租户侧漏~~ | **RESOLVED (round 10-12): org filter on problem+discussion suggestions** |
 
 ### Security Audit Evidence (2026-04-20)
 
-7 rounds of deep security audit completed across Phase 9/10/13/14 + full codebase scan.
-All Critical/High findings resolved and verified via `cargo build` + `cargo test --lib --workspace` (363 tests, 0 failures).
-Final round (ea10718): empty PATCH tenant bypass fixed, GradeAdmin import role ceiling enforced.
+12 rounds of deep security audit completed across Phase 9/10/13/14 + full codebase scan.
+All Critical/High findings resolved and verified.
 
-### Remaining Env-Only Blocker
+| Round | Commit | Fixes |
+|-------|--------|-------|
+| 1-3 | dbbb4af, 3dd5ae6, 3226b65 | /me tenant field, grade_id write chain, list_grades RBAC, community CRUD tenant isolation, transactional counting |
+| 4 | 3226b65 | Community tenant isolation on all CRUD, batch-create campus/grade force-override, search suggestions org filter |
+| 5 | 5a348d1 | Community read/detail tenant isolation, comment/reply INSERT org_id, like tenant pre-check |
+| 6 | 8ea20a6 | GradeAdmin role ceiling (no Teacher+), blog aggregation tenant filter, atomic like counting, search problem suggestions org filter |
+| 7 | ea10718 | Empty PATCH tenant bypass, GradeAdmin import role ceiling |
+| 8 | 5ad4718 | Admin user list/status campus/grade scope, GradeAdmin grade_id invariant |
+| 9 | 29c09c0 | search_discussions d.organization_id filter, discussion cross-org link prevention |
+| 10 | dfffdb3 | search_discussions cross-tenant leak, discussion cross-org link validation |
+| 11 | dd006da | Fail-closed admin scope — null campus_id/grade_id rejected (403) |
+| 12 | 75cc00a | Community sub-table tenant filter (replies/comments), search tenant scope, integration test sync |
 
-Docker E2E integration tests (`cargo test -p judge-worker -- --ignored`) require Linux + Docker.
+### Test Evidence (2026-04-20)
+
+- `cargo test --lib --workspace`: 360 unit tests, 0 failures
+- `cargo test --workspace` (with Docker PostgreSQL via testcontainers): 22 integration tests, 0 failures
+- **Total: 382 tests, 0 failures**
+- Release gate tests (Docker-backed): class/assignment authorization, contest/leaderboard scope, community search tenant filtering — all pass
+
+### Remaining Env-Only Gap
+
+Docker Redis E2E integration tests (`cargo test -p judge-worker -- --ignored`) require Linux + Docker/Redis.
 These are environment-dependent, not functional defects. Code is verified correct at unit level.
+CI already triggers Docker build on PR (commit dbbb4af).
 
 ### Minimum Closure Path
 

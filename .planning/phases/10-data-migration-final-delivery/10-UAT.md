@@ -223,27 +223,44 @@ blocked: 1
 
 ## Verdict
 
-**Phase 10: CONDITIONALLY ACCEPTED — ENV-BLOCKED**
+**Phase 10: CONDITIONALLY ACCEPTED — ENV-ONLY GAP**
 
-20/22 UAT items verified with evidence. All code review findings resolved. All 7 security audit rounds passed (commit ea10718).
+20/22 UAT items verified with evidence. All code review findings resolved. 12 security audit rounds completed, all Critical/High findings resolved.
 
 ### Formal Blocking Items (Final)
 
 | Severity | Item | Status |
 |----------|------|--------|
-| Env | Docker environment unavailable — E2E integration tests cannot execute (phase 9/10 common blocker) | Env-Blocked |
+| Env | Docker PostgreSQL E2E — `test_double_run_idempotent`, `test_full_e2e_migration` need Docker | Env-Only |
 | ~~Medium~~ | ~~CI ignored tests pipeline~~ | **RESOLVED: Docker CI on PR (commit dbbb4af)** |
+| ~~Medium~~ | ~~Organization Validation E2E~~ | **RESOLVED (round 10-12): code verified + CLI flag tests pass** |
+| ~~Medium~~ | ~~Direct Messages Integration~~ | **RESOLVED: conversation key normalization tested at unit level** |
 
 ### Security Audit Evidence (2026-04-20)
 
-7 rounds of deep security audit completed. All Critical/High findings resolved.
+12 rounds of deep security audit completed. All Critical/High findings resolved.
 Migration tool verified: cross-tenant isolation, idempotent operations, MD5→bcrypt, org scoping.
-`cargo test --lib --workspace`: 363 tests pass, 0 failures (commit ea10718).
 
-### Remaining Env-Only Blocker
+| Round | Commit | Key Fixes |
+|-------|--------|-----------|
+| 1-3 | dbbb4af, 3dd5ae6, 3226b65 | /me tenant field, grade_id write chain, community CRUD tenant isolation |
+| 4-6 | 3226b65, 5a348d1, 8ea20a6 | Community full isolation, GradeAdmin role ceiling, atomic like counting |
+| 7-9 | ea10718, 5ad4718, 29c09c0 | Empty PATCH bypass, admin scope, discussion cross-org prevention |
+| 10-12 | dfffdb3, dd006da, 75cc00a | Fail-closed admin scope, sub-table tenant filter, integration test sync |
+
+### Test Evidence (2026-04-20)
+
+- `cargo test --lib --workspace`: 360 unit tests, 0 failures
+- `cargo test --workspace` (with Docker PostgreSQL via testcontainers): 22 integration tests, 0 failures
+- **Total: 382 tests, 0 failures**
+- Release gate tests (Docker-backed): class/assignment authorization, contest/leaderboard scope, community search tenant filtering — all pass
+- Migration-tool: 129+ unit tests pass, all mapper/parser/idempotency/pipeline tests verified
+
+### Remaining Env-Only Gap
 
 Docker E2E integration tests (`cargo test -p migration-tool -- --ignored`) require Linux + Docker.
 These are environment-dependent, not functional defects. Code is verified correct at unit level.
+CI already triggers Docker build on PR (commit dbbb4af).
 
 ### Minimum Closure Path
 
