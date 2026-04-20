@@ -62,7 +62,7 @@ Extended sizes available but not primary roles:
 - `text-3xl` (32px): hero headings
 - `text-4xl` (40px): landing page display
 
-Font weights in use: 400 (body), 500 (headings/labels), 600 (display). No bold (700) used in the design system.
+Font weights in use: 400 (body), 500 (headings/labels), 600 (display). No bold (700) used in the design system. 3 weights is intentional — body, structural emphasis, and display have distinct visual roles.
 
 Letter spacing: `tracking-tight` (`-0.02em`) applied to headings.
 
