@@ -33,6 +33,16 @@ gaps:
 
 **Score:** 7/7 truths verified
 
+### Security Audit Evidence (2026-04-20)
+
+7 rounds of deep security audit verified Phase 14 truths remain intact after all fixes:
+
+- **GSD-05 (GradeAdmin scope)**: Verified GradeAdmin cannot assign Teacher+ in routes (batch_create, update_user_role) AND import flow (domain-imex, commit ea10718)
+- **GSD-06 (Admin UI)**: Grade dropdown, batch operations — no role ceiling bypass vectors found
+- **GSD-08 (CSV import/export)**: GradeAdmin import now enforces role ceiling (no Teacher+, commit ea10718)
+- **Tenant isolation**: All community CRUD/aggregation endpoints verified tenant-scoped (7 audit rounds)
+- **Build evidence**: `cargo build` passes, `cargo test --lib --workspace` = 363 pass, 0 fail (ea10718)
+
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
