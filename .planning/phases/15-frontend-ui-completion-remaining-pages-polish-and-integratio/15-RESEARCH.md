@@ -492,7 +492,7 @@ Based on CONTEXT.md and test TODO comments, potential new pages include:
 | A3 | Material Symbols are not loaded from CDN -- they use CSS @font-face | Icon Consistency | If CDN-loaded, removing CSS rules won't fully clean up |
 | A4 | MSW is not needed -- vi.mock() at service level suffices for all tests | Test Infrastructure | Some integration tests may want MSW for realistic API mocking |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does the backend have a preferences/settings API?**
    - What we know: Settings page has two no-op mutations labeled "TODO(P1): backend contract"
