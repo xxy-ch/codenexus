@@ -9,6 +9,7 @@ import { AdminRoute } from './components/auth/AdminRoute'
 import { Loading } from './components/ui/Loading'
 import { TEACHER_ROLES } from './types/auth'
 import { FEATURE_FLAGS } from './services/config'
+import { ErrorBoundary } from './components/error/ErrorBoundary'
 
 const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
   lazy(async () => {
@@ -88,7 +89,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <BrowserRouter>
-          <Routes>
+          <ErrorBoundary>
+            <Routes>
           {/* Public Routes */}
           <Route
             path="/login"
@@ -186,6 +188,7 @@ function App() {
           {/* Fallback */}
           <Route path="*" element={renderLazy(NotFound)} />
         </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
       </ToastProvider>
     </QueryClientProvider>
