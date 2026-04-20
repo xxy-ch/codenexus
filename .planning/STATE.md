@@ -89,6 +89,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Security audit round 6 fixes (ultrawork): 2026-04-20 — GradeAdmin role ceiling (no Teacher+), blog aggregation tenant filter, atomic like counting, search problem suggestions org filter (commit 8ea20a6)*
 *Security audit round 7 fixes: 2026-04-20 — empty PATCH tenant bypass (blog/discussions get_by_id org filter), GradeAdmin import role ceiling in domain-imex (commit ea10718)*
 *Security audit round 8 fixes: 2026-04-20 — admin user list/status campus/grade scope, GradeAdmin grade_id invariant, UAT frontmatter sync (commit 5ad4718)*
+*Security audit round 9 fixes: 2026-04-20 — search_discussions d.organization_id filter, create_discussion problem_id/contest_id cross-tenant validation (commit 29c09c0)*
 *Phase 9/10 verdict updated: 2026-04-20 — changed from BLOCKED to CONDITIONALLY ACCEPTED / ENV-BLOCKED; only Docker E2E env remains*
 
 ## Decisions

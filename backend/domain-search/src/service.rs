@@ -317,7 +317,7 @@ impl SearchService {
             // Root: no tenant filter
             (String::new(), None)
         } else if let Some(org_id) = school_id {
-            ("AND p.organization_id = $3".to_string(), Some(org_id))
+            ("AND d.organization_id = $3 AND p.organization_id = $3".to_string(), Some(org_id))
         } else {
             (String::new(), None)
         };

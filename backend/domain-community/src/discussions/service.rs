@@ -158,6 +158,34 @@ impl DiscussionService {
         organization_id: i64,
         req: CreateDiscussionRequest,
     ) -> Result<Discussion> {
+        // SECURITY: Verify problem_id belongs to the caller's organization (cross-tenant link prevention)
+        if let Some(pid) = req.problem_id {
+            let belongs = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM problems WHERE id = $1 AND organization_id = $2)",
+            )
+            .bind(pid)
+            .bind(organization_id)
+            .fetch_one(&self.pool)
+            .await?;
+            if !belongs {
+                anyhow::bail!("Problem does not belong to your organization");
+            }
+        }
+
+        // SECURITY: Verify contest_id belongs to the caller's organization
+        if let Some(cid) = req.contest_id {
+            let belongs = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM contests WHERE id = $1 AND organization_id = $2)",
+            )
+            .bind(cid)
+            .bind(organization_id)
+            .fetch_one(&self.pool)
+            .await?;
+            if !belongs {
+                anyhow::bail!("Contest does not belong to your organization");
+            }
+        }
+
         let discussion = sqlx::query_as::<_, Discussion>(
             r#"
             INSERT INTO discussions (title, content, author_id, organization_id, problem_id, contest_id, tags)
