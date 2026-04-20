@@ -357,7 +357,7 @@ impl BlogService {
         Ok(comment)
     }
 
-    /// Toggle like on article or comment (tenant-scoped)
+    /// Toggle like on article or comment (tenant-scoped, atomic)
     pub async fn toggle_like(
         &self,
         user_id: Uuid,
@@ -386,17 +386,19 @@ impl BlogService {
             anyhow::bail!("Target not found or access denied");
         }
 
-        // Check if already liked
+        // Check if already liked (within a transaction to prevent concurrent drift)
+        let mut tx = self.pool.begin().await?;
+
         let existing = sqlx::query(
             "SELECT id FROM likes WHERE user_id = $1 AND target_type = $2 AND target_id = $3",
         )
         .bind(user_id)
         .bind(target_type)
         .bind(target_id)
-        .fetch_optional(&self.pool)
+        .fetch_optional(&mut *tx)
         .await?;
 
-        if existing.is_some() {
+        let liked = if existing.is_some() {
             // Remove like
             sqlx::query(
                 "DELETE FROM likes WHERE user_id = $1 AND target_type = $2 AND target_id = $3",
@@ -404,67 +406,99 @@ impl BlogService {
             .bind(user_id)
             .bind(target_type)
             .bind(target_id)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await?;
 
-            // Decrement like count
+            // Recount likes atomically
             sqlx::query(&format!(
-                "UPDATE {} SET like_count = like_count - 1 WHERE id = $1",
+                "UPDATE {} SET like_count = (SELECT COUNT(*) FROM likes WHERE target_type = $2 AND target_id = $1) WHERE id = $1",
                 table
             ))
             .bind(target_id)
-            .execute(&self.pool)
+            .bind(target_type)
+            .execute(&mut *tx)
             .await?;
 
-            Ok(false)
+            false
         } else {
             // Add like
             sqlx::query("INSERT INTO likes (user_id, target_type, target_id) VALUES ($1, $2, $3)")
                 .bind(user_id)
                 .bind(target_type)
                 .bind(target_id)
-                .execute(&self.pool)
+                .execute(&mut *tx)
                 .await?;
 
-            // Increment like count
+            // Recount likes atomically
             sqlx::query(&format!(
-                "UPDATE {} SET like_count = like_count + 1 WHERE id = $1",
+                "UPDATE {} SET like_count = (SELECT COUNT(*) FROM likes WHERE target_type = $2 AND target_id = $1) WHERE id = $1",
                 table
             ))
             .bind(target_id)
-            .execute(&self.pool)
+            .bind(target_type)
+            .execute(&mut *tx)
             .await?;
 
-            Ok(true)
-        }
+            true
+        };
+
+        tx.commit().await?;
+
+        Ok(liked)
     }
 
-    /// Get categories
-    pub async fn get_categories(&self) -> Result<Vec<String>> {
-        let categories = sqlx::query_scalar::<_, String>(
-            "SELECT DISTINCT category FROM articles WHERE category IS NOT NULL ORDER BY category",
-        )
-        .fetch_all(&self.pool)
-        .await?;
+    /// Get categories (tenant-scoped)
+    pub async fn get_categories(&self, organization_id: Option<i64>) -> Result<Vec<String>> {
+        let categories = if let Some(org_id) = organization_id {
+            sqlx::query_scalar::<_, String>(
+                "SELECT DISTINCT category FROM articles WHERE category IS NOT NULL AND organization_id = $1 ORDER BY category",
+            )
+            .bind(org_id)
+            .fetch_all(&self.pool)
+            .await?
+        } else {
+            sqlx::query_scalar::<_, String>(
+                "SELECT DISTINCT category FROM articles WHERE category IS NOT NULL ORDER BY category",
+            )
+            .fetch_all(&self.pool)
+            .await?
+        };
 
         Ok(categories)
     }
 
-    /// Get popular tags
-    pub async fn get_popular_tags(&self, limit: i64) -> Result<Vec<(String, i64)>> {
-        let rows = sqlx::query(
-            r#"
-            SELECT unnest(tags) as tag, COUNT(*) as count
-            FROM articles
-            WHERE is_published = true
-            GROUP BY tag
-            ORDER BY count DESC
-            LIMIT $1
-            "#,
-        )
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await?;
+    /// Get popular tags (tenant-scoped)
+    pub async fn get_popular_tags(&self, limit: i64, organization_id: Option<i64>) -> Result<Vec<(String, i64)>> {
+        let rows = if let Some(org_id) = organization_id {
+            sqlx::query(
+                r#"
+                SELECT unnest(tags) as tag, COUNT(*) as count
+                FROM articles
+                WHERE is_published = true AND organization_id = $2
+                GROUP BY tag
+                ORDER BY count DESC
+                LIMIT $1
+                "#,
+            )
+            .bind(limit)
+            .bind(org_id)
+            .fetch_all(&self.pool)
+            .await?
+        } else {
+            sqlx::query(
+                r#"
+                SELECT unnest(tags) as tag, COUNT(*) as count
+                FROM articles
+                WHERE is_published = true
+                GROUP BY tag
+                ORDER BY count DESC
+                LIMIT $1
+                "#,
+            )
+            .bind(limit)
+            .fetch_all(&self.pool)
+            .await?
+        };
 
         let tags = rows
             .into_iter()
@@ -478,36 +512,66 @@ impl BlogService {
         Ok(tags)
     }
 
-    /// Get trending articles
-    pub async fn get_trending_articles(&self, limit: i64) -> Result<Vec<Article>> {
-        let articles = sqlx::query_as::<_, Article>(
-            r#"
-            SELECT * FROM articles
-            WHERE is_published = true
-            ORDER BY (view_count * 0.5 + like_count) DESC, published_at DESC
-            LIMIT $1
-            "#,
-        )
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await?;
+    /// Get trending articles (tenant-scoped)
+    pub async fn get_trending_articles(&self, limit: i64, organization_id: Option<i64>) -> Result<Vec<Article>> {
+        let articles = if let Some(org_id) = organization_id {
+            sqlx::query_as::<_, Article>(
+                r#"
+                SELECT * FROM articles
+                WHERE is_published = true AND organization_id = $2
+                ORDER BY (view_count * 0.5 + like_count) DESC, published_at DESC
+                LIMIT $1
+                "#,
+            )
+            .bind(limit)
+            .bind(org_id)
+            .fetch_all(&self.pool)
+            .await?
+        } else {
+            sqlx::query_as::<_, Article>(
+                r#"
+                SELECT * FROM articles
+                WHERE is_published = true
+                ORDER BY (view_count * 0.5 + like_count) DESC, published_at DESC
+                LIMIT $1
+                "#,
+            )
+            .bind(limit)
+            .fetch_all(&self.pool)
+            .await?
+        };
 
         Ok(articles)
     }
 
-    /// Get featured articles
-    pub async fn get_featured_articles(&self, limit: i64) -> Result<Vec<Article>> {
-        let articles = sqlx::query_as::<_, Article>(
-            r#"
-            SELECT * FROM articles
-            WHERE is_published = true AND is_featured = true
-            ORDER BY published_at DESC
-            LIMIT $1
-            "#,
-        )
-        .bind(limit)
-        .fetch_all(&self.pool)
-        .await?;
+    /// Get featured articles (tenant-scoped)
+    pub async fn get_featured_articles(&self, limit: i64, organization_id: Option<i64>) -> Result<Vec<Article>> {
+        let articles = if let Some(org_id) = organization_id {
+            sqlx::query_as::<_, Article>(
+                r#"
+                SELECT * FROM articles
+                WHERE is_published = true AND is_featured = true AND organization_id = $2
+                ORDER BY published_at DESC
+                LIMIT $1
+                "#,
+            )
+            .bind(limit)
+            .bind(org_id)
+            .fetch_all(&self.pool)
+            .await?
+        } else {
+            sqlx::query_as::<_, Article>(
+                r#"
+                SELECT * FROM articles
+                WHERE is_published = true AND is_featured = true
+                ORDER BY published_at DESC
+                LIMIT $1
+                "#,
+            )
+            .bind(limit)
+            .fetch_all(&self.pool)
+            .await?
+        };
 
         Ok(articles)
     }

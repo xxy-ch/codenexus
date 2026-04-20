@@ -120,19 +120,40 @@ impl SearchService {
             });
         }
 
-        let problem_titles = sqlx::query_scalar::<_, String>(
-            r#"
-            SELECT title
-            FROM problems
-            WHERE LOWER(title) LIKE $1 AND visibility = 'public'
-            ORDER BY created_at DESC
-            LIMIT 5
-            "#,
-        )
-        .bind(format!("%{}%", keyword))
-        .fetch_all(&self.pool)
-        .await
-        .unwrap_or_default();
+        // Tenant-aware problem suggestions: root sees all, others see only their org
+        let problem_titles = if is_root {
+            sqlx::query_scalar::<_, String>(
+                r#"
+                SELECT title
+                FROM problems
+                WHERE LOWER(title) LIKE $1 AND visibility = 'public'
+                ORDER BY created_at DESC
+                LIMIT 5
+                "#,
+            )
+            .bind(format!("%{}%", keyword))
+            .fetch_all(&self.pool)
+            .await
+            .unwrap_or_default()
+        } else if let Some(org_id) = organization_id {
+            sqlx::query_scalar::<_, String>(
+                r#"
+                SELECT title
+                FROM problems
+                WHERE LOWER(title) LIKE $1 AND visibility = 'public' AND organization_id = $2
+                ORDER BY created_at DESC
+                LIMIT 5
+                "#,
+            )
+            .bind(format!("%{}%", keyword))
+            .bind(org_id)
+            .fetch_all(&self.pool)
+            .await
+            .unwrap_or_default()
+        } else {
+            // Unauthenticated: no problem suggestions (cannot verify tenant)
+            Vec::new()
+        };
 
         // Tenant-aware discussion suggestions: root sees all, others see only their org
         let discussion_snippets = if is_root {

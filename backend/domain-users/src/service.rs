@@ -612,6 +612,8 @@ impl UserService {
                 })
                 .await?;
 
+            // SECURITY: Role ceiling for GradeAdmin is enforced at the route layer (routes.rs).
+            // Non-student roles are only assigned here after passing that authorization check.
             if let Some(role) = entry.role.as_deref() {
                 if role != "student" {
                     self.update_user_role(profile.id, role, request.organization_id).await?;

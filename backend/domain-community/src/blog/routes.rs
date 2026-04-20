@@ -53,6 +53,7 @@ async fn get_articles_handler(
 /// Get trending articles
 async fn get_trending_handler(
     State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<Vec<Article>>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
@@ -61,7 +62,13 @@ async fn get_trending_handler(
         .and_then(|l| l.parse::<i64>().ok())
         .unwrap_or(10);
 
-    match service.get_trending_articles(limit).await {
+    let organization_id = if matches!(claims.role.parse::<Role>(), Ok(Role::Root)) {
+        None
+    } else {
+        Some(claims.school_id)
+    };
+
+    match service.get_trending_articles(limit, organization_id).await {
         Ok(articles) => Ok(Json(articles)),
         Err(e) => {
             tracing::error!("Error fetching trending articles: {}", e);
@@ -73,6 +80,7 @@ async fn get_trending_handler(
 /// Get featured articles
 async fn get_featured_handler(
     State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<Vec<Article>>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
@@ -81,7 +89,13 @@ async fn get_featured_handler(
         .and_then(|l| l.parse::<i64>().ok())
         .unwrap_or(5);
 
-    match service.get_featured_articles(limit).await {
+    let organization_id = if matches!(claims.role.parse::<Role>(), Ok(Role::Root)) {
+        None
+    } else {
+        Some(claims.school_id)
+    };
+
+    match service.get_featured_articles(limit, organization_id).await {
         Ok(articles) => Ok(Json(articles)),
         Err(e) => {
             tracing::error!("Error fetching featured articles: {}", e);
@@ -93,10 +107,17 @@ async fn get_featured_handler(
 /// Get categories
 async fn get_categories_handler(
     State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
 ) -> Result<Json<Vec<String>>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.get_categories().await {
+    let organization_id = if matches!(claims.role.parse::<Role>(), Ok(Role::Root)) {
+        None
+    } else {
+        Some(claims.school_id)
+    };
+
+    match service.get_categories(organization_id).await {
         Ok(categories) => Ok(Json(categories)),
         Err(e) => {
             tracing::error!("Error fetching categories: {}", e);
@@ -108,6 +129,7 @@ async fn get_categories_handler(
 /// Get popular tags
 async fn get_popular_tags_handler(
     State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
     axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<Vec<(String, i64)>>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
@@ -116,7 +138,13 @@ async fn get_popular_tags_handler(
         .and_then(|l| l.parse::<i64>().ok())
         .unwrap_or(20);
 
-    match service.get_popular_tags(limit).await {
+    let organization_id = if matches!(claims.role.parse::<Role>(), Ok(Role::Root)) {
+        None
+    } else {
+        Some(claims.school_id)
+    };
+
+    match service.get_popular_tags(limit, organization_id).await {
         Ok(tags) => Ok(Json(tags)),
         Err(e) => {
             tracing::error!("Error fetching tags: {}", e);

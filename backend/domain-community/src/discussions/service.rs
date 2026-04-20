@@ -309,7 +309,7 @@ impl DiscussionService {
         Ok(reply)
     }
 
-    /// Like content (discussion or reply)
+    /// Like content (discussion or reply) — atomic with transactional count
     /// organization_id: tenant isolation — verifies target belongs to the user's org
     pub async fn toggle_like(
         &self,
@@ -319,31 +319,38 @@ impl DiscussionService {
         organization_id: i64,
     ) -> Result<bool> {
         // Verify the target belongs to the caller's organization
-        let belongs_to_org = match target_type {
+        let table = match target_type {
             "discussion" => {
-                sqlx::query_scalar::<_, bool>(
+                let exists = sqlx::query_scalar::<_, bool>(
                     "SELECT EXISTS(SELECT 1 FROM discussions WHERE id = $1 AND organization_id = $2)",
                 )
                 .bind(target_id)
                 .bind(organization_id)
                 .fetch_one(&self.pool)
-                .await?
+                .await?;
+                if !exists {
+                    anyhow::bail!("Target not found");
+                }
+                "discussions"
             }
             "reply" => {
-                sqlx::query_scalar::<_, bool>(
+                let exists = sqlx::query_scalar::<_, bool>(
                     "SELECT EXISTS(SELECT 1 FROM discussion_replies WHERE id = $1 AND organization_id = $2)",
                 )
                 .bind(target_id)
                 .bind(organization_id)
                 .fetch_one(&self.pool)
-                .await?
+                .await?;
+                if !exists {
+                    anyhow::bail!("Target not found");
+                }
+                "discussion_replies"
             }
             _ => return Ok(false),
         };
 
-        if !belongs_to_org {
-            anyhow::bail!("Target not found");
-        }
+        // Use a transaction to prevent concurrent like count drift
+        let mut tx = self.pool.begin().await?;
 
         // Check if already liked
         let existing = sqlx::query(
@@ -352,10 +359,10 @@ impl DiscussionService {
         .bind(user_id)
         .bind(target_type)
         .bind(target_id)
-        .fetch_optional(&self.pool)
+        .fetch_optional(&mut *tx)
         .await?;
 
-        if existing.is_some() {
+        let liked = if existing.is_some() {
             // Remove like
             sqlx::query(
                 "DELETE FROM likes WHERE user_id = $1 AND target_type = $2 AND target_id = $3",
@@ -363,49 +370,45 @@ impl DiscussionService {
             .bind(user_id)
             .bind(target_type)
             .bind(target_id)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await?;
 
-            // Decrement like count
-            let table = match target_type {
-                "discussion" => "discussions",
-                "reply" => "discussion_replies",
-                _ => return Ok(false),
-            };
+            // Recount likes atomically
             sqlx::query(&format!(
-                "UPDATE {} SET like_count = like_count - 1 WHERE id = $1",
+                "UPDATE {} SET like_count = (SELECT COUNT(*) FROM likes WHERE target_type = $2 AND target_id = $1) WHERE id = $1",
                 table
             ))
             .bind(target_id)
-            .execute(&self.pool)
+            .bind(target_type)
+            .execute(&mut *tx)
             .await?;
 
-            Ok(false)
+            false
         } else {
             // Add like
             sqlx::query("INSERT INTO likes (user_id, target_type, target_id) VALUES ($1, $2, $3)")
                 .bind(user_id)
                 .bind(target_type)
                 .bind(target_id)
-                .execute(&self.pool)
+                .execute(&mut *tx)
                 .await?;
 
-            // Increment like count
-            let table = match target_type {
-                "discussion" => "discussions",
-                "reply" => "discussion_replies",
-                _ => return Ok(true),
-            };
+            // Recount likes atomically
             sqlx::query(&format!(
-                "UPDATE {} SET like_count = like_count + 1 WHERE id = $1",
+                "UPDATE {} SET like_count = (SELECT COUNT(*) FROM likes WHERE target_type = $2 AND target_id = $1) WHERE id = $1",
                 table
             ))
             .bind(target_id)
-            .execute(&self.pool)
+            .bind(target_type)
+            .execute(&mut *tx)
             .await?;
 
-            Ok(true)
-        }
+            true
+        };
+
+        tx.commit().await?;
+
+        Ok(liked)
     }
 
     /// Get discussion by ID
