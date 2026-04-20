@@ -2,10 +2,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { usersService } from '@/services/users'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 import type { UserActivity } from '@/types/users'
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { Activity } from 'lucide-react'
+import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 
 export function DashboardEnhanced() {
   const queryClient = useQueryClient()
@@ -29,29 +32,16 @@ export function DashboardEnhanced() {
   })
 
   if (statsLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading message="加载中..." />
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   if (statsError || !userStats) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          加载失败
-        </h3>
-        <Button
-          variant="primary"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['userStats'] })}
-        >
-          重试
-        </Button>
-      </div>
+      <InlineError
+        title="仪表盘加载失败"
+        message="无法加载仪表盘数据，请稍后重试"
+        onRetry={() => queryClient.invalidateQueries({ queryKey: ['userStats'] })}
+      />
     )
   }
 
@@ -445,9 +435,7 @@ export function DashboardEnhanced() {
                 </div>
               ))
             ) : (
-              <div className="text-sm text-slate-500 dark:text-slate-400 py-6 text-center">
-                暂无最近活动
-              </div>
+              <EmptyState icon={Activity} title="暂无最近活动" description="开始做题后这里会显示你的活动记录" />
             )}
           </div>
         </div>

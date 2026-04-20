@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { rankingService } from '@/services/ranking'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
-import { ArrowRight, Building2, Crown, Medal, Search, Sparkles, Trophy } from 'lucide-react'
+import { ArrowRight, BarChart3, Building2, Crown, Medal, Search, Sparkles, Trophy } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 
 interface RankingUser {
   id: string
@@ -78,25 +80,16 @@ export function Ranking() {
   )
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <Loading message="加载排行榜中..." />
-      </div>
-    )
+    return <TableSkeleton rows={20} columns={4} />
   }
 
   if (error) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-center">
-        <Trophy className="h-12 w-12 text-red-500" />
-        <div>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">排行榜加载失败</h3>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">请重试或稍后再查看。</p>
-        </div>
-        <Button variant="primary" onClick={() => refetch()}>
-          重试
-        </Button>
-      </div>
+      <InlineError
+        title="排行榜加载失败"
+        message="请重试或稍后再查看"
+        onRetry={() => refetch()}
+      />
     )
   }
 
@@ -237,12 +230,11 @@ export function Ranking() {
 
           <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
             {displayUsers.length === 0 ? (
-              <div className="px-6 py-16 text-center">
-                <Trophy className="mx-auto h-10 w-10 text-slate-400" />
-                <p className="mt-4 text-base font-semibold text-slate-900 dark:text-white">
-                  {searchQuery ? '未找到匹配用户' : '暂无排行数据'}
-                </p>
-              </div>
+              <EmptyState
+                icon={BarChart3}
+                title={searchQuery ? '未找到匹配用户' : '暂无排行数据'}
+                description={searchQuery ? '尝试调整搜索条件' : '还没有用户提交过代码'}
+              />
             ) : (
               <table className="w-full">
                 <thead className="bg-slate-50 dark:bg-slate-900/80">

@@ -3,8 +3,11 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { contestsService } from '@/services/contests'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
+import { Trophy } from 'lucide-react'
+import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 
 interface Contest {
   id: string
@@ -127,45 +130,22 @@ export function ContestList() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading message="加载中..." />
-      </div>
-    )
+    return <CardGridSkeleton cards={6} />
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          加载失败
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-          无法加载竞赛列表，请稍后重试
-        </p>
-        <Button variant="primary" onClick={() => refetch()}>
-          重试
-        </Button>
-      </div>
+      <InlineError
+        title="竞赛列表加载失败"
+        message="无法加载竞赛列表，请稍后重试"
+        onRetry={() => refetch()}
+      />
     )
   }
 
   if (!data || data.contests.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-slate-400 mb-4">
-          emoji_events
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          暂无竞赛
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-          当前没有符合条件的竞赛
-        </p>
-      </div>
+      <EmptyState icon={Trophy} title="暂无竞赛" description="当前没有符合条件的竞赛" />
     )
   }
 

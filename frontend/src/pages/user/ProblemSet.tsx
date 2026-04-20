@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { useProblems } from '@/hooks/useProblems'
 import { ProblemTable } from '@/components/problems/ProblemTable'
 import { ProblemFilters } from '@/components/problems/ProblemFilters'
-import { Loading } from '@/components/ui/Loading'
 import { Link } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { FolderOpen } from 'lucide-react'
+import { ProblemListSkeleton } from '@/components/skeletons/ProblemListSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 import type { ProblemFilters as ProblemFiltersParams } from '@/services/problems'
 
 export function ProblemSet() {
@@ -35,17 +38,11 @@ export function ProblemSet() {
   }
 
   if (isLoading) {
-    return <Loading message="Loading problems..." />
+    return <ProblemListSkeleton />
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <span className="material-symbols-outlined text-5xl text-destructive mb-4">error</span>
-        <h3 className="text-lg font-semibold text-foreground mb-2">Failed to Load Problems</h3>
-        <p className="text-sm text-muted-foreground">Please try again later.</p>
-      </div>
-    )
+    return <InlineError title="题目加载失败" message="无法加载题目列表，请稍后重试" />
   }
 
   return (
@@ -150,15 +147,7 @@ export function ProblemSet() {
         </CardHeader>
 
         {problems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="material-symbols-outlined text-5xl text-muted-foreground/30 mb-4">
-              search_off
-            </span>
-            <h3 className="text-sm font-medium text-foreground mb-1">No Problems Found</h3>
-            <p className="text-xs text-muted-foreground">
-              Try adjusting your filters or search terms.
-            </p>
-          </div>
+          <EmptyState icon={FolderOpen} title="暂无题目" description="还没有发布任何题目" />
         ) : (
           <ProblemTable problems={problems} showSolvedStatus={false} />
         )}

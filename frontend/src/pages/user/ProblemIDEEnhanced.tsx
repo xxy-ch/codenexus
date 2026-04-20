@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { MonacoEditor } from '@/components/ide/MonacoEditor'
 import { problemsService } from '@/services/problems'
+import { IDESkeleton } from '@/components/skeletons/IDESkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 import type { Problem, TestCase } from '@/types/problems'
 
 interface SupportedLanguageOption {
@@ -103,28 +105,15 @@ export function ProblemIDEEnhanced() {
   }
 
   if (loading) {
-    return (
-      <div className="flex min-h-[70vh] items-center justify-center rounded-[28px] border border-slate-200 bg-white shadow-sm">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-b-2 border-blue-600" />
-          <p className="mt-4 text-sm text-slate-500">加载 IDE 工作区...</p>
-        </div>
-      </div>
-    )
+    return <IDESkeleton />
   }
 
   if (!problem) {
     return (
-      <div className="rounded-[28px] border border-rose-200 bg-white px-8 py-16 text-center shadow-sm">
-        <h2 className="text-2xl font-semibold text-slate-950">题目不存在</h2>
-        <p className="mt-2 text-sm text-slate-600">当前题目无法加载，返回题库重新选择。</p>
-        <Link
-          to="/problems"
-          className="mt-6 inline-flex items-center rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white"
-        >
-          返回题库
-        </Link>
-      </div>
+      <InlineError
+        title="加载失败"
+        message="当前题目无法加载，请返回题库重新选择"
+      />
     )
   }
 

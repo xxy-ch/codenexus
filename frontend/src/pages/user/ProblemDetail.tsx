@@ -1,8 +1,9 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useProblem } from '@/hooks/useProblems'
-import { Loading } from '@/components/ui/Loading'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
+import { ProblemDetailSkeleton } from '@/components/skeletons/ProblemDetailSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 
 const difficultyConfig = {
   easy: {
@@ -35,25 +36,16 @@ export function ProblemDetail() {
   }
 
   if (isLoading) {
-    return <Loading message="Loading problem..." />
+    return <ProblemDetailSkeleton />
   }
 
   if (error || !problem) {
     return (
-      <div className="text-center py-12">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          Problem Not Found
-        </h3>
-        <p className="text-slate-600 dark:text-slate-400 mb-4">
-          无法加载题目详情，请稍后重试。
-        </p>
-        <Link to="/problems">
-          <Button variant="primary">返回题库</Button>
-        </Link>
-      </div>
+      <InlineError
+        title="题目加载失败"
+        message="无法加载题目详情，请稍后重试"
+        onRetry={() => window.location.reload()}
+      />
     )
   }
 

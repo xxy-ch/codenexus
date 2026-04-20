@@ -3,9 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
 import { problemsService } from '@/services/problems'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
+import { FileText } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 
 const LANGUAGE_CONFIG = {
   cpp: { label: 'C++', icon: 'code' },
@@ -56,51 +59,31 @@ export function SubmissionHistory() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading message="加载中..." />
-      </div>
-    )
+    return <TableSkeleton rows={6} columns={5} />
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          加载失败
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-          无法加载提交记录，请稍后重试
-        </p>
-        <Button variant="primary" onClick={() => refetch()}>
-          重试
-        </Button>
-      </div>
+      <InlineError
+        title="提交记录加载失败"
+        message="无法加载提交记录，请稍后重试"
+        onRetry={() => refetch()}
+      />
     )
   }
 
   if (!data || data.submissions.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-slate-400 mb-4">
-          sentiment_dissatisfied
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          暂无提交记录
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-          开始解题后，您的提交记录将显示在这里
-        </p>
-        <Link to="/problems">
-          <Button variant="primary">
-            <span className="material-symbols-outlined mr-2">code</span>
-            浏览题目
-          </Button>
-        </Link>
-      </div>
+      <EmptyState
+        icon={FileText}
+        title="暂无提交记录"
+        description="提交代码后这里会显示你的提交历史"
+        action={
+          <Link to="/problems">
+            <Button variant="primary">浏览题目</Button>
+          </Link>
+        }
+      />
     )
   }
 

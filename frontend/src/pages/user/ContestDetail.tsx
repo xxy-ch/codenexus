@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { contestsService } from '@/services/contests'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
+import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 
 interface ContestProblem {
   id: string
@@ -156,35 +157,16 @@ export function ContestDetail() {
   }, [contest])
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading message="加载中..." />
-      </div>
-    )
+    return <DetailSkeleton />
   }
 
   if (error || !contest) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          竞赛不存在
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-          请检查竞赛ID或返回竞赛列表
-        </p>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            <span className="material-symbols-outlined">arrow_back</span>
-            返回
-          </Button>
-          <Button variant="primary" onClick={() => refetch()}>
-            重试
-          </Button>
-        </div>
-      </div>
+      <InlineError
+        title="竞赛详情加载失败"
+        message="请检查竞赛ID或返回竞赛列表"
+        onRetry={() => refetch()}
+      />
     )
   }
 

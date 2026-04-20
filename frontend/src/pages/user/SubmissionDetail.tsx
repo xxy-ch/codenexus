@@ -3,9 +3,10 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { problemsService } from '@/services/problems'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
 import { cn } from '@/lib/utils'
 import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
+import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 
 interface TestCase {
   id: number
@@ -77,37 +78,16 @@ export function SubmissionDetail() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loading message="加载中..." />
-      </div>
-    )
+    return <DetailSkeleton />
   }
 
   if (error || !submission) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <span className="material-symbols-outlined text-6xl text-red-500 mb-4">
-          error
-        </span>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-          {error instanceof Error && error.message.includes('not found')
-            ? '提交记录不存在'
-            : '加载失败'}
-        </h3>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-          {error instanceof Error ? error.message : '无法加载提交详情'}
-        </p>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => navigate(-1)}>
-            <span className="material-symbols-outlined">arrow_back</span>
-            返回
-          </Button>
-          <Button variant="primary" onClick={() => refetch()}>
-            重试
-          </Button>
-        </div>
-      </div>
+      <InlineError
+        title="提交详情加载失败"
+        message={error instanceof Error ? error.message : '无法加载提交详情'}
+        onRetry={() => refetch()}
+      />
     )
   }
 

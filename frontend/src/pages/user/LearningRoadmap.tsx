@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { usersService } from '@/services/users'
-import { Loading } from '@/components/ui/Loading'
+import { Map } from 'lucide-react'
+import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 
 const roadmapStages = [
   { id: 'basic', title: '基础算法', topics: ['数组', '字符串', '哈希表'] },
@@ -15,25 +17,16 @@ export function LearningRoadmap() {
   })
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[320px]">
-        <Loading message="加载学习路线图..." />
-      </div>
-    )
+    return <CardGridSkeleton cards={4} />
   }
 
   if (error || !stats) {
     return (
-      <div className="text-center py-16">
-        <p className="text-slate-600 dark:text-slate-300 mb-4">学习路线图加载失败</p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="px-4 py-2 rounded bg-primary text-white"
-        >
-          重试
-        </button>
-      </div>
+      <InlineError
+        title="学习路线图加载失败"
+        message="无法加载学习进度数据，请稍后重试"
+        onRetry={() => refetch()}
+      />
     )
   }
 

@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CalendarDays, IdCard, Mail, PencilLine, ShieldCheck, Sparkles } from 'lucide-react'
+import { CalendarDays, IdCard, Mail, PencilLine, ShieldCheck, Sparkles, User } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { usersService } from '@/services/users'
 import { Button } from '@/components/ui/Button'
-import { Loading } from '@/components/ui/Loading'
+import { ProfileSkeleton } from '@/components/skeletons/ProfileSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 
 export function Profile() {
   const { user: currentUser } = useAuthStore()
@@ -59,8 +61,8 @@ export function Profile() {
     [stats]
   )
 
-  if (isLoading) return <Loading message="加载中..." />
-  if (!profile) return <div className="py-12 text-center">用户不存在</div>
+  if (isLoading) return <ProfileSkeleton />
+  if (!profile) return <InlineError title="用户信息加载失败" message="用户不存在或加载失败" />
 
   const getActivityLabel = (type: string) => {
     if (type === 'submission') return '提交'
@@ -148,7 +150,7 @@ export function Profile() {
                 </div>
               </div>
             ))}
-            {(activities || []).length === 0 && <p className="text-sm text-slate-500">暂无活动</p>}
+            {(activities || []).length === 0 && <EmptyState icon={User} title="暂无活动" description="该用户还没有提交过代码" />}
           </div>
         </div>
 
