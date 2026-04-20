@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 15
 status: executing
-last_updated: "2026-04-20T16:01:54.843Z"
+last_updated: "2026-04-20T22:45:32.000Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 16
@@ -99,8 +99,10 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 
 - Phase 15 added: 2026-04-20 — Frontend UI completion — remaining pages, polish, and integration testing
 - Phase 15 discuss-phase completed: 2026-04-20 — 4 decisions: D-15-01 (wave-based all), D-15-02 (production-grade UI), D-15-03 (TDD full coverage), D-15-04 (PC-only)
+
 *Phase 15 plan 02 executed: 2026-04-20 — fixed 32 skipped tests, 170/170 passing*
 *Stopped at: Completed 15-02-PLAN.md*
+*Phase 15 plan 06 executed: 2026-04-20 — ErrorBoundary component + App.tsx wiring, 6 tests passing*
 
 ## Decisions
 
@@ -203,3 +205,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 15 P03 | 3min | 1 tasks | 2 files |
 | Phase 15 P04 | 8min | 1 tasks | 2 files |
 | Phase 15 P02 | 19min | 3 tasks | 3 files |
+| Phase 15 P06 | 2min | 1 tasks | 3 files |
