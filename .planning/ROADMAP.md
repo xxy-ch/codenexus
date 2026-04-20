@@ -544,16 +544,16 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 10. `npx vitest --run` passes with 0 skipped tests
 
 **Depends on:** Phase 14
-**Plans:** 4/12 plans executed
+**Plans:** 7/12 plans executed
 
 Plans:
 - [x] 15-01-PLAN.md — Test infrastructure: renderWithProviders helper (Wave 1)
 - [x] 15-02-PLAN.md — Fix 32 skipped tests in ContestDetail, ContestList, DashboardEnhanced (Wave 1)
 - [x] 15-03-PLAN.md — Fix UserManagement campus dropdown TODO + test (Wave 1)
 - [x] 15-04-PLAN.md — Fix Settings localStorage persistence TODO + test (Wave 1)
-- [ ] 15-05-PLAN.md — Create EmptyState + InlineError shared components + tests (Wave 2a)
-- [ ] 15-06-PLAN.md — Create ErrorBoundary + wrap App.tsx + test (Wave 2a)
-- [ ] 15-07-PLAN.md — Create 10 skeleton components + tests (Wave 2a)
+- [x] 15-05-PLAN.md — Create EmptyState + InlineError shared components + tests (Wave 2a)
+- [x] 15-06-PLAN.md — Create ErrorBoundary + wrap App.tsx + test (Wave 2a)
+- [x] 15-07-PLAN.md — Create 10 skeleton components + tests (Wave 2a)
 - [ ] 15-08-PLAN.md — Convert 12 user pages to skeleton/empty/error (Wave 2b)
 - [ ] 15-09-PLAN.md — Convert 7 community/search pages to skeleton/empty/error (Wave 2b)
 - [ ] 15-10-PLAN.md — Convert admin/teacher pages + icon migration (Wave 2b)
