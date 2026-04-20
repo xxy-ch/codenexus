@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { blogApi } from '@/services/articlesApi'
 import type { ArticleDetail, ArticleComment } from '@/types/community'
-import { Loading } from '@/components/ui/Loading'
+import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 import { useArticleUpdates } from '@/hooks/useCommunityUpdates'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -13,6 +14,7 @@ export function BlogDetail() {
 
   const [article, setArticle] = useState<ArticleDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [commentContent, setCommentContent] = useState('')
   const [parentCommentId, setParentCommentId] = useState<number | 'root' | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -26,11 +28,13 @@ export function BlogDetail() {
 
     const fetchArticle = async () => {
       setLoading(true)
+      setLoadError(false)
       try {
         const data = await blogApi.getArticle(slug)
         setArticle(data)
       } catch (error) {
         console.error('Failed to fetch article:', error)
+        setLoadError(true)
       } finally {
         setLoading(false)
       }
@@ -201,7 +205,11 @@ export function BlogDetail() {
   }
 
   if (loading) {
-    return <Loading message="Loading article..." />
+    return <DetailSkeleton />
+  }
+
+  if (loadError) {
+    return <InlineError title="文章加载失败" onRetry={() => { if (slug) { const fetchArticle = async () => { setLoading(true); setLoadError(false); try { const data = await blogApi.getArticle(slug); setArticle(data); } catch (e) { setLoadError(true); } finally { setLoading(false); } }; fetchArticle(); } }} />
   }
 
   if (!article) {

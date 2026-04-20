@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { discussionsApi } from '@/services/discussionsApi'
 import type { DiscussionDetail, DiscussionReply } from '@/types/community'
-import { Loading } from '@/components/ui/Loading'
+import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
+import { InlineError } from '@/components/ui/InlineError'
 import { useDiscussionUpdates } from '@/hooks/useCommunityUpdates'
 import { useAuth } from '@/hooks/useAuth'
 
@@ -13,6 +14,7 @@ export function DiscussionDetail() {
 
   const [discussion, setDiscussion] = useState<DiscussionDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [replyContent, setReplyContent] = useState('')
   const [parentReplyId, setParentReplyId] = useState<number | 'root' | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -27,11 +29,13 @@ export function DiscussionDetail() {
 
     const fetchDiscussion = async () => {
       setLoading(true)
+      setLoadError(false)
       try {
         const data = await discussionsApi.getDiscussion(parseInt(id))
         setDiscussion(data)
       } catch (error) {
         console.error('Failed to fetch discussion:', error)
+        setLoadError(true)
       } finally {
         setLoading(false)
       }
@@ -261,7 +265,11 @@ export function DiscussionDetail() {
   }
 
   if (loading) {
-    return <Loading message="Loading discussion..." />
+    return <DetailSkeleton />
+  }
+
+  if (loadError) {
+    return <InlineError title="讨论详情加载失败" onRetry={() => { if (id) { const fetchDiscussion = async () => { setLoading(true); setLoadError(false); try { const data = await discussionsApi.getDiscussion(parseInt(id)); setDiscussion(data); } catch (e) { setLoadError(true); } finally { setLoading(false); } }; fetchDiscussion(); } }} />
   }
 
   if (!discussion) {

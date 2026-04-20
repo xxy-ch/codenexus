@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { MessageSquare } from 'lucide-react'
 import { discussionsApi } from '@/services/discussionsApi'
 import type { Discussion, DiscussionFilters } from '@/types/community'
-import { Loading } from '@/components/ui/Loading'
+import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 
 export function DiscussionList() {
   const navigate = useNavigate()
@@ -10,6 +13,7 @@ export function DiscussionList() {
 
   const [discussions, setDiscussions] = useState<Discussion[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [hasMore, setHasMore] = useState(false)
 
   // Get filters from URL params
@@ -23,6 +27,7 @@ export function DiscussionList() {
 
   const fetchDiscussions = async () => {
     setLoading(true)
+    setLoadError(false)
     try {
       const filters: DiscussionFilters = {
         page,
@@ -37,6 +42,7 @@ export function DiscussionList() {
       setHasMore(response.has_more)
     } catch (error) {
       console.error('Failed to fetch discussions:', error)
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
@@ -203,7 +209,9 @@ export function DiscussionList() {
 
             {/* Loading State */}
             {loading && page === 1 ? (
-              <Loading message="Loading discussions..." />
+              <CardGridSkeleton cards={6} />
+            ) : loadError ? (
+              <InlineError title="讨论列表加载失败" onRetry={() => fetchDiscussions()} />
             ) : (
               <>
                 {/* Discussions List */}
@@ -305,22 +313,20 @@ export function DiscussionList() {
 
                 {/* Empty State */}
                 {!loading && discussions.length === 0 && (
-                  <div className="text-center py-12">
-                    <span className="material-icons text-6xl text-text-muted mb-4">forum</span>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      No discussions found
-                    </h3>
-                    <p className="text-text-muted mb-6">
-                      Be the first to start a discussion!
-                    </p>
-                    <button
-                      onClick={() => navigate('/discussions/new')}
-                      className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-medium"
-                    >
-                      <span className="material-icons">add</span>
-                      Create Discussion
-                    </button>
-                  </div>
+                  <EmptyState
+                    icon={MessageSquare}
+                    title="暂无讨论"
+                    description="还没有人发起讨论，来发表第一个吧"
+                    action={
+                      <button
+                        onClick={() => navigate('/discussions/new')}
+                        className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-medium"
+                      >
+                        <span className="material-icons">add</span>
+                        Create Discussion
+                      </button>
+                    }
+                  />
                 )}
 
                 {/* Pagination */}

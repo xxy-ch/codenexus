@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowRight, Bookmark, Flame, FolderKanban, PenSquare, Search, Sparkles, Star } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import { blogApi } from '@/services/articlesApi'
 import type { Article, ArticleFilters, PopularTag } from '@/types/community'
-import { Loading } from '@/components/ui/Loading'
+import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
 import { cn } from '@/lib/utils'
 
 export function BlogList() {
@@ -15,6 +18,7 @@ export function BlogList() {
   const [categories, setCategories] = useState<string[]>([])
   const [popularTags, setPopularTags] = useState<PopularTag[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [hasMore, setHasMore] = useState(false)
 
   const page = parseInt(searchParams.get('page') || '1')
@@ -24,6 +28,7 @@ export function BlogList() {
 
   const fetchArticles = async () => {
     setLoading(true)
+    setLoadError(false)
     try {
       if (sort === 'trending') {
         const trending = await blogApi.getTrendingArticles(12)
@@ -58,6 +63,7 @@ export function BlogList() {
       }
     } catch (error) {
       console.error('Failed to fetch articles:', error)
+      setLoadError(true)
     } finally {
       setLoading(false)
     }
@@ -230,7 +236,9 @@ export function BlogList() {
           </div>
 
           {loading && page === 1 ? (
-            <Loading message="Loading articles..." />
+            <CardGridSkeleton cards={6} />
+          ) : loadError ? (
+            <InlineError title="文章列表加载失败" onRetry={() => fetchArticles()} />
           ) : (
             <>
               {page === 1 && !category && !tag && !sort && featuredArticles.length > 0 && (
@@ -331,22 +339,22 @@ export function BlogList() {
               </div>
 
               {!loading && articles.length === 0 && (
-                <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-16 text-center shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                  <PenSquare className="mx-auto h-10 w-10 text-slate-400" />
-                  <h3 className="mt-4 text-lg font-semibold text-slate-950 dark:text-white">No articles found</h3>
-                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                    {category || tag ? 'Try adjusting your filters' : 'Be the first to write an article'}
-                  </p>
-                  {!category && !tag && (
-                    <button
-                      onClick={() => navigate('/blog/new')}
-                      className="mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-medium text-white dark:bg-white dark:text-slate-950"
-                    >
-                      <PenSquare className="h-4 w-4" />
-                      Write Article
-                    </button>
-                  )}
-                </div>
+                <EmptyState
+                  icon={BookOpen}
+                  title="暂无文章"
+                  description="还没有发布任何文章"
+                  action={
+                    !category && !tag ? (
+                      <button
+                        onClick={() => navigate('/blog/new')}
+                        className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-medium text-white dark:bg-white dark:text-slate-950"
+                      >
+                        <PenSquare className="h-4 w-4" />
+                        Write Article
+                      </button>
+                    ) : undefined
+                  }
+                />
               )}
 
               {articles.length > 0 && !sort && (
