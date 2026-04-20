@@ -619,11 +619,14 @@ pub async fn validate_user_import(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    // Query existing usernames to detect duplicates
-    let existing_usernames: Vec<String> = sqlx::query_scalar("SELECT username FROM users")
-        .fetch_all(&state.db_pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    // Query existing usernames within the caller's organization to detect duplicates
+    let existing_usernames: Vec<String> = sqlx::query_scalar(
+        "SELECT username FROM users WHERE organization_id = $1",
+    )
+    .bind(claims.school_id)
+    .fetch_all(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let skip_usernames: HashSet<String> = existing_usernames.into_iter().collect();
 

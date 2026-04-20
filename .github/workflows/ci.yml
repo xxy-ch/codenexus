@@ -121,10 +121,10 @@ jobs:
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/onlinejudge_test
         run: |
-          cargo run -p api -- --migrate-only 2>/dev/null || true
+          cargo run -p api -- --migrate-only
           # Also create migration_mappings table for migration-tool tests
           PGPASSWORD=postgres psql -h localhost -U postgres -d onlinejudge_test -c \
-            "CREATE TABLE IF NOT EXISTS migration_mappings (entity_type TEXT NOT NULL, old_id TEXT NOT NULL, new_id TEXT NOT NULL, PRIMARY KEY (entity_type, old_id));" || true
+            "CREATE TABLE IF NOT EXISTS migration_mappings (entity_type TEXT NOT NULL, old_id TEXT NOT NULL, new_id TEXT NOT NULL, PRIMARY KEY (entity_type, old_id));"
 
       - name: Run ignored integration tests
         run: cargo test --workspace -- --ignored

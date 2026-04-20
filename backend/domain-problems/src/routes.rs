@@ -30,6 +30,12 @@ fn require_admin(role: &str) -> Result<Role, StatusCode> {
     }
 }
 
+fn is_admin(role: &str) -> bool {
+    role.parse::<Role>()
+        .map(|r| r.is_higher_or_equal(Role::CampusAdmin))
+        .unwrap_or(false)
+}
+
 async fn ensure_language_settings(state: &AppState) -> Result<(), StatusCode> {
     sqlx::query(
         r#"
@@ -174,7 +180,7 @@ pub async fn create_problem(
             updated_at
         "#,
     )
-    .bind(req.organization_id)
+    .bind(claims.school_id)                // SECURITY: org from JWT, not request body
     .bind(claims.sub)
     .bind(&req.title)
     .bind(&req.description)
@@ -191,7 +197,7 @@ pub async fn create_problem(
 
 pub async fn list_problems(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Query(query): Query<ListProblemsQuery>,
 ) -> Result<Json<ProblemsListResponse>, StatusCode> {
     let page = query.page.unwrap_or(1);
@@ -202,6 +208,9 @@ pub async fn list_problems(
     let visibility = query.visibility.clone();
     let is_public = query.is_public.unwrap_or(true);
 
+    // SEC-03: Tenant isolation — non-admin sees only public + own-org problems
+    let admin = is_admin(&claims.role);
+
     let total = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT COUNT(*)
@@ -210,6 +219,7 @@ pub async fn list_problems(
           AND ($3::TEXT IS NULL OR difficulty = $3)
           AND ($4::TEXT IS NULL OR visibility = $4)
           AND ($5::BOOLEAN = false OR visibility = 'public')
+          AND ($6::BOOLEAN OR visibility = 'public' OR organization_id = $7)
         "#,
     )
     .bind(&search)
@@ -217,6 +227,8 @@ pub async fn list_problems(
     .bind(difficulty.clone())
     .bind(visibility.clone())
     .bind(is_public)
+    .bind(admin)
+    .bind(claims.school_id)
     .fetch_one(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -244,8 +256,9 @@ pub async fn list_problems(
           AND ($3::TEXT IS NULL OR p.difficulty = $3)
           AND ($4::TEXT IS NULL OR p.visibility = $4)
           AND ($5::BOOLEAN = false OR p.visibility = 'public')
+          AND ($6::BOOLEAN OR p.visibility = 'public' OR p.organization_id = $7)
         ORDER BY p.created_at DESC
-        LIMIT $6 OFFSET $7
+        LIMIT $8 OFFSET $9
         "#,
     )
     .bind(&search)
@@ -253,6 +266,8 @@ pub async fn list_problems(
     .bind(difficulty)
     .bind(visibility)
     .bind(is_public)
+    .bind(admin)
+    .bind(claims.school_id)
     .bind(limit)
     .bind(offset)
     .fetch_all(&state.db_pool)
@@ -269,9 +284,10 @@ pub async fn list_problems(
 
 pub async fn get_problem(
     State(state): State<AppState>,
-    AuthExtractor(_claims): AuthExtractor,
+    AuthExtractor(claims): AuthExtractor,
     Path(id): Path<i64>,
 ) -> Result<Json<ProblemDetail>, StatusCode> {
+    // SEC-03: Fetch with org check — non-public problems require same-org membership
     let problem = sqlx::query_as::<_, Problem>(
         r#"
         SELECT
@@ -303,6 +319,11 @@ pub async fn get_problem(
         Some(problem) => problem,
         None => return Err(StatusCode::NOT_FOUND),
     };
+
+    // SEC-03: Non-public problems require same-org membership (or admin)
+    if !problem.is_public && problem.organization_id != claims.school_id && !is_admin(&claims.role) {
+        return Err(StatusCode::FORBIDDEN);
+    }
 
     let test_case_count =
         sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM test_cases WHERE problem_id = $1")
@@ -343,6 +364,21 @@ pub async fn update_problem(
         if !["easy", "medium", "hard"].contains(&diff.as_str()) {
             return Err(StatusCode::BAD_REQUEST);
         }
+    }
+
+    // SEC-03: Verify problem belongs to caller's org (or admin)
+    let problem_org = sqlx::query_scalar::<_, i64>(
+        "SELECT organization_id FROM problems WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match problem_org {
+        Some(org_id) if org_id == claims.school_id || is_admin(&claims.role) => {}
+        Some(_) => return Err(StatusCode::FORBIDDEN),
+        None => return Err(StatusCode::NOT_FOUND),
     }
 
     let visibility = match (&req.visibility, req.is_public) {
@@ -408,6 +444,25 @@ pub async fn delete_problem(
     Path(id): Path<i64>,
 ) -> Result<StatusCode, StatusCode> {
     require_admin(&claims.role)?;
+
+    // SEC-03: Verify problem belongs to caller's org (root bypasses)
+    let is_root = claims.role.parse::<Role>() == Ok(Role::Root);
+    if !is_root {
+        let problem_org = sqlx::query_scalar::<_, i64>(
+            "SELECT organization_id FROM problems WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        match problem_org {
+            Some(org_id) if org_id == claims.school_id => {}
+            Some(_) => return Err(StatusCode::FORBIDDEN),
+            None => return Err(StatusCode::NOT_FOUND),
+        }
+    }
+
     let result = sqlx::query("DELETE FROM problems WHERE id = $1")
         .bind(id)
         .execute(&state.db_pool)
@@ -423,8 +478,29 @@ pub async fn delete_problem(
 
 pub async fn get_problem_statistics(
     State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
     Path(id): Path<i64>,
 ) -> Result<Json<ProblemStatistics>, StatusCode> {
+    // SEC-03: Verify problem visibility — non-public requires same-org
+    let problem_row = sqlx::query(
+        "SELECT (visibility = 'public') AS is_public, organization_id FROM problems WHERE id = $1",
+    )
+    .bind(id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match problem_row {
+        Some(row) => {
+            let is_public: bool = row.get("is_public");
+            let org_id: i64 = row.get("organization_id");
+            if !is_public && org_id != claims.school_id && !is_admin(&claims.role) {
+                return Err(StatusCode::FORBIDDEN);
+            }
+        }
+        None => return Err(StatusCode::NOT_FOUND),
+    }
+
     let stats = sqlx::query_as::<_, ProblemStatistics>(
         r#"
         SELECT

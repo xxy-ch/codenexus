@@ -391,7 +391,7 @@ async fn list_classes(
     query.organization_id = Some(claims.school_id);
     // GradeAdmin grade scoping: must have grade_id; reject if missing
     if claims.role == "gradeadmin" {
-        let gid = tenant_ctx.grade_id.ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+        let gid = tenant_ctx.grade_id.ok_or(StatusCode::FORBIDDEN)?;
         query.grade_id = Some(gid);
     }
     let service = ClassService::new(state.db_pool);

@@ -51,9 +51,9 @@ pub async fn get_global_leaderboard(
         Some(claims.school_id)
     };
 
-    // D-08: GradeAdmin grade scoping
+    // D-08: GradeAdmin grade scoping — must have grade assignment
     let grade_id = if claims.role == "gradeadmin" {
-        tenant_ctx.grade_id
+        Some(tenant_ctx.grade_id.ok_or(StatusCode::FORBIDDEN)?)
     } else {
         None
     };
@@ -119,9 +119,9 @@ pub async fn get_campus_leaderboard(
         }
     }
 
-    // D-08: GradeAdmin grade scoping
+    // D-08: GradeAdmin grade scoping — must have grade assignment
     let grade_id = if claims.role == "gradeadmin" {
-        tenant_ctx.grade_id
+        Some(tenant_ctx.grade_id.ok_or(StatusCode::FORBIDDEN)?)
     } else {
         None
     };

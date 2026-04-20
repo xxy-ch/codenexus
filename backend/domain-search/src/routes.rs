@@ -43,7 +43,7 @@ pub async fn search(
         })
         .unwrap_or((None, false, false));
 
-    // D-08: GradeAdmin grade scoping
+    // D-08: GradeAdmin grade scoping — must have grade assignment
     let grade_id = auth
         .as_ref()
         .and_then(|AuthExtractor(claims)| {
@@ -54,6 +54,13 @@ pub async fn search(
             }
         })
         .flatten();
+
+    // Reject gradeadmin without grade assignment (scope bypass)
+    if let Some(AuthExtractor(claims)) = auth.as_ref() {
+        if claims.role == "gradeadmin" && grade_id.is_none() {
+            return Err(axum::http::StatusCode::FORBIDDEN);
+        }
+    }
 
     // Save recent search for authenticated users
     if let (Some(AuthExtractor(claims)), Some(q)) = (auth, query.q.as_ref()) {

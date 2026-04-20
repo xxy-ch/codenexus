@@ -297,7 +297,7 @@ impl SearchService {
                 u.username AS author_username,
                 p.title AS problem_title
             FROM discussions d
-            JOIN users u ON u.id = d.user_id
+            JOIN users u ON u.id = d.author_id
             JOIN problems p ON p.id = d.problem_id
             WHERE ($1 = '' OR d.content ILIKE $2 OR p.title ILIKE $2)
             {} {}
