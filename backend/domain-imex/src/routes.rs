@@ -771,6 +771,53 @@ pub async fn execute_user_import(
                     }
                 }
 
+                // GradeAdmin: enforce campus + grade scope
+                if claims.role == "gradeadmin" {
+                    let caller_campus = match claims.campus_id {
+                        Some(c) => c,
+                        None => {
+                            error_items.push(ErrorItem {
+                                item: row.username.clone(),
+                                reason: "Grade admin has no campus assignment".to_string(),
+                            });
+                            continue;
+                        }
+                    };
+                    if row.campus_id != caller_campus {
+                        skipped_items.push(SkippedItem {
+                            item: row.username.clone(),
+                            reason: "Grade admin can only import users into their own campus"
+                                .to_string(),
+                        });
+                        continue;
+                    }
+                    // GradeAdmin: force grade_id to match their own assignment
+                    let caller_grade = match claims.grade_id {
+                        Some(g) => g,
+                        None => {
+                            error_items.push(ErrorItem {
+                                item: row.username.clone(),
+                                reason: "Grade admin has no grade assignment".to_string(),
+                            });
+                            continue;
+                        }
+                    };
+                    if row.grade_id.is_some() && row.grade_id != Some(caller_grade) {
+                        skipped_items.push(SkippedItem {
+                            item: row.username.clone(),
+                            reason: "Grade admin can only import users into their own grade"
+                                .to_string(),
+                        });
+                        continue;
+                    }
+                    // GradeAdmin users always get the caller's grade_id
+                }
+                let effective_grade_id = if claims.role == "gradeadmin" {
+                    claims.grade_id
+                } else {
+                    row.grade_id
+                };
+
                 // Hash the default password in a blocking task to avoid starving the runtime
                 let pw = default_password.clone();
                 let username_for_hash = row.username.clone();
@@ -822,8 +869,8 @@ pub async fn execute_user_import(
 
                 let user_result = sqlx::query_scalar::<_, uuid::Uuid>(
                     r#"
-                    INSERT INTO users (username, email, password_hash, display_name, organization_id, campus_id)
-                    VALUES ($1, $2, $3, $4, $5, $6)
+                    INSERT INTO users (username, email, password_hash, display_name, organization_id, campus_id, grade_id)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
                     RETURNING id
                     "#,
                 )
@@ -833,6 +880,7 @@ pub async fn execute_user_import(
                 .bind(&row.display_name)
                 .bind(claims.school_id)
                 .bind(row.campus_id)
+                .bind(effective_grade_id)
                 .fetch_one(&mut *tx)
                 .await;
 

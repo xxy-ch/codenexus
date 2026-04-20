@@ -76,6 +76,31 @@ async fn batch_create_users(
     ensure_admin(&claims.role)?;
     // SECURITY: Force organization_id from JWT claims, never trust client input
     request.organization_id = claims.school_id;
+
+    // SECURITY: Prevent privilege escalation — validate each requested role
+    // does not exceed the caller's role level
+    let caller_role = claims.role.parse::<shared::models::Role>()
+        .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
+    for user in &request.users {
+        if let Some(role_str) = &user.role {
+            let target_role = role_str.parse::<shared::models::Role>()
+                .map_err(|_| AppError::Auth(format!("Invalid role: {}", role_str)))?;
+            if target_role.is_higher_or_equal(caller_role) && target_role != caller_role {
+                return Err(AppError::Auth(format!(
+                    "Cannot assign role '{}' — exceeds your authorization level", role_str
+                )));
+            }
+        }
+        // SECURITY: GradeAdmin cannot set campus_id outside their own campus
+        if claims.role == "gradeadmin" {
+            if let Some(user_campus) = user.campus_id {
+                if Some(user_campus) != claims.campus_id {
+                    return Err(AppError::Auth("GradeAdmin can only create users in their own campus".to_string()));
+                }
+            }
+        }
+    }
+
     let service = UserService::new(state.db_pool, state.jwt_service.clone());
     let response = service.batch_create_users(request).await?;
     Ok(Json(response))
