@@ -32,8 +32,8 @@ progress:
 | 6 | Full CI/CD + Observability | Executed | 3 plans in 2 waves | 100% (3/3 plans) |
 | 7 | Test Coverage + Contest Enhancement | Executing | 7 plans (3 waves) | 57% (4/7 plans) |
 | 8 | Import/Export | Executed | 3 plans | 100% (3/3 plans) |
-| 9 | Judge Concurrency + Fault Tolerance | Executed (UAT Blocked) | 7 plans (4 initial + 3 gap closure) | 100% execution, UAT blocked |
-| 10 | Data Migration + Final Delivery | Executed (UAT Blocked) | 5 plans (4 waves) | 100% execution, UAT blocked |
+| 9 | Judge Concurrency + Fault Tolerance | Executed (UAT Env-Blocked) | 7 plans (4 initial + 3 gap closure) | 100% execution, UAT blocked by Docker E2E env |
+| 10 | Data Migration + Final Delivery | Executed (UAT Env-Blocked) | 5 plans (4 waves) | 100% execution, UAT blocked by Docker E2E env |
 | 11 | Feature Gateway Infrastructure | Planned | 0 plans | 0% |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
 | 13 | Tenant Hierarchy Restructure | Executed | 5 plans | 100% |
@@ -83,6 +83,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Security audit round 2 fixes: 2026-04-20 — /me tenant field removal, grade_id write chain, list_grades RBAC, Docker CI on PR (commit dbbb4af)*
 *Security audit round 3 fixes: 2026-04-20 — leaderboard is_root(), same-level role block, scoped update_user_role, GradeAdmin export, transactional role update (commit 3dd5ae6)*
 *14-VERIFICATION.md updated: 2026-04-20 — GSD-08 gap resolved, 7/7 truths verified, internal consistency restored*
+*Security audit round 4 fixes (ultrawork): 2026-04-20 — R1: community tenant isolation on all CRUD (blog/discussions update/delete/comment/reply), R2: transactional counting, R3: batch-create campus/grade force-override, R4: search suggestions org filter (commit 3226b65)*
+*Phase 9/10 UAT blocked by Docker E2E environment — not functional blocking. Clarified status to Env-Blocked.*
 
 ## Decisions
 
