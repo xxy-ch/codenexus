@@ -8,6 +8,15 @@ import { usersService } from '@/services/users'
 
 type TabType = 'account' | 'preferences' | 'notifications' | 'security'
 
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const stored = localStorage.getItem(key)
+    return stored ? JSON.parse(stored) : fallback
+  } catch {
+    return fallback
+  }
+}
+
 export function Settings() {
   const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState<TabType>('account')
@@ -33,22 +42,26 @@ export function Settings() {
     })
   }, [profile])
 
-  const [preferences, setPreferences] = useState({
-    theme: 'light' as 'light' | 'dark' | 'system',
-    language: 'zh-CN',
-    fontSize: 'medium' as 'small' | 'medium' | 'large',
-    autoSave: true,
-    showLineNumbers: true,
-    wordWrap: false,
-  })
+  const [preferences, setPreferences] = useState(() =>
+    loadFromStorage('oj_preferences', {
+      theme: 'light' as 'light' | 'dark' | 'system',
+      language: 'zh-CN',
+      fontSize: 'medium' as 'small' | 'medium' | 'large',
+      autoSave: true,
+      showLineNumbers: true,
+      wordWrap: false,
+    })
+  )
 
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    contestReminders: true,
-    newProblems: false,
-    replyComments: true,
-    weeklyReport: true,
-  })
+  const [notifications, setNotifications] = useState(() =>
+    loadFromStorage('oj_notifications', {
+      emailNotifications: true,
+      contestReminders: true,
+      newProblems: false,
+      replyComments: true,
+      weeklyReport: true,
+    })
+  )
 
   const updateAccountMutation = useMutation({
     mutationFn: async (data: typeof accountForm) =>
@@ -66,14 +79,26 @@ export function Settings() {
     },
   })
 
-  // TODO(P1): preferences persistence requires backend contract — current toggle is local-only
   const updatePreferencesMutation = useMutation({
-    mutationFn: async (_data: typeof preferences) => ({ success: true }),
+    mutationFn: async (data: typeof preferences) => {
+      localStorage.setItem('oj_preferences', JSON.stringify(data))
+      return { success: true }
+    },
+    onSuccess: () => {
+      setMessage({ type: 'success', text: '偏好已保存到本地' })
+      setTimeout(() => setMessage(null), 3000)
+    },
   })
 
-  // TODO(P1): notification preferences persistence requires backend contract — current toggle is local-only
   const updateNotificationsMutation = useMutation({
-    mutationFn: async (_data: typeof notifications) => ({ success: true }),
+    mutationFn: async (data: typeof notifications) => {
+      localStorage.setItem('oj_notifications', JSON.stringify(data))
+      return { success: true }
+    },
+    onSuccess: () => {
+      setMessage({ type: 'success', text: '通知设置已保存到本地' })
+      setTimeout(() => setMessage(null), 3000)
+    },
   })
 
   const tabs = [
