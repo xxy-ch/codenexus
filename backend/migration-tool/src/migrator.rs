@@ -1307,8 +1307,8 @@ impl Migrator {
             match sqlx::query(
                 r#"
                 INSERT INTO articles (id, title, slug, content, author_id, tags, category,
-                    is_published, is_featured, view_count, like_count, comment_count, created_at, published_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                    is_published, is_featured, view_count, like_count, comment_count, created_at, published_at, organization_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                 "#,
             )
             .bind(old_id_num)
@@ -1325,6 +1325,7 @@ impl Migrator {
             .bind(0i64)  // comment_count (updated after comments)
             .bind(_post_time) // created_at
             .bind(published_at.as_deref())
+            .bind(self.org_id) // organization_id (NOT NULL per migration 032)
             .execute(&mut *tx)
             .await
             {
@@ -1483,8 +1484,8 @@ impl Migrator {
             // Insert comment WITHOUT ON CONFLICT (Bug 1 fix).
             match sqlx::query(
                 r#"
-                INSERT INTO article_comments (id, article_id, parent_id, content, author_id, created_at)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO article_comments (id, article_id, parent_id, content, author_id, created_at, organization_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 "#,
             )
             .bind(new_id)
@@ -1493,6 +1494,7 @@ impl Migrator {
             .bind(content)
             .bind(&author_id)
             .bind(post_time)
+            .bind(self.org_id) // organization_id (NOT NULL per migration 032)
             .execute(&mut *tx)
             .await
             {
@@ -3245,6 +3247,40 @@ mod tests {
                 && campus.map_or(0, |c| c) == different_campus.2.map_or(0, |c| c)
         });
         assert!(!is_dup2, "different campus_id must not conflict");
+    }
+
+    /// Regression test: articles and article_comments INSERT must include organization_id
+    /// since migration 032 made organization_id NOT NULL on both tables.
+    #[test]
+    fn blog_insert_includes_organization_id_column() {
+        // Verify the article INSERT SQL includes organization_id
+        let article_sql = r#"
+                INSERT INTO articles (id, title, slug, content, author_id, tags, category,
+                    is_published, is_featured, view_count, like_count, comment_count, created_at, published_at, organization_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                "#;
+        assert!(
+            article_sql.contains("organization_id"),
+            "articles INSERT must include organization_id column"
+        );
+        assert!(
+            article_sql.matches('$').count() >= 15,
+            "articles INSERT must have at least 15 bind parameters (including org_id)"
+        );
+
+        // Verify the article_comments INSERT SQL includes organization_id
+        let comment_sql = r#"
+                INSERT INTO article_comments (id, article_id, parent_id, content, author_id, created_at, organization_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                "#;
+        assert!(
+            comment_sql.contains("organization_id"),
+            "article_comments INSERT must include organization_id column"
+        );
+        assert!(
+            comment_sql.matches('$').count() >= 7,
+            "article_comments INSERT must have at least 7 bind parameters (including org_id)"
+        );
     }
 
 }

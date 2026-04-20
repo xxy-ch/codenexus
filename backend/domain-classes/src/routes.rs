@@ -326,6 +326,11 @@ async fn batch_promote(
 
     // Determine current academic year from active grades
     let service = ClassService::new(state.db_pool);
+    // SECURITY: Verify campus belongs to caller's organization
+    service
+        .verify_campus_org(campus_id, claims.school_id)
+        .await
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     let query = ListGradesQuery {
         campus_id: Some(campus_id),
         is_active: Some(true),
@@ -364,6 +369,11 @@ async fn batch_create_year(
         .ok_or(StatusCode::FORBIDDEN)?;
 
     let service = ClassService::new(state.db_pool);
+    // SECURITY: Verify campus belongs to caller's organization
+    service
+        .verify_campus_org(campus_id, claims.school_id)
+        .await
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     let grades = service
         .create_academic_year_grades(
             campus_id,

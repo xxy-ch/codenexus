@@ -68,8 +68,8 @@ gaps:
 | `frontend/src/pages/admin/UserManagement.tsx` | Grade dropdown in batch create | VERIFIED | Lines 5,27-37: gradesService import, grade query, activeGrades filter. Line 73: grade_id in payload. Line 445: grade name column in table |
 | `frontend/src/App.tsx` | /admin/grades route | VERIFIED | Line 59: lazy import. Line 168: route element |
 | `frontend/src/layouts/AdminLayout.tsx` | Grade management nav item | VERIFIED | Line 11: nav entry for /admin/grades |
-| `backend/domain-imex/src/user_export.rs` | CSV export with grade_id | MISSING | UserExportRow has no grade_id field; CSV header is username,role,campus_id,display_name,email |
-| `backend/domain-imex/src/user_import.rs` | CSV import with grade_id | PARTIAL | BatchCreateUserInput accepts grade_id but import hardcodes None; CSV has no grade_id column |
+| `backend/domain-imex/src/user_export.rs` | CSV export with grade_id | VERIFIED | UserExportRow has grade_id field (line 9); CSV header includes grade_id (line 18,27); export writes grade_id (line 37). Fixed in commit 49b88a8. |
+| `backend/domain-imex/src/user_import.rs` | CSV import with grade_id | VERIFIED | CSV parser reads grade_id column (line 102); parses to Option<i64> (lines 185-189); wires to BatchCreateUserInput (line 224,259). Fixed in commit 49b88a8. |
 
 ### Key Link Verification
 
