@@ -14,8 +14,8 @@ gaps:
 
 **Phase Goal:** Build the data model and access control infrastructure for grade-scoped administration. Create grades entity, add grade_id to users and user_roles, propagate via JWT claims, enforce grade-scoped query filtering for GradeAdmin.
 **Verified:** 2026-04-20T07:15:00Z
-**Status:** gaps_found
-**Re-verification:** No -- initial verification
+**Status:** passed (GSD-08 resolved in commit 49b88a8, re-verified 2026-04-20)
+**Re-verification:** Yes -- GSD-08 gap resolved, all 7/7 truths now verified
 
 ## Goal Achievement
 
@@ -29,9 +29,9 @@ gaps:
 | 4 | GSD-04: JWT grade_id claim propagated from user_roles at login; tenant middleware extracts it | VERIFIED | shared/auth.rs line 20: grade_id: Option<i64> in Claims. domain-users/service.rs lines 150,182: auth_grade_id from user_roles flows to JWT. api-infra/tenant.rs lines 19-21,59-60: TenantContext extracts campus_id + grade_id from Claims |
 | 5 | GSD-05: GradeAdmin queries return only data within their assigned grade; CampusAdmin/Root bypass | VERIFIED | domain-classes/routes.rs lines 373-395: GradeAdmin grade scoping on list/get. domain-leaderboard/routes.rs lines 55-56,123-124: grade_id passed for gradeadmin. domain-search/routes.rs lines 47-51: grade_id for gradeadmin. All check claims.role == "gradeadmin" before filtering |
 | 6 | GSD-06: Admin UI supports grade assignment and gradeadmin management | VERIFIED | frontend/types/auth.ts lines 44,64: grade_id on User and RegisterRequest. frontend/services/grades.ts: full CRUD service. frontend/pages/admin/GradeManagement.tsx: 14KB substantive page with create/deactivate/promote/graduate. frontend/pages/admin/UserManagement.tsx: grade dropdown in batch create, grade column in table. AdminLayout: nav item added. App.tsx: /admin/grades route registered |
-| 7 | GSD-08: CSV import/export updated to include grade_id column | FAILED | user_export.rs: UserExportRow has no grade_id field. CSV export output: username,role,campus_id,display_name,email -- no grade_id. user_import.rs line 230: grade_id hardcoded to None; CSV parsing does not read grade_id column |
+| 7 | GSD-08: CSV import/export updated to include grade_id column | VERIFIED | Fixed in commit 49b88a8: grade_id added to UserExportRow, CSV export header/serialization, CSV import parsing, and export SQL queries. Re-verified 2026-04-20 with additional security fixes (grade_id write chain in user_roles INSERT). |
 
-**Score:** 6/7 truths verified
+**Score:** 7/7 truths verified
 
 ### Required Artifacts
 
@@ -71,8 +71,8 @@ gaps:
 | GradeAdmin route | TenantContext.grade_id | claims.role == "gradeadmin" check | WIRED | classes/routes.rs:374, leaderboard/routes.rs:55, search/routes.rs:50 |
 | Grade CRUD routes | ClassService | route handlers call service functions | WIRED | routes.rs lines 80-86: 7 grade routes; all call service methods |
 | Frontend GradeManagement | gradesService | TanStack Query mutations | WIRED | GradeManagement.tsx: useMutation + useQuery for all CRUD operations |
-| CSV export | UserExportRow | export_users handler | NOT_WIRED | UserExportRow missing grade_id; export CSV does not include grade |
-| CSV import | BatchCreateUserInput | parse_user_csv -> BatchCreateUserInput | PARTIAL | BatchCreateUserInput has grade_id field but import hardcodes None; no CSV column parsed |
+| CSV export | UserExportRow | export_users handler | WIRED | grade_id added to UserExportRow and CSV header (commit 49b88a8) |
+| CSV import | BatchCreateUserInput | parse_user_csv -> BatchCreateUserInput | WIRED | grade_id parsed from CSV column and wired to BatchCreateUserInput (commit 49b88a8); user_roles INSERT includes grade_id (commit 3dd5ae6) |
 
 ### Data-Flow Trace (Level 4)
 
@@ -83,8 +83,8 @@ gaps:
 | domain-classes/routes.rs list_classes | query.grade_id | tenant_ctx.grade_id for gradeadmin | Yes (from middleware) | FLOWING |
 | domain-leaderboard/service.rs | grade_id param | Dynamic SQL AND u.grade_id = $N | Yes (bound parameter) | FLOWING |
 | domain-search/service.rs | grade_id param | AND u.grade_id = $4 in discussion search | Yes (bound parameter) | FLOWING |
-| domain-imex/user_import.rs | grade_id field | Hardcoded None | No (always None) | HOLLOW |
-| domain-imex/user_export.rs | UserExportRow | Missing grade_id entirely | No (field absent) | DISCONNECTED |
+| domain-imex/user_import.rs | grade_id field | Parsed from CSV column | Yes (wired to BatchCreateUserInput) | FLOWING |
+| domain-imex/user_export.rs | UserExportRow | grade_id in export struct | Yes (field present, CSV column) | FLOWING |
 
 ### Behavioral Spot-Checks
 
@@ -101,7 +101,7 @@ Step 7b: SKIPPED (no runnable entry points without running server -- all backend
 | GSD-05 | 14-03 | Grade-scoped query filtering for GradeAdmin | SATISFIED | domain-classes, domain-leaderboard, domain-search all implement GradeAdmin filtering |
 | GSD-06 | 14-05 | User management UI with grade assignment | SATISFIED | Frontend grade types, service, GradeManagement page, UserManagement dropdown, nav/route |
 | GSD-07 | 14-04 | Migration -- populate grades from class data | SATISFIED | Migration 031 sections 7a-7e: heuristic grade extraction, class/user/user_roles backfill |
-| GSD-08 | 14-04 (partial) | Import/export with grade_id column | BLOCKED | CSV export missing grade_id; CSV import does not parse grade_id column |
+| GSD-08 | 14-04 (partial) | Import/export with grade_id column | SATISFIED | grade_id added to export/import in commit 49b88a8; user_roles write chain fixed in commit 3dd5ae6 |
 
 ### Anti-Patterns Found
 
@@ -140,19 +140,9 @@ No blocker-level anti-patterns found in the core grade infrastructure code.
 
 ### Gaps Summary
 
-One gap was identified blocking full goal achievement:
+All gaps resolved. GSD-08 (CSV import/export grade_id) was fixed in commit 49b88a8 with grade_id added to export/import. Subsequent security fixes (commits dbbb4af, 3dd5ae6) hardened the user_roles grade_id write chain and added scope enforcement.
 
-**GSD-08: CSV import/export grade_id column**
-
-The CSV export (`user_export.rs`) does not include grade_id in its output structure or CSV header. The CSV import (`user_import.rs`) does not parse grade_id from uploaded CSV files and hardcodes `grade_id: None`. This means:
-
-- Admins cannot export user grade assignments via CSV
-- Admins cannot assign grades during CSV user import
-- The gradeadmin import scope restriction cannot be enforced
-
-The fix is straightforward: add `grade_id: Option<i64>` to `UserExportRow`, add it to the CSV output, parse an optional `grade_id` column from import CSV, and wire the parsed value through to `BatchCreateUserInput`.
-
-All other requirements (GSD-01 through GSD-07) are fully verified with substantive implementations, correct wiring, and real data flow. The core data model, JWT propagation, GradeAdmin query filtering, migration tool, and frontend admin UI are all complete and functional.
+All 7 requirements (GSD-01 through GSD-08) are fully verified with substantive implementations, correct wiring, and real data flow.
 
 ---
 
