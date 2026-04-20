@@ -74,6 +74,29 @@ async fn verify_class_access(
     Ok(class)
 }
 
+/// SECURITY: For GradeAdmin, verify the class belongs to their assigned grade.
+/// Other roles pass through (CampusAdmin/Root have campus/org scope; Teacher has ownership check).
+fn verify_grade_scope(class: &Class, claims: &shared::models::Claims) -> Result<(), StatusCode> {
+    if claims.role == "gradeadmin" {
+        let gid = claims.grade_id.ok_or(StatusCode::FORBIDDEN)?;
+        if class.grade_id != Some(gid) {
+            return Err(StatusCode::FORBIDDEN);
+        }
+    }
+    Ok(())
+}
+
+/// Verify class access with tenant + ownership + grade scope for write operations.
+async fn verify_class_write_access(
+    service: &ClassService,
+    class_id: i64,
+    claims: &shared::models::Claims,
+) -> Result<Class, StatusCode> {
+    let class = verify_class_access(service, class_id, claims, true).await?;
+    verify_grade_scope(&class, claims)?;
+    Ok(class)
+}
+
 pub fn classes_router() -> Router<AppState> {
     Router::new()
         // Grade routes (CampusAdmin+)
@@ -404,6 +427,10 @@ async fn create_class(
     // Tenant: force organization_id from claims, ignore request body
     let mut req = request;
     req.organization_id = claims.school_id;
+    // SECURITY: GradeAdmin — force grade_id from claims to prevent cross-grade creation
+    if claims.role == "gradeadmin" {
+        req.grade_id = claims.grade_id;
+    }
     let service = ClassService::new(state.db_pool);
     let class = service
         .create_class(&req, claims.sub)
@@ -455,16 +482,20 @@ async fn update_class(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
     Path(class_id): Path<i64>,
-    Json(request): Json<UpdateClassRequest>,
+    Json(mut request): Json<UpdateClassRequest>,
 ) -> Result<Json<Class>, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
-    verify_class_access(&service, class_id, &claims, true).await?;
-    let class = service
+    let _class = verify_class_write_access(&service, class_id, &claims).await?;
+    // SECURITY: GradeAdmin cannot change grade_id to a different grade
+    if claims.role == "gradeadmin" {
+        request.grade_id = claims.grade_id;
+    }
+    let updated = service
         .update_class(class_id, &request)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    Ok(Json(class))
+    Ok(Json(updated))
 }
 
 async fn delete_class(
@@ -474,7 +505,7 @@ async fn delete_class(
 ) -> Result<StatusCode, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
-    verify_class_access(&service, class_id, &claims, true).await?;
+    verify_class_write_access(&service, class_id, &claims).await?;
     service
         .delete_class(class_id)
         .await
@@ -598,7 +629,7 @@ async fn create_assignment(
 ) -> Result<Json<Assignment>, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ClassService::new(state.db_pool);
-    verify_class_access(&service, class_id, &claims, true).await?;
+    verify_class_write_access(&service, class_id, &claims).await?;
     let assignment = service
         .create_assignment(class_id, &request)
         .await
@@ -662,8 +693,8 @@ async fn update_assignment(
         .get_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
-    // Owner check: verify the user owns the class this assignment belongs to
-    verify_class_access(&service, assignment.class_id, &claims, true).await?;
+    // Owner + grade scope check: verify the user owns the class and it's in their grade
+    verify_class_write_access(&service, assignment.class_id, &claims).await?;
     let assignment = service
         .update_assignment(assignment_id, &request)
         .await
@@ -682,7 +713,7 @@ async fn delete_assignment(
         .get_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
-    verify_class_access(&service, assignment.class_id, &claims, true).await?;
+    verify_class_write_access(&service, assignment.class_id, &claims).await?;
     service
         .delete_assignment(assignment_id)
         .await
@@ -701,7 +732,7 @@ async fn publish_assignment(
         .get_assignment(assignment_id)
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
-    verify_class_access(&service, assignment.class_id, &claims, true).await?;
+    verify_class_write_access(&service, assignment.class_id, &claims).await?;
     let assignment = service
         .publish_assignment(assignment_id)
         .await

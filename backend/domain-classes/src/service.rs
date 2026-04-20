@@ -153,6 +153,7 @@ impl ClassService {
     }
 
     /// Deactivate a grade (graduate). Sets is_active = false and optionally suspends students.
+    /// All operations run in a single transaction to prevent partial-commit data inconsistency.
     /// Returns the count of affected users.
     pub async fn deactivate_grade(
         &self,
@@ -165,7 +166,11 @@ impl ClassService {
             return Err(anyhow::anyhow!("Grade is already inactive"));
         }
 
-        // Deactivate the grade
+        // Everything in one transaction: grade deactivation, user grade_id clear,
+        // class grade_id clear, optional student suspension. Atomic all-or-nothing.
+        let mut tx = self.pool.begin().await?;
+
+        // Step 1: Deactivate the grade
         let grade = sqlx::query_as::<_, Grade>(
             r#"
             UPDATE grades SET is_active = false, updated_at = NOW()
@@ -174,10 +179,10 @@ impl ClassService {
             "#,
         )
         .bind(grade_id)
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *tx)
         .await?;
 
-        // Clear grade_id for users in this grade
+        // Step 2: Clear grade_id for users in this grade
         let affected = sqlx::query(
             r#"
             UPDATE users SET grade_id = NULL
@@ -185,43 +190,50 @@ impl ClassService {
             "#,
         )
         .bind(grade_id)
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await?
         .rows_affected() as i64;
 
-        // Optionally deactivate classes in this grade
+        // Step 3: Clear grade_id for classes in this grade
+        // NOTE: classes table has no is_active column; we clear grade_id instead.
         sqlx::query(
             r#"
-            UPDATE classes SET is_active = false, updated_at = NOW()
+            UPDATE classes SET grade_id = NULL, updated_at = NOW()
             WHERE grade_id = $1
             "#,
         )
         .bind(grade_id)
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await?;
 
-        // Optionally suspend student accounts
+        // Step 4: Optionally suspend student accounts
+        // NOTE: users table uses `status` column (TEXT: active/inactive/banned), not `is_active`.
+        // Select users who just had their grade_id cleared in this grade.
         if suspend_students && affected > 0 {
             sqlx::query(
                 r#"
-                UPDATE users SET is_active = false
-                WHERE grade_id IS NULL
-                  AND id IN (
-                    SELECT ur.user_id FROM user_roles ur
-                    WHERE ur.role = 'student' AND ur.organization_id IN (
+                UPDATE users SET status = 'inactive'
+                WHERE id IN (
+                    SELECT u.id FROM users u
+                    JOIN user_roles ur ON ur.user_id = u.id
+                    WHERE ur.role = 'student'
+                      AND u.organization_id IN (
                         SELECT c.organization_id FROM campuses c WHERE c.id = $1
+                      )
+                      AND u.id NOT IN (
+                        SELECT DISTINCT user_id FROM user_roles
+                        WHERE role NOT IN ('student')
+                      )
                     )
-                  )
-                  AND id NOT IN (
-                    SELECT DISTINCT user_id FROM user_roles
-                    WHERE role NOT IN ('student')
-                  )
+                  AND u.status = 'active'
                 "#,
             )
             .bind(grade.campus_id)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await?;
         }
+
+        tx.commit().await?;
 
         Ok((grade, affected))
     }

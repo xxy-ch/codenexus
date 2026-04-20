@@ -147,7 +147,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 10 P03]: Contest rules default to 'acm'; penalty_time defaults to 0 for contest_submissions
 - [Phase 10]: decode_blob_result refactored from &self to associated function for testability
 - D-12: Accept bounded 1-cycle priority reordering window for v1.0; strict priority deferred to v2
-- [Phase 13]: Contest/leaderboard admin checks raised to CampusAdmin; class management stays at GradeAdmin level
+- [Phase 13]: Contest admin-level operations (tenant bypass) raised to CampusAdmin via is_admin(); contest create/update remains teacher_plus (teachers create contests for classes); class management stays at GradeAdmin level
 - [Phase 14]: D-14-01: Combined 4 tasks into single commit -- adding grade_id to shared structs breaks all construction sites simultaneously
 - [Phase 14]: D-14-02: Propagated grade_id from DB through JWT in login/refresh flows for downstream plan consumption
 - [Phase 14 P02]: D-14-03: JWT grade_id sourced from user_roles (authorization scope) not users (identity) per D-07/D-08
