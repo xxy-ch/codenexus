@@ -152,13 +152,14 @@ impl BlogService {
                 .fetch_one(&self.pool)
                 .await?;
 
-        // Get comments
+        // Get comments (tenant-scoped to prevent cross-org data leakage from dirty data)
         let comments = sqlx::query_as::<_, ArticleComment>(
             "SELECT * FROM article_comments
-             WHERE article_id = $1
+             WHERE article_id = $1 AND organization_id = $2
              ORDER BY created_at ASC",
         )
         .bind(article.id)
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await?;
 

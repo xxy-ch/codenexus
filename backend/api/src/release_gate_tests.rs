@@ -199,12 +199,13 @@ async fn insert_enrollment(pool: &PgPool, class_id: i64, student_id: Uuid) {
     .expect("failed to insert enrollment");
 }
 
-async fn insert_discussion(pool: &PgPool, problem_id: i64, user_id: Uuid, content: &str) {
+async fn insert_discussion(pool: &PgPool, problem_id: i64, author_id: Uuid, organization_id: i64, content: &str) {
     sqlx::query(
-        "INSERT INTO discussions (problem_id, user_id, parent_id, content, is_pinned) VALUES ($1, $2, NULL, $3, false)",
+        "INSERT INTO discussions (problem_id, author_id, organization_id, content, title, is_pinned) VALUES ($1, $2, $3, $4, 'Test Discussion', false)",
     )
     .bind(problem_id)
-    .bind(user_id)
+    .bind(author_id)
+    .bind(organization_id)
     .bind(content)
     .execute(pool)
     .await
@@ -406,8 +407,8 @@ fn community_message_search_scope_filters_private_and_cross_tenant_content() {
             "public",
         )
         .await;
-        insert_discussion(&pool, 2, teacher_one.id, "alpha local discussion").await;
-        insert_discussion(&pool, 3, teacher_two.id, "alpha foreign discussion").await;
+        insert_discussion(&pool, 2, teacher_one.id, 1, "alpha local discussion").await;
+        insert_discussion(&pool, 3, teacher_two.id, 2, "alpha foreign discussion").await;
 
         let service = SearchService::new(pool);
         let query = SearchQuery {

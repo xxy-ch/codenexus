@@ -230,13 +230,14 @@ impl SearchService {
             // Root: see all problems from all organizations
             ("(p.visibility = 'public' OR p.visibility = 'private')".to_string(), None)
         } else if let Some(org_id) = school_id {
+            // SECURITY: Tenant-scoped — all non-root users see only problems from their own org
             if is_teacher_plus {
-                ("(p.visibility = 'public' OR (p.visibility = 'private' AND p.organization_id = $3))".to_string(), Some(org_id))
+                ("(p.organization_id = $3)".to_string(), Some(org_id))
             } else {
-                ("p.visibility = 'public'".to_string(), None)
+                ("(p.visibility = 'public' AND p.organization_id = $3)".to_string(), Some(org_id))
             }
         } else {
-            // Unauthenticated: public only
+            // Unauthenticated: public only (no tenant filter — no user context)
             ("p.visibility = 'public'".to_string(), None)
         };
 

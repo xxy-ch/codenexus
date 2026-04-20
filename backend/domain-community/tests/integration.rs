@@ -71,7 +71,7 @@ async fn test_create_and_get_discussion() {
     assert!(!discussion.is_locked);
 
     // Get detail (increments view count)
-    let detail = service.get_discussion_detail(discussion.id).await.unwrap();
+    let detail = service.get_discussion_detail(discussion.id, _org_id).await.unwrap();
     assert_eq!(detail.discussion.id, discussion.id);
     assert_eq!(detail.discussion.view_count, 1); // incremented by get_discussion_detail
     assert!(detail.replies.is_empty());
@@ -203,7 +203,7 @@ async fn test_blog_article_crud() {
     assert!(!article.slug.is_empty());
 
     // Get article by ID
-    let detail = service.get_article_detail(&article.id.to_string()).await.unwrap();
+    let detail = service.get_article_detail(&article.id.to_string(), _org_id).await.unwrap();
     assert_eq!(detail.article.id, article.id);
     assert_eq!(detail.article.view_count, 1); // incremented by get_article_detail
     assert!(detail.comments.is_empty());

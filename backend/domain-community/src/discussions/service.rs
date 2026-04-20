@@ -135,13 +135,14 @@ impl DiscussionService {
         .fetch_one(&self.pool)
         .await?;
 
-        // Get replies
+        // Get replies (tenant-scoped to prevent cross-org data leakage from dirty data)
         let replies = sqlx::query_as::<_, DiscussionReply>(
             "SELECT * FROM discussion_replies
-             WHERE discussion_id = $1
+             WHERE discussion_id = $1 AND organization_id = $2
              ORDER BY created_at ASC",
         )
         .bind(id)
+        .bind(organization_id)
         .fetch_all(&self.pool)
         .await?;
 

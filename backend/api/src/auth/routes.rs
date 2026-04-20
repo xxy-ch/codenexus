@@ -266,14 +266,56 @@ mod tests {
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
+    /// Seed a demo admin user (username "1001", password "admin123") for integration tests.
+    async fn seed_demo_admin() {
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let pool = sqlx::PgPool::connect(&database_url).await.expect("Failed to connect to seed DB");
+
+        // Ensure organization exists
+        sqlx::query("INSERT INTO organizations (id, name, slug) VALUES (1, 'Test Org', 'test-org') ON CONFLICT (id) DO NOTHING")
+            .execute(&pool)
+            .await
+            .expect("Failed to seed organization");
+
+        // Hash password
+        let password_hash = bcrypt::hash("admin123", bcrypt::DEFAULT_COST).expect("Failed to hash password");
+
+        // Insert user (idempotent via ON CONFLICT)
+        sqlx::query(
+            r#"INSERT INTO users (username, email, password_hash, display_name, user_code, organization_id, status)
+            VALUES ('1001', 'admin@example.com', $1, 'Demo Admin', '100100000001', 1, 'active')
+            ON CONFLICT (username) DO NOTHING"#,
+        )
+        .bind(&password_hash)
+        .execute(&pool)
+        .await
+        .expect("Failed to seed demo admin user");
+
+        // Insert user_role (idempotent)
+        let user_id: Option<uuid::Uuid> = sqlx::query_scalar("SELECT id FROM users WHERE username = '1001'")
+            .fetch_optional(&pool)
+            .await
+            .expect("Failed to query demo admin")
+            .flatten();
+
+        if let Some(uid) = user_id {
+            sqlx::query(
+                "INSERT INTO user_roles (user_id, organization_id, campus_id, grade_id, role)
+                VALUES ($1, 1, NULL, NULL, 'root')
+                ON CONFLICT DO NOTHING",
+            )
+            .bind(uid)
+            .execute(&pool)
+            .await
+            .expect("Failed to seed demo admin role");
+        }
+    }
+
     #[ignore = "requires a running PostgreSQL database; set DATABASE_URL environment variable"]
     #[tokio::test]
     async fn test_login_valid_credentials() {
-        std::env::set_var("DEMO_ADMIN_EMAIL", "admin@example.com");
-        std::env::set_var("DEMO_ADMIN_PASSWORD", "admin123");
-        std::env::set_var("DEMO_ADMIN_SCHOOL_ID", "1");
-        std::env::set_var("DEMO_ADMIN_ROLE", "admin");
         std::env::set_var("JWT_SECRET", "test_secret_key");
+        seed_demo_admin().await;
 
         let app = create_test_app().await;
 
@@ -327,11 +369,8 @@ mod tests {
     #[ignore = "requires a running PostgreSQL database; set DATABASE_URL environment variable"]
     #[tokio::test]
     async fn test_refresh_valid_token() {
-        std::env::set_var("DEMO_ADMIN_EMAIL", "admin@example.com");
-        std::env::set_var("DEMO_ADMIN_PASSWORD", "admin123");
-        std::env::set_var("DEMO_ADMIN_SCHOOL_ID", "1");
-        std::env::set_var("DEMO_ADMIN_ROLE", "admin");
         std::env::set_var("JWT_SECRET", "test_secret_key");
+        seed_demo_admin().await;
 
         let app = create_test_app().await;
 

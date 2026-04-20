@@ -775,10 +775,10 @@ impl ClassService {
             SELECT
                 ce.student_id,
                 u.username,
-                u.email,
+                COALESCE(u.email, '') AS email,
                 0 AS total_assignments,
                 0 AS completed_assignments,
-                0.0 AS average_score,
+                0.0::DOUBLE PRECISION AS average_score,
                 NULL::TIMESTAMPTZ AS last_submission
             FROM class_enrollments ce
             JOIN users u ON u.id = ce.student_id
