@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 11
-status: verifying
-last_updated: "2026-04-21T11:58:09.287Z"
+status: executed
+last_updated: "2026-04-21T12:42:00Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 16
@@ -16,7 +16,7 @@ progress:
 
 # Project State: AlgoMaster Online Judge
 
-**Status:** Phase 11 executed, 4/4 plans complete, human verification pending
+**Status:** Phase 11 v2 executed, 6/6 plans complete (4 original + 2 v2), standalone Gateway verified
 **Current Phase:** 11
 **Last Activity:** 2026-04-21
 
@@ -34,7 +34,7 @@ progress:
 | 8 | Import/Export | Executed | 3 plans | 100% (3/3 plans) |
 | 9 | Judge Concurrency + Fault Tolerance | Conditionally Accepted (Env-Only Gap) | 7 plans (4 initial + 3 gap closure) | 100% execution, UAT 20/22 pass, env-only gap |
 | 10 | Data Migration + Final Delivery | Conditionally Accepted (Env-Only Gap) | 5 plans (4 waves) | 100% execution, UAT 20/22 pass, env-only gap |
-| 11 | Feature Gateway Infrastructure | Executed | 4 plans in 3 waves | 100% (4/4 plans) |
+| 11 | Feature Gateway Infrastructure | Executed (v2 standalone) | 6 plans (4 original + 2 v2) | 100% (6/6 plans) |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
 | 13 | Tenant Hierarchy Restructure | Executed + Audit Hardened | 5 plans | 100% (5/5), is_admin tightened to Root-only, CampusAdmin campus-scoped |
 | 14 | Grade-Scoped Data Model | Executed + Audit Hardened | 6 plans (4 waves) | 100% (6/6), campus scope on problem/test_cases, grade scope centralized in verify_class_access |
@@ -121,6 +121,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 11 context re-discussed: 2026-04-21 — v2 standalone service architecture (D-17~D-26): independent binary, HTTP REST, direct DB, Docker Compose, fail-open, shared secret, full CRUD hosting, one-step migration*
 *Phase 11 v2 plan 01 executed: 2026-04-21 — standalone feature-gateway crate with all endpoints + Dockerfile*
 *Phase 11 v2 plan 02 executed: 2026-04-21 — API HTTP client + proxy routes + AppState migration + embedded module deleted*
+*Phase 11 v2 plan 03 executed: 2026-04-21 — Docker Compose integration + workspace build/test verification (commit a0fe4ac)*
+*Phase 11 v2 complete — standalone Gateway architecture fully verified (D-17~D-26)*
 
 ## Decisions
 
@@ -202,6 +204,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 11 v2 P02]: FeatureSource/ResolvedFeature types duplicated in api-infra client.rs to avoid cross-crate dependency on feature-gateway crate
 - [Phase 11 v2 P02]: D-06 role-scope authorization enforced at API proxy layer before forwarding to Gateway (API acts as auth gateway)
 - [Phase 11 v2 P02]: Fail-open results not cached -- only successful Gateway responses get TTL cache entry
+- [Phase 11 v2 P03]: WORKER_SECRET env var added to api service in docker-compose for Gateway Bearer auth (D-24)
+- [Phase 11 v2 P03]: Pre-existing test_admin_list_users_returns_200 failure (Phase 14 audit) documented as out-of-scope
 
 ## Performance Metrics
 
@@ -249,3 +253,4 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 11 P04 | 7min | 3 tasks | 10 files |
 | Phase 11 v2 P01 | 13min | 6 tasks | 8 files |
 | Phase 11 v2 P02 | 21min | 5 tasks | 12 files |
+| Phase 11 v2 P03 | 6min | 2 tasks | 1 files |
