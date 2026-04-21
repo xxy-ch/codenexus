@@ -374,13 +374,13 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 5. Feature resolution completes in <1ms with in-process cache + write-triggered invalidation (no DB hit on hot path)
 
 **Depends on:** Phase 10
-**Plans:** 1/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [x] 11-01-PLAN.md — DB migration + feature_gateway module (models, service, cache) + AppState (Wave 1)
-- [ ] 11-02-PLAN.md — API CRUD routes + feature_gate middleware + D-06 authorization (Wave 2)
-- [ ] 11-03-PLAN.md — Frontend featureGateway service + FEATURE_FLAGS migration + route gating (Wave 2)
-- [ ] 11-04-PLAN.md — Admin FeatureManagement page + Teacher ClassFeatureSettings page + routing (Wave 3)
+- [x] 11-02-PLAN.md — API CRUD routes + feature_gate middleware + D-06 authorization (Wave 2)
+- [x] 11-03-PLAN.md — Frontend featureGateway service + FEATURE_FLAGS migration + route gating (Wave 2)
+- [x] 11-04-PLAN.md — Admin FeatureManagement page + Teacher ClassFeatureSettings page + routing (Wave 3)
 
 ---
 

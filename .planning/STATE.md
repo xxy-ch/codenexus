@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: milestone
 current_phase: 11
 status: executing
-last_updated: "2026-04-21T02:59:03Z"
+last_updated: "2026-04-21T05:24:08.763Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 16
-  completed_phases: 12
+  completed_phases: 13
   total_plans: 69
-  completed_plans: 67
-  percent: 97
+  completed_plans: 69
+  percent: 100
 ---
 
 # Project State: AlgoMaster Online Judge
@@ -34,7 +34,7 @@ progress:
 | 8 | Import/Export | Executed | 3 plans | 100% (3/3 plans) |
 | 9 | Judge Concurrency + Fault Tolerance | Conditionally Accepted (Env-Only Gap) | 7 plans (4 initial + 3 gap closure) | 100% execution, UAT 20/22 pass, env-only gap |
 | 10 | Data Migration + Final Delivery | Conditionally Accepted (Env-Only Gap) | 5 plans (4 waves) | 100% execution, UAT 20/22 pass, env-only gap |
-| 11 | Feature Gateway Infrastructure | Executing | 4 plans in 3 waves | 25% (1/4 plans) |
+| 11 | Feature Gateway Infrastructure | Executed | 4 plans in 3 waves | 100% (4/4 plans) |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
 | 13 | Tenant Hierarchy Restructure | Executed + Audit Hardened | 5 plans | 100% (5/5), is_admin tightened to Root-only, CampusAdmin campus-scoped |
 | 14 | Grade-Scoped Data Model | Executed + Audit Hardened | 6 plans (4 waves) | 100% (6/6), campus scope on problem/test_cases, grade scope centralized in verify_class_access |
@@ -114,6 +114,10 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 11 UI-SPEC approved: 2026-04-21 — 6/6 dimensions passed, 1 non-blocking FLAG*
 *Phase 11 planned: 2026-04-21 — 4 plans in 3 waves (01: schema+service, 02: routes+middleware, 03: frontend migration, 04: admin/teacher pages)*
 *Phase 11 plan 01 executed: 2026-04-21 — feature_registry/feature_flags schema, FeatureGatewayService with DashMap cache, AppState integration (commit 7709c09)*
+*Phase 11 plan 02 executed: 2026-04-21 — CRUD routes with D-06 authorization, feature_gate middleware (404 per D-08), main.rs wiring (commit aecca26)*
+*Phase 11 plan 03 executed: 2026-04-21 — frontend migration from FEATURE_FLAGS to async gateway, 5 consumers migrated (commit 7835872)*
+*Phase 11 plan 04 executed: 2026-04-21 — FeatureToggle/InheritedIndicator components, admin FeatureManagement, teacher ClassFeatureSettings pages (commits 45ff439, 4900009, 48fd56b)*
+*Phase 11 complete — all 4 plans executed, feature gateway infrastructure fully operational*
 
 ## Decisions
 
@@ -191,6 +195,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 11 P01]: Sequential per-scope SQL queries for feature flag resolution instead of complex OR query -- simpler, more maintainable
 - [Phase 11 P01]: PgPool::connect_lazy requires #[tokio::test] even for unit tests that never connect (re-confirmed from Phase 10 P02)
 - [Phase 11 P01]: All AppState construction sites updated when adding required feature_gateway field (7 sites across 6 files)
+- [Phase 11]: FeatureToggle uses role=switch with aria-checked for accessibility; admin page fetches per-feature flags individually; teacher page auto-selects first class
 
 ## Performance Metrics
 
@@ -234,3 +239,5 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 15 P12 | 8min | 1 tasks | 9 files |
 | Phase 15 P12 | 4min | 1 tasks | 1 files |
 | Phase 11 P01 | 18min | 1 tasks | 12 files |
+| Phase 11 P02 | 10min | 1 tasks | 7 files |
+| Phase 11 P04 | 7min | 3 tasks | 10 files |
