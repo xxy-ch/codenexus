@@ -71,8 +71,27 @@ async fn verify_class_access(
     if require_owner {
         verify_class_owner(&class, claims)?;
     }
+    verify_campus_scope(&class, claims)?;
     verify_grade_scope(&class, claims)?;
     Ok(class)
+}
+
+/// SECURITY: Verify campus scope for CampusAdmin/GradeAdmin.
+/// Fail-closed: class.campus_id must match claims.campus_id.
+fn verify_campus_scope(class: &Class, claims: &shared::models::Claims) -> Result<(), StatusCode> {
+    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    match role {
+        Role::Root => Ok(()),
+        Role::CampusAdmin | Role::GradeAdmin => {
+            let cid = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
+            let ccid = class.campus_id.ok_or(StatusCode::FORBIDDEN)?;
+            if ccid != cid {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
 }
 
 /// SECURITY: For GradeAdmin, verify the class belongs to their assigned grade.

@@ -633,7 +633,11 @@ async fn acknowledge_with_retry(
         )
         .await
         {
-            Ok(_) => return Ok(()),
+            Ok(count) if count > 0 => return Ok(()),
+            Ok(_) => {
+                warn!("XACK returned 0 for message {} during recovery — message not in PEL, treating as failure", message_id);
+                return Err(anyhow::anyhow!("XACK returned 0 — message {} not acknowledged during recovery", message_id));
+            }
             Err(e) if attempt + 1 < max_retries => {
                 warn!(
                     "ACK attempt {}/{} failed for message {}: {}, retrying",

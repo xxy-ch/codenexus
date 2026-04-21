@@ -68,6 +68,12 @@ pub async fn list_contests(
 ) -> Result<Json<ContestsListResponse>, StatusCode> {
     // Tenant: force organization_id from claims
     query.organization_id = Some(claims.school_id);
+    // CampusAdmin/GradeAdmin: force campus_id filter
+    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    if matches!(role, Role::CampusAdmin | Role::GradeAdmin) {
+        let cid = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
+        query.campus_id = Some(cid);
+    }
     let service = ContestService::new(state.db_pool);
 
     let page = query.page.unwrap_or(1);
@@ -100,6 +106,7 @@ pub async fn get_contest(
 ) -> Result<Json<ContestDetail>, StatusCode> {
     let service = ContestService::new(state.db_pool);
     let contest = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest, &claims)?;
     Ok(Json(contest))
 }
 
@@ -112,11 +119,11 @@ pub async fn create_contest(
     require_teacher_plus(&claims.role)?;
     // Tenant: force organization_id from claims
     req.organization_id = claims.school_id;
-    // CampusAdmin/GradeAdmin: enforce campus scope on creation
+    // CampusAdmin/GradeAdmin: enforce campus scope on creation (fail-closed)
     let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
     if matches!(role, Role::CampusAdmin | Role::GradeAdmin) {
         let cid = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
-        if req.campus_id.is_some() && req.campus_id != Some(cid) {
+        if req.campus_id != Some(cid) {
             return Err(StatusCode::FORBIDDEN);
         }
     }
@@ -178,7 +185,8 @@ pub async fn add_problem_to_contest(
 ) -> Result<Json<ContestProblem>, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ContestService::new(state.db_pool);
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     let contest_problem = service
         .add_problem_to_contest(contest_id, req)
@@ -195,7 +203,8 @@ pub async fn get_contest_problems(
     Path(contest_id): Path<i64>,
 ) -> Result<Json<Vec<ContestProblemDetail>>, StatusCode> {
     let service = ContestService::new(state.db_pool);
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     let problems = service
         .get_contest_problems(contest_id)
@@ -213,7 +222,8 @@ pub async fn remove_problem_from_contest(
 ) -> Result<StatusCode, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ContestService::new(state.db_pool);
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     service
         .remove_problem_from_contest(contest_id, problem_id)
@@ -230,7 +240,8 @@ pub async fn get_contest_rankings(
     Path(contest_id): Path<i64>,
 ) -> Result<Json<Vec<ContestRankingEntry>>, StatusCode> {
     let service = ContestService::new(state.db_pool);
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     let rankings = service
         .get_contest_rankings(contest_id)
@@ -247,7 +258,8 @@ pub async fn get_contest_status(
     Path(contest_id): Path<i64>,
 ) -> Result<Json<ContestStatus>, StatusCode> {
     let service = ContestService::new(state.db_pool);
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     let status = service
         .get_contest_status(contest_id)
@@ -265,7 +277,8 @@ pub async fn register_for_contest(
 ) -> Result<Json<ContestParticipant>, StatusCode> {
     let service = ContestService::new(state.db_pool);
     // Verify tenant scope before registering
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     let participant = service
         .register_for_contest(contest_id, claims.sub)
@@ -292,7 +305,8 @@ pub async fn get_contest_participants(
         require_teacher_plus(&claims.role)?;
     }
     let service = ContestService::new(state.db_pool);
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     let participants = service
         .get_contest_participants(contest_id)
@@ -310,7 +324,8 @@ pub async fn link_submission(
 ) -> Result<Json<ContestSubmission>, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ContestService::new(state.db_pool);
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     let contest_submission = service
         .link_submission_to_contest(contest_id, submission_id)
