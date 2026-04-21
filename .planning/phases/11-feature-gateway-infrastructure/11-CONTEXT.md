@@ -1,6 +1,7 @@
 # Phase 11: Feature Gateway Infrastructure - Context
 
 **Gathered:** 2026-04-19
+**Updated:** 2026-04-21
 **Status:** Ready for planning
 
 <domain>
@@ -75,11 +76,35 @@ Build a unified runtime feature gateway that supports the agreed three-ring mode
   - **Why:** The user explicitly wants Phase 11 to "把架构做好，不发散".
   - **How to apply:** Planning should focus on registry/flags schema, resolver, guard abstraction, admin/teacher UI surfaces, and cache/invalidation. Future consumers remain downstream work.
 
-### the agent's Discretion
+### Frontend Feature Flag Migration (2026-04-21)
+- **D-13:** Replace the existing `FEATURE_FLAGS` static object in `services/config.ts` entirely. Create a new `services/featureGateway.ts` that calls the gateway API to resolve feature state at runtime. The existing env-var-driven `VITE_ENABLE_DIRECT_MESSAGES` and `VITE_ENABLE_PLAGIARISM` are deprecated — all feature state comes from DB via the gateway. Affected consumers: `App.tsx`, `Sidebar.tsx`, `AdminLayout.tsx`, `AdminDashboard.tsx`, `config.ts`.
+  - **Why:** Static env-var flags cannot support scoped overrides. The gateway provides per-campus/grade/class resolution which env-vars fundamentally cannot deliver.
+  - **How to apply:** New service provides async `useFeatureFlags()` hook (React Query) or a context provider. All existing `FEATURE_FLAGS.xxx` references are replaced with gateway-resolved state. Fallback to enabled when gateway is unavailable (fail-open for UX, fail-closed for security as per D-08).
+
+### Backend Guard Integration (2026-04-21)
+- **D-14:** Implement feature gate as an Axum middleware layer, placed after auth+tenant middleware and before the handler. Routes declare required feature slug at registration time (e.g., `.feature_gate("plagiarism")`). The middleware resolves the flag and returns 404 if disabled, without reaching the handler.
+  - **Why:** Declarative middleware keeps business logic clean, centralizes the 404 behavior (D-08), and makes it impossible to forget a guard on gated routes.
+  - **How to apply:** Add `feature_gate(slug)` as an Axum layer/route extension. The middleware accesses `TenantContext` from request extensions to resolve scope, calls the gateway service (cached), and short-circuits with 404 when disabled.
+
+### Admin UI Layout and Routing (2026-04-21)
+- **D-15:** Two separate pages:
+  - `/admin/features` — Admin feature management page showing global + scoped overrides at all levels. Admins can toggle at global/campus/grade scope per D-06 permission boundary.
+  - `/teacher/features` — Teacher feature management page showing only class-level toggles with inherited-from indicators per D-07. Teachers see effective state for their classes but can only override at class scope.
+  - **Why:** Admin and teacher have fundamentally different scope visibility (D-06, D-07). Separate pages avoid conditional rendering complexity and match the existing `/admin` vs `/teacher` routing convention.
+  - **How to apply:** `FeatureManagement.tsx` under `pages/admin/`, `ClassFeatureSettings.tsx` under `pages/teacher/`. Both consume the same gateway API but render different scope controls. Sidebar navigation updated to include the new entries.
+
+### Seed Data and Environment Variable Transition (2026-04-21)
+- **D-16:** Database migration inserts 5 seed features into `feature_registry` (direct_messages, plagiarism, discussions, blog, leaderboard), all with `default_enabled = true`. The frontend env vars `VITE_ENABLE_DIRECT_MESSAGES` and `VITE_ENABLE_PLAGIARISM` are deprecated — their consumers are migrated to gateway API calls. The backend `FEATURE_GATEWAY_ENABLED` env var is retained as the emergency-off path per D-11.
+  - **Why:** Migration-based seeding ensures the registry is populated on first deploy. Deprecating env vars eliminates dual-source-of-truth confusion. Retaining the emergency-off env var preserves the FGW-07 rollback path.
+  - **How to apply:** Add migration file with INSERT INTO feature_registry for the 5 features. Update frontend to remove FEATURE_FLAGS static object. Keep FEATURE_GATEWAY_ENABLED env check in gateway service.
+
+### Claude's Discretion
 - Exact table column names as long as they preserve the locked semantics above
 - Whether `global master control` is stored in registry/flag tables or a dedicated settings path, provided behavior remains a hard non-overridable control
 - Cache key shape and invalidation transport inside a single-process vs multi-process deployment
 - UI component decomposition for admin and teacher pages
+- Exact React Query key structure for frontend feature flag cache
+- Whether feature_gate middleware uses an extractor or a Layer wrapper
 
 </decisions>
 
@@ -89,6 +114,8 @@ Build a unified runtime feature gateway that supports the agreed three-ring mode
 - Use the school-facing hierarchy language consistently: `global / campus / grade / class`.
 - Surface inherited-state indicators clearly in management UI so operators know whether a state is local or inherited.
 - Keep Phase 11 architecture-first; do not broaden into AI-specific routes or dormant capability adapters yet.
+- Frontend migration should be a clean cut — no backwards compatibility with FEATURE_FLAGS once gateway is live.
+- Admin feature page should show a matrix: features as rows, scopes as columns, with toggle indicators and inherited-from labels.
 
 </specifics>
 
@@ -107,9 +134,15 @@ Build a unified runtime feature gateway that supports the agreed three-ring mode
 - `backend/api/src/main.rs` — current router composition and where feature-gated domain routers/guards would attach
 - `backend/api/src/plagiarism/routes.rs` — example admin-governed backend capability that may eventually consume gateway checks, without expanding Phase 11 scope
 - `backend/domain-classes/src/service.rs` — class/assignment reporting data access patterns that inform teacher-side management surfaces
+- `backend/api-infra/src/middleware/authz.rs` — existing RBAC middleware pattern to follow for feature_gate middleware
 
 ### Existing Frontend Integration Surface
-- `frontend/src/pages/teacher/AssignmentReport.tsx` — current teacher reporting surface and a likely place for inherited-state UI patterns
+- `frontend/src/services/config.ts` — current FEATURE_FLAGS object to be replaced (lines 51-54)
+- `frontend/src/App.tsx` — FEATURE_FLAGS consumer (routes 142, 172, 175, 178)
+- `frontend/src/components/layout/Sidebar.tsx` — FEATURE_FLAGS consumer (line 24)
+- `frontend/src/layouts/AdminLayout.tsx` — FEATURE_FLAGS consumer (lines 15, 40)
+- `frontend/src/pages/admin/AdminDashboard.tsx` — FEATURE_FLAGS consumer (lines 14, 54, 121)
+- `frontend/src/pages/teacher/AssignmentReport.tsx` — existing teacher surface for inherited-state UI patterns
 - `frontend/src/pages/admin/SimilarityScanConfig.tsx` — existing admin configuration surface pattern
 
 ### Codebase Guidance
@@ -117,25 +150,34 @@ Build a unified runtime feature gateway that supports the agreed three-ring mode
 - `.planning/codebase/CONVENTIONS.md` — established backend/frontend organization patterns
 - `.planning/codebase/STRUCTURE.md` — current file/module layout
 
+### Prior Phase Context
+- `.planning/phases/13-tenant-hierarchy-restructure/13-CONTEXT.md` — locked role hierarchy and scope model that D-06 depends on
+- `.planning/phases/14-grade-scoped-data-model/14-CONTEXT.md` — grade_id propagation model for scope resolution context
+
 </canonical_refs>
 
 <code_context>
 ## Existing Code Insights
 
 ### Reusable Assets
-- `backend/api/src/main.rs`: central protected-router assembly where a feature-gated domain router or middleware hook can be introduced without disturbing unrestricted infrastructure endpoints.
-- `frontend/src/pages/teacher/AssignmentReport.tsx`: existing teacher-oriented summary page that already models aggregated class-facing data and can inform inherited-state UI treatment.
-- `backend/api/src/plagiarism/routes.rs`: admin CRUD/report route pattern suitable as a reference for future feature-management endpoints.
+- `backend/api/src/main.rs`: central protected-router assembly where feature-gated middleware layer can be inserted without disturbing unrestricted infrastructure endpoints.
+- `backend/api-infra/src/middleware/authz.rs`: existing RBAC middleware pattern — feature_gate middleware should follow the same extractor/layer conventions.
+- `frontend/src/pages/teacher/AssignmentReport.tsx`: existing teacher-oriented summary page that models aggregated class-facing data — informs inherited-state UI treatment.
+- `frontend/src/pages/admin/SimilarityScanConfig.tsx`: existing admin configuration surface pattern for reference.
+- `frontend/src/services/config.ts`: current FEATURE_FLAGS to be replaced — provides the list of consumers to migrate.
 
 ### Established Patterns
 - Backend domains are mounted as nested routers from `backend/api/src/main.rs`, with auth and tenant middleware already applied at the protected router layer.
 - Frontend teacher/admin capability surfaces already exist as dedicated pages rather than ad hoc widgets.
-- Admin/internal operational behavior already uses environment-based control paths in other areas, which makes the emergency-off pattern a natural fit.
+- Frontend feature consumption uses direct import of FEATURE_FLAGS — this pattern shifts to async React Query or context provider.
+- Admin/internal operational behavior already uses environment-based control paths, making the emergency-off pattern a natural fit.
 
 ### Integration Points
-- New feature gateway backend surface should plug into protected API routing, not unrestricted health/worker-heartbeat routes.
-- Teacher-facing feature controls should align with existing class/reporting surfaces rather than invent a separate governance UX model.
-- Guard resolution must be cheap enough for route-path usage and must fail safely when the gateway is disabled.
+- New feature gateway backend surface plugs into protected API routing, not unrestricted health/worker-heartbeat routes.
+- Feature_gate middleware must access `TenantContext` (tenant_id, campus_id, grade_id) from request extensions for scope resolution.
+- Teacher-facing feature controls align with existing class/reporting surfaces rather than inventing a separate governance UX model.
+- Frontend new `services/featureGateway.ts` must be consumed by all current FEATURE_FLAGS importers (5 files).
+- New admin and teacher pages add routes to existing sidebar navigation.
 
 </code_context>
 
@@ -145,6 +187,7 @@ Build a unified runtime feature gateway that supports the agreed three-ring mode
 - Phase 12 AI analysis capability wiring and any AI-specific feature-slug rollout
 - Assignment-level scope controls from the earlier draft hierarchy; current locked hierarchy stops at `class`
 - Broader pre-integration of dormant modules just to prove the gateway abstraction
+- Feature flag audit logging (who changed what, when) — useful but not Phase 11 scope
 
 </deferred>
 
@@ -152,3 +195,4 @@ Build a unified runtime feature gateway that supports the agreed three-ring mode
 
 *Phase: 11-feature-gateway-infrastructure*
 *Context gathered: 2026-04-19*
+*Context updated: 2026-04-21 — added D-13 through D-16 (frontend migration, backend guard, UI layout, seed data)*
