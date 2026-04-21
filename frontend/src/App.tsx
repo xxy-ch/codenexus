@@ -58,6 +58,8 @@ const PlagiarismReportDetail = lazyNamed(() => import('./pages/admin/PlagiarismR
 const BatchOperations = lazyNamed(() => import('./pages/admin/BatchOperations'), 'BatchOperations')
 const JudgeQueue = lazyNamed(() => import('./pages/admin/JudgeQueue'), 'JudgeQueue')
 const GradeManagement = lazyNamed(() => import('./pages/admin/GradeManagement'), 'GradeManagement')
+const FeatureManagement = lazyNamed(() => import('./pages/admin/FeatureManagement'), 'FeatureManagement')
+const ClassFeatureSettings = lazyNamed(() => import('./pages/teacher/ClassFeatureSettings'), 'ClassFeatureSettings')
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -168,6 +170,7 @@ function App() {
             <Route path="teacher/assignment-report" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(AssignmentReport)}</ProtectedRoute>} />
             <Route path="teacher/contest-wizard" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ContestWizard)}</ProtectedRoute>} />
             <Route path="batch-operations" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(BatchOperations)}</ProtectedRoute>} />
+            <Route path="teacher/features" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ClassFeatureSettings)}</ProtectedRoute>} />
             {/* Add more protected routes here */}
           </Route>
 
@@ -186,6 +189,7 @@ function App() {
             <Route path="judge-settings" element={renderLazy(JudgeSettings)} />
             <Route path="judge-queue" element={renderLazy(JudgeQueue)} />
             <Route path="grades" element={renderLazy(GradeManagement)} />
+            <Route path="features" element={renderLazy(FeatureManagement)} />
             <Route path="problem-content" element={renderLazy(ProblemContentConfig)} />
             <Route path="similarity-scan" element={<FeatureGateRoute slug="plagiarism">{renderLazy(SimilarityScanConfig)}</FeatureGateRoute>} />
             <Route path="plagiarism-reports" element={<FeatureGateRoute slug="plagiarism">{renderLazy(PlagiarismReportList)}</FeatureGateRoute>} />
