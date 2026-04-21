@@ -207,6 +207,7 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .nest("/imex", domain_imex::imex_router())
         .nest("/admin/plagiarism", plagiarism::plagiarism_router())
         .nest("/admin/judge", judge_monitor::judge_monitor_router())
+        .nest("/features", api_infra::feature_gateway::features_router())
         .route_layer(axum::middleware::from_fn(
             middleware::tenant::tenant_middleware,
         ))

@@ -56,6 +56,16 @@ impl FeatureGatewayService {
         }
     }
 
+    /// Insert a cache entry directly (for testing).
+    ///
+    /// Allows middleware tests to pre-populate cache with known state
+    /// without needing a real database connection.
+    #[cfg(test)]
+    pub fn insert_cache(&self, slug: &str, scope: &str, resolved: ResolvedFeature) {
+        let key = Self::cache_key(slug, scope);
+        self.cache.insert(key, resolved);
+    }
+
     /// Build a cache key from feature slug and scope identifier.
     ///
     /// Format: `"{slug}:{scope}"` where scope is one of:
