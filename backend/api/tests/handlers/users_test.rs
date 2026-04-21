@@ -107,7 +107,7 @@ async fn seed_user_with_role(
     (org_id, campus_id, user_id)
 }
 
-fn make_token(jwt_service: &api::auth::JwtService, user_id: Uuid, role: &str, school_id: i64) -> String {
+fn make_token(jwt_service: &api::auth::JwtService, user_id: Uuid, role: &str, school_id: i64, campus_id: Option<i64>) -> String {
     let user = shared::models::User {
         id: user_id,
         username: "testuser".to_string(),
@@ -115,7 +115,7 @@ fn make_token(jwt_service: &api::auth::JwtService, user_id: Uuid, role: &str, sc
         password_hash: String::new(),
         role: role.to_string(),
         school_id,
-        campus_id: None,
+        campus_id,
         grade_id: None,
     };
     jwt_service.generate_access_token(&user).unwrap()
@@ -165,7 +165,7 @@ async fn test_admin_list_users_returns_200() {
         seed_user_with_role(&fixture.db_pool, "Grade Admin", "admin1", "gradeadmin").await;
 
     let (app, jwt_service) = build_users_app(fixture.db_pool.clone()).await;
-    let token = make_token(&jwt_service, admin_id, "gradeadmin", org_id);
+    let token = make_token(&jwt_service, admin_id, "gradeadmin", org_id, Some(_campus_id));
 
     let response = app
         .oneshot(
@@ -194,7 +194,7 @@ async fn test_student_cannot_list_all_users() {
         seed_user_with_role(&fixture.db_pool, "Student Org", "student1", "student").await;
 
     let (app, jwt_service) = build_users_app(fixture.db_pool.clone()).await;
-    let token = make_token(&jwt_service, student_id, "student", org_id);
+    let token = make_token(&jwt_service, student_id, "student", org_id, None);
 
     let response = app
         .oneshot(
