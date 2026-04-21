@@ -1,7 +1,7 @@
 # Roadmap: AlgoMaster Online Judge Modernization
 
 **Created:** 2026-04-13
-**Revised:** 2026-04-17 (Phase 10 planned)
+**Revised:** 2026-04-21 (Phase 11 planned)
 **Phases:** 15
 **v1 Requirements:** 50 (all mapped)
 
@@ -58,7 +58,7 @@
 
 **Requirements:**
 - ARCH-04 (partial): Domain modules `community` and `search` extracted as workspace crates
-- ARCH-05 (partial): API binary assembles community and search routers from their respective crates
+- ARCH-05 (partial): API binary assembles community and search routers from their crates
 
 **Success Criteria:**
 1. `cargo build -p domain-community -p domain-search` succeeds independently
@@ -77,7 +77,7 @@
 
 **Requirements:**
 - ARCH-04 (remaining): Domain modules `submissions`, `contests`, `classes`, `leaderboard` extracted as workspace crates
-- ARCH-05 (remaining): API binary assembles remaining routers from their respective crates
+- ARCH-05 (remaining): API binary assembles remaining routers from their crates
 - SEC-03: Leaderboard `/global` and `/problem/:id` endpoints enforce tenant filtering (only show user's organization data; Root can see all)
 
 **Plans:** 5 plans in 3 waves
@@ -374,10 +374,13 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 5. Feature resolution completes in <1ms with in-process cache + write-triggered invalidation (no DB hit on hot path)
 
 **Depends on:** Phase 10
-**Plans:** 0 plans (run /gsd-plan-phase 11 to break down)
+**Plans:** 4 plans in 3 waves
 
 Plans:
-- [ ] TBD
+- [ ] 11-01-PLAN.md — DB migration + feature_gateway module (models, service, cache) + AppState (Wave 1)
+- [ ] 11-02-PLAN.md — API CRUD routes + feature_gate middleware + D-06 authorization (Wave 2)
+- [ ] 11-03-PLAN.md — Frontend featureGateway service + FEATURE_FLAGS migration + route gating (Wave 2)
+- [ ] 11-04-PLAN.md — Admin FeatureManagement page + Teacher ClassFeatureSettings page + routing (Wave 3)
 
 ---
 
@@ -572,4 +575,4 @@ Plans:
 ---
 
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-20 Phase 15 planned (Frontend UI Completion)*
+*Last updated: 2026-04-21 Phase 11 planned (Feature Gateway Infrastructure)*
