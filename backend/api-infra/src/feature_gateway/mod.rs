@@ -5,9 +5,7 @@
 
 pub mod client;
 pub mod middleware;
-pub mod models;
 pub mod routes;
 
 pub use client::GatewayClient;
-pub use models::*;
 pub use routes::features_router;

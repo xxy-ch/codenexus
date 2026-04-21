@@ -11,7 +11,57 @@ use dashmap::DashMap;
 use serde::Deserialize;
 use tracing::warn;
 
-use super::models::{FeatureSource, ResolvedFeature};
+/// Source of a resolved feature flag value.
+///
+/// Duplicated from the standalone feature-gateway crate to avoid
+/// a cross-crate dependency. Must stay in sync with
+/// `backend/feature-gateway/src/models.rs`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FeatureSource {
+    Default,
+    GlobalOverride,
+    CampusOverride,
+    GradeOverride,
+    ClassOverride,
+    SystemEmergencyOff,
+}
+
+impl FeatureSource {
+    /// Parse a scope string into a FeatureSource variant.
+    pub fn from_scope_str(s: &str) -> Option<Self> {
+        match s {
+            "default" => Some(FeatureSource::Default),
+            "global" => Some(FeatureSource::GlobalOverride),
+            "campus" => Some(FeatureSource::CampusOverride),
+            "grade" => Some(FeatureSource::GradeOverride),
+            "class" => Some(FeatureSource::ClassOverride),
+            "system_emergency_off" => Some(FeatureSource::SystemEmergencyOff),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for FeatureSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FeatureSource::Default => write!(f, "default"),
+            FeatureSource::GlobalOverride => write!(f, "global"),
+            FeatureSource::CampusOverride => write!(f, "campus"),
+            FeatureSource::GradeOverride => write!(f, "grade"),
+            FeatureSource::ClassOverride => write!(f, "class"),
+            FeatureSource::SystemEmergencyOff => write!(f, "system_emergency_off"),
+        }
+    }
+}
+
+/// A resolved feature flag result.
+///
+/// Contains the effective enabled state and the source it was resolved from.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolvedFeature {
+    pub enabled: bool,
+    pub source: FeatureSource,
+}
 
 /// Cached resolve result with expiry timestamp.
 #[cfg(test)]

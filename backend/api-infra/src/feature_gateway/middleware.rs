@@ -152,9 +152,9 @@ mod tests {
         client.cache.insert(
             cache_key,
             super::super::client::CachedResolve {
-                resolved: super::super::models::ResolvedFeature {
+                resolved: super::super::client::ResolvedFeature {
                     enabled: false,
-                    source: super::super::models::FeatureSource::GradeOverride,
+                    source: super::super::client::FeatureSource::GradeOverride,
                 },
                 expires_at: std::time::Instant::now() + std::time::Duration::from_secs(60),
             },
