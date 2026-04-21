@@ -23,6 +23,7 @@ deadpool-redis = { version = "0.22", features = ["serde"] }
 metrics = "0.24"
 metrics-exporter-prometheus = "0.18"
 dashmap = "6"
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 
 # Optional deps for testkit feature
 testcontainers = { version = "0.23", optional = true }

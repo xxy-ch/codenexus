@@ -1,13 +1,13 @@
 //! Feature gateway module.
 //!
-//! Provides runtime feature flag resolution with scoped hierarchy,
-//! DashMap caching, and emergency-off support.
+//! Provides HTTP client for the standalone Feature Gateway service,
+//! feature gate middleware, and proxy routes.
 
+pub mod client;
 pub mod middleware;
 pub mod models;
 pub mod routes;
-pub mod service;
 
+pub use client::GatewayClient;
 pub use models::*;
 pub use routes::features_router;
-pub use service::FeatureGatewayService;
