@@ -96,6 +96,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Test evidence updated: 2026-04-20 — 382 tests pass (360 unit + 22 integration), 0 failures, release gate tests verified*
 *Security audit round 14: 2026-04-21 — is_admin tightened to Root-only (CampusAdmin no longer global), campus scope added to ProblemAccessRecord, grade scope centralized in verify_class_access, is_active filter semantics fixed, ROADMAP/STATE evidence chain aligned*
 *Security audit round 15: 2026-04-21 — 5c6fcf8 fail-closed campus scope across all domains (problems/contests/community/classes), XACK fail-closed in judge-worker, notifications FK forward migration 034, community author campus_id proxy via users JOIN, admin test campus_id fix (a9964fa)*
+*Security audit round 16: 2026-04-21 — c7d353e classes full campus scope (verify_campus_scope in verify_class_access chain), contests full-campus isolation on ALL handlers, recovery ACK fail-closed matching main chain*
 
 ### Roadmap Evolution
 
