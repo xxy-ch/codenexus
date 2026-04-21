@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
-import { FEATURE_FLAGS } from '@/services/config'
+import { useFeatureEnabled } from '@/hooks/useFeatureGate'
 import { isAdmin, isTeacherOrAbove, roleLabel, type Role } from '@/types/auth'
 
 interface NavItem {
@@ -11,22 +11,6 @@ interface NavItem {
   badge?: number
   minRole?: 'teacher' | 'admin'
 }
-
-const navItems: NavItem[] = [
-  { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
-  { label: 'Problems', path: '/problems', icon: 'terminal' },
-  { label: 'Submissions', path: '/submissions', icon: 'history' },
-  { label: 'Contests', path: '/contests', icon: 'trophy', badge: 2 },
-  { label: 'Ranking', path: '/ranking', icon: 'leaderboard' },
-  { label: 'Roadmap', path: '/roadmap', icon: 'route' },
-  { label: 'Discuss', path: '/discussions', icon: 'forum' },
-  { label: 'Blog', path: '/blog', icon: 'article' },
-  ...(FEATURE_FLAGS.directMessages ? [{ label: 'Messages', path: '/messages', icon: 'mail' }] : []),
-  { label: 'Classes', path: '/teacher/classes', icon: 'group', minRole: 'teacher' },
-  { label: 'Contest Wizard', path: '/teacher/contest-wizard', icon: 'build', minRole: 'teacher' },
-  { label: 'Reports', path: '/teacher/assignment-report', icon: 'insights', minRole: 'teacher' },
-  { label: 'Batch Ops', path: '/batch-operations', icon: 'upload_file', minRole: 'teacher' },
-]
 
 function canSeeItem(minRole: NavItem['minRole'], userRole: Role): boolean {
   if (!minRole) return true
@@ -38,6 +22,23 @@ function canSeeItem(minRole: NavItem['minRole'], userRole: Role): boolean {
 export function Sidebar() {
   const location = useLocation()
   const { user, logout } = useAuth()
+  const { enabled: dmEnabled } = useFeatureEnabled('direct_messages')
+
+  const navItems: NavItem[] = [
+    { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
+    { label: 'Problems', path: '/problems', icon: 'terminal' },
+    { label: 'Submissions', path: '/submissions', icon: 'history' },
+    { label: 'Contests', path: '/contests', icon: 'trophy', badge: 2 },
+    { label: 'Ranking', path: '/ranking', icon: 'leaderboard' },
+    { label: 'Roadmap', path: '/roadmap', icon: 'route' },
+    { label: 'Discuss', path: '/discussions', icon: 'forum' },
+    { label: 'Blog', path: '/blog', icon: 'article' },
+    ...(dmEnabled ? [{ label: 'Messages', path: '/messages', icon: 'mail' }] : []),
+    { label: 'Classes', path: '/teacher/classes', icon: 'group', minRole: 'teacher' },
+    { label: 'Contest Wizard', path: '/teacher/contest-wizard', icon: 'build', minRole: 'teacher' },
+    { label: 'Reports', path: '/teacher/assignment-report', icon: 'insights', minRole: 'teacher' },
+    { label: 'Batch Ops', path: '/batch-operations', icon: 'upload_file', minRole: 'teacher' },
+  ]
 
   const handleLogout = async () => {
     await logout()

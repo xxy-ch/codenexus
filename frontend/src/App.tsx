@@ -8,8 +8,8 @@ import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
 import { Loading } from './components/ui/Loading'
 import { TEACHER_ROLES } from './types/auth'
-import { FEATURE_FLAGS } from './services/config'
 import { ErrorBoundary } from './components/error/ErrorBoundary'
+import { useFeatureEnabled } from '@/hooks/useFeatureGate'
 
 const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
   lazy(async () => {
@@ -84,6 +84,26 @@ function renderLazy(Component: ComponentType) {
   )
 }
 
+/**
+ * Feature gate wrapper for routes.
+ * Fail-open: shows children during loading to avoid layout shift.
+ * When the feature is disabled, renders nothing (route disappears).
+ */
+function FeatureGateWrapper({ slug, children }: { slug: string; children: React.ReactNode }) {
+  const { enabled } = useFeatureEnabled(slug)
+  return enabled ? <>{children}</> : null
+}
+
+/**
+ * During loading, renders children (fail-open). After resolution,
+ * delegates to FeatureGateWrapper for actual enable/disable check.
+ */
+function FeatureGateRoute({ slug, children }: { slug: string; children: React.ReactNode }) {
+  const { isLoading } = useFeatureEnabled(slug)
+  if (isLoading) return <>{children}</>
+  return <FeatureGateWrapper slug={slug}>{children}</FeatureGateWrapper>
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -139,9 +159,7 @@ function App() {
             <Route path="blog/new" element={renderLazy(CreateArticle)} />
             <Route path="blog/:slug" element={renderLazy(BlogDetail)} />
             <Route path="blog/:slug/edit" element={renderLazy(EditArticle)} />
-            {FEATURE_FLAGS.directMessages && (
-              <Route path="messages" element={renderLazy(DirectMessages)} />
-            )}
+            <Route path="messages" element={<FeatureGateRoute slug="direct_messages">{renderLazy(DirectMessages)}</FeatureGateRoute>} />
             <Route path="search" element={renderLazy(SearchResults)} />
             <Route path="profile" element={renderLazy(Profile)} />
             <Route path="settings" element={renderLazy(Settings)} />
@@ -169,15 +187,9 @@ function App() {
             <Route path="judge-queue" element={renderLazy(JudgeQueue)} />
             <Route path="grades" element={renderLazy(GradeManagement)} />
             <Route path="problem-content" element={renderLazy(ProblemContentConfig)} />
-            {FEATURE_FLAGS.plagiarism && (
-              <Route path="similarity-scan" element={renderLazy(SimilarityScanConfig)} />
-            )}
-            {FEATURE_FLAGS.plagiarism && (
-              <Route path="plagiarism-reports" element={renderLazy(PlagiarismReportList)} />
-            )}
-            {FEATURE_FLAGS.plagiarism && (
-              <Route path="plagiarism-reports/:reportId" element={renderLazy(PlagiarismReportDetail)} />
-            )}
+            <Route path="similarity-scan" element={<FeatureGateRoute slug="plagiarism">{renderLazy(SimilarityScanConfig)}</FeatureGateRoute>} />
+            <Route path="plagiarism-reports" element={<FeatureGateRoute slug="plagiarism">{renderLazy(PlagiarismReportList)}</FeatureGateRoute>} />
+            <Route path="plagiarism-reports/:reportId" element={<FeatureGateRoute slug="plagiarism">{renderLazy(PlagiarismReportDetail)}</FeatureGateRoute>} />
           </Route>
 
           {/* Error Routes */}

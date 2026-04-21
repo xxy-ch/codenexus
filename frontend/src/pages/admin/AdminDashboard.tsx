@@ -11,11 +11,12 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
-import { FEATURE_FLAGS } from '@/services/config'
+import { useFeatureEnabled } from '@/hooks/useFeatureGate'
 import { isAdmin } from '@/types/auth'
 
 export function AdminDashboard() {
   const { user } = useAuthStore()
+  const { enabled: plagiarismEnabled } = useFeatureEnabled('plagiarism')
 
   if (user?.role && !isAdmin(user.role)) {
     return (
@@ -51,7 +52,7 @@ export function AdminDashboard() {
       icon: LayoutGrid,
       tone: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     },
-    ...(FEATURE_FLAGS.plagiarism
+    ...(plagiarismEnabled
       ? [
           {
             title: '相似度配置',
@@ -118,7 +119,7 @@ export function AdminDashboard() {
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Plagiarism</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{FEATURE_FLAGS.plagiarism ? 'Enabled' : 'Disabled'}</div>
+          <div className="mt-4 text-3xl font-semibold text-slate-950">{plagiarismEnabled ? 'Enabled' : 'Disabled'}</div>
           <p className="mt-2 text-sm leading-6 text-slate-600">相似度扫描和报告页都已经接入真实接口。</p>
         </div>
         <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">

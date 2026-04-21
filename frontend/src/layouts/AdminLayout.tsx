@@ -12,7 +12,7 @@ import {
   Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { FEATURE_FLAGS } from '@/services/config'
+import { useFeatureEnabled } from '@/hooks/useFeatureGate'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   dashboard: LayoutDashboard,
@@ -28,6 +28,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 
 export function AdminLayout() {
   const location = useLocation()
+  const { enabled: plagiarismEnabled } = useFeatureEnabled('plagiarism')
 
   const navigation = [
     { name: '仪表板', href: '/admin', icon: 'dashboard' },
@@ -37,7 +38,7 @@ export function AdminLayout() {
     { name: '判题设置', href: '/admin/judge-settings', icon: 'tune' },
     { name: '判题队列', href: '/admin/judge-queue', icon: 'dns' },
     { name: '题面配置', href: '/admin/problem-content', icon: 'edit_document' },
-    ...(FEATURE_FLAGS.plagiarism
+    ...(plagiarismEnabled
       ? [
           { name: '相似度配置', href: '/admin/similarity-scan', icon: 'tune' },
           { name: '抄袭报告', href: '/admin/plagiarism-reports', icon: 'find_in_page' },

@@ -46,14 +46,6 @@ export const API_CONFIG = {
     adminPlagiarismReports: '/admin/plagiarism/reports',
   },
 }
-// Feature toggles for backend-dependent modules.
-// Default: enabled for release completeness; allow explicit disable via env=false.
-export const FEATURE_FLAGS = {
-  directMessages: import.meta.env.VITE_ENABLE_DIRECT_MESSAGES !== 'false',
-  plagiarism: import.meta.env.VITE_ENABLE_PLAGIARISM !== 'false',
-} as const
-
-
 export const WS_CONFIG = {
   baseURL:
     import.meta.env.VITE_WS_BASE_URL ||
