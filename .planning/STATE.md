@@ -16,9 +16,9 @@ progress:
 
 # Project State: AlgoMaster Online Judge
 
-**Status:** Phase 15 executing, plan 10 complete
-**Current Phase:** 15
-**Last Activity:** 2026-04-20
+**Status:** Phase 11 planned, ready to execute
+**Current Phase:** 11
+**Last Activity:** 2026-04-21
 
 ## Phase Status
 
@@ -34,7 +34,7 @@ progress:
 | 8 | Import/Export | Executed | 3 plans | 100% (3/3 plans) |
 | 9 | Judge Concurrency + Fault Tolerance | Conditionally Accepted (Env-Only Gap) | 7 plans (4 initial + 3 gap closure) | 100% execution, UAT 20/22 pass, env-only gap |
 | 10 | Data Migration + Final Delivery | Conditionally Accepted (Env-Only Gap) | 5 plans (4 waves) | 100% execution, UAT 20/22 pass, env-only gap |
-| 11 | Feature Gateway Infrastructure | Planned | 0 plans | 0% |
+| 11 | Feature Gateway Infrastructure | Planned | 4 plans in 3 waves | 0% |
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
 | 13 | Tenant Hierarchy Restructure | Executed + Audit Hardened | 5 plans | 100% (5/5), is_admin tightened to Root-only, CampusAdmin campus-scoped |
 | 14 | Grade-Scoped Data Model | Executed + Audit Hardened | 6 plans (4 waves) | 100% (6/6), campus scope on problem/test_cases, grade scope centralized in verify_class_access |
@@ -110,6 +110,9 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 15 plan 10 executed: 2026-04-20 — admin/teacher skeleton screens + Lucide icon migration*
 *Stopped at: Completed 15-10-PLAN.md*
 *Phase 11 context updated: 2026-04-21 — added D-13 through D-16 (frontend migration, backend guard, UI layout, seed data)*
+*Phase 11 research completed: 2026-04-21 — standard stack, authz pattern, Sidebar const pitfall, no class_id in TenantContext*
+*Phase 11 UI-SPEC approved: 2026-04-21 — 6/6 dimensions passed, 1 non-blocking FLAG*
+*Phase 11 planned: 2026-04-21 — 4 plans in 3 waves (01: schema+service, 02: routes+middleware, 03: frontend migration, 04: admin/teacher pages)*
 
 ## Decisions
 
