@@ -7,10 +7,43 @@ use axum::{
 use serde_json::json;
 use uuid::Uuid;
 
+use axum::http::StatusCode;
+
 use super::{models::*, service::BlogService};
 use api_infra::state::AppState;
 use api_infra::websocket::message::WebSocketMessage;
 use shared::models::{Claims, Role};
+
+/// Verify campus scope for CampusAdmin / GradeAdmin.
+/// Uses author's campus_id (from users table) as proxy for item campus.
+/// Fail-closed: None campus_id is rejected.
+fn verify_campus_scope(
+    item_campus_id: Option<i64>,
+    claims: &Claims,
+) -> Result<(), (StatusCode, String)> {
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| (StatusCode::FORBIDDEN, "Invalid role".to_string()))?;
+    match role {
+        Role::Root => Ok(()),
+        Role::CampusAdmin | Role::GradeAdmin => {
+            let cid = claims
+                .campus_id
+                .ok_or((StatusCode::FORBIDDEN, "Missing campus context".to_string()))?;
+            let icid = item_campus_id
+                .ok_or((StatusCode::FORBIDDEN, "Item campus scope unknown".to_string()))?;
+            if icid != cid {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "Campus scope mismatch".to_string(),
+                ));
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
 
 /// Create blog router
 pub fn blog_router() -> Router<AppState> {
@@ -245,6 +278,16 @@ async fn update_article_handler(
         }
     };
 
+    let author_campus_id = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT u.campus_id FROM articles a JOIN users u ON a.author_id = u.id WHERE a.id = $1"
+    )
+    .bind(id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Scope check failed".to_string()))?
+    .flatten();
+    verify_campus_scope(author_campus_id, &claims)?;
+
     let service = BlogService::new(state.db_pool.clone());
 
     match service.update_article(id, user_id, claims.school_id, req).await {
@@ -292,6 +335,16 @@ async fn delete_article_handler(
             }
         }
     };
+
+    let author_campus_id = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT u.campus_id FROM articles a JOIN users u ON a.author_id = u.id WHERE a.id = $1"
+    )
+    .bind(id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Scope check failed".to_string()))?
+    .flatten();
+    verify_campus_scope(author_campus_id, &claims)?;
 
     let is_admin = matches!(
         claims.role.parse::<Role>(),

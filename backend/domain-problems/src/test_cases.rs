@@ -10,6 +10,11 @@ use serde_json::json;
 use shared::models::role::Role;
 use sqlx::FromRow;
 
+use super::problem_access::{
+    ensure_management_problem_read_access, ensure_problem_mutation_access,
+    ensure_problem_read_access, load_problem_access,
+};
+
 fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
     let role = role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
     if !role.is_higher_or_equal(Role::Teacher) {
@@ -79,6 +84,14 @@ pub async fn list_test_cases(
     AuthExtractor(claims): AuthExtractor,
     Path(problem_id): Path<i64>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
+    let problem = load_problem_access(&state, problem_id).await?;
+    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+
+    if is_management_role(&claims.role) {
+        ensure_management_problem_read_access(role, &claims, &problem)?;
+    } else {
+        ensure_problem_read_access(role, &claims, &problem)?;
+    }
     let test_cases = sqlx::query_as::<_, TestCase>(
         r#"
         SELECT
@@ -126,7 +139,9 @@ pub async fn create_test_case(
     Path(problem_id): Path<i64>,
     Json(req): Json<CreateTestCaseRequest>,
 ) -> Result<Json<TestCase>, StatusCode> {
-    require_teacher_plus(&claims.role)?;
+    let role = require_teacher_plus(&claims.role)?;
+    let problem = load_problem_access(&state, problem_id).await?;
+    ensure_problem_mutation_access(role, &claims, &problem)?;
     let test_case = sqlx::query_as::<_, TestCase>(
         r#"
         INSERT INTO test_cases (
@@ -164,10 +179,12 @@ pub async fn update_test_case(
     Path((problem_id, test_case_id)): Path<(i64, i64)>,
     Json(req): Json<UpdateTestCaseRequest>,
 ) -> Result<Json<TestCase>, StatusCode> {
-    require_teacher_plus(&claims.role)?;
+    let role = require_teacher_plus(&claims.role)?;
+    let problem = load_problem_access(&state, problem_id).await?;
+    ensure_problem_mutation_access(role, &claims, &problem)?;
     let test_case = sqlx::query_as::<_, TestCase>(
         r#"
-        UPDATE problems_test_cases
+        UPDATE test_cases
         SET
             input = COALESCE($1, input),
             output = COALESCE($2, output),
@@ -209,7 +226,9 @@ pub async fn delete_test_case(
     AuthExtractor(claims): AuthExtractor,
     Path((problem_id, test_case_id)): Path<(i64, i64)>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    require_teacher_plus(&claims.role)?;
+    let role = require_teacher_plus(&claims.role)?;
+    let problem = load_problem_access(&state, problem_id).await?;
+    ensure_problem_mutation_access(role, &claims, &problem)?;
     let result = sqlx::query("DELETE FROM test_cases WHERE id = $1 AND problem_id = $2")
         .bind(test_case_id)
         .bind(problem_id)
@@ -233,7 +252,9 @@ pub async fn batch_import_test_cases(
     Path(problem_id): Path<i64>,
     Json(req): Json<BatchImportTestCasesRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    require_teacher_plus(&claims.role)?;
+    let role = require_teacher_plus(&claims.role)?;
+    let problem = load_problem_access(&state, problem_id).await?;
+    ensure_problem_mutation_access(role, &claims, &problem)?;
     let mut imported_count = 0;
     let mut errors = Vec::new();
 

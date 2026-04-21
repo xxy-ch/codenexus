@@ -71,6 +71,7 @@ async fn verify_class_access(
     if require_owner {
         verify_class_owner(&class, claims)?;
     }
+    verify_grade_scope(&class, claims)?;
     Ok(class)
 }
 
@@ -519,7 +520,8 @@ async fn get_class_stats(
     Path(class_id): Path<i64>,
 ) -> Result<Json<ClassStats>, StatusCode> {
     let service = ClassService::new(state.db_pool);
-    verify_class_tenant(&service, class_id, claims.school_id).await?;
+    let class = verify_class_tenant(&service, class_id, claims.school_id).await?;
+    verify_grade_scope(&class, &claims)?;
     let stats = service
         .get_class_stats(class_id)
         .await
@@ -650,6 +652,7 @@ async fn get_assignment(
 
     // Tenant: verify assignment's class belongs to user's org
     let class = verify_class_tenant(&service, assignment.class_id, claims.school_id).await?;
+    verify_grade_scope(&class, &claims)?;
 
     // Authorization: only class members (enrolled students, teacher, or admins) can read assignments
     if !is_admin(&claims.role) && class.teacher_id != claims.sub {
@@ -673,7 +676,8 @@ async fn list_assignments(
     Path(class_id): Path<i64>,
 ) -> Result<Json<Vec<Assignment>>, StatusCode> {
     let service = ClassService::new(state.db_pool);
-    verify_class_tenant(&service, class_id, claims.school_id).await?;
+    let class = verify_class_tenant(&service, class_id, claims.school_id).await?;
+    verify_grade_scope(&class, &claims)?;
     let assignments = service
         .list_assignments(class_id)
         .await

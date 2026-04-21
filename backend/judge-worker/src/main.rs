@@ -528,7 +528,12 @@ async fn consume_and_process(
                                     }
                                 }
                             }
-                            Err(_) => {}
+                            Err(e) => {
+                                warn!(
+                                    "ACK failed for submission {} (stays in PEL): {}",
+                                    submission.submission_id, e
+                                );
+                            }
                         }
                     }
                 }
@@ -575,9 +580,14 @@ async fn acknowledge_with_retry_breaker(
         )
         .await
         {
-            Ok(_) => {
+            Ok(count) if count > 0 => {
                 redis_breaker.record_success();
                 return Ok(());
+            }
+            Ok(_) => {
+                warn!("XACK returned 0 for message {} — message not in PEL, treating as failure", message_id);
+                redis_breaker.record_failure();
+                return Err(anyhow::anyhow!("XACK returned 0 — message {} not acknowledged", message_id));
             }
             Err(e) if attempt + 1 < max_retries => {
                 warn!(

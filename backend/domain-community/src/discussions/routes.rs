@@ -6,10 +6,43 @@ use axum::{
 };
 use uuid::Uuid;
 
+use axum::http::StatusCode;
+
 use super::{models::*, service::DiscussionService};
 use api_infra::state::AppState;
 use api_infra::websocket::message::WebSocketMessage;
 use shared::models::{Claims, Role};
+
+/// Verify campus scope for CampusAdmin / GradeAdmin.
+/// Uses author's campus_id (from users table) as proxy for item campus.
+/// Fail-closed: None campus_id is rejected.
+fn verify_campus_scope(
+    item_campus_id: Option<i64>,
+    claims: &Claims,
+) -> Result<(), (StatusCode, String)> {
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| (StatusCode::FORBIDDEN, "Invalid role".to_string()))?;
+    match role {
+        Role::Root => Ok(()),
+        Role::CampusAdmin | Role::GradeAdmin => {
+            let cid = claims
+                .campus_id
+                .ok_or((StatusCode::FORBIDDEN, "Missing campus context".to_string()))?;
+            let icid = item_campus_id
+                .ok_or((StatusCode::FORBIDDEN, "Item campus scope unknown".to_string()))?;
+            if icid != cid {
+                return Err((
+                    StatusCode::FORBIDDEN,
+                    "Campus scope mismatch".to_string(),
+                ));
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
 
 /// Create discussions router
 pub fn discussions_router() -> Router<AppState> {
@@ -98,6 +131,16 @@ async fn update_discussion_handler(
     Extension(claims): Extension<Claims>,
     axum::extract::Json(req): axum::extract::Json<UpdateDiscussionRequest>,
 ) -> Result<Json<Discussion>, (axum::http::StatusCode, String)> {
+    let author_campus_id = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT u.campus_id FROM discussions d JOIN users u ON d.user_id = u.id WHERE d.id = $1"
+    )
+    .bind(id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Scope check failed".to_string()))?
+    .flatten();
+    verify_campus_scope(author_campus_id, &claims)?;
+
     let service = DiscussionService::new(state.db_pool);
 
     match service.update_discussion(id, user_id, claims.school_id, req).await {
@@ -123,6 +166,16 @@ async fn delete_discussion_handler(
     Extension(user_id): Extension<Uuid>,
     Extension(claims): Extension<Claims>,
 ) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
+    let author_campus_id = sqlx::query_scalar::<_, Option<i64>>(
+        "SELECT u.campus_id FROM discussions d JOIN users u ON d.user_id = u.id WHERE d.id = $1"
+    )
+    .bind(id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Scope check failed".to_string()))?
+    .flatten();
+    verify_campus_scope(author_campus_id, &claims)?;
+
     let is_admin = matches!(
         claims.role.parse::<Role>(),
         Ok(Role::Root | Role::CampusAdmin | Role::GradeAdmin)

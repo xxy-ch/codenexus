@@ -11,6 +11,7 @@ use super::models::ListProblemsQuery;
 pub struct ProblemAccessRecord {
     pub id: i64,
     pub organization_id: i64,
+    pub campus_id: Option<i64>,
     pub author_id: Option<Uuid>,
     pub visibility: String,
 }
@@ -41,8 +42,19 @@ pub fn can_view_management_problem_data(
     claims: &Claims,
     problem: &ProblemAccessRecord,
 ) -> bool {
-    role == Role::Root
-        || (role.is_higher_or_equal(Role::Teacher) && claims.school_id == problem.organization_id)
+    if role == Role::Root {
+        return true;
+    }
+    if claims.school_id != problem.organization_id {
+        return false;
+    }
+    match role {
+        Role::CampusAdmin | Role::GradeAdmin => {
+            let Some(cid) = claims.campus_id else { return false };
+            problem.campus_id == Some(cid)
+        }
+        _ => role.is_higher_or_equal(Role::Teacher),
+    }
 }
 
 pub fn can_read_problem(role: Role, claims: &Claims, problem: &ProblemAccessRecord) -> bool {
@@ -59,7 +71,10 @@ pub fn can_mutate_problem(role: Role, claims: &Claims, problem: &ProblemAccessRe
     }
 
     match role {
-        Role::CampusAdmin | Role::GradeAdmin => true,
+        Role::CampusAdmin | Role::GradeAdmin => {
+            let Some(cid) = claims.campus_id else { return false };
+            problem.campus_id == Some(cid)
+        }
         Role::Teacher => problem.author_id == Some(claims.sub),
         _ => false,
     }
@@ -74,6 +89,7 @@ pub async fn fetch_problem_access_record(
         SELECT
             id,
             organization_id,
+            campus_id,
             author_id,
             visibility
         FROM problems
@@ -97,7 +113,7 @@ mod tests {
             email: "test@example.com".to_string(),
             role: role.to_string(),
             school_id,
-            campus_id: None,
+            campus_id: Some(1),
             grade_id: None,
             iat: 0,
             exp: 1,
@@ -109,6 +125,7 @@ mod tests {
         ProblemAccessRecord {
             id: 42,
             organization_id,
+            campus_id: Some(1),
             author_id: Some(Uuid::from_u128(author_id)),
             visibility: visibility.to_string(),
         }

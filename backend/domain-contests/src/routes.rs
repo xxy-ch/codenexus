@@ -23,6 +23,24 @@ fn is_admin(role: &str) -> bool {
         .unwrap_or(false)
 }
 
+/// Verify campus scope for CampusAdmin/GradeAdmin accessing a contest.
+/// Fail-closed: None campus_id is rejected.
+fn verify_contest_campus_scope(contest: &ContestDetail, claims: &shared::models::auth::Claims) -> Result<(), StatusCode> {
+    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    match role {
+        Role::Root => Ok(()),
+        Role::CampusAdmin | Role::GradeAdmin => {
+            let cid = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
+            let ccid = contest.campus_id.ok_or(StatusCode::FORBIDDEN)?;
+            if ccid != cid {
+                return Err(StatusCode::FORBIDDEN);
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
 /// Verify tenant scope for a contest.
 async fn verify_contest_tenant(
     service: &ContestService,
@@ -94,6 +112,14 @@ pub async fn create_contest(
     require_teacher_plus(&claims.role)?;
     // Tenant: force organization_id from claims
     req.organization_id = claims.school_id;
+    // CampusAdmin/GradeAdmin: enforce campus scope on creation
+    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    if matches!(role, Role::CampusAdmin | Role::GradeAdmin) {
+        let cid = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
+        if req.campus_id.is_some() && req.campus_id != Some(cid) {
+            return Err(StatusCode::FORBIDDEN);
+        }
+    }
     let service = ContestService::new(state.db_pool);
 
     let contest = service
@@ -113,7 +139,8 @@ pub async fn update_contest(
 ) -> Result<Json<Contest>, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ContestService::new(state.db_pool);
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     let contest = service
         .update_contest(contest_id, req)
@@ -131,7 +158,8 @@ pub async fn delete_contest(
 ) -> Result<StatusCode, StatusCode> {
     require_teacher_plus(&claims.role)?;
     let service = ContestService::new(state.db_pool);
-    verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
+    verify_contest_campus_scope(&contest_detail, &claims)?;
 
     service
         .delete_contest(contest_id)

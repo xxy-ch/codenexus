@@ -638,12 +638,18 @@ impl ContestService {
 
 
         // Check if problem is in contest and get submission creation time
-        let submission_info: (i64, chrono::DateTime<chrono::Utc>) =
-            sqlx::query_as("SELECT problem_id, created_at FROM submissions WHERE id = $1")
+        // SECURITY: also fetch organization_id to prevent cross-tenant association
+        let submission_info: (i64, chrono::DateTime<chrono::Utc>, i64) =
+            sqlx::query_as("SELECT problem_id, created_at, organization_id FROM submissions WHERE id = $1")
                 .bind(submission_id)
                 .fetch_optional(&self.pool)
                 .await?
                 .ok_or_else(|| anyhow::anyhow!("Submission not found"))?;
+
+        // Verify submission belongs to same organization as contest
+        if submission_info.2 != contest.organization_id {
+            return Err(anyhow::anyhow!("Submission does not belong to this organization"));
+        }
 
         // Per Codex review: use submission's created_at (not link-time "now")
         // to avoid mis-tagging contest-time submissions linked post-contest as upsolving.

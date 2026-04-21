@@ -9,6 +9,8 @@ use api_infra::middleware::auth::AuthExtractor;
 use api_infra::state::AppState;
 use shared::models::role::Role;
 
+use super::problem_access::{ensure_problem_mutation_access, load_problem_access};
+
 use super::models::{
     CreateProblemRequest, ListProblemsQuery, Problem, ProblemDetail, ProblemStatistics,
     ProblemsListResponse, SupportedLanguage, UpdateProblemRequest, UpdateSupportedLanguagesRequest,
@@ -32,7 +34,7 @@ fn require_admin(role: &str) -> Result<Role, StatusCode> {
 
 fn is_admin(role: &str) -> bool {
     role.parse::<Role>()
-        .map(|r| r.is_higher_or_equal(Role::CampusAdmin))
+        .map(|r| r == Role::Root)
         .unwrap_or(false)
 }
 
@@ -287,7 +289,13 @@ pub async fn get_problem(
     AuthExtractor(claims): AuthExtractor,
     Path(id): Path<i64>,
 ) -> Result<Json<ProblemDetail>, StatusCode> {
-    // SEC-03: Fetch with org check — non-public problems require same-org membership
+    // SEC-03: Use access module for unified visibility check
+    let access = load_problem_access(&state, id).await?;
+    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    if !super::access::can_read_problem(role, &claims, &access) {
+        return Err(StatusCode::FORBIDDEN);
+    }
+
     let problem = sqlx::query_as::<_, Problem>(
         r#"
         SELECT
@@ -319,11 +327,6 @@ pub async fn get_problem(
         Some(problem) => problem,
         None => return Err(StatusCode::NOT_FOUND),
     };
-
-    // SEC-03: Non-public problems require same-org membership (or admin)
-    if !problem.is_public && problem.organization_id != claims.school_id && !is_admin(&claims.role) {
-        return Err(StatusCode::FORBIDDEN);
-    }
 
     let test_case_count =
         sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM test_cases WHERE problem_id = $1")
@@ -367,19 +370,9 @@ pub async fn update_problem(
     }
 
     // SEC-03: Verify problem belongs to caller's org (or admin)
-    let problem_org = sqlx::query_scalar::<_, i64>(
-        "SELECT organization_id FROM problems WHERE id = $1",
-    )
-    .bind(id)
-    .fetch_optional(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    match problem_org {
-        Some(org_id) if org_id == claims.school_id || is_admin(&claims.role) => {}
-        Some(_) => return Err(StatusCode::FORBIDDEN),
-        None => return Err(StatusCode::NOT_FOUND),
-    }
+    let role = require_teacher_plus(&claims.role)?;
+    let problem = load_problem_access(&state, id).await?;
+    ensure_problem_mutation_access(role, &claims, &problem)?;
 
     let visibility = match (&req.visibility, req.is_public) {
         (Some(vis), is_public) => Some(
@@ -443,25 +436,9 @@ pub async fn delete_problem(
     AuthExtractor(claims): AuthExtractor,
     Path(id): Path<i64>,
 ) -> Result<StatusCode, StatusCode> {
-    require_admin(&claims.role)?;
-
-    // SEC-03: Verify problem belongs to caller's org (root bypasses)
-    let is_root = claims.role.parse::<Role>() == Ok(Role::Root);
-    if !is_root {
-        let problem_org = sqlx::query_scalar::<_, i64>(
-            "SELECT organization_id FROM problems WHERE id = $1",
-        )
-        .bind(id)
-        .fetch_optional(&state.db_pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-        match problem_org {
-            Some(org_id) if org_id == claims.school_id => {}
-            Some(_) => return Err(StatusCode::FORBIDDEN),
-            None => return Err(StatusCode::NOT_FOUND),
-        }
-    }
+    let role = require_teacher_plus(&claims.role)?;
+    let problem = load_problem_access(&state, id).await?;
+    ensure_problem_mutation_access(role, &claims, &problem)?;
 
     let result = sqlx::query("DELETE FROM problems WHERE id = $1")
         .bind(id)
@@ -481,24 +458,11 @@ pub async fn get_problem_statistics(
     AuthExtractor(claims): AuthExtractor,
     Path(id): Path<i64>,
 ) -> Result<Json<ProblemStatistics>, StatusCode> {
-    // SEC-03: Verify problem visibility — non-public requires same-org
-    let problem_row = sqlx::query(
-        "SELECT (visibility = 'public') AS is_public, organization_id FROM problems WHERE id = $1",
-    )
-    .bind(id)
-    .fetch_optional(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-    match problem_row {
-        Some(row) => {
-            let is_public: bool = row.get("is_public");
-            let org_id: i64 = row.get("organization_id");
-            if !is_public && org_id != claims.school_id && !is_admin(&claims.role) {
-                return Err(StatusCode::FORBIDDEN);
-            }
-        }
-        None => return Err(StatusCode::NOT_FOUND),
+    // SEC-03: Use access module for unified visibility check
+    let access = load_problem_access(&state, id).await?;
+    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    if !super::access::can_read_problem(role, &claims, &access) {
+        return Err(StatusCode::FORBIDDEN);
     }
 
     let stats = sqlx::query_as::<_, ProblemStatistics>(

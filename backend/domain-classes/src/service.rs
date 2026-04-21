@@ -515,7 +515,9 @@ impl ClassService {
         }
         if query.is_active.is_some() {
             param_count += 1;
-            conditions.push(format!("${}::BOOLEAN = true", param_count));
+            // No is_active column; SELECT hardcodes TRUE. Filter is boolean parameter:
+            // true → TRUE (show all), false → FALSE (show none)
+            conditions.push(format!("${}::BOOLEAN", param_count));
         }
         if query.grade_id.is_some() {
             param_count += 1;
