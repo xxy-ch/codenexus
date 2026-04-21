@@ -5,6 +5,7 @@
 #   - redis: Redis cache/message queue (port 6379)
 #   - api: REST API service (port 3000)
 #   - frontend: Vite dev server (port 5173)
+#   - feature-gateway: Feature flag resolution service (port 3001)
 #   - judge-worker: Code execution service
 #
 # Environment Variables Required for API:
@@ -88,12 +89,16 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/online_judge
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-default_jwt_secret_change_me}
+      WORKER_SECRET: ${WORKER_SECRET:-default_worker_secret_change_me}
       API_BIND_ADDRESS: 0.0.0.0:3000
+      FEATURE_GATEWAY_URL: http://feature-gateway:3001
       RUST_LOG: api=debug,tower_http=debug,axum=trace
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      feature-gateway:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
@@ -116,6 +121,30 @@ services:
     depends_on:
       api:
         condition: service_healthy
+
+  feature-gateway:
+    build:
+      context: ./backend
+      dockerfile: feature-gateway/Dockerfile
+    container_name: online-judge-feature-gateway
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/online_judge
+      FEATURE_GATEWAY_ENABLED: "true"
+      GATEWAY_BIND_ADDRESS: 0.0.0.0:3001
+      WORKER_SECRET: ${WORKER_SECRET:-default_worker_secret_change_me}
+      RUST_LOG: feature_gateway=debug
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   judge-worker:
     build:
