@@ -1,7 +1,10 @@
-//! Feature gateway CRUD routes.
+//! Feature gateway proxy routes.
 //!
-//! Provides admin/teacher endpoints for managing feature flag overrides
-//! and reading resolved feature state. Enforces D-06 role-scope authorization.
+//! Provides admin/teacher endpoints that proxy to the standalone Feature Gateway
+//! service. The API acts as a facade (D-22) -- frontend code is unchanged.
+//!
+//! All endpoints forward requests to Gateway via GatewayClient and return
+//! the Gateway's JSON response as-is. On Gateway failure, returns 502 Bad Gateway.
 
 use axum::{
     extract::{Extension, Path, Query, State},
@@ -10,14 +13,185 @@ use axum::{
     Json, Router,
 };
 use serde::Deserialize;
-use shared::models::{role::Role, Claims};
+use shared::models::Claims;
 use std::str::FromStr;
 
 use crate::error::AppError;
 use crate::middleware::tenant::TenantContext;
 use crate::state::AppState;
 
-use super::models::SetFlagRequest;
+use shared::models::role::Role;
+
+/// Query parameters for the delete_flag endpoint.
+#[derive(Debug, Deserialize)]
+pub struct DeleteFlagParams {
+    pub scope: String,
+    pub scope_id: Option<i64>,
+}
+
+/// GET /features/resolved
+///
+/// Proxies to Gateway: resolves all features for the current user's scope.
+/// Uses TenantContext (campus_id, grade_id) from JWT claims for resolution.
+async fn resolved_features(
+    Extension(_claims): Extension<Claims>,
+    Extension(tenant_ctx): Extension<TenantContext>,
+    State(state): State<AppState>,
+) -> Result<impl IntoResponse, AppError> {
+    // First get the registry from Gateway
+    let registry_resp = state
+        .gateway_client
+        .get("/registry")
+        .await
+        .map_err(|(_status, msg)| AppError::Internal(msg))?;
+
+    let registry: Vec<serde_json::Value> = registry_resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse registry: {}", e)))?;
+
+    let mut result = serde_json::Map::new();
+    for entry in &registry {
+        let slug = entry["slug"].as_str().unwrap_or("");
+        if slug.is_empty() {
+            continue;
+        }
+
+        let resolved = state
+            .gateway_client
+            .resolve(slug, tenant_ctx.campus_id, tenant_ctx.grade_id)
+            .await;
+
+        result.insert(
+            slug.to_string(),
+            serde_json::json!({
+                "slug": slug,
+                "enabled": resolved.enabled,
+                "source": resolved.source.to_string(),
+            }),
+        );
+    }
+
+    Ok(Json(serde_json::Value::Object(result)))
+}
+
+/// GET /features/registry
+///
+/// Proxies to Gateway: returns all feature definitions from the registry.
+async fn list_registry(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+    let resp = state
+        .gateway_client
+        .get("/registry")
+        .await
+        .map_err(|(_status, msg)| AppError::Internal(msg))?;
+
+    let body: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse gateway response: {}", e)))?;
+
+    Ok(Json(body))
+}
+
+/// GET /features/:slug/flags
+///
+/// Proxies to Gateway: returns all flag overrides for a given feature slug.
+async fn list_flags(
+    Path(slug): Path<String>,
+    State(state): State<AppState>,
+) -> Result<impl IntoResponse, AppError> {
+    let path = format!("/features/{}/flags", slug);
+    let resp = state
+        .gateway_client
+        .get(&path)
+        .await
+        .map_err(|(_status, msg)| AppError::Internal(msg))?;
+
+    let body: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse gateway response: {}", e)))?;
+
+    Ok(Json(body))
+}
+
+/// POST /features/:slug/flags
+///
+/// Proxies to Gateway: creates or updates a feature flag override.
+/// Enforces D-06 role-scope authorization before proxying.
+async fn set_flag(
+    Extension(claims): Extension<Claims>,
+    Path(slug): Path<String>,
+    State(state): State<AppState>,
+    Json(body): Json<serde_json::Value>,
+) -> Result<impl IntoResponse, AppError> {
+    // Extract scope from body for authorization check
+    let scope = body["scope"].as_str().unwrap_or("");
+    let role = Role::from_str(&claims.role)
+        .map_err(|_| AppError::Forbidden("Invalid role".into()))?;
+
+    // D-06: Enforce role-scope authorization at API layer before proxying
+    if !check_scope_authorization(role, scope) {
+        return Err(AppError::Forbidden(format!(
+            "Role '{}' cannot manage scope '{}'",
+            claims.role, scope
+        )));
+    }
+
+    let path = format!("/features/{}/flags", slug);
+    let resp = state
+        .gateway_client
+        .post_json(&path, body)
+        .await
+        .map_err(|(_status, msg)| AppError::Internal(msg))?;
+
+    let result: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse gateway response: {}", e)))?;
+
+    Ok(Json(result))
+}
+
+/// DELETE /features/:slug/flags
+///
+/// Proxies to Gateway: deletes a feature flag override.
+/// Enforces D-06 role-scope authorization before proxying.
+async fn delete_flag(
+    Extension(claims): Extension<Claims>,
+    Path(slug): Path<String>,
+    State(state): State<AppState>,
+    Query(params): Query<DeleteFlagParams>,
+) -> Result<impl IntoResponse, AppError> {
+    let role = Role::from_str(&claims.role)
+        .map_err(|_| AppError::Forbidden("Invalid role".into()))?;
+
+    // D-06: Enforce role-scope authorization at API layer before proxying
+    if !check_scope_authorization(role, &params.scope) {
+        return Err(AppError::Forbidden(format!(
+            "Role '{}' cannot manage scope '{}'",
+            claims.role, params.scope
+        )));
+    }
+
+    let mut path = format!("/features/{}/flags?scope={}", slug, params.scope);
+    if let Some(scope_id) = params.scope_id {
+        path.push_str(&format!("&scope_id={}", scope_id));
+    }
+
+    let resp = state
+        .gateway_client
+        .delete(&path)
+        .await
+        .map_err(|(_status, msg)| AppError::Internal(msg))?;
+
+    let result: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to parse gateway response: {}", e)))?;
+
+    Ok(Json(result))
+}
 
 /// Check if a role is authorized to manage flags at the requested scope.
 ///
@@ -37,148 +211,7 @@ pub fn check_scope_authorization(role: Role, requested_scope: &str) -> bool {
     }
 }
 
-/// Query parameters for the delete_flag endpoint.
-#[derive(Debug, Deserialize)]
-pub struct DeleteFlagParams {
-    pub scope: String,
-    pub scope_id: Option<i64>,
-}
-
-/// GET /features/resolved
-///
-/// Returns all features with effective state for the current user's scope.
-/// Uses TenantContext (campus_id, grade_id) from JWT claims for resolution.
-async fn resolved_features(
-    Extension(_claims): Extension<Claims>,
-    Extension(tenant_ctx): Extension<TenantContext>,
-    State(state): State<AppState>,
-) -> Result<impl IntoResponse, AppError> {
-    let registry = state
-        .feature_gateway
-        .list_registry()
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    let mut result = serde_json::Map::new();
-    for entry in &registry {
-        let resolved = state
-            .feature_gateway
-            .resolve(&entry.slug, tenant_ctx.campus_id, tenant_ctx.grade_id)
-            .await;
-        result.insert(
-            entry.slug.clone(),
-            serde_json::json!({
-                "slug": entry.slug,
-                "enabled": resolved.enabled,
-                "source": resolved.source.to_string(),
-            }),
-        );
-    }
-
-    Ok(Json(serde_json::Value::Object(result)))
-}
-
-/// GET /features/registry
-///
-/// Returns all feature definitions from the registry.
-async fn list_registry(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
-    let entries = state
-        .feature_gateway
-        .list_registry()
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    Ok(Json(entries))
-}
-
-/// GET /features/:slug/flags
-///
-/// Returns all flag overrides for a given feature slug.
-async fn list_flags(
-    Path(slug): Path<String>,
-    State(state): State<AppState>,
-) -> Result<impl IntoResponse, AppError> {
-    let flags = state
-        .feature_gateway
-        .list_flags(&slug)
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    Ok(Json(flags))
-}
-
-/// POST /features/:slug/flags
-///
-/// Creates or updates a feature flag override at the given scope.
-/// Enforces D-06 role-scope authorization.
-async fn set_flag(
-    Extension(claims): Extension<Claims>,
-    Path(slug): Path<String>,
-    State(state): State<AppState>,
-    Json(req): Json<SetFlagRequest>,
-) -> Result<impl IntoResponse, AppError> {
-    let role = Role::from_str(&claims.role).map_err(|_| AppError::Forbidden("Invalid role".into()))?;
-
-    if !check_scope_authorization(role, &req.scope) {
-        return Err(AppError::Forbidden(format!(
-            "Role '{}' cannot manage scope '{}'",
-            claims.role, req.scope
-        )));
-    }
-
-    // Validate scope values
-    if !matches!(req.scope.as_str(), "global" | "campus" | "grade" | "class") {
-        return Err(AppError::Validation(format!(
-            "Invalid scope '{}'. Must be one of: global, campus, grade, class",
-            req.scope
-        )));
-    }
-
-    // Global scope must not have scope_id
-    if req.scope == "global" && req.scope_id.is_some() {
-        return Err(AppError::Validation(
-            "Global scope must not specify scope_id".into(),
-        ));
-    }
-
-    state
-        .feature_gateway
-        .set_flag(&slug, &req.scope, req.scope_id, req.enabled)
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    Ok(Json(serde_json::json!({"message": "Flag updated"})))
-}
-
-/// DELETE /features/:slug/flags
-///
-/// Deletes a feature flag override at the given scope.
-/// Enforces D-06 role-scope authorization.
-async fn delete_flag(
-    Extension(claims): Extension<Claims>,
-    Path(slug): Path<String>,
-    State(state): State<AppState>,
-    Query(params): Query<DeleteFlagParams>,
-) -> Result<impl IntoResponse, AppError> {
-    let role = Role::from_str(&claims.role).map_err(|_| AppError::Forbidden("Invalid role".into()))?;
-
-    if !check_scope_authorization(role, &params.scope) {
-        return Err(AppError::Forbidden(format!(
-            "Role '{}' cannot manage scope '{}'",
-            claims.role, params.scope
-        )));
-    }
-
-    state
-        .feature_gateway
-        .delete_flag(&slug, &params.scope, params.scope_id)
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    Ok(Json(serde_json::json!({"message": "Flag deleted"})))
-}
-
-/// Build the features router with all CRUD endpoints.
+/// Build the features router with all proxy endpoints.
 ///
 /// This router should be nested inside the protected_router in main.rs
 /// so that auth and tenant middleware are already applied.
