@@ -14,6 +14,14 @@ use tracing::warn;
 use super::models::{FeatureSource, ResolvedFeature};
 
 /// Cached resolve result with expiry timestamp.
+#[cfg(test)]
+pub struct CachedResolve {
+    pub resolved: ResolvedFeature,
+    pub expires_at: Instant,
+}
+
+/// Cached resolve result with expiry timestamp (production).
+#[cfg(not(test))]
 struct CachedResolve {
     resolved: ResolvedFeature,
     expires_at: Instant,
@@ -27,6 +35,10 @@ struct CachedResolve {
 pub struct GatewayClient {
     http: reqwest::Client,
     base_url: String,
+    /// In-memory TTL cache. Visible to tests in this crate for pre-population.
+    #[cfg(test)]
+    pub cache: Arc<DashMap<String, CachedResolve>>,
+    #[cfg(not(test))]
     cache: Arc<DashMap<String, CachedResolve>>,
     auth_header: String,
 }
@@ -266,25 +278,30 @@ mod tests {
 
     #[tokio::test]
     async fn test_resolve_caches_result() {
-        // This test verifies the cache mechanism by checking that a second call
-        // for the same key returns the cached value without making an HTTP call.
-        // Since we can't easily mock HTTP, we test the cache hit path by:
-        // 1. Calling resolve (which will fail-open, populating cache)
-        // 2. Manually verifying cache was populated
+        // Verifies the cache mechanism by pre-populating the cache
+        // and confirming resolve() returns the cached value without HTTP call.
         let client = GatewayClient::new(
             "http://127.0.0.1:19998".to_string(),
             "test_secret".to_string(),
         );
 
-        // First call -- fail-open, populates cache with enabled=true
-        let _ = client.resolve("test_slug", Some(1), Some(2)).await;
-
-        // Verify cache has the entry
+        // Pre-populate cache with a known value
         let cache_key = format!("test_slug:Some(1):Some(2)");
-        let cached = client.cache.get(&cache_key);
-        assert!(cached.is_some(), "Cache should contain entry after resolve");
-        let entry = cached.unwrap();
-        assert!(entry.resolved.enabled);
+        client.cache.insert(
+            cache_key,
+            CachedResolve {
+                resolved: ResolvedFeature {
+                    enabled: false,
+                    source: FeatureSource::GradeOverride,
+                },
+                expires_at: std::time::Instant::now() + std::time::Duration::from_secs(10),
+            },
+        );
+
+        // resolve() should return the cached value (not fail-open)
+        let result = client.resolve("test_slug", Some(1), Some(2)).await;
+        assert!(!result.enabled);
+        assert_eq!(result.source, FeatureSource::GradeOverride);
     }
 
     #[tokio::test]

@@ -1,8 +1,10 @@
 //! Feature gate middleware.
 //!
 //! Provides `feature_gate()` middleware function that checks if a feature
-//! is enabled before allowing the request through. Returns 404 (not 403)
-//! when a feature is disabled, per D-08.
+//! is enabled via the standalone Gateway HTTP service before allowing the
+//! request through. Returns 404 (not 403) when a feature is disabled, per D-08.
+//!
+//! Uses `GatewayClient` with TTL cache (D-21) and fail-open behavior (D-23).
 
 use std::future::Future;
 use std::pin::Pin;
@@ -10,13 +12,17 @@ use std::sync::Arc;
 
 use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
 
-use crate::feature_gateway::FeatureGatewayService;
+use super::client::GatewayClient;
 use crate::middleware::tenant::TenantContext;
 
 /// Feature gate middleware -- returns 404 if feature is disabled (D-08).
 ///
 /// Follows the same closure pattern as `require_permission` in authz.rs:
 /// closure returning `Pin<Box<dyn Future>>` + `Clone`.
+///
+/// Uses `GatewayClient` to call the standalone Gateway service via HTTP.
+/// The client includes a 10s TTL cache (D-21) and fail-open on Gateway
+/// unavailability (D-23).
 ///
 /// Accesses `TenantContext` from request extensions for scope resolution.
 /// The TenantContext is inserted by the tenant middleware, which runs
@@ -29,16 +35,16 @@ use crate::middleware::tenant::TenantContext;
 /// let gated_router = Router::new()
 ///     .route("/plagiarism", get(handler))
 ///     .route_layer(axum::middleware::from_fn(
-///         feature_gate("plagiarism", gateway.clone())
+///         feature_gate("plagiarism", gateway_client.clone())
 ///     ));
 /// ```
 pub fn feature_gate(
     slug: &'static str,
-    gateway: Arc<FeatureGatewayService>,
+    client: Arc<GatewayClient>,
 ) -> impl Fn(Request, Next) -> Pin<Box<dyn Future<Output = Result<Response, StatusCode>> + Send>>
        + Clone {
     move |req: Request, next: Next| {
-        let gateway = gateway.clone();
+        let client = client.clone();
         Box::pin(async move {
             let tenant_ctx = req.extensions().get::<TenantContext>();
 
@@ -47,7 +53,7 @@ pub fn feature_gate(
                 None => return Err(StatusCode::UNAUTHORIZED),
             };
 
-            let resolved = gateway.resolve(slug, campus_id, grade_id).await;
+            let resolved = client.resolve(slug, campus_id, grade_id).await;
 
             if resolved.enabled {
                 Ok(next.run(req).await)
@@ -71,14 +77,15 @@ mod tests {
     #[tokio::test]
     async fn test_feature_gate_no_tenant_returns_401() {
         // Without TenantContext in extensions, should return 401
-        let pool = sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent_test")
-            .expect("lazy connect should not fail");
-        let gateway = Arc::new(FeatureGatewayService::new(pool));
+        let client = Arc::new(GatewayClient::new(
+            "http://127.0.0.1:19999".to_string(),
+            "test_secret".to_string(),
+        ));
 
         let app = Router::new()
             .route("/test", get(ok_handler))
             .route_layer(middleware::from_fn(
-                feature_gate("plagiarism", gateway)
+                feature_gate("plagiarism", client)
             ));
 
         let response = app
@@ -95,22 +102,74 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_feature_gate_disabled_returns_404() {
-        // Gateway with enabled=false should return 404 for any feature
-        let pool = sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent_test")
-            .expect("lazy connect should not fail");
-        let gateway = Arc::new(FeatureGatewayService::new_with_enabled(pool, false));
+    async fn test_feature_gate_enabled_passes_through() {
+        // GatewayClient with fail-open: when Gateway is unavailable,
+        // resolve() returns enabled=true (D-23 fail-open).
+        // This means the middleware should pass through.
+        let client = Arc::new(GatewayClient::new(
+            "http://127.0.0.1:19998".to_string(),
+            "test_secret".to_string(),
+        ));
 
         let tenant_ctx = TenantContext {
             tenant_id: 1,
             campus_id: Some(1),
-            grade_id: Some(1),
+            grade_id: None,
         };
 
         let app = Router::new()
             .route("/test", get(ok_handler))
             .route_layer(middleware::from_fn(
-                feature_gate("plagiarism", gateway)
+                feature_gate("plagiarism", client)
+            ));
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/test")
+                    .extension(tenant_ctx)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // D-23: fail-open means Gateway unavailable -> enabled=true -> pass through
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_feature_gate_with_disabled_cache_entry_returns_404() {
+        // Pre-populate the client's cache with a disabled entry to test
+        // the disabled path without a real Gateway.
+        let client = Arc::new(GatewayClient::new(
+            "http://127.0.0.1:19997".to_string(),
+            "test_secret".to_string(),
+        ));
+
+        // Manually insert a disabled cache entry
+        let cache_key = format!("plagiarism:Some(1):None");
+        client.cache.insert(
+            cache_key,
+            super::super::client::CachedResolve {
+                resolved: super::super::models::ResolvedFeature {
+                    enabled: false,
+                    source: super::super::models::FeatureSource::GradeOverride,
+                },
+                expires_at: std::time::Instant::now() + std::time::Duration::from_secs(60),
+            },
+        );
+
+        let tenant_ctx = TenantContext {
+            tenant_id: 1,
+            campus_id: Some(1),
+            grade_id: None,
+        };
+
+        let app = Router::new()
+            .route("/test", get(ok_handler))
+            .route_layer(middleware::from_fn(
+                feature_gate("plagiarism", client)
             ));
 
         let response = app
@@ -126,50 +185,5 @@ mod tests {
 
         // D-08: must be 404, not 403
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
-    }
-
-    #[tokio::test]
-    async fn test_feature_gate_enabled_passes_through() {
-        // Gateway with enabled=true but no DB -- resolve falls through to
-        // cache miss then DB miss (no connection), returning default false.
-        // To test the pass-through path, we inject a cache entry.
-        let pool = sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent_test")
-            .expect("lazy connect should not fail");
-        let gateway = Arc::new(FeatureGatewayService::new_with_enabled(pool, true));
-
-        // Pre-populate cache with enabled=true for the feature
-        gateway.insert_cache(
-            "plagiarism",
-            "campus:1",
-            super::super::models::ResolvedFeature {
-                enabled: true,
-                source: super::super::models::FeatureSource::CampusOverride,
-            },
-        );
-
-        let tenant_ctx = TenantContext {
-            tenant_id: 1,
-            campus_id: Some(1),
-            grade_id: None,
-        };
-
-        let app = Router::new()
-            .route("/test", get(ok_handler))
-            .route_layer(middleware::from_fn(
-                feature_gate("plagiarism", gateway)
-            ));
-
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/test")
-                    .extension(tenant_ctx)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::OK);
     }
 }
