@@ -6,6 +6,7 @@
 use std::any::Any;
 use std::sync::Arc;
 
+use crate::feature_gateway::FeatureGatewayService;
 use crate::traits::class_repo::ClassMembershipChecker;
 use crate::traits::token_service::TokenService;
 use dashmap::DashMap;
@@ -37,4 +38,6 @@ pub struct AppState {
     pub prometheus_handle: PrometheusHandle,
     /// In-memory cache for import preview tokens (single-use, short-lived).
     pub preview_cache: Arc<PreviewCache>,
+    /// Feature gateway service for runtime feature flag resolution.
+    pub feature_gateway: Arc<FeatureGatewayService>,
 }

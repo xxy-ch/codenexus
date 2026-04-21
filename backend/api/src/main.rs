@@ -76,6 +76,10 @@ async fn main() -> anyhow::Result<()> {
     let prometheus_handle = setup_metrics_recorder();
     let preview_cache = std::sync::Arc::new(dashmap::DashMap::new());
 
+    let feature_gateway = std::sync::Arc::new(
+        api_infra::feature_gateway::FeatureGatewayService::new(db_pool.clone()),
+    );
+
     let state = AppState {
         db_pool,
         redis_pool,
@@ -87,6 +91,7 @@ async fn main() -> anyhow::Result<()> {
         class_membership_checker,
         prometheus_handle,
         preview_cache,
+        feature_gateway,
     };
 
     let app = create_router(state, config.clone());
@@ -326,6 +331,11 @@ mod tests {
                 ),
                 prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
                 preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
+                feature_gateway: std::sync::Arc::new(
+                    api_infra::feature_gateway::FeatureGatewayService::new(
+                        sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+                    ),
+                ),
             })
     }
 

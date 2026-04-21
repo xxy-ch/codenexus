@@ -1,5 +1,6 @@
 pub mod config;
 pub mod error;
+pub mod feature_gateway;
 pub mod metrics;
 pub mod middleware;
 pub mod rbac;

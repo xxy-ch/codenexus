@@ -25,7 +25,7 @@ async fn build_users_app(pool: PgPool) -> (
     let jwt_service = api::auth::JwtService::new(TEST_JWT_SECRET);
 
     let state = AppState {
-        db_pool: pool,
+        db_pool: pool.clone(),
         redis_pool: None,
         redis_url: String::new(),
         jwt_service: std::sync::Arc::new(api::auth::JwtService::new(TEST_JWT_SECRET)),
@@ -35,6 +35,9 @@ async fn build_users_app(pool: PgPool) -> (
         class_membership_checker: std::sync::Arc::new(NoopClassMembershipChecker),
         prometheus_handle: setup_metrics_recorder(),
         preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
+        feature_gateway: std::sync::Arc::new(
+            api_infra::feature_gateway::FeatureGatewayService::new(pool),
+        ),
     };
 
     let protected_router = axum::Router::new()

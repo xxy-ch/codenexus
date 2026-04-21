@@ -73,7 +73,7 @@ fn build_state(pool: PgPool) -> AppState {
     std::env::set_var("JWT_SECRET", &jwt_secret);
     let jwt_service = JwtService::new(&jwt_secret);
     AppState {
-        db_pool: pool,
+        db_pool: pool.clone(),
         redis_pool: None,
         redis_url: "redis://127.0.0.1:6379".to_string(),
         jwt_service: std::sync::Arc::new(jwt_service),
@@ -85,6 +85,9 @@ fn build_state(pool: PgPool) -> AppState {
         ),
         prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
         preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
+        feature_gateway: std::sync::Arc::new(
+            api_infra::feature_gateway::FeatureGatewayService::new(pool),
+        ),
     }
 }
 
