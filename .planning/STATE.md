@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 11
-status: executing
-last_updated: "2026-04-21T05:24:08.763Z"
+status: verifying
+last_updated: "2026-04-21T11:58:09.287Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 16
-  completed_phases: 13
-  total_plans: 69
+  completed_phases: 12
+  total_plans: 63
   completed_plans: 69
   percent: 100
 ---
@@ -119,6 +119,8 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 11 plan 04 executed: 2026-04-21 — FeatureToggle/InheritedIndicator components, admin FeatureManagement, teacher ClassFeatureSettings pages (commits 45ff439, 4900009, 48fd56b)*
 *Phase 11 complete — all 4 plans executed, feature gateway infrastructure fully operational*
 *Phase 11 context re-discussed: 2026-04-21 — v2 standalone service architecture (D-17~D-26): independent binary, HTTP REST, direct DB, Docker Compose, fail-open, shared secret, full CRUD hosting, one-step migration*
+*Phase 11 v2 plan 01 executed: 2026-04-21 — standalone feature-gateway crate with all endpoints + Dockerfile*
+*Phase 11 v2 plan 02 executed: 2026-04-21 — API HTTP client + proxy routes + AppState migration + embedded module deleted*
 
 ## Decisions
 
@@ -197,6 +199,9 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 - [Phase 11 P01]: PgPool::connect_lazy requires #[tokio::test] even for unit tests that never connect (re-confirmed from Phase 10 P02)
 - [Phase 11 P01]: All AppState construction sites updated when adding required feature_gateway field (7 sites across 6 files)
 - [Phase 11]: FeatureToggle uses role=switch with aria-checked for accessibility; admin page fetches per-feature flags individually; teacher page auto-selects first class
+- [Phase 11 v2 P02]: FeatureSource/ResolvedFeature types duplicated in api-infra client.rs to avoid cross-crate dependency on feature-gateway crate
+- [Phase 11 v2 P02]: D-06 role-scope authorization enforced at API proxy layer before forwarding to Gateway (API acts as auth gateway)
+- [Phase 11 v2 P02]: Fail-open results not cached -- only successful Gateway responses get TTL cache entry
 
 ## Performance Metrics
 
@@ -242,3 +247,5 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 | Phase 11 P01 | 18min | 1 tasks | 12 files |
 | Phase 11 P02 | 10min | 1 tasks | 7 files |
 | Phase 11 P04 | 7min | 3 tasks | 10 files |
+| Phase 11 v2 P01 | 13min | 6 tasks | 8 files |
+| Phase 11 v2 P02 | 21min | 5 tasks | 12 files |
