@@ -37,8 +37,11 @@ async fn build_contest_app(pool: PgPool) -> (
         class_membership_checker: std::sync::Arc::new(NoopClassMembershipChecker),
         prometheus_handle: setup_metrics_recorder(),
         preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
-        feature_gateway: std::sync::Arc::new(
-            api_infra::feature_gateway::FeatureGatewayService::new(pool),
+        gateway_client: std::sync::Arc::new(
+            api_infra::feature_gateway::GatewayClient::new(
+                "http://127.0.0.1:3001".to_string(),
+                "test_secret".to_string(),
+            ),
         ),
     };
 

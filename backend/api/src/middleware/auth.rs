@@ -141,9 +141,10 @@ mod tests {
             ),
             prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
             preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
-            feature_gateway: std::sync::Arc::new(
-                api_infra::feature_gateway::FeatureGatewayService::new(
-                    sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+            gateway_client: std::sync::Arc::new(
+                api_infra::feature_gateway::GatewayClient::new(
+                    "http://127.0.0.1:3001".to_string(),
+                    "test_secret".to_string(),
                 ),
             ),
         };

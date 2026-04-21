@@ -76,8 +76,10 @@ async fn main() -> anyhow::Result<()> {
     let prometheus_handle = setup_metrics_recorder();
     let preview_cache = std::sync::Arc::new(dashmap::DashMap::new());
 
-    let feature_gateway = std::sync::Arc::new(
-        api_infra::feature_gateway::FeatureGatewayService::new(db_pool.clone()),
+    let gateway_url = std::env::var("FEATURE_GATEWAY_URL")
+        .unwrap_or_else(|_| "http://127.0.0.1:3001".to_string());
+    let gateway_client = std::sync::Arc::new(
+        api_infra::feature_gateway::GatewayClient::new(gateway_url, config.worker_secret.clone()),
     );
 
     let state = AppState {
@@ -91,7 +93,7 @@ async fn main() -> anyhow::Result<()> {
         class_membership_checker,
         prometheus_handle,
         preview_cache,
-        feature_gateway,
+        gateway_client,
     };
 
     let app = create_router(state, config.clone());
@@ -332,9 +334,10 @@ mod tests {
                 ),
                 prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
                 preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
-                feature_gateway: std::sync::Arc::new(
-                    api_infra::feature_gateway::FeatureGatewayService::new(
-                        sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),
+                gateway_client: std::sync::Arc::new(
+                    api_infra::feature_gateway::GatewayClient::new(
+                        "http://127.0.0.1:3001".to_string(),
+                        "test_secret".to_string(),
                     ),
                 ),
             })
