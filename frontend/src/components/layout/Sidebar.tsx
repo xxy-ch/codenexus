@@ -38,6 +38,7 @@ export function Sidebar() {
     { label: 'Contest Wizard', path: '/teacher/contest-wizard', icon: 'build', minRole: 'teacher' },
     { label: 'Reports', path: '/teacher/assignment-report', icon: 'insights', minRole: 'teacher' },
     { label: 'Batch Ops', path: '/batch-operations', icon: 'upload_file', minRole: 'teacher' },
+    { label: 'Features', path: '/admin/features', icon: 'settings', minRole: 'admin' },
   ]
 
   const handleLogout = async () => {
