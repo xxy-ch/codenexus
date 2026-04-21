@@ -118,6 +118,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 11 plan 03 executed: 2026-04-21 — frontend migration from FEATURE_FLAGS to async gateway, 5 consumers migrated (commit 7835872)*
 *Phase 11 plan 04 executed: 2026-04-21 — FeatureToggle/InheritedIndicator components, admin FeatureManagement, teacher ClassFeatureSettings pages (commits 45ff439, 4900009, 48fd56b)*
 *Phase 11 complete — all 4 plans executed, feature gateway infrastructure fully operational*
+*Phase 11 context re-discussed: 2026-04-21 — v2 standalone service architecture (D-17~D-26): independent binary, HTTP REST, direct DB, Docker Compose, fail-open, shared secret, full CRUD hosting, one-step migration*
 
 ## Decisions
 
