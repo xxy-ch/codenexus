@@ -106,7 +106,7 @@ export function DashboardEnhanced() {
       case 'achievement':
         return 'text-purple-500'
       default:
-        return 'text-slate-500'
+        return 'text-muted-foreground'
     }
   }
 
@@ -335,9 +335,9 @@ export function DashboardEnhanced() {
           </h3>
           <ResponsiveContainer width="100%" height={250}>
             <BarChart data={weeklyActivity}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-              <XAxis dataKey="day" className="text-slate-600 dark:text-slate-400" />
-              <YAxis className="text-slate-600 dark:text-slate-400" />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="day" className="text-muted-foreground" />
+              <YAxis className="text-muted-foreground" />
               <Tooltip />
               <Legend />
               <Bar dataKey="提交" fill="#3b82f6" radius={[4, 4, 0, 0]} />

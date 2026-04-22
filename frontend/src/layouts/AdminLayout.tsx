@@ -47,9 +47,9 @@ export function AdminLayout() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-muted">
       {/* Admin Header */}
-      <header className="bg-white dark:bg-slate-900 border-b sticky top-0 z-10">
+      <header className="bg-card border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
@@ -68,8 +68,8 @@ export function AdminLayout() {
                       className={cn(
                         'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                         isActive
-                          ? 'bg-primary text-white'
-                          : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-secondary'
                       )}
                     >
                       <IconComponent className="h-4 w-4" />
@@ -82,7 +82,7 @@ export function AdminLayout() {
             <div className="flex items-center gap-4">
               <Link
                 to="/dashboard"
-                className="text-sm text-slate-600 hover:text-primary dark:text-slate-400"
+                className="text-sm text-muted-foreground hover:text-primary"
               >
                 返回用户界面
               </Link>

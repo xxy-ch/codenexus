@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -109,7 +109,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       <div className="flex-1">
         <p className={cn('font-medium', config.textColor)}>{toast.title}</p>
         {toast.message && (
-          <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">{toast.message}</p>
+          <p className="text-sm text-muted-foreground mt-1">{toast.message}</p>
         )}
       </div>
       <button

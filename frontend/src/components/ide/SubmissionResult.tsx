@@ -30,10 +30,10 @@ interface SubmissionResultProps {
 const STATUS_CONFIG = {
   pending: {
     label: '等待中',
-    bgColor: 'bg-slate-100 dark:bg-slate-800',
-    textColor: 'text-slate-600 dark:text-slate-400',
+    bgColor: 'bg-secondary',
+    textColor: 'text-muted-foreground',
     icon: Loader2,
-    iconColor: 'text-slate-400',
+    iconColor: 'text-muted-foreground',
   },
   running: {
     label: '评测中',
@@ -170,8 +170,8 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
 
           {/* 错误信息 */}
           {submission.error && (
-            <div className="bg-white dark:bg-slate-900 rounded-lg p-4 mb-4">
-              <p className="text-sm font-mono text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
+            <div className="bg-card rounded-lg p-4 mb-4">
+              <p className="text-sm font-mono text-foreground whitespace-pre-wrap">
                 {submission.error}
               </p>
             </div>
@@ -194,7 +194,7 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
                     <div
                       key={testCase.id}
                       className={cn(
-                        'bg-white dark:bg-slate-900 rounded-lg p-3 border',
+                        'bg-card rounded-lg p-3 border',
                         testCase.status === 'passed'
                           ? 'border-green-200 dark:border-green-800'
                           : 'border-red-200 dark:border-red-800'
@@ -212,7 +212,7 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
                           </span>
                         </div>
                         {testCase.runtime !== undefined && (
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-muted-foreground">
                             {testCase.runtime}ms
                           </span>
                         )}
@@ -226,21 +226,21 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
 
                       <div className="mt-2 space-y-1">
                         <div>
-                          <p className="text-xs font-semibold text-slate-500 mb-1">输入：</p>
-                          <pre className="text-xs bg-slate-50 dark:bg-slate-800 p-2 rounded font-mono">
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">输入：</p>
+                          <pre className="text-xs bg-muted p-2 rounded font-mono">
                             {testCase.input}
                           </pre>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-slate-500 mb-1">期望输出：</p>
-                          <pre className="text-xs bg-slate-50 dark:bg-slate-800 p-2 rounded font-mono">
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">期望输出：</p>
+                          <pre className="text-xs bg-muted p-2 rounded font-mono">
                             {testCase.expectedOutput}
                           </pre>
                         </div>
                         {testCase.actualOutput && (
                           <div>
-                            <p className="text-xs font-semibold text-slate-500 mb-1">实际输出：</p>
-                            <pre className="text-xs bg-slate-50 dark:bg-slate-800 p-2 rounded font-mono">
+                            <p className="text-xs font-semibold text-muted-foreground mb-1">实际输出：</p>
+                            <pre className="text-xs bg-muted p-2 rounded font-mono">
                               {testCase.actualOutput}
                             </pre>
                           </div>
@@ -256,7 +256,7 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
           {/* 操作按钮 */}
           <div className="flex gap-3 mt-4">
             {currentStatus === 'accepted' && (
-              <Button variant="primary" size="sm">
+              <Button variant="default" size="sm">
                 <PartyPopper className="w-4 h-4 mr-1" />
                 分享解答
               </Button>
@@ -282,14 +282,14 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
 // 提交结果的加载骨架
 export function SubmissionResultSkeleton() {
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+    <div className="bg-card rounded-xl border border-border p-6">
       <div className="flex items-center gap-3">
         <div className="animate-spin">
           <div className="w-6 h-6 border-2 border-primary rounded-full border-t-transparent"></div>
         </div>
         <div>
           <h3 className="font-semibold">提交中...</h3>
-          <p className="text-sm text-slate-500">请稍候，正在评测您的解答</p>
+          <p className="text-sm text-muted-foreground">请稍候，正在评测您的解答</p>
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ interface MarkdownPreviewProps {
   darkMode?: boolean
 }
 
-export const MarkdownPreview = memo(({ content, darkMode = false }: MarkdownPreviewProps) => {
+export const MarkdownPreview = memo(({ content, darkMode: _darkMode = false }: MarkdownPreviewProps) => {
   return (
     <div className="markdown-preview prose prose-lg dark:prose-invert max-w-none p-6">
       <ReactMarkdown
@@ -17,11 +17,11 @@ export const MarkdownPreview = memo(({ content, darkMode = false }: MarkdownPrev
             const match = /language-(\w+)/.exec(className || '')
             const inline = (props as any).inline
             return !inline && match ? (
-              <div className="my-2 overflow-x-auto rounded-lg border border-gray-200 bg-slate-950/95 dark:border-slate-700 dark:bg-slate-950">
-                <div className="border-b border-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-300">
+              <div className="my-2 overflow-x-auto rounded-lg border border-border bg-slate-950/95">
+                <div className="border-b border-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   {match[1]}
                 </div>
-                <pre className="overflow-x-auto px-4 py-4 text-sm text-slate-100">
+                <pre className="overflow-x-auto px-4 py-4 text-sm text-foreground">
                   <code className={className} {...props}>
                     {String(children).replace(/\n$/, '')}
                   </code>
@@ -29,7 +29,7 @@ export const MarkdownPreview = memo(({ content, darkMode = false }: MarkdownPrev
               </div>
             ) : (
               <code
-                className={`${className} px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-sm font-mono`}
+                className={`${className} px-1.5 py-0.5 rounded bg-secondary text-sm font-mono`}
                 {...props}
               >
                 {children}
@@ -63,7 +63,7 @@ export const MarkdownPreview = memo(({ content, darkMode = false }: MarkdownPrev
           blockquote({ node, children, ...props }) {
             return (
               <blockquote
-                className="border-l-4 border-primary pl-4 italic my-4 text-gray-600 dark:text-gray-400"
+                className="border-l-4 border-primary pl-4 italic my-4 text-muted-foreground"
                 {...props}
               >
                 {children}
@@ -74,7 +74,7 @@ export const MarkdownPreview = memo(({ content, darkMode = false }: MarkdownPrev
             return (
               <div className="overflow-x-auto my-4">
                 <table
-                  className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border border-gray-300 dark:border-gray-600"
+                  className="min-w-full divide-y divide-border border border-border"
                   {...props}
                 >
                   {children}
@@ -85,7 +85,7 @@ export const MarkdownPreview = memo(({ content, darkMode = false }: MarkdownPrev
           th({ node, children, ...props }) {
             return (
               <th
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-left font-semibold"
+                className="px-4 py-2 bg-secondary text-left font-semibold"
                 {...props}
               >
                 {children}
@@ -95,7 +95,7 @@ export const MarkdownPreview = memo(({ content, darkMode = false }: MarkdownPrev
           td({ node, children, ...props }) {
             return (
               <td
-                className="px-4 py-2 border-t border-gray-200 dark:border-gray-700"
+                className="px-4 py-2 border-t border-border"
                 {...props}
               >
                 {children}

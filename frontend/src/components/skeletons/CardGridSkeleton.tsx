@@ -13,7 +13,7 @@ export function CardGridSkeleton({ cards = 6, className }: CardGridSkeletonProps
       {Array.from({ length: cards }).map((_, i) => (
         <div
           key={`card-${i}`}
-          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950"
+          className="rounded-xl border border-border bg-card p-6 shadow-sm"
         >
           <Skeleton className="mb-3 h-6 w-3/4" />
           <Skeleton className="mb-4 h-4 w-1/2" />

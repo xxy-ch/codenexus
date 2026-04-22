@@ -114,7 +114,7 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
               if (query.length >= 2) setShowSuggestions(true)
             }}
             placeholder={placeholder}
-            className="block w-full pl-10 pr-12 py-2.5 border border-border-light dark:border-border-dark rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
+            className="block w-full pl-10 pr-12 py-2.5 border border-border rounded-lg bg-card text-foreground placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
           />
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center gap-1">
             {query && (
@@ -125,12 +125,12 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
                   setSuggestions([])
                   setShowSuggestions(false)
                 }}
-                className="p-1 text-text-muted hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="p-1 text-text-muted hover:text-foreground transition-colors"
               >
                 <span className="material-icons text-lg">close</span>
               </button>
             )}
-            <kbd className="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold text-text-muted bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">
+            <kbd className="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold text-text-muted bg-secondary border border-border rounded">
               ⌘K
             </kbd>
           </div>
@@ -139,7 +139,7 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
 
       {/* Suggestions dropdown */}
       {showSuggestions && (query.length >= 2 || suggestions.length > 0) && (
-        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-gray-800 border border-border-light dark:border-border-dark rounded-lg shadow-lg max-h-96 overflow-y-auto">
+        <div className="absolute z-50 w-full mt-2 bg-card border border-border rounded-lg shadow-lg max-h-96 overflow-y-auto">
           {loading ? (
             <div className="px-4 py-3 text-sm text-text-muted">Loading suggestions...</div>
           ) : suggestions.length > 0 ? (
@@ -149,11 +149,11 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
                   key={index}
                   type="button"
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="w-full px-4 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3"
+                  className="w-full px-4 py-2.5 text-left hover:bg-muted transition-colors flex items-center gap-3"
                 >
                   {getSuggestionIcon(suggestion.type)}
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <div className="text-sm font-medium text-foreground truncate">
                       {suggestion.text}
                     </div>
                     <div className="text-xs text-text-muted capitalize">
@@ -173,7 +173,7 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
 
           {/* Quick search options */}
           {query && (
-            <div className="border-t border-gray-100 dark:border-gray-700 px-4 py-2">
+            <div className="border-t border-border px-4 py-2">
               <div className="text-xs text-text-muted mb-2">Search in:</div>
               <div className="flex gap-2">
                 <button
@@ -182,7 +182,7 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
                     navigate(`/search?q=${encodeURIComponent(query)}&type=all`)
                     setShowSuggestions(false)
                   }}
-                  className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium bg-secondary text-foreground rounded hover:bg-muted transition-colors"
                 >
                   All
                 </button>
@@ -192,7 +192,7 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
                     navigate(`/search?q=${encodeURIComponent(query)}&type=problem`)
                     setShowSuggestions(false)
                   }}
-                  className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium bg-secondary text-foreground rounded hover:bg-muted transition-colors"
                 >
                   Problems
                 </button>
@@ -202,7 +202,7 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
                     navigate(`/search?q=${encodeURIComponent(query)}&type=discussion`)
                     setShowSuggestions(false)
                   }}
-                  className="px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium bg-secondary text-foreground rounded hover:bg-muted transition-colors"
                 >
                   Discussions
                 </button>

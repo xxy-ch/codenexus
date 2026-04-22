@@ -9,7 +9,7 @@ export function ConversationSkeleton({ className }: ConversationSkeletonProps) {
   return (
     <div className={cn('space-y-6', className)}>
       {/* Header banner */}
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <div className="px-6 py-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-3">
@@ -19,7 +19,7 @@ export function ConversationSkeleton({ className }: ConversationSkeletonProps) {
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={`stat-${i}`} className="rounded-2xl border px-4 py-3">
+                <div key={`stat-${i}`} className="rounded-xl border px-4 py-3">
                   <Skeleton className="h-3 w-24" />
                   <Skeleton className="mt-2 h-6 w-14" />
                 </div>
@@ -33,7 +33,7 @@ export function ConversationSkeleton({ className }: ConversationSkeletonProps) {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         {/* Sidebar: conversation list */}
         <div className="space-y-4">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="rounded-[24px] border border-border bg-card p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 <Skeleton className="h-3 w-28" />
@@ -57,9 +57,9 @@ export function ConversationSkeleton({ className }: ConversationSkeletonProps) {
         </div>
 
         {/* Chat area */}
-        <div className="rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-[24px] border border-border bg-card shadow-sm">
           {/* Chat header */}
-          <div className="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+          <div className="border-b border-border px-6 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="space-y-2">
                 <Skeleton className="h-3 w-32" />
@@ -72,25 +72,25 @@ export function ConversationSkeleton({ className }: ConversationSkeletonProps) {
           {/* Message bubbles */}
           <div className="space-y-4 p-6">
             <div className="flex justify-start">
-              <div className="max-w-[70%] rounded-2xl bg-slate-100 px-4 py-3 dark:bg-slate-800">
+              <div className="max-w-[70%] rounded-xl bg-secondary px-4 py-3">
                 <Skeleton className="h-4 w-48" />
                 <Skeleton className="mt-1 h-3 w-20" />
               </div>
             </div>
             <div className="flex justify-end">
-              <div className="max-w-[70%] rounded-2xl bg-primary/10 px-4 py-3">
+              <div className="max-w-[70%] rounded-xl bg-primary/10 px-4 py-3">
                 <Skeleton className="h-4 w-40" />
                 <Skeleton className="mt-1 h-3 w-16" />
               </div>
             </div>
             <div className="flex justify-start">
-              <div className="max-w-[70%] rounded-2xl bg-slate-100 px-4 py-3 dark:bg-slate-800">
+              <div className="max-w-[70%] rounded-xl bg-secondary px-4 py-3">
                 <Skeleton className="h-4 w-56" />
                 <Skeleton className="mt-1 h-3 w-20" />
               </div>
             </div>
             <div className="flex justify-end">
-              <div className="max-w-[70%] rounded-2xl bg-primary/10 px-4 py-3">
+              <div className="max-w-[70%] rounded-xl bg-primary/10 px-4 py-3">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="mt-1 h-3 w-16" />
               </div>
@@ -98,7 +98,7 @@ export function ConversationSkeleton({ className }: ConversationSkeletonProps) {
           </div>
 
           {/* Message input */}
-          <div className="border-t border-slate-200 px-6 py-4 dark:border-slate-800">
+          <div className="border-t border-border px-6 py-4">
             <div className="flex gap-3">
               <Skeleton className="h-10 flex-1 rounded-xl" />
               <Skeleton className="h-10 w-20 rounded-xl" />

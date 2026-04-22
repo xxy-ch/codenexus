@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
-import { ArrowLeft, Clock, Timer, Code2, BarChart3, Play, UserCheck, CircleCheck, Share2, Calendar, Zap, Flame, Trophy } from 'lucide-react'
+import { ArrowLeft, Clock, Timer, Code2, BarChart3, Play, UserCheck, CircleCheck, Share2, Calendar, Flame, Trophy } from 'lucide-react'
 
 interface ContestProblem {
   id: string
@@ -200,7 +200,7 @@ export function ContestDetail() {
         <div className="relative px-6 py-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3 min-w-0">
-              <Button variant="ghost" size="small" onClick={() => navigate(-1)} className="shrink-0">
+              <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="shrink-0">
                 <ArrowLeft className="w-5 h-5" />
               </Button>
               <div className="min-w-0">
@@ -305,14 +305,14 @@ export function ContestDetail() {
         <div className="flex gap-3">
           {contest.status === 'upcoming' && !contest.is_registered && (
             <Button
-              variant="primary"
+              variant="default"
               onClick={() => registerMutation.mutate()}
               disabled={registerMutation.isPending}
               className="font-bold"
             >
               {registerMutation.isPending ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
                   注册中...
                 </>
               ) : (
@@ -333,7 +333,7 @@ export function ContestDetail() {
 
           {contest.status === 'ongoing' && contest.is_registered && (
             <Button
-              variant="primary"
+              variant="default"
               onClick={() => enterMutation.mutate()}
               disabled={enterMutation.isPending}
               className="font-bold bg-[#3ecf8e] text-slate-950 hover:bg-[#3ecf8e]/90"
@@ -360,7 +360,7 @@ export function ContestDetail() {
           </Link>
         </div>
 
-        <Button variant="ghost" size="small">
+        <Button variant="ghost" size="sm">
           <Share2 className="w-4 h-4 mr-2" />
           分享
         </Button>

@@ -26,16 +26,16 @@ export function EditorWithPreview({
   const lineCount = value.split('\n').length
 
   return (
-    <div className="border border-border-light dark:border-border-dark rounded-xl overflow-hidden bg-white dark:bg-gray-800">
+    <div className="border border-border rounded-xl overflow-hidden bg-card">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-50 dark:bg-gray-900 border-b border-border-light dark:border-border-dark">
+      <div className="flex items-center justify-between px-4 py-2 bg-muted border-b border-border">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setMode('edit')}
             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
               mode === 'edit'
-                ? 'bg-white dark:bg-gray-700 text-primary shadow-sm'
-                : 'text-text-muted hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                ? 'bg-secondary text-primary shadow-sm'
+                : 'text-text-muted hover:text-foreground hover:bg-secondary'
             }`}
           >
             <span className="material-icons text-[18px] align-middle mr-1">edit</span>
@@ -45,8 +45,8 @@ export function EditorWithPreview({
             onClick={() => setMode('split')}
             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
               mode === 'split'
-                ? 'bg-white dark:bg-gray-700 text-primary shadow-sm'
-                : 'text-text-muted hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                ? 'bg-secondary text-primary shadow-sm'
+                : 'text-text-muted hover:text-foreground hover:bg-secondary'
             }`}
           >
             <span className="material-icons text-[18px] align-middle mr-1">view_column</span>
@@ -56,8 +56,8 @@ export function EditorWithPreview({
             onClick={() => setMode('preview')}
             className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
               mode === 'preview'
-                ? 'bg-white dark:bg-gray-700 text-primary shadow-sm'
-                : 'text-text-muted hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+                ? 'bg-secondary text-primary shadow-sm'
+                : 'text-text-muted hover:text-foreground hover:bg-secondary'
             }`}
           >
             <span className="material-icons text-[18px] align-middle mr-1">visibility</span>
@@ -76,8 +76,8 @@ export function EditorWithPreview({
       <div className="flex" style={{ minHeight: '500px' }}>
         {(mode === 'edit' || mode === 'split') && (
           <div
-            className={`bg-white dark:bg-gray-900 ${
-              mode === 'split' ? 'w-1/2 border-r border-border-light dark:border-border-dark' : 'w-full'
+            className={`bg-card ${
+              mode === 'split' ? 'w-1/2 border-r border-border' : 'w-full'
             }`}
           >
             <MarkdownEditor
@@ -91,7 +91,7 @@ export function EditorWithPreview({
         )}
         {(mode === 'preview' || mode === 'split') && (
           <div
-            className={`bg-white dark:bg-gray-900 overflow-auto ${
+            className={`bg-card overflow-auto ${
               mode === 'split' ? 'w-1/2' : 'w-full'
             }`}
             style={{ maxHeight: '500px' }}
@@ -102,7 +102,7 @@ export function EditorWithPreview({
       </div>
 
       {/* Markdown Tips */}
-      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900 border-t border-border-light dark:border-border-dark">
+      <div className="px-4 py-2 bg-muted border-t border-border">
         <div className="text-xs text-text-muted">
           <span className="font-medium">Markdown tips:</span>{' '}
           <span className="italic">**bold**</span>, {' '}

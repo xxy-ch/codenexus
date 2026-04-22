@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Clock, Cpu, Type, WrapText, Play, Lightbulb, AlertTriangle, CheckCircle, Info, FileText, Code2, Scale, Keyboard, History, ChevronDown } from 'lucide-react'
+import { Clock, Cpu, Type, WrapText, Play, Lightbulb, AlertTriangle, CheckCircle, Info, FileText, Code2, Scale, Keyboard, History } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 
@@ -75,10 +75,10 @@ export function IDELayout({
       {/* 头部 */}
       <div className="flex items-center justify-between mb-4 px-1">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-xl font-bold text-foreground">
             {problemTitle}
           </h1>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Clock className="w-4 h-4" />
             <span>{timeLimit}ms</span>
             <Cpu className="w-4 h-4" />
@@ -114,7 +114,7 @@ export function IDELayout({
 
           {/* 提交按钮 */}
           <Button
-            variant="primary"
+            variant="default"
             onClick={onSubmit}
             disabled={isSubmitting || !code.trim()}
             className="font-medium"
@@ -139,17 +139,17 @@ export function IDELayout({
         {/* 左侧面板 - 题目信息 */}
         <div
           style={{ width: `${leftPanelWidth}%` }}
-          className="bg-white dark:bg-slate-900 rounded-l-xl border border-t border-b border-l border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col"
+          className="bg-card rounded-l-xl border border-t border-b border-l border-border overflow-hidden flex flex-col"
         >
           {/* 标签页 */}
-          <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+          <div className="flex border-b border-border bg-muted">
             <button
               onClick={() => setActiveTab('description')}
               className={cn(
                 'flex-1 px-4 py-3 text-sm font-medium transition-colors',
                 activeTab === 'description'
-                  ? 'text-primary border-b-2 border-primary bg-white dark:bg-slate-900'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'text-primary border-b-2 border-primary bg-card'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <FileText className="w-4 h-4 inline mr-1" />
@@ -160,8 +160,8 @@ export function IDELayout({
               className={cn(
                 'flex-1 px-4 py-3 text-sm font-medium transition-colors',
                 activeTab === 'examples'
-                  ? 'text-primary border-b-2 border-primary bg-white dark:bg-slate-900'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'text-primary border-b-2 border-primary bg-card'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Code2 className="w-4 h-4 inline mr-1" />
@@ -172,8 +172,8 @@ export function IDELayout({
               className={cn(
                 'flex-1 px-4 py-3 text-sm font-medium transition-colors',
                 activeTab === 'constraints'
-                  ? 'text-primary border-b-2 border-primary bg-white dark:bg-slate-900'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  ? 'text-primary border-b-2 border-primary bg-card'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               <Scale className="w-4 h-4 inline mr-1" />
@@ -200,18 +200,18 @@ export function IDELayout({
                 </div>
                 <div className="space-y-4">
                   <h3 className="text-base font-semibold">题目描述</h3>
-                  <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                  <p className="text-sm text-foreground leading-relaxed">
                     通过实现高效的算法来解决问题。注意时间和内存约束。
                   </p>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4 mt-4">
+                  <div className="bg-muted rounded-lg p-4 mt-4">
                     <h4 className="text-sm font-semibold mb-2">输入格式</h4>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                    <p className="text-xs text-muted-foreground font-mono">
                       第一行包含一个整数 n (1 ≤ n ≤ 10^5)
                     </p>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                  <div className="bg-muted rounded-lg p-4">
                     <h4 className="text-sm font-semibold mb-2">输出格式</h4>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                    <p className="text-xs text-muted-foreground font-mono">
                       输出结果为整数
                     </p>
                   </div>
@@ -221,50 +221,50 @@ export function IDELayout({
 
             {activeTab === 'examples' && (
               <div className="space-y-4">
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg overflow-hidden">
-                  <div className="px-4 py-3 bg-slate-100 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <div className="bg-muted rounded-lg overflow-hidden">
+                  <div className="px-4 py-3 bg-secondary border-b border-border">
+                    <p className="text-sm font-semibold text-foreground">
                       示例 1
                     </p>
                   </div>
                   <div className="p-4 space-y-3">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 mb-2">输入：</p>
-                      <pre className="text-xs bg-white dark:bg-slate-900 p-3 rounded font-mono">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">输入：</p>
+                      <pre className="text-xs bg-card p-3 rounded font-mono">
                         5
                       </pre>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 mb-2">输出：</p>
-                      <pre className="text-xs bg-white dark:bg-slate-900 p-3 rounded font-mono">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">输出：</p>
+                      <pre className="text-xs bg-card p-3 rounded font-mono">
                         120
                       </pre>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 mb-2">解释：</p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">解释：</p>
+                      <p className="text-xs text-muted-foreground">
                         输入为 5，期望输出为 120。
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg overflow-hidden">
-                  <div className="px-4 py-3 bg-slate-100 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <div className="bg-muted rounded-lg overflow-hidden">
+                  <div className="px-4 py-3 bg-secondary border-b border-border">
+                    <p className="text-sm font-semibold text-foreground">
                       示例 2
                     </p>
                   </div>
                   <div className="p-4 space-y-3">
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 mb-2">输入：</p>
-                      <pre className="text-xs bg-white dark:bg-slate-900 p-3 rounded font-mono">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">输入：</p>
+                      <pre className="text-xs bg-card p-3 rounded font-mono">
                         10
                       </pre>
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-slate-500 mb-2">输出：</p>
-                      <pre className="text-xs bg-white dark:bg-slate-900 p-3 rounded font-mono">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">输出：</p>
+                      <pre className="text-xs bg-card p-3 rounded font-mono">
                         550
                       </pre>
                     </div>
@@ -292,9 +292,9 @@ export function IDELayout({
                   </div>
                 </div>
 
-                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                <div className="bg-muted rounded-lg p-4">
                   <h4 className="text-sm font-semibold mb-3">注意事项</h4>
-                  <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2">
+                  <ul className="text-xs text-muted-foreground space-y-2">
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-4 h-4" />
                       <span>对于大量输入/输出使用快速 I/O 方法</span>
@@ -330,7 +330,7 @@ export function IDELayout({
 
         {/* 调整大小手柄 */}
         <div
-          className="w-1 bg-slate-200 dark:bg-slate-700 hover:bg-primary cursor-col-resize transition-colors relative group"
+          className="w-1 bg-border hover:bg-primary cursor-col-resize transition-colors relative group"
           onMouseDown={handleMouseDown}
         >
           <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 h-8 bg-primary rounded opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -341,15 +341,15 @@ export function IDELayout({
         {/* 右侧面板 - 代码编辑器 */}
         <div
           style={{ width: `${100 - leftPanelWidth}%` }}
-          className="bg-white dark:bg-slate-900 rounded-r-xl border border-t border-b border-r border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col"
+          className="bg-card rounded-r-xl border border-t border-b border-r border-border overflow-hidden flex flex-col"
         >
           {/* 编辑器头部 */}
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between px-4 py-3 bg-muted border-b border-border">
             <div className="flex items-center gap-3">
               <select
                 value={language}
                 onChange={(e) => onLanguageChange(e.target.value)}
-                className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="px-3 py-1.5 border border-border rounded-lg text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary/50"
               >
                 {languages.map((lang) => (
                   <option key={lang.id} value={lang.id}>
@@ -357,14 +357,14 @@ export function IDELayout({
                   </option>
                 ))}
               </select>
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted-foreground">
                 {problemTitle}.{languages.find((l) => l.id === language)?.extension}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              <Keyboard className="w-4 h-4 text-slate-400" />
-              <span className="text-xs text-slate-500">Ctrl+S：保存</span>
+              <Keyboard className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Ctrl+S：保存</span>
             </div>
           </div>
 
@@ -374,7 +374,7 @@ export function IDELayout({
           </div>
 
           {/* 编辑器底部 */}
-          <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs text-slate-500">
+          <div className="px-4 py-2 bg-muted border-t border-border flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-4">
               <span>行 {code.split('\n').length}, 列 {code.split('\n').pop()?.length || 0}</span>
               <span>UTF-8</span>

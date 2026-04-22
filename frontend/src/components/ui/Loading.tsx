@@ -14,7 +14,7 @@ export function Loading({ size = 40, className, message }: LoadingProps) {
         className="inline-block animate-spin rounded-full border-4 border-border border-t-primary"
         style={{ width: size, height: size }}
       />
-      {message && <p className="text-sm text-slate-600 dark:text-slate-400">{message}</p>}
+      {message && <p className="text-sm text-muted-foreground">{message}</p>}
     </div>
   )
 }
@@ -28,7 +28,7 @@ export function PageLoading({ message = 'Loading...' }: PageLoadingProps) {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center">
         <Loading size={60} />
-        <p className="mt-4 text-slate-600 dark:text-slate-400">{message}</p>
+        <p className="mt-4 text-muted-foreground">{message}</p>
       </div>
     </div>
   )

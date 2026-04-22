@@ -23,7 +23,7 @@ export function MarkdownEditor({
       readOnly={readOnly}
       spellCheck={false}
       className={`block w-full resize-y border-0 bg-transparent px-4 py-4 font-mono text-sm leading-6 outline-none ${
-        darkMode ? 'text-slate-100 placeholder:text-slate-500' : 'text-slate-900 placeholder:text-slate-400'
+        darkMode ? 'text-foreground placeholder:text-muted-foreground' : 'text-foreground placeholder:text-muted-foreground'
       }`}
       style={{ minHeight }}
     />

@@ -23,21 +23,21 @@ type SubmissionStatusConfig = {
 
 const DEFAULT_STATUS_CONFIG: SubmissionStatusConfig = {
   label: 'Unknown',
-  bgColor: 'bg-slate-100 dark:bg-slate-800',
-  textColor: 'text-slate-600 dark:text-slate-400',
-  borderColor: 'border-slate-300 dark:border-slate-700',
+  bgColor: 'bg-secondary',
+  textColor: 'text-muted-foreground',
+  borderColor: 'border-border',
   icon: 'help',
-  iconColor: 'text-slate-400',
+  iconColor: 'text-muted-foreground',
 }
 
 export const SUBMISSION_STATUS_CONFIG: Record<SubmissionStatus, SubmissionStatusConfig> = {
   pending: {
     label: 'Pending',
-    bgColor: 'bg-slate-100 dark:bg-slate-800',
-    textColor: 'text-slate-600 dark:text-slate-400',
-    borderColor: 'border-slate-300 dark:border-slate-700',
+    bgColor: 'bg-secondary',
+    textColor: 'text-muted-foreground',
+    borderColor: 'border-border',
     icon: 'schedule',
-    iconColor: 'text-slate-400',
+    iconColor: 'text-muted-foreground',
   },
   queued: {
     label: 'Queued',

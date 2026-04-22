@@ -32,8 +32,8 @@ export function ProblemDetailSkeleton({ className }: ProblemDetailSkeletonProps)
       </div>
 
       {/* Description card */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-6 py-4">
           <Skeleton className="h-5 w-28" />
         </div>
         <div className="space-y-3 px-6 py-4">
@@ -44,17 +44,17 @@ export function ProblemDetailSkeleton({ className }: ProblemDetailSkeletonProps)
       </div>
 
       {/* Examples card */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-6 py-4">
           <Skeleton className="h-5 w-24" />
         </div>
         <div className="space-y-4 px-6 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2 rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50">
+            <div className="space-y-2 rounded-lg bg-muted p-4">
               <Skeleton className="h-3 w-12" />
               <Skeleton className="h-10 w-full" />
             </div>
-            <div className="space-y-2 rounded-lg bg-slate-50 p-4 dark:bg-slate-800/50">
+            <div className="space-y-2 rounded-lg bg-muted p-4">
               <Skeleton className="h-3 w-14" />
               <Skeleton className="h-10 w-full" />
             </div>
@@ -63,8 +63,8 @@ export function ProblemDetailSkeleton({ className }: ProblemDetailSkeletonProps)
       </div>
 
       {/* Constraints card */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-6 py-4">
           <Skeleton className="h-5 w-28" />
         </div>
         <div className="space-y-2 px-6 py-4">

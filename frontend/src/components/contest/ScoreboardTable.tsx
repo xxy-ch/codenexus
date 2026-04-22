@@ -23,14 +23,14 @@ function getProblemColumns(entries: ScoreboardEntry[]): Array<{ id: number; titl
 
 function getRankStyle(rank: number) {
   if (rank === 1) return 'text-amber-500'
-  if (rank === 2) return 'text-slate-400'
+  if (rank === 2) return 'text-muted-foreground'
   if (rank === 3) return 'text-amber-700'
   return 'text-foreground'
 }
 
 function getRankBg(rank: number) {
   if (rank === 1) return 'bg-amber-500/5'
-  if (rank === 2) return 'bg-slate-400/5'
+  if (rank === 2) return 'bg-muted-foreground/5'
   if (rank === 3) return 'bg-amber-700/5'
   return ''
 }

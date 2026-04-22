@@ -12,7 +12,7 @@ const statusConfig = {
   memory_limit_exceeded: { label: 'Memory Limit Exceeded', bgColor: 'bg-orange-100 dark:bg-orange-900/30', textColor: 'text-orange-700 dark:text-orange-400' },
   compilation_error: { label: 'Compilation Error', bgColor: 'bg-purple-100 dark:bg-purple-900/30', textColor: 'text-purple-700 dark:text-purple-400' },
   runtime_error: { label: 'Runtime Error', bgColor: 'bg-pink-100 dark:bg-pink-900/30', textColor: 'text-pink-700 dark:text-pink-400' },
-  pending: { label: 'Pending', bgColor: 'bg-gray-100 dark:bg-gray-900/30', textColor: 'text-gray-700 dark:text-gray-400' },
+  pending: { label: 'Pending', bgColor: 'bg-secondary dark:bg-secondary', textColor: 'text-muted-foreground' },
   running: { label: 'Running', bgColor: 'bg-blue-100 dark:bg-blue-900/30', textColor: 'text-blue-700 dark:text-blue-400' },
 }
 
