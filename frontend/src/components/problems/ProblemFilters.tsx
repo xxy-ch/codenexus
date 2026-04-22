@@ -1,33 +1,34 @@
 import { useState } from 'react'
+import { Search, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import type { ProblemFilters } from '@/services/problems'
 
 const difficultyOptions = [
-  { value: 'all', label: 'All Difficulties' },
-  { value: 'easy', label: 'Easy' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'hard', label: 'Hard' },
+  { value: 'all', label: '全部难度' },
+  { value: 'easy', label: '简单' },
+  { value: 'medium', label: '中等' },
+  { value: 'hard', label: '困难' },
 ] as const
 
 const sortOptions = [
-  { value: 'recent', label: 'Recent' },
-  { value: 'popular', label: 'Popular' },
-  { value: 'easy_first', label: 'Easy First' },
-  { value: 'hard_first', label: 'Hard First' },
+  { value: 'recent', label: '最新' },
+  { value: 'popular', label: '热门' },
+  { value: 'easy_first', label: '从简单到困难' },
+  { value: 'hard_first', label: '从困难到简单' },
 ] as const
 
 const popularTags = [
-  'Array',
-  'String',
-  'Linked List',
-  'Tree',
-  'Graph',
-  'Dynamic Programming',
-  'Math',
-  'Sorting',
-  'Binary Search',
-  'Greedy',
+  '数组',
+  '字符串',
+  '链表',
+  '树',
+  '图',
+  '动态规划',
+  '数学',
+  '排序',
+  '二分查找',
+  '贪心',
 ]
 
 interface ProblemFiltersProps {
@@ -86,20 +87,18 @@ export function ProblemFilters({
 
   return (
     <div className="space-y-4">
-      {/* Search and Quick Filters */}
+      {/* Search and filters — Vercel clean */}
       <div className="flex flex-col lg:flex-row gap-4">
-        {/* Search Bar */}
+        {/* Search bar */}
         <form onSubmit={handleSearchSubmit} className="flex-1">
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <span className="material-symbols-outlined text-xl">search</span>
-            </span>
+            <Search className="absolute inset-y-0 left-0 pl-3 h-5 w-5 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Search problems..."
+              placeholder="搜索题目..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white dark:bg-slate-800"
+              className="block w-full pl-10 pr-3 py-2 border border-border rounded-lg text-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background"
             />
             {searchValue && (
               <button
@@ -108,15 +107,15 @@ export function ProblemFilters({
                   setSearchValue('')
                   onFiltersChange({ ...filters, search: '', page: 1 })
                 }}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground"
               >
-                <span className="material-symbols-outlined text-xl">close</span>
+                <X className="w-5 h-5" />
               </button>
             )}
           </div>
         </form>
 
-        {/* Difficulty Filter */}
+        {/* Difficulty filter */}
         <div className="flex gap-2">
           <select
             value={filters.difficulty || 'all'}
@@ -125,7 +124,7 @@ export function ProblemFilters({
                 e.target.value as ProblemFilters['difficulty']
               )
             }
-            className="px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="px-3 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
             {difficultyOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -140,7 +139,7 @@ export function ProblemFilters({
             onChange={(e) =>
               handleSortChange(e.target.value as ProblemFilters['sort'])
             }
-            className="px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50"
+            className="px-3 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
           >
             {sortOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -151,16 +150,14 @@ export function ProblemFilters({
         </div>
       </div>
 
-      {/* Tag Filters */}
+      {/* Tag filters */}
       <div>
         <button
           onClick={() => setShowTagFilters(!showTagFilters)}
-          className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-primary dark:hover:text-primary transition-colors"
+          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
         >
-          <span className="material-symbols-outlined text-lg">
-            {showTagFilters ? 'expand_less' : 'expand_more'}
-          </span>
-          Filter by Tags
+          {showTagFilters ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+          按标签筛选
           {currentTags.length > 0 && (
             <span className="bg-primary/10 text-primary text-xs font-semibold px-2 py-0.5 rounded-full">
               {currentTags.length}
@@ -179,8 +176,8 @@ export function ProblemFilters({
                   className={cn(
                     'px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
                     isSelected
-                      ? 'bg-primary text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-primary hover:text-primary-foreground'
                   )}
                 >
                   {tag}
@@ -190,7 +187,7 @@ export function ProblemFilters({
           </div>
         )}
 
-        {/* Selected Tags */}
+        {/* Selected tags */}
         {currentTags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
             {currentTags.map((tag) => (
@@ -203,7 +200,7 @@ export function ProblemFilters({
                   onClick={() => handleTagToggle(tag)}
                   className="hover:bg-primary/20 rounded-full p-0.5"
                 >
-                  <span className="material-symbols-outlined text-sm">close</span>
+                  <X className="w-4 h-4" />
                 </button>
               </span>
             ))}
@@ -211,18 +208,18 @@ export function ProblemFilters({
         )}
       </div>
 
-      {/* Active Filters Summary and Clear */}
+      {/* Active filter summary and clear */}
       {hasActiveFilters && (
-        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
-          <div className="text-sm text-slate-600 dark:text-slate-400">
-            <span className="font-medium">{totalCount}</span> problems found
+        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium text-foreground">{totalCount}</span> 道题目
             {filters.difficulty !== 'all' && (
               <span className="ml-2">
                 • {difficultyOptions.find((d) => d.value === filters.difficulty)?.label}
               </span>
             )}
             {currentTags.length > 0 && (
-              <span className="ml-2">• {currentTags.length} tags</span>
+              <span className="ml-2">• {currentTags.length} 个标签</span>
             )}
           </div>
           <Button
@@ -231,7 +228,7 @@ export function ProblemFilters({
             onClick={handleClearFilters}
             className="text-sm"
           >
-            Clear Filters
+            清除筛选
           </Button>
         </div>
       )}

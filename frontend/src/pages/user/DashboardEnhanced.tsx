@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import type { UserActivity } from '@/types/users'
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { Activity } from 'lucide-react'
+import { Activity, Code2, Trophy, Flame, CheckCircle, XCircle, Upload, Cpu, Star, Award } from 'lucide-react'
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineError } from '@/components/ui/InlineError'
@@ -87,13 +87,13 @@ export function DashboardEnhanced() {
   const getActivityIcon = (activity: UserActivity) => {
     switch (activity.type) {
       case 'submission':
-        return activity.status === 'accepted' ? 'check_circle' : 'cancel'
+        return activity.status === 'accepted' ? CheckCircle : XCircle
       case 'contest_registration':
-        return 'emoji_events'
+        return Trophy
       case 'achievement':
-        return 'military_tech'
+        return Award
       default:
-        return 'activity'
+        return Activity
     }
   }
 
@@ -111,31 +111,32 @@ export function DashboardEnhanced() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Hero Section — PostHog warm parchment */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-8 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="lg:col-span-8 overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl space-y-4">
-              <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-                Dashboard Overview
+              <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
+                仪表盘概览
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
                   欢迎回来，继续把这周的通过数往上推。
                 </h1>
-                <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
+                <p className="mt-3 text-sm text-muted-foreground">
                   过去 7 天共提交 {totalWeeklySubmissions} 次，成功通过 {solvedThisWeek} 次。当前连续活跃 {userStats.current_streak} 天，保持今天的节奏就能继续拉高排名。
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-6">
+              <div className="flex flex-wrap items-center gap-8">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Global Rank</p>
-                  <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">#{userStats.ranking}</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">全球排名</p>
+                  <p className="mt-1 text-4xl font-extrabold text-foreground">#{userStats.ranking}</p>
                 </div>
-                <div className="h-10 w-px bg-slate-200 dark:bg-slate-700" />
+                <div className="h-12 w-px bg-border" />
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Total Points</p>
-                  <p className="mt-1 text-2xl font-bold text-primary">{userStats.total_points}</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">总积分</p>
+                  <p className="mt-1 text-4xl font-extrabold text-primary">{userStats.total_points}</p>
                 </div>
               </div>
             </div>
@@ -150,7 +151,7 @@ export function DashboardEnhanced() {
                       className="w-full rounded-sm bg-primary/15 transition-colors hover:bg-primary/30"
                       style={{ height }}
                     />
-                    <span className="text-[11px] font-medium text-slate-400">{item.day}</span>
+                    <span className="text-[11px] font-medium text-muted-foreground">{item.day}</span>
                   </div>
                 )
               })}
@@ -158,29 +159,29 @@ export function DashboardEnhanced() {
           </div>
         </div>
 
-        <div className="lg:col-span-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="lg:col-span-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Current Streak</p>
-              <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{userStats.current_streak} 天</p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">最高纪录 {userStats.longest_streak} 天，今天再完成 1 道题就能继续保持。</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">当前连续</p>
+              <p className="mt-2 text-4xl font-extrabold text-foreground">{userStats.current_streak} <span className="text-xl font-semibold text-muted-foreground">天</span></p>
+              <p className="mt-2 text-sm text-muted-foreground">最高纪录 {userStats.longest_streak} 天，今天再完成 1 道题就能继续保持。</p>
             </div>
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-orange-100 text-orange-500 dark:bg-orange-900/30 dark:text-orange-400">
-              <span className="material-symbols-outlined filled">local_fire_department</span>
+              <Flame className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-7 gap-2 text-center text-xs text-slate-500 dark:text-slate-400">
+          <div className="mt-6 grid grid-cols-7 gap-2 text-center text-xs text-muted-foreground">
             {weeklyActivity.map((item, index) => (
               <div key={item.day} className="space-y-2">
                 <div>{item.day}</div>
                 <div className={cn(
                   'flex h-9 w-9 items-center justify-center rounded-full border text-xs font-semibold',
                   index === 6
-                    ? 'border-primary bg-primary text-white shadow-sm shadow-primary/30'
+                    ? 'border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/30'
                     : item['提交'] > 0
                       ? 'border-primary/20 bg-primary/10 text-primary'
-                      : 'border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-700 dark:bg-slate-800'
+                      : 'border-border bg-muted text-muted-foreground'
                 )}>
                   {item['提交'] > 0 ? item['提交'] : '-'}
                 </div>
@@ -190,63 +191,65 @@ export function DashboardEnhanced() {
         </div>
       </section>
 
+      {/* Dark CTA buttons */}
       <div className="flex flex-wrap gap-3">
           <Link to="/problems">
-            <Button variant="primary">
-              <span className="material-symbols-outlined mr-2">code</span>
+            <Button variant="primary" className="bg-primary text-primary-foreground font-semibold">
+              <Code2 className="w-5 h-5 mr-2" />
               开始刷题
             </Button>
           </Link>
           <Link to="/contests">
-            <Button variant="outline">
-              <span className="material-symbols-outlined mr-2">emoji_events</span>
+            <Button variant="outline" className="border-border text-foreground font-semibold hover:bg-muted">
+              <Trophy className="w-5 h-5 mr-2" />
               查看竞赛
             </Button>
           </Link>
       </div>
 
+      {/* PostHog-style large metric cards */}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Weekly Focus</p>
-              <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">本周推进面板</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                这个区域按 reference 的 dashboard operations rail 收拢，把活跃天数、推荐题和最近提交放到同一层级里，减少来回跳页。
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">本周重点</p>
+              <h2 className="mt-2 text-xl font-bold text-foreground">本周推进面板</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                活跃天数、推荐题和最近提交放在同一层级，减少来回跳页。
               </p>
             </div>
-            <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              live data
+            <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
+              实时数据
             </div>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Accepted This Week</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{solvedThisWeek}</p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">来自最近 7 天的通过记录。</p>
+            <div className="rounded-2xl bg-muted p-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">本周通过</p>
+              <p className="mt-3 text-4xl font-extrabold text-foreground">{solvedThisWeek}</p>
+              <p className="mt-2 text-sm text-muted-foreground">来自最近 7 天的通过记录。</p>
             </div>
-            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Recommended Queue</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{recommendedProblems?.length ?? 0}</p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">当前实时推荐题目数量。</p>
+            <div className="rounded-2xl bg-muted p-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">推荐队列</p>
+              <p className="mt-3 text-4xl font-extrabold text-foreground">{recommendedProblems?.length ?? 0}</p>
+              <p className="mt-2 text-sm text-muted-foreground">当前实时推荐题目数量。</p>
             </div>
-            <div className="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Recent Activity</p>
-              <p className="mt-3 text-3xl font-semibold text-slate-950 dark:text-white">{recentActivity?.length ?? 0}</p>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">最新活动流条目数。</p>
+            <div className="rounded-2xl bg-muted p-4">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">最近活动</p>
+              <p className="mt-3 text-4xl font-extrabold text-foreground">{recentActivity?.length ?? 0}</p>
+              <p className="mt-2 text-sm text-muted-foreground">最新活动流条目数。</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Progress Snapshot</p>
-          <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">刷题进度快照</h2>
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">进度快照</p>
+          <h2 className="mt-2 text-xl font-bold text-foreground">刷题进度快照</h2>
           <div className="mt-5 space-y-4">
             {[
-              { label: 'Easy', value: userStats.easy_solved, color: 'bg-emerald-500' },
-              { label: 'Medium', value: userStats.medium_solved, color: 'bg-amber-500' },
-              { label: 'Hard', value: userStats.hard_solved, color: 'bg-rose-500' },
+              { label: '简单', value: userStats.easy_solved, color: 'bg-emerald-500' },
+              { label: '中等', value: userStats.medium_solved, color: 'bg-amber-500' },
+              { label: '困难', value: userStats.hard_solved, color: 'bg-rose-500' },
             ].map((item) => {
               const totalSolved = Math.max(1, userStats.unique_problems_solved)
               const width = Math.max(8, Math.round((item.value / totalSolved) * 100))
@@ -254,87 +257,80 @@ export function DashboardEnhanced() {
               return (
                 <div key={item.label}>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="font-medium text-slate-700 dark:text-slate-300">{item.label}</span>
-                    <span className="text-slate-500 dark:text-slate-400">{item.value}</span>
+                    <span className="font-medium text-foreground">{item.label}</span>
+                    <span className="text-muted-foreground">{item.value}</span>
                   </div>
-                  <div className="mt-2 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div className="mt-2 h-2.5 rounded-full bg-muted">
                     <div className={cn('h-2.5 rounded-full', item.color)} style={{ width: `${width}%` }} />
                   </div>
                 </div>
               )
             })}
           </div>
-          <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-            当前 dashboard 已覆盖真实统计、活动流和推荐题数据。剩余差距主要是 reference 中更激进的多面板编排，而不是数据缺口。
+          <div className="mt-6 rounded-2xl bg-muted p-4 text-sm leading-6 text-muted-foreground">
+            当前仪表盘已覆盖真实统计、活动流和推荐题数据。
           </div>
         </div>
       </section>
 
+      {/* PostHog oversized metric cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="material-symbols-outlined text-3xl text-green-500">
-              check_circle
-            </span>
-            <span className="text-xs text-slate-500">已解决</span>
+            <CheckCircle className="w-8 h-8 text-green-500" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">已解决</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
+          <p className="text-4xl font-extrabold text-foreground">
             {userStats.unique_problems_solved}
           </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             道题目
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="material-symbols-outlined text-3xl text-blue-500">
-              upload
-            </span>
-            <span className="text-xs text-slate-500">总提交</span>
+            <Upload className="w-8 h-8 text-blue-500" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">总提交</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
+          <p className="text-4xl font-extrabold text-foreground">
             {userStats.total_submissions}
           </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             次提交
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="material-symbols-outlined text-3xl text-purple-500">
-              precision_manufacturing
-            </span>
-            <span className="text-xs text-slate-500">准确率</span>
+            <Cpu className="w-8 h-8 text-purple-500" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">准确率</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
+          <p className="text-4xl font-extrabold text-foreground">
             {userStats.accuracy_rate}%
           </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             通过率
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="material-symbols-outlined text-3xl text-orange-500">
-              local_fire_department
-            </span>
-            <span className="text-xs text-slate-500">连续天数</span>
+            <Flame className="w-8 h-8 text-orange-500" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">连续天数</span>
           </div>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white">
+          <p className="text-4xl font-extrabold text-foreground">
             {userStats.current_streak}
           </p>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             天 (最高 {userStats.longest_streak} 天)
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-foreground mb-4">
             本周学习活动
           </h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -350,8 +346,8 @@ export function DashboardEnhanced() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+          <h3 className="text-lg font-bold text-foreground mb-4">
             难度分布
           </h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -377,7 +373,7 @@ export function DashboardEnhanced() {
             {difficultyDistribution.map((item) => (
               <div key={item.name} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                <span className="text-sm text-slate-600 dark:text-slate-400">
+                <span className="text-sm text-muted-foreground">
                   {item.name}: {item.value}
                 </span>
               </div>
@@ -387,9 +383,9 @@ export function DashboardEnhanced() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+        <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            <h3 className="text-lg font-bold text-foreground">
               最近活动
             </h3>
             <Link to="/submissions" className="text-sm text-primary hover:underline">
@@ -398,42 +394,43 @@ export function DashboardEnhanced() {
           </div>
           <div className="space-y-3">
             {recentActivity && recentActivity.length > 0 ? (
-              recentActivity.slice(0, 5).map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                >
-                  <span className={cn('material-symbols-outlined text-xl', getActivityColor(activity))}>
-                    {getActivityIcon(activity)}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    {activity.type === 'submission' && (
-                      <Link
-                        to={`/problems/${activity.problem_id}`}
-                        className="text-sm font-medium text-slate-900 dark:text-white hover:text-primary truncate block"
-                      >
-                        {activity.problem_title}
-                      </Link>
-                    )}
-                    {activity.type === 'contest_registration' && (
-                      <Link
-                        to={`/contests/${activity.contest_id}`}
-                        className="text-sm font-medium text-slate-900 dark:text-white hover:text-primary truncate block"
-                      >
-                        {activity.contest_name}
-                      </Link>
-                    )}
-                    {activity.type === 'achievement' && (
-                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                        解锁成就: {activity.achievement_name}
+              recentActivity.slice(0, 5).map((activity) => {
+                const IconComponent = getActivityIcon(activity)
+                return (
+                  <div
+                    key={activity.id}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                  >
+                    <IconComponent className={cn('w-5 h-5', getActivityColor(activity))} />
+                    <div className="flex-1 min-w-0">
+                      {activity.type === 'submission' && (
+                        <Link
+                          to={`/problems/${activity.problem_id}`}
+                          className="text-sm font-medium text-foreground hover:text-primary truncate block"
+                        >
+                          {activity.problem_title}
+                        </Link>
+                      )}
+                      {activity.type === 'contest_registration' && (
+                        <Link
+                          to={`/contests/${activity.contest_id}`}
+                          className="text-sm font-medium text-foreground hover:text-primary truncate block"
+                        >
+                          {activity.contest_name}
+                        </Link>
+                      )}
+                      {activity.type === 'achievement' && (
+                        <p className="text-sm font-medium text-foreground truncate">
+                          解锁成就: {activity.achievement_name}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(activity.created_at).toLocaleString('zh-CN')}
                       </p>
-                    )}
-                    <p className="text-xs text-slate-500">
-                      {new Date(activity.created_at).toLocaleString('zh-CN')}
-                    </p>
+                    </div>
                   </div>
-                </div>
-              ))
+                )
+              })
             ) : (
               <EmptyState icon={Activity} title="暂无最近活动" description="开始做题后这里会显示你的活动记录" />
             )}
@@ -441,30 +438,26 @@ export function DashboardEnhanced() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+          <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-foreground mb-4">
               排名与积分
             </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-yellow-500">
-                    trophy
-                  </span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">当前排名</span>
+                  <Trophy className="w-5 h-5 text-yellow-500" />
+                  <span className="text-sm text-muted-foreground">当前排名</span>
                 </div>
-                <span className="text-lg font-bold text-slate-900 dark:text-white">
+                <span className="text-2xl font-extrabold text-foreground">
                   #{userStats.ranking}
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-primary">
-                    stars
-                  </span>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">总积分</span>
+                  <Star className="w-5 h-5 text-primary" />
+                  <span className="text-sm text-muted-foreground">总积分</span>
                 </div>
-                <span className="text-lg font-bold text-slate-900 dark:text-white">
+                <span className="text-2xl font-extrabold text-foreground">
                   {userStats.total_points}
                 </span>
               </div>
@@ -472,12 +465,12 @@ export function DashboardEnhanced() {
           </div>
 
           {userStats.achievements && userStats.achievements.length > 0 && (
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                <h3 className="text-lg font-bold text-foreground">
                   最近成就
                 </h3>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                   {userStats.unlocked_achievements}/{userStats.total_achievements}
                 </span>
               </div>
@@ -487,14 +480,12 @@ export function DashboardEnhanced() {
                     key={achievement.id}
                     className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20"
                   >
-                    <span className="material-symbols-outlined text-2xl text-yellow-500">
-                      {achievement.icon}
-                    </span>
+                    <Award className="w-6 h-6 text-yellow-500" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {achievement.name}
                       </p>
-                      <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                      <p className="text-xs text-muted-foreground truncate">
                         {achievement.description}
                       </p>
                     </div>
@@ -507,13 +498,13 @@ export function DashboardEnhanced() {
       </div>
 
       {recommendedProblems && recommendedProblems.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+              <h3 className="text-lg font-bold text-foreground">
                 推荐题目
               </h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 根据您的学习进度智能推荐
               </p>
             </div>
@@ -539,10 +530,10 @@ export function DashboardEnhanced() {
                 <Link
                   key={problem.id}
                   to={`/problems/${problem.id}`}
-                  className="block border border-slate-200 dark:border-slate-800 rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all"
+                  className="block border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <h4 className="font-medium text-slate-900 dark:text-white text-sm line-clamp-2">
+                    <h4 className="font-medium text-foreground text-sm line-clamp-2">
                       {problem.title}
                     </h4>
                   </div>
@@ -550,14 +541,14 @@ export function DashboardEnhanced() {
                     <span className={cn('px-2 py-0.5 rounded text-xs font-medium', difficultyColor)}>
                       {difficultyLabel}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       {problem.points} 分
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs text-slate-500">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>通过率 {problem.acceptance_rate}%</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-2 line-clamp-1">
+                  <p className="text-xs text-muted-foreground mt-2 line-clamp-1">
                     {problem.reason}
                   </p>
                 </Link>
@@ -569,3 +560,4 @@ export function DashboardEnhanced() {
     </div>
   )
 }
+

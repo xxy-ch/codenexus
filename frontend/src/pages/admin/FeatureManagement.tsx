@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Puzzle } from 'lucide-react'
 import api from '@/services/api'
@@ -95,9 +96,9 @@ export function FeatureManagement() {
     label: string
     scopeId: number | null | undefined
   }> = [
-    { scope: 'global', label: 'Global', scopeId: null },
-    { scope: 'campus', label: 'Campus', scopeId: userCampusId },
-    { scope: 'grade', label: 'Grade', scopeId: userGradeId },
+    { scope: 'global', label: '全局', scopeId: null },
+    { scope: 'campus', label: '校区', scopeId: userCampusId },
+    { scope: 'grade', label: '年级', scopeId: userGradeId },
   ]
 
   if (isLoading) {
@@ -107,8 +108,8 @@ export function FeatureManagement() {
   if (error || !registry) {
     return (
       <InlineError
-        title="Feature list load failed"
-        message="Unable to load feature list, please retry"
+        title="功能列表加载失败"
+        message="无法加载功能列表，请重试"
         onRetry={() => refetch()}
       />
     )
@@ -118,8 +119,8 @@ export function FeatureManagement() {
     return (
       <EmptyState
         icon={Puzzle}
-        title="No features registered"
-        description="Feature registry is empty. Please verify backend migration has been executed."
+        title="未注册功能"
+        description="功能注册表为空，请确认后端迁移已执行。"
       />
     )
   }
@@ -159,20 +160,20 @@ export function FeatureManagement() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Feature Management</h1>
+        <h1 className="text-2xl font-bold text-foreground">功能开关管理</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage system feature enable/disable and scope
+          管理系统功能的启用/禁用和作用域覆盖
         </p>
       </div>
 
-      <div className="rounded-lg border">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[200px]">Feature Name</TableHead>
-              <TableHead className="w-[100px]">Default</TableHead>
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="w-[200px] text-xs font-semibold uppercase tracking-widest text-muted-foreground">功能名称</TableHead>
+              <TableHead className="w-[100px] text-xs font-semibold uppercase tracking-widest text-muted-foreground">默认值</TableHead>
               {scopeColumns.map((col) => (
-                <TableHead key={col.scope} className="w-[150px]">
+                <TableHead key={col.scope} className="w-[150px] text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                   {col.label}
                 </TableHead>
               ))}
@@ -183,10 +184,10 @@ export function FeatureManagement() {
               const featureFlags = flagsMap?.[feature.slug] ?? []
 
               return (
-                <TableRow key={feature.slug}>
+                <TableRow key={feature.slug} className="border-border hover:bg-muted/50">
                   <TableCell>
                     <div>
-                      <div className="font-medium">{feature.name}</div>
+                      <div className="text-sm font-medium text-foreground">{feature.name}</div>
                       {feature.description && (
                         <div className="text-xs text-muted-foreground mt-0.5">
                           {feature.description}
@@ -196,7 +197,7 @@ export function FeatureManagement() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={feature.default_enabled ? 'default' : 'secondary'}>
-                      {feature.default_enabled ? 'Enabled' : 'Disabled'}
+                      {feature.default_enabled ? '启用' : '禁用'}
                     </Badge>
                   </TableCell>
                   {scopeColumns.map((col) => {

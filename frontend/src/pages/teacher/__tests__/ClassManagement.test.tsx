@@ -145,7 +145,7 @@ describe('ClassManagement', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /选择 Class B/i }))
     fireEvent.change(screen.getByPlaceholderText('题目 ID'), { target: { value: '101' } })
-    fireEvent.change(screen.getByLabelText('assignment deadline'), { target: { value: '2026-03-20T18:00' } })
+    fireEvent.change(screen.getByLabelText('作业截止时间'), { target: { value: '2026-03-20T18:00' } })
     fireEvent.change(screen.getByPlaceholderText('分值'), { target: { value: '100' } })
     fireEvent.click(screen.getByRole('button', { name: '创建作业' }))
 

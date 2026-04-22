@@ -3,9 +3,8 @@ import { useProblems } from '@/hooks/useProblems'
 import { ProblemTable } from '@/components/problems/ProblemTable'
 import { ProblemFilters } from '@/components/problems/ProblemFilters'
 import { Link } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { FolderOpen } from 'lucide-react'
+import { FolderOpen, History, Trophy } from 'lucide-react'
 import { ProblemListSkeleton } from '@/components/skeletons/ProblemListSkeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineError } from '@/components/ui/InlineError'
@@ -47,118 +46,101 @@ export function ProblemSet() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
+      {/* Header — Vercel clean minimalism */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Problem Repository
-            </span>
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Problems
+          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            题库
+          </span>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
+            题目
           </h1>
           <p className="mt-1 text-sm text-muted-foreground max-w-lg">
-            Browse the problem catalog. Filter by difficulty and topic, then start solving.
+            浏览题库。按难度和主题筛选，然后开始解题。
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/submissions">
-              <span className="material-symbols-outlined text-base mr-1.5">history</span>
-              Submissions
-            </Link>
+          <Button variant="outline" size="sm" render={<Link to="/submissions" />}>
+              <History className="w-4 h-4 mr-1.5" />
+              提交记录
           </Button>
-          <Button size="sm" asChild>
-            <Link to="/contests">
-              <span className="material-symbols-outlined text-base mr-1.5">emoji_events</span>
-              Contests
-            </Link>
+          <Button size="sm" render={<Link to="/contests" />}>
+              <Trophy className="w-4 h-4 mr-1.5" />
+              竞赛
           </Button>
         </div>
       </div>
 
-      {/* Stats row */}
+      {/* Stats row — Vercel shadow-as-border */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-              Total
-            </p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{total}</p>
-          </CardContent>
-        </Card>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            总计
+          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{total}</p>
+        </div>
 
-        <Card className="border-difficulty-easy/20">
-          <CardContent className="p-4">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-difficulty-easy">
-              Easy
-            </p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{easyCount}</p>
-          </CardContent>
-        </Card>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-widest text-difficulty-easy">
+            简单
+          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{easyCount}</p>
+        </div>
 
-        <Card className="border-difficulty-medium/20">
-          <CardContent className="p-4">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-difficulty-medium">
-              Medium
-            </p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{mediumCount}</p>
-          </CardContent>
-        </Card>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-widest text-difficulty-medium">
+            中等
+          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{mediumCount}</p>
+        </div>
 
-        <Card className="border-difficulty-hard/20">
-          <CardContent className="p-4">
-            <p className="text-[11px] font-medium uppercase tracking-wider text-difficulty-hard">
-              Hard
-            </p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{hardCount}</p>
-          </CardContent>
-        </Card>
+        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-widest text-difficulty-hard">
+            困难
+          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{hardCount}</p>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card className="lg:sticky lg:top-2 lg:z-10">
-        <CardContent className="p-4">
-          <ProblemFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            totalCount={total}
-          />
-        </CardContent>
-      </Card>
+      <div className="bg-card rounded-lg border border-border p-4 shadow-sm lg:sticky lg:top-2 lg:z-10">
+        <ProblemFilters
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          totalCount={total}
+        />
+      </div>
 
       {/* Results */}
-      <Card>
-        <CardHeader className="border-b border-border px-6 py-4">
+      <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+        <div className="border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-sm font-medium">Results</CardTitle>
+              <p className="text-sm font-medium text-foreground">结果</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {visibleProblems} of {total} problems
+                {visibleProblems} / {total} 道题目
               </p>
             </div>
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-              <span className="material-symbols-outlined text-sm">tune</span>
-              {filters.sort || 'recent'}
+              筛选: {filters.sort || 'recent'}
             </span>
           </div>
-        </CardHeader>
+        </div>
 
         {problems.length === 0 ? (
           <EmptyState icon={FolderOpen} title="暂无题目" description="还没有发布任何题目" />
         ) : (
           <ProblemTable problems={problems} showSolvedStatus={false} />
         )}
-      </Card>
+      </div>
 
       {/* Pagination */}
-      <Card>
-        <CardContent className="flex items-center justify-between px-5 py-3">
+      <div className="bg-card rounded-lg border border-border px-5 py-3 shadow-sm">
+        <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">
-            Page <span className="font-medium text-foreground">{page}</span> of{' '}
-            <span className="font-medium text-foreground">{totalPages}</span>
+            第 <span className="font-medium text-foreground">{page}</span> 页，共{' '}
+            <span className="font-medium text-foreground">{totalPages}</span> 页
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -167,7 +149,7 @@ export function ProblemSet() {
               disabled={page <= 1}
               onClick={() => setFilters((prev) => ({ ...prev, page: Math.max(1, page - 1) }))}
             >
-              Prev
+              上一页
             </Button>
             <Button
               variant="outline"
@@ -175,11 +157,11 @@ export function ProblemSet() {
               disabled={page >= totalPages}
               onClick={() => setFilters((prev) => ({ ...prev, page: Math.min(totalPages, page + 1) }))}
             >
-              Next
+              下一页
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

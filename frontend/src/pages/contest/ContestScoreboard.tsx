@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { Activity, ChevronRight, RefreshCw, TimerReset, Trophy } from 'lucide-react'
+import { Activity, ChevronRight, RefreshCw, TimerReset, Trophy, Zap } from 'lucide-react'
 import { scoreboardService } from '@/services/scoreboard'
 import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
@@ -31,97 +31,103 @@ export function ContestScoreboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.16),_transparent_35%),linear-gradient(135deg,#eff6ff_0%,#f8fafc_50%,#ffffff_100%)] px-6 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),_transparent_35%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#020617_100%)]">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-                <span>Contest</span>
+    <div className="space-y-5">
+      {/* Hero Header — ClickHouse high-energy scoreboard */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-[#3ecf8e]/5" />
+        <div className="h-1 bg-gradient-to-r from-[#3ecf8e] via-primary to-amber-500" />
+        <div className="relative px-6 py-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>竞赛</span>
                 <ChevronRight className="h-4 w-4" />
-                <span className="font-medium text-slate-900 dark:text-white">Scoreboard</span>
+                <span className="font-semibold text-foreground">实时榜单</span>
               </div>
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">竞赛实时榜单</h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-                  当前榜单按真实竞赛排名接口渲染，每 15 秒自动刷新一次，适合作为交付范围内的 live scoreboard。
+                <h1 className="text-3xl font-black tracking-tight text-foreground">
+                  CodeNexus 实时榜单
+                </h1>
+                <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground font-normal">
+                  实时竞赛排名，每 15 秒自动刷新。数据源自排名接口，不使用前端 fallback。
                 </p>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/70 bg-white/85 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Refresh Window</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">15s</p>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 rounded-full bg-[#3ecf8e]/10 border border-[#3ecf8e]/20 px-4 py-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3ecf8e] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#3ecf8e]"></span>
+                </span>
+                <span className="text-xs font-bold text-[#3ecf8e] uppercase tracking-widest">Live</span>
               </div>
-              <div className="rounded-2xl border border-white/70 bg-white/85 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Source</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">Live API</p>
-              </div>
-              <div className="rounded-2xl border border-white/70 bg-white/85 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Mode</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">Scoreboard</p>
+              <div className="rounded-full border border-border bg-background px-4 py-2">
+                <span className="text-xs font-bold text-foreground uppercase tracking-widest">15s 刷新</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      {/* Status indicators — prominent, high-energy */}
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-blue-100 p-2 text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
-              <RefreshCw className="h-4 w-4" />
+            <div className="rounded-lg bg-[#3ecf8e]/10 p-2">
+              <RefreshCw className="h-4 w-4 text-[#3ecf8e]" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Auto Refresh</p>
-              <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">Enabled</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">自动刷新</p>
+              <p className="mt-0.5 text-sm font-bold text-foreground">已启用</p>
             </div>
           </div>
         </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-amber-100 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
-              <TimerReset className="h-4 w-4" />
+            <div className="rounded-lg bg-amber-500/10 p-2">
+              <TimerReset className="h-4 w-4 text-amber-500" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Polling Interval</p>
-              <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">15 seconds</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">刷新间隔</p>
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-foreground">15 秒</p>
             </div>
           </div>
         </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl bg-emerald-100 p-2 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">
-              <Trophy className="h-4 w-4" />
+            <div className="rounded-lg bg-primary/10 p-2">
+              <Trophy className="h-4 w-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Delivery Scope</p>
-              <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">Live ranking</p>
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">数据来源</p>
+              <p className="mt-0.5 text-sm font-bold text-foreground">实时排名接口</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      {/* Navigation bar */}
+      <div className="flex items-center justify-between rounded-xl border border-border bg-card px-5 py-3">
         <div className="flex items-center gap-3">
-          <div className="rounded-2xl bg-slate-950 p-2 text-white dark:bg-white dark:text-slate-950">
+          <div className="rounded-lg bg-foreground p-1.5 text-background">
             <Activity className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-950 dark:text-white">Live Contest Board</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">榜单源自真实排名接口，不使用前端 fallback。</p>
+            <p className="text-sm font-bold text-foreground">实时竞赛榜单</p>
+            <p className="text-[11px] text-muted-foreground">排名数据源自真实接口，每 15 秒轮询更新。</p>
           </div>
         </div>
         <Link
           to={contestId ? `/contests/${contestId}` : '/contests'}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted transition-colors"
         >
           返回竞赛
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      {/* Scoreboard Table */}
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         <ScoreboardTable entries={data} />
       </div>
     </div>

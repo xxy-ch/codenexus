@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
+import { Clock, Cpu, Loader2, CheckCircle, XCircle, Timer, AlertCircle, ChevronDown, ChevronUp, PartyPopper, RotateCcw, X } from 'lucide-react'
 
 interface SubmissionResult {
   id: string
@@ -28,59 +29,59 @@ interface SubmissionResultProps {
 
 const STATUS_CONFIG = {
   pending: {
-    label: 'Pending',
+    label: '等待中',
     bgColor: 'bg-slate-100 dark:bg-slate-800',
     textColor: 'text-slate-600 dark:text-slate-400',
-    icon: 'schedule',
+    icon: Loader2,
     iconColor: 'text-slate-400',
   },
   running: {
-    label: 'Running',
+    label: '评测中',
     bgColor: 'bg-blue-100 dark:bg-blue-900/30',
     textColor: 'text-blue-700 dark:text-blue-400',
-    icon: 'sync',
+    icon: Loader2,
     iconColor: 'text-blue-500',
   },
   accepted: {
-    label: 'Accepted',
+    label: '通过',
     bgColor: 'bg-green-100 dark:bg-green-900/30',
     textColor: 'text-green-700 dark:text-green-400',
-    icon: 'check_circle',
+    icon: CheckCircle,
     iconColor: 'text-green-500',
   },
   wrong_answer: {
-    label: 'Wrong Answer',
+    label: '答案错误',
     bgColor: 'bg-red-100 dark:bg-red-900/30',
     textColor: 'text-red-700 dark:text-red-400',
-    icon: 'cancel',
+    icon: XCircle,
     iconColor: 'text-red-500',
   },
   time_limit_exceeded: {
-    label: 'Time Limit Exceeded',
+    label: '超时',
     bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
     textColor: 'text-yellow-700 dark:text-yellow-400',
-    icon: 'timer',
+    icon: Timer,
     iconColor: 'text-yellow-500',
   },
   memory_limit_exceeded: {
-    label: 'Memory Limit Exceeded',
+    label: '内存超限',
     bgColor: 'bg-orange-100 dark:bg-orange-900/30',
     textColor: 'text-orange-700 dark:text-orange-400',
-    icon: 'memory',
+    icon: Cpu,
     iconColor: 'text-orange-500',
   },
   compilation_error: {
-    label: 'Compilation Error',
+    label: '编译错误',
     bgColor: 'bg-purple-100 dark:bg-purple-900/30',
     textColor: 'text-purple-700 dark:text-purple-400',
-    icon: 'error',
+    icon: AlertCircle,
     iconColor: 'text-purple-500',
   },
   runtime_error: {
-    label: 'Runtime Error',
+    label: '运行错误',
     bgColor: 'bg-pink-100 dark:bg-pink-900/30',
     textColor: 'text-pink-700 dark:text-pink-400',
-    icon: 'warning',
+    icon: AlertCircle,
     iconColor: 'text-pink-500',
   },
 }
@@ -106,6 +107,7 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
   }, [submission.status])
 
   const currentConfig = STATUS_CONFIG[currentStatus]
+  const StatusIcon = currentConfig.icon
 
   return (
     <div className={cn(
@@ -113,23 +115,21 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
       currentConfig.bgColor,
       currentConfig.textColor.replace('text-', 'border-').replace('dark:', 'dark:border-')
     )}>
-      {/* Header */}
+      {/* 头部 */}
       <div className="px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           {(currentStatus === 'running' || currentStatus === 'pending') && (
-            <div className="animate-spin">
-              <div className="w-5 h-5 border-2 border-current rounded-full border-t-transparent"></div>
-            </div>
+            <StatusIcon className="w-5 h-5 animate-spin" />
           )}
-          <span className={cn('material-symbols-outlined text-2xl', currentConfig.iconColor)}>
-            {currentConfig.icon}
-          </span>
+          {currentStatus !== 'running' && currentStatus !== 'pending' && (
+            <StatusIcon className={cn('w-6 h-6', currentConfig.iconColor)} />
+          )}
           <div>
             <h3 className={cn('font-semibold', currentStatus === 'accepted' ? 'text-green-600 dark:text-green-400' : '')}>
               {currentConfig.label}
             </h3>
             {currentStatus === 'running' && (
-              <p className="text-xs opacity-75">Your code is being judged...</p>
+              <p className="text-xs opacity-75">正在评测您的代码...</p>
             )}
           </div>
         </div>
@@ -141,34 +141,34 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
             onClick={onClose}
             className="text-current opacity-75 hover:opacity-100"
           >
-            <span className="material-symbols-outlined">close</span>
+            <X className="w-5 h-5" />
           </Button>
         )}
       </div>
 
-      {/* Content */}
+      {/* 内容 */}
       {(currentStatus === 'accepted' ||
         currentStatus === 'wrong_answer' ||
         currentStatus === 'time_limit_exceeded' ||
         currentStatus === 'memory_limit_exceeded') && (
         <div className="px-6 py-4 border-t border-current border-opacity-20">
-          {/* Stats */}
+          {/* 统计信息 */}
           <div className="flex items-center gap-6 mb-4">
             {submission.runtime !== undefined && (
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-lg">schedule</span>
+                <Clock className="w-5 h-5" />
                 <span className="text-sm font-medium">{submission.runtime}ms</span>
               </div>
             )}
             {submission.memory !== undefined && (
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-lg">memory</span>
+                <Cpu className="w-5 h-5" />
                 <span className="text-sm font-medium">{submission.memory}MB</span>
               </div>
             )}
           </div>
 
-          {/* Error Message */}
+          {/* 错误信息 */}
           {submission.error && (
             <div className="bg-white dark:bg-slate-900 rounded-lg p-4 mb-4">
               <p className="text-sm font-mono text-slate-800 dark:text-slate-200 whitespace-pre-wrap">
@@ -177,17 +177,15 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
             </div>
           )}
 
-          {/* Test Cases */}
+          {/* 测试用例 */}
           {submission.testCases && submission.testCases.length > 0 && (
             <div>
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="flex items-center gap-2 text-sm font-medium mb-3"
               >
-                <span className="material-symbols-outlined">
-                  {isExpanded ? 'expand_less' : 'expand_more'}
-                </span>
-                Test Cases ({submission.testCases.filter(tc => tc.status === 'passed').length}/{submission.testCases.length} passed)
+                {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                测试用例 ({submission.testCases.filter(tc => tc.status === 'passed').length}/{submission.testCases.length} 通过)
               </button>
 
               {isExpanded && (
@@ -204,11 +202,13 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-lg">
-                            {testCase.status === 'passed' ? 'check_circle' : 'cancel'}
-                          </span>
+                          {testCase.status === 'passed' ? (
+                            <CheckCircle className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-500" />
+                          )}
                           <span className="text-sm font-medium">
-                            Test Case {testCase.id}
+                            测试用例 {testCase.id}
                           </span>
                         </div>
                         {testCase.runtime !== undefined && (
@@ -226,20 +226,20 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
 
                       <div className="mt-2 space-y-1">
                         <div>
-                          <p className="text-xs font-semibold text-slate-500 mb-1">Input:</p>
+                          <p className="text-xs font-semibold text-slate-500 mb-1">输入：</p>
                           <pre className="text-xs bg-slate-50 dark:bg-slate-800 p-2 rounded font-mono">
                             {testCase.input}
                           </pre>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-slate-500 mb-1">Expected:</p>
+                          <p className="text-xs font-semibold text-slate-500 mb-1">期望输出：</p>
                           <pre className="text-xs bg-slate-50 dark:bg-slate-800 p-2 rounded font-mono">
                             {testCase.expectedOutput}
                           </pre>
                         </div>
                         {testCase.actualOutput && (
                           <div>
-                            <p className="text-xs font-semibold text-slate-500 mb-1">Actual:</p>
+                            <p className="text-xs font-semibold text-slate-500 mb-1">实际输出：</p>
                             <pre className="text-xs bg-slate-50 dark:bg-slate-800 p-2 rounded font-mono">
                               {testCase.actualOutput}
                             </pre>
@@ -253,24 +253,24 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
             </div>
           )}
 
-          {/* Actions */}
+          {/* 操作按钮 */}
           <div className="flex gap-3 mt-4">
             {currentStatus === 'accepted' && (
               <Button variant="primary" size="sm">
-                <span className="material-symbols-outlined mr-1">celebration</span>
-                Share Solution
+                <PartyPopper className="w-4 h-4 mr-1" />
+                分享解答
               </Button>
             )}
             {(currentStatus === 'wrong_answer' ||
               currentStatus === 'time_limit_exceeded' ||
               currentStatus === 'memory_limit_exceeded') && (
               <Button variant="outline" size="sm">
-                <span className="material-symbols-outlined mr-1">replay</span>
-                Try Again
+                <RotateCcw className="w-4 h-4 mr-1" />
+                再试一次
               </Button>
             )}
             <Button variant="ghost" size="sm" onClick={onClose}>
-              Close
+              关闭
             </Button>
           </div>
         </div>
@@ -279,7 +279,7 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
   )
 }
 
-// Loading skeleton for submission
+// 提交结果的加载骨架
 export function SubmissionResultSkeleton() {
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
@@ -288,8 +288,8 @@ export function SubmissionResultSkeleton() {
           <div className="w-6 h-6 border-2 border-primary rounded-full border-t-transparent"></div>
         </div>
         <div>
-          <h3 className="font-semibold">Submitting...</h3>
-          <p className="text-sm text-slate-500">Please wait while we judge your solution</p>
+          <h3 className="font-semibold">提交中...</h3>
+          <p className="text-sm text-slate-500">请稍候，正在评测您的解答</p>
         </div>
       </div>
     </div>

@@ -109,8 +109,8 @@ export function ClassFeatureSettings() {
   if (registryError || !registry) {
     return (
       <InlineError
-        title="Feature list load failed"
-        message="Unable to load feature list, please retry"
+        title="功能列表加载失败"
+        message="无法加载功能列表，请重试"
         onRetry={() => refetch()}
       />
     )
@@ -120,8 +120,8 @@ export function ClassFeatureSettings() {
     return (
       <EmptyState
         icon={Puzzle}
-        title="No features registered"
-        description="Feature registry is empty. Please verify backend migration has been executed."
+        title="未注册功能"
+        description="功能注册表为空，请确认后端迁移已执行。"
       />
     )
   }
@@ -166,22 +166,22 @@ export function ClassFeatureSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Class Feature Settings</h1>
+        <h1 className="text-2xl font-bold text-foreground">班级功能开关</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          View and manage effective feature state for your classes
+          查看和管理各班级的功能开关状态
         </p>
       </div>
 
       {classes.length > 1 && (
         <div className="flex items-center gap-3">
-          <label htmlFor="class-select" className="text-sm font-medium">
-            Select Class:
+          <label htmlFor="class-select" className="text-xs font-medium text-muted-foreground">
+            选择班级:
           </label>
           <select
             id="class-select"
             value={effectiveClassId ?? ''}
             onChange={(e) => setSelectedClassId(Number(e.target.value))}
-            className="rounded-md border bg-background px-3 py-1.5 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm text-foreground"
           >
             {classes.map((cls) => (
               <option key={cls.id} value={cls.id}>
@@ -193,25 +193,25 @@ export function ClassFeatureSettings() {
       )}
 
       {!effectiveClassId && classes.length > 1 && (
-        <p className="text-sm text-muted-foreground">Please select a class to view features.</p>
+        <p className="text-sm text-muted-foreground">请选择班级以查看功能开关。</p>
       )}
 
       {effectiveClassId && (
         <div className="space-y-4">
           {featureDisplays.map((feature) => (
-            <Card key={feature.slug}>
+            <Card key={feature.slug} className="border-border bg-card shadow-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>{feature.name}</CardTitle>
+                    <CardTitle className="text-sm text-foreground">{feature.name}</CardTitle>
                     {feature.description && (
-                      <CardDescription className="mt-1">
+                      <CardDescription className="mt-1 text-xs">
                         {feature.description}
                       </CardDescription>
                     )}
                   </div>
                   <Badge variant={feature.enabled ? 'default' : 'secondary'}>
-                    {feature.enabled ? 'Enabled' : 'Disabled'}
+                    {feature.enabled ? '已启用' : '已禁用'}
                   </Badge>
                 </div>
               </CardHeader>

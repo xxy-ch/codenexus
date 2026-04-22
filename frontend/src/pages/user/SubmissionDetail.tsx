@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
 import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
+import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock, Cpu, Code2, Copy, Check } from 'lucide-react'
 
 interface TestCase {
   id: number
@@ -96,220 +97,102 @@ export function SubmissionDetail() {
   const totalTestCases = submission.test_cases?.length || 0
   const statusLabel = statusConfig.label
 
+  const statusPillClass = cn(
+    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+    submission.status === 'accepted'
+      ? 'bg-[#3ecf8e]/10 text-[#3ecf8e]'
+      : submission.status === 'wrong_answer'
+        ? 'bg-red-500/10 text-red-500'
+        : submission.status === 'pending' || submission.status === 'queued'
+          ? 'bg-amber-500/10 text-amber-600'
+          : submission.status === 'time_limit_exceeded'
+            ? 'bg-orange-500/10 text-orange-500'
+            : submission.status === 'runtime_error'
+              ? 'bg-rose-500/10 text-rose-500'
+              : 'bg-muted text-muted-foreground'
+  )
+
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-              <button type="button" className="hover:text-primary" onClick={() => navigate('/problems')}>
-                Problems
+    <div className="space-y-4">
+      {/* Header — compact Supabase bar */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="small" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <button type="button" className="hover:text-foreground transition-colors" onClick={() => navigate('/problems')}>
+                题目
               </button>
-              <span>/</span>
-              <button type="button" className="hover:text-primary" onClick={() => navigate(`/problems/${submission.problem_id}`)}>
+              <span className="text-border">/</span>
+              <button type="button" className="hover:text-foreground transition-colors" onClick={() => navigate(`/problems/${submission.problem_id}`)}>
                 {submission.problem_title}
               </button>
-              <span>/</span>
-              <span className="text-slate-900 dark:text-white">Submission #{submission.id}</span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="small" onClick={() => navigate(-1)}>
-                <span className="material-symbols-outlined">arrow_back</span>
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  Submission #{submission.id}
-                </h1>
-                <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                  {submission.problem_title} 的完整判题分析，包含状态摘要、性能数据和测试用例详情。
-                </p>
-              </div>
+              <span className="text-border">/</span>
+              <span className="font-mono text-foreground">#{submission.id}</span>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className={cn(
-              'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold',
-              statusConfig.bgColor,
-              statusConfig.textColor,
-              statusConfig.borderColor
-            )}>
-              <span className="material-symbols-outlined text-base">{statusConfig.icon}</span>
+          <div className="flex items-center gap-2">
+            <div className={statusPillClass}>
+              {statusConfig.icon === 'check_circle' && <CheckCircle className="w-3.5 h-3.5" />}
+              {statusConfig.icon === 'cancel' && <XCircle className="w-3.5 h-3.5" />}
+              {statusConfig.icon === 'schedule' && <Clock className="w-3.5 h-3.5" />}
+              {statusConfig.icon === 'memory' && <Cpu className="w-3.5 h-3.5" />}
               {statusLabel}
             </div>
             <Link to={`/problems/${submission.problem_id}/solve`}>
-              <Button variant="primary" size="small">
-                <span className="material-symbols-outlined mr-2">replay</span>
+              <Button variant="outline" size="small">
+                <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
                 再次挑战
               </Button>
             </Link>
           </div>
         </div>
-      </section>
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Verdict</p>
-          <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{statusLabel}</p>
+      {/* Stats row — tight metric cards */}
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <div className="border border-border rounded-lg bg-card px-3 py-2.5">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">判题结果</p>
+          <p className={cn(
+            'mt-1 text-base font-semibold tabular-nums',
+            submission.status === 'accepted' ? 'text-[#3ecf8e]' : 'text-foreground'
+          )}>
+            {statusLabel}
+          </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Runtime</p>
-          <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{submission.time_ms !== undefined ? `${submission.time_ms}ms` : '-'}</p>
+        <div className="border border-border rounded-lg bg-card px-3 py-2.5">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">运行时间</p>
+          <p className="mt-1 text-base font-semibold tabular-nums text-foreground font-mono">
+            {submission.time_ms !== undefined ? `${submission.time_ms}ms` : '-'}
+          </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Memory</p>
-          <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{submission.memory_kb !== undefined ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}</p>
+        <div className="border border-border rounded-lg bg-card px-3 py-2.5">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">内存占用</p>
+          <p className="mt-1 text-base font-semibold tabular-nums text-foreground font-mono">
+            {submission.memory_kb !== undefined ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}
+          </p>
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Tests</p>
-          <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-white">{passedTestCases}/{totalTestCases}</p>
+        <div className="border border-border rounded-lg bg-card px-3 py-2.5">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">测试用例</p>
+          <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
+            <span className={passedTestCases === totalTestCases ? 'text-[#3ecf8e]' : ''}>{passedTestCases}</span>
+            <span className="text-muted-foreground">/{totalTestCases}</span>
+          </p>
         </div>
       </div>
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Analysis Summary</p>
-              <h2 className="mt-2 text-xl font-semibold text-slate-900 dark:text-white">判题分析摘要</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                当前详情页已收敛为 verdict、性能、测试点和源码四段式结构。这个摘要层把更新时间、语言和测试完成度拉到状态卡之前，更接近 reference 的分析入口。
-              </p>
-            </div>
-            <div className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              live submission
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Language</p>
-            <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{submission.language}</p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Updated</p>
-            <p className="mt-3 text-sm font-semibold text-slate-900 dark:text-white">
-              {new Date(submission.updated_at).toLocaleString('zh-CN')}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Completion</p>
-            <p className="mt-3 text-lg font-semibold text-slate-900 dark:text-white">{passedTestCases}/{totalTestCases}</p>
-          </div>
-        </div>
-      </section>
-
-      {/* Status Card */}
-      <div className={cn(
-        'rounded-xl border-2 p-6',
-        statusConfig.bgColor,
-        statusConfig.borderColor
-      )}>
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            {(submission.status === 'pending' || submission.status === 'running') && (
-              <div className="animate-spin">
-                <div className="w-8 h-8 border-2 border-current rounded-full border-t-transparent"></div>
-              </div>
-            )}
-            <span className={cn('material-symbols-outlined text-4xl', statusConfig.iconColor)}>
-              {statusConfig.icon}
-            </span>
-            <div>
-              <h2 className={cn('text-2xl font-bold', statusConfig.textColor)}>
-                {statusConfig.label}
-              </h2>
-              {submission.status === 'running' && (
-                <p className="text-sm opacity-75">您的代码正在判题中...</p>
-              )}
-            </div>
-          </div>
-
-          <div className="text-right">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] opacity-75">Updated</p>
-            <p className="mt-1 text-sm font-medium text-slate-900 dark:text-white">
-              {new Date(submission.updated_at).toLocaleString('zh-CN')}
-            </p>
-          </div>
-        </div>
-
-        {/* Stats */}
-        {(submission.status === 'accepted' ||
-          submission.status === 'wrong_answer' ||
-          submission.status === 'time_limit_exceeded' ||
-          submission.status === 'memory_limit_exceeded') && (
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-            {submission.time_ms !== undefined && (
-              <div className="bg-white dark:bg-slate-900 rounded-lg p-3">
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <span className="material-symbols-outlined text-lg">schedule</span>
-                  <span className="text-xs">运行时间</span>
-                </div>
-                <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
-                  {submission.time_ms}ms
-                </p>
-              </div>
-            )}
-            {submission.memory_kb !== undefined && (
-              <div className="bg-white dark:bg-slate-900 rounded-lg p-3">
-                <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <span className="material-symbols-outlined text-lg">memory</span>
-                  <span className="text-xs">内存占用</span>
-                </div>
-                <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
-                  {Math.round(submission.memory_kb / 1024)}MB
-                </p>
-              </div>
-            )}
-            {submission.test_cases && submission.test_cases.length > 0 && (
-              <>
-                <div className="bg-white dark:bg-slate-900 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <span className="material-symbols-outlined text-lg">check_circle</span>
-                    <span className="text-xs">通过测试</span>
-                  </div>
-                  <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
-                    {passedTestCases}/{totalTestCases}
-                  </p>
-                </div>
-                <div className="bg-white dark:bg-slate-900 rounded-lg p-3">
-                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <span className="material-symbols-outlined text-lg">language</span>
-                    <span className="text-xs">编程语言</span>
-                  </div>
-                  <p className="text-xl font-bold text-slate-900 dark:text-white mt-1 capitalize">
-                    {submission.language}
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Error Message */}
-        {(submission.status === 'compilation_error' ||
-          submission.status === 'runtime_error' ||
-          submission.status === 'wrong_answer') && submission.error_message && (
-          <div className="mt-6 bg-white dark:bg-slate-900 rounded-lg p-4">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-              错误信息:
-            </h3>
-            <pre className="text-sm text-red-600 dark:text-red-400 whitespace-pre-wrap font-mono">
-              {submission.error_message}
-            </pre>
-          </div>
-        )}
-      </div>
-
-      {/* Test Cases */}
+      {/* Test Cases — developer-panel style */}
       {submission.test_cases && submission.test_cases.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-            测试用例详情
-          </h3>
-          <div className="space-y-3">
+        <div className="border border-border rounded-xl bg-card overflow-hidden">
+          <div className="px-4 py-3 border-b border-border">
+            <h3 className="text-sm font-medium text-foreground">
+              测试用例详情
+            </h3>
+          </div>
+          <div className="divide-y divide-border">
             {submission.test_cases.map((testCase, index) => {
               const isExpanded = expandedTestCases.has(index)
               const isPassed = testCase.status === 'passed'
@@ -318,66 +201,62 @@ export function SubmissionDetail() {
                 <div
                   key={testCase.id}
                   className={cn(
-                    'rounded-lg border overflow-hidden',
-                    isPassed
-                      ? 'border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/10'
-                      : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10'
+                    isPassed ? '' : ''
                   )}
                 >
                   {/* Test Case Header */}
                   <div
-                    className="flex items-center justify-between p-4 cursor-pointer hover:bg-opacity-80 transition-colors"
+                    className="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => toggleTestCase(index)}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className={cn(
-                        'material-symbols-outlined text-xl',
-                        isPassed ? 'text-green-500' : 'text-red-500'
-                      )}>
-                        {isPassed ? 'check_circle' : 'cancel'}
-                      </span>
-                      <span className="font-medium text-slate-900 dark:text-white">
+                    <div className="flex items-center gap-2.5">
+                      {isPassed ? (
+                        <CheckCircle className="w-4 h-4 text-[#3ecf8e]" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-500" />
+                      )}
+                      <span className="text-sm font-medium text-foreground">
                         测试用例 {testCase.id}
                       </span>
                       {testCase.time_ms !== undefined && (
-                        <span className="text-xs text-slate-500">
+                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
                           {testCase.time_ms}ms
                         </span>
                       )}
                     </div>
                     <span className={cn(
-                      'px-2 py-1 rounded text-xs font-medium',
+                      'rounded-full px-2.5 py-1 text-xs font-medium',
                       isPassed
-                        ? 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200'
-                        : 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200'
+                        ? 'bg-[#3ecf8e]/10 text-[#3ecf8e]'
+                        : 'bg-red-500/10 text-red-500'
                     )}>
-                      {isPassed ? 'Passed' : 'Failed'}
+                      {isPassed ? '通过' : '失败'}
                     </span>
                   </div>
 
                   {/* Test Case Details */}
                   {isExpanded && (
-                    <div className="px-4 pb-4 space-y-3">
+                    <div className="px-4 pb-3 space-y-2.5">
                       {!isPassed && testCase.error && (
-                        <div className="text-xs text-red-600 dark:text-red-400">
+                        <div className="text-xs text-red-500 font-mono">
                           {testCase.error}
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                         <div>
-                          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                            输入:
+                          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-1">
+                            输入
                           </p>
-                          <pre className="text-xs bg-white dark:bg-slate-900 p-3 rounded font-mono overflow-x-auto">
+                          <pre className="text-xs bg-background border border-border p-2.5 rounded-lg font-mono overflow-x-auto text-foreground">
                             {testCase.input}
                           </pre>
                         </div>
                         <div>
-                          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                            期望输出:
+                          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-1">
+                            期望输出
                           </p>
-                          <pre className="text-xs bg-white dark:bg-slate-900 p-3 rounded font-mono overflow-x-auto">
+                          <pre className="text-xs bg-background border border-border p-2.5 rounded-lg font-mono overflow-x-auto text-foreground">
                             {testCase.expected_output}
                           </pre>
                         </div>
@@ -385,14 +264,14 @@ export function SubmissionDetail() {
 
                       {testCase.actual_output && (
                         <div>
-                          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                            实际输出:
+                          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-1">
+                            实际输出
                           </p>
                           <pre className={cn(
-                            'text-xs p-3 rounded font-mono overflow-x-auto',
+                            'text-xs p-2.5 rounded-lg font-mono overflow-x-auto border',
                             testCase.actual_output === testCase.expected_output
-                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
-                              : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200'
+                              ? 'bg-[#3ecf8e]/5 border-[#3ecf8e]/20 text-[#3ecf8e]'
+                              : 'bg-red-500/5 border-red-500/20 text-red-500'
                           )}>
                             {testCase.actual_output}
                           </pre>
@@ -407,74 +286,88 @@ export function SubmissionDetail() {
         </div>
       )}
 
-      <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.15fr)_360px]">
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-4 dark:border-slate-700 dark:bg-slate-800/50">
-            <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white">提交代码</h3>
-              <p className="mt-1 text-xs text-slate-500">
-                语言: {submission.language} • {new Date(submission.created_at).toLocaleString('zh-CN')}
-              </p>
+      {/* Code section — terminal/IDE feel */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="overflow-hidden border border-border rounded-xl bg-card">
+          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">提交代码</span>
+              <span className="text-[11px] font-mono text-muted-foreground">
+                {submission.language}
+              </span>
             </div>
             <Button
               variant="outline"
               size="small"
               onClick={handleCopyCode}
-              className="min-w-[100px]"
             >
-              <span className="material-symbols-outlined mr-2">
-                {copied ? 'check' : 'content_copy'}
-              </span>
-              {copied ? '已复制' : '复制代码'}
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 mr-1" />
+                  已复制
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 mr-1" />
+                  复制
+                </>
+              )}
             </Button>
           </div>
-          <div className="p-6">
-            <pre className="overflow-x-auto rounded-lg bg-slate-50 p-4 font-mono text-sm dark:bg-slate-950">
+          <div className="p-4">
+            <pre className="overflow-x-auto rounded-lg bg-background border border-border p-3 font-mono text-[13px] leading-5 text-foreground">
               <code>{submission.code}</code>
             </pre>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Delivery Note</p>
-            <h3 className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">分析侧栏</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
-              这里把提交元数据、操作者和题目标识提到代码面板右侧，保持和 reference 中“源码主区 + 侧栏摘要”的阅读顺序一致。
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-800/50">
-            <h3 className="mb-4 font-semibold text-slate-900 dark:text-white">提交信息</h3>
-            <div className="space-y-4 text-sm">
+        <div className="space-y-3">
+          {/* Submission metadata sidebar */}
+          <div className="border border-border rounded-xl bg-card p-4">
+            <h3 className="text-sm font-medium text-foreground mb-3">提交信息</h3>
+            <div className="space-y-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">提交时间</p>
-                <p className="mt-1 text-slate-900 dark:text-white">
+                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">提交时间</p>
+                <p className="mt-0.5 text-xs text-foreground">
                   {new Date(submission.created_at).toLocaleString('zh-CN')}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">更新时间</p>
-                <p className="mt-1 text-slate-900 dark:text-white">
+                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">更新时间</p>
+                <p className="mt-0.5 text-xs text-foreground">
                   {new Date(submission.updated_at).toLocaleString('zh-CN')}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">提交用户</p>
-                <p className="mt-1 text-slate-900 dark:text-white">{submission.username}</p>
+                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">提交用户</p>
+                <p className="mt-0.5 text-xs text-foreground">{submission.username}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">题目 ID</p>
-                <p className="mt-1 text-slate-900 dark:text-white">{submission.problem_id}</p>
+                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">题目 ID</p>
+                <p className="mt-0.5 text-xs font-mono text-foreground">{submission.problem_id}</p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">提交 ID</p>
-                <p className="mt-1 text-slate-900 dark:text-white">{submission.id}</p>
+                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">提交 ID</p>
+                <p className="mt-0.5 text-xs font-mono text-foreground">{submission.id}</p>
               </div>
             </div>
           </div>
+
+          {/* Error message if present */}
+          {(submission.status === 'compilation_error' ||
+            submission.status === 'runtime_error' ||
+            submission.status === 'wrong_answer') && submission.error_message && (
+            <div className="border border-red-500/20 rounded-xl bg-red-500/5 p-4">
+              <h3 className="text-sm font-medium text-red-500 mb-2">
+                错误信息
+              </h3>
+              <pre className="text-xs text-red-500 whitespace-pre-wrap font-mono">
+                {submission.error_message}
+              </pre>
+            </div>
+          )}
         </div>
-      </section>
+      </div>
     </div>
   )
 }

@@ -19,9 +19,16 @@ export function PlagiarismReportDetail() {
 
   const riskTone = useMemo(() => {
     const risk = data?.overall_risk?.toLowerCase()
-    if (risk === 'high') return 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300'
-    if (risk === 'medium') return 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-300'
-    return 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-300'
+    if (risk === 'high') return 'border-rose-500/30 bg-rose-500/5 text-rose-400'
+    if (risk === 'medium') return 'border-amber-500/30 bg-amber-500/5 text-amber-400'
+    return 'border-lime-500/30 bg-lime-500/5 text-lime-400'
+  }, [data?.overall_risk])
+
+  const riskLabel = useMemo(() => {
+    const risk = data?.overall_risk?.toLowerCase()
+    if (risk === 'high') return '高风险'
+    if (risk === 'medium') return '中风险'
+    return '低风险'
   }, [data?.overall_risk])
 
   const variantTone = useMemo(() => {
@@ -42,39 +49,44 @@ export function PlagiarismReportDetail() {
 
   return (
     <div className="space-y-6">
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(239,68,68,0.18),_transparent_35%),linear-gradient(135deg,#fff7ed_0%,#fff1f2_45%,#ffffff_100%)] px-6 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(239,68,68,0.22),_transparent_35%),linear-gradient(135deg,#0f172a_0%,#111827_45%,#020617_100%)]">
+      {/* Header */}
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <div className="px-6 py-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="space-y-3">
               <button
                 type="button"
                 onClick={() => navigate('/admin/plagiarism-reports')}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Back To Reports
+                返回报告列表
               </button>
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Plagiarism Detection Report</h1>
-                <p className="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">{data.id}</p>
+                <h1 className="text-2xl font-bold tracking-tight text-foreground">抄袭检测报告</h1>
+                <p className="mt-2 font-mono text-xs text-muted-foreground">{data.id}</p>
               </div>
-              <div className={cn('inline-flex rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em]', riskTone)}>
-                {data.overall_risk} risk · {variantTone}
+              <div className={cn('inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-widest', riskTone)}>
+                <span className={cn(
+                  'h-2 w-2 rounded-full',
+                  data.overall_risk === 'high' ? 'bg-rose-400' : data.overall_risk === 'medium' ? 'bg-amber-400' : 'bg-lime-400',
+                )} />
+                {riskLabel} / {variantTone}
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Status</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">{data.status}</p>
+              <div className="rounded-lg border border-border bg-background px-4 py-3">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">状态</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">{data.status}</p>
               </div>
-              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Pairs</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">{data.suspicious_pairs}</p>
+              <div className="rounded-lg border border-border bg-background px-4 py-3">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">可疑对</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">{data.suspicious_pairs}</p>
               </div>
-              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Submissions</p>
-                <p className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">{data.total_submissions}</p>
+              <div className="rounded-lg border border-border bg-background px-4 py-3">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">提交数</p>
+                <p className="mt-2 text-sm font-semibold text-foreground">{data.total_submissions}</p>
               </div>
             </div>
           </div>
@@ -83,37 +95,38 @@ export function PlagiarismReportDetail() {
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
+          {/* Quick stats */}
           <div className="grid gap-4 lg:grid-cols-3">
-            <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-red-100 p-2 text-red-600 dark:bg-red-950/40 dark:text-red-300">
+                <div className="rounded-lg bg-rose-500/10 p-2 text-rose-400">
                   <ShieldAlert className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Overall Risk</p>
-                  <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">{data.overall_risk}</p>
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground">总体风险</p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">{riskLabel}</p>
                 </div>
               </div>
             </div>
-            <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-amber-100 p-2 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">
+                <div className="rounded-lg bg-amber-500/10 p-2 text-amber-400">
                   <Layers3 className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Contest / Assignment</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{data.contest_id || data.assignment_id || '独立扫描'}</p>
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground">竞赛/作业</p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">{data.contest_id || data.assignment_id || '独立扫描'}</p>
                 </div>
               </div>
             </div>
-            <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-sky-100 p-2 text-sky-600 dark:bg-sky-950/40 dark:text-sky-300">
+                <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400">
                   <FileSearch className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Finished At</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground">完成时间</p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">
                     {data.finished_at ? new Date(data.finished_at).toLocaleString('zh-CN') : '未完成'}
                   </p>
                 </div>
@@ -121,52 +134,53 @@ export function PlagiarismReportDetail() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <div className="border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-              <h2 className="text-lg font-semibold text-slate-950 dark:text-white">可疑提交对</h2>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">按相似度和匹配行数展示当前报告中的主要证据。</p>
+          {/* Suspicious pairs */}
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            <div className="border-b border-border px-6 py-4">
+              <h2 className="text-sm font-semibold text-foreground">可疑提交对</h2>
+              <p className="mt-1 text-xs text-muted-foreground">按相似度和匹配行数展示当前报告中的主要证据。</p>
             </div>
-            <div className="divide-y divide-slate-200 dark:divide-slate-800">
+            <div className="divide-y divide-border">
               {data.top_pairs.length === 0 ? (
                 <div className="px-6 py-16 text-center">
-                  <Flag className="mx-auto h-10 w-10 text-emerald-500" />
-                  <p className="mt-4 text-base font-semibold text-slate-900 dark:text-white">当前报告没有可疑提交对</p>
-                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">这类报告应呈现为清白结论页，而不是强行渲染对比表。</p>
+                  <Flag className="mx-auto h-10 w-10 text-lime-400" />
+                  <p className="mt-4 text-sm font-semibold text-foreground">当前报告没有可疑提交对</p>
+                  <p className="mt-2 text-xs text-muted-foreground">这类报告应呈现为清白结论页。</p>
                 </div>
               ) : (
                 data.top_pairs.map((pair, index) => (
                   <div key={`${pair.left_submission_id}-${pair.right_submission_id}`} className="grid gap-4 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_220px]">
                     <div className="space-y-3">
                       <div className="flex items-center gap-3">
-                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-xs font-semibold text-white dark:bg-white dark:text-slate-950">
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                           {index + 1}
                         </span>
                         <div>
-                          <p className="text-sm font-semibold text-slate-950 dark:text-white">{pair.left_user} vs {pair.right_user}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {pair.left_submission_id} ↔ {pair.right_submission_id}
+                          <p className="text-sm font-semibold text-foreground">{pair.left_user} vs {pair.right_user}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {pair.left_submission_id} / {pair.right_submission_id}
                           </p>
                         </div>
                       </div>
                       <div className="grid gap-3 md:grid-cols-2">
-                        <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Left</p>
-                          <p className="mt-1 font-mono text-xs text-slate-700 dark:text-slate-300">{pair.left_submission_id}</p>
+                        <div className="rounded-lg bg-muted/50 px-4 py-3">
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">左侧</p>
+                          <p className="mt-1 font-mono text-xs text-foreground">{pair.left_submission_id}</p>
                         </div>
-                        <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                          <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Right</p>
-                          <p className="mt-1 font-mono text-xs text-slate-700 dark:text-slate-300">{pair.right_submission_id}</p>
+                        <div className="rounded-lg bg-muted/50 px-4 py-3">
+                          <p className="text-xs uppercase tracking-widest text-muted-foreground">右侧</p>
+                          <p className="mt-1 font-mono text-xs text-foreground">{pair.right_submission_id}</p>
                         </div>
                       </div>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                      <div className="rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Similarity</p>
-                        <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">{(pair.similarity * 100).toFixed(1)}%</p>
+                      <div className="rounded-lg border border-border px-4 py-3">
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground">相似度</p>
+                        <p className="mt-1 text-lg font-bold text-foreground">{(pair.similarity * 100).toFixed(1)}%</p>
                       </div>
-                      <div className="rounded-2xl border border-slate-200 px-4 py-3 dark:border-slate-800">
-                        <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Matched Lines</p>
-                        <p className="mt-1 text-lg font-semibold text-slate-950 dark:text-white">{pair.matched_lines}</p>
+                      <div className="rounded-lg border border-border px-4 py-3">
+                        <p className="text-xs uppercase tracking-widest text-muted-foreground">匹配行数</p>
+                        <p className="mt-1 text-lg font-bold text-foreground">{pair.matched_lines}</p>
                       </div>
                     </div>
                   </div>
@@ -176,29 +190,30 @@ export function PlagiarismReportDetail() {
           </div>
         </div>
 
+        {/* Sidebar */}
         <div className="space-y-4">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Report Timeline</p>
+          <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">报告时间线</p>
             <div className="mt-4 space-y-4">
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Created</p>
-                <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">{new Date(data.created_at).toLocaleString('zh-CN')}</p>
+              <div className="rounded-lg bg-muted/50 px-4 py-3">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">创建时间</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">{new Date(data.created_at).toLocaleString('zh-CN')}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Finished</p>
-                <p className="mt-1 text-sm font-semibold text-slate-950 dark:text-white">
+              <div className="rounded-lg bg-muted/50 px-4 py-3">
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">完成时间</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
                   {data.finished_at ? new Date(data.finished_at).toLocaleString('zh-CN') : '未完成'}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className={cn('rounded-[24px] border p-5 shadow-sm', riskTone)}>
+          <div className={cn('rounded-xl border p-5 shadow-sm', riskTone)}>
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-4 w-4" />
               <div>
                 <p className="text-sm font-semibold">交付边界</p>
-                <p className="mt-2 text-sm leading-6">
+                <p className="mt-2 text-xs leading-6">
                   当前详情页已经根据真实报告数据切出多种展示变体，但还没有实现源码逐段 diff 和人工判定工作流。
                 </p>
               </div>

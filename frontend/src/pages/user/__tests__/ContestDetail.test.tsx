@@ -203,7 +203,9 @@ describe('ContestDetail', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/通过率 80%/)).toBeInTheDocument()
-        expect(screen.getByText(/120 \/ 150/)).toBeInTheDocument()
+        // accepted_count is a bare text node, submission_count is inside "/ N" span
+        expect(screen.getByText('120')).toBeInTheDocument()
+        expect(screen.getByText(/\/\s*150/)).toBeInTheDocument()
       })
     })
 
@@ -420,8 +422,11 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        const backIcon = screen.getByText('arrow_back')
-        expect(backIcon).toBeInTheDocument()
+        // Lucide ArrowLeft renders as an SVG, find by the container button
+        const backSvg = document.querySelector('svg.lucide-arrow-left')
+        expect(backSvg).toBeInTheDocument()
+        const backButton = backSvg?.closest('button')
+        expect(backButton).toBeInTheDocument()
       })
     })
   })

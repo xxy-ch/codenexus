@@ -152,9 +152,11 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/45.*人|participants/i)).toBeInTheDocument()
-        expect(screen.getByText(/128.*人|participants/i)).toBeInTheDocument()
-        expect(screen.getByText(/256.*人|participants/i)).toBeInTheDocument()
+        // Component renders participant count as a bare number with "参与" label above it
+        expect(screen.getByText('45')).toBeInTheDocument()
+        expect(screen.getByText('128')).toBeInTheDocument()
+        expect(screen.getByText('256')).toBeInTheDocument()
+        expect(screen.getAllByText('参与').length).toBeGreaterThanOrEqual(3)
       })
     })
 
@@ -167,9 +169,11 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/4.*题|problems/i)).toBeInTheDocument()
-        expect(screen.getByText(/6.*题|problems/i)).toBeInTheDocument()
-        expect(screen.getByText(/3.*题|problems/i)).toBeInTheDocument()
+        // Component renders problems count as a bare number with "题目" label above it
+        expect(screen.getByText('4')).toBeInTheDocument()
+        expect(screen.getByText('6')).toBeInTheDocument()
+        expect(screen.getByText('3')).toBeInTheDocument()
+        expect(screen.getAllByText('题目').length).toBeGreaterThanOrEqual(3)
       })
     })
   })
@@ -404,9 +408,14 @@ describe('ContestList', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/进行中 \(1\)/)).toBeInTheDocument()
-        expect(screen.getByText(/即将开始 \(1\)/)).toBeInTheDocument()
-        expect(screen.getByText(/已结束 \(1\)/)).toBeInTheDocument()
+        // Section headings are h2 elements; status text also appears in filter buttons and card badges
+        const headings = screen.getAllByRole('heading')
+        const h2Texts = headings.filter(h => h.tagName === 'H2').map(h => h.textContent)
+        expect(h2Texts).toContain('进行中')
+        expect(h2Texts).toContain('即将开始')
+        expect(h2Texts).toContain('已结束')
+        // Count badges are separate span elements (one per status group, each showing "1")
+        expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(3)
       })
     })
   })

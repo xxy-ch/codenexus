@@ -1,18 +1,19 @@
 import { Link, useLocation } from 'react-router-dom'
+import { LayoutDashboard, Terminal, Trophy, MessageSquare, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
   label: string
   path: string
-  icon: string
+  icon: React.ElementType
 }
 
 const navItems: NavItem[] = [
-  { label: '首页', path: '/dashboard', icon: 'dashboard' },
-  { label: '题库', path: '/problems', icon: 'terminal' },
-  { label: '竞赛', path: '/contests', icon: 'trophy' },
-  { label: '讨论', path: '/discussions', icon: 'forum' },
-  { label: '我的', path: '/profile', icon: 'person' },
+  { label: '首页', path: '/dashboard', icon: LayoutDashboard },
+  { label: '题库', path: '/problems', icon: Terminal },
+  { label: '竞赛', path: '/contests', icon: Trophy },
+  { label: '讨论', path: '/discussions', icon: MessageSquare },
+  { label: '我的', path: '/profile', icon: User },
 ]
 
 export function MobileNav() {
@@ -23,6 +24,7 @@ export function MobileNav() {
       <div className="flex items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/')
+          const Icon = item.icon
           return (
             <Link
               key={item.path}
@@ -34,9 +36,7 @@ export function MobileNav() {
                   : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
               )}
             >
-              <span className="material-symbols-outlined text-xl filled">
-                {item.icon}
-              </span>
+              <Icon className="w-5 h-5" />
               <span className="text-xs font-medium truncate">{item.label}</span>
             </Link>
           )

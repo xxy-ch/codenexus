@@ -70,173 +70,170 @@ export function ProblemContentConfig() {
   }
 
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-        <div className="relative px-6 py-7 md:px-8">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_58%,#eff6ff_100%)]" />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Admin</span>
-                <ChevronRight className="h-4 w-4" />
-                <span>Problems</span>
-                <ChevronRight className="h-4 w-4" />
-                <span className="font-medium text-slate-900">Problem Content</span>
-              </div>
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Create / Edit Problem</h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  按 reference 的题面配置页重做。当前保持真实后端支持的字段范围: 标题、描述、难度、时空限制、标签与可见性。
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={!problemId || updateMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save Changes
-              </button>
-            </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Admin</span>
+          <ChevronRight className="h-3.5 w-3.5" />
+          <span>Problems</span>
+          <ChevronRight className="h-3.5 w-3.5" />
+          <span className="font-medium text-foreground">题面配置</span>
+        </div>
+        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">题面配置</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+              编辑题面内容、约束、可见性与说明。当前保持真实后端支持的字段范围。
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!problemId || updateMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            >
+              {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              保存修改
+            </button>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+      {/* Search bar */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="relative max-w-lg flex-1">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={problemId}
               onChange={(e) => setProblemId(e.target.value.trim())}
               placeholder="输入题目 ID"
-              className="w-full rounded-2xl border border-slate-200 py-3 pl-11 pr-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              className="w-full rounded-lg border border-border bg-background py-2.5 pl-11 pr-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
           <button
             type="button"
             onClick={loadProblem}
             disabled={!problemId || loading}
-            className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             加载题目
           </button>
           {(message || error) && (
-            <div className={`text-sm ${message ? 'text-emerald-600' : 'text-rose-600'}`}>{message || error}</div>
+            <div className={`text-sm ${message ? 'text-lime-400' : 'text-rose-400'}`}>{message || error}</div>
           )}
         </div>
-      </section>
+      </div>
 
       {loading ? (
         <FormSkeleton rows={3} />
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_380px]">
-          <section className="space-y-6">
-            <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 px-6 py-5">
-                <div className="flex items-center gap-2 text-lg font-semibold text-slate-950">
-                  <BookText className="h-5 w-5 text-blue-600" />
-                  Basic Information
+          <div className="space-y-6">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+              <div className="border-b border-border px-6 py-5">
+                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <BookText className="h-4 w-4 text-blue-400" />
+                  基本信息
                 </div>
               </div>
               <div className="space-y-5 p-6">
                 <label className="block text-sm">
-                  <span className="font-medium text-slate-700">Problem Title</span>
+                  <span className="text-xs font-medium text-muted-foreground">题目标题</span>
                   <input
                     value={form.title || ''}
                     onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                    className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                    className="mt-2 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </label>
                 <label className="block text-sm">
-                  <span className="font-medium text-slate-700">Description</span>
+                  <span className="text-xs font-medium text-muted-foreground">题目描述</span>
                   <textarea
                     value={form.description || ''}
                     onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                    className="mt-2 min-h-[360px] w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                    className="mt-2 min-h-[360px] w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                     placeholder="输入 Markdown 题面内容"
                   />
                 </label>
               </div>
             </div>
-          </section>
+          </div>
 
           <aside className="space-y-6">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Waypoints className="h-4 w-4 text-emerald-600" />
-                Metadata
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <Waypoints className="h-4 w-4 text-emerald-400" />
+                元数据
               </div>
               <div className="mt-4 space-y-4">
                 <label className="block text-sm">
-                  <span className="text-slate-600">Difficulty</span>
+                  <span className="text-xs text-muted-foreground">难度</span>
                   <select
                     value={form.difficulty || 'easy'}
                     onChange={(e) => setForm((prev) => ({ ...prev, difficulty: e.target.value }))}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   >
-                    <option value="easy">easy</option>
-                    <option value="medium">medium</option>
-                    <option value="hard">hard</option>
+                    <option value="easy">简单</option>
+                    <option value="medium">中等</option>
+                    <option value="hard">困难</option>
                   </select>
                 </label>
                 <label className="block text-sm">
-                  <span className="text-slate-600">Tags</span>
+                  <span className="text-xs text-muted-foreground">标签</span>
                   <input
                     value={tagsText}
                     onChange={(e) => setTagsText(e.target.value)}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                     placeholder="graph, shortest-path"
                   />
                 </label>
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Timer className="h-4 w-4 text-amber-600" />
-                Resource Limits
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <Timer className="h-4 w-4 text-amber-400" />
+                资源限制
               </div>
               <div className="mt-4 grid gap-4">
                 <label className="block text-sm">
-                  <span className="text-slate-600">Time Limit (ms)</span>
+                  <span className="text-xs text-muted-foreground">时间限制 (ms)</span>
                   <input
                     type="number"
                     value={form.time_limit || 1000}
                     onChange={(e) => setForm((prev) => ({ ...prev, time_limit: Number(e.target.value) }))}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-slate-600">Memory Limit (MB)</span>
+                  <span className="text-xs text-muted-foreground">内存限制 (MB)</span>
                   <input
                     type="number"
                     value={form.memory_limit || 256}
                     onChange={(e) => setForm((prev) => ({ ...prev, memory_limit: Number(e.target.value) }))}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </label>
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
-                <Eye className="h-4 w-4 text-violet-600" />
-                Visibility
+            <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <Eye className="h-4 w-4 text-violet-400" />
+                可见性
               </div>
               <div className="mt-4 space-y-4">
                 <select
                   value={form.visibility || 'private'}
                   onChange={(e) => setForm((prev) => ({ ...prev, visibility: e.target.value }))}
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                  className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 >
-                  <option value="private">private</option>
-                  <option value="public">public</option>
+                  <option value="private">私有</option>
+                  <option value="public">公开</option>
                 </select>
-                <label className="flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <label className="flex items-center gap-3 rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground">
                   <input
                     type="checkbox"
                     checked={!!form.is_public}

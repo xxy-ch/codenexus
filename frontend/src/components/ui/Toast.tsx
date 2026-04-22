@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -69,30 +70,32 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
 function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) {
   const config = {
     success: {
-      icon: 'check_circle',
+      icon: CheckCircle,
       bgColor: 'bg-green-100 dark:bg-green-900/30',
       textColor: 'text-green-700 dark:text-green-400',
       borderColor: 'border-green-300 dark:border-green-700',
     },
     error: {
-      icon: 'error',
+      icon: XCircle,
       bgColor: 'bg-red-100 dark:bg-red-900/30',
       textColor: 'text-red-700 dark:text-red-400',
       borderColor: 'border-red-300 dark:border-red-700',
     },
     warning: {
-      icon: 'warning',
+      icon: AlertTriangle,
       bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
       textColor: 'text-yellow-700 dark:text-yellow-400',
       borderColor: 'border-yellow-300 dark:border-yellow-700',
     },
     info: {
-      icon: 'info',
+      icon: Info,
       bgColor: 'bg-blue-100 dark:bg-blue-900/30',
       textColor: 'text-blue-700 dark:text-blue-400',
       borderColor: 'border-blue-300 dark:border-blue-700',
     },
   }[toast.type]
+
+  const Icon = config.icon
 
   return (
     <div
@@ -102,9 +105,7 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
         config.borderColor
       )}
     >
-      <span className={cn('material-symbols-outlined text-xl', config.textColor)}>
-        {config.icon}
-      </span>
+      <Icon className={cn('w-5 h-5', config.textColor)} />
       <div className="flex-1">
         <p className={cn('font-medium', config.textColor)}>{toast.title}</p>
         {toast.message && (
@@ -113,9 +114,9 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       </div>
       <button
         onClick={onRemove}
-        className={cn('material-symbols-outlined text-lg', config.textColor, 'hover:opacity-70')}
+        className={cn('hover:opacity-70', config.textColor)}
       >
-        close
+        <X className="w-5 h-5" />
       </button>
     </div>
   )

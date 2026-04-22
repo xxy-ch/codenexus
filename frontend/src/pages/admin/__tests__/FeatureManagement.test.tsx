@@ -89,15 +89,15 @@ describe('FeatureManagement', () => {
     render(<FeatureManagement />, { wrapper: createWrapper() })
 
     await waitFor(() => {
-      expect(screen.getByText('Feature Management')).toBeInTheDocument()
+      expect(screen.getByText('功能开关管理')).toBeInTheDocument()
     })
 
     // Column headers
-    expect(screen.getByText('Feature Name')).toBeInTheDocument()
-    expect(screen.getByText('Default')).toBeInTheDocument()
-    expect(screen.getByText('Global')).toBeInTheDocument()
-    expect(screen.getByText('Campus')).toBeInTheDocument()
-    expect(screen.getByText('Grade')).toBeInTheDocument()
+    expect(screen.getByText('功能名称')).toBeInTheDocument()
+    expect(screen.getByText('默认值')).toBeInTheDocument()
+    expect(screen.getByText('全局')).toBeInTheDocument()
+    expect(screen.getByText('校区')).toBeInTheDocument()
+    expect(screen.getByText('年级')).toBeInTheDocument()
 
     // Feature rows
     expect(screen.getByText('Direct Messages')).toBeInTheDocument()
@@ -110,7 +110,7 @@ describe('FeatureManagement', () => {
     render(<FeatureManagement />, { wrapper: createWrapper() })
 
     await waitFor(() => {
-      expect(screen.getByText('No features registered')).toBeInTheDocument()
+      expect(screen.getByText('未注册功能')).toBeInTheDocument()
     })
   })
 
@@ -120,7 +120,7 @@ describe('FeatureManagement', () => {
     render(<FeatureManagement />, { wrapper: createWrapper() })
 
     await waitFor(() => {
-      expect(screen.getByText('Feature list load failed')).toBeInTheDocument()
+      expect(screen.getByText('功能列表加载失败')).toBeInTheDocument()
     })
   })
 
@@ -164,7 +164,7 @@ describe('FeatureManagement', () => {
     render(<FeatureManagement />, { wrapper: createWrapper() })
 
     await waitFor(() => {
-      expect(screen.getByText('Feature Management')).toBeInTheDocument()
+      expect(screen.getByText('功能开关管理')).toBeInTheDocument()
     })
     // CampusAdmin: campus + grade writable, global read-only
     const toggles = screen.getAllByRole('switch')

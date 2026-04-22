@@ -20,12 +20,14 @@ export function AdminDashboard() {
 
   if (user?.role && !isAdmin(user.role)) {
     return (
-      <div className="py-16 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-500">
-          <ShieldAlert className="h-7 w-7" />
+      <div className="flex items-center justify-center py-16">
+        <div className="rounded-xl border border-border bg-card p-8 text-center shadow-sm">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <ShieldAlert className="h-7 w-7" />
+          </div>
+          <h2 className="mt-4 text-xl font-bold text-foreground">访问被拒绝</h2>
+          <p className="mt-2 text-sm text-muted-foreground">当前账号不具备管理员权限。</p>
         </div>
-        <h2 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">访问被拒绝</h2>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">当前账号不具备管理员权限。</p>
       </div>
     )
   }
@@ -36,21 +38,24 @@ export function AdminDashboard() {
       description: '查看题库状态、通过率和当前交付范围内的发布视图。',
       href: '/admin/problems',
       icon: BookCopy,
-      tone: 'bg-blue-50 text-blue-700 border-blue-200',
+      accent: 'text-blue-400',
+      bg: 'bg-blue-500/10',
     },
     {
       title: '判题设置',
       description: '维护测试数据、时间空间限制与评测参数。',
       href: '/admin/judge-settings',
       icon: SlidersHorizontal,
-      tone: 'bg-amber-50 text-amber-700 border-amber-200',
+      accent: 'text-amber-400',
+      bg: 'bg-amber-500/10',
     },
     {
       title: '题面配置',
       description: '集中编辑题面内容、约束、可见性与说明。',
       href: '/admin/problem-content',
       icon: LayoutGrid,
-      tone: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      accent: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
     },
     ...(plagiarismEnabled
       ? [
@@ -59,109 +64,115 @@ export function AdminDashboard() {
             description: '调整扫描阈值并发起新的代码相似度任务。',
             href: '/admin/similarity-scan',
             icon: Activity,
-            tone: 'bg-violet-50 text-violet-700 border-violet-200',
+            accent: 'text-violet-400',
+            bg: 'bg-violet-500/10',
           },
           {
             title: '抄袭报告',
             description: '查看真实扫描报告、可疑对照和风险详情。',
             href: '/admin/plagiarism-reports',
             icon: FileSearch,
-            tone: 'bg-rose-50 text-rose-700 border-rose-200',
+            accent: 'text-rose-400',
+            bg: 'bg-rose-500/10',
           },
         ]
       : []),
   ]
 
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-        <div className="relative px-6 py-7 md:px-8">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(37,99,235,0.12),_transparent_38%),linear-gradient(135deg,#ffffff_0%,#f8fafc_55%,#eff6ff_100%)]" />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Admin</span>
-                <ChevronRight className="h-4 w-4" />
-                <span className="font-medium text-slate-900">Overview</span>
-              </div>
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">System Overview</h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  管理端当前只暴露已接入真实后端的能力。页面结构按 reference 收拢，但所有入口仍受真实接口边界约束。
-                </p>
-              </div>
-            </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+          <span className="flex items-center gap-2">
+            <span>Admin</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+            <span className="font-medium text-foreground">系统概览</span>
+          </span>
+        </div>
+        <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">CodeNexus 系统概览</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+              管理端当前只暴露已接入真实后端的能力。页面结构按 reference 收拢，但所有入口仍受真实接口边界约束。
+            </p>
+          </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur">
-                <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Live Modules</div>
-                <div className="mt-3 text-3xl font-semibold text-slate-950">{modules.length}</div>
-                <div className="mt-1 text-sm text-slate-600">已接入真实后端的管理模块</div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-border bg-background p-4">
+              <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">活跃模块</div>
+              <div className="mt-3 text-3xl font-bold text-foreground">{modules.length}</div>
+              <div className="mt-1 text-xs text-muted-foreground">已接入真实后端的管理模块</div>
+            </div>
+            <div className="rounded-lg border border-border bg-primary p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground/70">
+                <Sparkles className="h-3.5 w-3.5" />
+                交付模式
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-950 p-4 text-white shadow-sm">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
-                  <Sparkles className="h-4 w-4" />
-                  Delivery Mode
-                </div>
-                <div className="mt-3 text-2xl font-semibold">Controlled Surface</div>
-                <div className="mt-1 text-sm text-slate-300">无后端支撑的入口已从本次交付面移除</div>
-              </div>
+              <div className="mt-3 text-lg font-bold text-primary-foreground">受控交付面</div>
+              <div className="mt-1 text-xs text-primary-foreground/70">无后端支撑的入口已从本次交付面移除</div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Problem View</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">CRUD</div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">题目管理当前已接通创建、编辑、删除与测试数据维护。</p>
+      {/* Status Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">题目管理</div>
+          <div className="mt-4 text-3xl font-bold text-foreground">CRUD</div>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">题目管理当前已接通创建、编辑、删除与测试数据维护。</p>
         </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Plagiarism</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{plagiarismEnabled ? 'Enabled' : 'Disabled'}</div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">相似度扫描和报告页都已经接入真实接口。</p>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">抄袭检测</div>
+          <div className="mt-4 flex items-center gap-2">
+            <span className={`inline-block h-2.5 w-2.5 rounded-full ${plagiarismEnabled ? 'bg-lime-400' : 'bg-muted-foreground/40'}`} />
+            <span className="text-3xl font-bold text-foreground">{plagiarismEnabled ? '已启用' : '已禁用'}</span>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">相似度扫描和报告页都已经接入真实接口。</p>
         </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Unsupported</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">2</div>
-          <p className="mt-2 text-sm leading-6 text-slate-600">用户管理和举报管理已从主入口移除。</p>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">未开放</div>
+          <div className="mt-4 text-3xl font-bold text-foreground">2</div>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">用户管理和举报管理已从主入口移除。</p>
         </div>
-        <div className="rounded-[24px] border border-blue-200 bg-blue-50 p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Runtime Policy</div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">Real API</div>
-          <p className="mt-2 text-sm leading-6 text-blue-900">不再为管理端页面提供用户可见的 mock fallback。</p>
+        <div className="rounded-xl border border-border bg-accent/50 p-5 shadow-sm">
+          <div className="text-xs font-semibold uppercase tracking-widest text-foreground">运行策略</div>
+          <div className="mt-4 text-3xl font-bold text-foreground">Real API</div>
+          <p className="mt-2 text-xs leading-5 text-muted-foreground">不再为管理端页面提供用户可见的 mock fallback。</p>
         </div>
-      </section>
+      </div>
 
-      <section className="rounded-[28px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900">
+      {/* Notice */}
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-5 py-4 text-sm leading-6 text-amber-200">
         当前后台不是全功能运营平台，而是这次交付范围内的受控后台。不存在真实后端的模块不会继续以假入口形式暴露。
-      </section>
+      </div>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {/* Module Grid */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {modules.map((module) => {
           const Icon = module.icon
           return (
             <Link
               key={module.href}
               to={module.href}
-              className="group rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              className="group rounded-xl border border-border bg-card p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
             >
-              <div className={`inline-flex rounded-2xl border px-3 py-3 ${module.tone}`}>
-                <Icon className="h-5 w-5" />
+              <div className={`inline-flex rounded-lg ${module.bg} p-3`}>
+                <Icon className={`h-5 w-5 ${module.accent}`} />
               </div>
               <div className="mt-5">
-                <h2 className="text-lg font-semibold text-slate-950">{module.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{module.description}</p>
+                <h2 className="text-base font-semibold text-foreground">{module.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{module.description}</p>
               </div>
-              <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-slate-900 transition group-hover:text-blue-700">
-                Open module
+              <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition group-hover:text-primary">
+                进入模块
                 <ArrowRight className="h-4 w-4" />
               </div>
             </Link>
           )
         })}
-      </section>
+      </div>
     </div>
   )
 }

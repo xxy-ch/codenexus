@@ -8,16 +8,29 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineError } from '@/components/ui/InlineError'
 
 const RISK_COLOR: Record<string, string> = {
-  low: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-  high: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  low: 'bg-lime-500/15 text-lime-400',
+  medium: 'bg-amber-500/15 text-amber-400',
+  high: 'bg-rose-500/15 text-rose-400',
 }
 
 const STATUS_COLOR: Record<string, string> = {
-  pending: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  processing: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-  completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-  failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  pending: 'bg-muted text-muted-foreground',
+  processing: 'bg-blue-500/15 text-blue-400',
+  completed: 'bg-lime-500/15 text-lime-400',
+  failed: 'bg-rose-500/15 text-rose-400',
+}
+
+const RISK_LABEL: Record<string, string> = {
+  low: '低风险',
+  medium: '中风险',
+  high: '高风险',
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  pending: '等待中',
+  processing: '处理中',
+  completed: '已完成',
+  failed: '失败',
 }
 
 export function PlagiarismReportList() {
@@ -45,47 +58,47 @@ export function PlagiarismReportList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">抄袭检测报告</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">查看扫描任务结果、风险等级和可疑提交对</p>
+          <h1 className="text-2xl font-bold text-foreground">抄袭检测报告</h1>
+          <p className="text-sm text-muted-foreground">查看扫描任务结果、风险等级和可疑提交对</p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 dark:bg-slate-800">
+          <thead className="bg-muted/50">
             <tr>
-              <th className="px-4 py-3 text-left">报告 ID</th>
-              <th className="px-4 py-3 text-left">对象</th>
-              <th className="px-4 py-3 text-right">提交总数</th>
-              <th className="px-4 py-3 text-right">可疑对数</th>
-              <th className="px-4 py-3 text-left">风险</th>
-              <th className="px-4 py-3 text-left">状态</th>
-              <th className="px-4 py-3 text-left">创建时间</th>
-              <th className="px-4 py-3 text-right">操作</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">报告 ID</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">对象</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">提交总数</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">可疑对数</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">风险</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">状态</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">创建时间</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border">
             {reports.map((report) => (
-              <tr key={report.id} className="border-t border-slate-200 dark:border-slate-800">
-                <td className="px-4 py-3 font-mono text-xs">{report.id}</td>
-                <td className="px-4 py-3">
+              <tr key={report.id} className="transition hover:bg-muted/50">
+                <td className="px-4 py-3 font-mono text-xs text-foreground">{report.id}</td>
+                <td className="px-4 py-3 text-muted-foreground">
                   {report.contest_id ? `contest:${report.contest_id}` : report.assignment_id ? `assignment:${report.assignment_id}` : '-'}
                 </td>
-                <td className="px-4 py-3 text-right">{report.total_submissions}</td>
-                <td className="px-4 py-3 text-right">{report.suspicious_pairs}</td>
+                <td className="px-4 py-3 text-right text-muted-foreground">{report.total_submissions}</td>
+                <td className="px-4 py-3 text-right text-muted-foreground">{report.suspicious_pairs}</td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${RISK_COLOR[report.overall_risk] || RISK_COLOR.low}`}>
-                    {report.overall_risk}
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${RISK_COLOR[report.overall_risk] || RISK_COLOR.low}`}>
+                    {RISK_LABEL[report.overall_risk] || report.overall_risk}
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLOR[report.status] || STATUS_COLOR.pending}`}>
-                    {report.status}
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLOR[report.status] || STATUS_COLOR.pending}`}>
+                    {STATUS_LABEL[report.status] || report.status}
                   </span>
                 </td>
-                <td className="px-4 py-3">{new Date(report.created_at).toLocaleString('zh-CN')}</td>
+                <td className="px-4 py-3 text-xs text-muted-foreground">{new Date(report.created_at).toLocaleString('zh-CN')}</td>
                 <td className="px-4 py-3 text-right">
-                  <Link className="text-primary hover:underline" to={`/admin/plagiarism-reports/${report.id}`}>
+                  <Link className="text-primary hover:underline text-xs font-medium" to={`/admin/plagiarism-reports/${report.id}`}>
                     查看详情
                   </Link>
                 </td>
@@ -107,20 +120,20 @@ export function PlagiarismReportList() {
           type="button"
           onClick={() => setPage((prev) => Math.max(1, prev - 1))}
           disabled={page <= 1}
-          className="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-700 disabled:opacity-50"
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground disabled:opacity-50"
         >
-          Prev
+          上一页
         </button>
-        <span className="text-sm text-slate-600 dark:text-slate-400">
+        <span className="text-xs text-muted-foreground">
           {page} / {totalPages}
         </span>
         <button
           type="button"
           onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
           disabled={page >= totalPages}
-          className="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-700 disabled:opacity-50"
+          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground disabled:opacity-50"
         >
-          Next
+          下一页
         </button>
       </div>
     </div>

@@ -5,24 +5,24 @@ import { problemsService } from '@/services/problems'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
-import { FileText } from 'lucide-react'
+import { FileText, ChevronLeft, ChevronRight, CheckCircle, XCircle, Clock, Cpu, Code2 } from 'lucide-react'
 import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineError } from '@/components/ui/InlineError'
 
 const LANGUAGE_CONFIG = {
-  cpp: { label: 'C++', icon: 'code' },
-  java: { label: 'Java', icon: 'code' },
-  python: { label: 'Python', icon: 'code' },
-  javascript: { label: 'JavaScript', icon: 'javascript' },
-  typescript: { label: 'TypeScript', icon: 'code' },
-  rust: { label: 'Rust', icon: 'code' },
-  go: { label: 'Go', icon: 'code' },
-  csharp: { label: 'C#', icon: 'code' },
-  ruby: { label: 'Ruby', icon: 'code' },
-  php: { label: 'PHP', icon: 'code' },
-  swift: { label: 'Swift', icon: 'code' },
-  kotlin: { label: 'Kotlin', icon: 'code' },
+  cpp: { label: 'C++', icon: Code2 },
+  java: { label: 'Java', icon: Code2 },
+  python: { label: 'Python', icon: Code2 },
+  javascript: { label: 'JavaScript', icon: Code2 },
+  typescript: { label: 'TypeScript', icon: Code2 },
+  rust: { label: 'Rust', icon: Code2 },
+  go: { label: 'Go', icon: Code2 },
+  csharp: { label: 'C#', icon: Code2 },
+  ruby: { label: 'Ruby', icon: Code2 },
+  php: { label: 'PHP', icon: Code2 },
+  swift: { label: 'Swift', icon: Code2 },
+  kotlin: { label: 'Kotlin', icon: Code2 },
 }
 
 export function SubmissionHistory() {
@@ -93,69 +93,56 @@ export function SubmissionHistory() {
   const averageMemory = data.submissions.reduce((sum, submission) => sum + (submission.memory_kb ?? 0), 0) / Math.max(1, data.submissions.length)
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-3">
-            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-primary">
-              Submission Archive
-            </span>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
+    <div className="space-y-4">
+      {/* Header — Supabase developer-tool aesthetic */}
+      <div className="bg-card border border-border rounded-xl p-5">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
                 提交历史
               </h1>
-              <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-                统一查看最近提交的状态、运行表现和语言分布。当前结果集共 {data.total} 条记录，已通过 {acceptedCount} 条。
-              </p>
+              <span className="rounded-full bg-[#3ecf8e]/10 px-2.5 py-1 text-xs font-medium text-[#3ecf8e]">
+                {data.total} 条记录
+              </span>
             </div>
+            <p className="text-sm font-normal text-muted-foreground">
+              查看最近的提交状态、运行表现和语言分布。已通过 {acceptedCount} 条。
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/40">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Current Page</p>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{page}</p>
+          <div className="flex items-center gap-2">
+            <div className="border border-border rounded-lg bg-background px-3 py-2">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">通过</p>
+              <p className="text-lg font-semibold tabular-nums text-[#3ecf8e]">{acceptedCount}</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/40">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Accepted</p>
-              <p className="mt-2 text-2xl font-bold text-green-600 dark:text-green-400">{acceptedCount}</p>
+            <div className="border border-border rounded-lg bg-background px-3 py-2">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">平均耗时</p>
+              <p className="text-lg font-semibold tabular-nums text-foreground">{Math.round(averageRuntime)}ms</p>
             </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/40">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Avg Runtime</p>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{Math.round(averageRuntime)}ms</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/40">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Avg Memory</p>
-              <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">{Math.round(averageMemory / 1024)}MB</p>
+            <div className="border border-border rounded-lg bg-background px-3 py-2">
+              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">平均内存</p>
+              <p className="text-lg font-semibold tabular-nums text-foreground">{Math.round(averageMemory / 1024)}MB</p>
             </div>
           </div>
-        </div>
-      </section>
-
-      <div>
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
-            提交历史
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            共 {data.total} 条提交记录
-          </p>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
-        <div className="flex flex-wrap items-center gap-4">
+      {/* Filter bar — compact, border-defined */}
+      <div className="bg-card border border-border rounded-xl px-4 py-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              状态:
+            <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              状态
             </span>
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <button
                 onClick={() => handleStatusFilter('all')}
                 className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
+                  'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
                   statusFilter === 'all'
-                    ? 'bg-primary text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
                 全部
@@ -163,37 +150,39 @@ export function SubmissionHistory() {
               <button
                 onClick={() => handleStatusFilter('accepted')}
                 className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
+                  'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
                   statusFilter === 'accepted'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    ? 'bg-[#3ecf8e]/15 text-[#3ecf8e]'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                Accepted
+                通过
               </button>
               <button
                 onClick={() => handleStatusFilter('wrong_answer')}
                 className={cn(
-                  'px-3 py-1.5 text-xs font-medium rounded-lg transition-colors',
+                  'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
                   statusFilter === 'wrong_answer'
-                    ? 'bg-red-500 text-white'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    ? 'bg-red-500/10 text-red-500'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
-                Wrong Answer
+                答案错误
               </button>
             </div>
           </div>
 
+          <div className="h-4 w-px bg-border" />
+
           <div className="flex items-center gap-2">
-            <label htmlFor="language-filter" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              语言:
+            <label htmlFor="language-filter" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              语言
             </label>
             <select
               id="language-filter"
               value={languageFilter}
               onChange={(e) => handleLanguageFilter(e.target.value)}
-              className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-sm bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
             >
               <option value="all">全部语言</option>
               {Object.entries(LANGUAGE_CONFIG).map(([key, config]) => (
@@ -206,89 +195,94 @@ export function SubmissionHistory() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Result Ledger</h3>
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">按时间倒序展示，点击任一行进入提交详情分析。</p>
-          </div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-            <span className="material-symbols-outlined text-sm">tune</span>
-            {statusFilter === 'all' ? 'All Status' : getSubmissionStatusConfig(statusFilter).label}
-          </div>
-        </div>
+      {/* Table — dense, border-defined, developer-tool feel */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+            <thead className="border-b border-border">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                   状态
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                   题目
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                   语言
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                   运行时间
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                   内存
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                   提交时间
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+            <tbody className="divide-y divide-border">
               {data.submissions.map((submission) => {
                 const statusConfig = getSubmissionStatusConfig(submission.status)
                 const languageConfig = LANGUAGE_CONFIG[submission.language as keyof typeof LANGUAGE_CONFIG] || {
                   label: submission.language,
-                  icon: 'code',
+                  icon: Code2,
                 }
+                const IconComponent = languageConfig.icon
+
+                const statusPillClass = cn(
+                  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+                  submission.status === 'accepted'
+                    ? 'bg-[#3ecf8e]/10 text-[#3ecf8e]'
+                    : submission.status === 'wrong_answer'
+                      ? 'bg-red-500/10 text-red-500'
+                      : submission.status === 'pending' || submission.status === 'queued'
+                        ? 'bg-amber-500/10 text-amber-600'
+                        : submission.status === 'time_limit_exceeded'
+                          ? 'bg-orange-500/10 text-orange-500'
+                          : submission.status === 'runtime_error'
+                            ? 'bg-rose-500/10 text-rose-500'
+                            : 'bg-muted text-muted-foreground'
+                )
 
                 return (
                   <tr
                     key={submission.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                    className="hover:bg-muted/50 transition-colors cursor-pointer"
                     onClick={() => navigate(`/submissions/${submission.id}`)}
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={cn(
-                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium',
-                        statusConfig.bgColor,
-                        statusConfig.textColor
-                      )}>
-                        <span className="material-symbols-outlined text-sm">
-                          {statusConfig.icon}
-                        </span>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <div className={statusPillClass}>
+                        {statusConfig.icon === 'check_circle' && <CheckCircle className="w-3.5 h-3.5" />}
+                        {statusConfig.icon === 'cancel' && <XCircle className="w-3.5 h-3.5" />}
+                        {statusConfig.icon === 'schedule' && <Clock className="w-3.5 h-3.5" />}
+                        {statusConfig.icon === 'memory' && <Cpu className="w-3.5 h-3.5" />}
                         {statusConfig.label}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-slate-900 dark:text-white">
+                    <td className="px-4 py-2.5">
+                      <span className="text-sm font-medium text-foreground">
                         {submission.problem_title}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <IconComponent className="w-3.5 h-3.5" />
+                        <span className="font-mono text-xs">{languageConfig.label}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-700 dark:text-slate-300">
-                        {languageConfig.label}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-700 dark:text-slate-300">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
                         {submission.time_ms ? `${submission.time_ms}ms` : '-'}
-                      </div>
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-700 dark:text-slate-300">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
                         {submission.memory_kb ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}
-                      </div>
+                      </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-slate-600 dark:text-slate-400">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span className="text-xs text-muted-foreground">
                         {new Date(submission.created_at).toLocaleString('zh-CN', {
                           year: 'numeric',
                           month: '2-digit',
@@ -296,7 +290,7 @@ export function SubmissionHistory() {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
-                      </div>
+                      </span>
                     </td>
                   </tr>
                 )
@@ -306,18 +300,18 @@ export function SubmissionHistory() {
         </div>
 
         {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-            <div className="text-sm text-slate-600 dark:text-slate-400">
-              第 {page} 页，共 {totalPages} 页
-            </div>
-            <div className="flex items-center gap-2">
+          <div className="px-4 py-3 border-t border-border flex items-center justify-between">
+            <span className="text-xs text-muted-foreground font-mono">
+              {page} / {totalPages}
+            </span>
+            <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="small"
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page === 1}
               >
-                <span className="material-symbols-outlined">chevron_left</span>
+                <ChevronLeft className="w-4 h-4 mr-1" />
                 上一页
               </Button>
               <Button
@@ -327,7 +321,7 @@ export function SubmissionHistory() {
                 disabled={page === totalPages}
               >
                 下一页
-                <span className="material-symbols-outlined">chevron_right</span>
+                <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </div>

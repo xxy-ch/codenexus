@@ -53,10 +53,10 @@ export function Profile() {
 
   const summaryCards = useMemo(
     () => [
-      { label: '已解决题目', value: stats?.unique_problems_solved ?? 0 },
-      { label: '提交次数', value: stats?.total_submissions ?? 0 },
-      { label: '通过率', value: `${Math.round((stats?.accuracy_rate ?? 0) * 100)}%` },
-      { label: '全站排名', value: stats?.ranking ?? '-' },
+      { label: '已解决题目', value: stats?.unique_problems_solved ?? 0, icon: '🎯' },
+      { label: '提交次数', value: stats?.total_submissions ?? 0, icon: '📝' },
+      { label: '通过率', value: `${Math.round((stats?.accuracy_rate ?? 0) * 100)}%`, icon: '✅' },
+      { label: '全站排名', value: stats?.ranking ?? '-', icon: '🏆' },
     ],
     [stats]
   )
@@ -74,35 +74,36 @@ export function Profile() {
 
   return (
     <div className="space-y-6">
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_32%),linear-gradient(135deg,#eff6ff_0%,#eef2ff_50%,#ffffff_100%)] px-6 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),_transparent_35%),linear-gradient(135deg,#0f172a_0%,#111827_48%,#020617_100%)]">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="flex items-start gap-5">
-              <div className="flex h-24 w-24 items-center justify-center rounded-[28px] bg-slate-950 text-3xl font-semibold text-white shadow-lg dark:bg-white dark:text-slate-950">
+      {/* Profile hero card — warm editorial feel */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        <div className="p-6">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 text-xl font-semibold text-primary shrink-0">
                 {profile.username.charAt(0).toUpperCase()}
               </div>
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-600 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Account Center
+              <div className="space-y-2 min-w-0">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-xs font-medium text-primary">个人中心</span>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
-                    {profile.display_name || profile.username}
-                  </h1>
-                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">@{profile.username}</p>
-                </div>
-                <div className="flex flex-wrap gap-3 text-sm text-slate-600 dark:text-slate-300">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 dark:bg-slate-900/70">
-                    <ShieldCheck className="h-4 w-4" />
+                <h1 className="text-2xl font-semibold text-card-foreground leading-relaxed truncate">
+                  {profile.display_name || profile.username}
+                </h1>
+                <p className="text-sm font-normal text-muted-foreground leading-relaxed">
+                  @{profile.username}
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                    <ShieldCheck className="h-3.5 w-3.5" />
                     {profile.role}
                   </span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 dark:bg-slate-900/70">
-                    <IdCard className="h-4 w-4" />
-                    Org #{profile.organization_id}
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                    <IdCard className="h-3.5 w-3.5" />
+                    组织 #{profile.organization_id}
                   </span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 dark:bg-slate-900/70">
-                    <CalendarDays className="h-4 w-4" />
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                    <CalendarDays className="h-3.5 w-3.5" />
                     {new Date(profile.created_at).toLocaleDateString('zh-CN')}
                   </span>
                 </div>
@@ -110,8 +111,8 @@ export function Profile() {
             </div>
 
             {currentUser?.id === profile.id && (
-              <Button variant="outline" onClick={() => setIsEditing((prev) => !prev)}>
-                <PencilLine className="mr-2 h-4 w-4" />
+              <Button variant="outline" size="sm" onClick={() => setIsEditing((prev) => !prev)} className="shrink-0">
+                <PencilLine className="mr-1.5 h-3.5 w-3.5" />
                 {isEditing ? '取消编辑' : '编辑资料'}
               </Button>
             )}
@@ -119,34 +120,37 @@ export function Profile() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Summary stat cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {summaryCards.map((item) => (
-          <div key={item.label} className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{item.label}</p>
-            <p className="mt-3 text-2xl font-semibold text-slate-950 dark:text-white">{item.value}</p>
+          <div key={item.label} className="rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-sm">
+            <p className="text-xs font-medium text-muted-foreground leading-relaxed">{item.label}</p>
+            <p className="mt-2 text-2xl font-semibold text-card-foreground tabular-nums">{item.value}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Recent Activity</p>
-              <h2 className="mt-2 text-lg font-semibold text-slate-950 dark:text-white">最近活动</h2>
-            </div>
+      {/* Main content grid */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        {/* Recent activity */}
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-semibold text-card-foreground">最近活动</h2>
+            <span className="text-xs font-medium text-muted-foreground">近期动态</span>
           </div>
-          <div className="mt-5 space-y-3">
+          <div className="space-y-3">
             {(activities || []).map((activity) => (
-              <div key={activity.id} className="rounded-2xl bg-slate-50 px-4 py-4 dark:bg-slate-900">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950 dark:text-white">{getActivityLabel(activity.type)}</p>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <div key={activity.id} className="rounded-lg bg-muted/50 px-4 py-3 transition-colors hover:bg-muted">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-card-foreground">{getActivityLabel(activity.type)}</p>
+                    <p className="mt-0.5 text-sm text-muted-foreground truncate">
                       {activity.problem_title || activity.contest_name || activity.achievement_name || '-'}
                     </p>
                   </div>
-                  <span className="text-xs text-slate-400">{new Date(activity.created_at).toLocaleString('zh-CN')}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    {new Date(activity.created_at).toLocaleString('zh-CN')}
+                  </span>
                 </div>
               </div>
             ))}
@@ -154,56 +158,57 @@ export function Profile() {
           </div>
         </div>
 
+        {/* Sidebar: identity + edit form */}
         <div className="space-y-4">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Identity</p>
-            <div className="mt-5 space-y-4">
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Username</p>
-                <p className="mt-1 font-semibold text-slate-950 dark:text-white">{profile.username}</p>
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">身份信息</h3>
+            <div className="space-y-3">
+              <div className="rounded-lg bg-muted/50 px-4 py-3">
+                <p className="text-xs text-muted-foreground">用户名</p>
+                <p className="mt-0.5 text-sm font-medium text-card-foreground">{profile.username}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Email</p>
-                <p className="mt-1 font-semibold text-slate-950 dark:text-white">{profile.email || '未设置'}</p>
+              <div className="rounded-lg bg-muted/50 px-4 py-3">
+                <p className="text-xs text-muted-foreground">邮箱</p>
+                <p className="mt-0.5 text-sm font-medium text-card-foreground">{profile.email || '未设置'}</p>
               </div>
-              <div className="rounded-2xl bg-slate-50 px-4 py-3 dark:bg-slate-900">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Campus</p>
-                <p className="mt-1 font-semibold text-slate-950 dark:text-white">{profile.campus_id ? `Campus #${profile.campus_id}` : '未绑定'}</p>
+              <div className="rounded-lg bg-muted/50 px-4 py-3">
+                <p className="text-xs text-muted-foreground">校区</p>
+                <p className="mt-0.5 text-sm font-medium text-card-foreground">{profile.campus_id ? `校区 #${profile.campus_id}` : '未绑定'}</p>
               </div>
             </div>
           </div>
 
           {isEditing && (
-            <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-              <div className="flex items-center gap-2 text-slate-900 dark:text-white">
-                <Mail className="h-4 w-4" />
-                <h2 className="text-lg font-semibold">编辑资料</h2>
+            <div className="rounded-xl border border-border bg-card p-6">
+              <div className="flex items-center gap-2 mb-5">
+                <Mail className="h-4 w-4 text-primary" />
+                <h2 className="text-base font-semibold text-card-foreground">编辑资料</h2>
               </div>
-              <div className="mt-5 space-y-4">
+              <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-sm font-medium">显示名称</label>
+                  <label className="mb-1.5 block text-sm font-medium text-card-foreground">显示名称</label>
                   <input
                     type="text"
                     value={editForm.display_name}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, display_name: e.target.value }))}
-                    className="w-full rounded-xl border px-4 py-3"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
                   />
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-medium">邮箱</label>
+                  <label className="mb-1.5 block text-sm font-medium text-card-foreground">邮箱</label>
                   <input
                     type="email"
                     value={editForm.email}
                     onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
-                    className="w-full rounded-xl border px-4 py-3"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
                   />
                 </div>
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setIsEditing(false)}>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setIsEditing(false)}>
                     取消
                   </Button>
                   <Button
-                    variant="primary"
+                    size="sm"
                     onClick={() =>
                       updateProfileMutation.mutate({
                         display_name: editForm.display_name || undefined,

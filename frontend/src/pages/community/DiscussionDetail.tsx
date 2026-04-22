@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Eye, MessageCircle, ThumbsUp, Edit3, CornerDownRight, X, Pin, CheckCircle, Lock, BookOpen, Send, RefreshCw } from 'lucide-react'
 import { discussionsApi } from '@/services/discussionsApi'
 import type { DiscussionDetail, DiscussionReply } from '@/types/community'
 import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
 import { useDiscussionUpdates } from '@/hooks/useCommunityUpdates'
 import { useAuth } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 
 export function DiscussionDetail() {
   const { id } = useParams<{ id: string }>()
@@ -21,7 +23,6 @@ export function DiscussionDetail() {
   const [liked, setLiked] = useState(false)
   const [likedReplies, setLikedReplies] = useState<Record<number, boolean>>({})
 
-  // WebSocket real-time updates
   const { update } = useDiscussionUpdates(id ? parseInt(id) : undefined)
 
   useEffect(() => {
@@ -44,10 +45,8 @@ export function DiscussionDetail() {
     fetchDiscussion()
   }, [id])
 
-  // Handle real-time reply updates
   useEffect(() => {
     if (update && discussion) {
-      // Add new reply to the discussion
       const newReply: DiscussionReply = {
         id: update.reply_id,
         discussion_id: update.discussion_id,
@@ -80,9 +79,7 @@ export function DiscussionDetail() {
         parent_reply_id: typeof parentReplyId === 'number' ? parentReplyId : undefined,
       })
 
-      // Add reply to the discussion
       if (typeof parentReplyId === 'number') {
-        // Nested reply - add to parent's replies
         setDiscussion((prev) => {
           if (!prev) return null
           const addNestedReply = (replies: DiscussionReply[]): DiscussionReply[] => {
@@ -108,7 +105,6 @@ export function DiscussionDetail() {
           }
         })
       } else {
-        // Top-level reply
         setDiscussion((prev) => {
           if (!prev) return null
           return {
@@ -199,66 +195,64 @@ export function DiscussionDetail() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleString()
+    return date.toLocaleString('zh-CN')
   }
 
   const renderReplies = (replies: DiscussionReply[], depth = 0) => {
     return replies.map((reply) => (
       <div
         key={reply.id}
-        className={`${depth > 0 ? 'ml-8 mt-4' : 'mt-4'} bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4`}
+        className={cn(
+          depth > 0 ? 'ml-8 mt-4' : 'mt-6',
+          'bg-background rounded-xl p-5'
+        )}
       >
-        {/* Reply Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-semibold text-primary">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-xs font-bold text-primary">
                 {reply.author_username.charAt(0).toUpperCase()}
               </span>
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
+            <span className="text-sm font-medium text-foreground">
               {reply.author_username}
             </span>
             {reply.is_solution && (
-              <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                <span className="material-icons text-[14px]">check_circle</span>
-                Solution
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-600">
+                <CheckCircle className="h-3 w-3" />
+                最佳答案
               </span>
             )}
           </div>
-          <span className="text-xs text-text-muted">{formatDate(reply.created_at)}</span>
+          <span className="text-xs text-muted-foreground">{formatDate(reply.created_at)}</span>
         </div>
 
-        {/* Reply Content */}
-        <div className="text-sm text-gray-700 dark:text-gray-300 mb-3 whitespace-pre-wrap">
+        <div className="text-sm text-muted-foreground leading-relaxed mb-4 whitespace-pre-wrap">
           {reply.content}
         </div>
 
-        {/* Reply Actions */}
         <div className="flex items-center gap-4 text-sm">
           <button
             onClick={() => setParentReplyId(reply.id)}
-            className="flex items-center gap-1 text-text-muted hover:text-primary transition-colors"
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition"
           >
-            <span className="material-icons text-base">reply</span>
-            Reply
+            <CornerDownRight className="h-3.5 w-3.5" />
+            回复
           </button>
           <button
             onClick={() => handleReplyLike(reply.id)}
-            className={`flex items-center gap-1 transition-colors ${
+            className={cn(
+              'flex items-center gap-1.5 transition',
               likedReplies[reply.id]
                 ? 'text-primary'
-                : 'text-text-muted hover:text-primary'
-            }`}
+                : 'text-muted-foreground hover:text-primary'
+            )}
           >
-            <span className="material-icons text-base">
-              {likedReplies[reply.id] ? 'thumb_up' : 'thumb_up_off_alt'}
-            </span>
+            <ThumbsUp className="h-3.5 w-3.5" />
             {reply.like_count}
           </button>
         </div>
 
-        {/* Nested Replies */}
         {reply.replies && reply.replies.length > 0 && renderReplies(reply.replies, depth + 1)}
       </div>
     ))
@@ -274,17 +268,14 @@ export function DiscussionDetail() {
 
   if (!discussion) {
     return (
-      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <span className="material-icons text-6xl text-text-muted mb-4">error_outline</span>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Discussion not found
-          </h2>
+          <h2 className="text-xl font-bold text-foreground mb-2">讨论未找到</h2>
           <button
             onClick={() => navigate('/discussions')}
-            className="mt-4 px-6 py-2 bg-primary text-white rounded-lg"
+            className="mt-4 rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground"
           >
-            Back to Discussions
+            返回讨论区
           </button>
         </div>
       </div>
@@ -292,188 +283,182 @@ export function DiscussionDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Header */}
-      <header className="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/discussions')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <span className="material-icons text-gray-600 dark:text-gray-400">arrow_back</span>
-            </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white truncate">
-              Discussion
-            </h1>
+    <div className="space-y-8">
+      {/* Navigation */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => navigate('/discussions')}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          返回讨论区
+        </button>
+      </div>
+
+      {/* Discussion Card */}
+      <article className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-8">
+          {/* Tags */}
+          <div className="flex items-center gap-2 mb-5 flex-wrap">
+            {discussion.discussion.is_pinned && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                <Pin className="h-3 w-3" />
+                置顶
+              </span>
+            )}
+            {discussion.discussion.is_solved && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">
+                <CheckCircle className="h-3 w-3" />
+                已解决
+              </span>
+            )}
+            {discussion.discussion.is_locked && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted-foreground/10 px-3 py-1 text-xs font-medium text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                已锁定
+              </span>
+            )}
+            {discussion.problem && (
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                {discussion.problem.title}
+              </span>
+            )}
+            {discussion.discussion.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+              >
+                #{t}
+              </span>
+            ))}
           </div>
-        </div>
-      </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Discussion */}
-        <article className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden mb-6">
-          <div className="p-6">
-            {/* Tags */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              {discussion.discussion.is_pinned && (
-                <span className="bg-primary/10 text-primary text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase">
-                  Pinned
-                </span>
-              )}
-              {discussion.discussion.is_solved && (
-                <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2.5 py-0.5 rounded-full font-medium flex items-center gap-1">
-                  <span className="material-icons text-[14px]">check_circle</span>
-                  Solved
-                </span>
-              )}
-              {discussion.discussion.is_locked && (
-                <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                  <span className="material-icons text-[14px]">lock</span>
-                  Locked
-                </span>
-              )}
-              {discussion.problem && (
-                <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs px-2 py-0.5 rounded-full font-medium">
-                  {discussion.problem.title}
-                </span>
-              )}
-              {discussion.discussion.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
+          {/* Title */}
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight mb-6">
+            {discussion.discussion.title}
+          </h1>
 
-            {/* Title */}
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              {discussion.discussion.title}
-            </h1>
-
-            {/* Author & Stats */}
-            <div className="flex items-center justify-between mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-base font-semibold text-primary">
-                    {discussion.author.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {discussion.author.username}
-                  </div>
-                  <div className="text-xs text-text-muted">
-                    Posted on {formatDate(discussion.discussion.created_at)}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 text-text-muted text-sm">
-                <span className="flex items-center gap-1">
-                  <span className="material-icons text-base">visibility</span>
-                  {discussion.discussion.view_count}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="material-icons text-base">chat_bubble_outline</span>
-                  {discussion.discussion.reply_count}
-                </span>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap mb-6">
-              {discussion.discussion.content}
-            </div>
-
-            {/* Actions */}
+          {/* Author & Stats */}
+          <div className="flex items-center justify-between mb-8 pb-8 border-b border-border flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              {user && user.id === discussion.author.id && (
-                <button
-                  onClick={() => navigate(`/discussions/${discussion.discussion.id}/edit`)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <span className="material-icons text-lg">edit</span>
-                  Edit
-                </button>
-              )}
-              <button
-                onClick={handleLike}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  liked
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-              >
-                <span className="material-icons text-lg">thumb_up</span>
-                {discussion.discussion.like_count}
-              </button>
-              {!discussion.discussion.is_locked && (
-                <button
-                  onClick={() => setParentReplyId('root')}
-                  className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
-                >
-                  <span className="material-icons text-lg">reply</span>
-                  Reply
-                </button>
-              )}
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-bold text-primary">
+                  {discussion.author.username.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">
+                  {discussion.author.username}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  发布于 {formatDate(discussion.discussion.created_at)}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Eye className="h-4 w-4" />
+                {discussion.discussion.view_count}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <MessageCircle className="h-4 w-4" />
+                {discussion.discussion.reply_count}
+              </span>
             </div>
           </div>
-        </article>
 
-        {/* Reply Form */}
-        {parentReplyId !== null && (
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-4 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                {typeof parentReplyId === 'number' ? 'Reply to comment' : 'Write a reply'}
-              </h3>
-              <button
-                onClick={() => {
-                  setParentReplyId(null)
-                  setReplyContent('')
-                }}
-                className="text-text-muted hover:text-gray-900 dark:hover:text-white"
-              >
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-            <textarea
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              placeholder="Write your reply..."
-              rows={4}
-              className="w-full px-3 py-2 border border-border-light dark:border-border-dark rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
-            <div className="flex justify-end mt-3">
-              <button
-                onClick={handleSubmitReply}
-                disabled={!replyContent.trim() || submitting}
-                className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? 'Posting...' : 'Post Reply'}
-              </button>
-            </div>
+          {/* Content */}
+          <div className="text-foreground whitespace-pre-wrap leading-[1.8] text-[15px] mb-8">
+            {discussion.discussion.content}
           </div>
-        )}
 
-        {/* Replies Section */}
-        <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Replies ({discussion.replies.length})
-          </h2>
-
-          {discussion.replies.length === 0 ? (
-            <div className="text-center py-8">
-              <span className="material-icons text-4xl text-text-muted mb-2">forum</span>
-              <p className="text-text-muted">No replies yet. Be the first to reply!</p>
-            </div>
-          ) : (
-            <div>{renderReplies(discussion.replies)}</div>
-          )}
+          {/* Actions */}
+          <div className="flex items-center gap-3">
+            {user && user.id === discussion.author.id && (
+              <button
+                onClick={() => navigate(`/discussions/${discussion.discussion.id}/edit`)}
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-background transition"
+              >
+                <Edit3 className="h-4 w-4" />
+                编辑
+              </button>
+            )}
+            <button
+              onClick={handleLike}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition',
+                liked
+                  ? 'bg-primary text-primary-foreground'
+                  : 'border border-border text-foreground hover:bg-background'
+              )}
+            >
+              <ThumbsUp className="h-4 w-4" />
+              {discussion.discussion.like_count}
+            </button>
+            {!discussion.discussion.is_locked && (
+              <button
+                onClick={() => setParentReplyId('root')}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+              >
+                <CornerDownRight className="h-4 w-4" />
+                回复
+              </button>
+            )}
+          </div>
         </div>
-      </main>
+      </article>
+
+      {/* Reply Form */}
+      {parentReplyId !== null && (
+        <div className="bg-card border border-border rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-foreground">
+              {typeof parentReplyId === 'number' ? '回复评论' : '撰写回复'}
+            </h3>
+            <button
+              onClick={() => {
+                setParentReplyId(null)
+                setReplyContent('')
+              }}
+              className="text-muted-foreground hover:text-foreground transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <textarea
+            value={replyContent}
+            onChange={(e) => setReplyContent(e.target.value)}
+            placeholder="写下你的回复..."
+            rows={4}
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+          />
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={handleSubmitReply}
+              disabled={!replyContent.trim() || submitting}
+              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {submitting ? '发布中...' : '发布回复'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Replies Section */}
+      <div className="bg-card border border-border rounded-2xl shadow-sm p-8">
+        <h2 className="text-lg font-bold text-foreground mb-2">
+          回复 ({discussion.replies.length})
+        </h2>
+
+        {discussion.replies.length === 0 ? (
+          <div className="text-center py-16">
+            <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">还没有回复，来发表第一条吧</p>
+          </div>
+        ) : (
+          <div>{renderReplies(discussion.replies)}</div>
+        )}
+      </div>
     </div>
   )
 }

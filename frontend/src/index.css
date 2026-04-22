@@ -1,5 +1,4 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -341,16 +340,6 @@
 
 :not(.dark) ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.25);
-}
-
-/* ─── Material Symbols ─────────────────────────────────────────────────── */
-
-.material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-}
-
-.material-symbols-outlined.filled {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 /* ─── Animations ───────────────────────────────────────────────────────── */

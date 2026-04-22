@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ArrowLeft, Eye, MessageCircle, ThumbsUp, Edit3, CornerDownRight, X } from 'lucide-react'
 import { blogApi } from '@/services/articlesApi'
 import type { ArticleDetail, ArticleComment } from '@/types/community'
 import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
 import { useArticleUpdates } from '@/hooks/useCommunityUpdates'
 import { useAuth } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 
 export function BlogDetail() {
   const { slug } = useParams<{ slug: string }>()
@@ -20,7 +22,6 @@ export function BlogDetail() {
   const [submitting, setSubmitting] = useState(false)
   const [liked, setLiked] = useState(false)
 
-  // WebSocket real-time updates
   const { update } = useArticleUpdates(slug)
 
   useEffect(() => {
@@ -43,7 +44,6 @@ export function BlogDetail() {
     fetchArticle()
   }, [slug])
 
-  // Handle real-time comment updates
   useEffect(() => {
     if (update && article) {
       const newComment: ArticleComment = {
@@ -77,9 +77,7 @@ export function BlogDetail() {
         parent_comment_id: typeof parentCommentId === 'number' ? parentCommentId : undefined,
       })
 
-      // Add comment to the article
       if (typeof parentCommentId === 'number') {
-        // Nested comment - add to parent's comments
         setArticle((prev) => {
           if (!prev) return null
           const addNestedComment = (comments: ArticleComment[]): ArticleComment[] => {
@@ -105,7 +103,6 @@ export function BlogDetail() {
           }
         })
       } else {
-        // Top-level comment
         setArticle((prev) => {
           if (!prev) return null
           return {
@@ -150,7 +147,7 @@ export function BlogDetail() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('zh-CN', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -161,44 +158,43 @@ export function BlogDetail() {
     return comments.map((comment) => (
       <div
         key={comment.id}
-        className={`${depth > 0 ? 'ml-8 mt-4' : 'mt-6 pt-6 border-t border-gray-100 dark:border-gray-800'} bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4`}
+        className={cn(
+          depth > 0 ? 'ml-8 mt-4' : 'mt-8 pt-8 border-t border-border',
+          'bg-background rounded-xl p-5'
+        )}
       >
-        {/* Comment Header */}
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-xs font-semibold text-primary">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+              <span className="text-xs font-bold text-primary">
                 {comment.author_username.charAt(0).toUpperCase()}
               </span>
             </div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
+            <span className="text-sm font-medium text-foreground">
               {comment.author_username}
             </span>
           </div>
-          <span className="text-xs text-text-muted">{formatDate(comment.created_at)}</span>
+          <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
         </div>
 
-        {/* Comment Content */}
-        <div className="text-sm text-gray-700 dark:text-gray-300 mb-3 whitespace-pre-wrap">
+        <div className="text-sm text-muted-foreground leading-relaxed mb-4 whitespace-pre-wrap">
           {comment.content}
         </div>
 
-        {/* Comment Actions */}
         <div className="flex items-center gap-4 text-sm">
           <button
             onClick={() => setParentCommentId(comment.id)}
-            className="flex items-center gap-1 text-text-muted hover:text-primary transition-colors"
+            className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition"
           >
-            <span className="material-icons text-base">reply</span>
-            Reply
+            <CornerDownRight className="h-3.5 w-3.5" />
+            回复
           </button>
-          <button className="flex items-center gap-1 text-text-muted hover:text-primary transition-colors">
-            <span className="material-icons text-base">thumb_up</span>
+          <button className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition">
+            <ThumbsUp className="h-3.5 w-3.5" />
             {comment.like_count}
           </button>
         </div>
 
-        {/* Nested Comments */}
         {comment.replies && comment.replies.length > 0 && renderComments(comment.replies, depth + 1)}
       </div>
     ))
@@ -214,17 +210,14 @@ export function BlogDetail() {
 
   if (!article) {
     return (
-      <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
         <div className="text-center">
-          <span className="material-icons text-6xl text-text-muted mb-4">error_outline</span>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Article not found
-          </h2>
+          <h2 className="text-xl font-bold text-foreground mb-2">文章未找到</h2>
           <button
             onClick={() => navigate('/blog')}
-            className="mt-4 px-6 py-2 bg-primary text-white rounded-lg"
+            className="mt-4 rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground"
           >
-            Back to Blog
+            返回博客
           </button>
         </div>
       </div>
@@ -232,185 +225,179 @@ export function BlogDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-      {/* Header */}
-      <header className="bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-border-dark shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
+    <div className="space-y-8">
+      {/* Navigation */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={() => navigate('/blog')}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          返回博客
+        </button>
+      </div>
+
+      {/* Article Card */}
+      <article className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-8 lg:p-10 border-b border-border">
+          {/* Tags & Category */}
+          <div className="flex items-center gap-2 mb-5 flex-wrap">
+            {article.article.is_featured && (
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                精选
+              </span>
+            )}
+            {article.article.category && (
+              <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                {article.article.category}
+              </span>
+            )}
+            {article.article.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+              >
+                #{t}
+              </span>
+            ))}
+          </div>
+
+          {/* Title */}
+          <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight mb-6">
+            {article.article.title}
+          </h1>
+
+          {/* Author & Stats */}
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-bold text-primary">
+                  {article.author.username.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">
+                  {article.author.username}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {article.article.published_at
+                    ? formatDate(article.article.published_at)
+                    : formatDate(article.article.created_at)}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Eye className="h-4 w-4" />
+                {article.article.view_count}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <MessageCircle className="h-4 w-4" />
+                {article.article.comment_count}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-8 lg:p-10">
+          <div className="max-w-none">
+            <div className="text-foreground whitespace-pre-wrap leading-[1.8] text-[15px]">
+              {article.article.content}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 mt-10 pt-8 border-t border-border">
+            {user && user.id === article.author.id && (
+              <button
+                onClick={() => navigate(`/blog/${article.article.slug}/edit`)}
+                className="inline-flex items-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-background transition"
+              >
+                <Edit3 className="h-4 w-4" />
+                编辑
+              </button>
+            )}
             <button
-              onClick={() => navigate('/blog')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              onClick={handleLike}
+              className={cn(
+                'inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition',
+                liked
+                  ? 'bg-primary text-primary-foreground'
+                  : 'border border-border text-foreground hover:bg-background'
+              )}
             >
-              <span className="material-icons text-gray-600 dark:text-gray-400">arrow_back</span>
+              <ThumbsUp className="h-4 w-4" />
+              {article.article.like_count} 点赞
             </button>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Blog</h1>
+            <button
+              onClick={() => setParentCommentId('root')}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+            >
+              <MessageCircle className="h-4 w-4" />
+              评论
+            </button>
           </div>
         </div>
-      </header>
+      </article>
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Article */}
-        <article className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden mb-8">
-          {/* Article Header */}
-          <div className="p-8 pb-6 border-b border-gray-100 dark:border-gray-800">
-            {/* Tags & Category */}
-            <div className="flex items-center gap-2 mb-4 flex-wrap">
-              {article.article.is_featured && (
-                <span className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-xs px-2.5 py-0.5 rounded-full font-semibold uppercase">
-                  Featured
-                </span>
-              )}
-              {article.article.category && (
-                <span className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs px-2 py-0.5 rounded-full font-medium">
-                  {article.article.category}
-                </span>
-              )}
-              {article.article.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-                >
-                  #{tag}
-                </span>
-              ))}
-            </div>
-
-            {/* Title */}
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              {article.article.title}
-            </h1>
-
-            {/* Author & Stats */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-base font-semibold text-primary">
-                    {article.author.username.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {article.author.username}
-                  </div>
-                  <div className="text-xs text-text-muted">
-                    {article.article.published_at
-                      ? formatDate(article.article.published_at)
-                      : formatDate(article.article.created_at)}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 text-text-muted text-sm">
-                <span className="flex items-center gap-1">
-                  <span className="material-icons text-base">visibility</span>
-                  {article.article.view_count}
-                </span>
-                <span className="flex items-center gap-1">
-                  <span className="material-icons text-base">chat_bubble_outline</span>
-                  {article.article.comment_count}
-                </span>
-              </div>
-            </div>
+      {/* Comment Form */}
+      {parentCommentId !== null && (
+        <div className="bg-card border border-border rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-foreground">
+              {typeof parentCommentId === 'number' ? '回复评论' : '撰写评论'}
+            </h3>
+            <button
+              onClick={() => {
+                setParentCommentId(null)
+                setCommentContent('')
+              }}
+              className="text-muted-foreground hover:text-foreground transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-
-          {/* Article Content */}
-          <div className="p-8">
-            <div className="prose prose-lg dark:prose-invert max-w-none">
-              <div className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
-                {article.article.content}
-              </div>
-            </div>
-
-            {/* Article Actions */}
-            <div className="flex items-center gap-3 mt-8 pt-6 border-t border-gray-100 dark:border-gray-800">
-              {user && user.id === article.author.id && (
-                <button
-                  onClick={() => navigate(`/blog/${article.article.slug}/edit`)}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <span className="material-icons text-lg">edit</span>
-                  Edit
-                </button>
-              )}
-              <button
-                onClick={handleLike}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-lg font-medium transition-colors ${
-                  liked
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-              >
-                <span className="material-icons text-lg">thumb_up</span>
-                {article.article.like_count} Likes
-              </button>
-              <button
-                onClick={() => setParentCommentId('root')}
-                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
-              >
-                <span className="material-icons text-lg">comment</span>
-                Comment
-              </button>
-            </div>
+          <textarea
+            value={commentContent}
+            onChange={(e) => setCommentContent(e.target.value)}
+            placeholder="分享你的想法..."
+            rows={4}
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none"
+          />
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={handleSubmitComment}
+              disabled={!commentContent.trim() || submitting}
+              className="rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              {submitting ? '发布中...' : '发布评论'}
+            </button>
           </div>
-        </article>
+        </div>
+      )}
 
-        {/* Comment Form */}
-        {parentCommentId !== null && (
-          <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                {typeof parentCommentId === 'number' ? 'Reply to comment' : 'Write a comment'}
-              </h3>
-              <button
-                onClick={() => {
-                  setParentCommentId(null)
-                  setCommentContent('')
-                }}
-                className="text-text-muted hover:text-gray-900 dark:hover:text-white"
-              >
-                <span className="material-icons">close</span>
-              </button>
-            </div>
-            <textarea
-              value={commentContent}
-              onChange={(e) => setCommentContent(e.target.value)}
-              placeholder="Share your thoughts..."
-              rows={4}
-              className="w-full px-4 py-3 border border-border-light dark:border-border-dark rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            />
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={handleSubmitComment}
-                disabled={!commentContent.trim() || submitting}
-                className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {submitting ? 'Posting...' : 'Post Comment'}
-              </button>
-            </div>
+      {/* Comments Section */}
+      <div className="bg-card border border-border rounded-2xl shadow-sm p-8">
+        <h2 className="text-xl font-bold text-foreground mb-2">
+          评论 ({article.comments.length})
+        </h2>
+
+        {article.comments.length === 0 ? (
+          <div className="text-center py-16">
+            <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-6">还没有评论，来发表第一条吧</p>
+            <button
+              onClick={() => setParentCommentId('root')}
+              className="rounded-xl bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
+            >
+              撰写评论
+            </button>
           </div>
+        ) : (
+          <div>{renderComments(article.comments)}</div>
         )}
-
-        {/* Comments Section */}
-        <div className="bg-surface-light dark:bg-surface-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark p-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
-            Comments ({article.comments.length})
-          </h2>
-
-          {article.comments.length === 0 ? (
-            <div className="text-center py-12">
-              <span className="material-icons text-5xl text-text-muted mb-3">chat_bubble_outline</span>
-              <p className="text-text-muted mb-4">No comments yet. Be the first to comment!</p>
-              <button
-                onClick={() => setParentCommentId('root')}
-                className="px-6 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
-              >
-                Write a Comment
-              </button>
-            </div>
-          ) : (
-            <div>{renderComments(article.comments)}</div>
-          )}
-        </div>
-      </main>
+      </div>
     </div>
   )
 }

@@ -3,11 +3,31 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { useFeatureEnabled } from '@/hooks/useFeatureGate'
 import { isAdmin, isTeacherOrAbove, roleLabel, type Role } from '@/types/auth'
+import {
+  Code2,
+  LayoutDashboard,
+  Terminal,
+  History,
+  Trophy,
+  BarChart3,
+  Map,
+  MessageSquare,
+  BookOpen,
+  Mail,
+  Users,
+  Wand2,
+  FileBarChart,
+  Upload,
+  Cog,
+  LogOut,
+  UserCog,
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 interface NavItem {
   label: string
   path: string
-  icon: string
+  icon: LucideIcon
   badge?: number
   minRole?: 'teacher' | 'admin'
 }
@@ -25,20 +45,20 @@ export function Sidebar() {
   const { enabled: dmEnabled } = useFeatureEnabled('direct_messages')
 
   const navItems: NavItem[] = [
-    { label: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
-    { label: 'Problems', path: '/problems', icon: 'terminal' },
-    { label: 'Submissions', path: '/submissions', icon: 'history' },
-    { label: 'Contests', path: '/contests', icon: 'trophy', badge: 2 },
-    { label: 'Ranking', path: '/ranking', icon: 'leaderboard' },
-    { label: 'Roadmap', path: '/roadmap', icon: 'route' },
-    { label: 'Discuss', path: '/discussions', icon: 'forum' },
-    { label: 'Blog', path: '/blog', icon: 'article' },
-    ...(dmEnabled ? [{ label: 'Messages', path: '/messages', icon: 'mail' }] : []),
-    { label: 'Classes', path: '/teacher/classes', icon: 'group', minRole: 'teacher' },
-    { label: 'Contest Wizard', path: '/teacher/contest-wizard', icon: 'build', minRole: 'teacher' },
-    { label: 'Reports', path: '/teacher/assignment-report', icon: 'insights', minRole: 'teacher' },
-    { label: 'Batch Ops', path: '/batch-operations', icon: 'upload_file', minRole: 'teacher' },
-    { label: 'Features', path: '/admin/features', icon: 'settings', minRole: 'admin' },
+    { label: '仪表板', path: '/dashboard', icon: LayoutDashboard },
+    { label: '题库', path: '/problems', icon: Terminal },
+    { label: '提交记录', path: '/submissions', icon: History },
+    { label: '竞赛', path: '/contests', icon: Trophy, badge: 2 },
+    { label: '排行榜', path: '/ranking', icon: BarChart3 },
+    { label: '学习路线', path: '/roadmap', icon: Map },
+    { label: '讨论区', path: '/discussions', icon: MessageSquare },
+    { label: '博客', path: '/blog', icon: BookOpen },
+    ...(dmEnabled ? [{ label: '消息', path: '/messages', icon: Mail }] : []),
+    { label: '班级管理', path: '/teacher/classes', icon: Users, minRole: 'teacher' },
+    { label: '创建竞赛', path: '/teacher/contest-wizard', icon: Wand2, minRole: 'teacher' },
+    { label: '作业报告', path: '/teacher/assignment-report', icon: FileBarChart, minRole: 'teacher' },
+    { label: '批量操作', path: '/batch-operations', icon: Upload, minRole: 'teacher' },
+    { label: '功能管理', path: '/admin/features', icon: Cog, minRole: 'admin' },
   ]
 
   const handleLogout = async () => {
@@ -60,11 +80,11 @@ export function Sidebar() {
   )
 
   return (
-    <aside className="w-60 bg-sidebar border-r border-sidebar-border flex-shrink-0 flex flex-col">
-      {/* Logo */}
+    <aside className="w-60 bg-sidebar border-r border-sidebar-border flex-shrink-0 flex flex-col h-full">
+      {/* Logo area */}
       <div className="h-12 flex items-center px-4 border-b border-sidebar-border">
-        <div className="h-7 w-7 bg-primary rounded-md flex items-center justify-center text-primary-foreground">
-          <span className="material-symbols-outlined text-lg">code</span>
+        <div className="h-7 w-7 bg-primary rounded-lg flex items-center justify-center shadow-sm">
+          <Code2 className="w-4 h-4 text-primary-foreground" />
         </div>
         <span className="ml-2.5 text-sm font-semibold tracking-tight text-sidebar-foreground">
           CodeNexus
@@ -76,24 +96,23 @@ export function Sidebar() {
         <div className="space-y-0.5">
           {visibleItems.map((item) => {
             const isActive = location.pathname === item.path
+            const Icon = item.icon
             return (
               <Link
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors',
+                  'flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-sm transition-colors duration-150',
                   isActive
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground'
                 )}
               >
-                <span className={cn(
-                  'material-symbols-outlined text-[18px]',
-                  isActive ? 'text-sidebar-primary' : ''
-                )}>
-                  {item.icon}
-                </span>
-                <span>{item.label}</span>
+                <Icon className={cn(
+                  'w-[18px] h-[18px] transition-colors duration-150',
+                  isActive ? 'text-sidebar-primary' : 'text-sidebar-foreground/50'
+                )} />
+                <span className="truncate">{item.label}</span>
                 {item.badge && (
                   <span className="ml-auto text-[11px] font-medium bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">
                     {item.badge}
@@ -105,42 +124,42 @@ export function Sidebar() {
         </div>
       </nav>
 
-      {/* User Profile */}
+      {/* User section */}
       <div className="p-3 border-t border-sidebar-border">
         <div className="flex items-center gap-2.5">
           <Link
             to="/profile"
-            className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-semibold hover:bg-primary/30 transition-colors"
+            className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold hover:bg-primary/20 transition-colors duration-150"
           >
             {getUserInitials()}
           </Link>
           <div className="flex-1 min-w-0">
             <Link
               to="/profile"
-              className="text-sm font-medium truncate text-sidebar-foreground hover:text-sidebar-primary transition-colors block"
+              className="text-sm font-medium truncate text-sidebar-foreground hover:text-sidebar-primary transition-colors duration-150 block"
             >
               {user?.first_name && user?.last_name
                 ? `${user.first_name} ${user.last_name}`
-                : user?.username || 'User'}
+                : user?.username || '用户'}
             </Link>
             <p className="text-[11px] text-sidebar-foreground/50 truncate">
-              {user?.role ? roleLabel(user.role) : 'User'}
+              {user?.role ? roleLabel(user.role) : '用户'}
             </p>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-0.5">
             <Link
               to="/settings"
-              className="text-sidebar-foreground/40 hover:text-sidebar-foreground/70 p-1 transition-colors"
-              title="Settings"
+              className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1 rounded-md hover:bg-sidebar-accent/50 transition-colors duration-150"
+              title="设置"
             >
-              <span className="material-symbols-outlined text-[18px]">settings</span>
+              <UserCog className="w-[18px] h-[18px]" />
             </Link>
             <button
               onClick={handleLogout}
-              className="text-sidebar-foreground/40 hover:text-sidebar-foreground/70 p-1 transition-colors"
-              title="Logout"
+              className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1 rounded-md hover:bg-sidebar-accent/50 transition-colors duration-150"
+              title="退出登录"
             >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
+              <LogOut className="w-[18px] h-[18px]" />
             </button>
           </div>
         </div>

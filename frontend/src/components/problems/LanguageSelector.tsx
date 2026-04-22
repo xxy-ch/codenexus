@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ChevronDown, ChevronUp, Check } from 'lucide-react'
 
 const languages = [
   { id: 'cpp', name: 'C++', extension: 'cpp', icon: '🔷' },
@@ -36,20 +37,18 @@ export function LanguageSelector({
       >
         <span className="text-lg">{selectedLanguageData?.icon}</span>
         <span className="font-medium">{selectedLanguageData?.name}</span>
-        <span className="material-symbols-outlined text-sm ml-auto">
-          {isOpen ? 'expand_less' : 'expand_more'}
-        </span>
+        {isOpen ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
       </button>
 
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* 背景遮罩 */}
           <div
             className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Dropdown */}
+          {/* 下拉菜单 */}
           <div className="absolute z-20 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg max-h-96 overflow-y-auto">
             <div className="py-1">
               {languages.map((language) => (
@@ -69,9 +68,7 @@ export function LanguageSelector({
                   <span className="text-lg">{language.icon}</span>
                   <span className="font-medium">{language.name}</span>
                   {selectedLanguage === language.id && (
-                    <span className="material-symbols-outlined text-primary ml-auto">
-                      check
-                    </span>
+                    <Check className="w-4 h-4 text-primary ml-auto" />
                   )}
                 </button>
               ))}

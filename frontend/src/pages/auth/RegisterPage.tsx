@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Loading } from '@/components/ui/Loading'
 import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
+import { Code2, AlertCircle, UserPlus } from 'lucide-react'
 import type { RegisterRequest } from '@/types/auth'
 
 export function RegisterPage() {
@@ -24,7 +25,6 @@ export function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
-  // 如果已经登录，重定向到仪表板
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard')
@@ -34,30 +34,26 @@ export function RegisterPage() {
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {}
 
-    // Email validation
     if (!formData.email) {
-      errors.email = 'Email is required'
+      errors.email = '请输入邮箱'
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Invalid email format'
+      errors.email = '邮箱格式不正确'
     }
 
-    // Username validation
     if (!formData.username) {
-      errors.username = 'Username is required'
+      errors.username = '请输入用户名'
     } else if (!/^[0-9]+$/.test(formData.username)) {
-      errors.username = 'Username must be numeric only'
+      errors.username = '用户名必须为纯数字'
     }
 
-    // Password validation
     if (!formData.password) {
-      errors.password = 'Password is required'
+      errors.password = '请输入密码'
     } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters'
+      errors.password = '密码至少需要6个字符'
     }
 
-    // Confirm password validation
     if (formData.password !== confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match'
+      errors.confirmPassword = '两次输入的密码不一致'
     }
 
     setValidationErrors(errors)
@@ -77,10 +73,10 @@ export function RegisterPage() {
     try {
       const result = await register(formData)
       if (!result.success) {
-        setError(result.error || 'Registration failed')
+        setError(result.error || '注册失败')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+      setError(err instanceof Error ? err.message : '发生意外错误')
     } finally {
       setIsSubmitting(false)
     }
@@ -92,31 +88,29 @@ export function RegisterPage() {
       ...prev,
       [name]: value,
     }))
-    // Clear validation error for this field
     if (validationErrors[name]) {
       setValidationErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
+        const next = { ...prev }
+        delete next[name]
+        return next
       })
     }
   }
 
   const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setConfirmPassword(e.target.value)
-    // Clear validation error for confirm password
     if (validationErrors.confirmPassword) {
       setValidationErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors.confirmPassword
-        return newErrors
+        const next = { ...prev }
+        delete next.confirmPassword
+        return next
       })
     }
   }
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <FormSkeleton />
         </div>
@@ -125,68 +119,63 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 py-12">
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl shadow-lg shadow-primary/30 mb-4">
-            <span className="material-symbols-outlined text-white text-4xl">code</span>
+        {/* Logo & Brand Header */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary rounded-xl shadow-lg shadow-primary/25 mb-6">
+            <Code2 className="w-7 h-7 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Join CodeNexus
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
+            加入 CodeNexus
           </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Create your account and start solving problems
+          <p className="text-sm text-muted-foreground">
+            创建账号，开始刷题之旅
           </p>
         </div>
 
-        {/* Register Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Create Account</CardTitle>
+        {/* Register Card */}
+        <Card className="border border-border rounded-2xl shadow-xl shadow-black/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-semibold text-foreground">
+              注册
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Error Message */}
               {error && (
-                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <div className="flex items-center">
-                    <span className="material-symbols-outlined text-red-600 dark:text-red-400 mr-2">
-                      error
-                    </span>
-                    <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                  </div>
+                <div className="flex items-center gap-2.5 p-3.5 bg-destructive/10 border border-destructive/20 rounded-xl">
+                  <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0" />
+                  <p className="text-sm text-destructive">{error}</p>
                 </div>
               )}
 
-              {/* Display Name */}
               <div>
-                <label htmlFor="display_name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Display Name
+                <label htmlFor="display_name" className="block text-sm font-medium text-foreground mb-1.5">
+                  显示名称
                 </label>
                 <Input
                   id="display_name"
                   name="display_name"
                   type="text"
                   autoComplete="nickname"
-                  placeholder="Student 2001"
+                  placeholder="请输入显示名称"
                   value={formData.display_name || ''}
                   onChange={handleChange}
                   disabled={isSubmitting}
                 />
               </div>
 
-              {/* Username Field */}
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Username *
+                <label htmlFor="username" className="block text-sm font-medium text-foreground mb-1.5">
+                  用户名 <span className="text-destructive">*</span>
                 </label>
                 <Input
                   id="username"
                   name="username"
                   type="text"
                   autoComplete="username"
-                  placeholder="2001"
+                  placeholder="纯数字，如 2001"
                   value={formData.username}
                   onChange={handleChange}
                   required
@@ -194,16 +183,15 @@ export function RegisterPage() {
                   error={validationErrors.username}
                 />
                 {validationErrors.username && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  <p className="mt-1 text-sm text-destructive">
                     {validationErrors.username}
                   </p>
                 )}
               </div>
 
-              {/* Email Field */}
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Email Address *
+                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-1.5">
+                  邮箱 <span className="text-destructive">*</span>
                 </label>
                 <Input
                   id="email"
@@ -218,23 +206,22 @@ export function RegisterPage() {
                   error={validationErrors.email}
                 />
                 {validationErrors.email && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  <p className="mt-1 text-sm text-destructive">
                     {validationErrors.email}
                   </p>
                 )}
               </div>
 
-              {/* Password Field */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Password *
+                <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1.5">
+                  密码 <span className="text-destructive">*</span>
                 </label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="••••••••"
+                  placeholder="请输入密码"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -242,26 +229,25 @@ export function RegisterPage() {
                   error={validationErrors.password}
                 />
                 {validationErrors.password && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  <p className="mt-1 text-sm text-destructive">
                     {validationErrors.password}
                   </p>
                 )}
-                <p className="mt-1 text-xs text-slate-500">
-                  Must be at least 8 characters with uppercase, lowercase, and number
+                <p className="mt-1 text-xs text-muted-foreground">
+                  至少6个字符
                 </p>
               </div>
 
-              {/* Confirm Password Field */}
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                  Confirm Password *
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-1.5">
+                  确认密码 <span className="text-destructive">*</span>
                 </label>
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="••••••••"
+                  placeholder="请再次输入密码"
                   value={confirmPassword}
                   onChange={handleConfirmPasswordChange}
                   required
@@ -269,70 +255,68 @@ export function RegisterPage() {
                   error={validationErrors.confirmPassword}
                 />
                 {validationErrors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                  <p className="mt-1 text-sm text-destructive">
                     {validationErrors.confirmPassword}
                   </p>
                 )}
               </div>
 
-              {/* Terms and Conditions */}
               <div className="flex items-start">
                 <input
                   type="checkbox"
                   required
-                  className="w-4 h-4 mt-1 text-primary border-slate-300 rounded focus:ring-primary dark:border-slate-700 dark:bg-slate-800"
+                  className="w-4 h-4 mt-0.5 text-primary border-border rounded focus:ring-primary transition-colors"
                 />
-                <label className="ml-2 text-sm text-slate-600 dark:text-slate-400">
-                  I agree to the{' '}
-                  <Link to="/terms" className="text-primary hover:underline">
-                    Terms of Service
+                <label className="ml-2 text-sm text-muted-foreground">
+                  我已阅读并同意{' '}
+                  <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors hover:underline">
+                    服务条款
                   </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="text-primary hover:underline">
-                    Privacy Policy
+                  和{' '}
+                  <Link to="/privacy" className="text-primary hover:text-primary/80 transition-colors hover:underline">
+                    隐私政策
                   </Link>
                 </label>
               </div>
 
-              {/* Submit Button */}
               <Button
                 type="submit"
                 variant="primary"
                 fullWidth
                 disabled={isSubmitting}
-                className="py-3"
+                className="py-2.5 rounded-lg"
               >
                 {isSubmitting ? (
-                  <span className="flex items-center justify-center">
-                    <Loading size={20} />
-                    Creating account...
+                  <span className="flex items-center justify-center gap-2">
+                    <Loading size={16} />
+                    注册中...
                   </span>
                 ) : (
-                  'Create Account'
+                  <span className="flex items-center justify-center gap-2">
+                    <UserPlus className="w-4 h-4" />
+                    注册
+                  </span>
                 )}
               </Button>
             </form>
 
-            {/* Divider */}
-            <div className="relative my-6">
+            <div className="relative my-8">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+                <div className="w-full border-t border-border" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-slate-900 text-slate-500">
-                  Already have an account?
+                <span className="px-3 bg-card text-muted-foreground">
+                  已有账号？
                 </span>
               </div>
             </div>
 
-            {/* Login Link */}
             <div className="text-center">
               <Link
                 to="/login"
-                className="inline-flex items-center text-sm font-medium text-primary hover:text-primary-hover"
+                className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
               >
-                <span className="material-symbols-outlined text-base mr-1">login</span>
-                Sign in instead
+                返回登录
               </Link>
             </div>
           </CardContent>

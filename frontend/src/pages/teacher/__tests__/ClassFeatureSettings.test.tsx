@@ -91,7 +91,7 @@ describe('ClassFeatureSettings', () => {
     render(<ClassFeatureSettings />, { wrapper: createWrapper() })
 
     await waitFor(() => {
-      expect(screen.getByText('Class Feature Settings')).toBeInTheDocument()
+      expect(screen.getByText('班级功能开关')).toBeInTheDocument()
     })
 
     // Feature names should appear
@@ -157,7 +157,7 @@ describe('ClassFeatureSettings', () => {
     render(<ClassFeatureSettings />, { wrapper: createWrapper() })
 
     await waitFor(() => {
-      expect(screen.getByText('No features registered')).toBeInTheDocument()
+      expect(screen.getByText('未注册功能')).toBeInTheDocument()
     })
   })
 
@@ -167,7 +167,7 @@ describe('ClassFeatureSettings', () => {
     render(<ClassFeatureSettings />, { wrapper: createWrapper() })
 
     await waitFor(() => {
-      expect(screen.getByText('Feature list load failed')).toBeInTheDocument()
+      expect(screen.getByText('功能列表加载失败')).toBeInTheDocument()
     })
   })
 })

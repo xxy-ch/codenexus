@@ -124,7 +124,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Current Streak')).toBeInTheDocument()
+        expect(screen.getByText('当前连续')).toBeInTheDocument()
         expect(screen.getAllByText(/7 天/).length).toBeGreaterThanOrEqual(1)
       })
     })
@@ -135,7 +135,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Global Rank')).toBeInTheDocument()
+        expect(screen.getByText('全球排名')).toBeInTheDocument()
         expect(screen.getAllByText('#128').length).toBeGreaterThanOrEqual(1)
       })
     })
@@ -146,7 +146,8 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/1250.*分|points/i)).toBeInTheDocument()
+        expect(screen.getAllByText('总积分').length).toBeGreaterThanOrEqual(1)
+        expect(screen.getAllByText('1250').length).toBeGreaterThanOrEqual(1)
       })
     })
 
@@ -156,9 +157,9 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/20.*简单|easy/i)).toBeInTheDocument()
-        expect(screen.getByText(/18.*中等|medium/i)).toBeInTheDocument()
-        expect(screen.getByText(/7.*困难|hard/i)).toBeInTheDocument()
+        expect(screen.getByText(/简单.*20|20.*简单/)).toBeInTheDocument()
+        expect(screen.getByText(/中等.*18|18.*中等/)).toBeInTheDocument()
+        expect(screen.getByText(/困难.*7|7.*困难/)).toBeInTheDocument()
       })
     })
   })
@@ -180,7 +181,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Dashboard Overview')).toBeInTheDocument()
+        expect(screen.getByText('仪表盘概览')).toBeInTheDocument()
         expect(screen.getByText('本周推进面板')).toBeInTheDocument()
       })
     })
@@ -405,7 +406,7 @@ describe('DashboardEnhanced', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText('Dashboard Overview')).toBeInTheDocument()
+        expect(screen.getByText('仪表盘概览')).toBeInTheDocument()
       })
 
       // Component doesn't have a dedicated refresh button in the main view,

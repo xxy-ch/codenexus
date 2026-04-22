@@ -198,7 +198,7 @@ describe('SubmissionHistory', () => {
       })
 
       // 点击状态过滤器
-      const acceptedFilter = screen.getByRole('button', { name: /^Accepted$/i })
+      const acceptedFilter = screen.getByRole('button', { name: '通过' })
       await user.click(acceptedFilter)
 
       await waitFor(() => {
@@ -254,7 +254,7 @@ describe('SubmissionHistory', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/第.*页|page.*of/i)).toBeInTheDocument()
+        expect(screen.getByText(/1 \/ 2/)).toBeInTheDocument()
       })
 
       // 点击下一页

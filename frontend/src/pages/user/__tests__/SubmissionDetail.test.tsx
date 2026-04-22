@@ -94,12 +94,13 @@ describe('SubmissionDetail', () => {
     renderComponent()
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Submission #1' })).toBeInTheDocument()
-      expect(screen.getByText(/判题分析摘要/)).toBeInTheDocument()
-      expect(screen.getByText('Two Sum 的完整判题分析，包含状态摘要、性能数据和测试用例详情。')).toBeInTheDocument()
+      expect(screen.getByText('判题结果')).toBeInTheDocument()
       expect(screen.getAllByText('45ms').length).toBeGreaterThan(0)
       expect(screen.getAllByText('1MB').length).toBeGreaterThan(0)
-      expect(screen.getAllByText('2/2').length).toBeGreaterThan(0)
+      // "2/2" is split across two <span> elements, so use a function matcher
+      expect(screen.getByText((_content, element) => {
+        return element?.tagName === 'P' && element?.textContent === '2/2'
+      })).toBeInTheDocument()
       expect(screen.getByText(/testuser/)).toBeInTheDocument()
     })
   })
@@ -127,10 +128,10 @@ describe('SubmissionDetail', () => {
 
     await waitFor(() => {
       expect(screen.getAllByText(/Wrong Answer|答案错误/i).length).toBeGreaterThan(0)
-      expect(screen.getByText(/错误信息:/)).toBeInTheDocument()
+      expect(screen.getByText('错误信息')).toBeInTheDocument()
       expect(screen.getAllByText(/Wrong output/i).length).toBeGreaterThan(0)
-      expect(screen.getByText(/期望输出:/)).toBeInTheDocument()
-      expect(screen.getByText(/实际输出:/)).toBeInTheDocument()
+      expect(screen.getByText('期望输出')).toBeInTheDocument()
+      expect(screen.getByText('实际输出')).toBeInTheDocument()
     })
   })
 
@@ -161,7 +162,7 @@ describe('SubmissionDetail', () => {
 
     await waitFor(() => {
       expect(screen.getAllByText(/Running|运行中/i).length).toBeGreaterThan(0)
-      expect(screen.getByText(/您的代码正在判题中/)).toBeInTheDocument()
+      expect(screen.getByText('判题结果')).toBeInTheDocument()
     })
   })
 

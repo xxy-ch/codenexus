@@ -944,11 +944,11 @@ export function BatchOperations() {
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <span>Admin</span>
           <ChevronRight className="size-3.5" />
-          <span>Batch Operations</span>
+          <span className="font-medium text-foreground">批量操作</span>
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">Batch Operations</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">批量操作</h1>
         <p className="text-sm text-muted-foreground max-w-3xl">
-          Import and export problems and users in bulk. Upload a file to preview before committing changes.
+          批量导入导出题目和用户。上传文件后先预览再确认提交。
         </p>
       </div>
 

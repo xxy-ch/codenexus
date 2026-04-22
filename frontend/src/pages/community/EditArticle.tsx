@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, RefreshCw, Save, Send, Tags } from 'lucide-react'
+import { ArrowLeft, RefreshCw, Save, Send, Tags, X } from 'lucide-react'
 import { blogApi } from '@/services/articlesApi'
 import type { UpdateArticleRequest } from '@/types/community'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
@@ -100,90 +100,92 @@ export function EditArticle() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_32%),linear-gradient(135deg,#eff6ff_0%,#ecfeff_42%,#ffffff_100%)] px-6 py-8 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.22),_transparent_32%),linear-gradient(135deg,#0f172a_0%,#111827_48%,#020617_100%)]">
-          <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-            <div className="space-y-3">
+    <div className="space-y-8">
+      {/* Hero */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-8 py-10">
+          <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
+            <div className="space-y-4">
               <button
                 type="button"
                 onClick={() => navigate(slug ? `/blog/${slug}` : '/blog')}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600 backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                Back To Article
+                <ArrowLeft className="h-4 w-4" />
+                返回文章
               </button>
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">Edit Article</h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                  在同一篇文章上继续迭代标题、标签和正文。当前交付仍基于真实博客更新接口，不额外引入草稿版本系统。
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">编辑文章</h1>
+                <p className="mt-3 max-w-2xl text-sm text-muted-foreground leading-relaxed">
+                  在同一篇文章上继续迭代标题、标签和正文。
                 </p>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Status</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{isPublished ? 'Published' : 'Draft'}</p>
+              <div className="rounded-xl border border-border bg-background px-4 py-3">
+                <p className="text-xs text-muted-foreground">状态</p>
+                <p className="mt-1.5 text-sm font-bold text-foreground">{isPublished ? '已发布' : '草稿'}</p>
               </div>
-              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Tags</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{tags.length}</p>
+              <div className="rounded-xl border border-border bg-background px-4 py-3">
+                <p className="text-xs text-muted-foreground">标签</p>
+                <p className="mt-1.5 text-sm font-bold text-foreground">{tags.length}</p>
               </div>
-              <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 backdrop-blur dark:border-slate-800/80 dark:bg-slate-900/70">
-                <p className="text-xs uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Title</p>
-                <p className="mt-2 text-sm font-semibold text-slate-950 dark:text-white">{title.length}/500</p>
+              <div className="rounded-xl border border-border bg-background px-4 py-3">
+                <p className="text-xs text-muted-foreground">标题</p>
+                <p className="mt-1.5 text-sm font-bold text-foreground">{title.length}/500</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="space-y-4">
+      {/* Form Layout */}
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+          <div className="space-y-5">
             <div>
-              <label className="mb-2 block text-sm font-medium">标题</label>
+              <label className="mb-2 block text-sm font-medium text-foreground">标题</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-xl border px-4 py-3 text-lg"
+                className="w-full rounded-xl border border-border bg-background px-4 py-3 text-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 maxLength={500}
               />
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium">正文</label>
+              <label className="mb-2 block text-sm font-medium text-foreground">正文</label>
               <EditorWithPreview
                 value={content}
                 onChange={setContent}
-                placeholder="Write your article in Markdown..."
+                placeholder="使用 Markdown 撰写你的文章..."
               />
             </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-            <div className="mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
-              <Tags className="h-4 w-4" />
-              <h2 className="text-lg font-semibold">Metadata</h2>
+        <div className="space-y-6">
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+            <div className="mb-5 flex items-center gap-2">
+              <Tags className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-bold text-foreground">元信息</h2>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="mb-2 block text-sm font-medium">分类</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">分类</label>
                 <input
                   type="text"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
-                  className="w-full rounded-xl border px-4 py-3"
+                  className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium">标签</label>
+                <label className="mb-2 block text-sm font-medium text-foreground">标签</label>
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -195,14 +197,14 @@ export function EditArticle() {
                         handleAddTag()
                       }
                     }}
-                    className="flex-1 rounded-xl border px-4 py-3"
+                    className="flex-1 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
                   />
                   <button
                     type="button"
                     onClick={handleAddTag}
-                    className="rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white dark:bg-white dark:text-slate-950"
+                    className="rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 transition"
                   >
-                    Add
+                    添加
                   </button>
                 </div>
                 {tags.length > 0 && (
@@ -212,19 +214,20 @@ export function EditArticle() {
                         key={tag}
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
-                        className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5 text-sm text-primary hover:bg-primary/20 transition"
                       >
                         #{tag}
+                        <X className="h-3 w-3" />
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              <label className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-4 dark:bg-slate-900">
+              <label className="flex items-center justify-between rounded-xl bg-background border border-border px-4 py-4 cursor-pointer">
                 <div>
-                  <p className="font-medium text-slate-900 dark:text-white">立即发布</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">关闭后保存为草稿状态</p>
+                  <p className="font-medium text-foreground text-sm">立即发布</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">关闭后保存为草稿状态</p>
                 </div>
                 <input
                   type="checkbox"
@@ -236,9 +239,9 @@ export function EditArticle() {
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-6 dark:border-slate-800 dark:bg-slate-900/60">
-            <p className="text-sm font-medium text-slate-900 dark:text-white">交付边界</p>
-            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
+            <p className="text-sm font-bold text-foreground">交付边界</p>
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
               当前编辑页支持标题、分类、标签和正文更新。不包含修订历史、多人协同和富媒体资源管理。
             </p>
           </div>
@@ -247,27 +250,27 @@ export function EditArticle() {
             <button
               type="button"
               onClick={() => navigate(slug ? `/blog/${slug}` : '/blog')}
-              className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium dark:border-slate-700"
+              className="flex-1 rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground hover:bg-background transition"
             >
-              Cancel
+              取消
             </button>
             <button
               type="button"
               onClick={() => handleSubmit(false)}
               disabled={submitting || !title.trim() || !content.trim()}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-medium text-foreground hover:bg-background disabled:opacity-50 transition"
             >
               {submitting ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {submitting ? 'Saving...' : 'Save Draft'}
+              {submitting ? '保存中...' : '保存草稿'}
             </button>
             <button
               type="button"
               onClick={() => handleSubmit(true)}
               disabled={submitting || !title.trim() || !content.trim()}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-slate-950"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50 transition"
             >
               <Send className="h-4 w-4" />
-              {submitting ? 'Publishing...' : 'Save & Publish'}
+              {submitting ? '发布中...' : '保存并发布'}
             </button>
           </div>
         </div>

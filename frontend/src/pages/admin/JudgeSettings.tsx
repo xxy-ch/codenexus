@@ -69,118 +69,120 @@ export function JudgeSettings() {
   }, [cases])
 
   return (
-    <div className="space-y-8">
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
-        <div className="relative px-6 py-7 md:px-8">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_58%,#eff6ff_100%)]" />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm text-slate-500">
-                <span>Admin</span>
-                <ChevronRight className="h-4 w-4" />
-                <span>Problems</span>
-                <ChevronRight className="h-4 w-4" />
-                <span className="font-medium text-slate-900">Judge Settings</span>
-              </div>
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Test Data & Judge Settings</h1>
-                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                  按 reference 的测试数据页重做，真实交付范围限定为测试用例维护，不扩展不存在的 special judge 和沙箱高级配置。
-                </p>
-              </div>
-            </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Admin</span>
+          <ChevronRight className="h-3.5 w-3.5" />
+          <span>Problems</span>
+          <ChevronRight className="h-3.5 w-3.5" />
+          <span className="font-medium text-foreground">判题设置</span>
+        </div>
+        <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">测试数据与判题设置</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+              管理测试用例、时间空间限制与评测参数。当前交付范围限定为测试用例维护。
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => refetch()}
+              disabled={!problemId}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm font-medium text-foreground disabled:opacity-50"
+            >
+              <RefreshCw className="h-4 w-4" />
+              刷新
+            </button>
+            <button
+              type="button"
+              onClick={() => createMutation.mutate()}
+              disabled={!problemId || !newInput || !newOutput || createMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            >
+              {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              保存用例
+            </button>
+          </div>
+        </div>
+      </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => refetch()}
-                disabled={!problemId}
-                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </button>
-              <button
-                type="button"
-                onClick={() => createMutation.mutate()}
-                disabled={!problemId || !newInput || !newOutput || createMutation.isPending}
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                Save Case
-              </button>
-            </div>
+      {/* Metric Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">测试用例</span>
+            <Database className="h-4 w-4 text-muted-foreground" />
           </div>
+          <div className="mt-4 text-3xl font-bold text-foreground">{stats.total}</div>
+          <p className="mt-2 text-xs text-muted-foreground">当前题目的测试用例总数。</p>
         </div>
-      </section>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">可见</span>
+            <Settings2 className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-lime-400" />
+            <span className="text-3xl font-bold text-lime-400">{stats.visible}</span>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">普通测试点。</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">隐藏</span>
+            <EyeOff className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="mt-4 text-3xl font-bold text-amber-400">{stats.hidden}</div>
+          <p className="mt-2 text-xs text-muted-foreground">隐藏测试点用于真实判题覆盖。</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">总分值</span>
+            <FileArchive className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="mt-4 text-3xl font-bold text-foreground">{stats.totalScore}</div>
+          <p className="mt-2 text-xs text-muted-foreground">当前测试点分值总和。</p>
+        </div>
+      </div>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Test Cases</span>
-            <Database className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{stats.total}</div>
-          <p className="mt-2 text-sm text-slate-600">当前题目的测试用例总数。</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Visible</span>
-            <Settings2 className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-emerald-600">{stats.visible}</div>
-          <p className="mt-2 text-sm text-slate-600">普通测试点，可用于公开样例和基础评测。</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Hidden</span>
-            <EyeOff className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-amber-600">{stats.hidden}</div>
-          <p className="mt-2 text-sm text-slate-600">隐藏测试点用于真实判题覆盖。</p>
-        </div>
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Total Score</span>
-            <FileArchive className="h-4 w-4 text-slate-400" />
-          </div>
-          <div className="mt-4 text-3xl font-semibold text-slate-950">{stats.totalScore}</div>
-          <p className="mt-2 text-sm text-slate-600">当前测试点分值总和。</p>
-        </div>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+      {/* Main Content */}
+      <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
         <aside className="space-y-6">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-950">Problem Selector</div>
-            <p className="mt-1 text-sm leading-6 text-slate-600">先输入题目 ID，再管理对应测试数据。</p>
+          {/* Problem Selector */}
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">题目选择</div>
+            <p className="mt-1 text-sm text-muted-foreground">先输入题目 ID，再管理对应测试数据。</p>
             <div className="mt-4 flex gap-3">
               <input
                 value={problemId}
                 onChange={(e) => setProblemId(e.target.value.trim())}
                 placeholder="输入题目 ID"
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <button
                 type="button"
                 onClick={() => refetch()}
                 disabled={!problemId}
-                className="rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
               >
                 加载
               </button>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-950">Language Permissions</div>
-            <p className="mt-1 text-sm leading-6 text-slate-600">Python 固定为默认语言，C / C++ 可在这里开启或关闭。</p>
+          {/* Language Permissions */}
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">语言权限</div>
+            <p className="mt-1 text-sm text-muted-foreground">Python 为默认语言，C/C++ 可在此开启或关闭。</p>
             <div className="mt-4 space-y-3">
               {languageSettings.map((language) => (
-                <label key={language.id} className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <label key={language.id} className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground">
                   <div>
-                    <div className="font-semibold text-slate-950">{language.name}</div>
-                    <div className="text-xs text-slate-500">{language.is_default ? 'default language' : 'optional language'}</div>
+                    <div className="text-sm font-medium text-foreground">{language.name}</div>
+                    <div className="text-xs text-muted-foreground">{language.is_default ? '默认语言' : '可选语言'}</div>
                   </div>
                   <input
                     type="checkbox"
@@ -198,79 +200,85 @@ export function JudgeSettings() {
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="text-sm font-semibold text-slate-950">Add Test Case</div>
+          {/* Add Test Case */}
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+            <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">添加测试用例</div>
             <div className="mt-4 space-y-4">
               <textarea
                 value={newInput}
                 onChange={(e) => setNewInput(e.target.value)}
-                placeholder="Input"
-                className="min-h-[120px] w-full rounded-2xl border border-slate-200 px-4 py-3 font-mono text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                placeholder="输入数据"
+                className="min-h-[120px] w-full rounded-lg border border-border bg-background px-4 py-3 font-mono text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <textarea
                 value={newOutput}
                 onChange={(e) => setNewOutput(e.target.value)}
-                placeholder="Expected output"
-                className="min-h-[120px] w-full rounded-2xl border border-slate-200 px-4 py-3 font-mono text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                placeholder="期望输出"
+                className="min-h-[120px] w-full rounded-lg border border-border bg-background px-4 py-3 font-mono text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <div className="grid grid-cols-2 gap-4">
                 <label className="text-sm">
-                  <span className="text-slate-600">Score</span>
+                  <span className="text-xs text-muted-foreground">分值</span>
                   <input
                     type="number"
                     value={newScore}
                     onChange={(e) => setNewScore(Number(e.target.value))}
-                    className="mt-1 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </label>
-                <label className="flex items-end gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <label className="flex items-end gap-3 rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground">
                   <input type="checkbox" checked={newHidden} onChange={(e) => setNewHidden(e.target.checked)} />
-                  Hidden case
+                  隐藏用例
                 </label>
               </div>
             </div>
           </div>
         </aside>
 
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+        {/* Case Table */}
+        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           {isLoading ? (
             <FormSkeleton rows={4} />
           ) : error ? (
             <InlineError title="配置加载失败" onRetry={() => refetch()} />
           ) : (
             <>
-              <div className="border-b border-slate-200 px-6 py-5">
-                <h2 className="text-lg font-semibold text-slate-950">Case Table</h2>
-                <p className="mt-1 text-sm text-slate-600">当前只交付真实 test case 管理，不扩展额外 judge runtime 开关。</p>
+              <div className="border-b border-border px-6 py-5">
+                <h2 className="text-sm font-semibold text-foreground">用例列表</h2>
+                <p className="mt-1 text-xs text-muted-foreground">当前只交付真实 test case 管理。</p>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-muted/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Input</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Output</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Score</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Hidden</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Action</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">#</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">输入</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">输出</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">分值</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">隐藏</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 bg-white">
+                  <tbody className="divide-y divide-border bg-card">
                     {cases.map((tc) => (
-                      <tr key={tc.id} className="transition hover:bg-slate-50">
-                        <td className="px-6 py-4 text-sm text-slate-500">{tc.order}</td>
-                        <td className="px-6 py-4 whitespace-pre-wrap font-mono text-sm text-slate-800">{tc.input || '-'}</td>
-                        <td className="px-6 py-4 whitespace-pre-wrap font-mono text-sm text-slate-800">{tc.expected_output || '-'}</td>
-                        <td className="px-6 py-4 text-right text-sm font-medium text-slate-900">{tc.score}</td>
-                        <td className="px-6 py-4 text-center text-sm">{tc.is_hidden ? 'Yes' : 'No'}</td>
+                      <tr key={tc.id} className="transition hover:bg-muted/50">
+                        <td className="px-6 py-4 text-xs text-muted-foreground">{tc.order}</td>
+                        <td className="px-6 py-4 whitespace-pre-wrap font-mono text-xs text-foreground">{tc.input || '-'}</td>
+                        <td className="px-6 py-4 whitespace-pre-wrap font-mono text-xs text-foreground">{tc.expected_output || '-'}</td>
+                        <td className="px-6 py-4 text-right text-sm font-medium text-foreground">{tc.score}</td>
+                        <td className="px-6 py-4 text-center text-xs">
+                          {tc.is_hidden
+                            ? <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-400">是</span>
+                            : <span className="text-muted-foreground">否</span>}
+                        </td>
                         <td className="px-6 py-4 text-right">
                           <button
                             type="button"
                             onClick={() => deleteMutation.mutate(tc.id)}
                             disabled={deleteMutation.isPending}
-                            className="inline-flex items-center gap-2 rounded-xl border border-rose-200 px-3 py-2 text-sm font-medium text-rose-600 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-1.5 text-xs font-medium text-rose-400 disabled:opacity-50"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                             删除
                           </button>
                         </td>
@@ -278,14 +286,14 @@ export function JudgeSettings() {
                     ))}
                     {problemId && cases.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-14 text-center text-sm text-slate-500">
+                        <td colSpan={6} className="px-6 py-14 text-center text-sm text-muted-foreground">
                           当前题目暂无测试用例
                         </td>
                       </tr>
                     )}
                     {!problemId && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-14 text-center text-sm text-slate-500">
+                        <td colSpan={6} className="px-6 py-14 text-center text-sm text-muted-foreground">
                           先输入题目 ID 再查看测试数据
                         </td>
                       </tr>
@@ -295,8 +303,8 @@ export function JudgeSettings() {
               </div>
             </>
           )}
-        </section>
-      </section>
+        </div>
+      </div>
     </div>
   )
 }

@@ -126,9 +126,9 @@ describe('UserManagement', () => {
   it('renders loading state then user table', async () => {
     renderWithProviders(<UserManagement />)
 
-    // Should eventually render the page header
+    // Should eventually render the page header (appears in both breadcrumb and h1)
     await waitFor(() => {
-      expect(screen.getByText('用户管理')).toBeInTheDocument()
+      expect(screen.getAllByText('用户管理').length).toBeGreaterThanOrEqual(2)
     })
   })
 })

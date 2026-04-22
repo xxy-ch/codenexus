@@ -44,20 +44,20 @@ function formatRelativeTime(dateStr: string): string {
   const diffMs = now.getTime() - date.getTime()
   const diffSeconds = Math.floor(diffMs / 1000)
 
-  if (diffSeconds < 5) return 'just now'
-  if (diffSeconds < 60) return `${diffSeconds}s ago`
+  if (diffSeconds < 5) return '刚刚'
+  if (diffSeconds < 60) return `${diffSeconds}秒前`
   const diffMinutes = Math.floor(diffSeconds / 60)
-  if (diffMinutes < 60) return `${diffMinutes}m ago`
+  if (diffMinutes < 60) return `${diffMinutes}分钟前`
   const diffHours = Math.floor(diffMinutes / 60)
-  if (diffHours < 24) return `${diffHours}h ago`
+  if (diffHours < 24) return `${diffHours}小时前`
   const diffDays = Math.floor(diffHours / 24)
-  return `${diffDays}d ago`
+  return `${diffDays}天前`
 }
 
 function breakerColor(state: string): string {
-  if (state === 'Closed') return 'bg-emerald-100 text-emerald-700'
-  if (state === 'HalfOpen') return 'bg-amber-100 text-amber-700'
-  return 'bg-rose-100 text-rose-700'
+  if (state === 'Closed') return 'bg-lime-500/15 text-lime-400'
+  if (state === 'HalfOpen') return 'bg-amber-500/15 text-amber-400'
+  return 'bg-rose-500/15 text-rose-400'
 }
 
 function formatDateTime(dateStr: string): string {
@@ -72,9 +72,9 @@ function formatDateTime(dateStr: string): string {
 }
 
 const tabs: { id: TabId; label: string }[] = [
-  { id: 'status', label: 'Queue Status' },
-  { id: 'workers', label: 'Workers' },
-  { id: 'dlq', label: 'Dead Letters' },
+  { id: 'status', label: '队列状态' },
+  { id: 'workers', label: 'Worker 节点' },
+  { id: 'dlq', label: '死信队列' },
 ]
 
 export function JudgeQueue() {
@@ -96,33 +96,35 @@ export function JudgeQueue() {
   const retryMutation = useMutation({
     mutationFn: (entryId: string) => judgeQueueService.retryDlqEntry(entryId),
     onSuccess: () => {
-      toast.success('DLQ entry retried successfully')
+      toast.success('已重新投递')
       queryClient.invalidateQueries({ queryKey: ['judge-dlq'] })
     },
     onError: () => {
-      toast.error('Failed to retry DLQ entry')
+      toast.error('重新投递失败')
     },
   })
 
   const discardMutation = useMutation({
     mutationFn: (entryId: string) => judgeQueueService.deleteDlqEntry(entryId),
     onSuccess: () => {
-      toast.success('DLQ entry discarded')
+      toast.success('已丢弃')
       queryClient.invalidateQueries({ queryKey: ['judge-dlq'] })
     },
     onError: () => {
-      toast.error('Failed to discard DLQ entry')
+      toast.error('丢弃失败')
     },
   })
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-        Judge Queue
-      </h1>
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">判题队列监控</h1>
+        <p className="mt-1 text-sm text-muted-foreground">实时监控判题队列状态、Worker 节点和死信队列。</p>
+      </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 rounded-lg border bg-slate-50 p-1 dark:bg-slate-900">
+      <div className="flex gap-1 rounded-lg border border-border bg-muted/50 p-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -131,8 +133,8 @@ export function JudgeQueue() {
             className={cn(
               'rounded-md px-4 py-2 text-sm font-medium transition-colors',
               activeTab === tab.id
-                ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-slate-100'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             {tab.label}
@@ -144,42 +146,45 @@ export function JudgeQueue() {
       {activeTab === 'status' && (
         <div className="space-y-4">
           {statusQuery.isLoading && (
-            <div className="rounded-lg border bg-white p-6 text-center text-sm text-slate-500 dark:bg-slate-900">
-              Loading queue status...
+            <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+              正在加载队列状态...
             </div>
           )}
           {statusQuery.data && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="rounded-lg border bg-white p-5 dark:bg-slate-900">
-                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Normal Queue Depth
+              <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  普通队列深度
                 </div>
-                <div className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="mt-2 text-3xl font-bold text-foreground">
                   {statusQuery.data.queues.normal_depth}
                 </div>
               </div>
-              <div className="rounded-lg border bg-white p-5 dark:bg-slate-900">
-                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Contest Queue Depth
+              <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  竞赛队列深度
                 </div>
-                <div className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="mt-2 text-3xl font-bold text-foreground">
                   {statusQuery.data.queues.contest_depth}
                 </div>
               </div>
-              <div className="rounded-lg border bg-white p-5 dark:bg-slate-900">
-                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Avg Wait Time
+              <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                  平均等待时间
                 </div>
-                <div className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="mt-2 text-3xl font-bold text-foreground">
                   {statusQuery.data.avg_wait_ms}
-                  <span className="ml-1 text-base font-normal text-slate-400">ms</span>
+                  <span className="ml-1 text-base font-normal text-muted-foreground">ms</span>
                 </div>
               </div>
-              <div className="rounded-lg border bg-white p-5 dark:bg-slate-900">
-                <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Active Judges
+              <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    活跃 Judge
+                  </div>
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-lime-400" />
                 </div>
-                <div className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">
+                <div className="mt-2 text-3xl font-bold text-foreground">
                   {statusQuery.data.active_judges}
                 </div>
               </div>
@@ -192,44 +197,44 @@ export function JudgeQueue() {
       {activeTab === 'workers' && (
         <div className="space-y-4">
           {statusQuery.isLoading && (
-            <div className="rounded-lg border bg-white p-6 text-center text-sm text-slate-500 dark:bg-slate-900">
-              Loading workers...
+            <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+              正在加载 Worker 节点...
             </div>
           )}
           {statusQuery.data && statusQuery.data.workers.length === 0 && (
-            <div className="rounded-lg border bg-white p-6 text-center text-sm text-slate-500 dark:bg-slate-900">
-              No active workers.
+            <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+              无活跃 Worker 节点。
             </div>
           )}
           {statusQuery.data && statusQuery.data.workers.length > 0 && (
-            <div className="overflow-hidden rounded-lg border bg-white dark:bg-slate-900">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-slate-50 dark:bg-slate-800">
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Worker ID</th>
-                    <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">Active</th>
-                    <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">Processed</th>
-                    <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">Wait (ms)</th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-600 dark:text-slate-300">Redis Breaker</th>
-                    <th className="px-4 py-3 text-center font-semibold text-slate-600 dark:text-slate-300">API Breaker</th>
-                    <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">Last Seen</th>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">Worker ID</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">活跃</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">已处理</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">等待 (ms)</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">Redis 熔断</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">API 熔断</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">最后心跳</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border">
                   {statusQuery.data.workers.map((worker) => (
-                    <tr key={worker.worker_id} className="border-b last:border-b-0">
-                      <td className="px-4 py-3 font-mono text-xs text-slate-700 dark:text-slate-300">
+                    <tr key={worker.worker_id} className="transition hover:bg-muted/50">
+                      <td className="px-4 py-3 font-mono text-xs text-foreground">
                         {worker.worker_id.length > 12
                           ? worker.worker_id.slice(0, 12) + '...'
                           : worker.worker_id}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-3 text-right text-muted-foreground">
                         {worker.active_judgements}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-3 text-right text-muted-foreground">
                         {worker.total_processed}
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-3 text-right text-muted-foreground">
                         {worker.avg_wait_ms}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -242,7 +247,7 @@ export function JudgeQueue() {
                           {worker.api_breaker_state}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-xs text-slate-500 dark:text-slate-400">
+                      <td className="px-4 py-3 text-right text-xs text-muted-foreground">
                         {formatRelativeTime(worker.last_seen)}
                       </td>
                     </tr>
@@ -258,44 +263,44 @@ export function JudgeQueue() {
       {activeTab === 'dlq' && (
         <div className="space-y-4">
           {dlqQuery.isLoading && (
-            <div className="rounded-lg border bg-white p-6 text-center text-sm text-slate-500 dark:bg-slate-900">
-              Loading dead letter queue...
+            <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+              正在加载死信队列...
             </div>
           )}
           {dlqQuery.data && dlqQuery.data.items.length === 0 && (
-            <div className="rounded-lg border bg-white p-6 text-center text-sm text-slate-500 dark:bg-slate-900">
-              No dead letter entries.
+            <div className="rounded-xl border border-border bg-card p-6 text-center text-sm text-muted-foreground">
+              死信队列为空。
             </div>
           )}
           {dlqQuery.data && dlqQuery.data.items.length > 0 && (
-            <div className="overflow-hidden rounded-lg border bg-white dark:bg-slate-900">
+            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-slate-50 dark:bg-slate-800">
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Submission ID</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Error</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Stream</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Submitted</th>
-                    <th className="px-4 py-3 text-left font-semibold text-slate-600 dark:text-slate-300">Failed</th>
-                    <th className="px-4 py-3 text-right font-semibold text-slate-600 dark:text-slate-300">Actions</th>
+                  <tr className="border-b border-border bg-muted/50">
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">提交 ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">错误</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">来源流</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">提交时间</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">失败时间</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border">
                   {dlqQuery.data.items.map((entry) => (
-                    <tr key={entry.id} className="border-b last:border-b-0">
-                      <td className="px-4 py-3 font-mono text-xs text-slate-700 dark:text-slate-300">
+                    <tr key={entry.id} className="transition hover:bg-muted/50">
+                      <td className="px-4 py-3 font-mono text-xs text-foreground">
                         {entry.submission_id}
                       </td>
-                      <td className="max-w-[200px] truncate px-4 py-3 text-slate-700 dark:text-slate-300" title={entry.error_reason}>
+                      <td className="max-w-[200px] truncate px-4 py-3 text-muted-foreground" title={entry.error_reason}>
                         {entry.error_reason}
                       </td>
-                      <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                      <td className="px-4 py-3 text-muted-foreground">
                         {entry.source_stream}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
                         {formatDateTime(entry.submitted_at)}
                       </td>
-                      <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
                         {formatDateTime(entry.failed_at)}
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -304,17 +309,17 @@ export function JudgeQueue() {
                             type="button"
                             onClick={() => retryMutation.mutate(entry.id)}
                             disabled={retryMutation.isPending}
-                            className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                            className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
                           >
-                            Retry
+                            重试
                           </button>
                           <button
                             type="button"
                             onClick={() => discardMutation.mutate(entry.id)}
                             disabled={discardMutation.isPending}
-                            className="rounded-md bg-rose-600 px-3 py-1 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+                            className="rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-1 text-xs font-medium text-rose-400 hover:bg-rose-500/10 disabled:opacity-50"
                           >
-                            Discard
+                            丢弃
                           </button>
                         </div>
                       </td>
