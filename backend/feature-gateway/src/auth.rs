@@ -5,24 +5,29 @@
 
 use std::env;
 
-use axum::{
-    extract::Request,
-    http::StatusCode,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
+
+/// Constant-time comparison to prevent timing side-channel attacks.
+/// Returns true only if lengths match AND all bytes are equal.
+fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut result: u8 = 0;
+    for (x, y) in a.iter().zip(b.iter()) {
+        result |= x ^ y;
+    }
+    result == 0
+}
 
 /// Middleware that requires a valid `WORKER_SECRET` Bearer token.
 ///
 /// Reads `WORKER_SECRET` from the environment. Requests must include
 /// `Authorization: Bearer <token>` header. Returns 401 if missing
 /// or mismatched.
-pub async fn require_worker_secret(
-    req: Request,
-    next: Next,
-) -> Result<Response, StatusCode> {
-    let expected = env::var("WORKER_SECRET")
-        .unwrap_or_else(|_| "default_worker_secret_change_me".to_string());
+pub async fn require_worker_secret(req: Request, next: Next) -> Result<Response, StatusCode> {
+    let expected =
+        env::var("WORKER_SECRET").unwrap_or_else(|_| "default_worker_secret_change_me".to_string());
 
     let auth_header = req
         .headers()
@@ -32,7 +37,7 @@ pub async fn require_worker_secret(
     match auth_header {
         Some(header) if header.starts_with("Bearer ") => {
             let token = &header[7..];
-            if token == expected {
+            if constant_time_eq(token.as_bytes(), expected.as_bytes()) {
                 Ok(next.run(req).await)
             } else {
                 Err(StatusCode::UNAUTHORIZED)
@@ -45,7 +50,7 @@ pub async fn require_worker_secret(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::{body::Body, routing::get, Router, middleware};
+    use axum::{body::Body, middleware, routing::get, Router};
     use tower::ServiceExt;
 
     async fn ok_handler() -> StatusCode {

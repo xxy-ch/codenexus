@@ -60,6 +60,7 @@ async fn list_conversations(
             COALESCE(last_msg.created_at::text, c.created_at::text) AS last_message_at,
             COALESCE(unread.unread_count, 0) AS unread_count
         FROM direct_conversations c
+        JOIN users caller ON caller.id = $1
         JOIN users u ON u.id = CASE WHEN c.user1_id = $1 THEN c.user2_id ELSE c.user1_id END
         LEFT JOIN LATERAL (
             SELECT m.content, m.created_at
@@ -75,7 +76,8 @@ async fn list_conversations(
               AND m.sender_id <> $1
               AND m.read_at IS NULL
         ) unread ON true
-        WHERE c.user1_id = $1 OR c.user2_id = $1
+        WHERE (c.user1_id = $1 OR c.user2_id = $1)
+          AND u.organization_id = caller.organization_id
         ORDER BY COALESCE(last_msg.created_at, c.created_at) DESC
         "#,
     )
@@ -104,7 +106,7 @@ async fn get_messages(
     AuthExtractor(claims): AuthExtractor,
     Path(conversation_id): Path<Uuid>,
 ) -> Result<Json<Vec<DirectMessageDto>>, StatusCode> {
-    ensure_conversation_member(&state, conversation_id, claims.sub).await?;
+    ensure_conversation_member(&state, conversation_id, claims.sub, claims.school_id).await?;
 
     sqlx::query(
         r#"
@@ -166,7 +168,7 @@ async fn send_message(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    ensure_conversation_member(&state, conversation_id, claims.sub).await?;
+    ensure_conversation_member(&state, conversation_id, claims.sub, claims.school_id).await?;
 
     let row = sqlx::query(
         r#"
@@ -211,17 +213,23 @@ async fn ensure_conversation_member(
     state: &AppState,
     conversation_id: Uuid,
     user_id: Uuid,
+    school_id: i64,
 ) -> Result<(), StatusCode> {
     let exists = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT 1
-        FROM direct_conversations
-        WHERE id = $1
-          AND (user1_id = $2 OR user2_id = $2)
+        FROM direct_conversations c
+        JOIN users u1 ON u1.id = c.user1_id
+        JOIN users u2 ON u2.id = c.user2_id
+        WHERE c.id = $1
+          AND (c.user1_id = $2 OR c.user2_id = $2)
+          AND u1.organization_id = $3
+          AND u2.organization_id = $3
         "#,
     )
     .bind(conversation_id)
     .bind(user_id)
+    .bind(school_id)
     .fetch_optional(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;

@@ -23,6 +23,31 @@ impl UserService {
             return Err(anyhow::anyhow!("Password must be at least 8 characters"));
         }
 
+        // Validate organization exists
+        let org_exists = sqlx::query_scalar::<_, i64>("SELECT 1 FROM organizations WHERE id = $1")
+            .bind(req.organization_id)
+            .fetch_optional(&self.pool)
+            .await?;
+        if org_exists.is_none() {
+            return Err(anyhow::anyhow!("Organization not found"));
+        }
+
+        // Validate campus belongs to organization (if provided)
+        if let Some(campus_id) = req.campus_id {
+            let campus_valid = sqlx::query_scalar::<_, i64>(
+                "SELECT 1 FROM campuses WHERE id = $1 AND organization_id = $2",
+            )
+            .bind(campus_id)
+            .bind(req.organization_id)
+            .fetch_optional(&self.pool)
+            .await?;
+            if campus_valid.is_none() {
+                return Err(anyhow::anyhow!(
+                    "Campus not found or does not belong to organization"
+                ));
+            }
+        }
+
         // Validate username format (numeric only)
         if !req.username.chars().all(|c| c.is_numeric()) {
             return Err(anyhow::anyhow!("Username must be numeric only"));
@@ -128,12 +153,17 @@ impl UserService {
             if verify_md5_password(&req.password, md5_hash) {
                 // Upgrade to bcrypt
                 let new_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)?;
-                sqlx::query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2")
-                    .bind(&new_hash)
-                    .bind(user.id)
-                    .execute(&self.pool)
-                    .await?;
-                info!("MD5 password upgraded to bcrypt for user: {}", user.username);
+                sqlx::query(
+                    "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+                )
+                .bind(&new_hash)
+                .bind(user.id)
+                .execute(&self.pool)
+                .await?;
+                info!(
+                    "MD5 password upgraded to bcrypt for user: {}",
+                    user.username
+                );
             } else {
                 return Err(anyhow::anyhow!("Invalid credentials"));
             }
@@ -344,7 +374,13 @@ impl UserService {
         self.get_user_profile(user_id).await
     }
 
-    pub async fn list_admin_users(&self, query: AdminUserQuery, organization_id: i64, scope_campus_id: Option<i64>, scope_grade_id: Option<i64>) -> Result<AdminUserListResponse> {
+    pub async fn list_admin_users(
+        &self,
+        query: AdminUserQuery,
+        organization_id: i64,
+        scope_campus_id: Option<i64>,
+        scope_grade_id: Option<i64>,
+    ) -> Result<AdminUserListResponse> {
         let page = query.page.unwrap_or(1).max(1);
         let limit = query.limit.unwrap_or(20).clamp(1, 100);
         let offset = (page - 1) * limit;
@@ -440,7 +476,12 @@ impl UserService {
         })
     }
 
-    pub async fn update_user_role(&self, user_id: Uuid, role: &str, caller_org_id: i64) -> Result<()> {
+    pub async fn update_user_role(
+        &self,
+        user_id: Uuid,
+        role: &str,
+        caller_org_id: i64,
+    ) -> Result<()> {
         // Validate and normalize to canonical role
         let normalized_role = role
             .parse::<shared::models::Role>()
@@ -454,12 +495,16 @@ impl UserService {
 
         // SECURITY: Verify target user belongs to the same organization
         if user.organization_id != caller_org_id {
-            return Err(anyhow::anyhow!("Cannot modify users outside your organization"));
+            return Err(anyhow::anyhow!(
+                "Cannot modify users outside your organization"
+            ));
         }
 
         // SECURITY: GradeAdmin requires grade_id — reject if target has none
         if normalized_role == "gradeadmin" && user.grade_id.is_none() {
-            return Err(anyhow::anyhow!("Cannot assign GradeAdmin role to user without grade_id"));
+            return Err(anyhow::anyhow!(
+                "Cannot assign GradeAdmin role to user without grade_id"
+            ));
         }
 
         sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
@@ -504,34 +549,47 @@ impl UserService {
 
         // SECURITY: Verify target user belongs to the same organization
         if user.organization_id != caller_org_id {
-            return Err(anyhow::anyhow!("Cannot modify users outside your organization"));
+            return Err(anyhow::anyhow!(
+                "Cannot modify users outside your organization"
+            ));
         }
 
         // SECURITY: Scope constraints for non-root admins — fail-closed
         if caller_role == shared::models::Role::CampusAdmin {
             // Fail-closed: CampusAdmin without campus_id cannot manage any users
-            let cid = caller_campus_id
-                .ok_or_else(|| anyhow::anyhow!("CampusAdmin account misconfigured: campus_id required"))?;
+            let cid = caller_campus_id.ok_or_else(|| {
+                anyhow::anyhow!("CampusAdmin account misconfigured: campus_id required")
+            })?;
             if user.campus_id != Some(cid) {
-                return Err(anyhow::anyhow!("CampusAdmin can only modify users in their own campus"));
+                return Err(anyhow::anyhow!(
+                    "CampusAdmin can only modify users in their own campus"
+                ));
             }
         } else if caller_role == shared::models::Role::GradeAdmin {
             // Fail-closed: GradeAdmin without campus_id/grade_id cannot manage any users
-            let cid = caller_campus_id
-                .ok_or_else(|| anyhow::anyhow!("GradeAdmin account misconfigured: campus_id required"))?;
-            let gid = caller_grade_id
-                .ok_or_else(|| anyhow::anyhow!("GradeAdmin account misconfigured: grade_id required"))?;
+            let cid = caller_campus_id.ok_or_else(|| {
+                anyhow::anyhow!("GradeAdmin account misconfigured: campus_id required")
+            })?;
+            let gid = caller_grade_id.ok_or_else(|| {
+                anyhow::anyhow!("GradeAdmin account misconfigured: grade_id required")
+            })?;
             if user.campus_id != Some(cid) {
-                return Err(anyhow::anyhow!("GradeAdmin can only modify users in their own campus"));
+                return Err(anyhow::anyhow!(
+                    "GradeAdmin can only modify users in their own campus"
+                ));
             }
             if user.grade_id != Some(gid) {
-                return Err(anyhow::anyhow!("GradeAdmin can only modify users in their own grade"));
+                return Err(anyhow::anyhow!(
+                    "GradeAdmin can only modify users in their own grade"
+                ));
             }
         }
 
         // SECURITY: GradeAdmin requires grade_id — reject if target has none
         if normalized_role == "gradeadmin" && user.grade_id.is_none() {
-            return Err(anyhow::anyhow!("Cannot assign GradeAdmin role to user without grade_id"));
+            return Err(anyhow::anyhow!(
+                "Cannot assign GradeAdmin role to user without grade_id"
+            ));
         }
 
         // SECURITY (B): Wrap DELETE + INSERT in transaction for atomicity
@@ -594,13 +652,16 @@ impl UserService {
 
         // SECURITY: Verify target user belongs to the same organization
         if user.organization_id != caller_org_id {
-            return Err(anyhow::anyhow!("Cannot modify users outside your organization"));
+            return Err(anyhow::anyhow!(
+                "Cannot modify users outside your organization"
+            ));
         }
 
         // SECURITY: CampusAdmin — fail-closed: reject if scope missing
         if caller_role == shared::models::Role::CampusAdmin {
-            let cid = caller_campus_id
-                .ok_or_else(|| anyhow::anyhow!("CampusAdmin account misconfigured: campus_id required"))?;
+            let cid = caller_campus_id.ok_or_else(|| {
+                anyhow::anyhow!("CampusAdmin account misconfigured: campus_id required")
+            })?;
             if user.campus_id != Some(cid) {
                 return Err(anyhow::anyhow!("Cannot modify users outside your campus"));
             }
@@ -608,10 +669,12 @@ impl UserService {
 
         // SECURITY: GradeAdmin — fail-closed: reject if scope missing
         if caller_role == shared::models::Role::GradeAdmin {
-            let cid = caller_campus_id
-                .ok_or_else(|| anyhow::anyhow!("GradeAdmin account misconfigured: campus_id required"))?;
-            let gid = caller_grade_id
-                .ok_or_else(|| anyhow::anyhow!("GradeAdmin account misconfigured: grade_id required"))?;
+            let cid = caller_campus_id.ok_or_else(|| {
+                anyhow::anyhow!("GradeAdmin account misconfigured: campus_id required")
+            })?;
+            let gid = caller_grade_id.ok_or_else(|| {
+                anyhow::anyhow!("GradeAdmin account misconfigured: grade_id required")
+            })?;
             if user.campus_id != Some(cid) {
                 return Err(anyhow::anyhow!("Cannot modify users outside your campus"));
             }
@@ -687,7 +750,8 @@ impl UserService {
             // Non-student roles are only assigned here after passing that authorization check.
             if let Some(role) = entry.role.as_deref() {
                 if role != "student" {
-                    self.update_user_role(profile.id, role, request.organization_id).await?;
+                    self.update_user_role(profile.id, role, request.organization_id)
+                        .await?;
                 }
             }
 
@@ -723,12 +787,18 @@ mod tests {
     #[test]
     fn verify_md5_password_correct() {
         // MD5("test123") == cc03e747a6afbbcbf8be7668acfebee5
-        assert!(verify_md5_password("test123", "cc03e747a6afbbcbf8be7668acfebee5"));
+        assert!(verify_md5_password(
+            "test123",
+            "cc03e747a6afbbcbf8be7668acfebee5"
+        ));
     }
 
     #[test]
     fn verify_md5_password_wrong() {
-        assert!(!verify_md5_password("wrong", "cc03e747a6afbbcbf8be7668acfebee5"));
+        assert!(!verify_md5_password(
+            "wrong",
+            "cc03e747a6afbbcbf8be7668acfebee5"
+        ));
     }
 
     #[test]
@@ -753,18 +823,28 @@ mod tests {
         let stored_hash = "482c811da5d5b4bc6d497ffa98491e38";
 
         // Correct password verifies
-        assert!(verify_md5_password("password123", stored_hash),
-            "correct password must verify against its MD5 hash");
+        assert!(
+            verify_md5_password("password123", stored_hash),
+            "correct password must verify against its MD5 hash"
+        );
 
         // Wrong passwords do not verify
-        assert!(!verify_md5_password("wrong", stored_hash),
-            "wrong password must NOT verify");
-        assert!(!verify_md5_password("Password123", stored_hash),
-            "case-different password must NOT verify");
-        assert!(!verify_md5_password("password1234", stored_hash),
-            "similar password must NOT verify");
-        assert!(!verify_md5_password("", stored_hash),
-            "empty password must NOT verify against non-empty hash");
+        assert!(
+            !verify_md5_password("wrong", stored_hash),
+            "wrong password must NOT verify"
+        );
+        assert!(
+            !verify_md5_password("Password123", stored_hash),
+            "case-different password must NOT verify"
+        );
+        assert!(
+            !verify_md5_password("password1234", stored_hash),
+            "similar password must NOT verify"
+        );
+        assert!(
+            !verify_md5_password("", stored_hash),
+            "empty password must NOT verify against non-empty hash"
+        );
     }
 
     // ===================== Phase 10: MD5->bcrypt Upgrade Flow Tests =====================
@@ -773,12 +853,22 @@ mod tests {
     #[test]
     fn test_md5_prefix_detection() {
         let md5_stored = "{MD5}5f4dcc3b5aa765d61d8327deb882cf99";
-        assert!(md5_stored.starts_with("{MD5}"), "hash prefixed with {{MD5}} must be detected");
-        assert_eq!(&md5_stored[5..], "5f4dcc3b5aa765d61d8327deb882cf99", "stripping the 5-char prefix must yield the raw MD5 hex");
+        assert!(
+            md5_stored.starts_with("{MD5}"),
+            "hash prefixed with {{MD5}} must be detected"
+        );
+        assert_eq!(
+            &md5_stored[5..],
+            "5f4dcc3b5aa765d61d8327deb882cf99",
+            "stripping the 5-char prefix must yield the raw MD5 hex"
+        );
 
         // Non-MD5 hashes (bcrypt) must NOT match
         let bcrypt_hash = "$2b$12$abcdefghijklmnopqrstuvwxyzABCDEF";
-        assert!(!bcrypt_hash.starts_with("{MD5}"), "bcrypt hash must not be detected as MD5");
+        assert!(
+            !bcrypt_hash.starts_with("{MD5}"),
+            "bcrypt hash must not be detected as MD5"
+        );
     }
 
     /// 2. Verify that `verify_md5_password` returns true for the correct password.
@@ -803,8 +893,8 @@ mod tests {
     /// 4. Verify that bcrypt::hash produces a hash starting with "$2b$".
     #[test]
     fn test_bcrypt_upgrade_produces_valid_hash() {
-        let hash = bcrypt::hash("password", bcrypt::DEFAULT_COST)
-            .expect("bcrypt hashing must succeed");
+        let hash =
+            bcrypt::hash("password", bcrypt::DEFAULT_COST).expect("bcrypt hashing must succeed");
         assert!(
             hash.starts_with("$2b$"),
             "bcrypt hash must start with '$2b$': got {}",
@@ -816,8 +906,8 @@ mod tests {
     #[test]
     fn test_bcrypt_upgrade_preserves_verification() {
         let plaintext = "password";
-        let hash = bcrypt::hash(plaintext, bcrypt::DEFAULT_COST)
-            .expect("bcrypt hashing must succeed");
+        let hash =
+            bcrypt::hash(plaintext, bcrypt::DEFAULT_COST).expect("bcrypt hashing must succeed");
 
         assert!(
             bcrypt::verify(plaintext, &hash).expect("bcrypt verify must not error"),

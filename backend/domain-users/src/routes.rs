@@ -63,7 +63,9 @@ async fn list_admin_users(
     Query(query): Query<AdminUserQuery>,
 ) -> Result<impl IntoResponse, AppError> {
     ensure_admin(&claims.role)?;
-    let caller_role = claims.role.parse::<shared::models::Role>()
+    let caller_role = claims
+        .role
+        .parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
     // SECURITY: Fail-closed — non-root admins MUST have required scope fields
     ensure_admin_scope(&caller_role, &claims)?;
@@ -77,7 +79,9 @@ async fn list_admin_users(
         _ => claims.grade_id, // GradeAdmin: restrict to their grade
     };
     let service = UserService::new(state.db_pool, state.jwt_service.clone());
-    let response = service.list_admin_users(query, claims.school_id, scope_campus_id, scope_grade_id).await?;
+    let response = service
+        .list_admin_users(query, claims.school_id, scope_campus_id, scope_grade_id)
+        .await?;
     Ok(Json(response))
 }
 
@@ -92,7 +96,9 @@ async fn batch_create_users(
 
     // SECURITY: Prevent privilege escalation — validate each requested role
     // does not equal or exceed the caller's role level (no same-level granting)
-    let caller_role = claims.role.parse::<shared::models::Role>()
+    let caller_role = claims
+        .role
+        .parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
     // SECURITY: Fail-closed — non-root admins MUST have required scope fields
     ensure_admin_scope(&caller_role, &claims)?;
@@ -101,20 +107,22 @@ async fn batch_create_users(
     for user in &mut request.users {
         // Prevent privilege escalation — caller cannot assign at or above their own level
         if let Some(role_str) = &user.role {
-            let target_role = role_str.parse::<shared::models::Role>()
+            let target_role = role_str
+                .parse::<shared::models::Role>()
                 .map_err(|_| AppError::Auth(format!("Invalid role: {}", role_str)))?;
             if target_role.is_higher_or_equal(caller_role) {
                 return Err(AppError::Auth(format!(
-                    "Cannot assign role '{}' — cannot assign at or above your own level", role_str
+                    "Cannot assign role '{}' — cannot assign at or above your own level",
+                    role_str
                 )));
             }
             // SECURITY: GradeAdmin can only assign TeachingAssistant and Student — cannot manage Teachers
-            if caller_role == shared::models::Role::GradeAdmin {
-                if target_role.is_higher_or_equal(shared::models::Role::Teacher) {
-                    return Err(AppError::Auth(
-                        "GradeAdmin cannot assign Teacher or higher roles".to_string()
-                    ));
-                }
+            if caller_role == shared::models::Role::GradeAdmin
+                && target_role.is_higher_or_equal(shared::models::Role::Teacher)
+            {
+                return Err(AppError::Auth(
+                    "GradeAdmin cannot assign Teacher or higher roles".to_string(),
+                ));
             }
         }
         // Force campus_id/grade_id based on caller role scope
@@ -153,30 +161,40 @@ async fn update_user_role(
 ) -> Result<impl IntoResponse, AppError> {
     ensure_admin(&claims.role)?;
     // SECURITY: Prevent privilege escalation — caller cannot assign at or above their own level
-    let caller_role = claims.role.parse::<shared::models::Role>()
+    let caller_role = claims
+        .role
+        .parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
     // SECURITY: Fail-closed — non-root admins MUST have required scope fields
     ensure_admin_scope(&caller_role, &claims)?;
-    let target_role = request.role.parse::<shared::models::Role>()
+    let target_role = request
+        .role
+        .parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid target role".to_string()))?;
     if target_role.is_higher_or_equal(caller_role) {
-        return Err(AppError::Auth("Cannot assign a role at or above your own level".to_string()));
+        return Err(AppError::Auth(
+            "Cannot assign a role at or above your own level".to_string(),
+        ));
     }
     // SECURITY: GradeAdmin can only assign TeachingAssistant and Student
-    if caller_role == shared::models::Role::GradeAdmin {
-        if target_role.is_higher_or_equal(shared::models::Role::Teacher) {
-            return Err(AppError::Auth("GradeAdmin cannot assign Teacher or higher roles".to_string()));
-        }
+    if caller_role == shared::models::Role::GradeAdmin
+        && target_role.is_higher_or_equal(shared::models::Role::Teacher)
+    {
+        return Err(AppError::Auth(
+            "GradeAdmin cannot assign Teacher or higher roles".to_string(),
+        ));
     }
     let service = UserService::new(state.db_pool, state.jwt_service.clone());
-    service.update_user_role_scoped(
-        user_id,
-        &request.role,
-        claims.school_id,
-        claims.campus_id,
-        claims.grade_id,
-        caller_role,
-    ).await?;
+    service
+        .update_user_role_scoped(
+            user_id,
+            &request.role,
+            claims.school_id,
+            claims.campus_id,
+            claims.grade_id,
+            caller_role,
+        )
+        .await?;
     Ok(Json(AdminMutationResponse { success: true }))
 }
 
@@ -186,18 +204,22 @@ async fn toggle_user_status(
     Path(user_id): Path<Uuid>,
 ) -> Result<impl IntoResponse, AppError> {
     ensure_admin(&claims.role)?;
-    let caller_role = claims.role.parse::<shared::models::Role>()
+    let caller_role = claims
+        .role
+        .parse::<shared::models::Role>()
         .map_err(|_| AppError::Auth("Invalid caller role".to_string()))?;
     // SECURITY: Fail-closed — non-root admins MUST have required scope fields
     ensure_admin_scope(&caller_role, &claims)?;
     let service = UserService::new(state.db_pool, state.jwt_service.clone());
-    service.update_user_status_scoped(
-        user_id,
-        claims.school_id,
-        caller_role,
-        claims.campus_id,
-        claims.grade_id,
-    ).await?;
+    service
+        .update_user_status_scoped(
+            user_id,
+            claims.school_id,
+            caller_role,
+            claims.campus_id,
+            claims.grade_id,
+        )
+        .await?;
     Ok(Json(AdminMutationResponse { success: true }))
 }
 

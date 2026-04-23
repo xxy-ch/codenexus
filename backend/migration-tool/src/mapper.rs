@@ -1,6 +1,6 @@
 /// Pure field-mapping functions for converting UOJ source data values
 /// into AlgoMaster target values. All functions are stateless and unit-testable.
-
+///
 /// Map UOJ usergroup to AlgoMaster role (D-10-10).
 ///
 /// - 'U' -> "student" (regular user)
@@ -326,9 +326,8 @@ mod tests {
 
     #[test]
     fn valid_config_parsed() {
-        let json = Some(
-            r#"{"view_content_type":"ALL","time_limit":2000,"memory_limit":512}"#.to_string(),
-        );
+        let json =
+            Some(r#"{"view_content_type":"ALL","time_limit":2000,"memory_limit":512}"#.to_string());
         let (time, mem) = parse_extra_config(&json);
         assert_eq!(time, 2000);
         assert_eq!(mem, 524288); // 512 * 1024
@@ -420,11 +419,7 @@ mod tests {
         // 4. map_language: supported and unsupported languages
         // Supported: C, C++, Python3
         assert_eq!(map_language("C"), Some("c"), "C must map to 'c'");
-        assert_eq!(
-            map_language("C++"),
-            Some("cpp"),
-            "C++ must map to 'cpp'"
-        );
+        assert_eq!(map_language("C++"), Some("cpp"), "C++ must map to 'cpp'");
         assert_eq!(
             map_language("C++17"),
             Some("cpp"),

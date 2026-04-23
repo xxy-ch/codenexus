@@ -399,6 +399,7 @@ impl SubmissionService {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     async fn queue_for_judging(
         &self,
         submission_id: i64,
@@ -449,7 +450,7 @@ impl SubmissionService {
                                   AND c.organization_id = $3
                                   AND c.start_time <= NOW()
                                   AND c.end_time >= NOW()
-                            )"
+                            )",
                         )
                         .bind(cid)
                         .bind(user_id)
@@ -466,7 +467,11 @@ impl SubmissionService {
                                 false
                             }
                         };
-                        if contest_active { "submissions:contest" } else { "submissions" }
+                        if contest_active {
+                            "submissions:contest"
+                        } else {
+                            "submissions"
+                        }
                     }
                     None => "submissions",
                 };

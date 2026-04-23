@@ -1,15 +1,17 @@
+#![allow(clippy::too_many_arguments, clippy::unnecessary_cast)]
+
 use anyhow::Result;
 use redis::Client;
 use std::env;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+mod circuit_breaker;
 #[allow(dead_code)]
 mod compiler;
-mod circuit_breaker;
 #[allow(dead_code)]
 mod db;
 mod heartbeat;
@@ -38,12 +40,10 @@ async fn main() -> Result<()> {
     // Load configuration
     let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1/".to_string());
     let api_url = env::var("API_URL").unwrap_or_else(|_| "http://127.0.0.1:3000".to_string());
-    let stream_name =
-        env::var("SUBMISSION_STREAM").unwrap_or_else(|_| "submissions".to_string());
+    let stream_name = env::var("SUBMISSION_STREAM").unwrap_or_else(|_| "submissions".to_string());
     let contest_stream =
         env::var("CONTEST_STREAM").unwrap_or_else(|_| "submissions:contest".to_string());
-    let group_name =
-        env::var("CONSUMER_GROUP").unwrap_or_else(|_| "judge_workers".to_string());
+    let group_name = env::var("CONSUMER_GROUP").unwrap_or_else(|_| "judge_workers".to_string());
     let consumer_name =
         env::var("CONSUMER_NAME").unwrap_or_else(|_| format!("worker-{}", uuid::Uuid::new_v4()));
 
@@ -69,8 +69,7 @@ async fn main() -> Result<()> {
         group_name, stream_name, contest_stream
     );
     consumer::ensure_consumer_group(&mut *conn.lock().await, &stream_name, &group_name).await?;
-    consumer::ensure_consumer_group(&mut *conn.lock().await, &contest_stream, &group_name)
-        .await?;
+    consumer::ensure_consumer_group(&mut *conn.lock().await, &contest_stream, &group_name).await?;
 
     // Create per-dependency circuit breakers (per D-04)
     let redis_breaker = Arc::new(CircuitBreaker::new(5, 30));
@@ -125,8 +124,8 @@ async fn main() -> Result<()> {
     info!("Connected to API at: {}", api_url);
 
     // Spawn heartbeat background task (per D-08, D-10)
-    let worker_secret =
-        env::var("WORKER_SECRET").expect("WORKER_SECRET must be set — refusing to start with a predictable default");
+    let worker_secret = env::var("WORKER_SECRET")
+        .expect("WORKER_SECRET must be set — refusing to start with a predictable default");
     let _heartbeat_handle = heartbeat::spawn_heartbeat_task(
         api_url.clone(),
         worker_secret,
@@ -192,34 +191,33 @@ async fn recover_stream(
 
                     match result {
                         Ok(judge_result) => {
-                            let should_ack =
-                                match send_result_with_retry(
-                                    http_client,
-                                    api_url,
-                                    &judge_result,
-                                    conn,
-                                    stream_name,
-                                    &original_msg_json,
-                                    school_id,
-                                )
-                                .await
-                                {
-                                    Ok(DeliveryOutcome::Delivered) => true,
-                                    Ok(DeliveryOutcome::StoredInDlq) => {
-                                        warn!(
-                                            "Recovered submission {} stored in DLQ (API unreachable)",
-                                            submission.submission_id
-                                        );
-                                        true
-                                    }
-                                    Err(e) => {
-                                        error!(
+                            let should_ack = match send_result_with_retry(
+                                http_client,
+                                api_url,
+                                &judge_result,
+                                conn,
+                                stream_name,
+                                &original_msg_json,
+                                school_id,
+                            )
+                            .await
+                            {
+                                Ok(DeliveryOutcome::Delivered) => true,
+                                Ok(DeliveryOutcome::StoredInDlq) => {
+                                    warn!(
+                                        "Recovered submission {} stored in DLQ (API unreachable)",
+                                        submission.submission_id
+                                    );
+                                    true
+                                }
+                                Err(e) => {
+                                    error!(
                                             "Recovered submission {} delivery AND DLQ failed (will retry on next startup): {}",
                                             submission.submission_id, e
                                         );
-                                        false
-                                    }
-                                };
+                                    false
+                                }
+                            };
 
                             if should_ack {
                                 if let Err(e) = acknowledge_with_retry(
@@ -284,29 +282,30 @@ impl Drop for ActiveGuard {
 /// how long the submission waited in the queue before being picked up by this worker.
 /// Falls back to 0 if `submitted_at` is missing or cannot be parsed (e.g., legacy
 /// messages that lack the field).
-fn compute_wait_ms(submitted_at: &Option<String>, dequeue_timestamp: &chrono::DateTime<chrono::Utc>) -> usize {
+fn compute_wait_ms(
+    submitted_at: &Option<String>,
+    dequeue_timestamp: &chrono::DateTime<chrono::Utc>,
+) -> usize {
     match submitted_at {
-        Some(ts) => {
-            match chrono::DateTime::parse_from_rfc3339(ts) {
-                Ok(enqueue_time) => {
-                    let wait = *dequeue_timestamp - enqueue_time.with_timezone(&chrono::Utc);
-                    let ms = wait.num_milliseconds();
-                    if ms < 0 {
-                        warn!(
+        Some(ts) => match chrono::DateTime::parse_from_rfc3339(ts) {
+            Ok(enqueue_time) => {
+                let wait = *dequeue_timestamp - enqueue_time.with_timezone(&chrono::Utc);
+                let ms = wait.num_milliseconds();
+                if ms < 0 {
+                    warn!(
                             "Negative queue wait time ({}ms), clamping to 0. submitted_at={}, dequeue={}",
                             ms, ts, dequeue_timestamp.to_rfc3339()
                         );
-                        0
-                    } else {
-                        ms as usize
-                    }
-                }
-                Err(e) => {
-                    warn!("Failed to parse submitted_at '{}': {}", ts, e);
                     0
+                } else {
+                    ms as usize
                 }
             }
-        }
+            Err(e) => {
+                warn!("Failed to parse submitted_at '{}': {}", ts, e);
+                0
+            }
+        },
         None => 0,
     }
 }
@@ -326,7 +325,10 @@ async fn run_processing_loop(
     total_processed: Arc<AtomicUsize>,
     avg_wait_ms: Arc<AtomicUsize>,
 ) -> Result<()> {
-    info!("Starting main processing loop (max concurrent: {})", max_concurrent);
+    info!(
+        "Starting main processing loop (max concurrent: {})",
+        max_concurrent
+    );
 
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
     let mut error_count: u32 = 0;
@@ -355,7 +357,10 @@ async fn run_processing_loop(
                 error_count = 0;
                 parked_normal = parked;
                 if count > 0 {
-                    info!("Dispatched {} submission(s) for concurrent processing", count);
+                    info!(
+                        "Dispatched {} submission(s) for concurrent processing",
+                        count
+                    );
                 }
             }
             Err(e) => {
@@ -461,36 +466,35 @@ async fn consume_and_process(
 
             match result {
                 Ok(judge_result) => {
-                    let should_ack =
-                        match send_result_with_retry_breaker(
-                            &http_client,
-                            &api_url,
-                            &judge_result,
-                            &conn,
-                            &api_breaker,
-                            &origin_stream,
-                            submitted_at.as_deref(),
-                            &original_msg_json,
-                            school_id,
-                        )
-                        .await
-                        {
-                            Ok(DeliveryOutcome::Delivered) => true,
-                            Ok(DeliveryOutcome::StoredInDlq) => {
-                                warn!(
-                                    "Submission {} stored in DLQ (API unreachable)",
-                                    submission.submission_id
-                                );
-                                true
-                            }
-                            Err(e) => {
-                                error!(
+                    let should_ack = match send_result_with_retry_breaker(
+                        &http_client,
+                        &api_url,
+                        &judge_result,
+                        &conn,
+                        &api_breaker,
+                        &origin_stream,
+                        submitted_at.as_deref(),
+                        &original_msg_json,
+                        school_id,
+                    )
+                    .await
+                    {
+                        Ok(DeliveryOutcome::Delivered) => true,
+                        Ok(DeliveryOutcome::StoredInDlq) => {
+                            warn!(
+                                "Submission {} stored in DLQ (API unreachable)",
+                                submission.submission_id
+                            );
+                            true
+                        }
+                        Err(e) => {
+                            error!(
                                     "Submission {} delivery AND DLQ write failed (will retry on next startup): {}",
                                     submission.submission_id, e
                                 );
-                                false
-                            }
-                        };
+                            false
+                        }
+                    };
 
                     if should_ack {
                         // ACK using origin stream name (per Pitfall 3)
@@ -517,13 +521,20 @@ async fn consume_and_process(
                                 // lost updates under concurrent judging tasks.
                                 loop {
                                     let prev = avg_wait_ms.load(Ordering::Relaxed);
-                                    let new_avg = if prev == 0 { wait_ms } else { (prev * 7 + wait_ms * 3) / 10 };
-                                    if avg_wait_ms.compare_exchange_weak(
-                                        prev,
-                                        new_avg,
-                                        Ordering::Relaxed,
-                                        Ordering::Relaxed,
-                                    ).is_ok() {
+                                    let new_avg = if prev == 0 {
+                                        wait_ms
+                                    } else {
+                                        (prev * 7 + wait_ms * 3) / 10
+                                    };
+                                    if avg_wait_ms
+                                        .compare_exchange_weak(
+                                            prev,
+                                            new_avg,
+                                            Ordering::Relaxed,
+                                            Ordering::Relaxed,
+                                        )
+                                        .is_ok()
+                                    {
                                         break;
                                     }
                                 }
@@ -585,9 +596,15 @@ async fn acknowledge_with_retry_breaker(
                 return Ok(());
             }
             Ok(_) => {
-                warn!("XACK returned 0 for message {} — message not in PEL, treating as failure", message_id);
+                warn!(
+                    "XACK returned 0 for message {} — message not in PEL, treating as failure",
+                    message_id
+                );
                 redis_breaker.record_failure();
-                return Err(anyhow::anyhow!("XACK returned 0 — message {} not acknowledged", message_id));
+                return Err(anyhow::anyhow!(
+                    "XACK returned 0 — message {} not acknowledged",
+                    message_id
+                ));
             }
             Err(e) if attempt + 1 < max_retries => {
                 warn!(
@@ -636,7 +653,10 @@ async fn acknowledge_with_retry(
             Ok(count) if count > 0 => return Ok(()),
             Ok(_) => {
                 warn!("XACK returned 0 for message {} during recovery — message not in PEL, treating as failure", message_id);
-                return Err(anyhow::anyhow!("XACK returned 0 — message {} not acknowledged during recovery", message_id));
+                return Err(anyhow::anyhow!(
+                    "XACK returned 0 — message {} not acknowledged during recovery",
+                    message_id
+                ));
             }
             Err(e) if attempt + 1 < max_retries => {
                 warn!(
@@ -738,7 +758,9 @@ async fn send_result_with_retry_breaker(
                         "Failed to write submission {} to DLQ: {}",
                         result.submission_id, dlq_err
                     );
-                    return Err(anyhow::anyhow!("API circuit breaker open and DLQ write failed"));
+                    return Err(anyhow::anyhow!(
+                        "API circuit breaker open and DLQ write failed"
+                    ));
                 }
             }
         }
@@ -950,7 +972,16 @@ mod tests {
                 // Track peak concurrency
                 loop {
                     let peak = peak_count.load(Ordering::Relaxed);
-                    if current <= peak || peak_count.compare_exchange_weak(peak, current, Ordering::Relaxed, Ordering::Relaxed).is_ok() {
+                    if current <= peak
+                        || peak_count
+                            .compare_exchange_weak(
+                                peak,
+                                current,
+                                Ordering::Relaxed,
+                                Ordering::Relaxed,
+                            )
+                            .is_ok()
+                    {
                         break;
                     }
                 }
@@ -994,7 +1025,8 @@ mod tests {
 
         // This acquire should not complete immediately
         let permit_future = semaphore.clone().acquire_owned();
-        let result = tokio::time::timeout(std::time::Duration::from_millis(50), permit_future).await;
+        let result =
+            tokio::time::timeout(std::time::Duration::from_millis(50), permit_future).await;
 
         assert!(
             result.is_err(),
@@ -1020,7 +1052,7 @@ mod tests {
             handles.push(thread::spawn(move || {
                 for i in 0..updates_per_thread {
                     let wait_ms = i + 1; // sample value
-                    // Same CAS loop as the production code
+                                         // Same CAS loop as the production code
                     loop {
                         let prev = avg.load(Ordering::Relaxed);
                         let new_avg = if prev == 0 {
@@ -1029,7 +1061,12 @@ mod tests {
                             (prev * 7 + wait_ms * 3) / 10
                         };
                         if avg
-                            .compare_exchange_weak(prev, new_avg, Ordering::Relaxed, Ordering::Relaxed)
+                            .compare_exchange_weak(
+                                prev,
+                                new_avg,
+                                Ordering::Relaxed,
+                                Ordering::Relaxed,
+                            )
                             .is_ok()
                         {
                             break;

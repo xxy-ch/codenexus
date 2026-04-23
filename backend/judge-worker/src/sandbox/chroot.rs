@@ -52,9 +52,13 @@ impl ChrootEnvironment {
     }
 }
 
-pub fn drop_privileges() {
-    unsafe {
-        libc::seteuid(0);
-        libc::setegid(0);
-    }
+/// Restore root privileges after sandboxed execution.
+///
+/// # Safety
+/// Caller must ensure this is only invoked from a process that was
+/// originally running as root (i.e., the judge-worker main process).
+/// This is NOT a privilege-drop function — it does the reverse.
+pub unsafe fn restore_root_privileges() {
+    libc::seteuid(0);
+    libc::setegid(0);
 }

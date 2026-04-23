@@ -80,10 +80,9 @@ async fn get_judge_status(
     let normal_depth = JudgeMonitorService::get_stream_depth(redis_pool, "submissions")
         .await
         .map_err(|e| AppError::Internal(format!("Failed to query normal queue depth: {}", e)))?;
-    let contest_depth =
-        JudgeMonitorService::get_stream_depth(redis_pool, "submissions:contest")
-            .await
-            .map_err(|e| AppError::Internal(format!("Failed to query contest queue depth: {}", e)))?;
+    let contest_depth = JudgeMonitorService::get_stream_depth(redis_pool, "submissions:contest")
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to query contest queue depth: {}", e)))?;
 
     // Get worker heartbeats -- propagate Redis errors instead of silently returning empty
     let workers = JudgeMonitorService::get_worker_heartbeats(redis_pool)
@@ -136,11 +135,16 @@ async fn list_dlq(
         .as_ref()
         .ok_or_else(|| AppError::Internal("Redis not configured".into()))?;
 
-    let count = query.count.unwrap_or(50).max(1).min(200);
+    let count = query.count.unwrap_or(50).clamp(1, 200);
     let school_id = claims.school_id;
-    let entries = JudgeMonitorService::list_dlq_entries(redis_pool, count, query.start_id.as_deref(), school_id)
-        .await
-        .map_err(map_dlq_error)?;
+    let entries = JudgeMonitorService::list_dlq_entries(
+        redis_pool,
+        count,
+        query.start_id.as_deref(),
+        school_id,
+    )
+    .await
+    .map_err(map_dlq_error)?;
 
     let items: Vec<serde_json::Value> = entries
         .into_iter()
@@ -272,10 +276,8 @@ mod tests {
     #[test]
     fn redis_error_produces_internal_error_not_zero() {
         let redis_err = anyhow::anyhow!("connection pool exhausted for 'submissions'");
-        let app_error: AppError = AppError::Internal(format!(
-            "Failed to query normal queue depth: {}",
-            redis_err
-        ));
+        let app_error: AppError =
+            AppError::Internal(format!("Failed to query normal queue depth: {}", redis_err));
 
         // Verify the error maps to 500 Internal Server Error
         let response = app_error.into_response();
@@ -291,10 +293,8 @@ mod tests {
     #[test]
     fn heartbeat_redis_error_produces_internal_error() {
         let redis_err = anyhow::anyhow!("SCAN failed: connection refused");
-        let app_error: AppError = AppError::Internal(format!(
-            "Failed to query worker heartbeats: {}",
-            redis_err
-        ));
+        let app_error: AppError =
+            AppError::Internal(format!("Failed to query worker heartbeats: {}", redis_err));
 
         let response = app_error.into_response();
         assert_eq!(
@@ -393,7 +393,10 @@ mod tests {
     #[test]
     fn ensure_root_rejects_admin() {
         let result = ensure_root("admin");
-        assert!(result.is_err(), "Admin should not access global infrastructure data");
+        assert!(
+            result.is_err(),
+            "Admin should not access global infrastructure data"
+        );
         if let Err(AppError::Forbidden(msg)) = result {
             assert!(
                 msg.contains("Root access required"),

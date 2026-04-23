@@ -4,7 +4,7 @@
 /// Per D-10-2, migrated passwords are stored with a `{MD5}` prefix marker.
 /// The auth middleware will detect this prefix and transparently upgrade to
 /// bcrypt on the user's first successful login.
-
+///
 /// Format an MD5 hash with the {MD5} prefix marker for transparent migration.
 ///
 /// The prefix follows the Django-style password marker pattern (D-10-2).

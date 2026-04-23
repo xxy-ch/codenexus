@@ -4,8 +4,8 @@
 //! Per D-10: Heartbeat includes breaker states and processing metrics.
 //! API stores heartbeat data in Redis with 30-second TTL.
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::Duration;
 
 use serde::Serialize;
@@ -77,6 +77,7 @@ pub async fn handle_heartbeat_response(
 ///
 /// Per D-08: interval 10s, Redis TTL 30s on the API side.
 /// The task runs for the lifetime of the worker process.
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_heartbeat_task(
     api_url: String,
     worker_secret: String,
@@ -132,7 +133,8 @@ pub fn spawn_heartbeat_task(
                         tracing::error!(
                             "Heartbeat has failed {} consecutive time(s) (last: HTTP {}). \
                              Worker may be missing from admin monitoring.",
-                            consecutive_failures, code
+                            consecutive_failures,
+                            code
                         );
                     }
                 }
