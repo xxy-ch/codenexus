@@ -1,0 +1,47 @@
+import { Link, useLocation } from 'react-router-dom'
+import { cn } from '@/lib/utils'
+
+interface NavItem {
+  label: string
+  path: string
+  icon: string
+}
+
+const navItems: NavItem[] = [
+  { label: '首页', path: '/dashboard', icon: 'dashboard' },
+  { label: '题库', path: '/problems', icon: 'terminal' },
+  { label: '竞赛', path: '/contests', icon: 'trophy' },
+  { label: '讨论', path: '/discussions', icon: 'forum' },
+  { label: '我的', path: '/profile', icon: 'person' },
+]
+
+export function MobileNav() {
+  const location = useLocation()
+
+  return (
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 z-50">
+      <div className="flex items-center justify-around py-2">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/')
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                'flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors min-w-0 flex-1',
+                isActive
+                  ? 'text-primary'
+                  : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              )}
+            >
+              <span className="material-symbols-outlined text-xl filled">
+                {item.icon}
+              </span>
+              <span className="text-xs font-medium truncate">{item.label}</span>
+            </Link>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}

@@ -1,0 +1,11 @@
+[workspace]
+members = ["api", "api-infra", "domain-classes", "domain-community", "domain-contests", "domain-imex", "domain-leaderboard", "domain-problems", "domain-search", "domain-submissions", "domain-users", "feature-gateway", "judge-worker", "migration-tool", "shared"]
+resolver = "2"
+
+[workspace.dependencies]
+tokio = { version = "1.35", features = ["full"] }
+axum = { version = "0.7", features = ["json", "multipart"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Contest Creation Wizard - Online Judge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a73e8",
+                        "primary-dark": "#1557b0",
+                        "primary-light": "#e8f0fe",
+                        "background-light": "#f8f9fa",
+                        "surface-light": "#ffffff",
+                        "text-main": "#202124",
+                        "text-sub": "#5f6368",
+                        "border-light": "#dadce0"
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "4px",
+                        "md": "8px",
+                        "lg": "12px",
+                        "xl": "16px",
+                        "2xl": "24px"
+                    },
+                    boxShadow: {
+                        'soft': '0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)',
+                        'floating': '0 4px 8px 3px rgba(60,64,67,0.15), 0 1px 3px rgba(60,64,67,0.3)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }input:checked + div {
+            border-color: #1a73e8;
+            background-color: #e8f0fe;
+        }
+        input:checked + div .radio-indicator {
+            border-color: #1a73e8;
+        }
+        input:checked + div .radio-indicator-inner {
+            background-color: #1a73e8;
+        }
+    </style>
+</head>
+<body class="bg-background-light font-display text-text-main antialiased min-h-screen flex overflow-hidden">
+<aside class="w-64 bg-surface-light border-r border-border-light hidden md:flex flex-col z-20 h-screen fixed left-0 top-0">
+<div class="h-16 flex items-center px-6 border-b border-border-light">
+<div class="flex items-center gap-2 cursor-pointer">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold text-lg">OJ</div>
+<span class="font-semibold text-lg tracking-tight text-text-main">AlgoMaster</span>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+<a class="flex items-center px-3 py-2 text-sm font-medium rounded-r-full rounded-l-full text-text-sub hover:bg-background-light transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-[22px]">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center px-3 py-2 text-sm font-medium rounded-r-full rounded-l-full bg-primary-light text-primary transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-[22px]">trophy</span>
+                Contests
+            </a>
+<a class="flex items-center px-3 py-2 text-sm font-medium rounded-r-full rounded-l-full text-text-sub hover:bg-background-light transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-[22px]">terminal</span>
+                Problems
+            </a>
+<a class="flex items-center px-3 py-2 text-sm font-medium rounded-r-full rounded-l-full text-text-sub hover:bg-background-light transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-[22px]">school</span>
+                Classes
+            </a>
+<div class="pt-4 mt-4 border-t border-border-light">
+<p class="px-3 text-xs font-semibold text-text-sub uppercase tracking-wider mb-2">My Contests</p>
+<a class="flex items-center px-3 py-2 text-sm font-medium rounded-r-full rounded-l-full text-text-sub hover:bg-background-light transition-colors" href="#">
+<span class="w-2 h-2 rounded-full bg-green-500 mr-3"></span>
+                    Spring 2024 Coding Cup
+                 </a>
+<a class="flex items-center px-3 py-2 text-sm font-medium rounded-r-full rounded-l-full text-text-sub hover:bg-background-light transition-colors" href="#">
+<span class="w-2 h-2 rounded-full bg-gray-400 mr-3"></span>
+                    Weekly Challenge #45
+                 </a>
+</div>
+</nav>
+<div class="p-4 border-t border-border-light">
+<a class="flex items-center px-3 py-2 text-sm font-medium rounded-r-full rounded-l-full text-text-sub hover:bg-background-light transition-colors" href="#">
+<span class="material-symbols-outlined mr-3 text-[22px]">settings</span>
+                Settings
+            </a>
+</div>
+</aside>
+<div class="flex-1 flex flex-col md:ml-64 h-screen overflow-hidden">
+<header class="bg-surface-light border-b border-border-light h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-10 sticky top-0">
+<div class="flex items-center">
+<button class="md:hidden p-2 rounded-full text-text-sub hover:bg-background-light mr-2">
+<span class="material-icons">menu</span>
+</button>
+<div class="flex items-center gap-2">
+<a class="text-text-sub hover:text-primary transition-colors flex items-center" href="#"><span class="material-icons text-xl">arrow_back</span></a>
+<h1 class="text-xl font-medium text-text-main hidden sm:block ml-2">Create New Contest</h1>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="px-4 py-2 text-sm font-medium text-text-sub hover:text-text-main">Save Draft</button>
+<button class="px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary-dark shadow-sm transition-colors">
+                    Publish Contest
+                </button>
+<div class="h-8 w-px bg-border-light mx-2"></div>
+<button class="flex items-center gap-2 p-1 rounded-full hover:bg-background-light pr-3">
+<img alt="Profile Picture" class="h-8 w-8 rounded-full object-cover border border-border-light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVX9qcczEu481PRCvq3bG780KrnB6Lpc974hPVSjAn-lt3LjQ6GX29dI-x_DcDPV2xQuR4meNntxJMrH9JFCjKf8dto8edBbF538F_F5l3eq7nKqramoo39oN2zmnKnpFdJaTLJfkxgdXGtoWksAtLQ5EV3ySvRKZKGA2AOrmhyYXo0VCmzsBlP6QiR7MCW4aE4JZ1PM8nivkSC3kg9g89NZYS5He_btIC3qdphDaEoELoTfz7PQ2NB1ccaNPM5QJcrF9hydLgdxM"/>
+</button>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto bg-background-light">
+<div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+<div class="flex flex-col lg:flex-row gap-8">
+<div class="w-full lg:w-64 flex-shrink-0">
+<nav class="space-y-1 sticky top-8">
+<a class="group flex items-center px-3 py-2 text-sm font-medium bg-primary-light text-primary rounded-md" href="#">
+<span class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-white text-primary border-2 border-primary mr-3 text-xs font-bold">1</span>
+<span class="truncate">Basic Info</span>
+</a>
+<a class="group flex items-center px-3 py-2 text-sm font-medium text-text-sub hover:bg-white hover:text-text-main rounded-md transition-colors" href="#">
+<span class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-border-light bg-white text-text-sub group-hover:border-text-sub mr-3 text-xs">2</span>
+<span class="truncate">Problems</span>
+</a>
+<a class="group flex items-center px-3 py-2 text-sm font-medium text-text-sub hover:bg-white hover:text-text-main rounded-md transition-colors" href="#">
+<span class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-border-light bg-white text-text-sub group-hover:border-text-sub mr-3 text-xs">3</span>
+<span class="truncate">Participants</span>
+</a>
+<a class="group flex items-center px-3 py-2 text-sm font-medium text-text-sub hover:bg-white hover:text-text-main rounded-md transition-colors" href="#">
+<span class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full border border-border-light bg-white text-text-sub group-hover:border-text-sub mr-3 text-xs">4</span>
+<span class="truncate">Settings</span>
+</a>
+</nav>
+</div>
+<div class="flex-1">
+<div class="bg-white shadow-soft rounded-lg border border-border-light">
+<div class="p-6 sm:p-8 space-y-8">
+<div>
+<h2 class="text-xl font-medium text-text-main mb-1">Basic Information</h2>
+<p class="text-sm text-text-sub">Define the core details of your contest.</p>
+</div>
+<div class="grid grid-cols-1 gap-y-6 gap-x-4">
+<div class="col-span-1">
+<label class="block text-sm font-medium text-text-main mb-1" for="contest-title">Contest Title</label>
+<input class="block w-full rounded-md border-border-light shadow-sm focus:border-primary focus:ring-primary sm:text-sm placeholder-gray-400 py-2.5" id="contest-title" placeholder="e.g. Annual Algo Cup 2024" type="text"/>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<div>
+<label class="block text-sm font-medium text-text-main mb-1" for="start-time">Start Time</label>
+<div class="relative rounded-md shadow-sm">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons text-gray-400 text-sm">calendar_today</span>
+</div>
+<input class="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-border-light rounded-md py-2.5" id="start-time" placeholder="Select start date &amp; time" type="datetime-local"/>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium text-text-main mb-1" for="end-time">End Time</label>
+<div class="relative rounded-md shadow-sm">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons text-gray-400 text-sm">event_busy</span>
+</div>
+<input class="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-border-light rounded-md py-2.5" id="end-time" placeholder="Select end date &amp; time" type="datetime-local"/>
+</div>
+</div>
+</div>
+<div class="border-t border-border-light my-2"></div>
+<div>
+<label class="block text-sm font-medium text-text-main mb-3">Rule Set</label>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+<label class="relative cursor-pointer group">
+<input class="sr-only" name="rule-set" type="radio"/>
+<div class="border border-border-light rounded-lg p-4 hover:border-primary/50 transition-all h-full">
+<div class="flex justify-between items-start mb-2">
+<span class="font-medium text-text-main">ACM / ICPC</span>
+<div class="radio-indicator w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center">
+<div class="radio-indicator-inner w-2 h-2 rounded-full bg-transparent"></div>
+</div>
+</div>
+<p class="text-xs text-text-sub">Penalty based on time and wrong submissions. Ranking by solved problems then time.</p>
+</div>
+</label>
+<label class="relative cursor-pointer group">
+<input class="sr-only" name="rule-set" type="radio"/>
+<div class="border border-border-light rounded-lg p-4 hover:border-primary/50 transition-all h-full">
+<div class="flex justify-between items-start mb-2">
+<span class="font-medium text-text-main">IOI</span>
+<div class="radio-indicator w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center">
+<div class="radio-indicator-inner w-2 h-2 rounded-full bg-transparent"></div>
+</div>
+</div>
+<p class="text-xs text-text-sub">Partial scoring allowed. Score accumulates based on test cases passed.</p>
+</div>
+</label>
+<label class="relative cursor-pointer group">
+<input checked="" class="sr-only" name="rule-set" type="radio"/>
+<div class="border border-border-light rounded-lg p-4 hover:border-primary/50 transition-all h-full">
+<div class="flex justify-between items-start mb-2">
+<span class="font-medium text-text-main">Classic OI</span>
+<div class="radio-indicator w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center">
+<div class="radio-indicator-inner w-2 h-2 rounded-full bg-transparent"></div>
+</div>
+</div>
+<p class="text-xs text-text-sub">Traditional Olympiad rules. Strictly file I/O or standard I/O based.</p>
+</div>
+</label>
+</div>
+</div>
+<div class="border-t border-border-light my-2"></div>
+<div>
+<div class="flex items-center justify-between">
+<div>
+<label class="text-sm font-medium text-text-main">Contest Visibility</label>
+<p class="text-xs text-text-sub mt-1">Control who can see and participate in this contest.</p>
+</div>
+<div class="flex items-center bg-gray-100 p-1 rounded-lg">
+<button class="px-4 py-1.5 rounded-md text-sm font-medium bg-white text-text-main shadow-sm transition-all">Public</button>
+<button class="px-4 py-1.5 rounded-md text-sm font-medium text-text-sub hover:text-text-main transition-all">Private</button>
+</div>
+</div>
+<div class="mt-4 bg-blue-50 border border-blue-100 rounded-md p-3 flex gap-3">
+<span class="material-icons text-blue-600 text-sm mt-0.5">info</span>
+<p class="text-xs text-blue-800 leading-relaxed">
+                                            Public contests are visible to all users on the platform. They will appear in the main contest calendar.
+                                        </p>
+</div>
+</div>
+<div class="pt-2">
+<div class="flex items-start">
+<div class="flex items-center h-5">
+<input class="focus:ring-primary h-4 w-4 text-primary border-gray-300 rounded" id="password_protected" name="password_protected" type="checkbox"/>
+</div>
+<div class="ml-3 text-sm">
+<label class="font-medium text-text-main" for="password_protected">Password Protected</label>
+<p class="text-text-sub text-xs">Require a password for users to enter the contest.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-gray-50 px-6 py-4 border-t border-border-light rounded-b-lg flex items-center justify-between">
+<button class="text-text-sub hover:text-text-main text-sm font-medium px-4 py-2" type="button">Cancel</button>
+<button class="inline-flex items-center px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" type="button">
+                                Continue to Problems
+                                <span class="material-icons ml-2 text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+</body></html>

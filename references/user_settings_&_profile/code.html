@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>User Settings &amp; Profile - Online Judge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d59f2",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "mono": ["Fira Code", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #374151;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 min-h-screen font-display">
+<!-- Top Navigation Bar -->
+<nav class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between h-16">
+<div class="flex items-center gap-4">
+<!-- Logo Placeholder -->
+<div class="flex-shrink-0 flex items-center gap-2 cursor-pointer">
+<div class="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">OJ</div>
+<span class="font-semibold text-lg tracking-tight hidden sm:block">Enterprise Judge</span>
+</div>
+<!-- Breadcrumbs -->
+<div class="hidden md:flex items-center ml-6 text-sm text-slate-500 dark:text-slate-400">
+<span class="hover:text-primary cursor-pointer">Home</span>
+<span class="mx-2">/</span>
+<span class="font-medium text-slate-900 dark:text-white">Settings</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:text-primary transition-colors relative">
+<span class="material-icons text-xl">notifications</span>
+<span class="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+</button>
+<div class="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium text-sm border border-primary/30">
+                        JD
+                    </div>
+</div>
+</div>
+</div>
+</nav>
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<!-- Header Section -->
+<div class="mb-8">
+<h1 class="text-3xl font-bold text-slate-900 dark:text-white">Account Settings</h1>
+<p class="mt-1 text-slate-500 dark:text-slate-400">Manage your profile information, security, and developer access.</p>
+</div>
+<div class="flex flex-col lg:flex-row gap-8">
+<!-- Sidebar Navigation -->
+<aside class="w-full lg:w-64 flex-shrink-0">
+<nav class="space-y-1">
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg bg-primary/10 text-primary" href="#">
+<span class="material-icons text-[20px] mr-3">person</span>
+                        Profile
+                    </a>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition-all" href="#security">
+<span class="material-icons text-[20px] mr-3">lock</span>
+                        Security
+                    </a>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition-all" href="#notifications">
+<span class="material-icons text-[20px] mr-3">notifications_none</span>
+                        Notifications
+                    </a>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition-all" href="#developer">
+<span class="material-icons text-[20px] mr-3">code</span>
+                        Developer &amp; API
+                    </a>
+<a class="group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition-all" href="#billing">
+<span class="material-icons text-[20px] mr-3">credit_card</span>
+                        Billing
+                    </a>
+</nav>
+<div class="mt-8 p-4 bg-slate-100 dark:bg-slate-800 rounded-xl">
+<h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Storage Usage</h3>
+<div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-2">
+<div class="bg-primary h-2 rounded-full" style="width: 45%"></div>
+</div>
+<div class="flex justify-between text-xs text-slate-600 dark:text-slate-400">
+<span>4.5 GB used</span>
+<span>10 GB total</span>
+</div>
+<button class="mt-3 text-xs text-primary font-medium hover:underline">Upgrade Plan</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<div class="flex-1 space-y-8">
+<!-- Profile Card -->
+<section class="bg-white dark:bg-slate-900 shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800" id="profile">
+<div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<div>
+<h2 class="text-lg font-semibold text-slate-900 dark:text-white">Public Profile</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400">This information will be displayed publicly.</p>
+</div>
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+                            Pro Member
+                        </span>
+</div>
+<div class="p-6 space-y-8">
+<!-- Avatar -->
+<div class="flex items-center gap-6">
+<div class="relative group">
+<img alt="Profile Picture" class="h-24 w-24 rounded-full object-cover ring-4 ring-slate-50 dark:ring-slate-800" data-alt="Close up portrait of a man looking forward" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpw0smqJK80R7cJwpxEr1SXrDg1qbGtXnvjlJ0hVGBvsQmvDT37bNGpz-MVu46vOnFpl4cpwl-ES9MsRVNTWcxbM0XyDLg32Wo7XFV63E8tZkhlEjPyMvkapZnMZ6c9f1ql7UC8pad-RCZP8ugUoE2wMXRXjLrSHJHVBOBGaRgMEufS7WGCs7ZAU2CfTyO2bYl5AS_g2UnShvBlCqdcISYDGw-Iebq0jgPBXI0ARCGf-tp46Pz818yEarqBKE2tLbypGD_2mjWKlc"/>
+<button class="absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-white shadow-lg hover:bg-blue-600 transition-colors" title="Change Avatar">
+<span class="material-icons text-sm block">edit</span>
+</button>
+</div>
+<div>
+<h3 class="text-lg font-medium text-slate-900 dark:text-white">John Doe</h3>
+<p class="text-sm text-slate-500 mb-2">User ID: <span class="font-mono text-xs bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">839201</span></p>
+<button class="text-sm text-slate-600 hover:text-primary dark:text-slate-400 font-medium">Remove photo</button>
+</div>
+</div>
+<!-- Form Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="col-span-1">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="full-name">Full Name</label>
+<input class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm h-10 px-3" id="full-name" name="full-name" type="text" value="John Doe"/>
+</div>
+<div class="col-span-1">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="username">Username</label>
+<div class="mt-1 flex rounded-lg shadow-sm">
+<span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-500 sm:text-sm">oj.com/u/</span>
+<input class="flex-1 block w-full rounded-none rounded-r-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-primary focus:ring-primary sm:text-sm h-10 px-3" id="username" name="username" type="text" value="johndoe_dev"/>
+</div>
+</div>
+<div class="col-span-1">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="email">Email Address</label>
+<div class="relative mt-1">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons text-slate-400 text-lg">mail</span>
+</div>
+<input class="block w-full pl-10 rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm h-10" id="email" name="email" type="email" value="john@university.edu"/>
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+<span class="text-green-500 text-xs font-medium flex items-center gap-1"><span class="material-icons text-sm">check_circle</span> Verified</span>
+</div>
+</div>
+</div>
+<div class="col-span-1">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="org">Organization / University</label>
+<input class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm h-10 px-3" id="org" name="org" type="text" value="Stanford University"/>
+</div>
+<div class="col-span-1 md:col-span-2">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="bio">Bio <span class="text-slate-400 font-normal ml-1">(Markdown supported)</span></label>
+<textarea class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-3" id="bio" name="bio" rows="3">Competitive programmer. Lover of algorithms and distributed systems.</textarea>
+</div>
+<div class="col-span-1 md:col-span-2">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Preferred Language</label>
+<div class="flex flex-wrap gap-2">
+<label class="inline-flex items-center px-4 py-2 rounded-lg border border-primary bg-primary/5 text-primary cursor-pointer hover:bg-primary/10 transition-colors">
+<input checked="" class="sr-only" name="lang" type="radio" value="cpp"/>
+<span class="font-medium">C++</span>
+</label>
+<label class="inline-flex items-center px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+<input class="sr-only" name="lang" type="radio" value="java"/>
+<span class="font-medium">Java</span>
+</label>
+<label class="inline-flex items-center px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+<input class="sr-only" name="lang" type="radio" value="python"/>
+<span class="font-medium">Python</span>
+</label>
+</div>
+</div>
+</div>
+</div>
+<div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3">
+<button class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" type="button">Cancel</button>
+<button class="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" type="button">Save Changes</button>
+</div>
+</section>
+<!-- Security Section -->
+<section class="bg-white dark:bg-slate-900 shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 scroll-mt-24" id="security">
+<div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800">
+<h2 class="text-lg font-semibold text-slate-900 dark:text-white">Security &amp; Login</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400">Manage your passwords and 2-factor authentication.</p>
+</div>
+<div class="p-6 space-y-8">
+<!-- Password Change -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+<div class="md:col-span-1">
+<h4 class="text-sm font-medium text-slate-900 dark:text-white">Password</h4>
+<p class="text-sm text-slate-500 mt-1">Last changed 3 months ago.</p>
+</div>
+<div class="md:col-span-2 space-y-4">
+<button class="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none">Change Password</button>
+</div>
+</div>
+<hr class="border-slate-200 dark:border-slate-800"/>
+<!-- 2FA -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+<div class="md:col-span-1">
+<h4 class="text-sm font-medium text-slate-900 dark:text-white">Two-Factor Authentication</h4>
+<p class="text-sm text-slate-500 mt-1">Add an extra layer of security to your account.</p>
+</div>
+<div class="md:col-span-2 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+<div class="flex items-center gap-3">
+<div class="h-10 w-10 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center">
+<span class="material-icons">shield</span>
+</div>
+<div>
+<p class="text-sm font-medium text-slate-900 dark:text-white">2FA is currently <span class="text-green-600 dark:text-green-400">Enabled</span></p>
+<p class="text-xs text-slate-500">Authentication via Google Authenticator</p>
+</div>
+</div>
+<button class="text-sm text-primary hover:text-blue-700 font-medium">Configure</button>
+</div>
+</div>
+<hr class="border-slate-200 dark:border-slate-800"/>
+<!-- Active Sessions -->
+<div class="space-y-4">
+<h4 class="text-sm font-medium text-slate-900 dark:text-white">Active Sessions</h4>
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-icons text-slate-400">desktop_windows</span>
+<div>
+<p class="text-sm font-medium text-slate-900 dark:text-white">Chrome on Windows <span class="ml-2 text-xs bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400 px-1.5 py-0.5 rounded">Current</span></p>
+<p class="text-xs text-slate-500">192.168.1.1 • San Francisco, CA</p>
+</div>
+</div>
+<span class="text-xs text-slate-400">Active now</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-icons text-slate-400">smartphone</span>
+<div>
+<p class="text-sm font-medium text-slate-900 dark:text-white">Safari on iPhone</p>
+<p class="text-xs text-slate-500">192.168.1.45 • San Francisco, CA</p>
+</div>
+</div>
+<button class="text-xs text-red-500 hover:text-red-700 font-medium">Revoke</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Developer / API Section -->
+<section class="bg-white dark:bg-slate-900 shadow-sm rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 scroll-mt-24" id="developer">
+<div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<div>
+<h2 class="text-lg font-semibold text-slate-900 dark:text-white">API Keys</h2>
+<p class="text-sm text-slate-500 dark:text-slate-400">Manage keys for accessing the OJ API programmatically.</p>
+</div>
+<button class="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+<span class="material-icons text-sm mr-2">add</span>
+                            Create New Key
+                        </button>
+</div>
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+<thead class="bg-slate-50 dark:bg-slate-800">
+<tr>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider" scope="col">Key Name</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider" scope="col">Prefix</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider" scope="col">Created</th>
+<th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider" scope="col">Last Used</th>
+<th class="relative px-6 py-3" scope="col">
+<span class="sr-only">Actions</span>
+</th>
+</tr>
+</thead>
+<tbody class="bg-white dark:bg-slate-900 divide-y divide-slate-200 dark:divide-slate-800">
+<tr>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-slate-900 dark:text-white">CI/CD Pipeline</div>
+<div class="text-xs text-slate-500">Read/Write access</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<code class="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-mono">oj_live_...4a2b</code>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                        Jan 12, 2023
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                        2 hours ago
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<button class="text-slate-400 hover:text-red-600 transition-colors"><span class="material-icons text-lg">delete</span></button>
+</td>
+</tr>
+<tr>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-slate-900 dark:text-white">VS Code Plugin</div>
+<div class="text-xs text-slate-500">Read only access</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<code class="text-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300 font-mono">oj_live_...9x9z</code>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                        Oct 04, 2023
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                        Never
+                                    </td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<button class="text-slate-400 hover:text-red-600 transition-colors"><span class="material-icons text-lg">delete</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Empty State Example (hidden by default logic but visible in code for completeness/future use) -->
+<!-- 
+                    <div class="text-center py-12">
+                        <span class="material-icons text-4xl text-slate-300 mb-3">vpn_key</span>
+                        <h3 class="mt-2 text-sm font-medium text-slate-900 dark:text-white">No API keys</h3>
+                        <p class="mt-1 text-sm text-slate-500">Get started by creating a new API key.</p>
+                        <div class="mt-6">
+                            <button type="button" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-blue-700 focus:outline-none">
+                                <span class="material-icons text-sm mr-2">add</span>
+                                Create New Key
+                            </button>
+                        </div>
+                    </div> 
+                    -->
+</section>
+<!-- Delete Account Zone -->
+<div class="rounded-xl border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 p-6">
+<h3 class="text-lg font-medium text-red-800 dark:text-red-400">Danger Zone</h3>
+<p class="mt-2 max-w-xl text-sm text-red-700 dark:text-red-300">
+                        Once you delete your account, there is no going back. Please be certain. All your submissions, contests, and team memberships will be permanently removed.
+                    </p>
+<div class="mt-5">
+<button class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" type="button">
+                            Delete Account
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="mt-12 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
+<p class="text-sm text-slate-500 dark:text-slate-400">© 2023 Enterprise Judge System. All rights reserved.</p>
+<div class="flex gap-6 text-sm text-slate-500 dark:text-slate-400">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Help Center</a>
+</div>
+</div>
+</footer>
+</body></html>

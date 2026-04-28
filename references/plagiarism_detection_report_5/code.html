@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Personal Collections &amp; Mistakes</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a73e8","primary-hover": "#1557b0",
+                        "background-light": "#ffffff",
+                        "surface-light": "#f8f9fa",
+                        "surface-card": "#f1f3f4","border-color": "#dadce0",
+                        "text-main": "#202124",
+                        "text-secondary": "#5f6368",
+                        "status-red-bg": "#fce8e6",
+                        "status-red-text": "#c5221f",
+                        "status-green-bg": "#e6f4ea",
+                        "status-green-text": "#137333",
+                        "status-orange-bg": "#fef7e0",
+                        "status-orange-text": "#ea8600",
+                        "status-yellow-bg": "#fff7e0", 
+                        "status-yellow-text": "#f9ab00",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Roboto", "Helvetica", "Arial", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "full": "9999px"},
+                    boxShadow: {
+                        "soft": "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+                        "card": "0 1px 3px 0 rgba(0,0,0,0.1), 0 1px 2px 0 rgba(0,0,0,0.06)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Roboto', sans-serif; }
+        h1, h2, h3, h4, .font-display { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body class="bg-background-light text-text-main font-body min-h-screen flex overflow-hidden">
+<aside class="w-20 lg:w-64 flex-shrink-0 flex flex-col border-r border-border-color bg-background-light transition-all duration-300 z-20">
+<div class="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-border-color">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold text-xl mr-0 lg:mr-3">
+            OJ
+        </div>
+<span class="text-xl font-bold tracking-tight hidden lg:block text-text-main">Nexus<span class="text-primary">Judge</span></span>
+</div>
+<nav class="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+<a class="flex items-center gap-4 px-4 py-3 rounded-r-full mr-2 text-text-secondary hover:bg-surface-light hover:text-primary transition-colors font-medium" href="#">
+<span class="material-icons text-[22px]">dashboard</span>
+<span class="hidden lg:block">Dashboard</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-r-full mr-2 text-text-secondary hover:bg-surface-light hover:text-primary transition-colors font-medium" href="#">
+<span class="material-icons text-[22px]">code</span>
+<span class="hidden lg:block">Problems</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-r-full mr-2 text-text-secondary hover:bg-surface-light hover:text-primary transition-colors font-medium" href="#">
+<span class="material-icons text-[22px]">emoji_events</span>
+<span class="hidden lg:block">Contests</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-r-full mr-2 bg-primary/10 text-primary font-medium" href="#">
+<span class="material-icons text-[22px]">book</span>
+<span class="hidden lg:block">Collections</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-r-full mr-2 text-text-secondary hover:bg-surface-light hover:text-primary transition-colors font-medium" href="#">
+<span class="material-icons text-[22px]">analytics</span>
+<span class="hidden lg:block">Progress</span>
+</a>
+</nav>
+<div class="p-4 border-t border-border-color">
+<button class="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-text-secondary hover:bg-surface-light transition-colors">
+<span class="material-icons text-[20px]">settings</span>
+<span class="hidden lg:block font-medium text-sm">Settings</span>
+</button>
+<div class="mt-4 flex items-center gap-3 px-3">
+<img alt="User" class="w-8 h-8 rounded-full border border-border-color bg-gray-100" data-alt="User avatar generic male" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzo2UDMepAwRSg3I0KtfQB6egLEM2Sii9YYn0v6UXQZzJAsHk-TasJcg9_X938XW2LFvX57Q6XzlHXLOGIx-3S0t5F0P8KvsOuwk6FQYDEmvmPNAekLA1o08eojGj4_umYjVcTITBnWCupoiLagmrW7iUZ9iFGM6E-4Z2AirZlUIZ4TKUgzQCXD_phKBopvFSBVCYEwbweqlUTcri6eM2VFjO-9s-ifI8rhUaz0EEocF6buyvT8fvpUYg2totEwaAUauLPJTi0UHQ"/>
+<div class="hidden lg:block">
+<p class="text-sm font-medium text-text-main">Alex Chen</p>
+<p class="text-xs text-text-secondary">Grandmaster</p>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-background-light">
+<header class="h-16 flex-shrink-0 border-b border-border-color bg-background-light flex items-center justify-between px-6 z-10">
+<div class="flex items-center gap-6">
+<h1 class="text-xl font-medium text-text-main flex items-center gap-2 font-display">
+<span class="material-icons text-primary">collections_bookmark</span>
+                My Notebook
+            </h1>
+<div class="h-6 w-px bg-border-color"></div>
+<div class="flex gap-6 text-sm">
+<div class="flex flex-col">
+<span class="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">Saved</span>
+<span class="font-bold text-text-main">42 Problems</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">Active Mistakes</span>
+<span class="font-bold text-status-red-text">18 Issues</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative group">
+<span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary text-lg group-focus-within:text-primary transition-colors">search</span>
+<input class="bg-surface-card border-none rounded-lg py-2 pl-10 pr-4 text-sm text-text-main placeholder-text-secondary focus:ring-2 focus:ring-primary/30 focus:bg-white w-72 transition-all shadow-sm" placeholder="Search saved problems..." type="text"/>
+</div>
+<button class="p-2 rounded-full text-text-secondary hover:bg-surface-light transition-colors relative">
+<span class="material-icons">filter_list</span>
+</button>
+</div>
+</header>
+<div class="flex-1 overflow-y-auto p-6 scroll-smooth bg-background-light">
+<div class="max-w-7xl mx-auto flex flex-col gap-8">
+<div class="border-b border-border-color w-full flex items-center gap-8 px-2">
+<button class="pb-3 border-b-2 border-transparent text-sm font-medium text-text-secondary hover:text-text-main transition-colors">
+                    Saved Problems
+                </button>
+<button class="pb-3 border-b-2 border-primary text-sm font-medium text-primary transition-all">
+                    Frequent Errors
+                </button>
+<button class="pb-3 border-b-2 border-transparent text-sm font-medium text-text-secondary hover:text-text-main transition-colors">
+                    Review Queue
+                </button>
+</div>
+<section>
+<div class="flex items-center justify-between mb-5">
+<h2 class="text-lg font-medium text-text-main flex items-center gap-2">
+<span class="material-symbols-outlined text-status-orange-text">warning</span>
+                        High Frequency Mistakes
+                    </h2>
+<a class="text-sm text-primary hover:text-primary-hover font-medium flex items-center gap-1" href="#">
+                        View Analysis <span class="material-icons text-sm">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+<div class="bg-surface-card rounded-xl p-6 border border-transparent hover:shadow-md hover:bg-white hover:border-border-color transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-status-red-bg text-status-red-text px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border border-status-red-bg">
+                                Time Limit Exceeded
+                            </div>
+<span class="text-xs text-text-secondary font-mono bg-white px-2 py-1 rounded border border-border-color">5x</span>
+</div>
+<h3 class="font-bold text-text-main text-lg mb-2 group-hover:text-primary transition-colors">Unoptimized Graph Traversal</h3>
+<p class="text-sm text-text-secondary mb-5 leading-relaxed">
+                            Often forgetting visited array check in DFS/BFS implementations causing infinite loops or redundant processing.
+                        </p>
+<div class="flex items-center gap-3 mt-auto pt-4 border-t border-gray-200/50">
+<div class="flex -space-x-2">
+<div class="w-7 h-7 rounded-full bg-white border border-border-color flex items-center justify-center text-[10px] font-bold text-text-secondary shadow-sm">P1</div>
+<div class="w-7 h-7 rounded-full bg-white border border-border-color flex items-center justify-center text-[10px] font-bold text-text-secondary shadow-sm">P2</div>
+<div class="w-7 h-7 rounded-full bg-white border border-border-color flex items-center justify-center text-[10px] font-bold text-text-secondary shadow-sm">+3</div>
+</div>
+<span class="text-xs text-text-secondary font-medium">Affected problems</span>
+</div>
+</div>
+<div class="bg-surface-card rounded-xl p-6 border border-transparent hover:shadow-md hover:bg-white hover:border-border-color transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-status-orange-bg text-status-orange-text px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border border-status-orange-bg">
+                                Integer Overflow
+                            </div>
+<span class="text-xs text-text-secondary font-mono bg-white px-2 py-1 rounded border border-border-color">3x</span>
+</div>
+<h3 class="font-bold text-text-main text-lg mb-2 group-hover:text-primary transition-colors">Using int instead of long long</h3>
+<p class="text-sm text-text-secondary mb-5 leading-relaxed">
+                            Failing to account for intermediate calculation overflow in modular arithmetic problems.
+                        </p>
+<div class="flex items-center gap-3 mt-auto pt-4 border-t border-gray-200/50">
+<div class="flex -space-x-2">
+<div class="w-7 h-7 rounded-full bg-white border border-border-color flex items-center justify-center text-[10px] font-bold text-text-secondary shadow-sm">A</div>
+<div class="w-7 h-7 rounded-full bg-white border border-border-color flex items-center justify-center text-[10px] font-bold text-text-secondary shadow-sm">B</div>
+</div>
+<span class="text-xs text-text-secondary font-medium">Affected problems</span>
+</div>
+</div>
+<div class="bg-surface-card rounded-xl p-6 border border-transparent hover:shadow-md hover:bg-white hover:border-border-color transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="bg-status-yellow-bg text-status-yellow-text px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border border-status-yellow-bg">
+                                Corner Case
+                            </div>
+<span class="text-xs text-text-secondary font-mono bg-white px-2 py-1 rounded border border-border-color">4x</span>
+</div>
+<h3 class="font-bold text-text-main text-lg mb-2 group-hover:text-primary transition-colors">Empty Input / Edge Values</h3>
+<p class="text-sm text-text-secondary mb-5 leading-relaxed">
+                            Forgetting to handle n=0, n=1, or array with all negative numbers in maximum subarray sum.
+                        </p>
+<div class="flex items-center gap-3 mt-auto pt-4 border-t border-gray-200/50">
+<button class="text-xs font-medium text-primary hover:bg-primary/10 px-3 py-1.5 rounded-md transition-colors -ml-1 flex items-center gap-1">
+                                Review 4 Problems <span class="material-icons text-[14px]">arrow_right_alt</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<section>
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-lg font-medium text-text-main flex items-center gap-2">
+<span class="material-icons text-primary text-base">bookmark</span>
+                        Saved Collections
+                    </h2>
+<div class="flex gap-1 border border-border-color rounded-lg p-1 bg-white">
+<button class="p-1.5 rounded hover:bg-surface-light text-text-secondary transition-colors">
+<span class="material-icons text-sm">view_module</span>
+</button>
+<button class="p-1.5 rounded bg-surface-card text-primary shadow-sm transition-colors">
+<span class="material-icons text-sm">view_list</span>
+</button>
+</div>
+</div>
+<div class="bg-white border border-border-color rounded-xl overflow-hidden shadow-card">
+<div class="grid grid-cols-12 gap-4 px-6 py-3 border-b border-border-color bg-surface-light text-xs font-bold uppercase text-text-secondary tracking-wider">
+<div class="col-span-5 md:col-span-4">Problem Name</div>
+<div class="col-span-2 hidden md:block">Difficulty</div>
+<div class="col-span-3 md:col-span-3">Tags</div>
+<div class="col-span-2 hidden md:block">Personal Note</div>
+<div class="col-span-4 md:col-span-1 text-right">Actions</div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-gray-100 hover:bg-surface-light transition-colors group">
+<div class="col-span-5 md:col-span-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-status-green-bg flex items-center justify-center text-status-green-text flex-shrink-0">
+<span class="material-icons text-sm font-bold">check</span>
+</div>
+<div>
+<h4 class="font-medium text-text-main text-sm group-hover:text-primary transition-colors cursor-pointer">Binary Tree Maximum Path Sum</h4>
+<span class="text-xs text-text-secondary">#124 • Added 2 days ago</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-status-red-bg text-status-red-text border border-status-red-bg/50">Hard</span>
+</div>
+<div class="col-span-3 md:col-span-3 flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-text-secondary border border-gray-200">DFS</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-text-secondary border border-gray-200">Tree</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-text-secondary border border-gray-200">Recursion</span>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="text-xs text-text-secondary italic">"Review post-order traversal logic..."</span>
+</div>
+<div class="col-span-4 md:col-span-1 flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-full hover:bg-gray-100 text-text-secondary hover:text-primary transition-colors"><span class="material-icons text-lg">edit_note</span></button>
+<button class="p-1.5 rounded-full hover:bg-status-red-bg text-text-secondary hover:text-status-red-text transition-colors"><span class="material-icons text-lg">delete_outline</span></button>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-gray-100 hover:bg-surface-light transition-colors group">
+<div class="col-span-5 md:col-span-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-status-yellow-bg flex items-center justify-center text-status-yellow-text flex-shrink-0">
+<span class="material-icons text-sm font-bold">priority_high</span>
+</div>
+<div>
+<h4 class="font-medium text-text-main text-sm group-hover:text-primary transition-colors cursor-pointer">Course Schedule II</h4>
+<span class="text-xs text-text-secondary">#210 • Added 5 days ago</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-status-orange-bg text-status-orange-text border border-status-orange-bg/50">Medium</span>
+</div>
+<div class="col-span-3 md:col-span-3 flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-text-secondary border border-gray-200">Topological Sort</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-text-secondary border border-gray-200">Graph</span>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="text-xs text-text-secondary italic">"Need to retry with Kahn's algo"</span>
+</div>
+<div class="col-span-4 md:col-span-1 flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-full hover:bg-gray-100 text-text-secondary hover:text-primary transition-colors"><span class="material-icons text-lg">edit_note</span></button>
+<button class="p-1.5 rounded-full hover:bg-status-red-bg text-text-secondary hover:text-status-red-text transition-colors"><span class="material-icons text-lg">delete_outline</span></button>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 items-center border-b border-gray-100 hover:bg-surface-light transition-colors group">
+<div class="col-span-5 md:col-span-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-status-red-bg flex items-center justify-center text-status-red-text flex-shrink-0">
+<span class="material-icons text-sm font-bold">close</span>
+</div>
+<div>
+<h4 class="font-medium text-text-main text-sm group-hover:text-primary transition-colors cursor-pointer">Sliding Window Maximum</h4>
+<span class="text-xs text-text-secondary">#239 • Added 1 week ago</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-status-red-bg text-status-red-text border border-status-red-bg/50">Hard</span>
+</div>
+<div class="col-span-3 md:col-span-3 flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-text-secondary border border-gray-200">Deque</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-text-secondary border border-gray-200">Sliding Window</span>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="text-xs text-text-secondary italic">"TLE on large input case"</span>
+</div>
+<div class="col-span-4 md:col-span-1 flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-full hover:bg-gray-100 text-text-secondary hover:text-primary transition-colors"><span class="material-icons text-lg">edit_note</span></button>
+<button class="p-1.5 rounded-full hover:bg-status-red-bg text-text-secondary hover:text-status-red-text transition-colors"><span class="material-icons text-lg">delete_outline</span></button>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-surface-light transition-colors group">
+<div class="col-span-5 md:col-span-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-status-green-bg flex items-center justify-center text-status-green-text flex-shrink-0">
+<span class="material-icons text-sm font-bold">check</span>
+</div>
+<div>
+<h4 class="font-medium text-text-main text-sm group-hover:text-primary transition-colors cursor-pointer">Valid Anagram</h4>
+<span class="text-xs text-text-secondary">#242 • Added 1 week ago</span>
+</div>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-status-green-bg text-status-green-text border border-status-green-bg/50">Easy</span>
+</div>
+<div class="col-span-3 md:col-span-3 flex flex-wrap gap-1.5">
+<span class="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-text-secondary border border-gray-200">String</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] bg-gray-100 text-text-secondary border border-gray-200">Hash Table</span>
+</div>
+<div class="col-span-2 hidden md:block">
+<span class="text-xs text-text-secondary italic">"Remember unicode edge cases"</span>
+</div>
+<div class="col-span-4 md:col-span-1 flex justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 rounded-full hover:bg-gray-100 text-text-secondary hover:text-primary transition-colors"><span class="material-icons text-lg">edit_note</span></button>
+<button class="p-1.5 rounded-full hover:bg-status-red-bg text-text-secondary hover:text-status-red-text transition-colors"><span class="material-icons text-lg">delete_outline</span></button>
+</div>
+</div>
+</div>
+<div class="mt-4 flex justify-between items-center">
+<span class="text-xs text-text-secondary">Showing 1-4 of 42</span>
+<div class="flex gap-2">
+<button class="px-3 py-1.5 text-xs rounded border border-border-color text-text-secondary opacity-50 cursor-not-allowed bg-white">Previous</button>
+<button class="px-3 py-1.5 text-xs rounded border border-border-color text-text-main hover:bg-surface-light transition-colors bg-white font-medium">Next</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+<div class="h-8 bg-surface-light border-t border-border-color flex-shrink-0 flex items-center justify-between px-4 text-[11px] text-text-secondary z-10">
+<span>Last synced: <strong>Today at 14:03</strong></span>
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-status-green-text"></span> System Stable</span>
+<span>Latency: 24ms</span>
+</div>
+</div>
+</main>
+
+</body></html>

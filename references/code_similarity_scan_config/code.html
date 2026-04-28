@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Code Similarity Scan Config</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d59f2",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-800 dark:text-slate-200 transition-colors duration-200">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-64 flex-shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hidden md:flex flex-col z-10">
+<div class="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold text-lg">OJ</div>
+<span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Enterprise<span class="text-primary">Judge</span></span>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto py-6 px-3 space-y-1">
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg group transition-colors" href="#">
+<span class="material-icons text-[20px] mr-3 text-slate-400 group-hover:text-primary transition-colors">dashboard</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<div class="pt-4 pb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Management</div>
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg group transition-colors" href="#">
+<span class="material-icons text-[20px] mr-3 text-slate-400 group-hover:text-primary transition-colors">code</span>
+<span class="font-medium">Problems</span>
+</a>
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg group transition-colors" href="#">
+<span class="material-icons text-[20px] mr-3 text-slate-400 group-hover:text-primary transition-colors">emoji_events</span>
+<span class="font-medium">Contests</span>
+</a>
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg group transition-colors" href="#">
+<span class="material-icons text-[20px] mr-3 text-slate-400 group-hover:text-primary transition-colors">people</span>
+<span class="font-medium">Users</span>
+</a>
+<div class="pt-4 pb-2 px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider">Tools</div>
+<a class="flex items-center px-3 py-2.5 bg-primary/10 text-primary rounded-lg group transition-colors" href="#">
+<span class="material-icons text-[20px] mr-3 text-primary">policy</span>
+<span class="font-medium">Plagiarism Check</span>
+</a>
+<a class="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg group transition-colors" href="#">
+<span class="material-icons text-[20px] mr-3 text-slate-400 group-hover:text-primary transition-colors">settings</span>
+<span class="font-medium">Settings</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-slate-800">
+<div class="flex items-center gap-3 px-2">
+<img alt="User Profile" class="h-9 w-9 rounded-full object-cover ring-2 ring-white dark:ring-slate-800" data-alt="Close up of a smiling man's face" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDWCSQxZ8HFcmfy9EwAXYe-QIfdThFQSbdUEs53gB6Nh82KMIvmgwK42mb44oeOw-5gtc2Pyy_7WGSz_XguqDASDOA-4E4fpP05J4wuriI-1_1VCeTPEw34O_VT6O31IPPqh4oEd8s2mKn6Bx6cLUyLeLDWc97SRNy0gmcHln1r1BggZPvwnyGFIBmlO4LIsGGJ4D1Ut65363ADhdByTjskHuYzT9SDDUWbBJkn6lfdkXMC_Hg-JQimcElDn_gyPiMz4r_KTFSajw"/>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-slate-900 dark:text-white truncate">Admin User</p>
+<p class="text-xs text-slate-500 truncate">admin@oj.enterprise</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark relative">
+<!-- Header -->
+<header class="bg-white dark:bg-slate-900 shadow-sm sticky top-0 z-20">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+<div class="flex justify-between items-center">
+<div>
+<nav aria-label="Breadcrumb" class="flex">
+<ol class="flex items-center space-x-2">
+<li><a class="text-slate-400 hover:text-slate-500 text-sm" href="#">Tools</a></li>
+<li><span class="text-slate-300 text-sm">/</span></li>
+<li><span class="text-primary font-medium text-sm">Code Similarity</span></li>
+</ol>
+</nav>
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white mt-1">New Scan Configuration</h1>
+</div>
+<div class="flex items-center gap-3">
+<button class="inline-flex items-center px-4 py-2 border border-slate-300 dark:border-slate-600 shadow-sm text-sm font-medium rounded-lg text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                Load Preset
+                            </button>
+<button class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-blue-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+<span class="material-icons text-sm mr-2">play_arrow</span>
+                                Start Scan
+                            </button>
+</div>
+</div>
+</div>
+</header>
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+<!-- Alert/Notification Area (Optional Context) -->
+<div class="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 border border-blue-100 dark:border-blue-900/50 flex items-start">
+<div class="flex-shrink-0">
+<span class="material-icons text-primary">info</span>
+</div>
+<div class="ml-3">
+<h3 class="text-sm font-medium text-blue-800 dark:text-blue-200">System Capacity</h3>
+<div class="mt-2 text-sm text-blue-700 dark:text-blue-300">
+<p>Current queue load is low. Estimated scan time for large contests (~500 submissions) is less than 2 minutes.</p>
+</div>
+</div>
+</div>
+<!-- Step 1: Scope Selection -->
+<section class="bg-white dark:bg-slate-900 shadow-sm rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800">
+<div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+<div>
+<h2 class="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">1</span>
+                                Scan Scope
+                            </h2>
+<p class="mt-1 text-sm text-slate-500">Select what you want to analyze for similarity.</p>
+</div>
+</div>
+<div class="p-6">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Type Toggle -->
+<div class="space-y-3">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Target Type</label>
+<div class="flex rounded-lg bg-slate-100 dark:bg-slate-800 p-1">
+<button class="flex-1 rounded-md bg-white dark:bg-slate-700 shadow-sm py-2 text-sm font-medium text-slate-900 dark:text-white transition-all ring-1 ring-black/5 dark:ring-white/10">
+                                        Contest
+                                    </button>
+<button class="flex-1 rounded-md py-2 text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all">
+                                        Single Problem
+                                    </button>
+</div>
+</div>
+<!-- Context Selector -->
+<div class="space-y-3">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="contest-select">Select Contest</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons text-slate-400 text-lg">search</span>
+</div>
+<input class="block w-full pl-10 pr-10 py-2.5 sm:text-sm border-slate-300 dark:border-slate-700 rounded-lg focus:ring-primary focus:border-primary bg-white dark:bg-slate-800 dark:text-white placeholder-slate-400" id="contest-select" placeholder="Search by ID or Name..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+<span class="material-icons text-slate-400 text-lg">expand_more</span>
+</div>
+</div>
+<p class="text-xs text-slate-500">e.g., Weekly Contest 342, specific problem ID: 1205</p>
+</div>
+</div>
+<!-- Selected Context Preview (Conditional) -->
+<div class="mt-6 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-800 flex items-start gap-4">
+<div class="h-12 w-12 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-icons">emoji_events</span>
+</div>
+<div>
+<h4 class="text-sm font-medium text-slate-900 dark:text-white">Weekly Contest 342</h4>
+<div class="flex items-center gap-4 mt-1">
+<span class="text-xs text-slate-500 flex items-center gap-1"><span class="material-icons text-[14px]">code</span> 4 Problems</span>
+<span class="text-xs text-slate-500 flex items-center gap-1"><span class="material-icons text-[14px]">groups</span> 1,240 Participants</span>
+<span class="text-xs text-slate-500 flex items-center gap-1"><span class="material-icons text-[14px]">history</span> Ended 2 days ago</span>
+</div>
+</div>
+<button class="ml-auto text-slate-400 hover:text-red-500">
+<span class="material-icons text-sm">close</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Step 2: Algorithm & Sensitivity -->
+<section class="bg-white dark:bg-slate-900 shadow-sm rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800">
+<div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800">
+<h2 class="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">2</span>
+                            Detection Settings
+                        </h2>
+<p class="mt-1 text-sm text-slate-500">Fine-tune how strict the comparison algorithm should be.</p>
+</div>
+<div class="p-6 space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Algorithm -->
+<div class="space-y-2">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Algorithm Strategy</label>
+<select class="block w-full pl-3 pr-10 py-2.5 text-base border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-lg bg-white dark:bg-slate-800 dark:text-white">
+<option>Token-based (MOSS-like)</option>
+<option>Text-based (Strict)</option>
+<option>AST Tree Comparison (Beta)</option>
+</select>
+</div>
+<!-- Languages -->
+<div class="space-y-2 col-span-2">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Languages to Scan</label>
+<div class="flex flex-wrap gap-2">
+<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
+                                        C++
+                                        <button class="flex-shrink-0 ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-primary hover:bg-primary hover:text-white focus:outline-none focus:bg-primary focus:text-white" type="button">
+<span class="sr-only">Remove C++</span>
+<svg class="h-2 w-2" fill="none" stroke="currentColor" viewbox="0 0 8 8"><path d="M1 1l6 6m0-6L1 7" stroke-linecap="round" stroke-width="1.5"></path></svg>
+</button>
+</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
+                                        Java
+                                        <button class="flex-shrink-0 ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-primary hover:bg-primary hover:text-white focus:outline-none focus:bg-primary focus:text-white" type="button">
+<span class="sr-only">Remove Java</span>
+<svg class="h-2 w-2" fill="none" stroke="currentColor" viewbox="0 0 8 8"><path d="M1 1l6 6m0-6L1 7" stroke-linecap="round" stroke-width="1.5"></path></svg>
+</button>
+</span>
+<span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20">
+                                        Python 3
+                                        <button class="flex-shrink-0 ml-1.5 h-4 w-4 rounded-full inline-flex items-center justify-center text-primary hover:bg-primary hover:text-white focus:outline-none focus:bg-primary focus:text-white" type="button">
+<span class="sr-only">Remove Python 3</span>
+<svg class="h-2 w-2" fill="none" stroke="currentColor" viewbox="0 0 8 8"><path d="M1 1l6 6m0-6L1 7" stroke-linecap="round" stroke-width="1.5"></path></svg>
+</button>
+</span>
+<button class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-transparent hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-icons text-sm mr-1">add</span> Add Language
+                                    </button>
+</div>
+</div>
+</div>
+<!-- Threshold Slider -->
+<div class="pt-4 border-t border-slate-100 dark:border-slate-800">
+<div class="flex justify-between items-center mb-4">
+<label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="threshold">Similarity Threshold</label>
+<span class="px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 text-primary font-bold text-sm">70%</span>
+</div>
+<div class="relative w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full">
+<div class="absolute top-0 left-0 h-2 bg-primary rounded-full" style="width: 70%;"></div>
+<div class="absolute top-0 w-4 h-4 bg-white border-2 border-primary rounded-full shadow cursor-pointer transform -translate-y-1/4 -translate-x-1/2 hover:scale-110 transition-transform" style="left: 70%;"></div>
+</div>
+<div class="mt-2 flex justify-between text-xs text-slate-400 font-mono">
+<span>0% (Loose)</span>
+<span>50%</span>
+<span>100% (Exact)</span>
+</div>
+<p class="mt-3 text-xs text-slate-500">Submissions with match percentage higher than this value will be flagged for manual review.</p>
+</div>
+</div>
+</section>
+<!-- Step 3: Filters & Exclusions -->
+<section class="bg-white dark:bg-slate-900 shadow-sm rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800">
+<div class="px-6 py-5 border-b border-slate-100 dark:border-slate-800 cursor-pointer flex justify-between items-center group">
+<div>
+<h2 class="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+<span class="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">3</span>
+                                Advanced Filters
+                            </h2>
+</div>
+<span class="material-icons text-slate-400 group-hover:text-primary transition-colors">expand_more</span>
+</div>
+<div class="p-6">
+<div class="space-y-4">
+<div class="flex items-start">
+<div class="flex items-center h-5">
+<input checked="" class="focus:ring-primary h-4 w-4 text-primary border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800" id="boilerplate" name="boilerplate" type="checkbox"/>
+</div>
+<div class="ml-3 text-sm">
+<label class="font-medium text-slate-700 dark:text-slate-300" for="boilerplate">Ignore Boilerplate Code</label>
+<p class="text-slate-500">Automatically exclude common template headers, includes, and I/O boilerplate from comparison.</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="flex items-center h-5">
+<input checked="" class="focus:ring-primary h-4 w-4 text-primary border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800" id="admins" name="admins" type="checkbox"/>
+</div>
+<div class="ml-3 text-sm">
+<label class="font-medium text-slate-700 dark:text-slate-300" for="admins">Exclude Admins &amp; Setters</label>
+<p class="text-slate-500">Do not include submissions from contest administrators or problem setters in the similarity pool.</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="flex items-center h-5">
+<input class="focus:ring-primary h-4 w-4 text-primary border-slate-300 dark:border-slate-600 rounded dark:bg-slate-800" id="previous" name="previous" type="checkbox"/>
+</div>
+<div class="ml-3 text-sm">
+<label class="font-medium text-slate-700 dark:text-slate-300" for="previous">Cross-Contest Scan</label>
+<p class="text-slate-500">Compare against previous years' solutions for the same problem (if applicable). <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Slower</span></p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<div class="flex justify-end pt-6 pb-20">
+<button class="mr-4 inline-flex justify-center py-3 px-6 border border-transparent shadow-sm text-sm font-medium rounded-lg text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" type="button">
+                        Save Config as Preset
+                    </button>
+<button class="inline-flex justify-center py-3 px-8 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-primary hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary" type="submit">
+                        Start Scan Now
+                    </button>
+</div>
+</div>
+</main>
+</div>
+<!-- Decorative background element for visual depth (Optional) -->
+<div class="fixed top-0 right-0 -z-10 opacity-30 pointer-events-none transform translate-x-1/3 -translate-y-1/3">
+<div class="w-96 h-96 rounded-full bg-primary blur-[128px]"></div>
+</div>
+</body></html>
