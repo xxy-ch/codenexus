@@ -53,6 +53,26 @@ export interface AnalysisClassSnapshot {
   created_at: string;
 }
 
+/** Feedback card from GET /analysis/submissions/:id/ai-feedback */
+export interface AiFeedbackCard {
+  id: number;
+  card_type: string;
+  title: string;
+  content: Record<string, unknown> | string | null;
+}
+
+/** Response shape for GET /analysis/submissions/:id/ai-feedback */
+export interface AiFeedbackResponse {
+  job_id: number;
+  submission_id: number;
+  status: "pending" | "processing" | "completed" | "failed";
+  llm_model: string | null;
+  created_at: string;
+  updated_at: string;
+  card: AiFeedbackCard | null;
+  error_message: string | null;
+}
+
 /** Response shape for POST /analysis/submissions/:id/trigger-feedback */
 export interface TriggerFeedbackResponse {
   job_id: number;
@@ -114,6 +134,18 @@ export const analysisService = {
   async triggerFeedback(submissionId: number) {
     const { data } = await api.post<TriggerFeedbackResponse>(
       `/analysis/submissions/${submissionId}/trigger-feedback`,
+    );
+    return data;
+  },
+
+  /**
+   * Get the status and result of an LLM feedback analysis job.
+   * Returns 404 when no job exists yet (user hasn't triggered one).
+   * Gated by `llm_code_assistant` feature flag on the backend.
+   */
+  async getAiFeedback(submissionId: number) {
+    const { data } = await api.get<AiFeedbackResponse>(
+      `/analysis/submissions/${submissionId}/ai-feedback`,
     );
     return data;
   },
