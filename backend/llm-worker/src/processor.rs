@@ -7,8 +7,8 @@ use sqlx::PgPool;
 use tracing::{error, info, warn};
 use crate::config::WorkerConfig;
 use crate::db;
-use crate::llm_client::{LlmClient, LlmError};
-use crate::prompts;
+use crate::llm_client::{ChatMessage, LlmClient, LlmError};
+use crate::prompts::{self, CodeReviewOutput};
 
 /// Process a single analysis job from claim to completion.
 ///
@@ -36,9 +36,8 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
             anyhow::anyhow!("problem {} not found for job {job_id}", job.problem_id)
         })?;
 
-    // 4. Build the prompt
-    let system = prompts::system_prompt();
-    let user_prompt = prompts::code_review_prompt(
+    // 4. Build the prompt messages
+    let messages = prompts::code_review_prompt(
         &problem.title,
         &problem.description,
         problem.difficulty.as_deref(),
@@ -46,10 +45,19 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
         &submission.code,
     );
 
-    // 5. Call LLM
+    // Convert prompt messages to ChatMessage for the LLM client
+    let chat_messages: Vec<ChatMessage> = messages
+        .into_iter()
+        .map(|m| ChatMessage {
+            role: m.role,
+            content: m.content,
+        })
+        .collect();
+
+    // 5. Call LLM with structured output parsing
     let client = LlmClient::from_config(config)?;
-    match client.chat(&system, &user_prompt).await {
-        Ok(result) => {
+    match client.chat_completion_structured::<CodeReviewOutput>(chat_messages, "").await {
+        Ok((review, result)) => {
             info!(
                 job_id,
                 model = %result.model,
@@ -60,27 +68,17 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
                 "LLM call succeeded"
             );
 
-            // 6. Parse the response as JSON
-            let content: serde_json::Value = match serde_json::from_str(&result.content) {
-                Ok(v) => v,
-                Err(e) => {
-                    warn!(job_id, error = %e, "LLM output is not valid JSON, wrapping as raw content");
-                    serde_json::json!({ "raw_content": result.content })
-                }
-            };
+            // 6. Serialize the structured output for storage
+            let content = serde_json::to_value(&review).unwrap_or_else(|_| {
+                serde_json::json!({ "raw_content": "serialization error" })
+            });
 
             // 7. Insert teaching card
-            let title = content
-                .get("title")
-                .and_then(|v| v.as_str())
-                .unwrap_or("Code Analysis")
-                .to_string();
-
             let card = db::NewTeachingCard {
                 problem_id: job.problem_id,
                 organization_id: job.organization_id,
                 card_type: "code_review".to_string(),
-                title,
+                title: review.title.clone(),
                 content,
                 source_cluster_ids: vec![],
             };
