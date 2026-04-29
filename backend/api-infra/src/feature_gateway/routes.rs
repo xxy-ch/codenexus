@@ -59,7 +59,12 @@ async fn resolved_features(
 
         let resolved = state
             .gateway_client
-            .resolve(slug, tenant_ctx.tenant_id, tenant_ctx.campus_id, tenant_ctx.grade_id)
+            .resolve(
+                slug,
+                tenant_ctx.tenant_id,
+                tenant_ctx.campus_id,
+                tenant_ctx.grade_id,
+            )
             .await;
 
         result.insert(
@@ -291,7 +296,9 @@ async fn verify_scope_ownership(
             if owns_class {
                 Ok(())
             } else {
-                Err(AppError::Forbidden("Class scope is outside caller ownership".into()))
+                Err(AppError::Forbidden(
+                    "Class scope is outside caller ownership".into(),
+                ))
             }
         }
         _ => Err(AppError::Forbidden(format!(
@@ -301,14 +308,21 @@ async fn verify_scope_ownership(
     }
 }
 
-fn require_matching_scope(scope_id: Option<i64>, expected: i64, label: &str) -> Result<(), AppError> {
+fn require_matching_scope(
+    scope_id: Option<i64>,
+    expected: i64,
+    label: &str,
+) -> Result<(), AppError> {
     match scope_id {
         Some(actual) if actual == expected => Ok(()),
         Some(_) => Err(AppError::Forbidden(format!(
             "{} scope is outside caller ownership",
             label
         ))),
-        None => Err(AppError::Validation(format!("{} scope_id is required", label))),
+        None => Err(AppError::Validation(format!(
+            "{} scope_id is required",
+            label
+        ))),
     }
 }
 
@@ -330,7 +344,9 @@ async fn require_existing_campus(
     if exists {
         Ok(())
     } else {
-        Err(AppError::Forbidden("Campus scope is outside caller ownership".into()))
+        Err(AppError::Forbidden(
+            "Campus scope is outside caller ownership".into(),
+        ))
     }
 }
 
@@ -358,7 +374,9 @@ async fn require_grade_in_campus(
     if exists {
         Ok(())
     } else {
-        Err(AppError::Forbidden("Grade scope is outside caller ownership".into()))
+        Err(AppError::Forbidden(
+            "Grade scope is outside caller ownership".into(),
+        ))
     }
 }
 

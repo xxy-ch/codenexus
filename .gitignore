@@ -6,6 +6,7 @@ release/
 # Compiled output
 **/*.rs.bk
 *.pdb
+*.png
 
 # IDE
 .vscode/
@@ -46,6 +47,7 @@ frontend/test-results/
 *_backup*
 *_bak*
 .gitnexus
+.playwright-mcp/
 
 # other
 .claude/
@@ -59,6 +61,8 @@ frontend/test-results/
 .gsd
 .gsd-id
 .mcp.json
+.bg-shell/
+.planning/
 .bg-shell/
 *.code-workspace
 .env

@@ -219,7 +219,11 @@ async fn test_submission_status_update() {
             .fetch_one(&fixture.db_pool)
             .await
             .unwrap();
-    assert_eq!(stored_score, Some(100), "Score must be persisted from judge result");
+    assert_eq!(
+        stored_score,
+        Some(100),
+        "Score must be persisted from judge result"
+    );
 }
 
 // --- Regression tests for compile_error terminal status (typo was "compilation_error") ---

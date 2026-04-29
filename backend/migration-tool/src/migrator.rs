@@ -2231,14 +2231,14 @@ mod tests {
         let receiver_id = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb".to_string();
 
         // Case 1: sender < receiver
-        let (min1, max1) = if &sender_id < &receiver_id {
+        let (min1, max1) = if sender_id < receiver_id {
             (sender_id.clone(), receiver_id.clone())
         } else {
             (receiver_id.clone(), sender_id.clone())
         };
 
         // Case 2: receiver < sender (reversed input)
-        let (min2, max2) = if &receiver_id < &sender_id {
+        let (min2, max2) = if receiver_id < sender_id {
             (receiver_id.clone(), sender_id.clone())
         } else {
             (sender_id.clone(), receiver_id.clone())

@@ -82,15 +82,9 @@ mod tests {
     fn test_role_from_str() {
         assert_eq!(Role::from_str("root"), Ok(Role::Root));
         assert_eq!(Role::from_str("ROOT"), Ok(Role::Root));
-        assert_eq!(
-            Role::from_str("gradeadmin"),
-            Ok(Role::GradeAdmin)
-        );
+        assert_eq!(Role::from_str("gradeadmin"), Ok(Role::GradeAdmin));
         // Backward compat: old role string still resolves
-        assert_eq!(
-            Role::from_str("organizationadmin"),
-            Ok(Role::GradeAdmin)
-        );
+        assert_eq!(Role::from_str("organizationadmin"), Ok(Role::GradeAdmin));
         assert_eq!(Role::from_str("campusadmin"), Ok(Role::CampusAdmin));
         assert_eq!(Role::from_str("teacher"), Ok(Role::Teacher));
         assert_eq!(

@@ -290,6 +290,7 @@ export function SubmissionDetail() {
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
         <div className="overflow-hidden border border-border rounded-xl bg-card shadow-whisper">
           <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
+            <div className="flex items-center gap-3">
               <span className="text-sm font-medium text-foreground">提交代码</span>
               <span className="text-[11px] font-mono text-muted-foreground">
                 {submission.language}

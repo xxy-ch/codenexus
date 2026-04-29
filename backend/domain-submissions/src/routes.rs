@@ -20,8 +20,7 @@ pub fn submissions_router() -> axum::Router<AppState> {
 }
 
 pub fn worker_results_router() -> axum::Router<AppState> {
-    axum::Router::new()
-        .route("/:id/results", axum::routing::post(update_judge_result))
+    axum::Router::new().route("/:id/results", axum::routing::post(update_judge_result))
 }
 
 #[derive(Debug, Deserialize)]

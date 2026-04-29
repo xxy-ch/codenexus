@@ -187,6 +187,8 @@ mod tests {
 
     #[test]
     fn cli_missing_database_url_fails() {
+        // Clear DATABASE_URL env var so clap doesn't fall back to it.
+        std::env::remove_var("DATABASE_URL");
         let result = Cli::try_parse_from([
             "uoj-migrate",
             "--dump-file",
