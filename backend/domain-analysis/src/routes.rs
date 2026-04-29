@@ -1,16 +1,37 @@
 use api_infra::state::AppState;
 use axum::{
-    extract::{Extension, Path, State},
+    extract::{Extension, Path, Query, State},
     http::StatusCode,
     response::Json,
     routing::{get, post},
     Router,
 };
+use serde::Deserialize;
 use serde_json::json;
 use shared::models::Claims;
 
 use crate::queue::{self, AnalysisJobMessage};
 use crate::service::AnalysisService;
+
+/// Query parameters for the similar-submissions endpoints.
+#[derive(Debug, Deserialize)]
+pub struct SimilarQueryParams {
+    /// Maximum number of results to return. Defaults to 20.
+    #[serde(default = "default_limit")]
+    pub limit: i64,
+    /// Minimum combined similarity score (0.0–1.0). Results below this
+    /// threshold are excluded. Defaults to 0.5.
+    #[serde(default = "default_min_similarity")]
+    pub min_similarity: f64,
+}
+
+fn default_limit() -> i64 {
+    20
+}
+
+fn default_min_similarity() -> f64 {
+    0.5
+}
 
 pub fn analysis_router() -> Router<AppState> {
     Router::new()
@@ -25,6 +46,14 @@ pub fn analysis_router() -> Router<AppState> {
         .route(
             "/submissions/:submission_id/ai-feedback",
             get(get_ai_feedback),
+        )
+        .route(
+            "/submissions/:submission_id/similar",
+            get(get_similar_submissions),
+        )
+        .route(
+            "/submissions/:submission_id/similar-cross",
+            get(get_cross_problem_similar),
         )
         .route(
             "/problems/:problem_id/teaching-cards",
@@ -275,4 +304,110 @@ pub async fn get_ai_feedback(
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
+}
+
+/// GET /analysis/submissions/:submission_id/similar
+///
+/// Retrieve the most similar submissions to the given submission within the
+/// **same problem**, constrained to the same organization (multi-tenant).
+///
+/// Query params:
+///   - `limit` (default 20): max results
+///   - `min_similarity` (default 0.5): minimum combined similarity score
+pub async fn get_similar_submissions(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Path(submission_id): Path<i64>,
+    Query(params): Query<SimilarQueryParams>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let service = AnalysisService::new(state.db_pool.clone());
+    let organization_id = claims.school_id;
+
+    let start = std::time::Instant::now();
+
+    let mut results = service
+        .find_similar_submissions(submission_id, organization_id, params.limit)
+        .await
+        .map_err(|error| {
+            tracing::error!(
+                error = %error,
+                submission_id,
+                organization_id,
+                "failed to find similar submissions"
+            );
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // Apply minimum similarity threshold at the routing layer.
+    results.retain(|s| s.similarity_score >= params.min_similarity);
+
+    let elapsed_ms = start.elapsed().as_millis() as i64;
+
+    tracing::info!(
+        submission_id,
+        organization_id,
+        result_count = results.len(),
+        elapsed_ms,
+        "similar submissions retrieval completed"
+    );
+
+    Ok(Json(json!({
+        "query_submission_id": submission_id,
+        "count": results.len(),
+        "elapsed_ms": elapsed_ms,
+        "similar_submissions": results,
+    })))
+}
+
+/// GET /analysis/submissions/:submission_id/similar-cross
+///
+/// Retrieve the most similar submissions to the given submission **across all
+/// problems** within the same organization.
+///
+/// Query params:
+///   - `limit` (default 20): max results
+///   - `min_similarity` (default 0.5): minimum combined similarity score
+pub async fn get_cross_problem_similar(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Path(submission_id): Path<i64>,
+    Query(params): Query<SimilarQueryParams>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let service = AnalysisService::new(state.db_pool.clone());
+    let organization_id = claims.school_id;
+
+    let start = std::time::Instant::now();
+
+    let mut results = service
+        .find_cross_problem_similar(submission_id, organization_id, params.limit)
+        .await
+        .map_err(|error| {
+            tracing::error!(
+                error = %error,
+                submission_id,
+                organization_id,
+                "failed to find cross-problem similar submissions"
+            );
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    // Apply minimum similarity threshold at the routing layer.
+    results.retain(|s| s.similarity_score >= params.min_similarity);
+
+    let elapsed_ms = start.elapsed().as_millis() as i64;
+
+    tracing::info!(
+        submission_id,
+        organization_id,
+        result_count = results.len(),
+        elapsed_ms,
+        "cross-problem similar submissions retrieval completed"
+    );
+
+    Ok(Json(json!({
+        "query_submission_id": submission_id,
+        "count": results.len(),
+        "elapsed_ms": elapsed_ms,
+        "similar_submissions": results,
+    })))
 }
