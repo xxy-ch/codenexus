@@ -50,6 +50,8 @@ frontend/test-results/
 .playwright-mcp/
 
 # other
+docs/brainstorms/
+frontend-skill/
 .claude/
 .crush/
 .cursor/
