@@ -192,6 +192,42 @@ impl From<FeatureWithProblem> for (AnalysisSubmissionFeatures, i64) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Problem recommendation models
+// ---------------------------------------------------------------------------
+
+/// A problem recommended to a user based on rule-based analysis.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProblemRecommendation {
+    /// Recommended problem ID.
+    pub problem_id: i64,
+    /// Problem title.
+    pub title: String,
+    /// Difficulty level: "easy", "medium", or "hard".
+    pub difficulty: String,
+    /// Why this problem is recommended.
+    pub reason: String,
+    /// Submission count for this problem in the organization (popularity).
+    pub submission_count: i64,
+}
+
+/// Internal struct for user accuracy stats per difficulty level.
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct UserDifficultyStats {
+    pub difficulty: String,
+    pub total: i64,
+    pub accepted: i64,
+}
+
+/// Internal struct for candidate problems to recommend.
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct CandidateProblem {
+    pub id: i64,
+    pub title: String,
+    pub difficulty: String,
+    pub submission_count: i64,
+}
+
 /// A submission ranked by weighted similarity to a query submission.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SimilarSubmission {

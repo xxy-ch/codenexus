@@ -6,7 +6,8 @@ use std::cmp::Ordering;
 use crate::extractor::StructuralFeatures;
 use crate::models::{
     AnalysisClassSnapshot, AnalysisJob, AnalysisSolutionCluster, AnalysisSubmissionFeatures,
-    AnalysisTeachingCard, FeatureWithProblem, NewAnalysisJob, SimilarSubmission, SubmissionMeta,
+    AnalysisTeachingCard, CandidateProblem, FeatureWithProblem, NewAnalysisJob, ProblemRecommendation,
+    SimilarSubmission, SubmissionMeta, UserDifficultyStats,
 };
 
 #[derive(Clone)]
@@ -513,6 +514,273 @@ impl AnalysisService {
             })
             .collect())
     }
+
+    // -----------------------------------------------------------------------
+    // Problem recommendations (rule-based)
+    // -----------------------------------------------------------------------
+
+    /// Get rule-based problem recommendations for a user after they have
+    /// worked on a given problem. The algorithm:
+    ///
+    /// 1. Queries the user's acceptance rate per difficulty level.
+    /// 2. Looks up the current problem's difficulty.
+    /// 3. Recommends up to 3 unsolved problems of similar difficulty.
+    /// 4. Recommends up to 2 problems at the next difficulty level.
+    /// 5. Returns at most 5 recommendations total.
+    ///
+    /// Results are cached in Redis for 1 hour (TTL 3600s).
+    pub async fn get_problem_recommendations(
+        &self,
+        user_id: uuid::Uuid,
+        problem_id: i64,
+        org_id: i64,
+        redis_pool: Option<&deadpool_redis::Pool>,
+    ) -> Result<Vec<ProblemRecommendation>> {
+        let cache_key = format!("recommend:{org_id}:{user_id}:{problem_id}");
+
+        // Try Redis cache first.
+        if let Some(pool) = redis_pool {
+            if let Ok(cached) = Self::read_cache(pool, &cache_key).await {
+                if !cached.is_empty() {
+                    tracing::debug!(
+                        user_id = %user_id,
+                        problem_id,
+                        "recommendation cache hit"
+                    );
+                    return Ok(cached);
+                }
+            }
+        }
+
+        // 1. Get the current problem's difficulty.
+        let current_difficulty: Option<(String,)> = sqlx::query_as(
+            "SELECT COALESCE(difficulty, 'easy') FROM problems WHERE id = $1 AND organization_id = $2",
+        )
+        .bind(problem_id)
+        .bind(org_id)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        let current_difficulty = match current_difficulty {
+            Some((d,)) => d,
+            None => return Ok(vec![]),
+        };
+
+        // 2. Get user's accuracy per difficulty.
+        let stats = sqlx::query_as::<_, UserDifficultyStats>(
+            r#"
+            SELECT
+                COALESCE(p.difficulty, 'easy') AS difficulty,
+                COUNT(*) AS total,
+                COUNT(*) FILTER (WHERE s.verdict = 'ac') AS accepted
+            FROM submissions s
+            JOIN problems p ON p.id = s.problem_id AND p.organization_id = s.organization_id
+            WHERE s.user_id = $1 AND s.organization_id = $2
+            GROUP BY COALESCE(p.difficulty, 'easy')
+            "#,
+        )
+        .bind(user_id)
+        .bind(org_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        // 3. Find problems the user has already solved (verdict = 'ac').
+        let solved_ids: Vec<i64> = sqlx::query_scalar(
+            r#"
+            SELECT DISTINCT problem_id
+            FROM submissions
+            WHERE user_id = $1 AND organization_id = $2 AND verdict = 'ac'
+            "#,
+        )
+        .bind(user_id)
+        .bind(org_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        // 4. Find problems the user has attempted but not solved.
+        let attempted_ids: Vec<i64> = sqlx::query_scalar(
+            r#"
+            SELECT DISTINCT problem_id
+            FROM submissions
+            WHERE user_id = $1 AND organization_id = $2 AND verdict IS NOT NULL AND verdict != 'ac'
+            "#,
+        )
+        .bind(user_id)
+        .bind(org_id)
+        .fetch_all(&self.pool)
+        .await?;
+
+        // 5. Recommend similar-difficulty unsolved problems (up to 3).
+        let similar_candidates = self
+            .fetch_candidate_problems(
+                org_id,
+                &current_difficulty,
+                &solved_ids,
+                &attempted_ids,
+                3,
+            )
+            .await?;
+
+        // 6. Recommend next-difficulty problems (up to 2).
+        let next_difficulty = next_difficulty_level(&current_difficulty, &stats);
+        let next_candidates = self
+            .fetch_candidate_problems(
+                org_id,
+                &next_difficulty,
+                &solved_ids,
+                &attempted_ids,
+                2,
+            )
+            .await?;
+
+        // 7. Combine and build recommendation objects.
+        let mut recommendations = Vec::with_capacity(5);
+
+        for c in &similar_candidates {
+            recommendations.push(ProblemRecommendation {
+                problem_id: c.id,
+                title: c.title.clone(),
+                difficulty: c.difficulty.clone(),
+                reason: format!(
+                    "与当前题目难度相同 ({})，推荐练习以巩固",
+                    current_difficulty
+                ),
+                submission_count: c.submission_count,
+            });
+        }
+
+        for c in &next_candidates {
+            recommendations.push(ProblemRecommendation {
+                problem_id: c.id,
+                title: c.title.clone(),
+                difficulty: c.difficulty.clone(),
+                reason: if c.difficulty == current_difficulty {
+                    "继续挑战当前难度".to_string()
+                } else {
+                    format!("尝试更高难度 ({}) 的题目", c.difficulty)
+                },
+                submission_count: c.submission_count,
+            });
+        }
+
+        recommendations.truncate(5);
+
+        // Cache the result for 1 hour.
+        if let Some(pool) = redis_pool {
+            Self::write_cache(pool, &cache_key, &recommendations, 3600).await;
+        }
+
+        tracing::info!(
+            user_id = %user_id,
+            problem_id,
+            org_id,
+            count = recommendations.len(),
+            "generated rule-based recommendations"
+        );
+
+        Ok(recommendations)
+    }
+
+    /// Fetch candidate problems for recommendation.
+    /// Prefers unsolved problems (not attempted at all), then unsolved but attempted.
+    /// Excludes already-solved problems.
+    async fn fetch_candidate_problems(
+        &self,
+        org_id: i64,
+        difficulty: &str,
+        solved_ids: &[i64],
+        attempted_ids: &[i64],
+        limit: i64,
+    ) -> Result<Vec<CandidateProblem>> {
+        if limit <= 0 {
+            return Ok(vec![]);
+        }
+
+        let candidates = sqlx::query_as::<_, CandidateProblem>(
+            r#"
+            SELECT
+                p.id,
+                p.title,
+                COALESCE(p.difficulty, 'easy') AS difficulty,
+                COALESCE(sub_stats.cnt, 0) AS submission_count
+            FROM problems p
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS cnt
+                FROM submissions s
+                WHERE s.problem_id = p.id AND s.organization_id = p.organization_id
+            ) sub_stats ON true
+            WHERE p.organization_id = $1
+              AND COALESCE(p.difficulty, 'easy') = $2
+              AND p.visibility IN ('public', 'campus')
+              AND p.id != ALL($3::bigint[])
+            ORDER BY
+                CASE WHEN p.id = ANY($4::bigint[]) THEN 1 ELSE 0 END,
+                sub_stats.cnt DESC NULLS LAST,
+                p.created_at DESC
+            LIMIT $5
+            "#,
+        )
+        .bind(org_id)
+        .bind(difficulty)
+        .bind(solved_ids)
+        .bind(attempted_ids)
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(candidates)
+    }
+
+    // -----------------------------------------------------------------------
+    // Redis cache helpers
+    // -----------------------------------------------------------------------
+
+    async fn read_cache(
+        pool: &deadpool_redis::Pool,
+        key: &str,
+    ) -> Result<Vec<ProblemRecommendation>> {
+        let mut conn = pool.get().await?;
+        let val: Option<String> = deadpool_redis::redis::cmd("GET")
+            .arg(key)
+            .query_async(&mut conn)
+            .await
+            .map_err(|e| anyhow::anyhow!("Redis GET error: {e}"))?;
+
+        match val {
+            Some(json_str) => {
+                let recs: Vec<ProblemRecommendation> =
+                    serde_json::from_str(&json_str).unwrap_or_default();
+                Ok(recs)
+            }
+            None => Ok(vec![]),
+        }
+    }
+
+    async fn write_cache(
+        pool: &deadpool_redis::Pool,
+        key: &str,
+        recs: &[ProblemRecommendation],
+        ttl_secs: i64,
+    ) {
+        if let Ok(json) = serde_json::to_string(recs) {
+            let mut conn = match pool.get().await {
+                Ok(c) => c,
+                Err(e) => {
+                    tracing::warn!(error = %e, "Redis pool get failed for cache write");
+                    return;
+                }
+            };
+            let result: Result<(), _> = deadpool_redis::redis::cmd("SETEX")
+                .arg(key)
+                .arg(ttl_secs)
+                .arg(&json)
+                .query_async(&mut conn)
+                .await;
+            if let Err(e) = result {
+                tracing::warn!(error = %e, "Redis SETEX failed for recommendation cache");
+            }
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -638,6 +906,29 @@ fn rank_by_similarity(
 pub struct AiFeedbackResult {
     pub job: AnalysisJob,
     pub card: Option<AnalysisTeachingCard>,
+}
+
+/// Determine the next difficulty level based on user's performance.
+/// If the user has > 60% acceptance rate at the current level, advance.
+/// Otherwise stay at the same level for more practice.
+fn next_difficulty_level(current: &str, stats: &[UserDifficultyStats]) -> String {
+    let acceptance_rate = stats
+        .iter()
+        .find(|s| s.difficulty == current)
+        .map(|s| {
+            if s.total > 0 {
+                s.accepted as f64 / s.total as f64
+            } else {
+                0.0
+            }
+        })
+        .unwrap_or(0.0);
+
+    match current {
+        "easy" if acceptance_rate > 0.6 => "medium".to_string(),
+        "medium" if acceptance_rate > 0.6 => "hard".to_string(),
+        _ => current.to_string(),
+    }
 }
 
 #[cfg(test)]
@@ -924,5 +1215,65 @@ mod similarity_tests {
             },
             problem_id,
         )
+    }
+
+    // -----------------------------------------------------------------------
+    // next_difficulty_level tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn next_difficulty_easy_high_acceptance_advances() {
+        let stats = vec![UserDifficultyStats {
+            difficulty: "easy".to_string(),
+            total: 10,
+            accepted: 7, // 70% > 60%
+        }];
+        assert_eq!(next_difficulty_level("easy", &stats), "medium");
+    }
+
+    #[test]
+    fn next_difficulty_easy_low_acceptance_stays() {
+        let stats = vec![UserDifficultyStats {
+            difficulty: "easy".to_string(),
+            total: 10,
+            accepted: 5, // 50% < 60%
+        }];
+        assert_eq!(next_difficulty_level("easy", &stats), "easy");
+    }
+
+    #[test]
+    fn next_difficulty_medium_high_acceptance_advances() {
+        let stats = vec![UserDifficultyStats {
+            difficulty: "medium".to_string(),
+            total: 10,
+            accepted: 8, // 80% > 60%
+        }];
+        assert_eq!(next_difficulty_level("medium", &stats), "hard");
+    }
+
+    #[test]
+    fn next_difficulty_hard_stays() {
+        let stats = vec![UserDifficultyStats {
+            difficulty: "hard".to_string(),
+            total: 10,
+            accepted: 9, // 90% > 60%, but hard is max
+        }];
+        assert_eq!(next_difficulty_level("hard", &stats), "hard");
+    }
+
+    #[test]
+    fn next_difficulty_no_stats_defaults_to_current() {
+        let stats: Vec<UserDifficultyStats> = vec![];
+        assert_eq!(next_difficulty_level("medium", &stats), "medium");
+    }
+
+    #[test]
+    fn next_difficulty_zero_total_stays() {
+        let stats = vec![UserDifficultyStats {
+            difficulty: "easy".to_string(),
+            total: 0,
+            accepted: 0,
+        }];
+        assert_eq!(next_difficulty_level("easy", &stats), "easy");
     }
 }

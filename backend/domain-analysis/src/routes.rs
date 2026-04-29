@@ -60,6 +60,10 @@ pub fn analysis_router() -> Router<AppState> {
             get(get_teaching_cards),
         )
         .route("/problems/:problem_id/clusters", get(get_solution_clusters))
+        .route(
+            "/problems/:problem_id/recommend",
+            get(get_problem_recommendations),
+        )
         .route("/classes/:class_id/cognition", get(get_class_cognition))
 }
 
@@ -409,5 +413,60 @@ pub async fn get_cross_problem_similar(
         "count": results.len(),
         "elapsed_ms": elapsed_ms,
         "similar_submissions": results,
+    })))
+}
+
+/// GET /analysis/problems/:problem_id/recommend
+///
+/// Get rule-based problem recommendations for the current user based on
+/// their submission history and the given problem's difficulty. Returns
+/// up to 5 recommended problems: up to 3 at the same difficulty level
+/// (unsolved) and up to 2 at the next difficulty level.
+///
+/// Results are cached in Redis for 1 hour per (user, problem) pair.
+pub async fn get_problem_recommendations(
+    State(state): State<AppState>,
+    Extension(claims): Extension<Claims>,
+    Path(problem_id): Path<i64>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let service = AnalysisService::new(state.db_pool.clone());
+    let organization_id = claims.school_id;
+    let user_id = claims.sub;
+
+    let start = std::time::Instant::now();
+
+    let redis_pool = state.redis_pool.as_ref();
+
+    let recommendations = service
+        .get_problem_recommendations(user_id, problem_id, organization_id, redis_pool)
+        .await
+        .map_err(|error| {
+            tracing::error!(
+                error = %error,
+                problem_id,
+                organization_id,
+                user_id = %user_id,
+                "failed to generate problem recommendations"
+            );
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    let elapsed_ms = start.elapsed().as_millis() as i64;
+
+    tracing::info!(
+        problem_id,
+        organization_id,
+        user_id = %user_id,
+        count = recommendations.len(),
+        elapsed_ms,
+        "problem recommendations generated"
+    );
+
+    Ok(Json(json!({
+        "problem_id": problem_id,
+        "user_id": user_id,
+        "count": recommendations.len(),
+        "elapsed_ms": elapsed_ms,
+        "recommendations": recommendations,
     })))
 }
