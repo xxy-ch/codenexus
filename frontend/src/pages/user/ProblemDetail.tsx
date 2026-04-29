@@ -7,6 +7,7 @@ import { InlineError } from "@/components/ui/InlineError";
 import { Clock, Cpu, Star, Play, Lightbulb, ArrowLeft } from "lucide-react";
 import { TeachingCardBlock } from "@/components/analysis/TeachingCardBlock";
 import { ClusterOverview } from "@/components/analysis/ClusterOverview";
+import { ProblemRecommendations } from "@/components/analysis/ProblemRecommendations";
 
 const difficultyConfig = {
   easy: {
@@ -127,6 +128,7 @@ export function ProblemDetail() {
         <div className="space-y-6">
           <TeachingCardBlock problemId={numericProblemId} />
           <ClusterOverview problemId={numericProblemId} />
+          <ProblemRecommendations problemId={numericProblemId} />
         </div>
       )}
 

@@ -8,6 +8,8 @@ import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
 import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
 import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock, Cpu, Code2, Copy, Check } from 'lucide-react'
+import { AiCodeFeedback } from '@/components/analysis/AiCodeFeedback'
+import { SimilarSubmissions } from '@/components/analysis/SimilarSubmissions'
 
 interface TestCase {
   id: number
@@ -368,6 +370,14 @@ export function SubmissionDetail() {
           )}
         </div>
       </div>
+
+      {/* AI Analysis — feedback + similar submissions */}
+      {Number.isFinite(Number(submissionId)) && (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <AiCodeFeedback submissionId={Number(submissionId)} />
+          <SimilarSubmissions submissionId={Number(submissionId)} />
+        </div>
+      )}
     </div>
   )
 }
