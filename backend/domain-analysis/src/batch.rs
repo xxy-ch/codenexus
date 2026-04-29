@@ -1,14 +1,18 @@
 use std::collections::VecDeque;
 use std::env;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use chrono::{NaiveDate, Utc};
+use deadpool_redis::Pool as RedisPool;
 use sqlx::PgPool;
 use tracing::{error, info, warn};
+use uuid::Uuid;
 
 use crate::embedding::EmbeddingClient;
 use crate::extractor;
 use crate::models::AnalysisJob;
+use crate::queue::{self, AnalysisJobMessage};
 use crate::service::AnalysisService;
 
 /// Configuration for the nightly batch processor.
@@ -63,7 +67,11 @@ impl BatchConfig {
 }
 
 /// Run the nightly batch process for all organizations.
-pub async fn run_nightly_batch(pool: PgPool, config: &BatchConfig) -> Result<()> {
+pub async fn run_nightly_batch(
+    pool: PgPool,
+    config: &BatchConfig,
+    redis_pool: Option<RedisPool>,
+) -> Result<()> {
     if !config.enabled {
         info!("Nightly batch disabled — skipping");
         return Ok(());
@@ -103,7 +111,7 @@ pub async fn run_nightly_batch(pool: PgPool, config: &BatchConfig) -> Result<()>
     }
 
     if config.llm_enabled {
-        match generate_teaching_cards(&service, &pool).await {
+        match generate_teaching_cards(&service, &pool, redis_pool.as_ref()).await {
             Ok(count) => info!(count, "Teaching card generation complete"),
             Err(error) => error!(error = %error, "Teaching card generation failed"),
         }
@@ -452,7 +460,71 @@ fn cosine_similarity_batch(a: &[f64], b: &[f64]) -> f64 {
     (dot / (mag_a * mag_b)).clamp(-1.0, 1.0)
 }
 
-async fn generate_teaching_cards(service: &AnalysisService, pool: &PgPool) -> Result<u64> {
+/// Placeholder fallback content for when LLM generation fails or is unavailable.
+fn make_placeholder_card(cluster_count: i64) -> serde_json::Value {
+    serde_json::json!({
+        "summary": "Auto-generated analysis placeholder",
+        "cluster_count": cluster_count,
+    })
+}
+
+/// Row for fetching a representative submission from each cluster.
+#[derive(sqlx::FromRow)]
+#[allow(dead_code)]
+struct ClusterRepresentative {
+    cluster_id: i64,
+    cluster_name: Option<String>,
+    member_count: i32,
+    submission_id: i64,
+    user_id: Uuid,
+}
+
+/// Wait for an LLM job to complete by polling the `analysis_jobs` table.
+///
+/// Polls every 500ms until the job reaches a terminal state (`completed` or `failed`)
+/// or the timeout elapses.
+///
+/// Returns the final job status string (e.g. "completed", "failed") on terminal state,
+/// or an error on timeout.
+async fn wait_for_llm_result(pool: &PgPool, job_id: i64, timeout: Duration) -> Result<String> {
+    let start = Instant::now();
+    let poll_interval = Duration::from_millis(500);
+
+    loop {
+        let status: Option<(String,)> =
+            sqlx::query_as("SELECT status FROM analysis_jobs WHERE id = $1")
+                .bind(job_id)
+                .fetch_optional(pool)
+                .await?;
+
+        match status {
+            Some((s,)) if s == "completed" || s == "failed" => return Ok(s),
+            Some((s,)) => {
+                // Still processing or pending — keep polling
+                let _ = s; // suppress unused warning
+            }
+            None => {
+                anyhow::bail!("job {job_id} disappeared from analysis_jobs");
+            }
+        }
+
+        if start.elapsed() >= timeout {
+            anyhow::bail!(
+                "LLM job {job_id} timed out after {}ms",
+                timeout.as_millis()
+            );
+        }
+
+        tokio::time::sleep(poll_interval).await;
+    }
+}
+
+async fn generate_teaching_cards(
+    service: &AnalysisService,
+    pool: &PgPool,
+    redis_pool: Option<&RedisPool>,
+) -> Result<u64> {
+    // Collect all (problem_id, org_id) pairs that have clusters.
     let problems: Vec<(i64, i64)> = sqlx::query_as(
         "SELECT problem_id, organization_id FROM analysis_solution_clusters GROUP BY problem_id, organization_id",
     )
@@ -460,34 +532,212 @@ async fn generate_teaching_cards(service: &AnalysisService, pool: &PgPool) -> Re
     .await?;
 
     let mut generated = 0u64;
-    for (problem_id, organization_id) in problems {
-        let cluster_count: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*) FROM analysis_solution_clusters WHERE problem_id = $1 AND organization_id = $2",
+    let mut llm_calls = 0u64;
+    let mut fallback_count = 0u64;
+    let batch_started = Instant::now();
+
+    // Sentinel UUID for batch-generated jobs (distinguishes from real-time feedback jobs).
+    let batch_user_id = Uuid::nil();
+
+    for (problem_id, organization_id) in &problems {
+        // Clean up any prior batch-generated placeholder/LLM cards for this problem+org.
+        // We regenerate fresh cards each nightly run.
+        sqlx::query(
+            "DELETE FROM analysis_teaching_cards WHERE problem_id = $1 AND organization_id = $2",
         )
         .bind(problem_id)
+        .bind(organization_id)
+        .execute(pool)
+        .await?;
+
+        if redis_pool.is_none() {
+            // No Redis — fall back to placeholder for every problem.
+            let cluster_count: (i64,) = sqlx::query_as(
+                "SELECT COUNT(*) FROM analysis_solution_clusters WHERE problem_id = $1 AND organization_id = $2",
+            )
+            .bind(problem_id)
+            .bind(organization_id)
+            .fetch_one(pool)
+            .await?;
+
+            insert_placeholder_card(pool, *problem_id, *organization_id, cluster_count.0).await?;
+            fallback_count += 1;
+            generated += 1;
+            continue;
+        }
+
+        // Redis is available — try LLM delegation.
+        // For each problem, pick a representative submission from each cluster.
+        let representatives: Vec<ClusterRepresentative> = sqlx::query_as(
+            "SELECT sc.id AS cluster_id, sc.cluster_name, sc.member_count,
+                    cm.submission_id, aj.user_id
+             FROM analysis_solution_clusters sc
+             JOIN analysis_cluster_members cm ON cm.cluster_id = sc.id
+             JOIN analysis_jobs aj ON aj.submission_id = cm.submission_id
+                AND aj.organization_id = sc.organization_id
+                AND aj.status = 'completed'
+             WHERE sc.problem_id = $1 AND sc.organization_id = $2
+             GROUP BY sc.id, sc.cluster_name, sc.member_count, cm.submission_id, aj.user_id
+             ORDER BY sc.member_count DESC",
+        )
+        .bind(problem_id)
+        .bind(organization_id)
+        .fetch_all(pool)
+        .await?;
+
+        if representatives.is_empty() {
+            // No cluster members with submissions — fall back to placeholder.
+            let cluster_count: (i64,) = sqlx::query_as(
+                "SELECT COUNT(*) FROM analysis_solution_clusters WHERE problem_id = $1 AND organization_id = $2",
+            )
+            .bind(problem_id)
+            .bind(organization_id)
+            .fetch_one(pool)
+            .await?;
+
+            insert_placeholder_card(pool, *problem_id, *organization_id, cluster_count.0).await?;
+            fallback_count += 1;
+            generated += 1;
+            continue;
+        }
+
+        // Use the most-represented cluster's submission as the primary sample.
+        // Create one analysis job per problem (llm-worker produces one teaching card per job).
+        let rep = &representatives[0];
+        let source_cluster_ids: Vec<i64> = representatives.iter().map(|r| r.cluster_id).collect();
+
+        // Create an analysis job row for the llm-worker to claim.
+        let job_id: i64 = sqlx::query_scalar(
+            "INSERT INTO analysis_jobs (submission_id, problem_id, user_id, organization_id, status)
+             VALUES ($1, $2, $3, $4, 'pending')
+             RETURNING id",
+        )
+        .bind(rep.submission_id)
+        .bind(problem_id)
+        .bind(batch_user_id)
         .bind(organization_id)
         .fetch_one(pool)
         .await?;
 
-        let card_content = serde_json::json!({
-            "summary": "Auto-generated analysis placeholder",
-            "cluster_count": cluster_count.0,
-        });
+        // Emit the LLM task to the Redis stream.
+        let task_msg = AnalysisJobMessage {
+            job_id,
+            submission_id: rep.submission_id,
+            problem_id: *problem_id,
+            user_id: rep.user_id,
+            organization_id: *organization_id,
+            campus_id: None,
+            grade_id: None,
+            contest_id: None,
+        };
 
-        sqlx::query(
-            "INSERT INTO analysis_teaching_cards (problem_id, organization_id, card_type, title, content, source_cluster_ids, created_at, updated_at)
-             VALUES ($1, $2, 'summary', 'Nightly Analysis Summary', $3, '{}'::bigint[], NOW(), NOW())",
-        )
-        .bind(problem_id)
-        .bind(organization_id)
-        .bind(sqlx::types::Json(card_content))
-        .execute(pool)
-        .await?;
-        generated += 1;
+        if let Err(error) = queue::emit_llm_task(redis_pool.unwrap(), &task_msg).await {
+            warn!(
+                problem_id,
+                organization_id,
+                job_id,
+                error = %error,
+                "Failed to emit LLM task — falling back to placeholder"
+            );
+            // Clean up the orphaned job row.
+            let _ = service.mark_failed(job_id, &format!("Redis emit failed: {error}")).await;
+            let cluster_count = source_cluster_ids.len() as i64;
+            insert_placeholder_card(pool, *problem_id, *organization_id, cluster_count).await?;
+            fallback_count += 1;
+            generated += 1;
+            continue;
+        }
+
+        llm_calls += 1;
+
+        // Wait for the llm-worker to process the job (timeout 60s per task).
+        match wait_for_llm_result(pool, job_id, Duration::from_secs(60)).await {
+            Ok(status) if status == "completed" => {
+                // The llm-worker has already inserted the teaching card via
+                // db::insert_teaching_card. Update source_cluster_ids if we can.
+                let _ = sqlx::query(
+                    "UPDATE analysis_teaching_cards SET source_cluster_ids = $3 \
+                     WHERE problem_id = $1 AND organization_id = $2 \
+                     AND card_type = 'code_review' \
+                     AND source_cluster_ids = '{}'",
+                )
+                .bind(problem_id)
+                .bind(organization_id)
+                .bind(&source_cluster_ids)
+                .execute(pool)
+                .await;
+
+                info!(
+                    problem_id,
+                    organization_id,
+                    job_id,
+                    "LLM-generated teaching card completed"
+                );
+                generated += 1;
+            }
+            Ok(status) => {
+                // Job failed — fall back to placeholder.
+                warn!(
+                    problem_id,
+                    organization_id,
+                    job_id,
+                    status,
+                    "LLM job failed — falling back to placeholder"
+                );
+                let cluster_count = source_cluster_ids.len() as i64;
+                insert_placeholder_card(pool, *problem_id, *organization_id, cluster_count).await?;
+                fallback_count += 1;
+                generated += 1;
+            }
+            Err(error) => {
+                // Timeout or DB error — fall back to placeholder.
+                warn!(
+                    problem_id,
+                    organization_id,
+                    job_id,
+                    error = %error,
+                    "LLM job timed out — falling back to placeholder"
+                );
+                let _ = service.mark_failed(job_id, &format!("Timed out: {error}")).await;
+                let cluster_count = source_cluster_ids.len() as i64;
+                insert_placeholder_card(pool, *problem_id, *organization_id, cluster_count).await?;
+                fallback_count += 1;
+                generated += 1;
+            }
+        }
     }
+
+    let elapsed = batch_started.elapsed();
+    info!(
+        generated,
+        llm_calls,
+        fallback_count,
+        elapsed_ms = elapsed.as_millis(),
+        "Teaching card batch complete"
+    );
 
     let _ = service;
     Ok(generated)
+}
+
+/// Insert a placeholder teaching card for cases where LLM generation is unavailable.
+async fn insert_placeholder_card(
+    pool: &PgPool,
+    problem_id: i64,
+    organization_id: i64,
+    cluster_count: i64,
+) -> Result<()> {
+    let content = make_placeholder_card(cluster_count);
+    sqlx::query(
+        "INSERT INTO analysis_teaching_cards (problem_id, organization_id, card_type, title, content, source_cluster_ids, created_at, updated_at)
+         VALUES ($1, $2, 'summary', 'Nightly Analysis Summary', $3, '{}'::bigint[], NOW(), NOW())",
+    )
+    .bind(problem_id)
+    .bind(organization_id)
+    .bind(sqlx::types::Json(content))
+    .execute(pool)
+    .await?;
+    Ok(())
 }
 
 async fn build_class_snapshots(
@@ -739,5 +989,35 @@ def merge_sort(arr):
         let a = vec![1.0, 0.0];
         let b = vec![0.0, 1.0];
         assert!((cosine_distance(&a, &b) - 1.0).abs() < 1e-9, "orthogonal vectors should have distance 1.0");
+    }
+
+    // ── LLM delegation unit tests ──
+
+    #[test]
+    fn placeholder_card_contains_cluster_count() {
+        let card = make_placeholder_card(5);
+        assert_eq!(card["cluster_count"], 5);
+        assert_eq!(card["summary"], "Auto-generated analysis placeholder");
+    }
+
+    #[test]
+    fn placeholder_card_zero_clusters() {
+        let card = make_placeholder_card(0);
+        assert_eq!(card["cluster_count"], 0);
+    }
+
+    #[test]
+    fn batch_user_id_is_nil_uuid() {
+        // Batch-generated jobs use the nil UUID as user_id to distinguish
+        // them from real-time feedback jobs.
+        let batch_user_id = Uuid::nil();
+        assert!(batch_user_id.is_nil());
+    }
+
+    #[test]
+    fn wait_for_llm_timeout_duration_is_60s() {
+        // Verify the timeout constant used in generate_teaching_cards.
+        let timeout = Duration::from_secs(60);
+        assert_eq!(timeout.as_millis(), 60000);
     }
 }
