@@ -2291,6 +2291,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "deadpool-redis",
  "reqwest",
  "serde",
  "serde_json",

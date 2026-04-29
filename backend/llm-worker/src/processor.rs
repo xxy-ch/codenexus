@@ -56,6 +56,7 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
                 prompt_tokens = result.usage.prompt_tokens,
                 completion_tokens = result.usage.completion_tokens,
                 latency_ms = result.latency.as_millis() as u64,
+                endpoint_used = %result.endpoint_used,
                 "LLM call succeeded"
             );
 
@@ -99,7 +100,7 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
 
             Ok(())
         }
-        Err(LlmError::Http { .. }) | Err(LlmError::Api { .. }) => {
+        Err(LlmError::Http { .. }) | Err(LlmError::Api { .. }) | Err(LlmError::AllEndpointsFailed { .. }) => {
             // Transient error — mark as failed and retry
             warn!(job_id, "LLM call failed with transient error, scheduling retry");
             let retried = db::retry_job(pool, job_id).await?;
@@ -131,8 +132,6 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     // Note: process_job requires a real PgPool and LLM endpoint.
     // End-to-end testing is covered by integration tests with wiremock.
     // The function signature is validated by the compiler through lib.rs exports.

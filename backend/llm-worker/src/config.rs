@@ -30,6 +30,8 @@ const DEFAULT_CONSUMER_GROUP: &str = "llm-worker";
 #[derive(Debug, Clone)]
 pub struct WorkerConfig {
     pub llm_api_url: String,
+    /// Optional fallback LLM API URL for automatic failover.
+    pub llm_fallback_url: Option<String>,
     pub llm_api_key: Option<String>,
     pub llm_model: String,
     pub llm_timeout: Duration,
@@ -56,6 +58,9 @@ impl WorkerConfig {
                 .ok()
                 .filter(|v| !v.trim().is_empty())
                 .unwrap_or_else(|| DEFAULT_LLM_API_URL.to_string()),
+            llm_fallback_url: env::var("LLM_FALLBACK_API_URL")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
             llm_api_key: env::var("LLM_API_KEY")
                 .ok()
                 .filter(|v| !v.trim().is_empty()),
@@ -111,6 +116,7 @@ mod tests {
     fn clear_env() {
         env::remove_var("DATABASE_URL");
         env::remove_var("LLM_API_URL");
+        env::remove_var("LLM_FALLBACK_API_URL");
         env::remove_var("LLM_API_KEY");
         env::remove_var("LLM_MODEL");
         env::remove_var("LLM_TIMEOUT_SECS");
@@ -142,6 +148,7 @@ mod tests {
 
         let config = WorkerConfig::from_env().expect("should succeed with DATABASE_URL");
         assert_eq!(config.llm_api_url, DEFAULT_LLM_API_URL);
+        assert!(config.llm_fallback_url.is_none(), "fallback should default to None");
         assert_eq!(config.llm_model, DEFAULT_LLM_MODEL);
         assert_eq!(config.llm_timeout, Duration::from_secs(DEFAULT_TIMEOUT_SECS));
         assert_eq!(config.max_retries, DEFAULT_MAX_RETRIES);
@@ -158,6 +165,7 @@ mod tests {
         clear_env();
         env::set_var("DATABASE_URL", "postgres://localhost/mydb");
         env::set_var("LLM_API_URL", "https://api.openai.com");
+        env::set_var("LLM_FALLBACK_API_URL", "https://fallback.openai.com");
         env::set_var("LLM_API_KEY", "sk-test-key");
         env::set_var("LLM_MODEL", "gpt-4o");
         env::set_var("LLM_TIMEOUT_SECS", "120");
@@ -169,6 +177,7 @@ mod tests {
 
         let config = WorkerConfig::from_env().unwrap();
         assert_eq!(config.llm_api_url, "https://api.openai.com");
+        assert_eq!(config.llm_fallback_url.as_deref(), Some("https://fallback.openai.com"));
         assert_eq!(config.llm_api_key.as_deref(), Some("sk-test-key"));
         assert_eq!(config.llm_model, "gpt-4o");
         assert_eq!(config.llm_timeout, Duration::from_secs(120));
