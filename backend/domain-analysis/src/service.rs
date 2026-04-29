@@ -755,6 +755,117 @@ mod similarity_tests {
         assert_eq!(results.len(), 1, "candidate without embedding should be skipped");
     }
 
+    #[test]
+    fn cosine_similarity_known_value() {
+        // a = [1, 2, 3], b = [4, 5, 6]
+        // dot = 1*4 + 2*5 + 3*6 = 32
+        // |a| = sqrt(14), |b| = sqrt(77)
+        // cos = 32 / (sqrt(14) * sqrt(77)) = 32 / sqrt(1078) ≈ 0.9746
+        let a = vec![1.0, 2.0, 3.0];
+        let b = vec![4.0, 5.0, 6.0];
+        let sim = cosine_similarity(&a, &b);
+        let expected = 32.0 / (14.0_f64.sqrt() * 77.0_f64.sqrt());
+        assert!(
+            (sim - expected).abs() < 1e-9,
+            "expected {expected}, got {sim}"
+        );
+    }
+
+    #[test]
+    fn weighted_combination_verifies_weights() {
+        // Use vectors where embedding cosine ≠ structural similarity
+        // so we can verify the exact weighted combination.
+        let target_emb = vec![1.0, 0.0];
+        let target_struct = vec![10.0, 50.0, 20.0, 3.0, 2.0, 1.0, 0.5, 15.0, 20.0, 100.0];
+
+        // Candidate embedding is orthogonal to target → cosine = 0.0
+        // Candidate structural is identical to target → structural = 1.0
+        let candidate_struct = target_struct.clone();
+        let now = chrono::Utc::now();
+        let candidates = vec![make_candidate_with_struct(
+            1,
+            100,
+            vec![0.0, 1.0], // orthogonal embedding → cos = 0.0
+            &candidate_struct,
+            now,
+        )];
+
+        let results = rank_by_similarity(&target_emb, &target_struct, candidates, Some(100), 10);
+        assert_eq!(results.len(), 1);
+        let r = &results[0];
+
+        // embedding_sim should be ~0.0, structural_sim should be ~1.0
+        assert!(r.embedding_similarity.abs() < 1e-9, "embedding should be ~0.0, got {}", r.embedding_similarity);
+        assert!((r.structural_similarity - 1.0).abs() < 1e-9, "structural should be ~1.0, got {}", r.structural_similarity);
+
+        // Weighted: 0.0 * 0.6 + 1.0 * 0.4 = 0.4
+        let expected_score = 0.0 * 0.6 + 1.0 * 0.4;
+        assert!(
+            (r.similarity_score - expected_score).abs() < 1e-9,
+            "weighted score should be {expected_score}, got {}",
+            r.similarity_score
+        );
+    }
+
+    #[test]
+    fn no_embedding_returns_empty_gracefully() {
+        // When target has no embedding, the DB-level queries would return None.
+        // We test the rank_by_similarity function with an empty candidates list
+        // (simulating what happens when no target embedding exists).
+        let target_struct = vec![10.0; 10];
+        let results = rank_by_similarity(&[], &target_struct, vec![], None, 10);
+        assert!(results.is_empty(), "no embedding should yield empty results");
+    }
+
+    #[test]
+    fn structural_similarity_symmetric() {
+        let a = vec![10.0, 50.0, 200.0, 3.0, 2.0, 1.0, 0.5, 15.0, 20.0, 100.0];
+        let b = vec![15.0, 60.0, 180.0, 5.0, 3.0, 2.0, 1.0, 20.0, 25.0, 120.0];
+        let sim_ab = structural_similarity(&a, &b);
+        let sim_ba = structural_similarity(&b, &a);
+        assert!(
+            (sim_ab - sim_ba).abs() < 1e-9,
+            "structural similarity should be symmetric: ab={sim_ab}, ba={sim_ba}"
+        );
+    }
+
+    #[test]
+    fn structural_similarity_mismatched_lengths() {
+        let a = vec![1.0, 2.0, 3.0];
+        let b = vec![1.0, 2.0];
+        assert_eq!(structural_similarity(&a, &b), 0.0);
+    }
+
+    fn make_candidate_with_struct(
+        submission_id: i64,
+        problem_id: i64,
+        embedding: Vec<f64>,
+        structural: &[f64],
+        created_at: chrono::DateTime<chrono::Utc>,
+    ) -> (AnalysisSubmissionFeatures, i64) {
+        (
+            AnalysisSubmissionFeatures {
+                id: submission_id * 100,
+                submission_id,
+                organization_id: 1,
+                cyclomatic_complexity: Some(structural[0]),
+                lines_of_code: Some(structural[1] as i32),
+                token_count: Some(structural[2] as i32),
+                function_count: Some(structural[3] as i32),
+                nesting_depth: Some(structural[4] as i32),
+                has_recursion: Some(false),
+                loop_count: Some(structural[5] as i32),
+                avg_loop_nesting: Some(structural[6]),
+                distinct_operators: Some(structural[7] as i32),
+                distinct_operands: Some(structural[8] as i32),
+                halstead_volume: Some(structural[9]),
+                embedding_vector: Some(sqlx::types::Json(embedding)),
+                created_at,
+            },
+            problem_id,
+        )
+    }
+
     // Helper to build a candidate feature row with a known embedding.
     fn make_candidate(
         submission_id: i64,
