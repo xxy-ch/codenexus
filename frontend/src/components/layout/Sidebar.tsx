@@ -102,12 +102,11 @@ export function Sidebar() {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  'flex items-center gap-2.5 px-2.5 py-1.5 rounded-r-md text-sm transition-all duration-200',
+                  'flex items-center gap-2.5 px-2.5 py-1.5 rounded-r-md text-sm transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]',
                   isActive
                     ? 'bg-white text-sidebar-accent-foreground font-medium border-l-2 border-primary shadow-[0_1px_2px_rgba(50,50,93,0.08),0_0_0.5px_rgba(0,0,0,0.06)]'
                     : 'text-sidebar-foreground/70 hover:bg-white hover:text-sidebar-foreground hover:shadow-[0_1px_2px_rgba(50,50,93,0.08),0_0_0.5px_rgba(0,0,0,0.06)]'
                 )}
-                style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
               >
                 <Icon className={cn(
                   'w-[18px] h-[18px] transition-colors duration-200',
@@ -130,16 +129,14 @@ export function Sidebar() {
         <div className="flex items-center gap-2.5">
           <Link
             to="/profile"
-            className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold hover:bg-primary/20 transition-all duration-200"
-            style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
+            className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold hover:bg-primary/20 transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
           >
             {getUserInitials()}
           </Link>
           <div className="flex-1 min-w-0">
             <Link
               to="/profile"
-              className="text-sm font-medium truncate text-sidebar-foreground hover:text-sidebar-primary transition-colors duration-200 block"
-              style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
+              className="text-sm font-medium truncate text-sidebar-foreground hover:text-sidebar-primary transition-colors duration-200 ease-[cubic-bezier(0.4,0,0.2,1)] block"
             >
               {user?.first_name && user?.last_name
                 ? `${user.first_name} ${user.last_name}`
@@ -152,16 +149,14 @@ export function Sidebar() {
           <div className="flex items-center gap-0.5">
             <Link
               to="/settings"
-              className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1 rounded-md hover:bg-white transition-all duration-200"
-              style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
+              className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1 rounded-md hover:bg-white transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
               title="设置"
             >
               <UserCog className="w-[18px] h-[18px]" />
             </Link>
             <button
               onClick={handleLogout}
-              className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1 rounded-md hover:bg-white transition-all duration-200"
-              style={{ transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)' }}
+              className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1 rounded-md hover:bg-white transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]"
               title="退出登录"
             >
               <LogOut className="w-[18px] h-[18px]" />

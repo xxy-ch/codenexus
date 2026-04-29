@@ -3,6 +3,7 @@ import { Download, FileUp, Loader2, CheckCircle2, AlertTriangle, XCircle, Chevro
 import toast from 'react-hot-toast'
 import { imexService } from '@/services/imex'
 import { problemsService } from '@/services/problems'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -432,9 +433,8 @@ function ProblemExportTab() {
               {problems.map((problem) => (
                 <TableRow
                   key={problem.id}
-                  className={selectedIds.has(problem.id) ? 'bg-muted' : undefined}
+                  className={cn('cursor-pointer', selectedIds.has(problem.id) ? 'bg-muted' : undefined)}
                   onClick={() => toggleSelect(problem.id)}
-                  style={{ cursor: 'pointer' }}
                 >
                   <TableCell>
                     <input

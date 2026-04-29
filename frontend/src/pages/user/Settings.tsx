@@ -3,6 +3,8 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { BellRing, LockKeyhole, MonitorCog, Palette, Settings2, UserRoundCog } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { Button } from '@/components/ui/Button'
+import { Select } from '@/components/ui/Select'
+import { Switch } from '@/components/ui/Switch'
 import { cn } from '@/lib/utils'
 import { usersService } from '@/services/users'
 
@@ -252,27 +254,27 @@ export function Settings() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-lg bg-muted/50 p-4">
                   <label className="mb-1.5 block text-sm font-medium text-card-foreground">主题</label>
-                  <select
+                  <Select
                     value={preferences.theme}
-                    onChange={(e) => setPreferences({ ...preferences, theme: e.target.value as never })}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="light">浅色</option>
-                    <option value="dark">深色</option>
-                    <option value="system">跟随系统</option>
-                  </select>
+                    onValueChange={(val) => setPreferences({ ...preferences, theme: val as 'light' | 'dark' | 'system' })}
+                    options={[
+                      { value: 'light', label: '浅色' },
+                      { value: 'dark', label: '深色' },
+                      { value: 'system', label: '跟随系统' },
+                    ]}
+                  />
                 </div>
                 <div className="rounded-lg bg-muted/50 p-4">
                   <label className="mb-1.5 block text-sm font-medium text-card-foreground">字体大小</label>
-                  <select
+                  <Select
                     value={preferences.fontSize}
-                    onChange={(e) => setPreferences({ ...preferences, fontSize: e.target.value as never })}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="small">小</option>
-                    <option value="medium">中</option>
-                    <option value="large">大</option>
-                  </select>
+                    onValueChange={(val) => setPreferences({ ...preferences, fontSize: val as 'small' | 'medium' | 'large' })}
+                    options={[
+                      { value: 'small', label: '小' },
+                      { value: 'medium', label: '中' },
+                      { value: 'large', label: '大' },
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -281,30 +283,23 @@ export function Settings() {
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">编辑器选项</p>
                 {[
-                  { key: 'autoSave', label: '自动保存', desc: '自动保存代码草稿' },
-                  { key: 'showLineNumbers', label: '显示行号', desc: '在编辑器中显示行号' },
-                  { key: 'wordWrap', label: '自动换行', desc: '编辑器内容自动换行' },
+                  { key: 'autoSave' as const, label: '自动保存', desc: '自动保存代码草稿' },
+                  { key: 'showLineNumbers' as const, label: '显示行号', desc: '在编辑器中显示行号' },
+                  { key: 'wordWrap' as const, label: '自动换行', desc: '编辑器内容自动换行' },
                 ].map((item) => (
-                  <button
+                  <div
                     key={item.key}
-                    type="button"
-                    onClick={() => setPreferences((prev) => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
-                    className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                    className="flex w-full items-center justify-between rounded-lg px-4 py-3"
                   >
                     <div>
                       <p className="text-sm font-medium text-card-foreground">{item.label}</p>
                       <p className="text-xs text-muted-foreground">{item.desc}</p>
                     </div>
-                    <div className={cn(
-                      'relative h-5 w-9 rounded-full transition-colors',
-                      preferences[item.key as keyof typeof preferences] ? 'bg-primary' : 'bg-muted-foreground/30'
-                    )}>
-                      <div className={cn(
-                        'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
-                        preferences[item.key as keyof typeof preferences] ? 'translate-x-4' : 'translate-x-0.5'
-                      )} />
-                    </div>
-                  </button>
+                    <Switch
+                      checked={preferences[item.key]}
+                      onCheckedChange={(checked) => setPreferences((prev) => ({ ...prev, [item.key]: checked }))}
+                    />
+                  </div>
                 ))}
               </div>
 
@@ -330,32 +325,25 @@ export function Settings() {
 
               <div className="space-y-2">
                 {[
-                  { key: 'emailNotifications', label: '邮件通知', desc: '接收重要事件的邮件提醒' },
-                  { key: 'contestReminders', label: '竞赛提醒', desc: '即将开始的竞赛推送通知' },
-                  { key: 'newProblems', label: '新题提醒', desc: '题库新增题目时通知' },
-                  { key: 'replyComments', label: '回复提醒', desc: '讨论或评论被回复时通知' },
-                  { key: 'weeklyReport', label: '每周报告', desc: '每周学习数据汇总' },
+                  { key: 'emailNotifications' as const, label: '邮件通知', desc: '接收重要事件的邮件提醒' },
+                  { key: 'contestReminders' as const, label: '竞赛提醒', desc: '即将开始的竞赛推送通知' },
+                  { key: 'newProblems' as const, label: '新题提醒', desc: '题库新增题目时通知' },
+                  { key: 'replyComments' as const, label: '回复提醒', desc: '讨论或评论被回复时通知' },
+                  { key: 'weeklyReport' as const, label: '每周报告', desc: '每周学习数据汇总' },
                 ].map((item) => (
-                  <button
+                  <div
                     key={item.key}
-                    type="button"
-                    onClick={() => setNotifications((prev) => ({ ...prev, [item.key]: !prev[item.key as keyof typeof prev] }))}
-                    className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-left transition-colors hover:bg-muted/50"
+                    className="flex w-full items-center justify-between rounded-lg px-4 py-3"
                   >
                     <div>
                       <p className="text-sm font-medium text-card-foreground">{item.label}</p>
                       <p className="text-xs text-muted-foreground">{item.desc}</p>
                     </div>
-                    <div className={cn(
-                      'relative h-5 w-9 rounded-full transition-colors',
-                      notifications[item.key as keyof typeof notifications] ? 'bg-primary' : 'bg-muted-foreground/30'
-                    )}>
-                      <div className={cn(
-                        'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform',
-                        notifications[item.key as keyof typeof notifications] ? 'translate-x-4' : 'translate-x-0.5'
-                      )} />
-                    </div>
-                  </button>
+                    <Switch
+                      checked={notifications[item.key]}
+                      onCheckedChange={(checked) => setNotifications((prev) => ({ ...prev, [item.key]: checked }))}
+                    />
+                  </div>
                 ))}
               </div>
 

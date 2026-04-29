@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Loading } from '@/components/ui/Loading'
 import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
+import { Checkbox } from '@/components/ui/Checkbox'
 import { Code2, AlertCircle, UserPlus } from 'lucide-react'
 import type { RegisterRequest } from '@/types/auth'
 
@@ -21,6 +22,7 @@ export function RegisterPage() {
     campus_id: 1,
   })
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
@@ -262,18 +264,17 @@ export function RegisterPage() {
               </div>
 
               <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  required
-                  className="w-4 h-4 mt-0.5 text-primary border-border rounded focus:ring-primary transition-colors"
+                <Checkbox
+                  checked={agreedToTerms}
+                  onCheckedChange={setAgreedToTerms}
                 />
-                <label className="ml-2 text-sm text-muted-foreground">
+                <label className="ml-2 text-sm text-muted-foreground cursor-pointer" onClick={() => setAgreedToTerms(!agreedToTerms)}>
                   我已阅读并同意{' '}
-                  <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors hover:underline">
+                  <Link to="/terms" className="text-primary hover:text-primary/80 transition-colors hover:underline" onClick={(e) => e.stopPropagation()}>
                     服务条款
                   </Link>{' '}
                   和{' '}
-                  <Link to="/privacy" className="text-primary hover:text-primary/80 transition-colors hover:underline">
+                  <Link to="/privacy" className="text-primary hover:text-primary/80 transition-colors hover:underline" onClick={(e) => e.stopPropagation()}>
                     隐私政策
                   </Link>
                 </label>
@@ -282,7 +283,7 @@ export function RegisterPage() {
               <Button
                 type="submit"
                 variant="default"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !agreedToTerms}
                 className="w-full py-2.5 rounded-lg"
               >
                 {isSubmitting ? (
