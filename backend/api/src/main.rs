@@ -200,7 +200,69 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
             config: governor_config.clone(),
         });
 
-    let analysis_gateway_client = state.gateway_client.clone();
+    // Feature-gate analysis endpoints with per-route granularity:
+    //   - General analysis (features, similar, etc.) → ai_analysis_enabled
+    //   - LLM code assistant (trigger-feedback)      → llm_code_assistant
+    //   - LLM problem recommendation (recommend)     → llm_problem_recommend
+    let analysis_base = Router::new()
+        .route(
+            "/submissions/:submission_id/features",
+            get(domain_analysis::routes::get_submission_features),
+        )
+        .route(
+            "/submissions/:submission_id/ai-feedback",
+            get(domain_analysis::routes::get_ai_feedback),
+        )
+        .route(
+            "/submissions/:submission_id/similar",
+            get(domain_analysis::routes::get_similar_submissions),
+        )
+        .route(
+            "/submissions/:submission_id/similar-cross",
+            get(domain_analysis::routes::get_cross_problem_similar),
+        )
+        .route(
+            "/problems/:problem_id/teaching-cards",
+            get(domain_analysis::routes::get_teaching_cards),
+        )
+        .route(
+            "/problems/:problem_id/clusters",
+            get(domain_analysis::routes::get_solution_clusters),
+        )
+        .route(
+            "/classes/:class_id/cognition",
+            get(domain_analysis::routes::get_class_cognition),
+        )
+        .route_layer(axum::middleware::from_fn(
+            api_infra::feature_gateway::middleware::feature_gate(
+                "ai_analysis_enabled",
+                state.gateway_client.clone(),
+            ),
+        ));
+
+    let analysis_llm_code = Router::new()
+        .route(
+            "/submissions/:submission_id/trigger-feedback",
+            post(domain_analysis::routes::trigger_feedback),
+        )
+        .route_layer(axum::middleware::from_fn(
+            api_infra::feature_gateway::middleware::feature_gate(
+                "llm_code_assistant",
+                state.gateway_client.clone(),
+            ),
+        ));
+
+    let analysis_llm_recommend = Router::new()
+        .route(
+            "/problems/:problem_id/recommend",
+            get(domain_analysis::routes::get_problem_recommendations),
+        )
+        .route_layer(axum::middleware::from_fn(
+            api_infra::feature_gateway::middleware::feature_gate(
+                "llm_problem_recommend",
+                state.gateway_client.clone(),
+            ),
+        ));
 
     let protected_router = Router::new()
         .nest("/users", domain_users::user_router())
@@ -210,12 +272,9 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .nest("/submissions", domain_submissions::submissions_router())
         .nest(
             "/analysis",
-            domain_analysis::routes::analysis_router().route_layer(axum::middleware::from_fn(
-                api_infra::feature_gateway::middleware::feature_gate(
-                    "ai_analysis_enabled",
-                    analysis_gateway_client,
-                ),
-            )),
+            analysis_base
+                .merge(analysis_llm_code)
+                .merge(analysis_llm_recommend),
         )
         .nest("/classes", domain_classes::classes_router())
         .nest("/discussions", domain_community::discussions_router())
