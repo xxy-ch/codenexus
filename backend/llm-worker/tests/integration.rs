@@ -513,7 +513,7 @@ async fn structured_output_uses_fallback() {
 
 #[test]
 fn code_review_prompt_produces_valid_template() {
-    let prompt = prompts::code_review_prompt(
+    let msgs = prompts::code_review_prompt(
         "Reverse Linked List",
         "Reverse a singly linked list.",
         Some("Easy"),
@@ -521,21 +521,21 @@ fn code_review_prompt_produces_valid_template() {
         "class Solution:\n    def reverseList(self, head):\n        pass",
     );
 
-    assert!(prompt.contains("Reverse Linked List"));
-    assert!(prompt.contains("Easy"));
-    assert!(prompt.contains("python"));
-    assert!(prompt.contains("class Solution"));
-    assert!(prompt.contains("insights"));
-    assert!(prompt.contains("suggestions"));
-    assert!(prompt.contains("complexity"));
-    assert!(prompt.contains("JSON"));
+    let user_content = &msgs[1].content;
+    assert!(user_content.contains("Reverse Linked List"));
+    assert!(user_content.contains("Easy"));
+    assert!(user_content.contains("python"));
+    assert!(user_content.contains("class Solution"));
+    assert!(user_content.contains("insights"));
+    assert!(user_content.contains("suggestions"));
+    assert!(user_content.contains("complexity"));
 }
 
 #[test]
 fn system_prompt_contains_instructions() {
     let prompt = prompts::system_prompt();
     assert!(!prompt.is_empty(), "system prompt should not be empty");
-    assert!(prompt.to_lowercase().contains("json") || prompt.contains("JSON"));
+    assert!(prompt.contains("JSON") || prompt.to_lowercase().contains("json"));
 }
 
 // ---------------------------------------------------------------------------
