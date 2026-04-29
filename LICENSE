@@ -1,22 +1,26 @@
-Private License
-Copyright (c) 2026 Cachoid Team. All rights reserved.
+MIT License (Non-Commercial)
 
-This software and all associated source code, assets, documentation, build
-artifacts, and configuration files (collectively, the "Software") are the
-confidential and proprietary property of the copyright holder.
+Copyright (c) 2026 Cachoid Xie
 
-No permission is granted to use, copy, modify, merge, publish, distribute,
-sublicense, sell, lease, transfer, disclose, reverse engineer, decompile,
-create derivative works from, or otherwise exploit the Software, in whole or
-in part, except with prior written authorization from the copyright holder.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Access to the Software is restricted to authorized personnel and approved
-delivery recipients under written agreement. Any unauthorized use, disclosure,
-or distribution is strictly prohibited.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-The Software is provided "AS IS", without warranty of any kind, express or
-implied, including but not limited to the warranties of merchantability,
-fitness for a particular purpose, title, and non-infringement. In no event
-shall the copyright holder or contributors be liable for any claim, damages,
-or other liability arising from, out of, or in connection with the Software or
-the use or other dealings in the Software.
+**The Software may not be used, in whole or in part, for commercial purposes,
+including but not limited to selling, licensing, offering as a paid service,
+or incorporating into a commercial product, without explicit written
+permission from the copyright holder.**
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

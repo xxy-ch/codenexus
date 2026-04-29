@@ -921,6 +921,7 @@ dependencies = [
  "axum",
  "chrono",
  "deadpool-redis",
+ "reqwest",
  "serde",
  "serde_json",
  "shared",
