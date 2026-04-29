@@ -69,3 +69,37 @@ pub async fn ensure_consumer_group(redis_pool: &Pool) -> Result<()> {
 
     Ok(())
 }
+
+/// Emit an LLM task to the analysis_events stream for the llm-worker to pick up.
+///
+/// The message contains a `data` JSON field with `job_id`, matching the format
+/// that the llm-worker's `read_messages` parser expects. The worker extracts
+/// `job_id` and uses it to claim the full job from the DB.
+pub async fn emit_llm_task(redis_pool: &Pool, task: &AnalysisJobMessage) -> Result<()> {
+    let mut conn = redis_pool.get().await?;
+    let json = serde_json::to_string(task)?;
+    let _: String = deadpool_redis::redis::cmd("XADD")
+        .arg(ANALYSIS_STREAM)
+        .arg("MAXLEN")
+        .arg("~")
+        .arg("10000")
+        .arg("*")
+        .arg("data")
+        .arg(&json)
+        .query_async(&mut conn)
+        .await?;
+    tracing::info!(
+        job_id = task.job_id,
+        submission_id = task.submission_id,
+        "Emitted LLM task to analysis_events stream"
+    );
+    Ok(())
+}
+
+/// Ensure the consumer group exists for the llm-worker on the analysis_events stream.
+///
+/// Convenience wrapper — the llm-worker also creates this group on startup.
+/// Called during API startup so the group is ready before any tasks are enqueued.
+pub async fn ensure_llm_consumer_group(redis_pool: &Pool) -> Result<()> {
+    ensure_consumer_group(redis_pool).await
+}

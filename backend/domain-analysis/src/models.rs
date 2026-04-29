@@ -14,6 +14,13 @@ pub struct AnalysisJob {
     pub grade_id: Option<i64>,
     pub contest_id: Option<i64>,
     pub status: String,
+    pub error_message: Option<String>,
+    pub llm_model: Option<String>,
+    pub prompt_tokens: Option<i32>,
+    pub completion_tokens: Option<i32>,
+    pub latency_ms: Option<i32>,
+    pub retry_count: Option<i32>,
+    pub max_retries: Option<i32>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -121,4 +128,12 @@ pub struct AnalysisEvent {
     pub runtime_ms: i64,
     pub memory_mb: i64,
     pub language: String,
+}
+
+/// Submission metadata needed to create an analysis job.
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct SubmissionMeta {
+    pub user_id: Uuid,
+    pub problem_id: i64,
+    pub organization_id: i64,
 }

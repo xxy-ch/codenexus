@@ -5,7 +5,7 @@ use sqlx::PgPool;
 use crate::extractor::StructuralFeatures;
 use crate::models::{
     AnalysisClassSnapshot, AnalysisJob, AnalysisSolutionCluster, AnalysisSubmissionFeatures,
-    AnalysisTeachingCard, NewAnalysisJob,
+    AnalysisTeachingCard, NewAnalysisJob, SubmissionMeta,
 };
 
 #[derive(Clone)]
@@ -250,7 +250,11 @@ impl AnalysisService {
 
     pub async fn list_pending_jobs(&self, limit: i64) -> Result<Vec<AnalysisJob>> {
         let jobs = sqlx::query_as::<_, AnalysisJob>(
-            "SELECT * FROM analysis_jobs WHERE status = 'pending' ORDER BY created_at ASC LIMIT $1",
+            r#"SELECT id, submission_id, problem_id, user_id, organization_id,
+                      campus_id, grade_id, contest_id, status, error_message,
+                      llm_model, prompt_tokens, completion_tokens, latency_ms,
+                      retry_count, max_retries, created_at, updated_at
+               FROM analysis_jobs WHERE status = 'pending' ORDER BY created_at ASC LIMIT $1"#,
         )
         .bind(limit)
         .fetch_all(&self.pool)
@@ -262,4 +266,82 @@ impl AnalysisService {
     pub async fn latest_processing_date(&self) -> NaiveDate {
         Utc::now().date_naive()
     }
+
+    // -----------------------------------------------------------------------
+    // LLM feedback trigger & query methods
+    // -----------------------------------------------------------------------
+
+    /// Look up a submission's metadata (user_id, problem_id, organization_id).
+    /// Used by the trigger-feedback endpoint to create an analysis job.
+    pub async fn get_submission_meta(
+        &self,
+        submission_id: i64,
+        organization_id: i64,
+    ) -> Result<Option<SubmissionMeta>> {
+        let row = sqlx::query_as::<_, SubmissionMeta>(
+            r#"SELECT user_id, problem_id, organization_id
+               FROM submissions
+               WHERE id = $1 AND organization_id = $2"#,
+        )
+        .bind(submission_id)
+        .bind(organization_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(row)
+    }
+
+    /// Find the latest analysis job for a given submission.
+    /// Returns None if no job exists yet.
+    pub async fn find_latest_job_by_submission(
+        &self,
+        submission_id: i64,
+    ) -> Result<Option<AnalysisJob>> {
+        let row = sqlx::query_as::<_, AnalysisJob>(
+            r#"SELECT id, submission_id, problem_id, user_id, organization_id,
+                      campus_id, grade_id, contest_id, status, error_message,
+                      llm_model, prompt_tokens, completion_tokens, latency_ms,
+                      retry_count, max_retries, created_at, updated_at
+               FROM analysis_jobs
+               WHERE submission_id = $1
+               ORDER BY created_at DESC
+               LIMIT 1"#,
+        )
+        .bind(submission_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(row)
+    }
+
+    /// Get the AI feedback result for a submission — job status + teaching card.
+    /// Returns the latest job for the submission, and if completed, the associated
+    /// teaching card for the problem.
+    pub async fn get_ai_feedback(
+        &self,
+        submission_id: i64,
+        organization_id: i64,
+    ) -> Result<Option<AiFeedbackResult>> {
+        let job = self.find_latest_job_by_submission(submission_id).await?;
+
+        match job {
+            None => Ok(None),
+            Some(job) => {
+                let card = if job.status == "completed" {
+                    self.get_teaching_cards(job.problem_id, organization_id)
+                        .await
+                        .ok()
+                        .and_then(|cards| cards.into_iter().next())
+                } else {
+                    None
+                };
+
+                Ok(Some(AiFeedbackResult { job, card }))
+            }
+        }
+    }
+}
+
+/// Aggregated result for the GET ai-feedback endpoint.
+pub struct AiFeedbackResult {
+    pub job: AnalysisJob,
+    pub card: Option<AnalysisTeachingCard>,
 }
