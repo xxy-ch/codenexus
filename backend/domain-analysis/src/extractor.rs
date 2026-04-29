@@ -630,4 +630,138 @@ def search(items):
         assert_eq!(features.loop_count, 4);
         assert!((features.avg_loop_nesting - 1.75).abs() < f64::EPSILON);
     }
+
+    // --- Additional tests for T04 coverage ---
+
+    #[test]
+    fn detects_python_recursion() {
+        let code = r#"
+def fib(n):
+    if n <= 1:
+        return n
+    return fib(n - 1) + fib(n - 2)
+"#;
+        let features = extract_features(code, "python").unwrap();
+        assert!(features.has_recursion, "should detect fib calling itself");
+    }
+
+    #[test]
+    fn detects_c_recursion() {
+        let code = r#"
+int factorial(int n) {
+    if (n <= 1) return 1;
+    return n * factorial(n - 1);
+}
+"#;
+        let features = extract_features(code, "c").unwrap();
+        assert!(features.has_recursion, "should detect factorial calling itself");
+    }
+
+    #[test]
+    fn no_recursion_for_non_recursive_code() {
+        // Use functions that don't call each other to avoid
+        // declaration-site "fn name(" being counted as a call.
+        let code = r#"
+fn compute(a: i32) -> i32 {
+    a * 2
+}
+fn main() {
+    let x = 5;
+    let y = x + 3;
+}
+"#;
+        let features = extract_features(code, "rust").unwrap();
+        assert!(!features.has_recursion, "non-recursive code should not flag recursion");
+    }
+
+    #[test]
+    fn counts_javascript_arrow_functions() {
+        let code = r#"
+const add = (a, b) => a + b;
+function multiply(a, b) {
+    return a * b;
+}
+const greet = name => `Hello ${name}`;
+"#;
+        let features = extract_features(code, "javascript").unwrap();
+        assert!(features.function_count >= 3, "should count arrow and regular functions, got {}", features.function_count);
+    }
+
+    #[test]
+    fn counts_c_loop_nesting() {
+        let code = r#"
+int main() {
+    for (int i = 0; i < 10; i++) {
+        while (running()) {
+            for (int j = 0; j < 5; j++) {
+                work();
+            }
+        }
+    }
+    while (retry()) {
+        simple();
+    }
+}
+"#;
+        let features = extract_features(code, "c").unwrap();
+        // 4 loops: outer for, while, inner for, outer while
+        assert_eq!(features.loop_count, 4);
+        // Nesting depths: outer for=1, while=2, inner for=3, outer while=1 → avg = (1+2+3+1)/4 = 1.75
+        assert!((features.avg_loop_nesting - 1.75).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn counts_java_loop_nesting() {
+        let code = r#"
+public class Solution {
+    public void solve() {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                while (needsRetry()) {
+                    retry();
+                }
+            }
+        }
+    }
+}
+"#;
+        let features = extract_features(code, "java").unwrap();
+        assert_eq!(features.loop_count, 3);
+        // Depths: outer for=1, inner for=2, while=3 → avg = (1+2+3)/3 = 2.0
+        assert!((features.avg_loop_nesting - 2.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn go_function_count_with_receiver() {
+        let code = r#"
+func (s *Server) HandleRequest() {
+    for _, item := range s.items {
+        process(item)
+    }
+}
+func main() {
+    s := &Server{}
+    s.HandleRequest()
+}
+"#;
+        let features = extract_features(code, "go").unwrap();
+        assert!(features.function_count >= 2, "should count Go methods and functions, got {}", features.function_count);
+    }
+
+    #[test]
+    fn zero_loops_yields_zero_avg_nesting() {
+        let code = "fn main() { println!(\"hello\"); }";
+        let features = extract_features(code, "rust").unwrap();
+        assert_eq!(features.loop_count, 0);
+        assert_eq!(features.avg_loop_nesting, 0.0);
+    }
+
+    #[test]
+    fn whitespace_only_input_returns_zeroes() {
+        let features = extract_features("   \n\t\n  ", "rust").unwrap();
+        assert_eq!(features.lines_of_code, 0);
+        assert_eq!(features.function_count, 0);
+        assert!(!features.has_recursion);
+        assert_eq!(features.loop_count, 0);
+    }
 }

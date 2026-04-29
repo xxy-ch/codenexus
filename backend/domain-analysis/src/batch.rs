@@ -5,6 +5,7 @@ use chrono::{NaiveDate, Utc};
 use sqlx::PgPool;
 use tracing::{error, info, warn};
 
+use crate::embedding::EmbeddingClient;
 use crate::extractor;
 use crate::models::AnalysisJob;
 use crate::service::AnalysisService;
@@ -18,6 +19,8 @@ pub struct BatchConfig {
     pub run_hour_utc: u32,
     /// Maximum submissions to process per organization per batch run
     pub batch_size: i64,
+    /// Whether embedding generation is enabled for feature backfill.
+    pub embedding_enabled: bool,
     /// Whether LLM-based generation is enabled.
     pub llm_enabled: bool,
 }
@@ -28,6 +31,7 @@ impl Default for BatchConfig {
             enabled: false,
             run_hour_utc: 2,
             batch_size: 1000,
+            embedding_enabled: false,
             llm_enabled: false,
         }
     }
@@ -45,6 +49,10 @@ impl BatchConfig {
                 .ok()
                 .and_then(|value| value.parse().ok())
                 .unwrap_or(1000),
+            embedding_enabled: env::var("EMBEDDING_API_URL")
+                .ok()
+                .map(|value| !value.trim().is_empty())
+                .unwrap_or(false),
             llm_enabled: env::var("AI_API_KEY")
                 .ok()
                 .map(|value| !value.is_empty())
@@ -62,10 +70,28 @@ pub async fn run_nightly_batch(pool: PgPool, config: &BatchConfig) -> Result<()>
 
     let service = AnalysisService::new(pool.clone());
     let today = Utc::now().date_naive();
+    let embedding_client = if config.embedding_enabled {
+        match EmbeddingClient::from_env() {
+            Ok(client) => client,
+            Err(error) => {
+                warn!(error = %error, "Embedding client configuration failed; continuing without embeddings");
+                None
+            }
+        }
+    } else {
+        None
+    };
 
     info!(date = %today, "Starting nightly analysis batch");
 
-    match backfill_pending_features(&service, &pool, config.batch_size).await {
+    match backfill_pending_features(
+        &service,
+        &pool,
+        config.batch_size,
+        embedding_client.as_ref(),
+    )
+    .await
+    {
         Ok(count) => info!(count, "Feature backfill complete"),
         Err(error) => error!(error = %error, "Feature backfill failed"),
     }
@@ -100,6 +126,7 @@ async fn backfill_pending_features(
     service: &AnalysisService,
     pool: &PgPool,
     batch_size: i64,
+    embedding_client: Option<&EmbeddingClient>,
 ) -> Result<u64> {
     let pending = sqlx::query_as::<_, AnalysisJob>(
         "SELECT * FROM analysis_jobs WHERE status = 'pending' ORDER BY created_at ASC LIMIT $1",
@@ -110,7 +137,7 @@ async fn backfill_pending_features(
 
     let mut processed = 0u64;
     for job in &pending {
-        if let Err(error) = process_job(service, pool, job).await {
+        if let Err(error) = process_job(service, pool, job, embedding_client).await {
             warn!(job_id = job.id, error = %error, "Failed to process analysis job");
             let _ = service.mark_failed(job.id, &error.to_string()).await;
         } else {
@@ -121,7 +148,12 @@ async fn backfill_pending_features(
     Ok(processed)
 }
 
-async fn process_job(service: &AnalysisService, pool: &PgPool, job: &AnalysisJob) -> Result<()> {
+async fn process_job(
+    service: &AnalysisService,
+    pool: &PgPool,
+    job: &AnalysisJob,
+    embedding_client: Option<&EmbeddingClient>,
+) -> Result<()> {
     service.mark_processing(job.id).await?;
 
     let source: Option<(String, String)> =
@@ -131,13 +163,31 @@ async fn process_job(service: &AnalysisService, pool: &PgPool, job: &AnalysisJob
             .await?;
 
     if let Some((source_code, language)) = source {
+        let extract_source = source_code.clone();
         let features = tokio::task::spawn_blocking(move || {
-            extractor::extract_features(&source_code, &language)
+            extractor::extract_features(&extract_source, &language)
         })
         .await??;
 
+        let embedding = if let Some(client) = embedding_client {
+            match client.embed(&source_code).await {
+                Ok(embedding) => Some(embedding),
+                Err(error) => {
+                    warn!(
+                        job_id = job.id,
+                        submission_id = job.submission_id,
+                        error = %error,
+                        "Embedding generation failed; storing structural features without embedding"
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        };
+
         service
-            .store_features(job.submission_id, job.organization_id, &features)
+            .store_features(job.submission_id, job.organization_id, &features, embedding)
             .await?;
     }
 
@@ -311,4 +361,98 @@ async fn invalidate_stale(pool: &PgPool) -> Result<u64> {
         .execute(pool)
         .await?;
     Ok(result.rows_affected())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Mutex, OnceLock};
+
+    use super::*;
+
+    fn env_lock() -> &'static Mutex<()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+    }
+
+    /// Verify BatchConfig::from_env correctly detects embedding availability
+    /// based on EMBEDDING_API_URL presence.
+    #[test]
+    fn batch_config_embedding_enabled_when_url_set() {
+        let _guard = env_lock().lock().unwrap();
+        std::env::set_var("EMBEDDING_API_URL", "http://embedding.test");
+        let config = BatchConfig::from_env();
+        assert!(config.embedding_enabled, "embedding should be enabled when EMBEDDING_API_URL is set");
+        std::env::remove_var("EMBEDDING_API_URL");
+    }
+
+    #[test]
+    fn batch_config_embedding_disabled_when_url_missing() {
+        let _guard = env_lock().lock().unwrap();
+        std::env::remove_var("EMBEDDING_API_URL");
+        let config = BatchConfig::from_env();
+        assert!(!config.embedding_enabled, "embedding should be disabled when EMBEDDING_API_URL is unset");
+    }
+
+    #[test]
+    fn batch_config_ignores_whitespace_url() {
+        let _guard = env_lock().lock().unwrap();
+        std::env::set_var("EMBEDDING_API_URL", "   ");
+        let config = BatchConfig::from_env();
+        assert!(!config.embedding_enabled, "whitespace-only URL should disable embedding");
+        std::env::remove_var("EMBEDDING_API_URL");
+    }
+
+    /// Verify that structural feature extraction completes successfully
+    /// even when no embedding client is available (degradation pattern).
+    #[test]
+    fn extract_features_succeeds_without_embedding_client() {
+        let code = r#"
+fn quicksort(arr: &mut [i32]) {
+    if arr.len() <= 1 { return; }
+    let pivot = arr[0];
+    for i in 1..arr.len() {
+        if arr[i] < pivot {
+            arr.swap(i, 0);
+        }
+    }
+}
+"#;
+        let features = extractor::extract_features(code, "rust").unwrap();
+
+        // Structural features must be valid and complete regardless of embedding
+        assert!(features.cyclomatic_complexity > 0.0);
+        assert!(features.lines_of_code > 0);
+        assert!(features.function_count >= 1);
+        assert!(features.loop_count >= 1);
+        assert!(features.max_nesting_depth >= 1);
+        // This simulates the degradation path: features are ready to store
+        // even though embedding = None
+    }
+
+    #[test]
+    fn extract_features_python_degradation_path() {
+        let code = r#"
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+    mid = len(arr) // 2
+    left = merge_sort(arr[:mid])
+    right = merge_sort(arr[mid:])
+    return merge(left, right)
+"#;
+        let features = extractor::extract_features(code, "python").unwrap();
+        assert!(features.has_recursion, "merge_sort calls itself");
+        assert!(features.function_count >= 1);
+        // Features are complete and can be stored without embedding
+    }
+
+    #[test]
+    fn batch_default_config_sensible() {
+        let config = BatchConfig::default();
+        assert!(!config.enabled);
+        assert!(!config.embedding_enabled);
+        assert!(!config.llm_enabled);
+        assert_eq!(config.run_hour_utc, 2);
+        assert_eq!(config.batch_size, 1000);
+    }
 }

@@ -474,32 +474,165 @@ mod tests {
     }
 
     #[test]
-    fn from_env_builds_optional_client_from_embedding_variables() {
+    fn from_env_returns_none_when_no_url_set() {
         let _guard = env_lock().lock().unwrap();
-        std::env::set_var("EMBEDDING_API_URL", "http://primary.example");
-        std::env::set_var(
-            "EMBEDDING_FALLBACK_URL",
-            "http://fallback.example/v1/embeddings",
-        );
-        std::env::set_var("EMBEDDING_API_KEY", "env-secret");
-        std::env::set_var("EMBEDDING_MODEL", "env-model");
-
-        let client = EmbeddingClient::from_env().unwrap().unwrap();
-
-        assert_eq!(
-            client.primary_url.as_str(),
-            "http://primary.example/v1/embeddings"
-        );
-        assert_eq!(
-            client.fallback_url.as_ref().unwrap().as_str(),
-            "http://fallback.example/v1/embeddings"
-        );
-        assert_eq!(client.api_key.as_deref(), Some("env-secret"));
-        assert_eq!(client.model, "env-model");
-
         std::env::remove_var("EMBEDDING_API_URL");
         std::env::remove_var("EMBEDDING_FALLBACK_URL");
         std::env::remove_var("EMBEDDING_API_KEY");
         std::env::remove_var("EMBEDDING_MODEL");
+
+        let result = EmbeddingClient::from_env().unwrap();
+        assert!(result.is_none(), "should return Ok(None) when EMBEDDING_API_URL is unset");
+    }
+
+    #[test]
+    fn new_normalizes_bare_base_url() {
+        let client = EmbeddingClient::new(
+            "http://localhost:8000".to_string(),
+            None,
+            None,
+            "model-a".to_string(),
+            Duration::from_secs(5),
+        )
+        .unwrap();
+        assert_eq!(
+            client.primary_url.as_str(),
+            "http://localhost:8000/v1/embeddings"
+        );
+    }
+
+    #[test]
+    fn new_preserves_already_complete_url() {
+        let client = EmbeddingClient::new(
+            "http://localhost:8000/v1/embeddings".to_string(),
+            None,
+            None,
+            "model-a".to_string(),
+            Duration::from_secs(5),
+        )
+        .unwrap();
+        assert_eq!(
+            client.primary_url.as_str(),
+            "http://localhost:8000/v1/embeddings"
+        );
+    }
+
+    #[test]
+    fn new_strips_trailing_slash_before_appending_path() {
+        let client = EmbeddingClient::new(
+            "http://localhost:8000/".to_string(),
+            None,
+            None,
+            "model-a".to_string(),
+            Duration::from_secs(5),
+        )
+        .unwrap();
+        assert_eq!(
+            client.primary_url.as_str(),
+            "http://localhost:8000/v1/embeddings"
+        );
+    }
+
+    #[test]
+    fn new_uses_default_model_when_empty() {
+        let client = EmbeddingClient::new(
+            "http://localhost:8000".to_string(),
+            None,
+            None,
+            "".to_string(),
+            Duration::from_secs(5),
+        )
+        .unwrap();
+        assert_eq!(client.model, "text-embedding-3-small");
+    }
+
+    #[test]
+    fn new_ignores_empty_fallback_url() {
+        let client = EmbeddingClient::new(
+            "http://localhost:8000".to_string(),
+            Some("".to_string()),
+            None,
+            "m".to_string(),
+            Duration::from_secs(5),
+        )
+        .unwrap();
+        assert!(client.fallback_url.is_none());
+    }
+
+    #[test]
+    fn new_ignores_whitespace_only_api_key() {
+        let client = EmbeddingClient::new(
+            "http://localhost:8000".to_string(),
+            None,
+            Some("   ".to_string()),
+            "m".to_string(),
+            Duration::from_secs(5),
+        )
+        .unwrap();
+        assert!(client.api_key.is_none());
+    }
+
+    #[test]
+    fn new_rejects_invalid_url() {
+        let result = EmbeddingClient::new(
+            "not a url".to_string(),
+            None,
+            None,
+            "m".to_string(),
+            Duration::from_secs(5),
+        );
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("invalid embedding URL"), "error: {err}");
+    }
+
+    #[tokio::test]
+    async fn embed_returns_error_on_empty_data_array() {
+        let (url, _req) = spawn_embedding_server(
+            200,
+            r#"{"data":[],"model":"demo","object":"list"}"#.to_string(),
+        )
+        .await;
+        let client = EmbeddingClient::new(
+            url,
+            None,
+            None,
+            "demo-model".to_string(),
+            Duration::from_secs(10),
+        )
+        .unwrap();
+
+        let error = client.embed("anything").await.unwrap_err();
+        assert!(
+            error.to_string().contains("missing data[0].embedding"),
+            "expected malformed response error, got: {error}"
+        );
+    }
+
+    #[tokio::test]
+    async fn embed_returns_fallback_error_when_both_endpoints_fail() {
+        let (primary_url, _) = spawn_embedding_server(
+            500,
+            r#"{"error":{"message":"primary down"}}"#.to_string(),
+        )
+        .await;
+        let (fallback_url, _) = spawn_embedding_server(
+            503,
+            r#"{"error":{"message":"fallback down"}}"#.to_string(),
+        )
+        .await;
+        let client = EmbeddingClient::new(
+            primary_url,
+            Some(fallback_url),
+            None,
+            "demo-model".to_string(),
+            Duration::from_secs(10),
+        )
+        .unwrap();
+
+        let error = client.embed("anything").await.unwrap_err();
+        let msg = error.to_string();
+        assert!(msg.contains("primary failed"), "error: {msg}");
+        assert!(msg.contains("fallback failed"), "error: {msg}");
     }
 }

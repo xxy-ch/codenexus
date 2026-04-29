@@ -81,7 +81,10 @@ impl AnalysisService {
         submission_id: i64,
         organization_id: i64,
         features: &StructuralFeatures,
+        embedding: Option<Vec<f64>>,
     ) -> Result<()> {
+        let embedding = embedding.map(sqlx::types::Json);
+
         sqlx::query(
             r#"
             INSERT INTO analysis_submission_features (
@@ -98,8 +101,9 @@ impl AnalysisService {
                 distinct_operators,
                 distinct_operands,
                 halstead_volume,
+                embedding_vector,
                 created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
             ON CONFLICT (submission_id)
             DO UPDATE SET
                 organization_id = EXCLUDED.organization_id,
@@ -113,7 +117,8 @@ impl AnalysisService {
                 avg_loop_nesting = EXCLUDED.avg_loop_nesting,
                 distinct_operators = EXCLUDED.distinct_operators,
                 distinct_operands = EXCLUDED.distinct_operands,
-                halstead_volume = EXCLUDED.halstead_volume
+                halstead_volume = EXCLUDED.halstead_volume,
+                embedding_vector = COALESCE(EXCLUDED.embedding_vector, analysis_submission_features.embedding_vector)
             "#,
         )
         .bind(submission_id)
@@ -129,6 +134,29 @@ impl AnalysisService {
         .bind(features.distinct_operators)
         .bind(features.distinct_operands)
         .bind(features.halstead_volume)
+        .bind(embedding)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    pub async fn store_embedding(
+        &self,
+        submission_id: i64,
+        organization_id: i64,
+        embedding: Vec<f64>,
+    ) -> Result<()> {
+        sqlx::query(
+            r#"
+            UPDATE analysis_submission_features
+            SET embedding_vector = $3
+            WHERE submission_id = $1 AND organization_id = $2
+            "#,
+        )
+        .bind(submission_id)
+        .bind(organization_id)
+        .bind(sqlx::types::Json(embedding))
         .execute(&self.pool)
         .await?;
 
