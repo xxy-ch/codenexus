@@ -7,6 +7,7 @@
 #   - frontend: Vite dev server (port 5173)
 #   - feature-gateway: Feature flag resolution service (port 3001)
 #   - judge-worker: Code execution service
+#   - llm-worker: LLM analysis worker (consumes from Redis Streams)
 #
 # Environment Variables Required for API:
 #   - DATABASE_URL=postgresql://postgres:postgres@localhost:5432/online_judge
@@ -187,6 +188,38 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  llm-worker:
+    build:
+      context: ./backend
+      dockerfile: llm-worker/Dockerfile
+    container_name: online-judge-llm-worker
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/online_judge
+      REDIS_URL: redis://redis:6379
+      LLM_API_URL: ${LLM_API_URL:-http://host.docker.internal:11434}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-deepseek-coder}
+      LLM_TIMEOUT_SECS: "60"
+      LLM_MAX_RETRIES: "3"
+      RUST_LOG: llm_worker=debug
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pgrep -f llm-worker >/dev/null || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
 volumes:
   postgres_data:
