@@ -80,7 +80,7 @@ export function SubmissionHistory() {
         description="提交代码后这里会显示你的提交历史"
         action={
           <Link to="/problems">
-            <Button variant="primary">浏览题目</Button>
+            <Button variant="default">浏览题目</Button>
           </Link>
         }
       />
@@ -94,15 +94,15 @@ export function SubmissionHistory() {
 
   return (
     <div className="space-y-4">
-      {/* Header — Supabase developer-tool aesthetic */}
-      <div className="bg-card border border-border rounded-xl p-5">
+      {/* Header */}
+      <div className="bg-card border border-border rounded-xl p-5 shadow-whisper">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1.5">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-semibold tracking-tight text-foreground">
                 提交历史
               </h1>
-              <span className="rounded-full bg-[#3ecf8e]/10 px-2.5 py-1 text-xs font-medium text-[#3ecf8e]">
+              <span className="rounded-full bg-status-accepted/10 px-2.5 py-1 text-xs font-medium text-status-accepted">
                 {data.total} 条记录
               </span>
             </div>
@@ -114,7 +114,7 @@ export function SubmissionHistory() {
           <div className="flex items-center gap-2">
             <div className="border border-border rounded-lg bg-background px-3 py-2">
               <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">通过</p>
-              <p className="text-lg font-semibold tabular-nums text-[#3ecf8e]">{acceptedCount}</p>
+              <p className="text-lg font-semibold tabular-nums text-status-accepted">{acceptedCount}</p>
             </div>
             <div className="border border-border rounded-lg bg-background px-3 py-2">
               <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">平均耗时</p>
@@ -128,8 +128,8 @@ export function SubmissionHistory() {
         </div>
       </div>
 
-      {/* Filter bar — compact, border-defined */}
-      <div className="bg-card border border-border rounded-xl px-4 py-3">
+      {/* Filter bar */}
+      <div className="bg-card border border-border rounded-xl px-4 py-3 shadow-whisper">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
@@ -152,7 +152,7 @@ export function SubmissionHistory() {
                 className={cn(
                   'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
                   statusFilter === 'accepted'
-                    ? 'bg-[#3ecf8e]/15 text-[#3ecf8e]'
+                    ? 'bg-status-accepted/10 text-status-accepted'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -163,7 +163,7 @@ export function SubmissionHistory() {
                 className={cn(
                   'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
                   statusFilter === 'wrong_answer'
-                    ? 'bg-red-500/10 text-red-500'
+                    ? 'bg-destructive/10 text-destructive'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -195,11 +195,11 @@ export function SubmissionHistory() {
         </div>
       </div>
 
-      {/* Table — dense, border-defined, developer-tool feel */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Table */}
+      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-whisper">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="border-b border-border">
+            <thead className="border-b border-border-subtle">
               <tr>
                 <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
                   状态
@@ -221,7 +221,7 @@ export function SubmissionHistory() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody className="divide-y divide-border-subtle">
               {data.submissions.map((submission) => {
                 const statusConfig = getSubmissionStatusConfig(submission.status)
                 const languageConfig = LANGUAGE_CONFIG[submission.language as keyof typeof LANGUAGE_CONFIG] || {
@@ -233,22 +233,22 @@ export function SubmissionHistory() {
                 const statusPillClass = cn(
                   'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
                   submission.status === 'accepted'
-                    ? 'bg-[#3ecf8e]/10 text-[#3ecf8e]'
+                    ? 'bg-status-accepted/10 text-status-accepted'
                     : submission.status === 'wrong_answer'
-                      ? 'bg-red-500/10 text-red-500'
+                      ? 'bg-destructive/10 text-destructive'
                       : submission.status === 'pending' || submission.status === 'queued'
-                        ? 'bg-amber-500/10 text-amber-600'
+                        ? 'bg-status-pending/10 text-status-pending'
                         : submission.status === 'time_limit_exceeded'
-                          ? 'bg-orange-500/10 text-orange-500'
+                          ? 'bg-status-tle/10 text-status-tle'
                           : submission.status === 'runtime_error'
-                            ? 'bg-rose-500/10 text-rose-500'
+                            ? 'bg-status-re/10 text-status-re'
                             : 'bg-muted text-muted-foreground'
                 )
 
                 return (
                   <tr
                     key={submission.id}
-                    className="hover:bg-muted/50 transition-colors cursor-pointer"
+                    className="hover:bg-background-alt transition-colors cursor-pointer"
                     onClick={() => navigate(`/submissions/${submission.id}`)}
                   >
                     <td className="px-4 py-2.5 whitespace-nowrap">
@@ -266,23 +266,23 @@ export function SubmissionHistory() {
                       </span>
                     </td>
                     <td className="px-4 py-2.5 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <div className="inline-flex items-center gap-1.5 rounded-full bg-background-subtle px-2 py-0.5 text-sm text-secondary">
                         <IconComponent className="w-3.5 h-3.5" />
                         <span className="font-mono text-xs">{languageConfig.label}</span>
                       </div>
                     </td>
                     <td className="px-4 py-2.5 whitespace-nowrap">
-                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      <span className="font-mono text-sm tabular-nums text-secondary">
                         {submission.time_ms ? `${submission.time_ms}ms` : '-'}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 whitespace-nowrap">
-                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                      <span className="font-mono text-sm tabular-nums text-secondary">
                         {submission.memory_kb ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 whitespace-nowrap">
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-tertiary">
                         {new Date(submission.created_at).toLocaleString('zh-CN', {
                           year: 'numeric',
                           month: '2-digit',
@@ -300,14 +300,14 @@ export function SubmissionHistory() {
         </div>
 
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-border flex items-center justify-between">
+          <div className="px-4 py-3 border-t border-border-subtle flex items-center justify-between">
             <span className="text-xs text-muted-foreground font-mono">
               {page} / {totalPages}
             </span>
             <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
-                size="small"
+                size="sm"
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page === 1}
               >
@@ -316,7 +316,7 @@ export function SubmissionHistory() {
               </Button>
               <Button
                 variant="outline"
-                size="small"
+                size="sm"
                 onClick={() => handlePageChange(page + 1)}
                 disabled={page === totalPages}
               >

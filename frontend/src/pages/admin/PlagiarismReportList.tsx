@@ -8,16 +8,16 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineError } from '@/components/ui/InlineError'
 
 const RISK_COLOR: Record<string, string> = {
-  low: 'bg-lime-500/15 text-lime-400',
-  medium: 'bg-amber-500/15 text-amber-400',
-  high: 'bg-rose-500/15 text-rose-400',
+  low: 'bg-status-accepted/10 text-status-accepted',
+  medium: 'bg-difficulty-medium/10 text-difficulty-medium',
+  high: 'bg-destructive/10 text-destructive',
 }
 
 const STATUS_COLOR: Record<string, string> = {
   pending: 'bg-muted text-muted-foreground',
-  processing: 'bg-blue-500/15 text-blue-400',
-  completed: 'bg-lime-500/15 text-lime-400',
-  failed: 'bg-rose-500/15 text-rose-400',
+  processing: 'bg-status-pending/10 text-status-pending',
+  completed: 'bg-status-accepted/10 text-status-accepted',
+  failed: 'bg-destructive/10 text-destructive',
 }
 
 const RISK_LABEL: Record<string, string> = {

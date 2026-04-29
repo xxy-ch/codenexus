@@ -18,16 +18,23 @@ impl ClassService {
 
     /// SECURITY: Verify that a campus belongs to the given organization.
     /// Defense-in-depth to prevent cross-org writes even if JWT claims are inconsistent.
-    pub async fn verify_campus_org(&self, campus_id: i64, org_id: i64) -> Result<(), anyhow::Error> {
-        let row: Option<(i64,)> = sqlx::query_as(
-            "SELECT 1 FROM campuses WHERE id = $1 AND organization_id = $2",
-        )
-        .bind(campus_id)
-        .bind(org_id)
-        .fetch_optional(&self.pool)
-        .await?;
+    pub async fn verify_campus_org(
+        &self,
+        campus_id: i64,
+        org_id: i64,
+    ) -> Result<(), anyhow::Error> {
+        let row: Option<(i64,)> =
+            sqlx::query_as("SELECT 1 FROM campuses WHERE id = $1 AND organization_id = $2")
+                .bind(campus_id)
+                .bind(org_id)
+                .fetch_optional(&self.pool)
+                .await?;
         if row.is_none() {
-            anyhow::bail!("Campus {} does not belong to organization {}", campus_id, org_id);
+            anyhow::bail!(
+                "Campus {} does not belong to organization {}",
+                campus_id,
+                org_id
+            );
         }
         Ok(())
     }
@@ -184,12 +191,11 @@ impl ClassService {
         .await?;
 
         // Step 2: Count users in this grade (before clearing grade_id)
-        let affected: i64 = sqlx::query_scalar::<_, i64>(
-            "SELECT COUNT(*) FROM users WHERE grade_id = $1",
-        )
-        .bind(grade_id)
-        .fetch_one(&mut *tx)
-        .await?;
+        let affected: i64 =
+            sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM users WHERE grade_id = $1")
+                .bind(grade_id)
+                .fetch_one(&mut *tx)
+                .await?;
 
         // Step 3: Optionally suspend student accounts BEFORE clearing grade_id.
         // users table uses `status` column (TEXT: active/inactive/banned), not `is_active`.
@@ -217,12 +223,10 @@ impl ClassService {
         }
 
         // Step 4: Clear grade_id for users in this grade
-        sqlx::query(
-            "UPDATE users SET grade_id = NULL WHERE grade_id = $1",
-        )
-        .bind(grade_id)
-        .execute(&mut *tx)
-        .await?;
+        sqlx::query("UPDATE users SET grade_id = NULL WHERE grade_id = $1")
+            .bind(grade_id)
+            .execute(&mut *tx)
+            .await?;
 
         // Step 5: Clear grade_id for classes in this grade
         // NOTE: classes table has no is_active column; we clear grade_id instead.
@@ -250,6 +254,9 @@ impl ClassService {
         old_academic_year: &str,
         new_academic_year: &str,
     ) -> Result<Vec<Grade>> {
+        // SECURITY (H-07): Wrap entire promotion in transaction for atomicity
+        let mut tx = self.pool.begin().await?;
+
         // Get current active grades for this campus
         let current_grades = sqlx::query_as::<_, Grade>(
             r#"
@@ -261,7 +268,7 @@ impl ClassService {
         )
         .bind(campus_id)
         .bind(old_academic_year)
-        .fetch_all(&self.pool)
+        .fetch_all(&mut *tx)
         .await?;
 
         let mut new_grades = Vec::new();
@@ -282,7 +289,7 @@ impl ClassService {
             .bind(&new_name)
             .bind(new_year_level)
             .bind(new_academic_year)
-            .fetch_optional(&self.pool)
+            .fetch_optional(&mut *tx)
             .await?;
 
             if let Some(g) = new_grade {
@@ -295,7 +302,7 @@ impl ClassService {
                 )
                 .bind(g.id)
                 .bind(old_grade.id)
-                .execute(&self.pool)
+                .execute(&mut *tx)
                 .await?;
 
                 // Deactivate old grade
@@ -306,13 +313,14 @@ impl ClassService {
                     "#,
                 )
                 .bind(old_grade.id)
-                .execute(&self.pool)
+                .execute(&mut *tx)
                 .await?;
 
                 new_grades.push(g);
             }
         }
 
+        tx.commit().await?;
         Ok(new_grades)
     }
 
@@ -325,11 +333,7 @@ impl ClassService {
         name_templates: &[String],
     ) -> Result<Vec<Grade>> {
         // Default to Chinese high school patterns if no templates provided
-        let defaults = vec![
-            "高一".to_string(),
-            "高二".to_string(),
-            "高三".to_string(),
-        ];
+        let defaults = vec!["高一".to_string(), "高二".to_string(), "高三".to_string()];
         let templates = if name_templates.is_empty() {
             &defaults
         } else {
@@ -695,11 +699,7 @@ impl ClassService {
     // ========== Student Enrollment ==========
 
     /// Add student to class
-    pub async fn add_student(
-        &self,
-        class_id: i64,
-        username: &str,
-    ) -> Result<ClassEnrollment> {
+    pub async fn add_student(&self, class_id: i64, username: &str) -> Result<ClassEnrollment> {
         // Get class
         let class = self.get_class(class_id).await?;
 

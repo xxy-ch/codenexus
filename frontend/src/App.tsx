@@ -40,6 +40,8 @@ const BlogList = lazyNamed(() => import('./pages/community/BlogList'), 'BlogList
 const BlogDetail = lazyNamed(() => import('./pages/community/BlogDetail'), 'BlogDetail')
 const CreateArticle = lazyNamed(() => import('./pages/community/CreateArticle'), 'CreateArticle')
 const EditArticle = lazyNamed(() => import('./pages/community/EditArticle'), 'EditArticle')
+const ComponentPreview = lazy(() => import('./pages/preview/ComponentPreview'))
+const DesignShowcase = lazy(() => import('./pages/preview/DesignShowcase'))
 const DirectMessages = lazyNamed(() => import('./pages/community/DirectMessages'), 'DirectMessages')
 const SearchResults = lazyNamed(() => import('./pages/search/SearchResults'), 'SearchResults')
 const Profile = lazyNamed(() => import('./pages/user/Profile'), 'Profile')
@@ -195,6 +197,10 @@ function App() {
             <Route path="plagiarism-reports" element={<FeatureGateRoute slug="plagiarism">{renderLazy(PlagiarismReportList)}</FeatureGateRoute>} />
             <Route path="plagiarism-reports/:reportId" element={<FeatureGateRoute slug="plagiarism">{renderLazy(PlagiarismReportDetail)}</FeatureGateRoute>} />
           </Route>
+
+          {/* Preview Route (public, no auth) */}
+          <Route path="/preview" element={renderLazy(ComponentPreview)} />
+          <Route path="/design" element={renderLazy(DesignShowcase)} />
 
           {/* Error Routes */}
           <Route path="/unauthorized" element={renderLazy(UnauthorizedPage)} />

@@ -9,8 +9,8 @@ mod redis;
 mod websocket;
 mod worker_heartbeat;
 
-use api_infra::state::AppState;
 use api_infra::metrics::setup_metrics_recorder;
+use api_infra::state::AppState;
 use axum::serve;
 use axum::{
     extract::State,
@@ -78,9 +78,10 @@ async fn main() -> anyhow::Result<()> {
 
     let gateway_url = std::env::var("FEATURE_GATEWAY_URL")
         .unwrap_or_else(|_| "http://127.0.0.1:3001".to_string());
-    let gateway_client = std::sync::Arc::new(
-        api_infra::feature_gateway::GatewayClient::new(gateway_url, config.worker_secret.clone()),
-    );
+    let gateway_client = std::sync::Arc::new(api_infra::feature_gateway::GatewayClient::new(
+        gateway_url,
+        config.worker_secret.clone(),
+    ));
 
     let state = AppState {
         db_pool,
@@ -181,7 +182,12 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         // Prometheus metrics endpoint
         .route("/metrics", get(metrics_handler))
         // Internal worker heartbeat (auth via X-Worker-Secret, not JWT)
-        .route("/internal/worker/heartbeat", post(worker_heartbeat::handle_heartbeat));
+        .route(
+            "/internal/worker/heartbeat",
+            post(worker_heartbeat::handle_heartbeat),
+        )
+        // Internal judge result callback (auth via X-Worker-Secret, not JWT)
+        .nest("/submissions", domain_submissions::worker_results_router());
 
     // Rate-limited public endpoints (auth, websocket)
     let rate_limited_public = Router::new()
@@ -194,12 +200,23 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
             config: governor_config.clone(),
         });
 
+    let analysis_gateway_client = state.gateway_client.clone();
+
     let protected_router = Router::new()
         .nest("/users", domain_users::user_router())
         .nest("/problems", domain_problems::problems_router())
         .nest("/contests", domain_contests::contests_router())
         .nest("/leaderboard", domain_leaderboard::leaderboard_router())
         .nest("/submissions", domain_submissions::submissions_router())
+        .nest(
+            "/analysis",
+            domain_analysis::routes::analysis_router().route_layer(axum::middleware::from_fn(
+                api_infra::feature_gateway::middleware::feature_gate(
+                    "ai_analysis_enabled",
+                    analysis_gateway_client,
+                ),
+            )),
+        )
         .nest("/classes", domain_classes::classes_router())
         .nest("/discussions", domain_community::discussions_router())
         .nest("/blog", domain_community::blog_router())
@@ -211,7 +228,7 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .nest("/admin/judge", judge_monitor::judge_monitor_router())
         .nest("/features", api_infra::feature_gateway::features_router())
         .route_layer(axum::middleware::from_fn(
-            middleware::tenant::tenant_middleware,
+            api_infra::middleware::tenant::tenant_middleware,
         ))
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
@@ -247,10 +264,8 @@ async fn health_live() -> &'static str {
 ///
 /// Per T-06-03 mitigation: response only contains "connected"/"unavailable"
 /// status strings; no connection strings, hostnames, or error messages.
-async fn health_ready(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    let db_ok = sqlx::query_scalar::<_, i64>("SELECT 1")
+async fn health_ready(State(state): State<AppState>) -> impl IntoResponse {
+    let db_ok = sqlx::query_scalar::<_, i32>("SELECT 1")
         .fetch_one(&state.db_pool)
         .await
         .is_ok();
@@ -310,7 +325,7 @@ async fn metrics_handler(State(state): State<AppState>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::body::{Body, to_bytes};
+    use axum::body::{to_bytes, Body};
     use axum::http::{Request, StatusCode};
     use tower::ServiceExt;
 

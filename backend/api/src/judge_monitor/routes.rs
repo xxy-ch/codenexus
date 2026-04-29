@@ -46,8 +46,8 @@ pub fn judge_monitor_router() -> axum::Router<AppState> {
     axum::Router::new()
         .route("/status", axum::routing::get(get_judge_status))
         .route("/dlq", axum::routing::get(list_dlq))
-        .route("/dlq/{id}/retry", axum::routing::post(retry_dlq))
-        .route("/dlq/{id}", axum::routing::delete(delete_dlq))
+        .route("/dlq/:id/retry", axum::routing::post(retry_dlq))
+        .route("/dlq/:id", axum::routing::delete(delete_dlq))
 }
 
 #[derive(Deserialize)]

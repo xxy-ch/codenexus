@@ -11,16 +11,21 @@ use uuid::Uuid;
 async fn setup_fixture() -> TestFixture {
     let fixture = TestFixture::new().await;
     let migrator = sqlx::migrate!("../api/migrations");
-    migrator.run(&fixture.db_pool).await.expect("Failed to run migrations");
+    migrator
+        .run(&fixture.db_pool)
+        .await
+        .expect("Failed to run migrations");
     fixture
 }
 
 /// Seed an organization. Returns org_id.
 async fn seed_org(pool: &PgPool) -> i64 {
-    sqlx::query_scalar("INSERT INTO organizations (name, slug) VALUES ('Test Org', 'test-org') RETURNING id")
-        .fetch_one(pool)
-        .await
-        .unwrap()
+    sqlx::query_scalar(
+        "INSERT INTO organizations (name, slug) VALUES ('Test Org', 'test-org') RETURNING id",
+    )
+    .fetch_one(pool)
+    .await
+    .unwrap()
 }
 
 /// Seed org + campus. Returns (org_id, campus_id).
@@ -209,12 +214,11 @@ async fn test_md5_login_upgrade_integration() {
 
     // Step 2: Verify the password matches via MD5.
     // This simulates what UserService::login does when it detects the {MD5} prefix.
-    let stored_hash: String =
-        sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
-            .bind(user_id)
-            .fetch_one(&fixture.db_pool)
-            .await
-            .unwrap();
+    let stored_hash: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
+        .bind(user_id)
+        .fetch_one(&fixture.db_pool)
+        .await
+        .unwrap();
 
     assert!(
         stored_hash.starts_with("{MD5}"),
@@ -242,12 +246,11 @@ async fn test_md5_login_upgrade_integration() {
         .unwrap();
 
     // Step 4: Verify the new hash is bcrypt format.
-    let upgraded_hash: String =
-        sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
-            .bind(user_id)
-            .fetch_one(&fixture.db_pool)
-            .await
-            .unwrap();
+    let upgraded_hash: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
+        .bind(user_id)
+        .fetch_one(&fixture.db_pool)
+        .await
+        .unwrap();
 
     assert!(
         upgraded_hash.starts_with("$2b$"),
@@ -270,13 +273,12 @@ async fn test_md5_login_upgrade_integration() {
     );
 
     // Step 6 (extra): Verify the user record is otherwise unchanged.
-    let user: (Uuid, String, i64, String) = sqlx::query_as(
-        "SELECT id, username, organization_id, status FROM users WHERE id = $1",
-    )
-    .bind(user_id)
-    .fetch_one(&fixture.db_pool)
-    .await
-    .unwrap();
+    let user: (Uuid, String, i64, String) =
+        sqlx::query_as("SELECT id, username, organization_id, status FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&fixture.db_pool)
+            .await
+            .unwrap();
 
     assert_eq!(user.0, user_id);
     assert_eq!(user.1, "md5user");

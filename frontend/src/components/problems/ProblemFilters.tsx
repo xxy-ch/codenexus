@@ -198,7 +198,7 @@ export function ProblemFilters({
                 {tag}
                 <button
                   onClick={() => handleTagToggle(tag)}
-                  className="hover:bg-primary/20 rounded-full p-0.5"
+                  className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>

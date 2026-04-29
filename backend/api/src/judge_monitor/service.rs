@@ -68,11 +68,13 @@ impl JudgeMonitorService {
                             .arg(stream)
                             .query_async(&mut conn)
                             .await
-                            .map_err(|e| anyhow::anyhow!(
-                                "XLEN for stream '{}' failed during nil-lag fallback: {}",
-                                stream,
-                                e
-                            ))?;
+                            .map_err(|e| {
+                                anyhow::anyhow!(
+                                    "XLEN for stream '{}' failed during nil-lag fallback: {}",
+                                    stream,
+                                    e
+                                )
+                            })?;
                         Ok(pending + total_len as usize)
                     }
                 }
@@ -124,11 +126,7 @@ impl JudgeMonitorService {
                     Ok(fields) => fields,
                     Err(e) => {
                         failed_reads += 1;
-                        tracing::warn!(
-                            "Failed to read heartbeat data for key '{}': {}",
-                            key,
-                            e
-                        );
+                        tracing::warn!("Failed to read heartbeat data for key '{}': {}", key, e);
                         continue;
                     }
                 };
@@ -185,9 +183,7 @@ impl JudgeMonitorService {
         // XRANGE is inclusive on both ends. For pagination after a given ID
         // we use "(" (exclusive lower bound) so the already-seen entry is
         // not returned again. The first call uses "-" (earliest ID).
-        let mut cursor = start_id.map_or_else(|| "-".to_string(), |id| {
-            format!("({}", id)
-        });
+        let mut cursor = start_id.map_or_else(|| "-".to_string(), |id| format!("({}", id));
 
         while results.len() < target {
             let entries: Vec<(String, HashMap<String, String>)> =
@@ -353,7 +349,10 @@ impl JudgeMonitorService {
 /// Returns `(pending, Some(lag))` if the group was found and `lag` is a number.
 /// Returns `(pending, None)` if `lag` is nil (group hasn't consumed yet) or absent (pre-Redis 7).
 /// Returns `(0, None)` if the target group is not found.
-fn parse_group_depth(info: &deadpool_redis::redis::Value, target_group: &str) -> (usize, Option<usize>) {
+fn parse_group_depth(
+    info: &deadpool_redis::redis::Value,
+    target_group: &str,
+) -> (usize, Option<usize>) {
     let groups = match info {
         deadpool_redis::redis::Value::Array(groups) => groups,
         _ => return (0, None),
@@ -375,7 +374,10 @@ fn parse_group_depth(info: &deadpool_redis::redis::Value, target_group: &str) ->
                 deadpool_redis::redis::Value::BulkString(b) => {
                     String::from_utf8_lossy(b).to_string()
                 }
-                _ => { i += 2; continue; }
+                _ => {
+                    i += 2;
+                    continue;
+                }
             };
 
             match key.as_str() {
@@ -402,7 +404,11 @@ fn parse_group_depth(info: &deadpool_redis::redis::Value, target_group: &str) ->
                         deadpool_redis::redis::Value::Int(n) => Some(*n as usize),
                         deadpool_redis::redis::Value::BulkString(b) => {
                             let s = String::from_utf8_lossy(b);
-                            if s.contains("nil") { None } else { s.parse().ok() }
+                            if s.contains("nil") {
+                                None
+                            } else {
+                                s.parse().ok()
+                            }
                         }
                         // Nil value: group hasn't consumed anything yet
                         deadpool_redis::redis::Value::Nil => None,
@@ -451,7 +457,10 @@ mod tests {
             deadpool_redis::redis::ErrorKind::ResponseError,
             "NOGROUP No such key 'submissions' or consumer group 'judge_workers'",
         ));
-        assert!(is_no_group_error(&err), "NOGROUP should be classified as non-existent");
+        assert!(
+            is_no_group_error(&err),
+            "NOGROUP should be classified as non-existent"
+        );
 
         // Should NOT match: connection refused
         let conn_err = deadpool_redis::redis::RedisError::from((
@@ -477,7 +486,11 @@ mod tests {
     // ---- parse_group_depth tests ----
 
     /// Helper: build XINFO GROUPS response for a single group.
-    fn build_xinfo_response(group_name: &str, pending: i64, lag: Option<i64>) -> deadpool_redis::redis::Value {
+    fn build_xinfo_response(
+        group_name: &str,
+        pending: i64,
+        lag: Option<i64>,
+    ) -> deadpool_redis::redis::Value {
         let mut fields: Vec<deadpool_redis::redis::Value> = vec![
             deadpool_redis::redis::Value::BulkString(b"name".to_vec()),
             deadpool_redis::redis::Value::BulkString(group_name.as_bytes().to_vec()),
@@ -498,9 +511,7 @@ mod tests {
                 fields.push(deadpool_redis::redis::Value::Nil);
             }
         }
-        deadpool_redis::redis::Value::Array(vec![
-            deadpool_redis::redis::Value::Array(fields),
-        ])
+        deadpool_redis::redis::Value::Array(vec![deadpool_redis::redis::Value::Array(fields)])
     }
 
     #[test]
@@ -510,7 +521,11 @@ mod tests {
         assert_eq!(pending, 3, "Should parse pending count");
         assert_eq!(lag, Some(7), "Should parse lag count");
         // Total backlog = 3 + 7 = 10
-        assert_eq!(pending + lag.unwrap(), 10, "Total backlog should be pending + lag");
+        assert_eq!(
+            pending + lag.unwrap(),
+            10,
+            "Total backlog should be pending + lag"
+        );
     }
 
     #[test]
@@ -519,7 +534,11 @@ mod tests {
         let (pending, lag) = parse_group_depth(&info, "judge_workers");
         assert_eq!(pending, 2);
         assert_eq!(lag, Some(0));
-        assert_eq!(pending + lag.unwrap(), 2, "No unconsumed messages, only in-flight");
+        assert_eq!(
+            pending + lag.unwrap(),
+            2,
+            "No unconsumed messages, only in-flight"
+        );
     }
 
     #[test]
@@ -739,21 +758,30 @@ mod tests {
         // Verify all expected fields are present and parseable
         assert_eq!(fields.get("worker_id").unwrap(), "worker-1");
         assert_eq!(
-            fields.get("active_judgements").and_then(|v: &String| v.parse::<usize>().ok()),
+            fields
+                .get("active_judgements")
+                .and_then(|v: &String| v.parse::<usize>().ok()),
             Some(2)
         );
         assert_eq!(
-            fields.get("total_processed").and_then(|v: &String| v.parse::<usize>().ok()),
+            fields
+                .get("total_processed")
+                .and_then(|v: &String| v.parse::<usize>().ok()),
             Some(100)
         );
         assert_eq!(
-            fields.get("avg_wait_ms").and_then(|v: &String| v.parse::<usize>().ok()),
+            fields
+                .get("avg_wait_ms")
+                .and_then(|v: &String| v.parse::<usize>().ok()),
             Some(150)
         );
 
         // Empty fields should not be pushed (the fix skips empty results)
         let empty: HashMap<String, String> = HashMap::new();
-        assert!(empty.is_empty(), "Empty heartbeat maps should be filtered out");
+        assert!(
+            empty.is_empty(),
+            "Empty heartbeat maps should be filtered out"
+        );
     }
 
     /// Regression test (Bug 3): Verify that a missing or malformed active_judgements
@@ -870,7 +898,11 @@ mod tests {
             .collect();
 
         // Should get exactly entries 1, 4, 6 (school_id=10)
-        assert_eq!(filtered.len(), 3, "Should find exactly 3 entries for school_id=10");
+        assert_eq!(
+            filtered.len(),
+            3,
+            "Should find exactly 3 entries for school_id=10"
+        );
 
         let filtered_ids: Vec<&str> = filtered.iter().map(|(id, _)| id.as_str()).collect();
         assert!(
@@ -944,10 +976,7 @@ mod tests {
             // Step 2: Validate school_id
             let entry_school = fields.get("school_id").map(|s| s.as_str()).unwrap_or("");
             assert_eq!(entry_school, "10", "School ID must match");
-            assert_ne!(
-                entry_school, "",
-                "original_message must be present"
-            );
+            assert_ne!(entry_school, "", "original_message must be present");
 
             // Step 3: XADD (re-enqueue)
             source_stream.push("re-enqueued:42".to_string());
@@ -968,9 +997,15 @@ mod tests {
 
         // === Invariant: exactly one retry succeeded ===
         assert!(retry1_success, "First retry must succeed");
-        assert!(!retry2_success, "Second retry must fail (entry already deleted)");
+        assert!(
+            !retry2_success,
+            "Second retry must fail (entry already deleted)"
+        );
         assert_eq!(source_stream.len(), 1, "Exactly one re-enqueue must happen");
-        assert!(dlq_entries.is_empty(), "DLQ must be empty after both retries");
+        assert!(
+            dlq_entries.is_empty(),
+            "DLQ must be empty after both retries"
+        );
     }
 
     /// Verify that the Lua retry script rejects entries without school_id

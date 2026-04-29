@@ -71,8 +71,7 @@ pub fn build_problem_zip(
 ) -> Result<Vec<u8>> {
     let buf = std::io::Cursor::new(Vec::new());
     let mut writer = ZipWriter::new(buf);
-    let options = SimpleFileOptions::default()
-        .compression_method(zip::CompressionMethod::Deflated);
+    let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
     let slug = slugify(&problem.title);
 
@@ -280,7 +279,10 @@ mod tests {
             Some("https://leetcode.com/problems/two-sum/".to_string())
         );
         assert_eq!(item.config.author_note, Some("Classic problem".to_string()));
-        assert_eq!(item.description, "Find two numbers that add up to the target.");
+        assert_eq!(
+            item.description,
+            "Find two numbers that add up to the target."
+        );
         assert_eq!(item.test_case_files.len(), 2);
         assert_eq!(item.status, ImportItemStatus::Valid);
 

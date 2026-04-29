@@ -125,8 +125,8 @@ export function JudgeSettings() {
             <Settings2 className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="mt-4 flex items-center gap-2">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-lime-400" />
-            <span className="text-3xl font-bold text-lime-400">{stats.visible}</span>
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-status-accepted" />
+            <span className="text-3xl font-bold text-status-accepted">{stats.visible}</span>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">普通测试点。</p>
         </div>
@@ -135,7 +135,7 @@ export function JudgeSettings() {
             <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">隐藏</span>
             <EyeOff className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-amber-400">{stats.hidden}</div>
+          <div className="mt-4 text-3xl font-bold text-difficulty-medium">{stats.hidden}</div>
           <p className="mt-2 text-xs text-muted-foreground">隐藏测试点用于真实判题覆盖。</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -268,7 +268,7 @@ export function JudgeSettings() {
                         <td className="px-6 py-4 text-right text-sm font-medium text-foreground">{tc.score}</td>
                         <td className="px-6 py-4 text-center text-xs">
                           {tc.is_hidden
-                            ? <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-amber-400">是</span>
+                            ? <span className="rounded-full bg-difficulty-medium/10 px-2 py-0.5 text-difficulty-medium">是</span>
                             : <span className="text-muted-foreground">否</span>}
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -276,7 +276,7 @@ export function JudgeSettings() {
                             type="button"
                             onClick={() => deleteMutation.mutate(tc.id)}
                             disabled={deleteMutation.isPending}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-1.5 text-xs font-medium text-rose-400 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive disabled:opacity-50"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             删除

@@ -18,7 +18,10 @@ use uuid::Uuid;
 async fn setup_fixture() -> TestFixture {
     let fixture = TestFixture::new().await;
     let migrator = sqlx::migrate!("../api/migrations");
-    migrator.run(&fixture.db_pool).await.expect("Failed to run migrations");
+    migrator
+        .run(&fixture.db_pool)
+        .await
+        .expect("Failed to run migrations");
     fixture
 }
 
@@ -30,14 +33,13 @@ async fn seed_org_with_user(
     username: &str,
     role: &str,
 ) -> (i64, i64, Uuid) {
-    let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
-    )
-    .bind(org_name)
-    .bind(org_name.to_lowercase().replace(' ', "-"))
-    .fetch_one(pool)
-    .await
-    .unwrap();
+    let org_id: i64 =
+        sqlx::query_scalar("INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id")
+            .bind(org_name)
+            .bind(org_name.to_lowercase().replace(' ', "-"))
+            .fetch_one(pool)
+            .await
+            .unwrap();
 
     let campus_id: i64 = sqlx::query_scalar(
         "INSERT INTO campuses (organization_id, name, slug) VALUES ($1, 'Main Campus', $2) RETURNING id",
@@ -120,10 +122,20 @@ async fn test_contest_list_tenant_isolated() {
     let fixture = setup_fixture().await;
 
     // Seed org A and org B
-    let (org_a, _campus_a, _user_a) =
-        seed_org_with_user(&fixture.db_pool, "Org A (Contest)", "contest_user_a", "teacher").await;
-    let (org_b, _campus_b, _user_b) =
-        seed_org_with_user(&fixture.db_pool, "Org B (Contest)", "contest_user_b", "teacher").await;
+    let (org_a, _campus_a, _user_a) = seed_org_with_user(
+        &fixture.db_pool,
+        "Org A (Contest)",
+        "contest_user_a",
+        "teacher",
+    )
+    .await;
+    let (org_b, _campus_b, _user_b) = seed_org_with_user(
+        &fixture.db_pool,
+        "Org B (Contest)",
+        "contest_user_b",
+        "teacher",
+    )
+    .await;
 
     let service = domain_contests::service::ContestService::new(fixture.db_pool.clone());
 
@@ -192,10 +204,20 @@ async fn test_contest_list_tenant_isolated() {
 async fn test_problem_list_tenant_isolated() {
     let fixture = setup_fixture().await;
 
-    let (org_a, _campus_a, user_a) =
-        seed_org_with_user(&fixture.db_pool, "Org A (Problem)", "problem_user_a", "teacher").await;
-    let (org_b, _campus_b, user_b) =
-        seed_org_with_user(&fixture.db_pool, "Org B (Problem)", "problem_user_b", "teacher").await;
+    let (org_a, _campus_a, user_a) = seed_org_with_user(
+        &fixture.db_pool,
+        "Org A (Problem)",
+        "problem_user_a",
+        "teacher",
+    )
+    .await;
+    let (org_b, _campus_b, user_b) = seed_org_with_user(
+        &fixture.db_pool,
+        "Org B (Problem)",
+        "problem_user_b",
+        "teacher",
+    )
+    .await;
 
     // Create problems in each org
     let prob_a = seed_problem(&fixture.db_pool, org_a, user_a, "Org A Problem").await;
@@ -205,13 +227,12 @@ async fn test_problem_list_tenant_isolated() {
     assert_ne!(prob_a, prob_b);
 
     // Query problems for org A only
-    let org_a_problems: Vec<(i64, String)> = sqlx::query_as(
-        "SELECT id, title FROM problems WHERE organization_id = $1 ORDER BY id",
-    )
-    .bind(org_a)
-    .fetch_all(&fixture.db_pool)
-    .await
-    .unwrap();
+    let org_a_problems: Vec<(i64, String)> =
+        sqlx::query_as("SELECT id, title FROM problems WHERE organization_id = $1 ORDER BY id")
+            .bind(org_a)
+            .fetch_all(&fixture.db_pool)
+            .await
+            .unwrap();
 
     assert_eq!(org_a_problems.len(), 1, "Org A should see 1 problem");
     assert_eq!(org_a_problems[0].1, "Org A Problem");
@@ -224,13 +245,12 @@ async fn test_problem_list_tenant_isolated() {
     );
 
     // Query problems for org B only
-    let org_b_problems: Vec<(i64, String)> = sqlx::query_as(
-        "SELECT id, title FROM problems WHERE organization_id = $1 ORDER BY id",
-    )
-    .bind(org_b)
-    .fetch_all(&fixture.db_pool)
-    .await
-    .unwrap();
+    let org_b_problems: Vec<(i64, String)> =
+        sqlx::query_as("SELECT id, title FROM problems WHERE organization_id = $1 ORDER BY id")
+            .bind(org_b)
+            .fetch_all(&fixture.db_pool)
+            .await
+            .unwrap();
 
     assert_eq!(org_b_problems.len(), 1, "Org B should see 1 problem");
     assert_eq!(org_b_problems[0].1, "Org B Problem");
@@ -250,30 +270,34 @@ async fn test_user_list_tenant_isolated() {
         seed_org_with_user(&fixture.db_pool, "Org B (User)", "user_b", "student").await;
 
     // Direct SQL to verify tenant scoping at the database level
-    let org_a_users: Vec<(Uuid,)> = sqlx::query_as(
-        "SELECT id FROM users WHERE organization_id = $1",
-    )
-    .bind(org_a)
-    .fetch_all(&fixture.db_pool)
-    .await
-    .unwrap();
+    let org_a_users: Vec<(Uuid,)> =
+        sqlx::query_as("SELECT id FROM users WHERE organization_id = $1")
+            .bind(org_a)
+            .fetch_all(&fixture.db_pool)
+            .await
+            .unwrap();
 
-    let org_b_users: Vec<(Uuid,)> = sqlx::query_as(
-        "SELECT id FROM users WHERE organization_id = $1",
-    )
-    .bind(org_b)
-    .fetch_all(&fixture.db_pool)
-    .await
-    .unwrap();
+    let org_b_users: Vec<(Uuid,)> =
+        sqlx::query_as("SELECT id FROM users WHERE organization_id = $1")
+            .bind(org_b)
+            .fetch_all(&fixture.db_pool)
+            .await
+            .unwrap();
 
     // Each org should see exactly its own user
-    assert!(org_a_users.iter().any(|u| u.0 == user_a), "Org A must contain user_a");
+    assert!(
+        org_a_users.iter().any(|u| u.0 == user_a),
+        "Org A must contain user_a"
+    );
     assert!(
         !org_a_users.iter().any(|u| u.0 == user_b),
         "Org A must NOT contain user_b (cross-tenant leak)"
     );
 
-    assert!(org_b_users.iter().any(|u| u.0 == user_b), "Org B must contain user_b");
+    assert!(
+        org_b_users.iter().any(|u| u.0 == user_b),
+        "Org B must contain user_b"
+    );
     assert!(
         !org_b_users.iter().any(|u| u.0 == user_a),
         "Org B must NOT contain user_a (cross-tenant leak)"
@@ -302,13 +326,12 @@ async fn test_submission_list_tenant_isolated() {
     let sub_b = seed_submission(&fixture.db_pool, org_b, user_b, prob_b, "wa").await;
 
     // Query submissions for org A only
-    let org_a_subs: Vec<(i64,)> = sqlx::query_as(
-        "SELECT id FROM submissions WHERE organization_id = $1",
-    )
-    .bind(org_a)
-    .fetch_all(&fixture.db_pool)
-    .await
-    .unwrap();
+    let org_a_subs: Vec<(i64,)> =
+        sqlx::query_as("SELECT id FROM submissions WHERE organization_id = $1")
+            .bind(org_a)
+            .fetch_all(&fixture.db_pool)
+            .await
+            .unwrap();
 
     assert!(
         org_a_subs.iter().any(|s| s.0 == sub_a),
@@ -320,13 +343,12 @@ async fn test_submission_list_tenant_isolated() {
     );
 
     // Query submissions for org B only
-    let org_b_subs: Vec<(i64,)> = sqlx::query_as(
-        "SELECT id FROM submissions WHERE organization_id = $1",
-    )
-    .bind(org_b)
-    .fetch_all(&fixture.db_pool)
-    .await
-    .unwrap();
+    let org_b_subs: Vec<(i64,)> =
+        sqlx::query_as("SELECT id FROM submissions WHERE organization_id = $1")
+            .bind(org_b)
+            .fetch_all(&fixture.db_pool)
+            .await
+            .unwrap();
 
     assert!(
         org_b_subs.iter().any(|s| s.0 == sub_b),

@@ -38,9 +38,9 @@ interface ContestDetail {
 const STATUS_CONFIG = {
   upcoming: {
     label: '即将开始',
-    bgColor: 'bg-blue-500/10',
-    textColor: 'text-blue-400',
-    borderColor: 'border-blue-500/30',
+    bgColor: 'bg-status-pending/10',
+    textColor: 'text-status-pending',
+    borderColor: 'border-status-pending/20',
     icon: Calendar,
   },
   ongoing: {
@@ -68,15 +68,15 @@ const DIFFICULTY_CONFIG = {
   },
   medium: {
     label: '中等',
-    bgColor: 'bg-amber-500/10',
-    textColor: 'text-amber-500',
-    borderColor: 'border-amber-500/20',
+    bgColor: 'bg-difficulty-medium/10',
+    textColor: 'text-difficulty-medium',
+    borderColor: 'border-difficulty-medium/20',
   },
   hard: {
     label: '困难',
-    bgColor: 'bg-red-500/10',
-    textColor: 'text-red-500',
-    borderColor: 'border-red-500/20',
+    bgColor: 'bg-difficulty-hard/10',
+    textColor: 'text-difficulty-hard',
+    borderColor: 'border-difficulty-hard/20',
   },
 }
 
@@ -205,7 +205,7 @@ export function ContestDetail() {
               </Button>
               <div className="min-w-0">
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-2xl font-black tracking-tight text-foreground truncate">
+                  <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">
                     {contest.name}
                   </h1>
                   <span className={cn(
@@ -246,14 +246,14 @@ export function ContestDetail() {
           'rounded-xl border-2 px-6 py-5 text-center',
           isLive
             ? 'bg-[#3ecf8e]/5 border-[#3ecf8e]/20'
-            : 'bg-blue-500/5 border-blue-500/20'
+            : 'bg-status-pending/5 border-status-pending/20'
         )}>
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
             {contest.status === 'upcoming' ? '距离竞赛开始还有' : '竞赛剩余时间'}
           </p>
           <p className={cn(
-            'text-4xl font-black tabular-nums tracking-tight',
-            isLive ? 'text-[#3ecf8e]' : 'text-blue-400'
+            'text-3xl font-bold tabular-nums tracking-tight',
+            isLive ? 'text-[#3ecf8e]' : 'text-status-pending'
           )}>
             {countdown}
           </p>
@@ -272,8 +272,8 @@ export function ContestDetail() {
           </p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <div className="mx-auto mb-2 w-fit rounded-lg bg-amber-500/10 p-2">
-            <Timer className="w-5 h-5 text-amber-500" />
+          <div className="mx-auto mb-2 w-fit rounded-lg bg-difficulty-medium/10 p-2">
+            <Timer className="w-5 h-5 text-difficulty-medium" />
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">竞赛时长</p>
           <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
@@ -290,8 +290,8 @@ export function ContestDetail() {
           </p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <div className="mx-auto mb-2 w-fit rounded-lg bg-red-500/10 p-2">
-            <Trophy className="w-5 h-5 text-red-500" />
+          <div className="mx-auto mb-2 w-fit rounded-lg bg-difficulty-hard/10 p-2">
+            <Trophy className="w-5 h-5 text-difficulty-hard" />
           </div>
           <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">参与人数</p>
           <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
@@ -389,11 +389,11 @@ export function ContestDetail() {
 
         {/* Prizes */}
         {contest.prizes && (
-          <div className="mt-5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-amber-500 mb-2">
+          <div className="mt-5 rounded-lg border border-difficulty-medium/20 bg-difficulty-medium/5 p-4">
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-difficulty-medium mb-2">
               奖励
             </h3>
-            <p className="text-sm text-amber-500">
+            <p className="text-sm text-difficulty-medium">
               {contest.prizes}
             </p>
           </div>
@@ -468,7 +468,7 @@ export function ContestDetail() {
         </h2>
         <div className="grid grid-cols-3 gap-6">
           <div className="text-center">
-            <p className="text-4xl font-black tabular-nums text-primary mb-1">
+            <p className="text-3xl font-bold tabular-nums text-primary mb-1">
               {contest.participants_count}
             </p>
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -476,7 +476,7 @@ export function ContestDetail() {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-4xl font-black tabular-nums text-[#3ecf8e] mb-1">
+            <p className="text-3xl font-bold tabular-nums text-[#3ecf8e] mb-1">
               {contest.problems_count}
             </p>
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -484,7 +484,7 @@ export function ContestDetail() {
             </p>
           </div>
           <div className="text-center">
-            <p className="text-4xl font-black tabular-nums text-amber-500 mb-1">
+            <p className="text-3xl font-bold tabular-nums text-difficulty-medium mb-1">
               {contest.problems.reduce((sum, p) => sum + p.points, 0)}
             </p>
             <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">

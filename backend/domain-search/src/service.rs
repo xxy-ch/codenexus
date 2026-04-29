@@ -43,10 +43,25 @@ impl SearchService {
     ) -> Result<SearchResponse> {
         let query_text = query.q.clone().unwrap_or_default().trim().to_string();
         let normalized_type = query.r#type.to_lowercase();
-        let include_problems = normalized_type == "all" || normalized_type == "problem";
-        let include_discussions = normalized_type == "all" || normalized_type == "discussion";
         let page = query.page.max(1);
         let limit = query.limit.clamp(1, 50);
+
+        if query_text.is_empty() {
+            return Ok(SearchResponse {
+                query: query_text,
+                results: Vec::new(),
+                total_count: 0,
+                problem_count: 0,
+                discussion_count: 0,
+                article_count: 0,
+                page,
+                limit,
+                has_more: false,
+            });
+        }
+
+        let include_problems = normalized_type == "all" || normalized_type == "problem";
+        let include_discussions = normalized_type == "all" || normalized_type == "discussion";
         let offset = ((page - 1) * limit) as usize;
 
         let problem_results = if include_problems {
@@ -56,7 +71,8 @@ impl SearchService {
             Vec::new()
         };
         let discussion_results = if include_discussions {
-            self.search_discussions(&query_text, school_id, is_root, grade_id).await?
+            self.search_discussions(&query_text, school_id, is_root, grade_id)
+                .await?
         } else {
             Vec::new()
         };
@@ -228,13 +244,19 @@ impl SearchService {
         // - Unauthenticated users see only public problems
         let (visibility_clause, extra_bind) = if is_root {
             // Root: see all problems from all organizations
-            ("(p.visibility = 'public' OR p.visibility = 'private')".to_string(), None)
+            (
+                "(p.visibility = 'public' OR p.visibility = 'private')".to_string(),
+                None,
+            )
         } else if let Some(org_id) = school_id {
             // SECURITY: Tenant-scoped — all non-root users see only problems from their own org
             if is_teacher_plus {
                 ("(p.organization_id = $3)".to_string(), Some(org_id))
             } else {
-                ("(p.visibility = 'public' AND p.organization_id = $3)".to_string(), Some(org_id))
+                (
+                    "(p.visibility = 'public' AND p.organization_id = $3)".to_string(),
+                    Some(org_id),
+                )
             }
         } else {
             // Unauthenticated: public only (no tenant filter — no user context)
@@ -250,7 +272,7 @@ impl SearchService {
                 p.difficulty,
                 p.created_at::text AS created_at,
                 u.id AS author_id,
-                u.username AS author_username
+                COALESCE(u.username, u.display_name, u.email, u.id::text) AS author_username
             FROM problems p
             JOIN users u ON u.id = p.author_id
             WHERE {} AND ($1 = '' OR p.title ILIKE $2 OR p.description ILIKE $2)
@@ -318,9 +340,12 @@ impl SearchService {
             // Root: no tenant filter
             (String::new(), None)
         } else if let Some(org_id) = school_id {
-            ("AND d.organization_id = $3 AND p.organization_id = $3".to_string(), Some(org_id))
+            (
+                "AND d.organization_id = $3 AND p.organization_id = $3".to_string(),
+                Some(org_id),
+            )
         } else {
-            (String::new(), None)
+            return Ok(Vec::new());
         };
 
         // D-08: GradeAdmin grade scoping on discussion author
@@ -338,7 +363,7 @@ impl SearchService {
                 d.is_pinned,
                 d.created_at::text AS created_at,
                 u.id AS author_id,
-                u.username AS author_username,
+                COALESCE(u.username, u.display_name, u.email, u.id::text) AS author_username,
                 p.title AS problem_title
             FROM discussions d
             JOIN users u ON u.id = d.author_id

@@ -75,7 +75,7 @@ export function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <Card className="border border-border rounded-2xl shadow-xl shadow-black/5">
+        <Card className="border border-border rounded-2xl shadow-prominent">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg font-semibold text-foreground">
               登录
@@ -134,10 +134,9 @@ export function LoginPage() {
 
               <Button
                 type="submit"
-                variant="primary"
-                fullWidth
+                variant="default"
                 disabled={isSubmitting}
-                className="py-2.5 rounded-lg"
+                className="w-full py-2.5 rounded-lg"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">

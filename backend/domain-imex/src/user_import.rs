@@ -60,8 +60,7 @@ pub fn parse_user_csv(
         .map_err(|e| anyhow!("Failed to read CSV headers: {}", e))?
         .clone();
 
-    let header_set: std::collections::HashSet<&str> =
-        headers.iter().map(|h| h.trim()).collect();
+    let header_set: std::collections::HashSet<&str> = headers.iter().map(|h| h.trim()).collect();
 
     for required in REQUIRED_HEADERS {
         if !header_set.contains(required) {
@@ -96,8 +95,7 @@ pub fn parse_user_csv(
         let username_raw = get_column(&record, &headers, "username").unwrap_or_default();
         let role_raw = get_column(&record, &headers, "role").unwrap_or_default();
         let campus_id_raw = get_column(&record, &headers, "campus_id").unwrap_or_default();
-        let display_name_raw =
-            get_column(&record, &headers, "display_name").unwrap_or_default();
+        let display_name_raw = get_column(&record, &headers, "display_name").unwrap_or_default();
         let email_raw = get_column(&record, &headers, "email").unwrap_or_default();
         let grade_id_raw = get_column(&record, &headers, "grade_id").unwrap_or_default();
 
@@ -128,9 +126,16 @@ pub fn parse_user_csv(
         let role_result = Role::from_str(&role).map(|parsed| {
             let canonical = parsed.as_str().to_string();
             if canonical == FORBIDDEN_ROLE {
-                Err(format!("Role '{}' cannot be assigned via import", canonical))
-            } else if ROOT_ONLY_ROLES.contains(&canonical.as_str()) && !role_policy.allow_root_roles {
-                Err(format!("Role '{}' requires root privileges to assign", canonical))
+                Err(format!(
+                    "Role '{}' cannot be assigned via import",
+                    canonical
+                ))
+            } else if ROOT_ONLY_ROLES.contains(&canonical.as_str()) && !role_policy.allow_root_roles
+            {
+                Err(format!(
+                    "Role '{}' requires root privileges to assign",
+                    canonical
+                ))
             } else {
                 Ok(canonical)
             }
@@ -271,7 +276,11 @@ pub fn convert_to_batch_request(
 }
 
 /// Helper: get a column value from a CSV record by header name.
-fn get_column<'a>(record: &'a csv::StringRecord, headers: &csv::StringRecord, name: &str) -> Option<String> {
+fn get_column<'a>(
+    record: &'a csv::StringRecord,
+    headers: &csv::StringRecord,
+    name: &str,
+) -> Option<String> {
     headers
         .iter()
         .position(|h| h.trim() == name)
@@ -329,7 +338,10 @@ mod tests {
         let skip = HashSet::new();
         let result = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default());
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Missing required column: 'username'"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Missing required column: 'username'"));
     }
 
     #[test]
@@ -339,7 +351,10 @@ mod tests {
         let skip = HashSet::new();
         let result = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default());
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Missing required column: 'role'"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Missing required column: 'role'"));
     }
 
     #[test]
@@ -354,7 +369,11 @@ mod tests {
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Error);
-        assert!(rows[0].warning.as_ref().unwrap().contains("Username is required"));
+        assert!(rows[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("Username is required"));
     }
 
     #[test]
@@ -369,7 +388,11 @@ mod tests {
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Error);
-        assert!(rows[0].warning.as_ref().unwrap().contains("Invalid role: 'superadmin'"));
+        assert!(rows[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("Invalid role: 'superadmin'"));
     }
 
     #[test]
@@ -385,14 +408,20 @@ mod tests {
         let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Duplicate);
-        assert!(rows[0].warning.as_ref().unwrap().contains("already exists in database"));
+        assert!(rows[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("already exists in database"));
     }
 
     #[test]
     fn handles_utf8_bom() {
         let mut csv_bytes = Vec::new();
         csv_bytes.extend_from_slice(BOM);
-        csv_bytes.extend_from_slice(b"username,role,campus_id,display_name,email\nalice,student,1,Alice,");
+        csv_bytes.extend_from_slice(
+            b"username,role,campus_id,display_name,email\nalice,student,1,Alice,",
+        );
 
         let skip = HashSet::new();
         let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
@@ -429,7 +458,11 @@ mod tests {
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Error);
-        assert!(rows[0].warning.as_ref().unwrap().contains("Invalid campus_id"));
+        assert!(rows[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("Invalid campus_id"));
     }
 
     #[test]
@@ -440,10 +473,21 @@ mod tests {
         );
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy { allow_root_roles: true }).unwrap();
+        let rows = parse_user_csv(
+            &csv_bytes,
+            &skip,
+            &RolePolicy {
+                allow_root_roles: true,
+            },
+        )
+        .unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Error);
-        assert!(rows[0].warning.as_ref().unwrap().contains("cannot be assigned via import"));
+        assert!(rows[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("cannot be assigned via import"));
     }
 
     #[test]
@@ -454,10 +498,21 @@ mod tests {
         );
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy { allow_root_roles: false }).unwrap();
+        let rows = parse_user_csv(
+            &csv_bytes,
+            &skip,
+            &RolePolicy {
+                allow_root_roles: false,
+            },
+        )
+        .unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Error);
-        assert!(rows[0].warning.as_ref().unwrap().contains("requires root privileges"));
+        assert!(rows[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("requires root privileges"));
     }
 
     #[test]
@@ -468,7 +523,14 @@ mod tests {
         );
 
         let skip = HashSet::new();
-        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy { allow_root_roles: true }).unwrap();
+        let rows = parse_user_csv(
+            &csv_bytes,
+            &skip,
+            &RolePolicy {
+                allow_root_roles: true,
+            },
+        )
+        .unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Valid);
         // Role should be normalized to canonical lowercase
@@ -486,7 +548,11 @@ mod tests {
         let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].status, ImportItemStatus::Error);
-        assert!(rows[0].warning.as_ref().unwrap().contains("Invalid role: 'admin'"));
+        assert!(rows[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("Invalid role: 'admin'"));
     }
 
     #[test]

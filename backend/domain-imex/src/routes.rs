@@ -21,10 +21,9 @@ use sqlx::Row;
 use uuid::Uuid;
 
 use crate::models::{
-    CachedPreview, CreatedItem, ErrorItem, ImportExecuteRequest, ImportError,
-    ImportItemStatus, ImportPreviewResponse, ImportResultResponse, ImportWarning, PreviewItem,
-    ProblemImportPreview, SkippedItem, UserImportPreview, UserImportPreviewResponse,
-    UserPreviewItem,
+    CachedPreview, CreatedItem, ErrorItem, ImportError, ImportExecuteRequest, ImportItemStatus,
+    ImportPreviewResponse, ImportResultResponse, ImportWarning, PreviewItem, ProblemImportPreview,
+    SkippedItem, UserImportPreview, UserImportPreviewResponse, UserPreviewItem,
 };
 use crate::problem_export::{build_problem_zip, ExportProblem, ExportTestCase};
 use crate::problem_import::{convert_to_test_cases, parse_problem_zip};
@@ -64,7 +63,7 @@ pub fn imex_router() -> Router<AppState> {
         .merge(problem_import_router)
         .merge(user_import_router)
         .route("/import/problems/execute", post(execute_problem_import))
-        .route("/export/problems/{id}", get(export_problem))
+        .route("/export/problems/:id", get(export_problem))
         .route("/import/users/execute", post(execute_user_import))
         .route("/export/users", get(export_users))
 }
@@ -144,7 +143,10 @@ fn get_text_field(
 }
 
 /// Build an import preview response from parsed problem items.
-fn build_problem_preview_response(items: &[crate::models::ProblemImportItem], token: Uuid) -> ImportPreviewResponse {
+fn build_problem_preview_response(
+    items: &[crate::models::ProblemImportItem],
+    token: Uuid,
+) -> ImportPreviewResponse {
     let total = items.len();
     let mut valid = 0;
     let mut warnings = Vec::new();
@@ -196,7 +198,10 @@ fn build_problem_preview_response(items: &[crate::models::ProblemImportItem], to
 }
 
 /// Build a user-specific preview response from parsed user rows.
-fn build_user_preview_response(rows: &[crate::models::UserImportRow], token: Uuid) -> UserImportPreviewResponse {
+fn build_user_preview_response(
+    rows: &[crate::models::UserImportRow],
+    token: Uuid,
+) -> UserImportPreviewResponse {
     let total = rows.len();
     let mut valid = 0;
     let mut warnings = Vec::new();
@@ -268,13 +273,12 @@ pub async fn validate_problem_import(
     let file_bytes = get_file_field(&fields, "file")?;
 
     // Query existing problem titles for the organization to detect duplicates
-    let existing_titles: Vec<String> = sqlx::query_scalar(
-        "SELECT title FROM problems WHERE organization_id = $1",
-    )
-    .bind(claims.school_id)
-    .fetch_all(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let existing_titles: Vec<String> =
+        sqlx::query_scalar("SELECT title FROM problems WHERE organization_id = $1")
+            .bind(claims.school_id)
+            .fetch_all(&state.db_pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let skip_titles: HashSet<String> = existing_titles.into_iter().collect();
 
@@ -426,9 +430,9 @@ pub async fn execute_problem_import(
                 .bind(&item.description)
                 .bind(&item.config.difficulty)
                 .bind(item.config.time_limit)
-                .bind(item.config.memory_limit * 1024)  // MB → KB
+                .bind(item.config.memory_limit * 1024) // MB → KB
                 .bind(claims.school_id)
-                .bind(claims.sub)                        // author_id (NOT NULL)
+                .bind(claims.sub) // author_id (NOT NULL)
                 .bind(&visibility)
                 .fetch_one(&mut *tx)
                 .await;
@@ -471,7 +475,11 @@ pub async fn execute_problem_import(
 
                         if tc_ok {
                             if let Err(e) = tx.commit().await {
-                                tracing::warn!("Failed to commit problem '{}': {}", item.config.title, e);
+                                tracing::warn!(
+                                    "Failed to commit problem '{}': {}",
+                                    item.config.title,
+                                    e
+                                );
                                 error_items.push(ErrorItem {
                                     item: item.config.title.clone(),
                                     reason: format!("Transaction commit failed: {}", e),
@@ -548,12 +556,12 @@ pub async fn export_problem(
         description: row.get("description"),
         difficulty: row.get("difficulty"),
         time_limit: row.get::<i32, _>("time_limit_ms"),
-        memory_limit: row.get::<i32, _>("memory_limit_kb") / 1024,  // KB → MB
+        memory_limit: row.get::<i32, _>("memory_limit_kb") / 1024, // KB → MB
         is_public: visibility_str == "public",
         visibility: visibility_str,
-        tags: vec![],        // not stored in DB
-        source_url: None,    // not stored in DB
-        author_note: None,   // not stored in DB
+        tags: vec![],      // not stored in DB
+        source_url: None,  // not stored in DB
+        author_note: None, // not stored in DB
     };
 
     // Fetch test cases
@@ -634,13 +642,12 @@ pub async fn validate_user_import(
     }
 
     // Query existing usernames within the caller's organization to detect duplicates
-    let existing_usernames: Vec<String> = sqlx::query_scalar(
-        "SELECT username FROM users WHERE organization_id = $1",
-    )
-    .bind(claims.school_id)
-    .fetch_all(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let existing_usernames: Vec<String> =
+        sqlx::query_scalar("SELECT username FROM users WHERE organization_id = $1")
+            .bind(claims.school_id)
+            .fetch_all(&state.db_pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let skip_usernames: HashSet<String> = existing_usernames.into_iter().collect();
 
@@ -653,12 +660,12 @@ pub async fn validate_user_import(
     let rows = tokio::task::spawn_blocking(move || {
         parse_user_csv(&file_bytes, &skip_usernames, &role_policy)
     })
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-        .map_err(|e| {
-            tracing::warn!("User CSV parse error: {}", e);
-            StatusCode::BAD_REQUEST
-        })?;
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    .map_err(|e| {
+        tracing::warn!("User CSV parse error: {}", e);
+        StatusCode::BAD_REQUEST
+    })?;
 
     let token = Uuid::new_v4();
     let response = build_user_preview_response(&rows, token);
@@ -932,7 +939,11 @@ pub async fn execute_user_import(
                         match role_result {
                             Ok(_) => {
                                 if let Err(e) = tx.commit().await {
-                                    tracing::warn!("Failed to commit user '{}': {}", row.username, e);
+                                    tracing::warn!(
+                                        "Failed to commit user '{}': {}",
+                                        row.username,
+                                        e
+                                    );
                                     error_items.push(ErrorItem {
                                         item: row.username.clone(),
                                         reason: format!("Transaction commit failed: {}", e),
@@ -945,7 +956,11 @@ pub async fn execute_user_import(
                                 }
                             }
                             Err(e) => {
-                                tracing::warn!("Failed to insert role for '{}': {}", row.username, e);
+                                tracing::warn!(
+                                    "Failed to insert role for '{}': {}",
+                                    row.username,
+                                    e
+                                );
                                 let _ = tx.rollback().await;
                                 error_items.push(ErrorItem {
                                     item: row.username.clone(),

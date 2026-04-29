@@ -31,7 +31,7 @@ export function ServerError() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button
-            variant="primary"
+            variant="default"
             onClick={() => window.location.reload()}
             className="inline-flex items-center gap-2 rounded-lg"
           >

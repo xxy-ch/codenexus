@@ -18,10 +18,7 @@ const TEST_JWT_SECRET: &str = "test_handler_secret_key";
 /// Build a minimal Axum app with the user router mounted at /users,
 /// with auth and tenant middleware applied.
 /// Returns the app (as Router<()>) and the JwtService for token generation.
-async fn build_users_app(pool: PgPool) -> (
-    axum::Router,
-    api::auth::JwtService,
-) {
+async fn build_users_app(pool: PgPool) -> (axum::Router, api::auth::JwtService) {
     let jwt_service = api::auth::JwtService::new(TEST_JWT_SECRET);
 
     let state = AppState {
@@ -35,18 +32,16 @@ async fn build_users_app(pool: PgPool) -> (
         class_membership_checker: std::sync::Arc::new(NoopClassMembershipChecker),
         prometheus_handle: setup_metrics_recorder(),
         preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
-        gateway_client: std::sync::Arc::new(
-            api_infra::feature_gateway::GatewayClient::new(
-                "http://127.0.0.1:3001".to_string(),
-                "test_secret".to_string(),
-            ),
-        ),
+        gateway_client: std::sync::Arc::new(api_infra::feature_gateway::GatewayClient::new(
+            "http://127.0.0.1:3001".to_string(),
+            "test_secret".to_string(),
+        )),
     };
 
     let protected_router = axum::Router::new()
         .nest("/users", domain_users::user_router())
         .route_layer(axum::middleware::from_fn(
-            api::middleware::tenant::tenant_middleware,
+            api_infra::middleware::tenant::tenant_middleware,
         ))
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
@@ -66,14 +61,13 @@ async fn seed_user_with_role(
     username: &str,
     role: &str,
 ) -> (i64, i64, Uuid) {
-    let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
-    )
-    .bind(org_name)
-    .bind(org_name.to_lowercase().replace(' ', "-"))
-    .fetch_one(pool)
-    .await
-    .unwrap();
+    let org_id: i64 =
+        sqlx::query_scalar("INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id")
+            .bind(org_name)
+            .bind(org_name.to_lowercase().replace(' ', "-"))
+            .fetch_one(pool)
+            .await
+            .unwrap();
 
     let campus_id: i64 = sqlx::query_scalar(
         "INSERT INTO campuses (organization_id, name, slug) VALUES ($1, 'Main Campus', $2) RETURNING id",
@@ -113,7 +107,14 @@ async fn seed_user_with_role(
     (org_id, campus_id, user_id)
 }
 
-fn make_token(jwt_service: &api::auth::JwtService, user_id: Uuid, role: &str, school_id: i64, campus_id: Option<i64>) -> String {
+fn make_token(
+    jwt_service: &api::auth::JwtService,
+    user_id: Uuid,
+    role: &str,
+    school_id: i64,
+    campus_id: Option<i64>,
+    grade_id: Option<i64>,
+) -> String {
     let user = shared::models::User {
         id: user_id,
         username: "testuser".to_string(),
@@ -122,7 +123,7 @@ fn make_token(jwt_service: &api::auth::JwtService, user_id: Uuid, role: &str, sc
         role: role.to_string(),
         school_id,
         campus_id,
-        grade_id: None,
+        grade_id,
     };
     jwt_service.generate_access_token(&user).unwrap()
 }
@@ -130,7 +131,10 @@ fn make_token(jwt_service: &api::auth::JwtService, user_id: Uuid, role: &str, sc
 async fn setup_fixture() -> TestFixture {
     let fixture = TestFixture::new().await;
     let migrator = sqlx::migrate!("../api/migrations");
-    migrator.run(&fixture.db_pool).await.expect("Failed to run migrations");
+    migrator
+        .run(&fixture.db_pool)
+        .await
+        .expect("Failed to run migrations");
     fixture
 }
 
@@ -167,11 +171,27 @@ async fn test_admin_list_users_returns_200() {
     let fixture = setup_fixture().await;
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
 
-    let (org_id, _campus_id, admin_id) =
+    let (org_id, campus_id, admin_id) =
         seed_user_with_role(&fixture.db_pool, "Grade Admin", "admin1", "gradeadmin").await;
 
+    // Seed a grade so GradeAdmin has a valid grade_id in claims
+    let grade_id: i64 = sqlx::query_scalar(
+        "INSERT INTO grades (campus_id, name, year_level, academic_year) VALUES ($1, 'Test Grade', 1, '2025-2026') RETURNING id",
+    )
+    .bind(campus_id)
+    .fetch_one(&fixture.db_pool)
+    .await
+    .unwrap();
+
     let (app, jwt_service) = build_users_app(fixture.db_pool.clone()).await;
-    let token = make_token(&jwt_service, admin_id, "gradeadmin", org_id, Some(_campus_id));
+    let token = make_token(
+        &jwt_service,
+        admin_id,
+        "gradeadmin",
+        org_id,
+        Some(campus_id),
+        Some(grade_id),
+    );
 
     let response = app
         .oneshot(
@@ -200,7 +220,7 @@ async fn test_student_cannot_list_all_users() {
         seed_user_with_role(&fixture.db_pool, "Student Org", "student1", "student").await;
 
     let (app, jwt_service) = build_users_app(fixture.db_pool.clone()).await;
-    let token = make_token(&jwt_service, student_id, "student", org_id, None);
+    let token = make_token(&jwt_service, student_id, "student", org_id, None, None);
 
     let response = app
         .oneshot(
@@ -215,8 +235,7 @@ async fn test_student_cannot_list_all_users() {
 
     // The ensure_admin check in routes.rs returns AppError::Auth which maps to 401
     assert!(
-        response.status() == StatusCode::UNAUTHORIZED
-            || response.status() == StatusCode::FORBIDDEN,
+        response.status() == StatusCode::UNAUTHORIZED || response.status() == StatusCode::FORBIDDEN,
         "GET /users/admin with student role must return 401 or 403, got {}",
         response.status()
     );

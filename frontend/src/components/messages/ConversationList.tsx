@@ -22,14 +22,14 @@ export function ConversationList({
             key={conversation.id}
             type="button"
             onClick={() => onSelect(conversation.id)}
-            className={`w-full text-left px-4 py-3 hover:bg-muted ${
+            className={`w-full text-left px-4 py-3 hover:bg-muted transition-colors ${
               activeConversationId === conversation.id ? 'bg-muted' : ''
             }`}
           >
             <div className="flex items-center justify-between">
               <p className="font-medium text-sm text-foreground">{conversation.peer_username}</p>
               {conversation.unread_count > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
                   {conversation.unread_count}
                 </span>
               )}

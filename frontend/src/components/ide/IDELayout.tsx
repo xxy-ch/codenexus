@@ -185,14 +185,14 @@ export function IDELayout({
           <div className="flex-1 overflow-y-auto p-6">
             {activeTab === 'description' && (
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 mb-6">
+                <div className="bg-status-pending/5 border-l-4 border-status-pending/30 p-4 mb-6">
                   <div className="flex items-start gap-2">
-                    <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+                    <Lightbulb className="w-5 h-5 text-status-pending mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                      <h4 className="text-sm font-semibold text-status-pending mb-1">
                         提示
                       </h4>
-                      <p className="text-xs text-blue-800 dark:text-blue-200">
+                      <p className="text-xs text-status-pending">
                         在编码之前仔细思考问题。将问题分解为更小的部分。
                       </p>
                     </div>
@@ -275,14 +275,14 @@ export function IDELayout({
 
             {activeTab === 'constraints' && (
               <div className="space-y-4">
-                <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4">
+                <div className="bg-status-tle/5 border-l-4 border-status-tle/30 p-4">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5" />
+                    <AlertTriangle className="w-5 h-5 text-status-tle mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                      <h4 className="text-sm font-semibold text-status-tle mb-1">
                         约束条件
                       </h4>
-                      <ul className="text-xs text-amber-800 dark:text-amber-200 space-y-1 mt-2">
+                      <ul className="text-xs text-status-tle space-y-1 mt-2">
                         <li>• 时间限制：{timeLimit}ms</li>
                         <li>• 内存限制：{memoryLimit}MB</li>
                         <li>• 输入大小：≤ 10^6</li>
@@ -314,11 +314,11 @@ export function IDELayout({
                   </ul>
                 </div>
 
-                <div className="bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-4">
-                  <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                <div className="bg-status-re/5 border-l-4 border-status-re/30 p-4">
+                  <h4 className="text-sm font-semibold text-status-re mb-2">
                     复杂度要求
                   </h4>
-                  <div className="text-xs text-purple-800 dark:text-purple-200 space-y-1">
+                  <div className="text-xs text-status-re space-y-1">
                     <p>• 时间复杂度：O(n log n) 或更好</p>
                     <p>• 空间复杂度：O(n) 或更好</p>
                   </div>

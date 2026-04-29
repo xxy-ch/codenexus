@@ -1,7 +1,18 @@
 use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::sync::OnceLock;
 use std::time::Duration;
 
-pub async fn get_db_connection() -> Result<PgPool, sqlx::Error> {
+static DB_POOL: OnceLock<PgPool> = OnceLock::new();
+
+/// Get a shared PgPool singleton.
+///
+/// Creates the pool on first call, returns the same instance on subsequent calls.
+/// Prevents connection leak from creating a new 5-connection pool per submission.
+pub async fn get_db_connection() -> Result<&'static PgPool, sqlx::Error> {
+    if let Some(pool) = DB_POOL.get() {
+        return Ok(pool);
+    }
+
     let database_url = std::env::var("DATABASE_URL").map_err(|_| {
         sqlx::Error::Configuration("DATABASE_URL environment variable not set".into())
     })?;
@@ -10,7 +21,10 @@ pub async fn get_db_connection() -> Result<PgPool, sqlx::Error> {
         .acquire_timeout(Duration::from_secs(30))
         .connect(&database_url)
         .await?;
-    Ok(pool)
+
+    // Another thread may have initialized it first — that's fine
+    let _ = DB_POOL.set(pool);
+    Ok(DB_POOL.get().unwrap())
 }
 
 /// Test case model for judge-worker

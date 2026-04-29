@@ -118,7 +118,11 @@ impl DiscussionService {
 
     /// Get discussion by ID with replies
     /// organization_id: tenant isolation — required to prevent cross-tenant reads
-    pub async fn get_discussion_detail(&self, id: i64, organization_id: i64) -> Result<DiscussionDetail> {
+    pub async fn get_discussion_detail(
+        &self,
+        id: i64,
+        organization_id: i64,
+    ) -> Result<DiscussionDetail> {
         // Increment view count (scoped to organization)
         sqlx::query("UPDATE discussions SET view_count = view_count + 1 WHERE id = $1 AND organization_id = $2")
             .bind(id)
@@ -270,7 +274,13 @@ impl DiscussionService {
     }
 
     /// Delete discussion
-    pub async fn delete_discussion(&self, id: i64, user_id: Uuid, is_admin: bool, organization_id: i64) -> Result<bool> {
+    pub async fn delete_discussion(
+        &self,
+        id: i64,
+        user_id: Uuid,
+        is_admin: bool,
+        organization_id: i64,
+    ) -> Result<bool> {
         let result = if is_admin {
             sqlx::query("DELETE FROM discussions WHERE id = $1 AND organization_id = $2")
                 .bind(id)
@@ -278,12 +288,14 @@ impl DiscussionService {
                 .execute(&self.pool)
                 .await?
         } else {
-            sqlx::query("DELETE FROM discussions WHERE id = $1 AND author_id = $2 AND organization_id = $3")
-                .bind(id)
-                .bind(user_id)
-                .bind(organization_id)
-                .execute(&self.pool)
-                .await?
+            sqlx::query(
+                "DELETE FROM discussions WHERE id = $1 AND author_id = $2 AND organization_id = $3",
+            )
+            .bind(id)
+            .bind(user_id)
+            .bind(organization_id)
+            .execute(&self.pool)
+            .await?
         };
 
         Ok(result.rows_affected() > 0)

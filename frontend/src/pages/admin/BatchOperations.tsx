@@ -158,7 +158,7 @@ function ProblemImportTab() {
               <ul className="space-y-1 text-sm">
                 {result.created_items.map((item) => (
                   <li key={item.id} className="flex items-center gap-2">
-                    <CheckCircle2 className="size-3.5 text-green-500" />
+                    <CheckCircle2 className="size-3.5 text-status-accepted" />
                     {item.title}
                   </li>
                 ))}
@@ -176,7 +176,7 @@ function ProblemImportTab() {
               <ul className="space-y-1 text-sm">
                 {result.skipped_items.map((item, idx) => (
                   <li key={idx} className="flex items-center gap-2">
-                    <AlertTriangle className="size-3.5 text-amber-500" />
+                    <AlertTriangle className="size-3.5 text-difficulty-medium" />
                     {item.item} -- {item.reason}
                   </li>
                 ))}
@@ -608,7 +608,7 @@ function UserImportTab() {
               <ul className="space-y-1 text-sm">
                 {result.skipped_items.map((item, idx) => (
                   <li key={idx} className="flex items-center gap-2">
-                    <AlertTriangle className="size-3.5 text-amber-500" />
+                    <AlertTriangle className="size-3.5 text-difficulty-medium" />
                     {item.item} -- {item.reason}
                   </li>
                 ))}

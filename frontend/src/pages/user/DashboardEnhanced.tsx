@@ -46,9 +46,9 @@ export function DashboardEnhanced() {
   }
 
   const DIFFICULTY_COLORS = {
-    easy: '#10b981',
-    medium: '#f59e0b',
-    hard: '#ef4444',
+    easy: 'var(--difficulty-easy)',
+    medium: 'var(--difficulty-medium)',
+    hard: 'var(--difficulty-hard)',
   }
 
   const weekNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
@@ -100,11 +100,11 @@ export function DashboardEnhanced() {
   const getActivityColor = (activity: UserActivity) => {
     switch (activity.type) {
       case 'submission':
-        return activity.status === 'accepted' ? 'text-green-500' : 'text-red-500'
+        return activity.status === 'accepted' ? 'text-status-accepted' : 'text-destructive'
       case 'contest_registration':
-        return 'text-yellow-500'
+        return 'text-difficulty-medium'
       case 'achievement':
-        return 'text-purple-500'
+        return 'text-status-re'
       default:
         return 'text-muted-foreground'
     }
@@ -114,14 +114,14 @@ export function DashboardEnhanced() {
     <div className="space-y-8">
       {/* Hero Section — PostHog warm parchment */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-8 overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="lg:col-span-8 overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-prominent">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl space-y-4">
               <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">
                 仪表盘概览
               </div>
               <div>
-                <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">
                   欢迎回来，继续把这周的通过数往上推。
                 </h1>
                 <p className="mt-3 text-sm text-muted-foreground">
@@ -131,12 +131,12 @@ export function DashboardEnhanced() {
               <div className="flex flex-wrap items-center gap-8">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">全球排名</p>
-                  <p className="mt-1 text-4xl font-extrabold text-foreground">#{userStats.ranking}</p>
+                  <p className="mt-1 text-3xl font-bold text-foreground">#{userStats.ranking}</p>
                 </div>
                 <div className="h-12 w-px bg-border" />
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">总积分</p>
-                  <p className="mt-1 text-4xl font-extrabold text-primary">{userStats.total_points}</p>
+                  <p className="mt-1 text-3xl font-bold text-primary">{userStats.total_points}</p>
                 </div>
               </div>
             </div>
@@ -159,14 +159,14 @@ export function DashboardEnhanced() {
           </div>
         </div>
 
-        <div className="lg:col-span-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="lg:col-span-4 rounded-2xl border border-border bg-card p-6 shadow-prominent">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">当前连续</p>
-              <p className="mt-2 text-4xl font-extrabold text-foreground">{userStats.current_streak} <span className="text-xl font-semibold text-muted-foreground">天</span></p>
+              <p className="mt-2 text-3xl font-bold text-foreground">{userStats.current_streak} <span className="text-xl font-semibold text-muted-foreground">天</span></p>
               <p className="mt-2 text-sm text-muted-foreground">最高纪录 {userStats.longest_streak} 天，今天再完成 1 道题就能继续保持。</p>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-orange-100 text-orange-500 dark:bg-orange-900/30 dark:text-orange-400">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Flame className="w-6 h-6" />
             </div>
           </div>
@@ -194,7 +194,7 @@ export function DashboardEnhanced() {
       {/* Dark CTA buttons */}
       <div className="flex flex-wrap gap-3">
           <Link to="/problems">
-            <Button variant="primary" className="bg-primary text-primary-foreground font-semibold">
+            <Button variant="default" className="bg-primary text-primary-foreground font-semibold">
               <Code2 className="w-5 h-5 mr-2" />
               开始刷题
             </Button>
@@ -209,11 +209,11 @@ export function DashboardEnhanced() {
 
       {/* PostHog-style large metric cards */}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">本周重点</p>
-              <h2 className="mt-2 text-xl font-bold text-foreground">本周推进面板</h2>
+              <p className="text-xs font-semibold uppercase tracking-widest text-secondary">本周重点</p>
+              <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground">本周推进面板</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 活跃天数、推荐题和最近提交放在同一层级，减少来回跳页。
               </p>
@@ -226,29 +226,29 @@ export function DashboardEnhanced() {
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl bg-muted p-4">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">本周通过</p>
-              <p className="mt-3 text-4xl font-extrabold text-foreground">{solvedThisWeek}</p>
+              <p className="mt-3 text-3xl font-bold text-foreground">{solvedThisWeek}</p>
               <p className="mt-2 text-sm text-muted-foreground">来自最近 7 天的通过记录。</p>
             </div>
             <div className="rounded-2xl bg-muted p-4">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">推荐队列</p>
-              <p className="mt-3 text-4xl font-extrabold text-foreground">{recommendedProblems?.length ?? 0}</p>
+              <p className="mt-3 text-3xl font-bold text-foreground">{recommendedProblems?.length ?? 0}</p>
               <p className="mt-2 text-sm text-muted-foreground">当前实时推荐题目数量。</p>
             </div>
             <div className="rounded-2xl bg-muted p-4">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">最近活动</p>
-              <p className="mt-3 text-4xl font-extrabold text-foreground">{recentActivity?.length ?? 0}</p>
+              <p className="mt-3 text-3xl font-bold text-foreground">{recentActivity?.length ?? 0}</p>
               <p className="mt-2 text-sm text-muted-foreground">最新活动流条目数。</p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">进度快照</p>
-          <h2 className="mt-2 text-xl font-bold text-foreground">刷题进度快照</h2>
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
+          <p className="text-xs font-semibold uppercase tracking-widest text-secondary">进度快照</p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight text-foreground">刷题进度快照</h2>
           <div className="mt-5 space-y-4">
             {[
-              { label: '简单', value: userStats.easy_solved, color: 'bg-emerald-500' },
-              { label: '中等', value: userStats.medium_solved, color: 'bg-amber-500' },
+              { label: '简单', value: userStats.easy_solved, color: 'bg-difficulty-easy' },
+              { label: '中等', value: userStats.medium_solved, color: 'bg-difficulty-medium' },
               { label: '困难', value: userStats.hard_solved, color: 'bg-rose-500' },
             ].map((item) => {
               const totalSolved = Math.max(1, userStats.unique_problems_solved)
@@ -275,62 +275,70 @@ export function DashboardEnhanced() {
 
       {/* PostHog oversized metric cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-card hover-lift">
           <div className="flex items-center justify-between mb-4">
-            <CheckCircle className="w-8 h-8 text-green-500" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">已解决</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background-subtle">
+              <CheckCircle className="w-5 h-5 text-status-accepted" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-secondary">已解决</span>
           </div>
-          <p className="text-4xl font-extrabold text-foreground">
+          <p className="text-3xl font-bold tracking-tight text-foreground">
             {userStats.unique_problems_solved}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-secondary">
             道题目
           </p>
         </div>
 
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-card hover-lift">
           <div className="flex items-center justify-between mb-4">
-            <Upload className="w-8 h-8 text-blue-500" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">总提交</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background-subtle">
+              <Upload className="w-5 h-5 text-status-pending" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-secondary">总提交</span>
           </div>
-          <p className="text-4xl font-extrabold text-foreground">
+          <p className="text-3xl font-bold tracking-tight text-foreground">
             {userStats.total_submissions}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-secondary">
             次提交
           </p>
         </div>
 
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-card hover-lift">
           <div className="flex items-center justify-between mb-4">
-            <Cpu className="w-8 h-8 text-purple-500" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">准确率</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background-subtle">
+              <Cpu className="w-5 h-5 text-status-re" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-secondary">准确率</span>
           </div>
-          <p className="text-4xl font-extrabold text-foreground">
+          <p className="text-3xl font-bold tracking-tight text-foreground">
             {userStats.accuracy_rate}%
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-secondary">
             通过率
           </p>
         </div>
 
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-card hover-lift">
           <div className="flex items-center justify-between mb-4">
-            <Flame className="w-8 h-8 text-orange-500" />
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">连续天数</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background-subtle">
+              <Flame className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-widest text-secondary">连续天数</span>
           </div>
-          <p className="text-4xl font-extrabold text-foreground">
+          <p className="text-3xl font-bold tracking-tight text-foreground">
             {userStats.current_streak}
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-secondary">
             天 (最高 {userStats.longest_streak} 天)
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-foreground mb-4">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-whisper">
+          <h3 className="text-lg font-bold tracking-tight text-foreground mb-4">
             本周学习活动
           </h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -340,14 +348,14 @@ export function DashboardEnhanced() {
               <YAxis className="text-muted-foreground" />
               <Tooltip />
               <Legend />
-              <Bar dataKey="提交" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="通过" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="提交" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="通过" fill="var(--status-accepted)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
-          <h3 className="text-lg font-bold text-foreground mb-4">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-whisper">
+          <h3 className="text-lg font-bold tracking-tight text-foreground mb-4">
             难度分布
           </h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -383,9 +391,9 @@ export function DashboardEnhanced() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6 shadow-whisper">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-foreground">
+            <h3 className="text-lg font-bold tracking-tight text-foreground">
               最近活动
             </h3>
             <Link to="/submissions" className="text-sm text-primary hover:underline">
@@ -399,7 +407,7 @@ export function DashboardEnhanced() {
                 return (
                   <div
                     key={activity.id}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-muted hover:bg-muted/80 transition-colors"
+                    className="flex items-center gap-3 p-3 rounded-lg border-b border-border-subtle last:border-b-0 hover:bg-background-alt transition-colors duration-150"
                   >
                     <IconComponent className={cn('w-5 h-5', getActivityColor(activity))} />
                     <div className="flex-1 min-w-0">
@@ -438,17 +446,17 @@ export function DashboardEnhanced() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-foreground mb-4">
+          <div className="bg-card rounded-2xl border border-border p-6 shadow-whisper">
+            <h3 className="text-lg font-bold tracking-tight text-foreground mb-4">
               排名与积分
             </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-yellow-500" />
+                  <Trophy className="w-5 h-5 text-difficulty-medium" />
                   <span className="text-sm text-muted-foreground">当前排名</span>
                 </div>
-                <span className="text-2xl font-extrabold text-foreground">
+                <span className="text-2xl font-bold text-foreground">
                   #{userStats.ranking}
                 </span>
               </div>
@@ -457,7 +465,7 @@ export function DashboardEnhanced() {
                   <Star className="w-5 h-5 text-primary" />
                   <span className="text-sm text-muted-foreground">总积分</span>
                 </div>
-                <span className="text-2xl font-extrabold text-foreground">
+                <span className="text-2xl font-bold text-foreground">
                   {userStats.total_points}
                 </span>
               </div>
@@ -465,9 +473,9 @@ export function DashboardEnhanced() {
           </div>
 
           {userStats.achievements && userStats.achievements.length > 0 && (
-            <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-whisper">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-foreground">
+                <h3 className="text-lg font-bold tracking-tight text-foreground">
                   最近成就
                 </h3>
                 <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -480,7 +488,7 @@ export function DashboardEnhanced() {
                     key={achievement.id}
                     className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20"
                   >
-                    <Award className="w-6 h-6 text-yellow-500" />
+                    <Award className="w-6 h-6 text-difficulty-medium" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">
                         {achievement.name}
@@ -498,10 +506,10 @@ export function DashboardEnhanced() {
       </div>
 
       {recommendedProblems && recommendedProblems.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+        <div className="bg-card rounded-2xl border border-border p-6 shadow-card">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-bold text-foreground">
+              <h3 className="text-lg font-bold tracking-tight text-foreground">
                 推荐题目
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
@@ -515,9 +523,9 @@ export function DashboardEnhanced() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {recommendedProblems.map((problem) => {
               const difficultyColor = {
-                easy: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-                medium: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
-                hard: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+                easy: 'bg-difficulty-easy/10 text-difficulty-easy',
+                medium: 'bg-difficulty-medium/10 text-difficulty-medium',
+                hard: 'bg-difficulty-hard/10 text-difficulty-hard',
               }[problem.difficulty]
 
               const difficultyLabel = {
@@ -530,7 +538,7 @@ export function DashboardEnhanced() {
                 <Link
                   key={problem.id}
                   to={`/problems/${problem.id}`}
-                  className="block border border-border rounded-lg p-4 hover:border-primary/50 hover:shadow-md transition-all"
+                  className="block border border-border rounded-lg p-4 hover:-translate-y-0.5 hover:shadow-elevated transition-all"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-medium text-foreground text-sm line-clamp-2">
@@ -538,7 +546,7 @@ export function DashboardEnhanced() {
                     </h4>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={cn('px-2 py-0.5 rounded text-xs font-medium', difficultyColor)}>
+                    <span className={cn('px-2 py-0.5 rounded-full text-xs font-medium', difficultyColor)}>
                       {difficultyLabel}
                     </span>
                     <span className="text-xs text-muted-foreground">

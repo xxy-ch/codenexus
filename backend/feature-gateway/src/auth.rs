@@ -24,10 +24,12 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 ///
 /// Reads `WORKER_SECRET` from the environment. Requests must include
 /// `Authorization: Bearer <token>` header. Returns 401 if missing
-/// or mismatched.
+/// or mismatched. Returns 500 if WORKER_SECRET is not configured.
 pub async fn require_worker_secret(req: Request, next: Next) -> Result<Response, StatusCode> {
-    let expected =
-        env::var("WORKER_SECRET").unwrap_or_else(|_| "default_worker_secret_change_me".to_string());
+    let expected = env::var("WORKER_SECRET").map_err(|_| {
+        tracing::error!("WORKER_SECRET not configured — rejecting all requests");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     let auth_header = req
         .headers()

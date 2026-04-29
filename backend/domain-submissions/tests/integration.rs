@@ -10,7 +10,10 @@ use uuid::Uuid;
 async fn setup_fixture() -> TestFixture {
     let fixture = TestFixture::new().await;
     let migrator = sqlx::migrate!("../api/migrations");
-    migrator.run(&fixture.db_pool).await.expect("Failed to run migrations");
+    migrator
+        .run(&fixture.db_pool)
+        .await
+        .expect("Failed to run migrations");
     fixture
 }
 
@@ -87,12 +90,10 @@ async fn test_create_and_get_submission() {
 
     // Note: create_submission checks language_enabled via judge_language_settings.
     // We seed the default settings row so python3 is always enabled.
-    sqlx::query(
-        "INSERT INTO judge_language_settings (id) VALUES (TRUE) ON CONFLICT DO NOTHING",
-    )
-    .execute(&fixture.db_pool)
-    .await
-    .unwrap();
+    sqlx::query("INSERT INTO judge_language_settings (id) VALUES (TRUE) ON CONFLICT DO NOTHING")
+        .execute(&fixture.db_pool)
+        .await
+        .unwrap();
 
     let req = domain_submissions::models::CreateSubmissionRequest {
         problem_id,
@@ -127,9 +128,33 @@ async fn test_list_submissions_by_user() {
     .unwrap();
 
     // Insert submissions for both users
-    insert_submission(&fixture.db_pool, org_id, user1_id, problem_id, "python3", "queued").await;
-    insert_submission(&fixture.db_pool, org_id, user1_id, problem_id, "python3", "judged").await;
-    insert_submission(&fixture.db_pool, org_id, user2_id, problem_id, "python3", "queued").await;
+    insert_submission(
+        &fixture.db_pool,
+        org_id,
+        user1_id,
+        problem_id,
+        "python3",
+        "queued",
+    )
+    .await;
+    insert_submission(
+        &fixture.db_pool,
+        org_id,
+        user1_id,
+        problem_id,
+        "python3",
+        "judged",
+    )
+    .await;
+    insert_submission(
+        &fixture.db_pool,
+        org_id,
+        user2_id,
+        problem_id,
+        "python3",
+        "queued",
+    )
+    .await;
 
     let service = domain_submissions::service::SubmissionService::new(fixture.db_pool.clone());
 
@@ -186,4 +211,59 @@ async fn test_submission_status_update() {
             .await
             .unwrap();
     assert_eq!(verdict.as_deref(), Some("ac"));
+
+    // Verify score was persisted (regression: score was silently dropped before fix)
+    let stored_score: Option<i32> =
+        sqlx::query_scalar("SELECT score FROM submissions WHERE id = $1")
+            .bind(sub_id)
+            .fetch_one(&fixture.db_pool)
+            .await
+            .unwrap();
+    assert_eq!(stored_score, Some(100), "Score must be persisted from judge result");
+}
+
+// --- Regression tests for compile_error terminal status (typo was "compilation_error") ---
+
+use domain_submissions::service::SubmissionService;
+
+#[test]
+fn test_compile_error_is_terminal_status() {
+    assert!(
+        SubmissionService::is_terminal_status("compile_error"),
+        "compile_error must be recognized as terminal"
+    );
+}
+
+#[test]
+fn test_compile_error_normalizes_to_judged() {
+    assert_eq!(
+        SubmissionService::normalize_judge_status("compile_error"),
+        "judged",
+        "compile_error must normalize to 'judged' (same as other verdicts)"
+    );
+}
+
+#[test]
+fn test_all_verdict_statuses_are_terminal() {
+    // Every status that normalize_judge_status maps to "judged" must also be terminal
+    for status in &[
+        "accepted",
+        "wrong_answer",
+        "runtime_error",
+        "time_limit_exceeded",
+        "memory_limit_exceeded",
+        "compile_error",
+    ] {
+        assert!(
+            SubmissionService::is_terminal_status(status),
+            "{} should be terminal (it normalizes to 'judged')",
+            status
+        );
+        assert_eq!(
+            SubmissionService::normalize_judge_status(status),
+            "judged",
+            "{} should normalize to 'judged'",
+            status
+        );
+    }
 }

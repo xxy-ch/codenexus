@@ -6,6 +6,7 @@
 
 use axum::{
     extract::{Path, Query, State},
+    http::HeaderMap,
     response::{IntoResponse, Response},
     routing::{delete, get, post},
     Json, Router,
@@ -102,9 +103,7 @@ async fn resolve_feature(
 /// GET /registry
 ///
 /// Returns all feature definitions from the registry.
-async fn list_registry(
-    State(state): State<AppState>,
-) -> Result<impl IntoResponse, GatewayError> {
+async fn list_registry(State(state): State<AppState>) -> Result<impl IntoResponse, GatewayError> {
     let entries = state
         .gateway
         .list_registry()
@@ -140,8 +139,26 @@ async fn list_flags(
 async fn set_flag(
     Path(slug): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Json(req): Json<SetFlagRequest>,
 ) -> Result<impl IntoResponse, GatewayError> {
+    // SECURITY (C-06): Enforce D-06 role-scope authorization
+    let caller_role = headers
+        .get("X-Caller-Role")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse::<Role>().ok())
+        .ok_or_else(|| GatewayError::validation("Missing or invalid X-Caller-Role header"))?;
+
+    if !check_scope_authorization(caller_role, &req.scope) {
+        return Err(GatewayError {
+            error: format!(
+                "Role {:?} not authorized for scope '{}'",
+                caller_role, req.scope
+            ),
+            status: 403,
+        });
+    }
+
     // Validate scope values
     if !matches!(req.scope.as_str(), "global" | "campus" | "grade" | "class") {
         return Err(GatewayError::validation(format!(
@@ -152,9 +169,9 @@ async fn set_flag(
 
     // Global scope must not have scope_id
     if req.scope == "global" && req.scope_id.is_some() {
-        return Err(GatewayError::validation(
-            String::from("Global scope must not specify scope_id"),
-        ));
+        return Err(GatewayError::validation(String::from(
+            "Global scope must not specify scope_id",
+        )));
     }
 
     state
@@ -173,8 +190,26 @@ async fn set_flag(
 async fn delete_flag(
     Path(slug): Path<String>,
     State(state): State<AppState>,
+    headers: HeaderMap,
     Query(params): Query<DeleteFlagParams>,
 ) -> Result<impl IntoResponse, GatewayError> {
+    // SECURITY (C-06): Enforce D-06 role-scope authorization
+    let caller_role = headers
+        .get("X-Caller-Role")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|s| s.parse::<Role>().ok())
+        .ok_or_else(|| GatewayError::validation("Missing or invalid X-Caller-Role header"))?;
+
+    if !check_scope_authorization(caller_role, &params.scope) {
+        return Err(GatewayError {
+            error: format!(
+                "Role {:?} not authorized for scope '{}'",
+                caller_role, params.scope
+            ),
+            status: 403,
+        });
+    }
+
     state
         .gateway
         .delete_flag(&slug, &params.scope, params.scope_id)
@@ -203,9 +238,9 @@ pub fn gateway_router(state: AppState) -> Router {
     Router::new()
         .route("/resolve", get(resolve_feature))
         .route("/registry", get(list_registry))
-        .route("/features/{slug}/flags", get(list_flags))
-        .route("/features/{slug}/flags", post(set_flag))
-        .route("/features/{slug}/flags", delete(delete_flag))
+        .route("/features/:slug/flags", get(list_flags))
+        .route("/features/:slug/flags", post(set_flag))
+        .route("/features/:slug/flags", delete(delete_flag))
         .route("/health", get(health_check))
         .with_state(state)
 }
@@ -262,8 +297,14 @@ mod tests {
 
     #[test]
     fn test_check_scope_authorization_ta_denied() {
-        assert!(!check_scope_authorization(Role::TeachingAssistant, "global"));
-        assert!(!check_scope_authorization(Role::TeachingAssistant, "campus"));
+        assert!(!check_scope_authorization(
+            Role::TeachingAssistant,
+            "global"
+        ));
+        assert!(!check_scope_authorization(
+            Role::TeachingAssistant,
+            "campus"
+        ));
         assert!(!check_scope_authorization(Role::TeachingAssistant, "grade"));
         assert!(!check_scope_authorization(Role::TeachingAssistant, "class"));
     }

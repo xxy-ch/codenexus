@@ -7,7 +7,7 @@ export function UnauthorizedPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card className="border border-border rounded-2xl shadow-xl shadow-black/5">
+        <Card className="border border-border rounded-2xl shadow-prominent">
           <CardHeader className="text-center pb-2">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-destructive/10 border border-destructive/20 rounded-2xl mb-5 mx-auto">
               <Lock className="w-8 h-8 text-destructive" />
@@ -29,15 +29,15 @@ export function UnauthorizedPage() {
                 <ArrowLeft className="w-4 h-4" />
                 返回上一页
               </Button>
-              <Button
-                variant="primary"
-                as={Link}
-                to="/dashboard"
-                className="inline-flex items-center gap-2 rounded-lg"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                仪表盘
-              </Button>
+              <Link to="/dashboard">
+                <Button
+                  variant="default"
+                  className="inline-flex items-center gap-2 rounded-lg"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  仪表盘
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>

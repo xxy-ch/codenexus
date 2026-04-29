@@ -9,22 +9,43 @@ RUN apk add --no-cache \
 
 WORKDIR /app
 
-# Layer 1: Copy Cargo.toml files for dependency caching
+# Layer 1: Copy all Cargo.toml files for dependency caching
 COPY Cargo.toml Cargo.lock ./
 COPY feature-gateway/Cargo.toml ./feature-gateway/Cargo.toml
-COPY shared/Cargo.toml ./shared/Cargo.toml
+COPY shared ./shared
+# Copy stub Cargo.toml for other workspace members (only needed for workspace resolution)
+COPY api/Cargo.toml ./api/Cargo.toml
+COPY api-infra/Cargo.toml ./api-infra/Cargo.toml
+COPY domain-classes/Cargo.toml ./domain-classes/Cargo.toml
+COPY domain-community/Cargo.toml ./domain-community/Cargo.toml
+COPY domain-contests/Cargo.toml ./domain-contests/Cargo.toml
+COPY domain-imex/Cargo.toml ./domain-imex/Cargo.toml
+COPY domain-leaderboard/Cargo.toml ./domain-leaderboard/Cargo.toml
+COPY domain-problems/Cargo.toml ./domain-problems/Cargo.toml
+COPY domain-search/Cargo.toml ./domain-search/Cargo.toml
+COPY domain-submissions/Cargo.toml ./domain-submissions/Cargo.toml
+COPY domain-users/Cargo.toml ./domain-users/Cargo.toml
+COPY judge-worker/Cargo.toml ./judge-worker/Cargo.toml
+COPY migration-tool/Cargo.toml ./migration-tool/Cargo.toml
 
-# Create dummy source files
-RUN mkdir -p feature-gateway/src shared/src && \
+# Create dummy source files for all workspace members
+RUN mkdir -p feature-gateway/src api/src api-infra/src \
+    domain-classes/src domain-community/src domain-contests/src \
+    domain-imex/src domain-leaderboard/src domain-problems/src \
+    domain-search/src domain-submissions/src domain-users/src \
+    judge-worker/src migration-tool/src && \
     printf 'fn main() {}\n' > feature-gateway/src/main.rs && \
-    printf '' > shared/src/lib.rs
+    for dir in api api-infra domain-classes domain-community domain-contests \
+        domain-imex domain-leaderboard domain-problems domain-search \
+        domain-submissions domain-users judge-worker migration-tool; do \
+        printf '' > ${dir}/src/lib.rs; \
+    done
 
 # Build dependencies only (cached layer)
 RUN cargo build --release -p feature-gateway 2>/dev/null || true
 
 # Layer 2: Copy actual source code
 COPY feature-gateway ./feature-gateway
-COPY shared ./shared
 
 # Build the actual application
 RUN cargo build --release -p feature-gateway
@@ -52,6 +73,6 @@ EXPOSE 3001
 ENV GATEWAY_BIND_ADDRESS=0.0.0.0:3001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:3001/health || exit 1
+    CMD curl -f -H "Authorization: Bearer ${WORKER_SECRET}" http://localhost:3001/health || exit 1
 
 CMD ["/app/feature-gateway"]

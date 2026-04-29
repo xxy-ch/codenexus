@@ -74,9 +74,10 @@ impl CircuitBreaker {
                 let elapsed = last.elapsed().as_secs();
                 if elapsed >= self.half_open_timeout_secs {
                     // Transition to HalfOpen -- only one caller wins the race
-                    let won = self.half_open_in_progress.compare_exchange(
-                        false, true, Ordering::Relaxed, Ordering::Relaxed
-                    ).is_ok();
+                    let won = self
+                        .half_open_in_progress
+                        .compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed)
+                        .is_ok();
                     if won {
                         self.is_open.store(false, Ordering::Relaxed);
                         return true;
@@ -146,7 +147,10 @@ mod tests {
         let breaker = CircuitBreaker::new(5, 30);
         for _ in 0..4 {
             breaker.record_failure();
-            assert!(breaker.allow_request(), "Should still allow before threshold");
+            assert!(
+                breaker.allow_request(),
+                "Should still allow before threshold"
+            );
         }
         breaker.record_failure(); // 5th failure
         assert!(!breaker.allow_request(), "Should reject after 5 failures");
@@ -165,7 +169,10 @@ mod tests {
         // Wait for half-open timeout
         tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
-        assert!(breaker.allow_request(), "Should allow after timeout (HalfOpen)");
+        assert!(
+            breaker.allow_request(),
+            "Should allow after timeout (HalfOpen)"
+        );
         // State is now HalfOpen (is_open = false, but we have failure history)
         assert_eq!(breaker.state(), BreakerState::HalfOpen);
     }

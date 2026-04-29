@@ -79,7 +79,10 @@ async fn verify_class_access(
 /// SECURITY: Verify campus scope for CampusAdmin/GradeAdmin.
 /// Fail-closed: class.campus_id must match claims.campus_id.
 fn verify_campus_scope(class: &Class, claims: &shared::models::Claims) -> Result<(), StatusCode> {
-    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     match role {
         Role::Root => Ok(()),
         Role::CampusAdmin | Role::GradeAdmin => {
@@ -187,13 +190,10 @@ async fn create_grade(
         .verify_campus_org(request.campus_id, claims.school_id)
         .await
         .map_err(|_| StatusCode::FORBIDDEN)?;
-    let grade = service
-        .create_grade(&request)
-        .await
-        .map_err(|e| {
-            tracing::error!("Failed to create grade: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    let grade = service.create_grade(&request).await.map_err(|e| {
+        tracing::error!("Failed to create grade: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
     Ok(Json(grade))
 }
 
@@ -217,8 +217,10 @@ async fn list_grades(
             // SECURITY: Force campus_id to caller's own campus — never trust query param
             query.campus_id = claims.campus_id;
             if let Some(cid) = query.campus_id {
-                service.verify_campus_org(cid, claims.school_id)
-                    .await.map_err(|_| StatusCode::FORBIDDEN)?;
+                service
+                    .verify_campus_org(cid, claims.school_id)
+                    .await
+                    .map_err(|_| StatusCode::FORBIDDEN)?;
             }
         }
         _ => {
@@ -256,9 +258,7 @@ async fn update_grade(
     let service = ClassService::new(state.db_pool);
 
     // Verify grade belongs to user's campus
-    let campus_id = claims
-        .campus_id
-        .ok_or(StatusCode::FORBIDDEN)?;
+    let campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
     // SECURITY: Verify campus belongs to caller's organization
     service
         .verify_campus_org(campus_id, claims.school_id)
@@ -285,9 +285,7 @@ async fn deactivate_grade(
     require_campus_admin(&claims.role)?;
     let service = ClassService::new(state.db_pool);
 
-    let campus_id = claims
-        .campus_id
-        .ok_or(StatusCode::FORBIDDEN)?;
+    let campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
     // SECURITY: Verify campus belongs to caller's organization
     service
         .verify_campus_org(campus_id, claims.school_id)
@@ -315,9 +313,7 @@ async fn batch_graduate(
     Json(request): Json<GraduateGradeRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     require_campus_admin(&claims.role)?;
-    let campus_id = claims
-        .campus_id
-        .ok_or(StatusCode::FORBIDDEN)?;
+    let campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
 
     // Graduate the highest year_level grade in the campus
     let service = ClassService::new(state.db_pool);
@@ -331,7 +327,10 @@ async fn batch_graduate(
         is_active: Some(true),
         academic_year: None,
     };
-    let grades = service.list_grades(&query).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let grades = service
+        .list_grades(&query)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let highest = grades.grades.iter().max_by_key(|g| g.year_level);
 
@@ -363,9 +362,7 @@ async fn batch_promote(
     Json(request): Json<PromoteGradeRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     require_campus_admin(&claims.role)?;
-    let campus_id = claims
-        .campus_id
-        .ok_or(StatusCode::FORBIDDEN)?;
+    let campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
 
     // Determine current academic year from active grades
     let service = ClassService::new(state.db_pool);
@@ -379,7 +376,10 @@ async fn batch_promote(
         is_active: Some(true),
         academic_year: None,
     };
-    let current_grades = service.list_grades(&query).await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let current_grades = service
+        .list_grades(&query)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let current_year = current_grades
         .grades
@@ -407,9 +407,7 @@ async fn batch_create_year(
     Json(request): Json<CreateAcademicYearRequest>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     require_campus_admin(&claims.role)?;
-    let campus_id = claims
-        .campus_id
-        .ok_or(StatusCode::FORBIDDEN)?;
+    let campus_id = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
 
     let service = ClassService::new(state.db_pool);
     // SECURITY: Verify campus belongs to caller's organization

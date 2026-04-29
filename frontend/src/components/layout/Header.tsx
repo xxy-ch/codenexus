@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export function Header({ title, showSearch = true, actions }: HeaderProps) {
   return (
-    <header className="h-12 bg-card border-b border-border flex items-center justify-between px-6 z-10">
+    <header className="h-12 bg-white border-b border-border flex items-center justify-between px-6 z-10">
       <div className="flex items-center flex-1 gap-6">
         {title && (
           <h1 className="text-sm font-semibold text-foreground hidden md:block shrink-0">

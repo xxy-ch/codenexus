@@ -89,15 +89,22 @@ pub async fn auth_middleware(
         .validate_token(&token)
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    // Check JWT blacklist (revoked tokens)
+    // Check JWT blacklist (revoked tokens) — fail-closed when Redis is configured but unavailable
     if let Some(redis_pool) = &state.redis_pool {
-        if let Ok(mut conn) = redis_pool.get().await {
-            let blacklisted: bool = deadpool_redis::redis::cmd("EXISTS")
-                .arg(format!("bl:{}", claims.jti))
-                .query_async(&mut conn)
-                .await
-                .unwrap_or(false);
-            if blacklisted {
+        let conn_result = redis_pool.get().await;
+        match conn_result {
+            Ok(mut conn) => {
+                let blacklisted: bool = deadpool_redis::redis::cmd("EXISTS")
+                    .arg(format!("bl:{}", claims.jti))
+                    .query_async(&mut conn)
+                    .await
+                    .unwrap_or(false);
+                if blacklisted {
+                    return Err(StatusCode::UNAUTHORIZED);
+                }
+            }
+            Err(e) => {
+                tracing::warn!("Redis unavailable during blacklist check — rejecting request (fail-closed): {}", e);
                 return Err(StatusCode::UNAUTHORIZED);
             }
         }
@@ -141,12 +148,10 @@ mod tests {
             ),
             prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
             preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
-            gateway_client: std::sync::Arc::new(
-                api_infra::feature_gateway::GatewayClient::new(
-                    "http://127.0.0.1:3001".to_string(),
-                    "test_secret".to_string(),
-                ),
-            ),
+            gateway_client: std::sync::Arc::new(api_infra::feature_gateway::GatewayClient::new(
+                "http://127.0.0.1:3001".to_string(),
+                "test_secret".to_string(),
+            )),
         };
         Router::new()
             .route("/protected", get(protected_handler))

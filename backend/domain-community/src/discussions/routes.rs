@@ -30,13 +30,12 @@ fn verify_campus_scope(
             let cid = claims
                 .campus_id
                 .ok_or((StatusCode::FORBIDDEN, "Missing campus context".to_string()))?;
-            let icid = item_campus_id
-                .ok_or((StatusCode::FORBIDDEN, "Item campus scope unknown".to_string()))?;
+            let icid = item_campus_id.ok_or((
+                StatusCode::FORBIDDEN,
+                "Item campus scope unknown".to_string(),
+            ))?;
             if icid != cid {
-                return Err((
-                    StatusCode::FORBIDDEN,
-                    "Campus scope mismatch".to_string(),
-                ));
+                return Err((StatusCode::FORBIDDEN, "Campus scope mismatch".to_string()));
             }
             Ok(())
         }
@@ -114,7 +113,10 @@ async fn create_discussion_handler(
 ) -> Result<Json<Discussion>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.create_discussion(user_id, claims.school_id, req).await {
+    match service
+        .create_discussion(user_id, claims.school_id, req)
+        .await
+    {
         Ok(discussion) => Ok(Json(discussion)),
         Err(e) => {
             tracing::error!("Error creating discussion: {}", e);
@@ -132,18 +134,26 @@ async fn update_discussion_handler(
     axum::extract::Json(req): axum::extract::Json<UpdateDiscussionRequest>,
 ) -> Result<Json<Discussion>, (axum::http::StatusCode, String)> {
     let author_campus_id = sqlx::query_scalar::<_, Option<i64>>(
-        "SELECT u.campus_id FROM discussions d JOIN users u ON d.user_id = u.id WHERE d.id = $1"
+        "SELECT u.campus_id FROM discussions d JOIN users u ON d.author_id = u.id WHERE d.id = $1",
     )
     .bind(id)
     .fetch_optional(&state.db_pool)
     .await
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Scope check failed".to_string()))?
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Scope check failed".to_string(),
+        )
+    })?
     .flatten();
     verify_campus_scope(author_campus_id, &claims)?;
 
     let service = DiscussionService::new(state.db_pool);
 
-    match service.update_discussion(id, user_id, claims.school_id, req).await {
+    match service
+        .update_discussion(id, user_id, claims.school_id, req)
+        .await
+    {
         Ok(discussion) => Ok(Json(discussion)),
         Err(e) => {
             if e.to_string().contains("not found") {
@@ -167,12 +177,17 @@ async fn delete_discussion_handler(
     Extension(claims): Extension<Claims>,
 ) -> Result<axum::http::StatusCode, (axum::http::StatusCode, String)> {
     let author_campus_id = sqlx::query_scalar::<_, Option<i64>>(
-        "SELECT u.campus_id FROM discussions d JOIN users u ON d.user_id = u.id WHERE d.id = $1"
+        "SELECT u.campus_id FROM discussions d JOIN users u ON d.author_id = u.id WHERE d.id = $1",
     )
     .bind(id)
     .fetch_optional(&state.db_pool)
     .await
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Scope check failed".to_string()))?
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Scope check failed".to_string(),
+        )
+    })?
     .flatten();
     verify_campus_scope(author_campus_id, &claims)?;
 
@@ -183,7 +198,10 @@ async fn delete_discussion_handler(
 
     let service = DiscussionService::new(state.db_pool);
 
-    match service.delete_discussion(id, user_id, is_admin, claims.school_id).await {
+    match service
+        .delete_discussion(id, user_id, is_admin, claims.school_id)
+        .await
+    {
         Ok(true) => Ok(axum::http::StatusCode::NO_CONTENT),
         Ok(false) => Err((
             axum::http::StatusCode::FORBIDDEN,
@@ -223,7 +241,10 @@ async fn create_reply_handler(
 ) -> Result<Json<DiscussionReply>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.create_reply(id, user_id, claims.school_id, req).await {
+    match service
+        .create_reply(id, user_id, claims.school_id, req)
+        .await
+    {
         Ok(reply) => {
             // Send WebSocket notification for new reply
             let msg = WebSocketMessage::DiscussionReply {
@@ -263,7 +284,10 @@ async fn like_discussion_handler(
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "discussion", id, claims.school_id).await {
+    match service
+        .toggle_like(user_id, "discussion", id, claims.school_id)
+        .await
+    {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);
@@ -281,7 +305,10 @@ async fn like_reply_handler(
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = DiscussionService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "reply", reply_id, claims.school_id).await {
+    match service
+        .toggle_like(user_id, "reply", reply_id, claims.school_id)
+        .await
+    {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);

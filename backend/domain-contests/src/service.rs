@@ -207,21 +207,19 @@ impl ContestService {
         req: AddProblemToContestRequest,
     ) -> Result<ContestProblem> {
         // Verify problem belongs to the same organization as the contest
-        let contest_org: Option<i64> = sqlx::query_scalar(
-            "SELECT organization_id FROM contests WHERE id = $1",
-        )
-        .bind(contest_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .flatten();
+        let contest_org: Option<i64> =
+            sqlx::query_scalar("SELECT organization_id FROM contests WHERE id = $1")
+                .bind(contest_id)
+                .fetch_optional(&self.pool)
+                .await?
+                .flatten();
 
-        let problem_org: Option<i64> = sqlx::query_scalar(
-            "SELECT organization_id FROM problems WHERE id = $1",
-        )
-        .bind(req.problem_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .flatten();
+        let problem_org: Option<i64> =
+            sqlx::query_scalar("SELECT organization_id FROM problems WHERE id = $1")
+                .bind(req.problem_id)
+                .fetch_optional(&self.pool)
+                .await?
+                .flatten();
 
         match (contest_org, problem_org) {
             (Some(co), Some(po)) if co == po => {} // OK: same org
@@ -230,7 +228,8 @@ impl ContestService {
             (co, po) => {
                 return Err(anyhow::anyhow!(
                     "Cross-tenant violation: contest org {:?} != problem org {:?}",
-                    co, po
+                    co,
+                    po
                 ));
             }
         }
@@ -348,14 +347,16 @@ impl ContestService {
         // Per D-04: Filter out upsolving submissions
         let participants = sqlx::query_as::<_, (Uuid, String)>(
             r#"
-            SELECT DISTINCT u.id, u.username
+            SELECT DISTINCT
+                u.id,
+                COALESCE(u.username, u.display_name, u.email, u.id::text) AS username
             FROM contest_submissions cs
             JOIN submissions s ON s.id = cs.submission_id
             JOIN users u ON u.id = s.user_id
             WHERE cs.contest_id = $1
               AND s.created_at < $2
               AND NOT cs.is_upsolving
-            ORDER BY u.username
+            ORDER BY username
             "#,
         )
         .bind(contest_id)
@@ -636,19 +637,21 @@ impl ContestService {
             return Err(anyhow::anyhow!("Contest has not started yet"));
         }
 
-
         // Check if problem is in contest and get submission creation time
         // SECURITY: also fetch organization_id to prevent cross-tenant association
-        let submission_info: (i64, chrono::DateTime<chrono::Utc>, i64) =
-            sqlx::query_as("SELECT problem_id, created_at, organization_id FROM submissions WHERE id = $1")
-                .bind(submission_id)
-                .fetch_optional(&self.pool)
-                .await?
-                .ok_or_else(|| anyhow::anyhow!("Submission not found"))?;
+        let submission_info: (i64, chrono::DateTime<chrono::Utc>, i64) = sqlx::query_as(
+            "SELECT problem_id, created_at, organization_id FROM submissions WHERE id = $1",
+        )
+        .bind(submission_id)
+        .fetch_optional(&self.pool)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("Submission not found"))?;
 
         // Verify submission belongs to same organization as contest
         if submission_info.2 != contest.organization_id {
-            return Err(anyhow::anyhow!("Submission does not belong to this organization"));
+            return Err(anyhow::anyhow!(
+                "Submission does not belong to this organization"
+            ));
         }
 
         // Per Codex review: use submission's created_at (not link-time "now")

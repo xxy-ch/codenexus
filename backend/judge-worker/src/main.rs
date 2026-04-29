@@ -896,7 +896,7 @@ mod tests {
 
         // Should be approximately 5000ms (queue wait), not 0 (processing time)
         assert!(
-            wait_ms >= 4500 && wait_ms <= 5500,
+            (4500..=5500).contains(&wait_ms),
             "Expected ~5000ms queue wait, got {}ms",
             wait_ms
         );

@@ -28,22 +28,22 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         toastOptions={{
           duration: 5000,
           style: {
-            background: '#363636',
-            color: '#fff',
+            background: '#26251e',
+            color: '#f2f1ed',
             padding: '12px 16px',
             borderRadius: '8px',
             maxWidth: '400px',
           },
           success: {
             iconTheme: {
-              primary: '#10b981',
-              secondary: '#fff',
+              primary: '#1f8a65',
+              secondary: '#f2f1ed',
             },
           },
           error: {
             iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
+              primary: '#cf2d56',
+              secondary: '#f2f1ed',
             },
           },
         }}

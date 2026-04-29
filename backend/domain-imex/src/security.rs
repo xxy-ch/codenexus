@@ -30,11 +30,7 @@ impl fmt::Display for SecurityError {
                 write!(f, "Too many files in archive: {} (max {})", count, max)
             }
             SecurityError::ArchiveTooLarge { size, max } => {
-                write!(
-                    f,
-                    "Archive too large: {} bytes (max {} bytes)",
-                    size, max
-                )
+                write!(f, "Archive too large: {} bytes (max {} bytes)", size, max)
             }
         }
     }
@@ -82,7 +78,10 @@ pub fn validate_zip_entry(path: &str, size: u64, is_symlink: bool) -> Result<(),
 /// Checks for:
 /// - Too many entries (max 500)
 /// - Total archive size exceeding limit (max 50 MB)
-pub fn validate_zip_archive(entry_count: usize, total_raw_size: usize) -> Result<(), SecurityError> {
+pub fn validate_zip_archive(
+    entry_count: usize,
+    total_raw_size: usize,
+) -> Result<(), SecurityError> {
     if entry_count > MAX_ARCHIVE_ENTRIES {
         return Err(SecurityError::TooManyFiles {
             count: entry_count,
@@ -105,7 +104,8 @@ pub fn validate_zip_archive(entry_count: usize, total_raw_size: usize) -> Result
 /// characters are all stripped.
 pub fn sanitize_csv_cell(value: &str) -> String {
     let trimmed = value.trim_start();
-    let stripped = trimmed.trim_start_matches(|c| c == '=' || c == '+' || c == '-' || c == '@' || c == '\t');
+    let stripped =
+        trimmed.trim_start_matches(|c| c == '=' || c == '+' || c == '-' || c == '@' || c == '\t');
     stripped.to_string()
 }
 

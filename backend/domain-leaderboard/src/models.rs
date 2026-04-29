@@ -74,4 +74,3 @@ pub struct ProblemLeaderboardEntry {
     pub language: String,
     pub solved_at: DateTime<Utc>,
 }
-

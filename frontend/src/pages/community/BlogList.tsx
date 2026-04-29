@@ -221,7 +221,7 @@ export function BlogList() {
         <div className="space-y-8">
           <div className="flex flex-col gap-4 bg-card border border-border rounded-2xl p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">
                 {activeTitle}
                 {tag && <span className="ml-2 text-primary">#{tag}</span>}
               </h2>

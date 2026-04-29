@@ -4,6 +4,7 @@ use std::{fs, path::Path, path::PathBuf};
 
 const SANDBOX_USER: Uid = Uid::from_raw(1000);
 const SANDBOX_GROUP: Gid = Gid::from_raw(1000);
+
 pub struct ChrootEnvironment {
     pub root_path: PathBuf,
     pub original_pid: i32,
@@ -52,13 +53,36 @@ impl ChrootEnvironment {
     }
 }
 
-/// Restore root privileges after sandboxed execution.
+/// Drop privileges to the nobody user in a child process.
 ///
-/// # Safety
-/// Caller must ensure this is only invoked from a process that was
-/// originally running as root (i.e., the judge-worker main process).
-/// This is NOT a privilege-drop function — it does the reverse.
-pub unsafe fn restore_root_privileges() {
-    libc::seteuid(0);
-    libc::setegid(0);
+/// Called from pre_exec to ensure user-submitted code runs as an
+/// unprivileged user, not root. Combined with no-new-privs and seccomp,
+/// this prevents privilege escalation from submitted code.
+///
+/// Returns an error if privilege drop fails — the process will abort
+/// rather than run as root.
+pub fn drop_privileges_to_nobody() -> Result<()> {
+    #[cfg(target_os = "linux")]
+    {
+        let nobody_uid = Uid::from_raw(65534);
+        let nobody_gid = Gid::from_raw(65534);
+
+        setgid(nobody_gid).with_context(|| "Failed to drop GID to nobody")?;
+        setuid(nobody_uid).with_context(|| "Failed to drop UID to nobody")?;
+
+        // Verify we actually dropped
+        let uid = unsafe { libc::getuid() };
+        let gid = unsafe { libc::getgid() };
+        if uid == 0 || gid == 0 {
+            return Err(anyhow::anyhow!(
+                "Privilege drop verification failed: still running as root (uid={}, gid={})",
+                uid,
+                gid
+            ));
+        }
+
+        tracing::debug!("Dropped privileges to nobody (uid={}, gid={})", uid, gid);
+    }
+
+    Ok(())
 }

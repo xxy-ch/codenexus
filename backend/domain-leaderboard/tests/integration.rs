@@ -10,20 +10,22 @@ use uuid::Uuid;
 async fn setup_fixture() -> TestFixture {
     let fixture = TestFixture::new().await;
     let migrator = sqlx::migrate!("../api/migrations");
-    migrator.run(&fixture.db_pool).await.expect("Failed to run migrations");
+    migrator
+        .run(&fixture.db_pool)
+        .await
+        .expect("Failed to run migrations");
     fixture
 }
 
 /// Seed a user with an AC submission. Returns (org_id, user_id, problem_id).
 async fn seed_user_with_ac_submission(pool: &PgPool, email_suffix: &str) -> (i64, Uuid) {
-    let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
-    )
-    .bind(format!("Org for {}", email_suffix))
-    .bind(format!("org-for-{}", email_suffix))
-    .fetch_one(pool)
-    .await
-    .unwrap();
+    let org_id: i64 =
+        sqlx::query_scalar("INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id")
+            .bind(format!("Org for {}", email_suffix))
+            .bind(format!("org-for-{}", email_suffix))
+            .fetch_one(pool)
+            .await
+            .unwrap();
 
     let user_id: Uuid = sqlx::query_scalar(
         "INSERT INTO users (email, password_hash, organization_id) VALUES ($1, 'hash', $2) RETURNING id",
@@ -107,19 +109,16 @@ async fn test_problem_leaderboard_tenant_isolated() {
 
     // Create a shared problem accessible by both orgs (public)
     // Actually problems are org-scoped, so let's just query each org's problem
-    let problem1_id: i64 = sqlx::query_scalar(
-        "SELECT id FROM problems WHERE organization_id = $1 LIMIT 1",
-    )
-    .bind(org1_id)
-    .fetch_one(&fixture.db_pool)
-    .await
-    .unwrap();
+    let problem1_id: i64 =
+        sqlx::query_scalar("SELECT id FROM problems WHERE organization_id = $1 LIMIT 1")
+            .bind(org1_id)
+            .fetch_one(&fixture.db_pool)
+            .await
+            .unwrap();
 
-    let service = domain_leaderboard::service::LeaderboardService::new(
-        fixture.db_pool.clone(),
-        None,
-    )
-    .unwrap();
+    let service =
+        domain_leaderboard::service::LeaderboardService::new(fixture.db_pool.clone(), None)
+            .unwrap();
 
     // Problem leaderboard for org1 should only show org1 users
     let entries = service

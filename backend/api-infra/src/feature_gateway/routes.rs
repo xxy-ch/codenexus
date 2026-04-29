@@ -59,7 +59,7 @@ async fn resolved_features(
 
         let resolved = state
             .gateway_client
-            .resolve(slug, tenant_ctx.campus_id, tenant_ctx.grade_id)
+            .resolve(slug, tenant_ctx.tenant_id, tenant_ctx.campus_id, tenant_ctx.grade_id)
             .await;
 
         result.insert(
@@ -78,7 +78,18 @@ async fn resolved_features(
 /// GET /features/registry
 ///
 /// Proxies to Gateway: returns all feature definitions from the registry.
-async fn list_registry(State(state): State<AppState>) -> Result<impl IntoResponse, AppError> {
+async fn list_registry(
+    Extension(claims): Extension<Claims>,
+    State(state): State<AppState>,
+) -> Result<impl IntoResponse, AppError> {
+    let role =
+        Role::from_str(&claims.role).map_err(|_| AppError::Forbidden("Invalid role".into()))?;
+    if !role.is_higher_or_equal(Role::Teacher) {
+        return Err(AppError::Forbidden(
+            "Feature registry requires teacher or higher role".into(),
+        ));
+    }
+
     let resp = state
         .gateway_client
         .get("/registry")
@@ -97,9 +108,18 @@ async fn list_registry(State(state): State<AppState>) -> Result<impl IntoRespons
 ///
 /// Proxies to Gateway: returns all flag overrides for a given feature slug.
 async fn list_flags(
+    Extension(claims): Extension<Claims>,
     Path(slug): Path<String>,
     State(state): State<AppState>,
 ) -> Result<impl IntoResponse, AppError> {
+    let role =
+        Role::from_str(&claims.role).map_err(|_| AppError::Forbidden("Invalid role".into()))?;
+    if !role.is_higher_or_equal(Role::Teacher) {
+        return Err(AppError::Forbidden(
+            "Feature flags require teacher or higher role".into(),
+        ));
+    }
+
     let path = format!("/features/{}/flags", slug);
     let resp = state
         .gateway_client
@@ -121,14 +141,15 @@ async fn list_flags(
 /// Enforces D-06 role-scope authorization before proxying.
 async fn set_flag(
     Extension(claims): Extension<Claims>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(slug): Path<String>,
     State(state): State<AppState>,
     Json(body): Json<serde_json::Value>,
 ) -> Result<impl IntoResponse, AppError> {
     // Extract scope from body for authorization check
     let scope = body["scope"].as_str().unwrap_or("");
-    let role = Role::from_str(&claims.role)
-        .map_err(|_| AppError::Forbidden("Invalid role".into()))?;
+    let role =
+        Role::from_str(&claims.role).map_err(|_| AppError::Forbidden("Invalid role".into()))?;
 
     // D-06: Enforce role-scope authorization at API layer before proxying
     if !check_scope_authorization(role, scope) {
@@ -137,11 +158,13 @@ async fn set_flag(
             claims.role, scope
         )));
     }
+    let scope_id = body["scope_id"].as_i64();
+    verify_scope_ownership(&state, &claims, tenant_ctx, role, scope, scope_id).await?;
 
     let path = format!("/features/{}/flags", slug);
     let resp = state
         .gateway_client
-        .post_json(&path, body)
+        .post_json(&path, body, Some(&claims.role))
         .await
         .map_err(|(_status, msg)| AppError::Internal(msg))?;
 
@@ -159,12 +182,13 @@ async fn set_flag(
 /// Enforces D-06 role-scope authorization before proxying.
 async fn delete_flag(
     Extension(claims): Extension<Claims>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(slug): Path<String>,
     State(state): State<AppState>,
     Query(params): Query<DeleteFlagParams>,
 ) -> Result<impl IntoResponse, AppError> {
-    let role = Role::from_str(&claims.role)
-        .map_err(|_| AppError::Forbidden("Invalid role".into()))?;
+    let role =
+        Role::from_str(&claims.role).map_err(|_| AppError::Forbidden("Invalid role".into()))?;
 
     // D-06: Enforce role-scope authorization at API layer before proxying
     if !check_scope_authorization(role, &params.scope) {
@@ -173,6 +197,15 @@ async fn delete_flag(
             claims.role, params.scope
         )));
     }
+    verify_scope_ownership(
+        &state,
+        &claims,
+        tenant_ctx,
+        role,
+        &params.scope,
+        params.scope_id,
+    )
+    .await?;
 
     let mut path = format!("/features/{}/flags?scope={}", slug, params.scope);
     if let Some(scope_id) = params.scope_id {
@@ -181,7 +214,7 @@ async fn delete_flag(
 
     let resp = state
         .gateway_client
-        .delete(&path)
+        .delete(&path, Some(&claims.role))
         .await
         .map_err(|(_status, msg)| AppError::Internal(msg))?;
 
@@ -211,17 +244,135 @@ pub fn check_scope_authorization(role: Role, requested_scope: &str) -> bool {
     }
 }
 
+async fn verify_scope_ownership(
+    state: &AppState,
+    claims: &Claims,
+    tenant_ctx: TenantContext,
+    role: Role,
+    scope: &str,
+    scope_id: Option<i64>,
+) -> Result<(), AppError> {
+    match (role, scope) {
+        (Role::Root, "global") => Ok(()),
+        (Role::Root, "campus") => require_existing_campus(state, claims.school_id, scope_id).await,
+        (Role::CampusAdmin, "campus") => {
+            let expected = tenant_ctx
+                .campus_id
+                .ok_or_else(|| AppError::Forbidden("Campus scope is missing".into()))?;
+            require_matching_scope(scope_id, expected, "campus")
+        }
+        (Role::CampusAdmin, "grade") => {
+            let campus_id = tenant_ctx
+                .campus_id
+                .ok_or_else(|| AppError::Forbidden("Campus scope is missing".into()))?;
+            require_grade_in_campus(state, claims.school_id, campus_id, scope_id).await
+        }
+        (Role::GradeAdmin, "grade") => {
+            let expected = tenant_ctx
+                .grade_id
+                .ok_or_else(|| AppError::Forbidden("Grade scope is missing".into()))?;
+            require_matching_scope(scope_id, expected, "grade")
+        }
+        (Role::Teacher, "class") => {
+            let class_id = scope_id
+                .ok_or_else(|| AppError::Validation("class scope_id is required".into()))?;
+            let owns_class = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(
+                    SELECT 1 FROM classes
+                    WHERE id = $1 AND organization_id = $2 AND teacher_id = $3
+                )",
+            )
+            .bind(class_id)
+            .bind(claims.school_id)
+            .bind(claims.sub)
+            .fetch_one(&state.db_pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+            if owns_class {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden("Class scope is outside caller ownership".into()))
+            }
+        }
+        _ => Err(AppError::Forbidden(format!(
+            "Role '{}' cannot manage scope '{}'",
+            claims.role, scope
+        ))),
+    }
+}
+
+fn require_matching_scope(scope_id: Option<i64>, expected: i64, label: &str) -> Result<(), AppError> {
+    match scope_id {
+        Some(actual) if actual == expected => Ok(()),
+        Some(_) => Err(AppError::Forbidden(format!(
+            "{} scope is outside caller ownership",
+            label
+        ))),
+        None => Err(AppError::Validation(format!("{} scope_id is required", label))),
+    }
+}
+
+async fn require_existing_campus(
+    state: &AppState,
+    organization_id: i64,
+    scope_id: Option<i64>,
+) -> Result<(), AppError> {
+    let campus_id =
+        scope_id.ok_or_else(|| AppError::Validation("campus scope_id is required".into()))?;
+    let exists = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM campuses WHERE id = $1 AND organization_id = $2)",
+    )
+    .bind(campus_id)
+    .bind(organization_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+    if exists {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden("Campus scope is outside caller ownership".into()))
+    }
+}
+
+async fn require_grade_in_campus(
+    state: &AppState,
+    organization_id: i64,
+    campus_id: i64,
+    scope_id: Option<i64>,
+) -> Result<(), AppError> {
+    let grade_id =
+        scope_id.ok_or_else(|| AppError::Validation("grade scope_id is required".into()))?;
+    let exists = sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(
+            SELECT 1 FROM grades g
+            JOIN campuses c ON c.id = g.campus_id
+            WHERE g.id = $1 AND g.campus_id = $2 AND c.organization_id = $3
+        )",
+    )
+    .bind(grade_id)
+    .bind(campus_id)
+    .bind(organization_id)
+    .fetch_one(&state.db_pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+    if exists {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden("Grade scope is outside caller ownership".into()))
+    }
+}
+
 /// Build the features router with all proxy endpoints.
 ///
 /// This router should be nested inside the protected_router in main.rs
 /// so that auth and tenant middleware are already applied.
 pub fn features_router() -> Router<AppState> {
     Router::new()
-        .route("/features/resolved", get(resolved_features))
-        .route("/features/registry", get(list_registry))
-        .route("/features/{slug}/flags", get(list_flags))
-        .route("/features/{slug}/flags", post(set_flag))
-        .route("/features/{slug}/flags", delete(delete_flag))
+        .route("/resolved", get(resolved_features))
+        .route("/registry", get(list_registry))
+        .route("/:slug/flags", get(list_flags))
+        .route("/:slug/flags", post(set_flag))
+        .route("/:slug/flags", delete(delete_flag))
 }
 
 #[cfg(test)]
@@ -276,8 +427,14 @@ mod tests {
 
     #[test]
     fn test_check_scope_authorization_ta_denied() {
-        assert!(!check_scope_authorization(Role::TeachingAssistant, "global"));
-        assert!(!check_scope_authorization(Role::TeachingAssistant, "campus"));
+        assert!(!check_scope_authorization(
+            Role::TeachingAssistant,
+            "global"
+        ));
+        assert!(!check_scope_authorization(
+            Role::TeachingAssistant,
+            "campus"
+        ));
         assert!(!check_scope_authorization(Role::TeachingAssistant, "grade"));
         assert!(!check_scope_authorization(Role::TeachingAssistant, "class"));
     }

@@ -26,26 +26,28 @@ COPY domain-contests/Cargo.toml ./domain-contests/Cargo.toml
 COPY domain-classes/Cargo.toml ./domain-classes/Cargo.toml
 COPY domain-leaderboard/Cargo.toml ./domain-leaderboard/Cargo.toml
 COPY domain-imex/Cargo.toml ./domain-imex/Cargo.toml
+COPY feature-gateway/Cargo.toml ./feature-gateway/Cargo.toml
 COPY judge-worker/Cargo.toml ./judge-worker/Cargo.toml
 COPY migration-tool/Cargo.toml ./migration-tool/Cargo.toml
 
-# Create dummy source files so cargo can resolve the workspace
-RUN mkdir -p api/src api-infra/src shared/src && \
-    mkdir -p domain-users/src domain-problems/src domain-community/src domain-search/src && \
-    mkdir -p domain-submissions/src domain-contests/src domain-classes/src domain-leaderboard/src && \
-    mkdir -p domain-imex/src judge-worker/src migration-tool/src && \
+# Copy real source for crates that `api` links against so Cargo resolves the
+# actual public APIs during the cached dependency build.
+COPY api-infra ./api-infra
+COPY shared ./shared
+COPY domain-users ./domain-users
+COPY domain-problems ./domain-problems
+COPY domain-community ./domain-community
+COPY domain-search ./domain-search
+COPY domain-submissions ./domain-submissions
+COPY domain-contests ./domain-contests
+COPY domain-classes ./domain-classes
+COPY domain-leaderboard ./domain-leaderboard
+COPY domain-imex ./domain-imex
+
+# Create dummy source files only for workspace members not needed by the API build.
+RUN mkdir -p api/src feature-gateway/src judge-worker/src migration-tool/src && \
     printf 'fn main() {}\n' > api/src/main.rs && \
-    printf '' > api-infra/src/lib.rs && \
-    printf '' > shared/src/lib.rs && \
-    printf '' > domain-users/src/lib.rs && \
-    printf '' > domain-problems/src/lib.rs && \
-    printf '' > domain-community/src/lib.rs && \
-    printf '' > domain-search/src/lib.rs && \
-    printf '' > domain-submissions/src/lib.rs && \
-    printf '' > domain-contests/src/lib.rs && \
-    printf '' > domain-classes/src/lib.rs && \
-    printf '' > domain-leaderboard/src/lib.rs && \
-    printf '' > domain-imex/src/lib.rs && \
+    printf 'fn main() {}\n' > feature-gateway/src/main.rs && \
     printf 'fn main() {}\n' > judge-worker/src/main.rs && \
     printf 'fn main() {}\n' > migration-tool/src/main.rs
 
@@ -65,6 +67,7 @@ COPY domain-contests ./domain-contests
 COPY domain-classes ./domain-classes
 COPY domain-leaderboard ./domain-leaderboard
 COPY domain-imex ./domain-imex
+COPY feature-gateway ./feature-gateway
 
 # Build the actual application
 RUN cargo build --release -p api
@@ -93,7 +96,7 @@ USER appuser
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:3000/health || exit 1
+    CMD curl -f http://localhost:3000/health/ready || exit 1
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["/app/api"]

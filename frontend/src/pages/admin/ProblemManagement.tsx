@@ -11,9 +11,9 @@ type DifficultyType = 'easy' | 'medium' | 'hard'
 type SortType = 'recent' | 'title' | 'submissions' | 'acceptance'
 
 const DIFFICULTY_CONFIG = {
-  easy: { label: '简单', color: 'bg-lime-500/15 text-lime-400' },
-  medium: { label: '中等', color: 'bg-amber-500/15 text-amber-400' },
-  hard: { label: '困难', color: 'bg-rose-500/15 text-rose-400' },
+  easy: { label: '简单', color: 'bg-status-accepted/10 text-status-accepted' },
+  medium: { label: '中等', color: 'bg-difficulty-medium/10 text-difficulty-medium' },
+  hard: { label: '困难', color: 'bg-destructive/10 text-destructive' },
 }
 
 export function ProblemManagement() {
@@ -161,10 +161,10 @@ export function ProblemManagement() {
       </div>
 
       {/* Status Banner */}
-      <div className="rounded-xl border border-lime-500/30 bg-lime-500/5 px-5 py-4">
+      <div className="rounded-xl border border-status-accepted/20 bg-status-accepted/5 px-5 py-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex gap-3">
-            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-lime-500/10 text-lime-400">
+            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-status-accepted/10 text-status-accepted">
               <Plus className="h-4 w-4" />
             </div>
             <div>
@@ -174,7 +174,7 @@ export function ProblemManagement() {
               </p>
             </div>
           </div>
-          <div className="rounded-lg border border-lime-500/30 bg-lime-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-lime-400">
+          <div className="rounded-lg border border-status-accepted/20 bg-status-accepted/10 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-status-accepted">
             create / edit / delete
           </div>
         </div>
@@ -196,8 +196,8 @@ export function ProblemManagement() {
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="mt-4 flex items-center gap-2">
-            <span className="inline-block h-2.5 w-2.5 rounded-full bg-lime-400" />
-            <span className="text-3xl font-bold text-lime-400">{stats.publishedCount}</span>
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-status-accepted" />
+            <span className="text-3xl font-bold text-status-accepted">{stats.publishedCount}</span>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">当前列表中的公开题目数量。</p>
         </div>
@@ -206,7 +206,7 @@ export function ProblemManagement() {
             <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">草稿/隐藏</span>
             <EyeOff className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-amber-400">{stats.draftCount}</div>
+          <div className="mt-4 text-3xl font-bold text-difficulty-medium">{stats.draftCount}</div>
           <p className="mt-2 text-xs text-muted-foreground">非公开条目数。</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -214,7 +214,7 @@ export function ProblemManagement() {
             <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">低通过率</span>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-rose-400">{stats.lowCoverageCount}</div>
+          <div className="mt-4 text-3xl font-bold text-destructive">{stats.lowCoverageCount}</div>
           <p className="mt-2 text-xs text-muted-foreground">通过率低于 30% 或暂无提交的题目。</p>
         </div>
       </div>
@@ -421,12 +421,12 @@ export function ProblemManagement() {
                         <span
                           className={cn(
                             'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium',
-                            problem.status === 'published' && 'bg-lime-500/15 text-lime-400',
-                            problem.status === 'draft' && 'bg-amber-500/15 text-amber-400',
+                            problem.status === 'published' && 'bg-status-accepted/10 text-status-accepted',
+                            problem.status === 'draft' && 'bg-difficulty-medium/10 text-difficulty-medium',
                             problem.status === 'archived' && 'bg-muted text-muted-foreground',
                           )}
                         >
-                          {problem.status === 'published' && <span className="h-1.5 w-1.5 rounded-full bg-lime-400" />}
+                          {problem.status === 'published' && <span className="h-1.5 w-1.5 rounded-full bg-status-accepted" />}
                           {problem.status === 'published' ? '已发布' : problem.status === 'draft' ? '草稿' : '已归档'}
                         </span>
                       </td>
@@ -454,7 +454,7 @@ export function ProblemManagement() {
                           <button
                             type="button"
                             onClick={() => startEdit(problem)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                             编辑
@@ -466,7 +466,7 @@ export function ProblemManagement() {
                                 deleteMutation.mutate(problem.id)
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-1.5 text-xs font-medium text-rose-400 hover:bg-rose-500/10"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/15 transition-colors"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             删除

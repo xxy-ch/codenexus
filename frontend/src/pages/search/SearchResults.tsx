@@ -132,7 +132,7 @@ export function SearchResults() {
               </span>
             )}
             {item.is_solved && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+              <span className="inline-flex items-center gap-1 rounded-full bg-status-accepted/10 px-2.5 py-1 text-xs font-medium text-status-accepted">
                 <CheckCircle className="h-3 w-3" />
                 已解决
               </span>

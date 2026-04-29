@@ -20,10 +20,7 @@ const TEST_JWT_SECRET: &str = "test_handler_secret_key";
 /// Build a minimal Axum app with the contest router mounted at /contests,
 /// with auth and tenant middleware applied (mirrors main.rs setup).
 /// Returns the app (as Router<()>) and the JwtService for token generation.
-async fn build_contest_app(pool: PgPool) -> (
-    axum::Router,
-    api::auth::JwtService,
-) {
+async fn build_contest_app(pool: PgPool) -> (axum::Router, api::auth::JwtService) {
     let jwt_service = api::auth::JwtService::new(TEST_JWT_SECRET);
 
     let state = AppState {
@@ -37,19 +34,17 @@ async fn build_contest_app(pool: PgPool) -> (
         class_membership_checker: std::sync::Arc::new(NoopClassMembershipChecker),
         prometheus_handle: setup_metrics_recorder(),
         preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
-        gateway_client: std::sync::Arc::new(
-            api_infra::feature_gateway::GatewayClient::new(
-                "http://127.0.0.1:3001".to_string(),
-                "test_secret".to_string(),
-            ),
-        ),
+        gateway_client: std::sync::Arc::new(api_infra::feature_gateway::GatewayClient::new(
+            "http://127.0.0.1:3001".to_string(),
+            "test_secret".to_string(),
+        )),
     };
 
     // Mirror create_router's protected_router structure: auth -> tenant -> contest routes
     let protected_router = axum::Router::new()
         .nest("/contests", domain_contests::contests_router())
         .route_layer(axum::middleware::from_fn(
-            api::middleware::tenant::tenant_middleware,
+            api_infra::middleware::tenant::tenant_middleware,
         ))
         .route_layer(axum::middleware::from_fn_with_state(
             state.clone(),
@@ -65,14 +60,13 @@ async fn build_contest_app(pool: PgPool) -> (
 /// Seed the minimum dependency chain: organization -> campus -> user.
 /// Returns (org_id, campus_id, user_id).
 async fn seed_org_campus_user(pool: &PgPool, org_name: &str) -> (i64, i64, Uuid) {
-    let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
-    )
-    .bind(org_name)
-    .bind(org_name.to_lowercase().replace(' ', "-"))
-    .fetch_one(pool)
-    .await
-    .unwrap();
+    let org_id: i64 =
+        sqlx::query_scalar("INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id")
+            .bind(org_name)
+            .bind(org_name.to_lowercase().replace(' ', "-"))
+            .fetch_one(pool)
+            .await
+            .unwrap();
 
     let campus_id: i64 = sqlx::query_scalar(
         "INSERT INTO campuses (organization_id, name, slug) VALUES ($1, 'Main Campus', $2) RETURNING id",
@@ -108,7 +102,12 @@ async fn seed_org_campus_user(pool: &PgPool, org_name: &str) -> (i64, i64, Uuid)
 }
 
 /// Generate a valid JWT for the given user details.
-fn make_token(jwt_service: &api::auth::JwtService, user_id: Uuid, role: &str, school_id: i64) -> String {
+fn make_token(
+    jwt_service: &api::auth::JwtService,
+    user_id: Uuid,
+    role: &str,
+    school_id: i64,
+) -> String {
     let user = shared::models::User {
         id: user_id,
         username: "testuser".to_string(),
@@ -125,7 +124,10 @@ fn make_token(jwt_service: &api::auth::JwtService, user_id: Uuid, role: &str, sc
 async fn setup_fixture() -> TestFixture {
     let fixture = TestFixture::new().await;
     let migrator = sqlx::migrate!("../api/migrations");
-    migrator.run(&fixture.db_pool).await.expect("Failed to run migrations");
+    migrator
+        .run(&fixture.db_pool)
+        .await
+        .expect("Failed to run migrations");
     fixture
 }
 

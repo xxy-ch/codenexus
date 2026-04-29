@@ -3,13 +3,13 @@
 //! Provides runtime feature flag resolution with scoped hierarchy,
 //! DashMap caching, emergency-off support, and CRUD endpoints.
 
-pub mod models;
-pub mod service;
-pub mod routes;
 pub mod auth;
+pub mod models;
+pub mod routes;
+pub mod service;
 
-use std::sync::Arc;
 use service::FeatureGatewayService;
+use std::sync::Arc;
 
 /// Application state shared across all route handlers.
 #[derive(Clone)]

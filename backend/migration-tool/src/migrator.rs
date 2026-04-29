@@ -43,7 +43,10 @@ impl Migrator {
     /// - If `--org-id` is provided: validate the org exists, return (org_id, None).
     /// - If `--create-default-org` is provided: create "Imported from UOJ" org
     ///   and "Main Campus", return (org_id, Some(campus_id)).
-    pub async fn migrate_organization(cli: &crate::Cli, pool: &PgPool) -> Result<(i64, Option<i64>)> {
+    pub async fn migrate_organization(
+        cli: &crate::Cli,
+        pool: &PgPool,
+    ) -> Result<(i64, Option<i64>)> {
         if let Some(org_id) = cli.org_id {
             // Validate the org exists
             let exists: bool =
@@ -190,17 +193,17 @@ impl Migrator {
             // Check target DB for email conflicts (Bug 3 fix).
             // A prior migration or manual user creation may have taken this email.
             let final_email = {
-                let exists: bool = sqlx::query_scalar(
-                    "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
-                )
-                .bind(&final_email)
-                .fetch_one(&self.pool)
-                .await
-                .unwrap_or(false);
+                let exists: bool =
+                    sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
+                        .bind(&final_email)
+                        .fetch_one(&self.pool)
+                        .await
+                        .unwrap_or(false);
                 if exists {
                     tracing::warn!(
                         "Email '{}' already taken in target DB, using synthetic for user '{}'",
-                        final_email, username
+                        final_email,
+                        username
                     );
                     crate::mapper::generate_synthetic_email(username)
                 } else {
@@ -241,13 +244,14 @@ impl Migrator {
             // Always SELECT back the real UUID -- on crash/re-run the INSERT
             // does nothing, so we must recover the existing user's actual ID.
             // Also verify organization_id to prevent cross-tenant binding (Bug 1).
-            let real_row: (String, i64) = sqlx::query_as(
-                "SELECT id, organization_id FROM users WHERE username = $1",
-            )
-            .bind(username)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to find user '{}' after insert: {}", username, e))?;
+            let real_row: (String, i64) =
+                sqlx::query_as("SELECT id, organization_id FROM users WHERE username = $1")
+                    .bind(username)
+                    .fetch_one(&self.pool)
+                    .await
+                    .map_err(|e| {
+                        anyhow::anyhow!("Failed to find user '{}' after insert: {}", username, e)
+                    })?;
 
             if real_row.1 != self.org_id {
                 // This username belongs to a different org — cannot reuse.
@@ -332,13 +336,12 @@ impl Migrator {
         // Always SELECT back the real ID -- on re-run the INSERT does nothing,
         // so we must recover the existing user's UUID.
         // Scope by organization_id to prevent cross-tenant lookup.
-        let real_id: String = sqlx::query_scalar(
-            "SELECT id FROM users WHERE username = $1 AND organization_id = $2",
-        )
-        .bind(&scoped_username)
-        .bind(self.org_id)
-        .fetch_one(&self.pool)
-        .await?;
+        let real_id: String =
+            sqlx::query_scalar("SELECT id FROM users WHERE username = $1 AND organization_id = $2")
+                .bind(&scoped_username)
+                .bind(self.org_id)
+                .fetch_one(&self.pool)
+                .await?;
 
         // Insert root role for system user (idempotent)
         // grade_id is NULL -- system user has no grade affiliation
@@ -373,10 +376,9 @@ impl Migrator {
 
         // Get system migration user UUID (D-10-11, org-scoped)
         let scoped_username = format!("uoj_migration_{}", self.org_id);
-        let author_id = self
-            .id_map
-            .get("user", &scoped_username)
-            .ok_or_else(|| anyhow::anyhow!("System migration user not found. Run migrate_users first."))?;
+        let author_id = self.id_map.get("user", &scoped_username).ok_or_else(|| {
+            anyhow::anyhow!("System migration user not found. Run migrate_users first.")
+        })?;
         tracing::info!("Using system migration user as author: {}", author_id);
 
         // Parse problem rows
@@ -867,18 +869,21 @@ impl Migrator {
 
             // Parse end_time = start_time + last_min minutes
             let last_min_val: i64 = last_min.parse().unwrap_or(180);
-            let end_time = match chrono::NaiveDateTime::parse_from_str(start_time, "%Y-%m-%d %H:%M:%S") {
-                Ok(dt) => (dt + chrono::Duration::minutes(last_min_val)).format("%Y-%m-%d %H:%M:%S").to_string(),
-                Err(_) => {
-                    tracing::warn!(
-                        "Cannot parse start_time '{}' for contest {}, skipping",
-                        start_time,
-                        old_id
-                    );
-                    skipped += 1;
-                    continue;
-                }
-            };
+            let end_time =
+                match chrono::NaiveDateTime::parse_from_str(start_time, "%Y-%m-%d %H:%M:%S") {
+                    Ok(dt) => (dt + chrono::Duration::minutes(last_min_val))
+                        .format("%Y-%m-%d %H:%M:%S")
+                        .to_string(),
+                    Err(_) => {
+                        tracing::warn!(
+                            "Cannot parse start_time '{}' for contest {}, skipping",
+                            start_time,
+                            old_id
+                        );
+                        skipped += 1;
+                        continue;
+                    }
+                };
 
             // Use old ID as new ID
             let new_id: i64 = match old_id.parse() {
@@ -1129,7 +1134,10 @@ impl Migrator {
             }
         };
 
-        tracing::info!("Found {} contests_submissions rows in source dump", rows.len());
+        tracing::info!(
+            "Found {} contests_submissions rows in source dump",
+            rows.len()
+        );
 
         let mut migrated = 0u64;
         let mut skipped = 0u64;
@@ -1412,7 +1420,10 @@ impl Migrator {
             // UOJ blogs_comments columns: id, blog_id, content, post_time,
             // poster, zan, reply_id
             if row.len() < 7 {
-                tracing::warn!("Skipping malformed blogs_comments row ({} fields)", row.len());
+                tracing::warn!(
+                    "Skipping malformed blogs_comments row ({} fields)",
+                    row.len()
+                );
                 skipped += 1;
                 continue;
             }
@@ -1523,7 +1534,8 @@ impl Migrator {
             tx.commit().await?;
 
             // Update in-memory cache after successful commit
-            self.id_map.cache("blog_comment", old_id, new_id.to_string());
+            self.id_map
+                .cache("blog_comment", old_id, new_id.to_string());
 
             migrated += 1;
         }
@@ -1623,10 +1635,7 @@ impl Migrator {
             let user_id = match self.id_map.get("user", username) {
                 Some(id) => id,
                 None => {
-                    tracing::debug!(
-                        "Skipping like: user '{}' not found in id_map",
-                        username
-                    );
+                    tracing::debug!("Skipping like: user '{}' not found in id_map", username);
                     skipped_no_user += 1;
                     continue;
                 }
@@ -1636,10 +1645,7 @@ impl Migrator {
             let target_id_i64: i64 = match new_target_id.parse() {
                 Ok(id) => id,
                 Err(_) => {
-                    tracing::debug!(
-                        "Skipping like: target_id '{}' not numeric",
-                        new_target_id
-                    );
+                    tracing::debug!("Skipping like: target_id '{}' not numeric", new_target_id);
                     skipped_no_target += 1;
                     continue;
                 }
@@ -1716,10 +1722,7 @@ impl Migrator {
             let sender_id = match self.id_map.get("user", sender) {
                 Some(id) => id,
                 None => {
-                    tracing::debug!(
-                        "Skipping message: sender '{}' not found in id_map",
-                        sender
-                    );
+                    tracing::debug!("Skipping message: sender '{}' not found in id_map", sender);
                     skipped += 1;
                     continue;
                 }
@@ -1760,7 +1763,9 @@ impl Migrator {
             //   LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)
             // So we cannot use ON CONFLICT (user1_id, user2_id) -- it won't match.
             // Instead, SELECT first; only INSERT if not found.
-            let conversation_id = if let Some(conv_id) = conv_cache.get(&(min_user.clone(), max_user.clone())) {
+            let conversation_id = if let Some(conv_id) =
+                conv_cache.get(&(min_user.clone(), max_user.clone()))
+            {
                 *conv_id
             } else {
                 // Try to find existing conversation using LEAST/GREATEST to match
@@ -1839,7 +1844,8 @@ impl Migrator {
             tx.commit().await?;
 
             // Update in-memory cache after successful commit
-            self.id_map.cache("message", &stable_key, msg_id.to_string());
+            self.id_map
+                .cache("message", &stable_key, msg_id.to_string());
             self.id_map.cache("message", old_id, msg_id.to_string());
 
             msg_count += 1;
@@ -1857,7 +1863,9 @@ impl Migrator {
 
     /// Build a HashMap of blog_id -> Vec<tag> from blogs_tags table.
     /// Public for unit testing.
-    fn build_blog_tags_map_from_dump(dump: &ParsedDump) -> std::collections::HashMap<i64, Vec<String>> {
+    fn build_blog_tags_map_from_dump(
+        dump: &ParsedDump,
+    ) -> std::collections::HashMap<i64, Vec<String>> {
         let mut map: std::collections::HashMap<i64, Vec<String>> = std::collections::HashMap::new();
         if let Some(rows) = dump.tables.get("blogs_tags") {
             for row in rows {
@@ -1890,9 +1898,7 @@ impl Migrator {
         let rows = match self.dump.tables.get("best_ac_submissions") {
             Some(rows) => rows,
             None => {
-                tracing::warn!(
-                    "No best_ac_submissions table found in dump, skipping"
-                );
+                tracing::warn!("No best_ac_submissions table found in dump, skipping");
                 return Ok(());
             }
         };
@@ -1908,10 +1914,7 @@ impl Migrator {
             //   tot_size, shortest_id, shortest_used_time, shortest_used_memory,
             //   shortest_tot_size
             if row.len() < 3 {
-                tracing::debug!(
-                    "Skipping malformed best_ac row ({} fields)",
-                    row.len()
-                );
+                tracing::debug!("Skipping malformed best_ac row ({} fields)", row.len());
                 skipped += 1;
                 continue;
             }
@@ -1936,10 +1939,7 @@ impl Migrator {
             let user_id = match self.id_map.get("user", submitter) {
                 Some(id) => id,
                 None => {
-                    tracing::debug!(
-                        "Skipping best_ac: user '{}' not found in id_map",
-                        submitter
-                    );
+                    tracing::debug!("Skipping best_ac: user '{}' not found in id_map", submitter);
                     skipped += 1;
                     continue;
                 }
@@ -1973,10 +1973,7 @@ impl Migrator {
 
             // Record mapping for idempotency.
             // Value stores the triple (user, problem, submission) for auditing.
-            let mapping_value = format!(
-                "{}:{}:{}",
-                user_id, new_problem_id, new_submission_id
-            );
+            let mapping_value = format!("{}:{}:{}", user_id, new_problem_id, new_submission_id);
             self.id_map
                 .get_or_insert("best_ac", &composite_key, mapping_value)
                 .await?;
@@ -2049,7 +2046,9 @@ mod tests {
         let mut dump = ParsedDump::default();
         dump.tables.insert(
             "blogs_tags".to_string(),
-            rows.into_iter().map(|r| r.into_iter().map(|s| s.to_string()).collect()).collect(),
+            rows.into_iter()
+                .map(|r| r.into_iter().map(|s| s.to_string()).collect())
+                .collect(),
         );
         dump
     }
@@ -2092,8 +2091,8 @@ mod tests {
     #[test]
     fn build_blog_tags_map_skips_malformed_rows() {
         let dump = make_dump_with_blogs_tags(vec![
-            vec!["1"],           // too short
-            vec!["2", "abc"],    // non-numeric blog_id
+            vec!["1"],        // too short
+            vec!["2", "abc"], // non-numeric blog_id
             vec!["3", "10", "ok"],
         ]);
         let map = Migrator::build_blog_tags_map_from_dump(&dump);
@@ -2125,8 +2124,16 @@ mod tests {
         // Verify that (min, max) ordering produces consistent conversation keys
         let id_a = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
         let id_b = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
-        let (min1, max1) = if id_a < id_b { (id_a, id_b) } else { (id_b, id_a) };
-        let (min2, max2) = if id_b < id_a { (id_b, id_a) } else { (id_a, id_b) };
+        let (min1, max1) = if id_a < id_b {
+            (id_a, id_b)
+        } else {
+            (id_b, id_a)
+        };
+        let (min2, max2) = if id_b < id_a {
+            (id_b, id_a)
+        } else {
+            (id_a, id_b)
+        };
         assert_eq!(min1, min2);
         assert_eq!(max1, max2);
         assert_eq!(min1, id_a);
@@ -2145,23 +2152,23 @@ mod tests {
     #[test]
     fn submission_field_mapping_time_and_memory_at_correct_indices() {
         let row: Vec<String> = vec![
-            "100".to_string(),       // 0: id
-            "1".to_string(),         // 1: problem_id
-            "NULL".to_string(),      // 2: contest_id
+            "100".to_string(),                 // 0: id
+            "1".to_string(),                   // 1: problem_id
+            "NULL".to_string(),                // 2: contest_id
             "2024-01-01 00:00:00".to_string(), // 3: submit_time
-            "alice".to_string(),     // 4: submitter
+            "alice".to_string(),               // 4: submitter
             "#include <cstdio>".to_string(),   // 5: content
-            "C++".to_string(),       // 6: language
-            "256".to_string(),       // 7: tot_size
+            "C++".to_string(),                 // 6: language
+            "256".to_string(),                 // 7: tot_size
             "2024-01-01 00:00:05".to_string(), // 8: judge_time
-            "Accepted".to_string(),  // 9: result
-            "Judged".to_string(),    // 10: status
-            "NULL".to_string(),      // 11: result_error
-            "100".to_string(),       // 12: score
-            "50".to_string(),        // 13: used_time  <-- expected value
-            "2048".to_string(),      // 14: used_memory <-- expected value
-            "0".to_string(),         // 15: is_hidden
-            "".to_string(),          // 16: status_details
+            "Accepted".to_string(),            // 9: result
+            "Judged".to_string(),              // 10: status
+            "NULL".to_string(),                // 11: result_error
+            "100".to_string(),                 // 12: score
+            "50".to_string(),                  // 13: used_time  <-- expected value
+            "2048".to_string(),                // 14: used_memory <-- expected value
+            "0".to_string(),                   // 15: is_hidden
+            "".to_string(),                    // 16: status_details
         ];
 
         // Verify row has the expected number of columns
@@ -2172,7 +2179,10 @@ mod tests {
         // used_memory is at index 14
         assert_eq!(row[14], "2048", "used_memory should be at index 14");
         // score is at index 12 (must NOT be confused with used_time)
-        assert_eq!(row[12], "100", "score should be at index 12 (not used_time)");
+        assert_eq!(
+            row[12], "100",
+            "score should be at index 12 (not used_time)"
+        );
         // result is at index 9
         assert_eq!(row[9], "Accepted", "result should be at index 9");
     }
@@ -2186,7 +2196,10 @@ mod tests {
         let is_hidden = "0";
         let is_draft = "0";
         let is_published = is_hidden == "0" && is_draft == "0";
-        assert!(is_published, "should be published when not hidden and not draft");
+        assert!(
+            is_published,
+            "should be published when not hidden and not draft"
+        );
 
         // Hidden, not draft => NOT published
         let is_hidden = "1";
@@ -2204,7 +2217,10 @@ mod tests {
         let is_hidden = "1";
         let is_draft = "1";
         let is_published = is_hidden == "0" && is_draft == "0";
-        assert!(!is_published, "should NOT be published when hidden and draft");
+        assert!(
+            !is_published,
+            "should NOT be published when hidden and draft"
+        );
     }
 
     // Bug 1: Message conversation key normalization -- deterministic regardless of
@@ -2228,14 +2244,22 @@ mod tests {
             (sender_id.clone(), receiver_id.clone())
         };
 
-        assert_eq!(min1, min2, "min user should be same regardless of input order");
-        assert_eq!(max1, max2, "max user should be same regardless of input order");
+        assert_eq!(
+            min1, min2,
+            "min user should be same regardless of input order"
+        );
+        assert_eq!(
+            max1, max2,
+            "max user should be same regardless of input order"
+        );
 
         // Row-index based stable keys are unique per position, not per sender/receiver
         let stable_key_0 = format!("message:{}", 0);
         let stable_key_1 = format!("message:{}", 1);
-        assert_ne!(stable_key_0, stable_key_1,
-            "different row indices produce different stable keys");
+        assert_ne!(
+            stable_key_0, stable_key_1,
+            "different row indices produce different stable keys"
+        );
     }
 
     // ===================== New Regression Tests (Bugs 1-4 re-review) =====================
@@ -2254,12 +2278,17 @@ mod tests {
 
         // Parse the mapped contest ID (same logic as migrate_submissions)
         let new_contest_id: Result<i64, _> = contest_id_map_value.parse();
-        assert!(new_contest_id.is_ok(), "contest_id mapping must be parseable as i64");
+        assert!(
+            new_contest_id.is_ok(),
+            "contest_id mapping must be parseable as i64"
+        );
         assert_eq!(new_contest_id.unwrap(), 5);
 
         // Verify the condition check: contest_id_str is not "NULL" and not empty
-        assert!(contest_id_str != "NULL" && !contest_id_str.is_empty(),
-            "contest_id must be non-NULL and non-empty to trigger contest_submissions insert");
+        assert!(
+            contest_id_str != "NULL" && !contest_id_str.is_empty(),
+            "contest_id must be non-NULL and non-empty to trigger contest_submissions insert"
+        );
     }
 
     // Regression 2: Conversation conflict handling.
@@ -2292,8 +2321,10 @@ mod tests {
         let key_a = format!("message:{}", 0);
         let key_b = format!("message:{}", 1);
 
-        assert_ne!(key_a, key_b,
-            "different row indices must produce different dedup keys");
+        assert_ne!(
+            key_a, key_b,
+            "different row indices must produce different dedup keys"
+        );
         assert_eq!(key_a, "message:0");
         assert_eq!(key_b, "message:1");
     }
@@ -2304,8 +2335,11 @@ mod tests {
         // Even identical messages at the same timestamp get unique keys
         let keys: Vec<String> = (0..100).map(|i| format!("message:{}", i)).collect();
         let unique_keys: std::collections::HashSet<String> = keys.iter().cloned().collect();
-        assert_eq!(unique_keys.len(), 100,
-            "100 row indices must produce 100 unique keys");
+        assert_eq!(
+            unique_keys.len(),
+            100,
+            "100 row indices must produce 100 unique keys"
+        );
     }
 
     // Regression 4: Cross-tenant system user.
@@ -2318,8 +2352,10 @@ mod tests {
         let username_a = format!("uoj_migration_{}", org_a);
         let username_b = format!("uoj_migration_{}", org_b);
 
-        assert_ne!(username_a, username_b,
-            "different orgs must produce different system user usernames");
+        assert_ne!(
+            username_a, username_b,
+            "different orgs must produce different system user usernames"
+        );
         assert_eq!(username_a, "uoj_migration_1");
         assert_eq!(username_b, "uoj_migration_2");
     }
@@ -2366,15 +2402,20 @@ mod tests {
         // After fix: if id_map doesn't know, we try INSERT. If it fails (db_has_row),
         // we log error and skip -- NOT silently record a wrong mapping.
         let should_try_insert = !id_map_has_mapping;
-        assert!(should_try_insert, "must attempt INSERT when id_map has no mapping");
+        assert!(
+            should_try_insert,
+            "must attempt INSERT when id_map has no mapping"
+        );
 
         // The INSERT would fail because db_has_row is true, but the error is logged
         // and the migration continues without writing to id_map.
         // Key assertion: we must NOT write to id_map on failure.
         let insert_succeeded = false; // DB collision
         let wrote_to_id_map = insert_succeeded; // Only write on success
-        assert!(!wrote_to_id_map,
-            "must NOT write to id_map when INSERT fails due to ID collision");
+        assert!(
+            !wrote_to_id_map,
+            "must NOT write to id_map when INSERT fails due to ID collision"
+        );
     }
 
     // Regression Test 2: Message dedup with row index (Bug 2).
@@ -2388,8 +2429,10 @@ mod tests {
         let key_a = format!("message:{}", row_index_a);
         let key_b = format!("message:{}", row_index_b);
 
-        assert_ne!(key_a, key_b,
-            "identical messages at different row positions must have different dedup keys");
+        assert_ne!(
+            key_a, key_b,
+            "identical messages at different row positions must have different dedup keys"
+        );
         assert_eq!(key_a, "message:42");
         assert_eq!(key_b, "message:43");
     }
@@ -2414,10 +2457,14 @@ mod tests {
         // After INSERT ON CONFLICT DO NOTHING + SELECT back:
         let real_id = db_uuid; // SELECT returns the existing UUID
 
-        assert_eq!(real_id, first_run_uuid,
-            "must recover the original UUID from DB, not use the new generated one");
-        assert_ne!(real_id, second_run_uuid,
-            "must NOT use the second-run generated UUID");
+        assert_eq!(
+            real_id, first_run_uuid,
+            "must recover the original UUID from DB, not use the new generated one"
+        );
+        assert_ne!(
+            real_id, second_run_uuid,
+            "must NOT use the second-run generated UUID"
+        );
     }
 
     // Regression Test 4: User role idempotency (Bug 3).
@@ -2453,11 +2500,18 @@ mod tests {
             (receiver_id.clone(), sender_id.clone())
         };
 
-        assert_eq!(user1, "00000000-0000-0000-0000-000000000000",
-            "user1 must be the lexicographically smaller UUID");
-        assert_eq!(user2, "ffffffff-ffff-ffff-ffff-ffffffffffff",
-            "user2 must be the lexicographically larger UUID");
-        assert!(user1 < user2, "user1 must be less than user2 for index match");
+        assert_eq!(
+            user1, "00000000-0000-0000-0000-000000000000",
+            "user1 must be the lexicographically smaller UUID"
+        );
+        assert_eq!(
+            user2, "ffffffff-ffff-ffff-ffff-ffffffffffff",
+            "user2 must be the lexicographically larger UUID"
+        );
+        assert!(
+            user1 < user2,
+            "user1 must be less than user2 for index match"
+        );
     }
 
     // Regression Test 6: Cross-tenant system user isolation (Bug 1 fix).
@@ -2498,14 +2552,18 @@ mod tests {
 
         // The code checks: if real_row.1 != self.org_id { skip }
         let should_skip = existing_user_org_id != current_org_id;
-        assert!(should_skip,
-            "must skip user when username belongs to a different organization");
+        assert!(
+            should_skip,
+            "must skip user when username belongs to a different organization"
+        );
 
         // Same org case: should NOT skip
         let same_org_id: i64 = 5;
         let should_not_skip = same_org_id != current_org_id;
-        assert!(!should_not_skip,
-            "must NOT skip user when username belongs to the same organization");
+        assert!(
+            !should_not_skip,
+            "must NOT skip user when username belongs to the same organization"
+        );
     }
 
     // Regression Test 8: Conversation LEAST/GREATEST lookup (Bug 2 fix).
@@ -2535,16 +2593,22 @@ mod tests {
         let db_least = std::cmp::min(db_user1, db_user2);
         let db_greatest = std::cmp::max(db_user1, db_user2);
 
-        assert_eq!(db_least, min_user,
-            "LEAST of stored pair must match normalized min");
-        assert_eq!(db_greatest, max_user,
-            "GREATEST of stored pair must match normalized max");
+        assert_eq!(
+            db_least, min_user,
+            "LEAST of stored pair must match normalized min"
+        );
+        assert_eq!(
+            db_greatest, max_user,
+            "GREATEST of stored pair must match normalized max"
+        );
 
         // This proves the LEAST/GREATEST query finds the row even when stored reversed.
         // A plain WHERE user1_id = min AND user2_id = max would FAIL here because
         // db_user1 (B) != min_user (A).
-        assert_ne!(db_user1, min_user,
-            "plain column match would miss reversed storage -- LEAST/GREATEST needed");
+        assert_ne!(
+            db_user1, min_user,
+            "plain column match would miss reversed storage -- LEAST/GREATEST needed"
+        );
     }
 
     // Regression Test 9: Email DB conflict uses synthetic fallback (Bug 3 fix).
@@ -2565,10 +2629,14 @@ mod tests {
             original_email.to_string()
         };
 
-        assert_eq!(final_email, "alice@migrated.uoj.local",
-            "must use synthetic email when DB already has the email");
-        assert_ne!(final_email, original_email,
-            "synthetic email must differ from conflicting email");
+        assert_eq!(
+            final_email, "alice@migrated.uoj.local",
+            "must use synthetic email when DB already has the email"
+        );
+        assert_ne!(
+            final_email, original_email,
+            "synthetic email must differ from conflicting email"
+        );
     }
 
     // Regression Test 10: Empty email always gets synthetic (Bug 3 fix).
@@ -2585,8 +2653,10 @@ mod tests {
         } else {
             email.to_string()
         };
-        assert_eq!(final_email, "bob@migrated.uoj.local",
-            "empty email must get synthetic replacement");
+        assert_eq!(
+            final_email, "bob@migrated.uoj.local",
+            "empty email must get synthetic replacement"
+        );
 
         // "NULL" string case
         let email = "NULL";
@@ -2595,8 +2665,10 @@ mod tests {
         } else {
             email.to_string()
         };
-        assert_eq!(final_email, "bob@migrated.uoj.local",
-            "'NULL' string email must get synthetic replacement");
+        assert_eq!(
+            final_email, "bob@migrated.uoj.local",
+            "'NULL' string email must get synthetic replacement"
+        );
     }
 
     // ===================== Best AC migration tests =====================
@@ -2626,16 +2698,16 @@ mod tests {
     #[test]
     fn best_ac_field_indices_match_model() {
         let row: Vec<String> = vec![
-            "10".to_string(),       // 0: problem_id
-            "alice".to_string(),    // 1: submitter
-            "500".to_string(),      // 2: submission_id
-            "50".to_string(),       // 3: used_time
-            "1024".to_string(),     // 4: used_memory
-            "256".to_string(),      // 5: tot_size
-            "500".to_string(),      // 6: shortest_id
-            "48".to_string(),       // 7: shortest_used_time
-            "900".to_string(),      // 8: shortest_used_memory
-            "200".to_string(),      // 9: shortest_tot_size
+            "10".to_string(),    // 0: problem_id
+            "alice".to_string(), // 1: submitter
+            "500".to_string(),   // 2: submission_id
+            "50".to_string(),    // 3: used_time
+            "1024".to_string(),  // 4: used_memory
+            "256".to_string(),   // 5: tot_size
+            "500".to_string(),   // 6: shortest_id
+            "48".to_string(),    // 7: shortest_used_time
+            "900".to_string(),   // 8: shortest_used_memory
+            "200".to_string(),   // 9: shortest_tot_size
         ];
         assert!(row.len() >= 3, "row must have at least 3 columns");
         assert_eq!(row[0], "10", "problem_id at index 0");
@@ -2649,10 +2721,7 @@ mod tests {
         let user_id = "uuid-alice";
         let new_problem_id = "10";
         let new_submission_id = "500";
-        let mapping_value = format!(
-            "{}:{}:{}",
-            user_id, new_problem_id, new_submission_id
-        );
+        let mapping_value = format!("{}:{}:{}", user_id, new_problem_id, new_submission_id);
         assert_eq!(mapping_value, "uuid-alice:10:500");
     }
 
@@ -2715,8 +2784,10 @@ mod tests {
         .fetch_one(&pool)
         .await
         .expect("Mapping should exist");
-        assert_eq!(new_id, "uuid-abc",
-            "Idempotent re-insert must preserve original mapping");
+        assert_eq!(
+            new_id, "uuid-abc",
+            "Idempotent re-insert must preserve original mapping"
+        );
 
         // Cleanup
         sqlx::query(
@@ -2760,7 +2831,11 @@ mod tests {
         .execute(&pool)
         .await
         .expect("First insert should succeed");
-        assert_eq!(result.rows_affected(), 1, "First insert should affect 1 row");
+        assert_eq!(
+            result.rows_affected(),
+            1,
+            "First insert should affect 1 row"
+        );
 
         // Second insert: conflict, no row affected -- migrator detects this
         // and uses SELECT to recover the existing UUID
@@ -2772,7 +2847,11 @@ mod tests {
         .execute(&pool)
         .await
         .expect("Conflict insert should not fail");
-        assert_eq!(result.rows_affected(), 0, "Conflict insert should affect 0 rows");
+        assert_eq!(
+            result.rows_affected(),
+            0,
+            "Conflict insert should affect 0 rows"
+        );
 
         // Verify original mapping is preserved (not overwritten)
         let (new_id,): (String,) = sqlx::query_as(
@@ -2782,8 +2861,10 @@ mod tests {
         .fetch_one(&pool)
         .await
         .expect("Mapping should exist");
-        assert_eq!(new_id, "uuid-sys-1",
-            "Conflict must preserve original UUID, not overwrite");
+        assert_eq!(
+            new_id, "uuid-sys-1",
+            "Conflict must preserve original UUID, not overwrite"
+        );
 
         // Cleanup
         sqlx::query(
@@ -2842,8 +2923,10 @@ mod tests {
         .await
         .expect("Query should succeed");
 
-        assert!(result.is_none(),
-            "Rolled-back transaction must leave no mapping -- re-run safely retries");
+        assert!(
+            result.is_none(),
+            "Rolled-back transaction must leave no mapping -- re-run safely retries"
+        );
     }
 
     // Crash recovery problem: a rolled-back transaction leaves no trace.
@@ -2909,7 +2992,10 @@ mod tests {
         .expect("Query should succeed");
 
         assert!(prob.is_none(), "Rolled-back problem mapping must not exist");
-        assert!(tc.is_none(), "Rolled-back test_case mapping must not exist -- tx is all-or-nothing");
+        assert!(
+            tc.is_none(),
+            "Rolled-back test_case mapping must not exist -- tx is all-or-nothing"
+        );
     }
 
     // ===================== Pipeline Ordering Gap Test =====================
@@ -2935,39 +3021,75 @@ mod tests {
         ];
 
         // Verify all 9 steps are accounted for
-        assert_eq!(expected_order.len(), 9, "must have exactly 9 migration steps");
+        assert_eq!(
+            expected_order.len(),
+            9,
+            "must have exactly 9 migration steps"
+        );
 
         // Verify the critical ordering constraint:
         // contests MUST come before submissions so contest_id mappings exist
         // when creating contest_submissions rows.
-        let contests_pos = expected_order.iter().position(|&s| s == "migrate_contests").unwrap();
-        let submissions_pos = expected_order.iter().position(|&s| s == "migrate_submissions").unwrap();
-        assert!(contests_pos < submissions_pos,
+        let contests_pos = expected_order
+            .iter()
+            .position(|&s| s == "migrate_contests")
+            .unwrap();
+        let submissions_pos = expected_order
+            .iter()
+            .position(|&s| s == "migrate_submissions")
+            .unwrap();
+        assert!(
+            contests_pos < submissions_pos,
             "contests (pos {}) must come before submissions (pos {})",
-            contests_pos, submissions_pos);
+            contests_pos,
+            submissions_pos
+        );
 
         // best_ac MUST come after submissions so submission id_map entries exist
-        let best_ac_pos = expected_order.iter().position(|&s| s == "migrate_best_ac").unwrap();
-        assert!(submissions_pos < best_ac_pos,
+        let best_ac_pos = expected_order
+            .iter()
+            .position(|&s| s == "migrate_best_ac")
+            .unwrap();
+        assert!(
+            submissions_pos < best_ac_pos,
             "submissions (pos {}) must come before best_ac (pos {})",
-            submissions_pos, best_ac_pos);
+            submissions_pos,
+            best_ac_pos
+        );
 
         // Users MUST come first (everything depends on user id_map)
-        assert_eq!(expected_order[0], "migrate_users",
-            "migrate_users must be the first step");
+        assert_eq!(
+            expected_order[0], "migrate_users",
+            "migrate_users must be the first step"
+        );
 
         // Problems MUST come before submissions (submission FK references problems)
-        let problems_pos = expected_order.iter().position(|&s| s == "migrate_problems").unwrap();
-        assert!(problems_pos < submissions_pos,
+        let problems_pos = expected_order
+            .iter()
+            .position(|&s| s == "migrate_problems")
+            .unwrap();
+        assert!(
+            problems_pos < submissions_pos,
             "problems (pos {}) must come before submissions (pos {})",
-            problems_pos, submissions_pos);
+            problems_pos,
+            submissions_pos
+        );
 
         // Blogs MUST come before likes (likes reference blog/article ids)
-        let blogs_pos = expected_order.iter().position(|&s| s == "migrate_blogs").unwrap();
-        let likes_pos = expected_order.iter().position(|&s| s == "migrate_likes").unwrap();
-        assert!(blogs_pos < likes_pos,
+        let blogs_pos = expected_order
+            .iter()
+            .position(|&s| s == "migrate_blogs")
+            .unwrap();
+        let likes_pos = expected_order
+            .iter()
+            .position(|&s| s == "migrate_likes")
+            .unwrap();
+        assert!(
+            blogs_pos < likes_pos,
             "blogs (pos {}) must come before likes (pos {})",
-            blogs_pos, likes_pos);
+            blogs_pos,
+            likes_pos
+        );
     }
 
     // Verify that running migration logic twice produces the same id_map entries.
@@ -2981,10 +3103,7 @@ mod tests {
             ("user".to_string(), "alice".to_string()),
             "uuid-alice-001".to_string(),
         );
-        id_map_first.insert(
-            ("problem".to_string(), "42".to_string()),
-            "42".to_string(),
-        );
+        id_map_first.insert(("problem".to_string(), "42".to_string()), "42".to_string());
         id_map_first.insert(
             ("submission".to_string(), "100".to_string()),
             "100".to_string(),
@@ -3006,16 +3125,21 @@ mod tests {
         assert!(sub_exists, "submission 100 mapping exists from first run");
 
         // No new entries added (same entities skipped)
-        assert_eq!(id_map_first, id_map_second,
-            "second run produces identical mappings as first run");
+        assert_eq!(
+            id_map_first, id_map_second,
+            "second run produces identical mappings as first run"
+        );
 
         // A NEW entity (not in first run) would still be added
         let new_key = ("user".to_string(), "newuser".to_string());
         let new_exists = id_map_second.contains_key(&new_key);
         assert!(!new_exists, "new user not yet migrated");
         id_map_second.insert(new_key.clone(), "uuid-new-002".to_string());
-        assert_eq!(id_map_second.len(), id_map_first.len() + 1,
-            "new entity adds exactly one mapping");
+        assert_eq!(
+            id_map_second.len(),
+            id_map_first.len() + 1,
+            "new entity adds exactly one mapping"
+        );
     }
 
     // ===================== contests_submissions Source Table Tests =====================
@@ -3026,12 +3150,12 @@ mod tests {
     fn test_contest_submission_source_row_parsing() {
         // Simulate a well-formed source row
         let row: Vec<String> = vec![
-            "10".to_string(),       // contest_id
-            "alice".to_string(),    // submitter
-            "5".to_string(),        // problem_id
-            "200".to_string(),      // submission_id
-            "100".to_string(),      // score
-            "20".to_string(),       // penalty
+            "10".to_string(),    // contest_id
+            "alice".to_string(), // submitter
+            "5".to_string(),     // problem_id
+            "200".to_string(),   // submission_id
+            "100".to_string(),   // score
+            "20".to_string(),    // penalty
         ];
 
         assert!(row.len() >= 6, "row must have at least 6 fields");
@@ -3082,7 +3206,8 @@ mod tests {
     #[test]
     fn test_contest_submission_source_id_lookup_skips_unmapped() {
         // Simulate id_map with partial mappings
-        let mut id_map: std::collections::HashMap<(String, String), String> = std::collections::HashMap::new();
+        let mut id_map: std::collections::HashMap<(String, String), String> =
+            std::collections::HashMap::new();
         id_map.insert(("contest".to_string(), "10".to_string()), "10".to_string());
         // submission 200 is NOT mapped
 
@@ -3094,13 +3219,19 @@ mod tests {
 
         // When submission is not mapped, the row must be skipped
         let should_skip = !submission_mapped;
-        assert!(should_skip, "row with unmapped submission_id must be skipped");
+        assert!(
+            should_skip,
+            "row with unmapped submission_id must be skipped"
+        );
 
         // When contest is not mapped, the row must be skipped
         let contest_99_mapped = id_map.contains_key(&("contest".to_string(), "99".to_string()));
         assert!(!contest_99_mapped, "contest 99 should NOT be mapped");
         let should_skip_unmapped_contest = !contest_99_mapped;
-        assert!(should_skip_unmapped_contest, "row with unmapped contest_id must be skipped");
+        assert!(
+            should_skip_unmapped_contest,
+            "row with unmapped contest_id must be skipped"
+        );
     }
 
     // Verify that the UPSERT strategy correctly overrides dummy penalty_time=0
@@ -3116,10 +3247,14 @@ mod tests {
         // UPSERT ON CONFLICT (submission_id) DO UPDATE SET penalty_time = EXCLUDED.penalty_time
         // After upsert, the effective penalty must be the source value
         let effective_penalty = source_penalty; // UPSERT replaces the dummy
-        assert_ne!(effective_penalty, dummy_penalty,
-            "upsert must override the dummy penalty_time=0");
-        assert_eq!(effective_penalty, 45,
-            "effective penalty must be the source value");
+        assert_ne!(
+            effective_penalty, dummy_penalty,
+            "upsert must override the dummy penalty_time=0"
+        );
+        assert_eq!(
+            effective_penalty, 45,
+            "effective penalty must be the source value"
+        );
     }
 
     // Verify pipeline ordering includes the contest_submissions enrichment step
@@ -3138,25 +3273,40 @@ mod tests {
             "migrate_messages",
         ];
 
-        assert_eq!(expected_order.len(), 9,
-            "pipeline must have 9 steps after adding contest_submissions enrichment");
+        assert_eq!(
+            expected_order.len(),
+            9,
+            "pipeline must have 9 steps after adding contest_submissions enrichment"
+        );
 
-        let submissions_pos = expected_order.iter()
-            .position(|&s| s == "migrate_submissions").unwrap();
-        let enrichment_pos = expected_order.iter()
-            .position(|&s| s == "migrate_contest_submissions_from_source").unwrap();
-        let best_ac_pos = expected_order.iter()
-            .position(|&s| s == "migrate_best_ac").unwrap();
+        let submissions_pos = expected_order
+            .iter()
+            .position(|&s| s == "migrate_submissions")
+            .unwrap();
+        let enrichment_pos = expected_order
+            .iter()
+            .position(|&s| s == "migrate_contest_submissions_from_source")
+            .unwrap();
+        let best_ac_pos = expected_order
+            .iter()
+            .position(|&s| s == "migrate_best_ac")
+            .unwrap();
 
         // Enrichment must come AFTER submissions (needs submission id_map)
-        assert!(submissions_pos < enrichment_pos,
+        assert!(
+            submissions_pos < enrichment_pos,
             "submissions (pos {}) must come before enrichment (pos {})",
-            submissions_pos, enrichment_pos);
+            submissions_pos,
+            enrichment_pos
+        );
 
         // Enrichment must come BEFORE best_ac (doesn't depend on it, but logically grouped)
-        assert!(enrichment_pos < best_ac_pos,
+        assert!(
+            enrichment_pos < best_ac_pos,
             "enrichment (pos {}) must come before best_ac (pos {})",
-            enrichment_pos, best_ac_pos);
+            enrichment_pos,
+            best_ac_pos
+        );
     }
 
     // ===================== user_roles NULL campus_id Idempotency Tests =====================
@@ -3180,8 +3330,10 @@ mod tests {
         let row1_eff = effective_campus(row1_campus);
         let row2_eff = effective_campus(row2_campus);
 
-        assert_eq!(row1_eff, row2_eff,
-            "COALESCE(NULL, 0) must equal COALESCE(NULL, 0) — NULL campus_id rows must conflict");
+        assert_eq!(
+            row1_eff, row2_eff,
+            "COALESCE(NULL, 0) must equal COALESCE(NULL, 0) — NULL campus_id rows must conflict"
+        );
         assert_eq!(row1_eff, 0, "NULL campus_id maps to 0");
 
         // Case 2: NULL campus_id vs real campus_id must NOT conflict
@@ -3217,9 +3369,8 @@ mod tests {
     #[test]
     fn test_user_roles_rerun_idempotent_with_null_campus() {
         // Simulate first run: inserts (user_1, org_1, NULL, 'student')
-        let mut roles: Vec<(String, i64, Option<i64>, &str)> = vec![
-            ("user_1".to_string(), 1, None, "student"),
-        ];
+        let mut roles: Vec<(String, i64, Option<i64>, &str)> =
+            vec![("user_1".to_string(), 1, None, "student")];
 
         // Simulate re-run: same INSERT with ON CONFLICT DO NOTHING
         // The COALESCE index detects: COALESCE(NULL,0) == COALESCE(NULL,0)
@@ -3230,8 +3381,10 @@ mod tests {
                 && campus.map_or(0, |c| c) == new_role.2.map_or(0, |c| c)
         });
 
-        assert!(is_duplicate,
-            "ON CONFLICT DO NOTHING must detect duplicate (user_1, org_1, NULL campus)");
+        assert!(
+            is_duplicate,
+            "ON CONFLICT DO NOTHING must detect duplicate (user_1, org_1, NULL campus)"
+        );
 
         // The re-run inserts nothing (ON CONFLICT DO NOTHING)
         if !is_duplicate {
@@ -3240,7 +3393,8 @@ mod tests {
         assert_eq!(roles.len(), 1, "re-run must not add duplicate role");
 
         // But a different campus_id for the same user IS allowed
-        let different_campus: (String, i64, Option<i64>, &str) = ("user_1".to_string(), 1, Some(5), "student");
+        let different_campus: (String, i64, Option<i64>, &str) =
+            ("user_1".to_string(), 1, Some(5), "student");
         let is_dup2 = roles.iter().any(|(uid, org, campus, _role)| {
             uid == &different_campus.0
                 && org == &different_campus.1
@@ -3282,5 +3436,4 @@ mod tests {
             "article_comments INSERT must have at least 7 bind parameters (including org_id)"
         );
     }
-
 }

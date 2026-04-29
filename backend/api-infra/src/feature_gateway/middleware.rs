@@ -4,7 +4,8 @@
 //! is enabled via the standalone Gateway HTTP service before allowing the
 //! request through. Returns 404 (not 403) when a feature is disabled, per D-08.
 //!
-//! Uses `GatewayClient` with TTL cache (D-21) and fail-open behavior (D-23).
+//! Uses `GatewayClient` with TTL cache (D-21) and fail-closed behavior (C-07):
+//! when the Gateway is unavailable, features resolve to disabled.
 
 use std::future::Future;
 use std::pin::Pin;
@@ -41,19 +42,19 @@ use crate::middleware::tenant::TenantContext;
 pub fn feature_gate(
     slug: &'static str,
     client: Arc<GatewayClient>,
-) -> impl Fn(Request, Next) -> Pin<Box<dyn Future<Output = Result<Response, StatusCode>> + Send>>
-       + Clone {
+) -> impl Fn(Request, Next) -> Pin<Box<dyn Future<Output = Result<Response, StatusCode>> + Send>> + Clone
+{
     move |req: Request, next: Next| {
         let client = client.clone();
         Box::pin(async move {
             let tenant_ctx = req.extensions().get::<TenantContext>();
 
-            let (campus_id, grade_id) = match tenant_ctx {
-                Some(ctx) => (ctx.campus_id, ctx.grade_id),
+            let (tenant_id, campus_id, grade_id) = match tenant_ctx {
+                Some(ctx) => (ctx.tenant_id, ctx.campus_id, ctx.grade_id),
                 None => return Err(StatusCode::UNAUTHORIZED),
             };
 
-            let resolved = client.resolve(slug, campus_id, grade_id).await;
+            let resolved = client.resolve(slug, tenant_id, campus_id, grade_id).await;
 
             if resolved.enabled {
                 Ok(next.run(req).await)
@@ -67,7 +68,7 @@ pub fn feature_gate(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::{body::Body, routing::get, Router, middleware};
+    use axum::{body::Body, middleware, routing::get, Router};
     use tower::util::ServiceExt;
 
     async fn ok_handler() -> StatusCode {
@@ -84,17 +85,10 @@ mod tests {
 
         let app = Router::new()
             .route("/test", get(ok_handler))
-            .route_layer(middleware::from_fn(
-                feature_gate("plagiarism", client)
-            ));
+            .route_layer(middleware::from_fn(feature_gate("plagiarism", client)));
 
         let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/test")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -102,10 +96,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_feature_gate_enabled_passes_through() {
-        // GatewayClient with fail-open: when Gateway is unavailable,
-        // resolve() returns enabled=true (D-23 fail-open).
-        // This means the middleware should pass through.
+    async fn test_feature_gate_unavailable_returns_404() {
+        // C-07: GatewayClient with fail-closed: when Gateway is unavailable,
+        // resolve() returns enabled=false.
+        // The middleware should block with 404 (D-08).
         let client = Arc::new(GatewayClient::new(
             "http://127.0.0.1:19998".to_string(),
             "test_secret".to_string(),
@@ -119,9 +113,7 @@ mod tests {
 
         let app = Router::new()
             .route("/test", get(ok_handler))
-            .route_layer(middleware::from_fn(
-                feature_gate("plagiarism", client)
-            ));
+            .route_layer(middleware::from_fn(feature_gate("plagiarism", client)));
 
         let response = app
             .oneshot(
@@ -134,8 +126,8 @@ mod tests {
             .await
             .unwrap();
 
-        // D-23: fail-open means Gateway unavailable -> enabled=true -> pass through
-        assert_eq!(response.status(), StatusCode::OK);
+        // C-07: fail-closed means Gateway unavailable -> enabled=false -> 404
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
@@ -148,7 +140,7 @@ mod tests {
         ));
 
         // Manually insert a disabled cache entry
-        let cache_key = format!("plagiarism:Some(1):None");
+        let cache_key = "1:plagiarism:Some(1):None".to_string();
         client.cache.insert(
             cache_key,
             super::super::client::CachedResolve {
@@ -168,9 +160,7 @@ mod tests {
 
         let app = Router::new()
             .route("/test", get(ok_handler))
-            .route_layer(middleware::from_fn(
-                feature_gate("plagiarism", client)
-            ));
+            .route_layer(middleware::from_fn(feature_gate("plagiarism", client)));
 
         let response = app
             .oneshot(

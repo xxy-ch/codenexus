@@ -48,6 +48,26 @@ impl UserService {
             }
         }
 
+        // Validate grade belongs to the same campus (if provided).
+        // Grade is campus-scoped, so a grade_id without campus_id is a fail-closed error.
+        if let Some(grade_id) = req.grade_id {
+            let campus_id = req
+                .campus_id
+                .ok_or_else(|| anyhow::anyhow!("Grade requires campus_id"))?;
+            let grade_valid = sqlx::query_scalar::<_, i64>(
+                "SELECT 1 FROM grades WHERE id = $1 AND campus_id = $2",
+            )
+            .bind(grade_id)
+            .bind(campus_id)
+            .fetch_optional(&self.pool)
+            .await?;
+            if grade_valid.is_none() {
+                return Err(anyhow::anyhow!(
+                    "Grade not found or does not belong to campus"
+                ));
+            }
+        }
+
         // Validate username format (numeric only)
         if !req.username.chars().all(|c| c.is_numeric()) {
             return Err(anyhow::anyhow!("Username must be numeric only"));
@@ -57,11 +77,14 @@ impl UserService {
             Self::validate_user_code(user_code)?;
         }
 
-        // Check if username already exists
+        // SECURITY: Wrap uniqueness checks + INSERT in transaction to prevent TOCTOU race
+        let mut tx = self.pool.begin().await?;
+
+        // Check if username already exists (inside transaction for atomicity)
         let existing_user =
             sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE username = $1")
                 .bind(&req.username)
-                .fetch_optional(&self.pool)
+                .fetch_optional(&mut *tx)
                 .await?;
 
         if existing_user.is_some() {
@@ -72,7 +95,7 @@ impl UserService {
             let existing_user_code =
                 sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE user_code = $1")
                     .bind(user_code)
-                    .fetch_optional(&self.pool)
+                    .fetch_optional(&mut *tx)
                     .await?;
 
             if existing_user_code.is_some() {
@@ -86,7 +109,7 @@ impl UserService {
                 let existing_email =
                     sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE email = $1")
                         .bind(email)
-                        .fetch_optional(&self.pool)
+                        .fetch_optional(&mut *tx)
                         .await?;
 
                 if existing_email.is_some() {
@@ -120,7 +143,7 @@ impl UserService {
         .bind(req.organization_id)
         .bind(req.campus_id)
         .bind(req.grade_id)
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *tx)
         .await?;
 
         // Assign default user role
@@ -131,8 +154,10 @@ impl UserService {
         .bind(req.organization_id)
         .bind(req.campus_id)
         .bind(req.grade_id)
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await?;
+
+        tx.commit().await?;
 
         self.get_user_profile(user_id).await
     }
@@ -507,9 +532,11 @@ impl UserService {
             ));
         }
 
+        // SECURITY: Wrap DELETE + INSERT in transaction for atomicity
+        let mut tx = self.pool.begin().await?;
         sqlx::query("DELETE FROM user_roles WHERE user_id = $1")
             .bind(user_id)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await?;
 
         sqlx::query(
@@ -520,9 +547,10 @@ impl UserService {
         .bind(user.campus_id)
         .bind(user.grade_id)
         .bind(normalized_role)
-        .execute(&self.pool)
+        .execute(&mut *tx)
         .await?;
 
+        tx.commit().await?;
         Ok(())
     }
 

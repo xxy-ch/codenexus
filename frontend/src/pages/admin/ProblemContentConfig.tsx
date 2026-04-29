@@ -122,7 +122,7 @@ export function ProblemContentConfig() {
             加载题目
           </button>
           {(message || error) && (
-            <div className={`text-sm ${message ? 'text-lime-400' : 'text-rose-400'}`}>{message || error}</div>
+            <div className={`text-sm ${message ? 'text-status-accepted' : 'text-destructive'}`}>{message || error}</div>
           )}
         </div>
       </div>
@@ -135,7 +135,7 @@ export function ProblemContentConfig() {
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
               <div className="border-b border-border px-6 py-5">
                 <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <BookText className="h-4 w-4 text-blue-400" />
+                  <BookText className="h-4 w-4 text-primary" />
                   基本信息
                 </div>
               </div>
@@ -164,7 +164,7 @@ export function ProblemContentConfig() {
           <aside className="space-y-6">
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                <Waypoints className="h-4 w-4 text-emerald-400" />
+                <Waypoints className="h-4 w-4 text-status-accepted" />
                 元数据
               </div>
               <div className="mt-4 space-y-4">
@@ -194,7 +194,7 @@ export function ProblemContentConfig() {
 
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                <Timer className="h-4 w-4 text-amber-400" />
+                <Timer className="h-4 w-4 text-difficulty-medium" />
                 资源限制
               </div>
               <div className="mt-4 grid gap-4">
@@ -221,7 +221,7 @@ export function ProblemContentConfig() {
 
             <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                <Eye className="h-4 w-4 text-violet-400" />
+                <Eye className="h-4 w-4 text-status-re" />
                 可见性
               </div>
               <div className="mt-4 space-y-4">

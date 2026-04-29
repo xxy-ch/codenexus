@@ -17,8 +17,8 @@ interface SupportedLanguageOption {
 
 function difficultyBadge(difficulty: string) {
   if (difficulty === 'easy') return 'bg-[#3ecf8e]/10 text-[#3ecf8e] border-[#3ecf8e]/20'
-  if (difficulty === 'medium') return 'bg-amber-500/10 text-amber-600 border-amber-500/20'
-  return 'bg-red-500/10 text-red-500 border-red-500/20'
+  if (difficulty === 'medium') return 'bg-difficulty-medium/10 text-difficulty-medium border-difficulty-medium/20'
+  return 'bg-difficulty-hard/10 text-difficulty-hard border-difficulty-hard/20'
 }
 
 export function ProblemIDEEnhanced() {

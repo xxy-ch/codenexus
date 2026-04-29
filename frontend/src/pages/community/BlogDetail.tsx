@@ -263,7 +263,7 @@ export function BlogDetail() {
           </div>
 
           {/* Title */}
-          <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight mb-6">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight mb-6">
             {article.article.title}
           </h1>
 

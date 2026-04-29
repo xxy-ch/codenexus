@@ -55,9 +55,9 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 function breakerColor(state: string): string {
-  if (state === 'Closed') return 'bg-lime-500/15 text-lime-400'
-  if (state === 'HalfOpen') return 'bg-amber-500/15 text-amber-400'
-  return 'bg-rose-500/15 text-rose-400'
+  if (state === 'Closed') return 'bg-status-accepted/10 text-status-accepted'
+  if (state === 'HalfOpen') return 'bg-status-tle/10 text-status-tle'
+  return 'bg-destructive/10 text-destructive'
 }
 
 function formatDateTime(dateStr: string): string {
@@ -182,7 +182,7 @@ export function JudgeQueue() {
                   <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                     活跃 Judge
                   </div>
-                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-lime-400" />
+                  <span className="inline-block h-2.5 w-2.5 rounded-full bg-status-accepted" />
                 </div>
                 <div className="mt-2 text-3xl font-bold text-foreground">
                   {statusQuery.data.active_judges}
@@ -309,7 +309,7 @@ export function JudgeQueue() {
                             type="button"
                             onClick={() => retryMutation.mutate(entry.id)}
                             disabled={retryMutation.isPending}
-                            className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                            className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
                           >
                             重试
                           </button>
@@ -317,7 +317,7 @@ export function JudgeQueue() {
                             type="button"
                             onClick={() => discardMutation.mutate(entry.id)}
                             disabled={discardMutation.isPending}
-                            className="rounded-md border border-rose-500/30 bg-rose-500/5 px-3 py-1 text-xs font-medium text-rose-400 hover:bg-rose-500/10 disabled:opacity-50"
+                            className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-1 text-xs font-medium text-destructive hover:bg-destructive/15 disabled:opacity-50"
                           >
                             丢弃
                           </button>

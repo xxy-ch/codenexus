@@ -100,25 +100,25 @@ export function SubmissionDetail() {
   const statusPillClass = cn(
     'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
     submission.status === 'accepted'
-      ? 'bg-[#3ecf8e]/10 text-[#3ecf8e]'
+      ? 'bg-status-accepted/10 text-status-accepted'
       : submission.status === 'wrong_answer'
-        ? 'bg-red-500/10 text-red-500'
+        ? 'bg-destructive/10 text-destructive'
         : submission.status === 'pending' || submission.status === 'queued'
-          ? 'bg-amber-500/10 text-amber-600'
+          ? 'bg-status-pending/10 text-status-pending'
           : submission.status === 'time_limit_exceeded'
-            ? 'bg-orange-500/10 text-orange-500'
+            ? 'bg-status-tle/10 text-status-tle'
             : submission.status === 'runtime_error'
-              ? 'bg-rose-500/10 text-rose-500'
+              ? 'bg-status-re/10 text-status-re'
               : 'bg-muted text-muted-foreground'
   )
 
   return (
     <div className="space-y-4">
-      {/* Header — compact Supabase bar */}
-      <div className="bg-card border border-border rounded-xl p-4">
+      {/* Header */}
+      <div className="bg-card border border-border rounded-xl p-4 shadow-card">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="small" onClick={() => navigate(-1)}>
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -143,7 +143,7 @@ export function SubmissionDetail() {
               {statusLabel}
             </div>
             <Link to={`/problems/${submission.problem_id}/solve`}>
-              <Button variant="outline" size="small">
+              <Button variant="outline" size="sm">
                 <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
                 再次挑战
               </Button>
@@ -158,7 +158,7 @@ export function SubmissionDetail() {
           <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">判题结果</p>
           <p className={cn(
             'mt-1 text-base font-semibold tabular-nums',
-            submission.status === 'accepted' ? 'text-[#3ecf8e]' : 'text-foreground'
+            submission.status === 'accepted' ? 'text-status-accepted' : 'text-foreground'
           )}>
             {statusLabel}
           </p>
@@ -178,7 +178,7 @@ export function SubmissionDetail() {
         <div className="border border-border rounded-lg bg-card px-3 py-2.5">
           <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">测试用例</p>
           <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
-            <span className={passedTestCases === totalTestCases ? 'text-[#3ecf8e]' : ''}>{passedTestCases}</span>
+            <span className={passedTestCases === totalTestCases ? 'text-status-accepted' : ''}>{passedTestCases}</span>
             <span className="text-muted-foreground">/{totalTestCases}</span>
           </p>
         </div>
@@ -186,13 +186,13 @@ export function SubmissionDetail() {
 
       {/* Test Cases — developer-panel style */}
       {submission.test_cases && submission.test_cases.length > 0 && (
-        <div className="border border-border rounded-xl bg-card overflow-hidden">
-          <div className="px-4 py-3 border-b border-border">
+        <div className="border border-border rounded-xl bg-card overflow-hidden shadow-whisper">
+          <div className="px-4 py-3 border-b border-border-subtle">
             <h3 className="text-sm font-medium text-foreground">
               测试用例详情
             </h3>
           </div>
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border-subtle">
             {submission.test_cases.map((testCase, index) => {
               const isExpanded = expandedTestCases.has(index)
               const isPassed = testCase.status === 'passed'
@@ -211,9 +211,9 @@ export function SubmissionDetail() {
                   >
                     <div className="flex items-center gap-2.5">
                       {isPassed ? (
-                        <CheckCircle className="w-4 h-4 text-[#3ecf8e]" />
+                        <CheckCircle className="w-4 h-4 text-status-accepted" />
                       ) : (
-                        <XCircle className="w-4 h-4 text-red-500" />
+                        <XCircle className="w-4 h-4 text-destructive" />
                       )}
                       <span className="text-sm font-medium text-foreground">
                         测试用例 {testCase.id}
@@ -227,8 +227,8 @@ export function SubmissionDetail() {
                     <span className={cn(
                       'rounded-full px-2.5 py-1 text-xs font-medium',
                       isPassed
-                        ? 'bg-[#3ecf8e]/10 text-[#3ecf8e]'
-                        : 'bg-red-500/10 text-red-500'
+                        ? 'bg-[#3ecf8e]/10 text-status-accepted'
+                        : 'bg-destructive/10 text-destructive'
                     )}>
                       {isPassed ? '通过' : '失败'}
                     </span>
@@ -238,7 +238,7 @@ export function SubmissionDetail() {
                   {isExpanded && (
                     <div className="px-4 pb-3 space-y-2.5">
                       {!isPassed && testCase.error && (
-                        <div className="text-xs text-red-500 font-mono">
+                        <div className="text-xs text-destructive font-mono">
                           {testCase.error}
                         </div>
                       )}
@@ -270,8 +270,8 @@ export function SubmissionDetail() {
                           <pre className={cn(
                             'text-xs p-2.5 rounded-lg font-mono overflow-x-auto border',
                             testCase.actual_output === testCase.expected_output
-                              ? 'bg-[#3ecf8e]/5 border-[#3ecf8e]/20 text-[#3ecf8e]'
-                              : 'bg-red-500/5 border-red-500/20 text-red-500'
+                              ? 'bg-[#3ecf8e]/5 border-[#3ecf8e]/20 text-status-accepted'
+                              : 'bg-destructive/5 border-destructive/20 text-destructive'
                           )}>
                             {testCase.actual_output}
                           </pre>
@@ -288,9 +288,8 @@ export function SubmissionDetail() {
 
       {/* Code section — terminal/IDE feel */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="overflow-hidden border border-border rounded-xl bg-card">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-            <div className="flex items-center gap-2">
+        <div className="overflow-hidden border border-border rounded-xl bg-card shadow-whisper">
+          <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
               <span className="text-sm font-medium text-foreground">提交代码</span>
               <span className="text-[11px] font-mono text-muted-foreground">
                 {submission.language}
@@ -298,7 +297,7 @@ export function SubmissionDetail() {
             </div>
             <Button
               variant="outline"
-              size="small"
+              size="sm"
               onClick={handleCopyCode}
             >
               {copied ? (
@@ -315,7 +314,7 @@ export function SubmissionDetail() {
             </Button>
           </div>
           <div className="p-4">
-            <pre className="overflow-x-auto rounded-lg bg-background border border-border p-3 font-mono text-[13px] leading-5 text-foreground">
+            <pre className="overflow-x-auto rounded-lg bg-zinc-950 border border-zinc-800 p-3 font-mono text-[13px] leading-5 text-zinc-100 shadow-whisper">
               <code>{submission.code}</code>
             </pre>
           </div>
@@ -357,11 +356,11 @@ export function SubmissionDetail() {
           {(submission.status === 'compilation_error' ||
             submission.status === 'runtime_error' ||
             submission.status === 'wrong_answer') && submission.error_message && (
-            <div className="border border-red-500/20 rounded-xl bg-red-500/5 p-4">
-              <h3 className="text-sm font-medium text-red-500 mb-2">
+            <div className="border border-destructive/20 rounded-xl bg-destructive/5 p-4">
+              <h3 className="text-sm font-medium text-destructive mb-2">
                 错误信息
               </h3>
-              <pre className="text-xs text-red-500 whitespace-pre-wrap font-mono">
+              <pre className="text-xs text-destructive whitespace-pre-wrap font-mono">
                 {submission.error_message}
               </pre>
             </div>

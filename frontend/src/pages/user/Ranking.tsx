@@ -105,7 +105,7 @@ export function Ranking() {
                 Global User Rankings
               </div>
               <div>
-                <h1 className="text-3xl font-extrabold tracking-tight">排行榜</h1>
+                <h1 className="text-3xl font-bold tracking-tight">排行榜</h1>
                 <p className="mt-2 max-w-2xl text-sm text-white/75">
                   展示真实榜单、组织排行和当前用户位置。保留真实 leaderboard 数据，不再混入 mock 名次变化。
                 </p>
@@ -115,15 +115,15 @@ export function Ranking() {
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
                 <p className="text-xs uppercase tracking-widest text-white/60">Visible Users</p>
-                <p className="mt-2 text-3xl font-extrabold">{displayUsers.length}</p>
+                <p className="mt-2 text-3xl font-bold">{displayUsers.length}</p>
               </div>
               <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
                 <p className="text-xs uppercase tracking-widest text-white/60">Your Rank</p>
-                <p className="mt-2 text-3xl font-extrabold">{currentUserEntry?.ranking ?? '-'}</p>
+                <p className="mt-2 text-3xl font-bold">{currentUserEntry?.ranking ?? '-'}</p>
               </div>
               <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
                 <p className="text-xs uppercase tracking-widest text-white/60">Solved</p>
-                <p className="mt-2 text-3xl font-extrabold">{currentUserEntry?.problems_solved ?? 0}</p>
+                <p className="mt-2 text-3xl font-bold">{currentUserEntry?.problems_solved ?? 0}</p>
               </div>
             </div>
           </div>
@@ -213,18 +213,18 @@ export function Ranking() {
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground">
                     #{user.ranking}
                   </span>
-                  <Medal className={cn('h-5 w-5', index === 0 ? 'text-amber-500' : 'text-muted-foreground')} />
+                  <Medal className={cn('h-5 w-5', index === 0 ? 'text-difficulty-medium' : 'text-muted-foreground')} />
                 </div>
                 <h3 className="mt-6 text-lg font-bold text-foreground">{user.username}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{user.first_name} {user.last_name}</p>
                 <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
                   <div className="rounded-2xl bg-muted px-3 py-2">
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">积分</p>
-                    <p className="mt-1 text-xl font-extrabold text-foreground">{user.points}</p>
+                    <p className="mt-1 text-xl font-bold text-foreground">{user.points}</p>
                   </div>
                   <div className="rounded-2xl bg-muted px-3 py-2">
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">已解决</p>
-                    <p className="mt-1 text-xl font-extrabold text-foreground">{user.problems_solved}</p>
+                    <p className="mt-1 text-xl font-bold text-foreground">{user.problems_solved}</p>
                   </div>
                 </div>
               </div>
@@ -309,16 +309,16 @@ export function Ranking() {
               <div className="mt-4 space-y-3">
                 <div className="rounded-2xl bg-muted px-4 py-3">
                   <p className="text-xs uppercase tracking-widest text-muted-foreground">排名</p>
-                  <p className="mt-1 text-3xl font-extrabold text-foreground">#{currentUserEntry.ranking}</p>
+                  <p className="mt-1 text-3xl font-bold text-foreground">#{currentUserEntry.ranking}</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-2xl bg-muted px-4 py-3">
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">积分</p>
-                    <p className="mt-1 text-xl font-extrabold text-foreground">{currentUserEntry.points}</p>
+                    <p className="mt-1 text-xl font-bold text-foreground">{currentUserEntry.points}</p>
                   </div>
                   <div className="rounded-2xl bg-muted px-4 py-3">
                     <p className="text-xs uppercase tracking-widest text-muted-foreground">已解决</p>
-                    <p className="mt-1 text-xl font-extrabold text-foreground">{currentUserEntry.problems_solved}</p>
+                    <p className="mt-1 text-xl font-bold text-foreground">{currentUserEntry.problems_solved}</p>
                   </div>
                 </div>
               </div>

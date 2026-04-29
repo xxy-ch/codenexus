@@ -82,7 +82,12 @@ async fn add_message(
 }
 
 /// Sends a submission to the judge queue
-pub async fn queue_submission(pool: &Pool, message: &SubmissionMessage, stream_name: &str, school_id: i64) -> Result<String> {
+pub async fn queue_submission(
+    pool: &Pool,
+    message: &SubmissionMessage,
+    stream_name: &str,
+    school_id: i64,
+) -> Result<String> {
     let config = QueueConfig::default();
 
     // Ensure stream exists (ignore error if already exists)
@@ -173,7 +178,11 @@ mod tests {
         let json = serde_json::to_string(&message).unwrap();
 
         // Verify contest_id appears in the JSON output
-        assert!(json.contains("\"contest_id\":99"), "contest_id must be in JSON: {}", json);
+        assert!(
+            json.contains("\"contest_id\":99"),
+            "contest_id must be in JSON: {}",
+            json
+        );
 
         let deserialized: SubmissionMessage = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.contest_id, Some(99));
@@ -194,7 +203,11 @@ mod tests {
         };
 
         let json = serde_json::to_string(&message).unwrap();
-        assert!(!json.contains("contest_id"), "contest_id should be omitted when None: {}", json);
+        assert!(
+            !json.contains("contest_id"),
+            "contest_id should be omitted when None: {}",
+            json
+        );
 
         // Deserialization without the field should still work
         let deserialized: SubmissionMessage = serde_json::from_str(&json).unwrap();

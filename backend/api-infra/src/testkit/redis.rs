@@ -22,7 +22,7 @@ impl RedisTestContainer {
     pub async fn connection_url(&self) -> String {
         let port = self
             .container
-            .get_host_port_ipv4(6379)
+            .get_host_port_ipv4(6379_u16.tcp())
             .await
             .expect("Failed to get Redis port");
         format!("redis://127.0.0.1:{port}")

@@ -89,7 +89,7 @@ export function SimilarityScanConfig() {
       </div>
 
       {/* Info */}
-      <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 px-5 py-4 text-sm leading-6 text-blue-200">
+      <div className="rounded-xl border border-primary/20 bg-primary/5 px-5 py-4 text-sm leading-6 text-primary">
         当前系统使用真实相似度接口，未再保留 mock fallback。只有竞赛/作业级别的扫描入口。
       </div>
 
@@ -97,7 +97,7 @@ export function SimilarityScanConfig() {
         <div className="space-y-6">
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Shield className="h-5 w-5 text-blue-400" />
+              <Shield className="h-5 w-5 text-primary" />
               检测设置
             </div>
             <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -196,7 +196,7 @@ export function SimilarityScanConfig() {
         <aside className="space-y-6">
           <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              <SlidersHorizontal className="h-4 w-4 text-violet-400" />
+              <SlidersHorizontal className="h-4 w-4 text-status-re" />
               发起扫描
             </div>
             <div className="mt-4 space-y-4">

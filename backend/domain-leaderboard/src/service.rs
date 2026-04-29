@@ -108,7 +108,7 @@ impl LeaderboardService {
             WITH user_stats AS (
                 SELECT
                     u.id as user_id,
-                    u.username,
+                    COALESCE(u.username, u.display_name, u.email, u.id::text) as username,
                     u.organization_id,
                     u.campus_id,
                     COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
@@ -135,7 +135,7 @@ impl LeaderboardService {
                 LEFT JOIN submissions s ON s.user_id = u.id {time_filter}
                 LEFT JOIN problems p ON p.id = s.problem_id
                 WHERE 1=1 {tenant_filter} {grade_filter}
-                GROUP BY u.id, u.username, u.organization_id, u.campus_id
+                GROUP BY u.id, u.username, u.display_name, u.email, u.organization_id, u.campus_id
                 HAVING COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') >= $1
             )
             SELECT
@@ -182,21 +182,18 @@ impl LeaderboardService {
         "#
         );
 
-        let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query)
-            .bind(min_problems_filter);
+        let mut count_builder =
+            sqlx::query_scalar::<_, i64>(&count_query).bind(min_problems_filter);
         if school_id.is_some() {
             count_builder = count_builder.bind(school_id);
         }
         if grade_id.is_some() {
             count_builder = count_builder.bind(grade_id);
         }
-        let total: i64 = count_builder
-            .fetch_one(&self.pool)
-            .await
-            .map_err(|e| {
-                tracing::error!("Failed to count global leaderboard entries: {}", e);
-                anyhow::anyhow!("Database error: {}", e)
-            })?;
+        let total: i64 = count_builder.fetch_one(&self.pool).await.map_err(|e| {
+            tracing::error!("Failed to count global leaderboard entries: {}", e);
+            anyhow::anyhow!("Database error: {}", e)
+        })?;
 
         // Cache result
         if let Some(pool) = &self.redis_pool {
@@ -230,7 +227,7 @@ impl LeaderboardService {
             WITH user_stats AS (
                 SELECT
                     u.id as user_id,
-                    u.username,
+                    COALESCE(u.username, u.display_name, u.email, u.id::text) as username,
                     u.organization_id,
                     u.campus_id,
                     COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
@@ -257,7 +254,7 @@ impl LeaderboardService {
                 LEFT JOIN submissions s ON s.user_id = u.id
                 LEFT JOIN problems p ON p.id = s.problem_id
                 WHERE u.organization_id = $1
-                GROUP BY u.id, u.username, u.organization_id, u.campus_id
+                GROUP BY u.id, u.username, u.display_name, u.email, u.organization_id, u.campus_id
             )
             SELECT
                 ROW_NUMBER() OVER (ORDER BY score DESC, problems_solved DESC, username ASC) as rank,
@@ -280,10 +277,11 @@ impl LeaderboardService {
         .fetch_all(&self.pool)
         .await?;
 
-        let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE organization_id = $1")
-            .bind(school_id)
-            .fetch_one(&self.pool)
-            .await?;
+        let total: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE organization_id = $1")
+                .bind(school_id)
+                .fetch_one(&self.pool)
+                .await?;
 
         Ok(LeaderboardResponse {
             total,
@@ -316,7 +314,7 @@ impl LeaderboardService {
             WITH user_stats AS (
                 SELECT
                     u.id as user_id,
-                    u.username,
+                    COALESCE(u.username, u.display_name, u.email, u.id::text) as username,
                     u.organization_id,
                     u.campus_id,
                     COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
@@ -343,7 +341,7 @@ impl LeaderboardService {
                 LEFT JOIN submissions s ON s.user_id = u.id
                 LEFT JOIN problems p ON p.id = s.problem_id
                 WHERE u.campus_id = $1 {grade_filter}
-                GROUP BY u.id, u.username, u.organization_id, u.campus_id
+                GROUP BY u.id, u.username, u.display_name, u.email, u.organization_id, u.campus_id
             )
             SELECT
                 ROW_NUMBER() OVER (ORDER BY score DESC, problems_solved DESC, username ASC) as rank,
@@ -406,7 +404,7 @@ impl LeaderboardService {
             WITH user_stats AS (
                 SELECT
                     u.id as user_id,
-                    u.username,
+                    COALESCE(u.username, u.display_name, u.email, u.id::text) as username,
                     u.organization_id,
                     u.campus_id,
                     COUNT(DISTINCT s.problem_id) FILTER (WHERE s.verdict = 'ac') as problems_solved,
@@ -434,7 +432,7 @@ impl LeaderboardService {
                 LEFT JOIN submissions s ON s.user_id = u.id
                 LEFT JOIN problems p ON p.id = s.problem_id
                 WHERE ce.class_id = $1 AND ce.status = 'active'
-                GROUP BY u.id, u.username, u.organization_id, u.campus_id
+                GROUP BY u.id, u.username, u.display_name, u.email, u.organization_id, u.campus_id
             )
             SELECT
                 ROW_NUMBER() OVER (ORDER BY score DESC, problems_solved DESC, username ASC) as rank,
@@ -457,11 +455,12 @@ impl LeaderboardService {
         .fetch_all(&self.pool)
         .await?;
 
-        let total: i64 =
-            sqlx::query_scalar("SELECT COUNT(*) FROM class_enrollments WHERE class_id = $1 AND status = 'active'")
-                .bind(class_id)
-                .fetch_one(&self.pool)
-                .await?;
+        let total: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM class_enrollments WHERE class_id = $1 AND status = 'active'",
+        )
+        .bind(class_id)
+        .fetch_one(&self.pool)
+        .await?;
 
         Ok(LeaderboardResponse {
             total,
@@ -892,9 +891,9 @@ impl LeaderboardService {
                 SELECT
                     ROW_NUMBER() OVER (ORDER BY s.time_ms ASC, s.created_at ASC) as rank,
                     s.user_id,
-                    u.username,
-                    s.time_ms,
-                    s.memory_kb,
+                    COALESCE(u.username, u.display_name, u.email, u.id::text) as username,
+                    s.time_ms::BIGINT as time_ms,
+                    s.memory_kb::BIGINT as memory_kb,
                     s.language,
                     s.created_at as solved_at
                 FROM submissions s
@@ -916,9 +915,9 @@ impl LeaderboardService {
                 SELECT
                     ROW_NUMBER() OVER (ORDER BY s.time_ms ASC, s.created_at ASC) as rank,
                     s.user_id,
-                    u.username,
-                    s.time_ms,
-                    s.memory_kb,
+                    COALESCE(u.username, u.display_name, u.email, u.id::text) as username,
+                    s.time_ms::BIGINT as time_ms,
+                    s.memory_kb::BIGINT as memory_kb,
                     s.language,
                     s.created_at as solved_at
                 FROM submissions s
@@ -936,5 +935,4 @@ impl LeaderboardService {
 
         Ok(entries)
     }
-
 }

@@ -56,10 +56,9 @@ pub async fn request_id_middleware(mut req: Request, next: Next) -> Response {
     );
 
     let mut response = response;
-    response.headers_mut().insert(
-        "x-request-id",
-        request_id.parse().unwrap(),
-    );
+    response
+        .headers_mut()
+        .insert("x-request-id", request_id.parse().unwrap());
     response
 }
 
@@ -86,12 +85,7 @@ mod tests {
     async fn test_generates_uuid_when_no_header() {
         let app = test_app();
         let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/test")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
             .await
             .unwrap();
 
@@ -154,7 +148,12 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
         // If middleware runs correctly, the response header should echo the ID
-        let rid = response.headers().get("x-request-id").unwrap().to_str().unwrap();
+        let rid = response
+            .headers()
+            .get("x-request-id")
+            .unwrap()
+            .to_str()
+            .unwrap();
         assert_eq!(rid, "ext-test-456");
     }
 
@@ -162,12 +161,7 @@ mod tests {
     async fn test_response_header_is_set() {
         let app = test_app();
         let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/test")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
+            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
             .await
             .unwrap();
 

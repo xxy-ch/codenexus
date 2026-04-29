@@ -63,6 +63,7 @@ async fn websocket_handler_inner(
     client_ip: std::net::IpAddr,
 ) {
     let server = state.websocket_server.clone();
+    let db_pool = state.db_pool.clone(); // H-03: needed for subscription authorization
     let client_id = Uuid::new_v4();
     let user_id = claims.sub;
     let school_id = claims.school_id;
@@ -163,21 +164,78 @@ async fn websocket_handler_inner(
                         // Handle topic subscription requests.
                         // All subscriptions are validated against the authenticated user_id.
                         WebSocketMessage::SubmissionUpdate { submission_id, .. } => {
-                            // Only allow subscribing to own submissions
-                            let topic = crate::websocket::server::topics::submission(submission_id);
-                            server.subscribe(client_id, topic).await;
+                            // H-03: Verify submission belongs to this user
+                            let owner_ok = sqlx::query_scalar::<_, uuid::Uuid>(
+                                "SELECT user_id FROM submissions WHERE id = $1",
+                            )
+                            .bind(submission_id)
+                            .fetch_optional(&db_pool)
+                            .await
+                            .ok()
+                            .flatten()
+                            .map(|uid| uid == user_id)
+                            .unwrap_or(false);
+
+                            if owner_ok {
+                                let topic =
+                                    crate::websocket::server::topics::submission(submission_id);
+                                server.subscribe(client_id, topic).await;
+                            } else {
+                                tracing::warn!(
+                                    "WS subscription denied: user {} tried to subscribe to submission {}",
+                                    user_id, submission_id
+                                );
+                            }
                         }
 
                         WebSocketMessage::ContestUpdate { contest_id, .. } => {
-                            // Contest topic subscription allowed for authenticated users
-                            let topic = crate::websocket::server::topics::contest(contest_id);
-                            server.subscribe(client_id, topic).await;
+                            // H-03: Verify contest belongs to user's organization
+                            let org_ok = sqlx::query_scalar::<_, i64>(
+                                "SELECT organization_id FROM contests WHERE id = $1",
+                            )
+                            .bind(contest_id)
+                            .fetch_optional(&db_pool)
+                            .await
+                            .ok()
+                            .flatten()
+                            .map(|org_id| org_id == school_id)
+                            .unwrap_or(false);
+
+                            if org_ok {
+                                let topic = crate::websocket::server::topics::contest(contest_id);
+                                server.subscribe(client_id, topic).await;
+                            } else {
+                                tracing::warn!(
+                                    "WS subscription denied: user {} tried to subscribe to contest {} (org mismatch)",
+                                    user_id, contest_id
+                                );
+                            }
                         }
 
                         WebSocketMessage::ChatMessage { contest_id, .. } => {
-                            // Contest chat topic subscription
-                            let topic = crate::websocket::server::topics::contest_chat(contest_id);
-                            server.subscribe(client_id, topic).await;
+                            // H-03: Verify contest belongs to user's organization
+                            let org_ok = sqlx::query_scalar::<_, i64>(
+                                "SELECT organization_id FROM contests WHERE id = $1",
+                            )
+                            .bind(contest_id)
+                            .fetch_optional(&db_pool)
+                            .await
+                            .ok()
+                            .flatten()
+                            .map(|org_id| org_id == school_id)
+                            .unwrap_or(false);
+
+                            if org_ok {
+                                let topic =
+                                    crate::websocket::server::topics::contest_chat(contest_id);
+                                server.subscribe(client_id, topic).await;
+                            } else {
+                                tracing::warn!(
+                                    "WS chat subscription denied: user {} tried contest {}",
+                                    user_id,
+                                    contest_id
+                                );
+                            }
                         }
 
                         _ => {

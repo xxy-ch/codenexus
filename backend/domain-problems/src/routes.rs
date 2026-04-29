@@ -9,6 +9,7 @@ use api_infra::middleware::auth::AuthExtractor;
 use api_infra::state::AppState;
 use shared::models::role::Role;
 
+use super::access::requests_management_problem_view;
 use super::problem_access::{ensure_problem_mutation_access, load_problem_access};
 
 use super::models::{
@@ -36,6 +37,23 @@ fn is_admin(role: &str) -> bool {
     role.parse::<Role>()
         .map(|r| r == Role::Root)
         .unwrap_or(false)
+}
+
+fn management_list_campus_scope(
+    role: Role,
+    claims: &shared::models::Claims,
+    management_view: bool,
+) -> Result<Option<i64>, StatusCode> {
+    if !management_view {
+        return Ok(None);
+    }
+
+    match role {
+        Role::CampusAdmin | Role::GradeAdmin => {
+            claims.campus_id.map(Some).ok_or(StatusCode::FORBIDDEN)
+        }
+        _ => Ok(None),
+    }
 }
 
 async fn ensure_language_settings(state: &AppState) -> Result<(), StatusCode> {
@@ -182,7 +200,7 @@ pub async fn create_problem(
             updated_at
         "#,
     )
-    .bind(claims.school_id)                // SECURITY: org from JWT, not request body
+    .bind(claims.school_id) // SECURITY: org from JWT, not request body
     .bind(claims.sub)
     .bind(&req.title)
     .bind(&req.description)
@@ -210,18 +228,26 @@ pub async fn list_problems(
     let visibility = query.visibility.clone();
     let is_public = query.is_public.unwrap_or(true);
 
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
+    let management_view = requests_management_problem_view(&query);
+    let campus_scope = management_list_campus_scope(role, &claims, management_view)?;
+
     // SEC-03: Tenant isolation — non-admin sees only public + own-org problems
     let admin = is_admin(&claims.role);
 
     let total = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT COUNT(*)
-        FROM problems
-        WHERE ($1 = '' OR title ILIKE $2 OR description ILIKE $2)
-          AND ($3::TEXT IS NULL OR difficulty = $3)
-          AND ($4::TEXT IS NULL OR visibility = $4)
-          AND ($5::BOOLEAN = false OR visibility = 'public')
-          AND ($6::BOOLEAN OR visibility = 'public' OR organization_id = $7)
+        FROM problems p
+        WHERE ($1 = '' OR p.title ILIKE $2 OR p.description ILIKE $2)
+          AND ($3::TEXT IS NULL OR p.difficulty = $3)
+          AND ($4::TEXT IS NULL OR p.visibility = $4)
+          AND ($5::BOOLEAN = false OR p.visibility = 'public')
+          AND ($6::BOOLEAN OR p.visibility = 'public' OR p.organization_id = $7)
+          AND ($8::BIGINT IS NULL OR p.campus_id = $8)
         "#,
     )
     .bind(&search)
@@ -231,6 +257,7 @@ pub async fn list_problems(
     .bind(is_public)
     .bind(admin)
     .bind(claims.school_id)
+    .bind(campus_scope)
     .fetch_one(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -259,8 +286,9 @@ pub async fn list_problems(
           AND ($4::TEXT IS NULL OR p.visibility = $4)
           AND ($5::BOOLEAN = false OR p.visibility = 'public')
           AND ($6::BOOLEAN OR p.visibility = 'public' OR p.organization_id = $7)
+          AND ($8::BIGINT IS NULL OR p.campus_id = $8)
         ORDER BY p.created_at DESC
-        LIMIT $8 OFFSET $9
+        LIMIT $9 OFFSET $10
         "#,
     )
     .bind(&search)
@@ -270,6 +298,7 @@ pub async fn list_problems(
     .bind(is_public)
     .bind(admin)
     .bind(claims.school_id)
+    .bind(campus_scope)
     .bind(limit)
     .bind(offset)
     .fetch_all(&state.db_pool)
@@ -291,7 +320,10 @@ pub async fn get_problem(
 ) -> Result<Json<ProblemDetail>, StatusCode> {
     // SEC-03: Use access module for unified visibility check
     let access = load_problem_access(&state, id).await?;
-    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     if !super::access::can_read_problem(role, &claims, &access) {
         return Err(StatusCode::FORBIDDEN);
     }
@@ -460,7 +492,10 @@ pub async fn get_problem_statistics(
 ) -> Result<Json<ProblemStatistics>, StatusCode> {
     // SEC-03: Use access module for unified visibility check
     let access = load_problem_access(&state, id).await?;
-    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     if !super::access::can_read_problem(role, &claims, &access) {
         return Err(StatusCode::FORBIDDEN);
     }
@@ -504,4 +539,66 @@ pub async fn get_problem_statistics(
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok(Json(stats))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use uuid::Uuid;
+
+    fn claims(role: &str, school_id: i64, campus_id: Option<i64>) -> shared::models::Claims {
+        shared::models::Claims {
+            sub: Uuid::from_u128(1),
+            email: "test@example.com".to_string(),
+            role: role.to_string(),
+            school_id,
+            campus_id,
+            grade_id: None,
+            iat: 0,
+            exp: 1,
+            jti: Uuid::from_u128(2),
+        }
+    }
+
+    #[test]
+    fn management_list_campus_scope_applies_only_to_campus_admins() {
+        let root = claims("root", 7, None);
+        let teacher = claims("teacher", 7, None);
+        let campus_admin = claims("campusadmin", 7, Some(12));
+        let grade_admin = claims("gradeadmin", 7, Some(34));
+
+        assert_eq!(
+            management_list_campus_scope(Role::Root, &root, true).unwrap(),
+            None
+        );
+        assert_eq!(
+            management_list_campus_scope(Role::Teacher, &teacher, true).unwrap(),
+            None
+        );
+        assert_eq!(
+            management_list_campus_scope(Role::CampusAdmin, &campus_admin, true).unwrap(),
+            Some(12)
+        );
+        assert_eq!(
+            management_list_campus_scope(Role::GradeAdmin, &grade_admin, true).unwrap(),
+            Some(34)
+        );
+    }
+
+    #[test]
+    fn management_list_campus_scope_is_fail_closed_when_missing_campus() {
+        let campus_admin = claims("campusadmin", 7, None);
+        let err = management_list_campus_scope(Role::CampusAdmin, &campus_admin, true)
+            .expect_err("missing campus_id must be rejected");
+        assert_eq!(err, StatusCode::FORBIDDEN);
+    }
+
+    #[test]
+    fn management_list_campus_scope_does_not_affect_public_views() {
+        let campus_admin = claims("campusadmin", 7, Some(12));
+        assert_eq!(
+            management_list_campus_scope(Role::CampusAdmin, &campus_admin, false).unwrap(),
+            None
+        );
+    }
 }

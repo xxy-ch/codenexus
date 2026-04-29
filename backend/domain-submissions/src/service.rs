@@ -52,12 +52,38 @@ impl SubmissionService {
             return Err(anyhow::anyhow!("Problem not found"));
         }
 
+        // Validate contest_id if provided: contest must belong to same org and user must be an active participant
+        if let Some(contest_id) = req.contest_id {
+            let contest_valid = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(
+                    SELECT 1 FROM contest_participants cp
+                    JOIN contests c ON c.id = cp.contest_id
+                    WHERE cp.contest_id = $1
+                      AND cp.user_id = $2
+                      AND c.organization_id = $3
+                      AND c.start_time <= NOW()
+                      AND c.end_time >= NOW()
+                )",
+            )
+            .bind(contest_id)
+            .bind(user_id)
+            .bind(school_id)
+            .fetch_one(&self.pool)
+            .await?;
+
+            if !contest_valid {
+                return Err(anyhow::anyhow!(
+                    "Contest not found, not active, or you are not a participant"
+                ));
+            }
+        }
+
         // Create submission
         let submission = sqlx::query_as::<_, Submission>(
             r#"
             INSERT INTO submissions (organization_id, user_id, problem_id, code, language, status)
             VALUES (
-                COALESCE((SELECT organization_id FROM users WHERE id = $1), 1),
+                $5,
                 $1,
                 $2,
                 $3,
@@ -71,7 +97,7 @@ impl SubmissionService {
                 code,
                 language,
                 status,
-                NULL::INTEGER as score,
+                score,
                 time_ms as runtime_ms,
                 memory_kb,
                 created_at,
@@ -82,6 +108,7 @@ impl SubmissionService {
         .bind(req.problem_id)
         .bind(&req.code)
         .bind(normalized_language)
+        .bind(school_id)
         .fetch_one(&self.pool)
         .await?;
 
@@ -165,7 +192,7 @@ impl SubmissionService {
                     END,
                     s.status
                 ) as status,
-                NULL::INTEGER as score,
+                s.score,
                 s.time_ms as runtime_ms,
                 s.memory_kb,
                 s.created_at,
@@ -281,7 +308,7 @@ impl SubmissionService {
                     END,
                     status
                 ) as status,
-                NULL::INTEGER as score,
+                score,
                 time_ms as runtime_ms,
                 memory_kb,
                 created_at,
@@ -461,19 +488,37 @@ impl SubmissionService {
                             Ok(active) => active,
                             Err(err) => {
                                 tracing::warn!(
-                                    "Contest status check failed for contest_id={}: {}. Falling back to normal queue",
+                                    "Contest status check failed for contest_id={}: {}. Rejecting submission",
                                     cid, err
                                 );
-                                false
+                                sqlx::query(
+                                    "UPDATE submissions SET status = 'pending', updated_at = NOW() WHERE id = $1",
+                                )
+                                .bind(submission_id)
+                                .execute(&self.pool)
+                                .await?;
+                                return Err(anyhow::anyhow!(
+                                    "Contest {} validation failed: {}",
+                                    cid,
+                                    err
+                                ));
                             }
                         };
-                        if contest_active {
-                            "submissions:contest"
-                        } else {
-                            "submissions"
+
+                        match resolve_queue_stream_name(Some(cid), contest_active) {
+                            Ok(stream) => stream,
+                            Err(err) => {
+                                sqlx::query(
+                                    "UPDATE submissions SET status = 'pending', updated_at = NOW() WHERE id = $1",
+                                )
+                                .bind(submission_id)
+                                .execute(&self.pool)
+                                .await?;
+                                return Err(err);
+                            }
                         }
                     }
-                    None => "submissions",
+                    None => resolve_queue_stream_name(None, true)?,
                 };
 
                 match queue::queue_submission(redis_pool, &message, stream_name, school_id).await {
@@ -497,10 +542,26 @@ impl SubmissionService {
                     }
                 }
             } else {
-                tracing::warn!("Problem {} not found, skipping queue", problem_id);
+                sqlx::query(
+                    "UPDATE submissions SET status = 'pending', updated_at = NOW() WHERE id = $1",
+                )
+                .bind(submission_id)
+                .execute(&self.pool)
+                .await?;
+                return Err(anyhow::anyhow!(
+                    "Problem {} was not found while queueing submission {}",
+                    problem_id,
+                    submission_id
+                ));
             }
         } else {
-            tracing::warn!("Redis not configured, submission not queued");
+            // In test / no-Redis mode we keep the submission as queued and return success.
+            // The caller can still inspect or update the row synchronously.
+            tracing::debug!(
+                "Redis is not configured; leaving submission {} in queued state",
+                submission_id
+            );
+            return Ok(());
         }
 
         Ok(())
@@ -525,6 +586,7 @@ impl SubmissionService {
             "accepted"
                 | "wrong_answer"
                 | "runtime_error"
+                | "compile_error"
                 | "compilation_error"
                 | "time_limit_exceeded"
                 | "memory_limit_exceeded"
@@ -532,6 +594,21 @@ impl SubmissionService {
                 | "judged"
                 | "failed"
         )
+    }
+
+    /// Normalize judge-worker result status into the status persisted on submissions.
+    pub fn normalize_judge_status(status: &str) -> &str {
+        match status {
+            "accepted"
+            | "wrong_answer"
+            | "runtime_error"
+            | "time_limit_exceeded"
+            | "memory_limit_exceeded"
+            | "compile_error"
+            | "compilation_error" => "judged",
+            "failed" => "failed",
+            _ => status,
+        }
     }
 
     /// Update submission with detailed judge results
@@ -545,25 +622,12 @@ impl SubmissionService {
     ) -> Result<()> {
         sqlx::query(
             "UPDATE submissions
-             SET status = $1, verdict = $2, time_ms = $3, memory_kb = $4, updated_at = NOW()
-             WHERE id = $5",
+             SET status = $1, verdict = $2, score = $3, time_ms = $4, memory_kb = $5, updated_at = NOW()
+             WHERE id = $6",
         )
-        .bind(
-            if status == "accepted"
-                || status == "wrong_answer"
-                || status == "runtime_error"
-                || status == "time_limit_exceeded"
-                || status == "memory_limit_exceeded"
-                || status == "compile_error"
-            {
-                "judged"
-            } else if status == "failed" {
-                "failed"
-            } else {
-                status
-            },
-        )
+        .bind(Self::normalize_judge_status(status))
         .bind(map_verdict(status))
+        .bind(score)
         .bind(runtime_ms)
         .bind(memory_kb)
         .bind(submission_id)
@@ -621,6 +685,20 @@ impl SubmissionService {
     }
 }
 
+fn resolve_queue_stream_name(
+    contest_id: Option<i64>,
+    contest_active: bool,
+) -> Result<&'static str> {
+    match contest_id {
+        Some(_cid) if contest_active => Ok("submissions:contest"),
+        Some(cid) => Err(anyhow::anyhow!(
+            "Contest {} is not active or the user is not a participant",
+            cid
+        )),
+        None => Ok("submissions"),
+    }
+}
+
 fn map_verdict(status: &str) -> Option<&'static str> {
     match status {
         "accepted" => Some("ac"),
@@ -628,7 +706,7 @@ fn map_verdict(status: &str) -> Option<&'static str> {
         "runtime_error" => Some("rte"),
         "time_limit_exceeded" => Some("tle"),
         "memory_limit_exceeded" => Some("mle"),
-        "compile_error" => Some("ce"),
+        "compile_error" | "compilation_error" => Some("ce"),
         "system_error" | "failed" => Some("ie"),
         _ => None,
     }
@@ -640,5 +718,31 @@ fn normalize_submission_language(language: &str) -> Option<&'static str> {
         "c" => Some("c"),
         "cpp" | "c++" => Some("cpp"),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resolve_queue_stream_name_allows_plain_submissions() {
+        assert_eq!(
+            resolve_queue_stream_name(None, true).unwrap(),
+            "submissions"
+        );
+    }
+
+    #[test]
+    fn resolve_queue_stream_name_allows_active_contests() {
+        assert_eq!(
+            resolve_queue_stream_name(Some(42), true).unwrap(),
+            "submissions:contest"
+        );
+    }
+
+    #[test]
+    fn resolve_queue_stream_name_rejects_inactive_or_inaccessible_contests() {
+        assert!(resolve_queue_stream_name(Some(42), false).is_err());
     }
 }

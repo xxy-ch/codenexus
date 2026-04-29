@@ -252,7 +252,11 @@ UNLOCK TABLES;
         let dump = parse_dump(dump_content);
 
         // Three tables parsed
-        assert_eq!(dump.tables.len(), 3, "must find 3 tables: user_info, problems, submissions");
+        assert_eq!(
+            dump.tables.len(),
+            3,
+            "must find 3 tables: user_info, problems, submissions"
+        );
         assert!(dump.tables.contains_key("user_info"));
         assert!(dump.tables.contains_key("problems"));
         assert!(dump.tables.contains_key("submissions"));

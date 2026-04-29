@@ -31,7 +31,7 @@ export function NotFound() {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link to="/dashboard">
-            <Button variant="primary" className="inline-flex items-center gap-2 rounded-lg">
+            <Button variant="default" className="inline-flex items-center gap-2 rounded-lg">
               <Home className="h-4 w-4" />
               返回首页
             </Button>

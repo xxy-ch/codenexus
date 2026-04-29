@@ -10,21 +10,27 @@ use uuid::Uuid;
 async fn setup_fixture() -> TestFixture {
     let fixture = TestFixture::new().await;
     let migrator = sqlx::migrate!("../api/migrations");
-    migrator.run(&fixture.db_pool).await.expect("Failed to run migrations");
+    migrator
+        .run(&fixture.db_pool)
+        .await
+        .expect("Failed to run migrations");
     fixture
 }
 
 /// Seed org, user, and a problem with a specific title.
 /// Returns (org_id, user_id, problem_id).
-async fn seed_org_with_problem(pool: &PgPool, org_name: &str, problem_title: &str) -> (i64, Uuid, i64) {
-    let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
-    )
-    .bind(org_name)
-    .bind(format!("{}", org_name.to_lowercase().replace(' ', "-")))
-    .fetch_one(pool)
-    .await
-    .unwrap();
+async fn seed_org_with_problem(
+    pool: &PgPool,
+    org_name: &str,
+    problem_title: &str,
+) -> (i64, Uuid, i64) {
+    let org_id: i64 =
+        sqlx::query_scalar("INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id")
+            .bind(org_name)
+            .bind(org_name.to_lowercase().replace(' ', "-"))
+            .fetch_one(pool)
+            .await
+            .unwrap();
 
     let user_id: Uuid = sqlx::query_scalar(
         "INSERT INTO users (email, password_hash, organization_id) VALUES ($1, 'hash', $2) RETURNING id",
@@ -118,5 +124,9 @@ async fn test_search_empty_query_returns_empty() {
         .unwrap();
     // The search should succeed (not error), even if results are returned.
     // Verify we got a valid response object back (not an error).
-    assert_eq!(response.results.len(), 0, "Empty DB should return zero results");
+    assert_eq!(
+        response.results.len(),
+        0,
+        "Empty DB should return zero results"
+    );
 }

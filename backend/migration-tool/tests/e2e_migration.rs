@@ -148,10 +148,7 @@ async fn run_full_migration(pool: &PgPool) -> Result<(i64, Option<i64>)> {
     let (org_id, campus_id) = create_default_org(pool).await;
 
     let dump = parser::parse_dump(realistic_dump_sql());
-    assert!(
-        !dump.tables.is_empty(),
-        "Parsed dump must contain tables"
-    );
+    assert!(!dump.tables.is_empty(), "Parsed dump must contain tables");
 
     let mut migrator = Migrator::new(
         pool.clone(),
@@ -272,7 +269,11 @@ async fn test_full_e2e_migration() {
             .fetch_one(&pool)
             .await
             .unwrap();
-    assert_eq!(problem_count, 1, "Expected 1 problem, got {}", problem_count);
+    assert_eq!(
+        problem_count, 1,
+        "Expected 1 problem, got {}",
+        problem_count
+    );
 
     let problem: (String, String, i32, i32) = sqlx::query_as(
         "SELECT title, visibility, time_limit_ms, memory_limit_kb FROM problems WHERE id = 1",
@@ -298,12 +299,11 @@ async fn test_full_e2e_migration() {
         submission_count
     );
 
-    let submission: (String, String, String, Option<String>) = sqlx::query_as(
-        "SELECT language, status, code, verdict FROM submissions WHERE id = 1",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("submission 1 must exist");
+    let submission: (String, String, String, Option<String>) =
+        sqlx::query_as("SELECT language, status, code, verdict FROM submissions WHERE id = 1")
+            .fetch_one(&pool)
+            .await
+            .expect("submission 1 must exist");
     assert_eq!(submission.0, "cpp");
     assert_eq!(submission.1, "judged"); // Accepted => judged
     assert_eq!(submission.3, Some("ac".to_string())); // Accepted => ac verdict
@@ -315,14 +315,16 @@ async fn test_full_e2e_migration() {
             .fetch_one(&pool)
             .await
             .unwrap();
-    assert_eq!(contest_count, 1, "Expected 1 contest, got {}", contest_count);
+    assert_eq!(
+        contest_count, 1,
+        "Expected 1 contest, got {}",
+        contest_count
+    );
 
-    let contest: (String,) = sqlx::query_as(
-        "SELECT name FROM contests WHERE id = 1",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("contest 1 must exist");
+    let contest: (String,) = sqlx::query_as("SELECT name FROM contests WHERE id = 1")
+        .fetch_one(&pool)
+        .await
+        .expect("contest 1 must exist");
     assert_eq!(contest.0, "Test Contest");
 
     // ----- Verify contest_problems -----
@@ -346,16 +348,22 @@ async fn test_full_e2e_migration() {
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(article_count, 1, "Expected 1 article, got {}", article_count);
+    assert_eq!(
+        article_count, 1,
+        "Expected 1 article, got {}",
+        article_count
+    );
 
-    let article: (String, bool, String) = sqlx::query_as(
-        "SELECT title, is_published, content FROM articles WHERE id = 1",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("article 1 must exist");
+    let article: (String, bool, String) =
+        sqlx::query_as("SELECT title, is_published, content FROM articles WHERE id = 1")
+            .fetch_one(&pool)
+            .await
+            .expect("article 1 must exist");
     assert_eq!(article.0, "My First Blog");
-    assert!(article.1, "article must be published (not hidden, not draft)");
+    assert!(
+        article.1,
+        "article must be published (not hidden, not draft)"
+    );
 
     // ----- Verify blog comments -----
     let comment_count: i64 =
@@ -386,11 +394,10 @@ async fn test_full_e2e_migration() {
     assert_eq!(conv_count, 1, "Expected 1 conversation (alice <-> bob)");
 
     // ----- Verify migration_mappings -----
-    let mapping_count: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM migration_mappings")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let mapping_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM migration_mappings")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     // users: alice, bob, system user = 3
     // problem: 1 = 1
     // submission: 1 = 1
@@ -484,17 +491,15 @@ async fn test_double_run_idempotent() {
             .await
             .unwrap();
 
-    let articles_after_run1: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM articles")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let articles_after_run1: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM articles")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
 
-    let mappings_after_run1: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM migration_mappings")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let mappings_after_run1: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM migration_mappings")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
 
     // Capture mapping snapshot (old_id -> new_id for each entity type)
     let mapping_snapshot_run1: Vec<(String, String, String)> = sqlx::query_as(
@@ -560,22 +565,20 @@ async fn test_double_run_idempotent() {
         "Contest count must not change after second run"
     );
 
-    let articles_after_run2: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM articles")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let articles_after_run2: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM articles")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(
         articles_after_run2, articles_after_run1,
         "Article count must not change after second run"
     );
 
     // --- Verify: mapping count unchanged ---
-    let mappings_after_run2: i64 =
-        sqlx::query_scalar("SELECT COUNT(*) FROM migration_mappings")
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+    let mappings_after_run2: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM migration_mappings")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
     assert_eq!(
         mappings_after_run2, mappings_after_run1,
         "Migration mapping count must not change after second run"
@@ -600,7 +603,10 @@ async fn test_double_run_idempotent() {
             .fetch_one(&pool)
             .await
             .unwrap();
-    assert_eq!(cp_count, 1, "No duplicate contest participants after second run");
+    assert_eq!(
+        cp_count, 1,
+        "No duplicate contest participants after second run"
+    );
 
     // --- Verify no duplicate contest problems ---
     let cprob_count: i64 =
@@ -608,7 +614,10 @@ async fn test_double_run_idempotent() {
             .fetch_one(&pool)
             .await
             .unwrap();
-    assert_eq!(cprob_count, 1, "No duplicate contest problems after second run");
+    assert_eq!(
+        cprob_count, 1,
+        "No duplicate contest problems after second run"
+    );
 
     // --- Verify no duplicate likes ---
     let like_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM likes")
@@ -637,7 +646,10 @@ async fn test_double_run_idempotent() {
             .fetch_one(&pool)
             .await
             .unwrap();
-    assert_eq!(comment_count, 1, "No duplicate article comments after second run");
+    assert_eq!(
+        comment_count, 1,
+        "No duplicate article comments after second run"
+    );
 
     // Cleanup
     cleanup_migration_data(&pool).await;

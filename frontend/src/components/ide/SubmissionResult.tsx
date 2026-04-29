@@ -37,52 +37,52 @@ const STATUS_CONFIG = {
   },
   running: {
     label: '评测中',
-    bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-    textColor: 'text-blue-700 dark:text-blue-400',
+    bgColor: 'bg-status-pending/10',
+    textColor: 'text-status-pending',
     icon: Loader2,
-    iconColor: 'text-blue-500',
+    iconColor: 'text-status-pending',
   },
   accepted: {
     label: '通过',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-400',
+    bgColor: 'bg-status-accepted/10',
+    textColor: 'text-status-accepted',
     icon: CheckCircle,
-    iconColor: 'text-green-500',
+    iconColor: 'text-status-accepted',
   },
   wrong_answer: {
     label: '答案错误',
-    bgColor: 'bg-red-100 dark:bg-red-900/30',
-    textColor: 'text-red-700 dark:text-red-400',
+    bgColor: 'bg-destructive/10',
+    textColor: 'text-destructive',
     icon: XCircle,
-    iconColor: 'text-red-500',
+    iconColor: 'text-destructive',
   },
   time_limit_exceeded: {
     label: '超时',
-    bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-    textColor: 'text-yellow-700 dark:text-yellow-400',
+    bgColor: 'bg-status-tle/10',
+    textColor: 'text-status-tle',
     icon: Timer,
-    iconColor: 'text-yellow-500',
+    iconColor: 'text-status-tle',
   },
   memory_limit_exceeded: {
     label: '内存超限',
-    bgColor: 'bg-orange-100 dark:bg-orange-900/30',
-    textColor: 'text-orange-700 dark:text-orange-400',
+    bgColor: 'bg-status-tle/10',
+    textColor: 'text-status-tle',
     icon: Cpu,
-    iconColor: 'text-orange-500',
+    iconColor: 'text-status-tle',
   },
   compilation_error: {
     label: '编译错误',
-    bgColor: 'bg-purple-100 dark:bg-purple-900/30',
-    textColor: 'text-purple-700 dark:text-purple-400',
+    bgColor: 'bg-status-re/10',
+    textColor: 'text-status-re',
     icon: AlertCircle,
-    iconColor: 'text-purple-500',
+    iconColor: 'text-status-re',
   },
   runtime_error: {
     label: '运行错误',
-    bgColor: 'bg-pink-100 dark:bg-pink-900/30',
-    textColor: 'text-pink-700 dark:text-pink-400',
+    bgColor: 'bg-destructive/10',
+    textColor: 'text-destructive',
     icon: AlertCircle,
-    iconColor: 'text-pink-500',
+    iconColor: 'text-destructive',
   },
 }
 
@@ -125,7 +125,7 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
             <StatusIcon className={cn('w-6 h-6', currentConfig.iconColor)} />
           )}
           <div>
-            <h3 className={cn('font-semibold', currentStatus === 'accepted' ? 'text-green-600 dark:text-green-400' : '')}>
+            <h3 className={cn('font-semibold', currentStatus === 'accepted' ? 'text-status-accepted' : '')}>
               {currentConfig.label}
             </h3>
             {currentStatus === 'running' && (
@@ -196,16 +196,16 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
                       className={cn(
                         'bg-card rounded-lg p-3 border',
                         testCase.status === 'passed'
-                          ? 'border-green-200 dark:border-green-800'
-                          : 'border-red-200 dark:border-red-800'
+                          ? 'border-status-accepted/20'
+                          : 'border-destructive/20'
                       )}
                     >
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-2">
                           {testCase.status === 'passed' ? (
-                            <CheckCircle className="w-5 h-5 text-green-500" />
+                            <CheckCircle className="w-5 h-5 text-status-accepted" />
                           ) : (
-                            <XCircle className="w-5 h-5 text-red-500" />
+                            <XCircle className="w-5 h-5 text-destructive" />
                           )}
                           <span className="text-sm font-medium">
                             测试用例 {testCase.id}
@@ -219,7 +219,7 @@ export function SubmissionResult({ submission, onClose }: SubmissionResultProps)
                       </div>
 
                       {testCase.status === 'failed' && testCase.error && (
-                        <div className="mt-2 text-xs text-red-600 dark:text-red-400">
+                        <div className="mt-2 text-xs text-destructive">
                           {testCase.error}
                         </div>
                       )}

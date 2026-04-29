@@ -27,24 +27,21 @@ const STATUS_CONFIG = {
   upcoming: {
     label: '即将开始',
     bgColor: 'bg-blue-500/10',
-    textColor: 'text-blue-400',
-    borderColor: 'border-blue-500/30',
+    textColor: 'text-blue-600',
     icon: CalendarClock,
     glow: '',
   },
   ongoing: {
     label: '进行中',
-    bgColor: 'bg-[#3ecf8e]/10',
-    textColor: 'text-[#3ecf8e]',
-    borderColor: 'border-[#3ecf8e]/30',
+    bgColor: 'bg-status-accepted/10',
+    textColor: 'text-status-accepted',
     icon: CirclePlay,
-    glow: 'shadow-lg shadow-[#3ecf8e]/10',
+    glow: '',
   },
   completed: {
     label: '已结束',
-    bgColor: 'bg-muted',
-    textColor: 'text-muted-foreground',
-    borderColor: 'border-border',
+    bgColor: 'bg-gray-500/10',
+    textColor: 'text-gray-600',
     icon: CircleCheck,
     glow: '',
   },
@@ -58,13 +55,13 @@ const DIFFICULTY_CONFIG = {
   },
   medium: {
     label: '中等',
-    bgColor: 'bg-amber-500/10',
-    textColor: 'text-amber-500',
+    bgColor: 'bg-difficulty-medium/10',
+    textColor: 'text-difficulty-medium',
   },
   hard: {
     label: '困难',
-    bgColor: 'bg-red-500/10',
-    textColor: 'text-red-500',
+    bgColor: 'bg-difficulty-hard/10',
+    textColor: 'text-difficulty-hard',
   },
 }
 
@@ -165,10 +162,7 @@ export function ContestList() {
         key={contest.id}
         to={`/contests/${contest.id}`}
         className={cn(
-          'block bg-card border border-border rounded-xl overflow-hidden transition-all',
-          isLive
-            ? 'hover:shadow-lg hover:shadow-primary/10 hover:border-primary/40'
-            : 'hover:border-foreground/20 hover:shadow-md'
+          'block bg-card border border-border rounded-xl overflow-hidden shadow-card hover-lift transition-all',
         )}
       >
         {/* Live indicator bar for ongoing contests */}
@@ -197,10 +191,9 @@ export function ContestList() {
               </p>
             </div>
             <span className={cn(
-              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border',
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold',
               statusConfig.bgColor,
               statusConfig.textColor,
-              statusConfig.borderColor
             )}>
               <StatusIcon className="w-3.5 h-3.5" />
               {statusConfig.label}
@@ -238,10 +231,10 @@ export function ContestList() {
           {/* Countdown or Timer — bold, urgent */}
           {(countdown || remaining) && (
             <div className={cn(
-              'px-4 py-2.5 rounded-lg border text-sm font-bold tabular-nums',
+              'px-4 py-2.5 rounded-lg border text-sm font-bold font-mono',
               contest.status === 'upcoming'
-                ? 'bg-blue-500/5 border-blue-500/20 text-blue-400'
-                : 'bg-[#3ecf8e]/5 border-[#3ecf8e]/20 text-[#3ecf8e]'
+                ? 'bg-status-pending/5 border-status-pending/20 text-status-pending'
+                : 'bg-status-accepted/5 border-status-accepted/20 text-status-accepted'
             )}>
               {isLive && <Zap className="w-4 h-4 inline mr-1.5" />}
               {countdown && `距开始还有 ${countdown}`}
@@ -291,8 +284,8 @@ export function ContestList() {
   return (
     <div className="space-y-6">
       {/* Hero Header — ClickHouse high-energy */}
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-[#3ecf8e]/5" />
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card shadow-prominent">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-status-accepted/5" />
         <div className="relative px-6 py-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
@@ -301,10 +294,10 @@ export function ContestList() {
                   <Trophy className="w-5 h-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-black tracking-tight text-foreground">
+                  <h1 className="text-3xl font-bold tracking-tight text-foreground">
                     CodeNexus 竞赛
                   </h1>
-                  <p className="text-sm font-normal text-muted-foreground">
+                  <p className="text-sm font-normal text-secondary">
                     参加编程竞赛，与全站选手同台竞技
                   </p>
                 </div>
@@ -314,12 +307,12 @@ export function ContestList() {
             {/* Live stats in hero */}
             <div className="flex items-center gap-3">
               {data.contests.filter(c => c.status === 'ongoing').length > 0 && (
-                <div className="flex items-center gap-2 rounded-full bg-[#3ecf8e]/10 border border-[#3ecf8e]/20 px-4 py-2">
+                <div className="flex items-center gap-2 rounded-full bg-status-accepted/10 border border-status-accepted/20 px-4 py-2">
                   <span className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3ecf8e] opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#3ecf8e]"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-accepted opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-status-accepted"></span>
                   </span>
-                  <span className="text-sm font-bold text-[#3ecf8e]">
+                  <span className="text-sm font-bold text-status-accepted">
                     {data.contests.filter(c => c.status === 'ongoing').length} 场进行中
                   </span>
                 </div>
@@ -384,7 +377,7 @@ export function ContestList() {
                 className={cn(
                   'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
                   statusFilter === 'upcoming'
-                    ? 'bg-blue-500 text-white'
+                    ? 'bg-status-pending text-white'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 )}
               >
@@ -431,13 +424,13 @@ export function ContestList() {
           {groupedContests.ongoing.length > 0 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="rounded-lg bg-[#3ecf8e]/10 p-1.5">
-                  <CirclePlay className="w-5 h-5 text-[#3ecf8e]" />
+                <div className="rounded-lg bg-status-accepted/10 p-1.5">
+                  <CirclePlay className="w-5 h-5 text-status-accepted" />
                 </div>
                 <h2 className="text-lg font-bold text-foreground uppercase tracking-wide">
                   进行中
                 </h2>
-                <span className="rounded-full bg-[#3ecf8e]/10 px-2.5 py-1 text-xs font-bold text-[#3ecf8e]">
+                <span className="rounded-full bg-status-accepted/10 px-2.5 py-1 text-xs font-bold text-status-accepted">
                   {groupedContests.ongoing.length}
                 </span>
               </div>
@@ -452,12 +445,12 @@ export function ContestList() {
             <div>
               <div className="flex items-center gap-3 mb-4">
                 <div className="rounded-lg bg-blue-500/10 p-1.5">
-                  <CalendarClock className="w-5 h-5 text-blue-400" />
+                  <CalendarClock className="w-5 h-5 text-blue-600" />
                 </div>
                 <h2 className="text-lg font-bold text-foreground uppercase tracking-wide">
                   即将开始
                 </h2>
-                <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-400">
+                <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-bold text-blue-600">
                   {groupedContests.upcoming.length}
                 </span>
               </div>

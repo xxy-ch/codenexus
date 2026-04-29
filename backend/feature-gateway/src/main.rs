@@ -11,8 +11,8 @@ use sqlx::postgres::PgPoolOptions;
 use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use feature_gateway::service::FeatureGatewayService;
 use feature_gateway::routes::gateway_router;
+use feature_gateway::service::FeatureGatewayService;
 use feature_gateway::AppState;
 
 #[tokio::main]
@@ -29,18 +29,14 @@ async fn main() -> Result<()> {
     info!("Feature gateway starting...");
 
     // Load configuration
-    let database_url =
-        env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
-    let bind_address = env::var("GATEWAY_BIND_ADDRESS")
-        .unwrap_or_else(|_| "0.0.0.0:3001".to_string());
+    let bind_address =
+        env::var("GATEWAY_BIND_ADDRESS").unwrap_or_else(|_| "0.0.0.0:3001".to_string());
 
-    // Ensure WORKER_SECRET is set for security
+    // SECURITY: WORKER_SECRET must be explicitly set — refuse to start with default
     let _worker_secret = env::var("WORKER_SECRET")
-        .unwrap_or_else(|_| {
-            tracing::warn!("WORKER_SECRET not set, using insecure default — set this in production");
-            "default_worker_secret_change_me".to_string()
-        });
+        .expect("WORKER_SECRET must be set. Refusing to start with insecure default.");
 
     // Log feature gateway enabled state
     let gateway_enabled = env::var("FEATURE_GATEWAY_ENABLED")
@@ -63,10 +59,9 @@ async fn main() -> Result<()> {
     };
 
     // Build router with auth middleware on all routes
-    let app = gateway_router(state)
-        .layer(axum::middleware::from_fn(
-            feature_gateway::auth::require_worker_secret,
-        ));
+    let app = gateway_router(state).layer(axum::middleware::from_fn(
+        feature_gateway::auth::require_worker_secret,
+    ));
 
     // Bind and serve
     let listener = tokio::net::TcpListener::bind(&bind_address).await?;

@@ -83,7 +83,10 @@ mod tests {
         };
 
         let serialized = serde_json::to_string(&msg).unwrap();
-        assert!(serialized.contains("\"contest_id\":99"), "contest_id must appear in JSON");
+        assert!(
+            serialized.contains("\"contest_id\":99"),
+            "contest_id must appear in JSON"
+        );
 
         let deserialized: SubmissionMessage = serde_json::from_str(&serialized).unwrap();
         assert_eq!(deserialized.contest_id, Some(99));

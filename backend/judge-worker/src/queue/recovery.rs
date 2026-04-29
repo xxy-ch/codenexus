@@ -139,9 +139,7 @@ pub async fn recover_pending_submissions(
                     continue;
                 }
                 let message_id = match &parts[0] {
-                    redis::Value::BulkString(bytes) => {
-                        String::from_utf8_lossy(bytes).to_string()
-                    }
+                    redis::Value::BulkString(bytes) => String::from_utf8_lossy(bytes).to_string(),
                     _ => continue,
                 };
 
@@ -150,10 +148,8 @@ pub async fn recover_pending_submissions(
                     let mut data_json: Option<String> = None;
                     let mut i = 0;
                     while i + 1 < field_pairs.len() {
-                        if let (
-                            redis::Value::BulkString(key),
-                            redis::Value::BulkString(val),
-                        ) = (&field_pairs[i], &field_pairs[i + 1])
+                        if let (redis::Value::BulkString(key), redis::Value::BulkString(val)) =
+                            (&field_pairs[i], &field_pairs[i + 1])
                         {
                             if key == b"data" {
                                 data_json = Some(String::from_utf8_lossy(val).to_string());
@@ -174,9 +170,7 @@ pub async fn recover_pending_submissions(
                                 ) = (&field_pairs[j], &field_pairs[j + 1])
                                 {
                                     if key == b"school_id" {
-                                        sid = String::from_utf8_lossy(val)
-                                            .parse::<i64>()
-                                            .ok();
+                                        sid = String::from_utf8_lossy(val).parse::<i64>().ok();
                                     }
                                 }
                                 j += 2;
@@ -198,7 +192,10 @@ pub async fn recover_pending_submissions(
         }
     }
 
-    info!("Recovered {} submissions for re-processing", recovered.len());
+    info!(
+        "Recovered {} submissions for re-processing",
+        recovered.len()
+    );
     Ok(recovered)
 }
 
@@ -319,7 +316,11 @@ mod tests {
             recover_pending_submissions(&mut conn, stream, group, "recovery_worker", 0).await;
         assert!(result.is_ok());
         let recovered = result.unwrap();
-        assert_eq!(recovered.len(), 1, "Should recover exactly 1 pending message");
+        assert_eq!(
+            recovered.len(),
+            1,
+            "Should recover exactly 1 pending message"
+        );
         assert_eq!(recovered[0].1.submission_id, 42);
     }
 
@@ -334,8 +335,7 @@ mod tests {
 
         // Seed a pending message with correct SubmissionMessage field names
         let test_data = r#"{"submission_id":99,"problem_id":1,"language":"cpp","source_code":"int main(){}","user_id":"00000000-0000-0000-0000-000000000001","time_limit_ms":1000,"memory_limit_mb":256}"#;
-        let _ =
-            seed_pending_message(&mut conn, stream, group, consumer, test_data).await;
+        let _ = seed_pending_message(&mut conn, stream, group, consumer, test_data).await;
 
         // Use a very high min_idle_ms so the message is NOT claimed
         let result =
@@ -371,15 +371,12 @@ mod tests {
             let mut sid: Option<i64> = None;
             let mut j = 0;
             while j + 1 < field_pairs_with_school_id.len() {
-                if let (
-                    redis::Value::BulkString(key),
-                    redis::Value::BulkString(val),
-                ) = (&field_pairs_with_school_id[j], &field_pairs_with_school_id[j + 1])
-                {
+                if let (redis::Value::BulkString(key), redis::Value::BulkString(val)) = (
+                    &field_pairs_with_school_id[j],
+                    &field_pairs_with_school_id[j + 1],
+                ) {
                     if key == b"school_id" {
-                        sid = String::from_utf8_lossy(val)
-                            .parse::<i64>()
-                            .ok();
+                        sid = String::from_utf8_lossy(val).parse::<i64>().ok();
                     }
                 }
                 j += 2;
@@ -404,15 +401,12 @@ mod tests {
             let mut sid: Option<i64> = None;
             let mut j = 0;
             while j + 1 < field_pairs_no_school_id.len() {
-                if let (
-                    redis::Value::BulkString(key),
-                    redis::Value::BulkString(val),
-                ) = (&field_pairs_no_school_id[j], &field_pairs_no_school_id[j + 1])
-                {
+                if let (redis::Value::BulkString(key), redis::Value::BulkString(val)) = (
+                    &field_pairs_no_school_id[j],
+                    &field_pairs_no_school_id[j + 1],
+                ) {
                     if key == b"school_id" {
-                        sid = String::from_utf8_lossy(val)
-                            .parse::<i64>()
-                            .ok();
+                        sid = String::from_utf8_lossy(val).parse::<i64>().ok();
                     }
                 }
                 j += 2;
@@ -438,15 +432,11 @@ mod tests {
             let mut sid: Option<i64> = None;
             let mut j = 0;
             while j + 1 < field_pairs_malformed.len() {
-                if let (
-                    redis::Value::BulkString(key),
-                    redis::Value::BulkString(val),
-                ) = (&field_pairs_malformed[j], &field_pairs_malformed[j + 1])
+                if let (redis::Value::BulkString(key), redis::Value::BulkString(val)) =
+                    (&field_pairs_malformed[j], &field_pairs_malformed[j + 1])
                 {
                     if key == b"school_id" {
-                        sid = String::from_utf8_lossy(val)
-                            .parse::<i64>()
-                            .ok();
+                        sid = String::from_utf8_lossy(val).parse::<i64>().ok();
                     }
                 }
                 j += 2;
@@ -524,7 +514,8 @@ mod tests {
         let (_msg_id, submission, school_id) = &recovered[0];
         assert_eq!(submission.submission_id, 55);
         assert_eq!(
-            *school_id, Some(42),
+            *school_id,
+            Some(42),
             "Recovery must extract school_id from stream fields for DLQ tenant isolation"
         );
     }

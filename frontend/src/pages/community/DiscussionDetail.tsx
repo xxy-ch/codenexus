@@ -218,7 +218,7 @@ export function DiscussionDetail() {
               {reply.author_username}
             </span>
             {reply.is_solution && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-600">
+              <span className="inline-flex items-center gap-1 rounded-full bg-status-accepted/10 px-2.5 py-0.5 text-xs font-medium text-status-accepted">
                 <CheckCircle className="h-3 w-3" />
                 最佳答案
               </span>
@@ -307,7 +307,7 @@ export function DiscussionDetail() {
               </span>
             )}
             {discussion.discussion.is_solved && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-600">
+              <span className="inline-flex items-center gap-1 rounded-full bg-status-accepted/10 px-3 py-1 text-xs font-medium text-status-accepted">
                 <CheckCircle className="h-3 w-3" />
                 已解决
               </span>
@@ -334,7 +334,7 @@ export function DiscussionDetail() {
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground leading-tight mb-6">
+          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight text-foreground leading-tight mb-6">
             {discussion.discussion.title}
           </h1>
 

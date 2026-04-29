@@ -28,9 +28,15 @@ pub async fn write_to_dlq(
         ("result_json", result_json),
         ("error_reason", error_reason.to_string()),
         ("failed_at", chrono::Utc::now().to_rfc3339()),
-        ("source_stream", source_stream.unwrap_or("submissions").to_string()),
+        (
+            "source_stream",
+            source_stream.unwrap_or("submissions").to_string(),
+        ),
         ("submitted_at", submitted_at.unwrap_or("").to_string()),
-        ("original_message", original_message.unwrap_or("").to_string()),
+        (
+            "original_message",
+            original_message.unwrap_or("").to_string(),
+        ),
     ];
 
     // Include school_id for tenant isolation if available
@@ -196,11 +202,9 @@ mod tests {
         };
 
         let error_reason = "Test case 2: expected 20, got 21";
-        let source_stream = Some("submissions:contest");
-        let submitted_at = Some("2026-04-18T10:00:00Z");
-        let original_message = Some(
-            r#"{"submission_id":99,"problem_id":7,"user_id":"11111111-2222-3333-4444-555555555555","language":"python3","source_code":"x=int(input())\nprint(x+1)","time_limit_ms":2000,"memory_limit_mb":512,"contest_id":3}"#,
-        );
+        let source_stream = "submissions:contest";
+        let submitted_at = "2026-04-18T10:00:00Z";
+        let original_message = r#"{"submission_id":99,"problem_id":7,"user_id":"11111111-2222-3333-4444-555555555555","language":"python3","source_code":"x=int(input())\nprint(x+1)","time_limit_ms":2000,"memory_limit_mb":512,"contest_id":3}"#;
         let school_id: Option<i64> = Some(42);
 
         // Replicate the exact field construction from write_to_dlq
@@ -210,9 +214,9 @@ mod tests {
             ("result_json", result_json),
             ("error_reason", error_reason.to_string()),
             ("failed_at", chrono::Utc::now().to_rfc3339()),
-            ("source_stream", source_stream.unwrap_or("submissions").to_string()),
-            ("submitted_at", submitted_at.unwrap_or("").to_string()),
-            ("original_message", original_message.unwrap_or("").to_string()),
+            ("source_stream", source_stream.to_string()),
+            ("submitted_at", submitted_at.to_string()),
+            ("original_message", original_message.to_string()),
         ];
         if let Some(sid) = school_id {
             fields_vec.push(("school_id", sid.to_string()));
@@ -241,11 +245,7 @@ mod tests {
 
         // Verify each field has a non-empty value
         for (key, value) in &fields {
-            assert!(
-                !value.is_empty(),
-                "Field '{}' must not be empty",
-                key
-            );
+            assert!(!value.is_empty(), "Field '{}' must not be empty", key);
         }
 
         // Verify result_json parses back correctly as JudgeResult
@@ -310,10 +310,12 @@ mod tests {
         fields_vec.push(("school_id", "42".to_string()));
 
         // Verify the original_message field contains valid JSON
-        let orig = fields_vec.iter().find(|(k, _)| *k == "original_message").unwrap();
-        let deserialized: SubmissionMessage = serde_json::from_str(&orig.1).expect(
-            "original_message must be valid JSON deserializable into SubmissionMessage",
-        );
+        let orig = fields_vec
+            .iter()
+            .find(|(k, _)| *k == "original_message")
+            .unwrap();
+        let deserialized: SubmissionMessage = serde_json::from_str(&orig.1)
+            .expect("original_message must be valid JSON deserializable into SubmissionMessage");
 
         // Verify the deserialized message has the correct submission_id
         assert_eq!(
@@ -323,7 +325,8 @@ mod tests {
         assert_eq!(deserialized.problem_id, 7);
         assert_eq!(deserialized.language, "python3");
         assert_eq!(
-            deserialized.contest_id, Some(3),
+            deserialized.contest_id,
+            Some(3),
             "contest_id must survive the round-trip for contest submissions"
         );
 
@@ -343,18 +346,14 @@ mod tests {
     #[test]
     fn dlq_recovery_fields_are_never_empty_when_provided() {
         let school_id: Option<i64> = Some(10);
-        let original_message: Option<&str> = Some(
-            r#"{"submission_id":42,"problem_id":1,"language":"cpp"}"#,
-        );
+        let original_message = r#"{"submission_id":42,"problem_id":1,"language":"cpp"}"#;
 
         // When school_id is provided, it must be included
         assert!(school_id.is_some());
-        assert!(original_message.is_some());
-        assert!(!original_message.unwrap().is_empty());
+        assert!(!original_message.is_empty());
 
         // Verify parseable
-        let parsed: serde_json::Value =
-            serde_json::from_str(original_message.unwrap()).unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(original_message).unwrap();
         assert_eq!(parsed["submission_id"], 42);
     }
 }

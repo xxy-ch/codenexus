@@ -11,7 +11,10 @@ use uuid::Uuid;
 async fn setup_fixture() -> TestFixture {
     let fixture = TestFixture::new().await;
     let migrator = sqlx::migrate!("../api/migrations");
-    migrator.run(&fixture.db_pool).await.expect("Failed to run migrations");
+    migrator
+        .run(&fixture.db_pool)
+        .await
+        .expect("Failed to run migrations");
     fixture
 }
 
@@ -124,7 +127,7 @@ async fn test_list_contests_by_organization() {
 
     // Create second org
     let org2_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name) VALUES ('Test Org 2') RETURNING id",
+        "INSERT INTO organizations (name, slug) VALUES ('Test Org 2', 'test-org-2') RETURNING id",
     )
     .fetch_one(&fixture.db_pool)
     .await
@@ -138,11 +141,23 @@ async fn test_list_contests_by_organization() {
 
     // Create contests in both orgs
     let _c1 = service
-        .create_contest(make_create_request(org1_id, None, "Org1 Contest", start, end))
+        .create_contest(make_create_request(
+            org1_id,
+            None,
+            "Org1 Contest",
+            start,
+            end,
+        ))
         .await
         .unwrap();
     let _c2 = service
-        .create_contest(make_create_request(org2_id, None, "Org2 Contest", start, end))
+        .create_contest(make_create_request(
+            org2_id,
+            None,
+            "Org2 Contest",
+            start,
+            end,
+        ))
         .await
         .unwrap();
 
@@ -176,7 +191,13 @@ async fn test_register_for_contest() {
     let end = now + Duration::hours(3);
 
     let contest = service
-        .create_contest(make_create_request(org_id, None, "Register Test", start, end))
+        .create_contest(make_create_request(
+            org_id,
+            None,
+            "Register Test",
+            start,
+            end,
+        ))
         .await
         .unwrap();
 
@@ -214,10 +235,7 @@ async fn test_contest_status_transitions() {
         .await
         .unwrap();
 
-    let status = service
-        .get_contest_status(active_contest.id)
-        .await
-        .unwrap();
+    let status = service.get_contest_status(active_contest.id).await.unwrap();
     assert_eq!(status.status, "active");
     assert!(!status.is_frozen);
 
@@ -251,10 +269,7 @@ async fn test_contest_status_transitions() {
         .await
         .unwrap();
 
-    let status = service
-        .get_contest_status(ended_contest.id)
-        .await
-        .unwrap();
+    let status = service.get_contest_status(ended_contest.id).await.unwrap();
     assert_eq!(status.status, "ended");
 }
 
@@ -299,11 +314,14 @@ async fn seed_contest_for_freeze(
 
     // Add problem to contest
     service
-        .add_problem_to_contest(contest.id, domain_contests::models::AddProblemToContestRequest {
-            problem_id,
-            points: Some(100),
-            order_index: Some(0),
-        })
+        .add_problem_to_contest(
+            contest.id,
+            domain_contests::models::AddProblemToContestRequest {
+                problem_id,
+                points: Some(100),
+                order_index: Some(0),
+            },
+        )
         .await
         .unwrap();
 
@@ -426,7 +444,10 @@ async fn test_freeze_snapshot_stored_during_freeze_window() {
     link_contest_submission_sql(&fixture.db_pool, seeded.contest_id, sub_during, false).await;
 
     // Get rankings -- freeze is active
-    let rankings = service.get_contest_rankings(seeded.contest_id).await.unwrap();
+    let rankings = service
+        .get_contest_rankings(seeded.contest_id)
+        .await
+        .unwrap();
 
     // Should have 1 entry (the user)
     assert_eq!(rankings.len(), 1, "Should have exactly one ranking entry");
@@ -482,16 +503,32 @@ async fn test_freeze_snapshot_is_cached() {
     link_contest_submission_sql(&fixture.db_pool, seeded.contest_id, sub, false).await;
 
     // First call -- computes and stores snapshot
-    let rankings1 = service.get_contest_rankings(seeded.contest_id).await.unwrap();
+    let rankings1 = service
+        .get_contest_rankings(seeded.contest_id)
+        .await
+        .unwrap();
 
     // Second call -- should return cached snapshot
-    let rankings2 = service.get_contest_rankings(seeded.contest_id).await.unwrap();
+    let rankings2 = service
+        .get_contest_rankings(seeded.contest_id)
+        .await
+        .unwrap();
 
     // Both should return the same data
-    assert_eq!(rankings1.len(), rankings2.len(), "Cached snapshot should have same entry count");
+    assert_eq!(
+        rankings1.len(),
+        rankings2.len(),
+        "Cached snapshot should have same entry count"
+    );
     if !rankings1.is_empty() {
-        assert_eq!(rankings1[0].score, rankings2[0].score, "Cached snapshot should have same score");
-        assert_eq!(rankings1[0].solved_count, rankings2[0].solved_count, "Cached snapshot should have same solved count");
+        assert_eq!(
+            rankings1[0].score, rankings2[0].score,
+            "Cached snapshot should have same score"
+        );
+        assert_eq!(
+            rankings1[0].solved_count, rankings2[0].solved_count,
+            "Cached snapshot should have same solved count"
+        );
     }
 
     // Verify snapshot row exists in DB
@@ -527,7 +564,13 @@ async fn test_freeze_auto_reveals_after_contest_ends() {
         now - Duration::hours(2),
     )
     .await;
-    link_contest_submission_sql(&fixture.db_pool, seeded.contest_id, sub_before_freeze, false).await;
+    link_contest_submission_sql(
+        &fixture.db_pool,
+        seeded.contest_id,
+        sub_before_freeze,
+        false,
+    )
+    .await;
 
     // Insert submission during what would have been the freeze window
     let sub_during_freeze = insert_submission_at(
@@ -539,10 +582,19 @@ async fn test_freeze_auto_reveals_after_contest_ends() {
         now - Duration::minutes(90),
     )
     .await;
-    link_contest_submission_sql(&fixture.db_pool, seeded.contest_id, sub_during_freeze, false).await;
+    link_contest_submission_sql(
+        &fixture.db_pool,
+        seeded.contest_id,
+        sub_during_freeze,
+        false,
+    )
+    .await;
 
     // Get rankings -- contest ended, no freeze, all submissions visible
-    let rankings = service.get_contest_rankings(seeded.contest_id).await.unwrap();
+    let rankings = service
+        .get_contest_rankings(seeded.contest_id)
+        .await
+        .unwrap();
 
     assert_eq!(rankings.len(), 1, "Should have one ranking entry");
     let entry = &rankings[0];
@@ -559,7 +611,10 @@ async fn test_freeze_auto_reveals_after_contest_ends() {
     .fetch_one(&fixture.db_pool)
     .await
     .unwrap();
-    assert!(!snapshot_exists, "No snapshot should be stored for ended contest");
+    assert!(
+        !snapshot_exists,
+        "No snapshot should be stored for ended contest"
+    );
 }
 
 /// Test: Post-contest submissions are automatically tagged is_upsolving=true.
@@ -633,7 +688,10 @@ async fn test_upsolving_excluded_from_official_rankings() {
     link_contest_submission_sql(&fixture.db_pool, seeded.contest_id, upsolving_sub, true).await;
 
     // Get rankings
-    let rankings = service.get_contest_rankings(seeded.contest_id).await.unwrap();
+    let rankings = service
+        .get_contest_rankings(seeded.contest_id)
+        .await
+        .unwrap();
 
     assert_eq!(rankings.len(), 1, "Should have one ranking entry");
     let entry = &rankings[0];

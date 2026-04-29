@@ -209,7 +209,7 @@ export function DiscussionList() {
                   <article
                     key={discussion.id}
                     onClick={() => navigate(`/discussions/${discussion.id}`)}
-                    className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition hover:shadow-[rgba(0,0,0,0.04)_0px_4px_18px,rgba(0,0,0,0.02)_0px_2px_7px] group cursor-pointer"
+                    className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden transition hover:-translate-y-0.5 hover:shadow-ambient group cursor-pointer"
                   >
                     <div className="p-6">
                       {/* Badges */}
@@ -222,7 +222,7 @@ export function DiscussionList() {
                             </span>
                           )}
                           {discussion.is_solved && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-status-accepted/10 px-2.5 py-1 text-xs font-medium text-status-accepted">
                               <CheckCircle className="h-3 w-3" />
                               已解决
                             </span>

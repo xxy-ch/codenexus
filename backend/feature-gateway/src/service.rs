@@ -10,9 +10,7 @@ use std::sync::Arc;
 use dashmap::DashMap;
 use sqlx::PgPool;
 
-use crate::models::{
-    FeatureFlagEntry, FeatureRegistryEntry, FeatureSource, ResolvedFeature,
-};
+use crate::models::{FeatureFlagEntry, FeatureRegistryEntry, FeatureSource, ResolvedFeature};
 
 /// Feature gateway service.
 ///
@@ -77,6 +75,14 @@ impl FeatureGatewayService {
     /// "global", "campus:{id}", "grade:{id}", "class:{id}"
     fn cache_key(slug: &str, scope: &str) -> String {
         format!("{}:{}", slug, scope)
+    }
+
+    fn scope_cache_segment(scope: &str, scope_id: Option<i64>) -> String {
+        match (scope, scope_id) {
+            ("global", _) => "global".to_string(),
+            (scope, Some(scope_id)) => format!("{}:{}", scope, scope_id),
+            (scope, None) => scope.to_string(),
+        }
     }
 
     /// Resolve feature state for a given context without class scope.
@@ -179,17 +185,12 @@ impl FeatureGatewayService {
     ) -> ResolvedFeature {
         // Build dynamic query based on available scope IDs.
         // This avoids complex SQL with many nullable OR conditions.
-        let result: Option<(bool, String)> = self.query_most_specific_override(
-            slug,
-            class_id,
-            campus_id,
-            grade_id,
-        )
-        .await;
+        let result: Option<(bool, String)> = self
+            .query_most_specific_override(slug, class_id, campus_id, grade_id)
+            .await;
 
         if let Some((enabled, scope)) = result {
-            let source = FeatureSource::from_scope_str(&scope)
-                .unwrap_or(FeatureSource::Default);
+            let source = FeatureSource::from_scope_str(&scope).unwrap_or(FeatureSource::Default);
 
             let resolved = ResolvedFeature { enabled, source };
 
@@ -300,14 +301,13 @@ impl FeatureGatewayService {
 
     /// Query the feature_registry for default_enabled value.
     async fn query_registry_default(&self, slug: &str) -> bool {
-        let row: Option<(bool,)> = sqlx::query_as(
-            "SELECT default_enabled FROM feature_registry WHERE slug = $1",
-        )
-        .bind(slug)
-        .fetch_optional(&self.db_pool)
-        .await
-        .ok()
-        .flatten();
+        let row: Option<(bool,)> =
+            sqlx::query_as("SELECT default_enabled FROM feature_registry WHERE slug = $1")
+                .bind(slug)
+                .fetch_optional(&self.db_pool)
+                .await
+                .ok()
+                .flatten();
 
         row.map(|(e,)| e).unwrap_or(false)
     }
@@ -351,20 +351,34 @@ impl FeatureGatewayService {
         scope_id: Option<i64>,
         enabled: bool,
     ) -> anyhow::Result<()> {
-        sqlx::query(
-            "INSERT INTO feature_flags (feature_slug, scope, scope_id, enabled) \
-             VALUES ($1, $2, $3, $4) \
-             ON CONFLICT (feature_slug, scope, scope_id) \
-             DO UPDATE SET enabled = $4, updated_at = now()",
-        )
-        .bind(slug)
-        .bind(scope)
-        .bind(scope_id)
-        .bind(enabled)
-        .execute(&self.db_pool)
-        .await?;
+        if scope_id.is_none() {
+            sqlx::query(
+                "INSERT INTO feature_flags (feature_slug, scope, scope_id, enabled) \
+                 VALUES ($1, $2, NULL, $3) \
+                 ON CONFLICT (feature_slug, scope) WHERE scope_id IS NULL \
+                 DO UPDATE SET enabled = $3, updated_at = now()",
+            )
+            .bind(slug)
+            .bind(scope)
+            .bind(enabled)
+            .execute(&self.db_pool)
+            .await?;
+        } else {
+            sqlx::query(
+                "INSERT INTO feature_flags (feature_slug, scope, scope_id, enabled) \
+                 VALUES ($1, $2, $3, $4) \
+                 ON CONFLICT (feature_slug, scope, scope_id) \
+                 DO UPDATE SET enabled = $4, updated_at = now()",
+            )
+            .bind(slug)
+            .bind(scope)
+            .bind(scope_id)
+            .bind(enabled)
+            .execute(&self.db_pool)
+            .await?;
+        }
 
-        self.invalidate(slug, scope);
+        self.invalidate(slug, &Self::scope_cache_segment(scope, scope_id));
         Ok(())
     }
 
@@ -387,7 +401,7 @@ impl FeatureGatewayService {
         .execute(&self.db_pool)
         .await?;
 
-        self.invalidate(slug, scope);
+        self.invalidate(slug, &Self::scope_cache_segment(scope, scope_id));
         Ok(())
     }
 }
@@ -421,6 +435,26 @@ mod tests {
         assert_eq!(
             FeatureGatewayService::cache_key("direct_messages", "class:15"),
             "direct_messages:class:15"
+        );
+    }
+
+    #[test]
+    fn test_scope_cache_segment_format() {
+        assert_eq!(
+            FeatureGatewayService::scope_cache_segment("global", None),
+            "global"
+        );
+        assert_eq!(
+            FeatureGatewayService::scope_cache_segment("grade", Some(7)),
+            "grade:7"
+        );
+        assert_eq!(
+            FeatureGatewayService::scope_cache_segment("campus", Some(42)),
+            "campus:42"
+        );
+        assert_eq!(
+            FeatureGatewayService::scope_cache_segment("class", Some(15)),
+            "class:15"
         );
     }
 
@@ -462,6 +496,28 @@ mod tests {
 
         assert!(service.cache.contains_key(&key));
         service.invalidate("plagiarism", "global");
+        assert!(!service.cache.contains_key(&key));
+    }
+
+    #[tokio::test]
+    async fn test_invalidate_removes_scoped_cache_entry() {
+        let pool = make_test_pool();
+        let service = FeatureGatewayService::new_with_enabled(pool, true);
+
+        let key = FeatureGatewayService::cache_key("plagiarism", "grade:7");
+        service.cache.insert(
+            key.clone(),
+            ResolvedFeature {
+                enabled: true,
+                source: FeatureSource::GradeOverride,
+            },
+        );
+
+        assert!(service.cache.contains_key(&key));
+        service.invalidate(
+            "plagiarism",
+            &FeatureGatewayService::scope_cache_segment("grade", Some(7)),
+        );
         assert!(!service.cache.contains_key(&key));
     }
 

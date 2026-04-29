@@ -4,7 +4,13 @@ use redis::aio::MultiplexedConnection;
 
 /// The tuple type returned by `consume_priority`:
 /// (message_id, submission, origin_stream, school_id, submitted_at)
-pub type PriorityMessage = (String, SubmissionMessage, String, Option<i64>, Option<String>);
+pub type PriorityMessage = (
+    String,
+    SubmissionMessage,
+    String,
+    Option<i64>,
+    Option<String>,
+);
 
 /// Parsed result from consuming a submission from a Redis stream.
 pub struct ConsumedMessage {
@@ -24,9 +30,7 @@ pub async fn consume_submission(
     block_ms: Option<u64>,
 ) -> Result<Vec<ConsumedMessage>> {
     let mut cmd = redis::cmd("XREADGROUP");
-    cmd.arg("GROUP")
-        .arg(group_name)
-        .arg(consumer_name);
+    cmd.arg("GROUP").arg(group_name).arg(consumer_name);
 
     if let Some(ms) = block_ms {
         cmd.arg("BLOCK").arg(ms);
@@ -193,7 +197,8 @@ pub async fn consume_priority(
     // is truly empty. Otherwise keep parking it and process contest first.
     if let Some(parked) = parked_normal {
         // Drain contest — if any contest message exists, it takes priority.
-        let contest_messages = drain_contest(conn, contest_stream, group_name, consumer_name).await?;
+        let contest_messages =
+            drain_contest(conn, contest_stream, group_name, consumer_name).await?;
         if !contest_messages.is_empty() {
             // Contest still has messages — keep the parked normal, return contest.
             return Ok((contest_messages, Some(parked)));
@@ -209,7 +214,8 @@ pub async fn consume_priority(
     }
 
     // Step 3: Contest is empty. Read one message from normal stream with short block.
-    let normal_messages = read_normal_blocking(conn, normal_stream, group_name, consumer_name, 200).await?;
+    let normal_messages =
+        read_normal_blocking(conn, normal_stream, group_name, consumer_name, 200).await?;
     if normal_messages.is_empty() {
         return Ok((Vec::new(), None));
     }
@@ -224,7 +230,10 @@ pub async fn consume_priority(
         tracing::debug!(
             "Contest message arrived after normal read; parking normal message for next cycle"
         );
-        return Ok((contest_messages, Some(normal_messages.into_iter().next().unwrap())));
+        return Ok((
+            contest_messages,
+            Some(normal_messages.into_iter().next().unwrap()),
+        ));
     }
 
     // Bounded race window: between this final drain returning empty and the
@@ -295,9 +304,7 @@ async fn read_normal_blocking(
 }
 
 /// Parse a StreamReadReply into the tuple format used by consume_priority.
-fn parse_stream_reply(
-    result: redis::streams::StreamReadReply,
-) -> Result<Vec<PriorityMessage>> {
+fn parse_stream_reply(result: redis::streams::StreamReadReply) -> Result<Vec<PriorityMessage>> {
     let mut messages = Vec::new();
 
     for stream_key in result.keys {
@@ -365,9 +372,7 @@ mod tests {
         block_ms: Option<u64>,
     ) -> Vec<String> {
         let mut cmd = redis::cmd("XREADGROUP");
-        cmd.arg("GROUP")
-            .arg(group_name)
-            .arg(consumer_name);
+        cmd.arg("GROUP").arg(group_name).arg(consumer_name);
 
         if let Some(ms) = block_ms {
             cmd.arg("BLOCK").arg(ms);
@@ -381,9 +386,7 @@ mod tests {
 
         cmd.args_iter()
             .map(|arg| match arg {
-                redis::Arg::Simple(data) => {
-                    String::from_utf8_lossy(data).to_string()
-                }
+                redis::Arg::Simple(data) => String::from_utf8_lossy(data).to_string(),
                 redis::Arg::Cursor => "<cursor>".to_string(),
             })
             .collect()
@@ -397,8 +400,14 @@ mod tests {
         let args = build_xreadgroup_args("submissions", "workers", "w1", Some(5000));
 
         // Expected: GROUP workers w1 BLOCK 5000 COUNT 1 STREAMS submissions >
-        let streams_pos = args.iter().position(|a| a == "STREAMS").expect("STREAMS not found");
-        let block_pos = args.iter().position(|a| a == "BLOCK").expect("BLOCK not found");
+        let streams_pos = args
+            .iter()
+            .position(|a| a == "STREAMS")
+            .expect("STREAMS not found");
+        let block_pos = args
+            .iter()
+            .position(|a| a == "BLOCK")
+            .expect("BLOCK not found");
 
         assert!(
             block_pos < streams_pos,
@@ -411,7 +420,19 @@ mod tests {
         // Full argument verification (includes command name from args_iter)
         assert_eq!(
             args,
-            vec!["XREADGROUP", "GROUP", "workers", "w1", "BLOCK", "5000", "COUNT", "1", "STREAMS", "submissions", ">"]
+            vec![
+                "XREADGROUP",
+                "GROUP",
+                "workers",
+                "w1",
+                "BLOCK",
+                "5000",
+                "COUNT",
+                "1",
+                "STREAMS",
+                "submissions",
+                ">"
+            ]
         );
     }
 
@@ -429,7 +450,17 @@ mod tests {
         // Expected: XREADGROUP GROUP workers w1 COUNT 1 STREAMS contest_submissions >
         assert_eq!(
             args,
-            vec!["XREADGROUP", "GROUP", "workers", "w1", "COUNT", "1", "STREAMS", "contest_submissions", ">"]
+            vec![
+                "XREADGROUP",
+                "GROUP",
+                "workers",
+                "w1",
+                "COUNT",
+                "1",
+                "STREAMS",
+                "contest_submissions",
+                ">"
+            ]
         );
     }
 
@@ -448,7 +479,17 @@ mod tests {
 
         assert_eq!(
             args,
-            vec!["XREADGROUP", "GROUP", "judge_workers", "w1", "COUNT", "1", "STREAMS", "submissions:contest", ">"]
+            vec![
+                "XREADGROUP",
+                "GROUP",
+                "judge_workers",
+                "w1",
+                "COUNT",
+                "1",
+                "STREAMS",
+                "submissions:contest",
+                ">"
+            ]
         );
     }
 
@@ -459,8 +500,13 @@ mod tests {
     fn test_normal_phase_uses_short_block() {
         let args = build_xreadgroup_args("submissions", "judge_workers", "w1", Some(200));
 
-        let block_pos = args.iter().position(|a| a == "BLOCK").expect("BLOCK not found");
-        let block_val: u64 = args[block_pos + 1].parse().expect("BLOCK value not a number");
+        let block_pos = args
+            .iter()
+            .position(|a| a == "BLOCK")
+            .expect("BLOCK not found");
+        let block_val: u64 = args[block_pos + 1]
+            .parse()
+            .expect("BLOCK value not a number");
         assert!(
             block_val <= 500,
             "Normal phase BLOCK should be short (<=500ms) for priority responsiveness, got {}ms",
@@ -469,7 +515,19 @@ mod tests {
 
         assert_eq!(
             args,
-            vec!["XREADGROUP", "GROUP", "judge_workers", "w1", "BLOCK", "200", "COUNT", "1", "STREAMS", "submissions", ">"]
+            vec![
+                "XREADGROUP",
+                "GROUP",
+                "judge_workers",
+                "w1",
+                "BLOCK",
+                "200",
+                "COUNT",
+                "1",
+                "STREAMS",
+                "submissions",
+                ">"
+            ]
         );
     }
 
@@ -492,7 +550,10 @@ mod tests {
                                 br#"{"submission_id":42,"problem_id":1,"user_id":"550e8400-e29b-41d4-a716-446655440000","language":"cpp","source_code":"int main(){}","time_limit_ms":1000,"memory_limit_mb":256,"contest_id":7}"#.to_vec(),
                             ),
                         );
-                        m.insert("school_id".to_string(), redis::Value::BulkString(b"100".to_vec()));
+                        m.insert(
+                            "school_id".to_string(),
+                            redis::Value::BulkString(b"100".to_vec()),
+                        );
                         m.insert(
                             "submitted_at".to_string(),
                             redis::Value::BulkString(b"2026-01-15T12:00:00.000Z".to_vec()),
@@ -512,21 +573,19 @@ mod tests {
         assert_eq!(submission.contest_id, Some(7));
         assert_eq!(origin, "submissions:contest");
         assert_eq!(*school_id, Some(100));
-        assert_eq!(
-            submitted_at.as_deref(),
-            Some("2026-01-15T12:00:00.000Z")
-        );
+        assert_eq!(submitted_at.as_deref(), Some("2026-01-15T12:00:00.000Z"));
     }
 
     /// Regression test: parse_stream_reply with empty reply returns no messages.
     #[test]
     fn test_parse_stream_reply_empty() {
-        let reply = redis::streams::StreamReadReply {
-            keys: vec![],
-        };
+        let reply = redis::streams::StreamReadReply { keys: vec![] };
 
         let messages = parse_stream_reply(reply).unwrap();
-        assert!(messages.is_empty(), "Empty reply should produce no messages");
+        assert!(
+            messages.is_empty(),
+            "Empty reply should produce no messages"
+        );
     }
 
     /// Regression test: parse_stream_reply skips entries with missing data field.
@@ -548,7 +607,10 @@ mod tests {
         };
 
         let messages = parse_stream_reply(reply).unwrap();
-        assert!(messages.is_empty(), "Entry without data field should be skipped");
+        assert!(
+            messages.is_empty(),
+            "Entry without data field should be skipped"
+        );
     }
 
     /// Gap-closure test: Verify parked normal message is only returned when
@@ -626,7 +688,10 @@ mod tests {
                                 br#"{"submission_id":77,"problem_id":2,"user_id":"00000000-0000-0000-0000-000000000002","language":"java","source_code":"class Main{}","time_limit_ms":2000,"memory_limit_mb":512,"contest_id":5}"#.to_vec(),
                             ),
                         );
-                        m.insert("school_id".to_string(), redis::Value::BulkString(b"20".to_vec()));
+                        m.insert(
+                            "school_id".to_string(),
+                            redis::Value::BulkString(b"20".to_vec()),
+                        );
                         m
                     },
                 }],
@@ -635,7 +700,11 @@ mod tests {
 
         // Parse the contest reply -- this is what drain_contest returns
         let contest_messages = parse_stream_reply(contest_reply).unwrap();
-        assert_eq!(contest_messages.len(), 1, "Should parse one contest message");
+        assert_eq!(
+            contest_messages.len(),
+            1,
+            "Should parse one contest message"
+        );
 
         let (msg_id, submission, origin, school_id, _submitted_at) = &contest_messages[0];
         assert_eq!(msg_id, "999-0");
@@ -717,8 +786,10 @@ mod tests {
 
         // When contest is non-empty on recheck, normal is parked
         let should_park_normal = contest_messages_on_recheck > 0;
-        assert!(should_park_normal,
-            "normal must be parked when contest arrives during read");
+        assert!(
+            should_park_normal,
+            "normal must be parked when contest arrives during read"
+        );
 
         // Parked message is Some(normal), returned as second tuple element
         let parked: Option<bool> = Some(true);
@@ -728,7 +799,9 @@ mod tests {
         let parked_exists = parked.is_some();
         let contest_empty_on_next_call = true;
         let returns_parked_when_contest_empty = parked_exists && contest_empty_on_next_call;
-        assert!(returns_parked_when_contest_empty,
-            "parked normal is returned on next call when contest is empty");
+        assert!(
+            returns_parked_when_contest_empty,
+            "parked normal is returned on next call when contest is empty"
+        );
     }
 }

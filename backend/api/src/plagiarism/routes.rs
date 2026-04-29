@@ -333,7 +333,7 @@ async fn ensure_default_config(state: &AppState) -> Result<(), StatusCode> {
 }
 
 fn ensure_admin(claims: &shared::models::Claims) -> Result<(), StatusCode> {
-    if claims.role == "admin" {
+    if matches!(claims.role.as_str(), "root" | "campusadmin" | "gradeadmin") {
         Ok(())
     } else {
         Err(StatusCode::FORBIDDEN)

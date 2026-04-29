@@ -177,10 +177,7 @@ mod tests {
     impl EnvGuard {
         fn new(vars: &[&'static str]) -> Self {
             let lock = ENV_LOCK.lock().unwrap();
-            let saved_vars = vars
-                .iter()
-                .map(|&k| (k, std::env::var(k).ok()))
-                .collect();
+            let saved_vars = vars.iter().map(|&k| (k, std::env::var(k).ok())).collect();
             Self {
                 saved_vars,
                 _lock: lock,
@@ -289,7 +286,13 @@ mod tests {
 
     #[test]
     fn test_production_cors_defaults_empty() {
-        let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL", "CORS_ORIGINS"]);
+        let _guard = EnvGuard::new(&[
+            "APP_ENV",
+            "JWT_SECRET",
+            "WORKER_SECRET",
+            "DATABASE_URL",
+            "CORS_ORIGINS",
+        ]);
         std::env::set_var("APP_ENV", "production");
         std::env::set_var("JWT_SECRET", "real-secret");
         std::env::set_var("WORKER_SECRET", "real-secret");
@@ -316,7 +319,13 @@ mod tests {
 
     #[test]
     fn test_production_cors_from_env() {
-        let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL", "CORS_ORIGINS"]);
+        let _guard = EnvGuard::new(&[
+            "APP_ENV",
+            "JWT_SECRET",
+            "WORKER_SECRET",
+            "DATABASE_URL",
+            "CORS_ORIGINS",
+        ]);
         std::env::set_var("APP_ENV", "production");
         std::env::set_var("JWT_SECRET", "real-secret");
         std::env::set_var("WORKER_SECRET", "real-secret");

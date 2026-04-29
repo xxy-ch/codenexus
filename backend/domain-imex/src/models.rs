@@ -301,7 +301,10 @@ mod tests {
         }"#;
 
         let result = serde_json::from_str::<ProblemConfig>(json);
-        assert!(result.is_err(), "should fail without required field 'title'");
+        assert!(
+            result.is_err(),
+            "should fail without required field 'title'"
+        );
     }
 
     #[test]

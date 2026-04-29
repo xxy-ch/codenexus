@@ -235,18 +235,17 @@ mod tests {
             ),
             prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
             preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
-            gateway_client: std::sync::Arc::new(
-                api_infra::feature_gateway::GatewayClient::new(
-                    "http://127.0.0.1:3001".to_string(),
-                    "test_secret".to_string(),
-                ),
-            ),
+            gateway_client: std::sync::Arc::new(api_infra::feature_gateway::GatewayClient::new(
+                "http://127.0.0.1:3001".to_string(),
+                "test_secret".to_string(),
+            )),
         };
 
         Router::new()
             .route("/login", post(login))
             .route("/refresh", post(refresh))
             .route("/logout", post(logout))
+            .route("/register", post(register))
             .with_state(app_state)
     }
 
@@ -275,7 +274,9 @@ mod tests {
     /// Seed a demo admin user (username "1001", password "admin123") for integration tests.
     async fn seed_demo_admin() {
         let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-        let pool = sqlx::PgPool::connect(&database_url).await.expect("Failed to connect to seed DB");
+        let pool = sqlx::PgPool::connect(&database_url)
+            .await
+            .expect("Failed to connect to seed DB");
 
         // Ensure organization exists
         sqlx::query("INSERT INTO organizations (id, name, slug) VALUES (1, 'Test Org', 'test-org') ON CONFLICT (id) DO NOTHING")
@@ -284,7 +285,8 @@ mod tests {
             .expect("Failed to seed organization");
 
         // Hash password
-        let password_hash = bcrypt::hash("admin123", bcrypt::DEFAULT_COST).expect("Failed to hash password");
+        let password_hash =
+            bcrypt::hash("admin123", bcrypt::DEFAULT_COST).expect("Failed to hash password");
 
         // Insert user (idempotent via ON CONFLICT)
         sqlx::query(
@@ -298,11 +300,12 @@ mod tests {
         .expect("Failed to seed demo admin user");
 
         // Insert user_role (idempotent)
-        let user_id: Option<uuid::Uuid> = sqlx::query_scalar("SELECT id FROM users WHERE username = '1001'")
-            .fetch_optional(&pool)
-            .await
-            .expect("Failed to query demo admin")
-            .flatten();
+        let user_id: Option<uuid::Uuid> =
+            sqlx::query_scalar("SELECT id FROM users WHERE username = '1001'")
+                .fetch_optional(&pool)
+                .await
+                .expect("Failed to query demo admin")
+                .flatten();
 
         if let Some(uid) = user_id {
             sqlx::query(
@@ -456,14 +459,94 @@ mod tests {
             ),
             prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
             preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
-            gateway_client: std::sync::Arc::new(
-                api_infra::feature_gateway::GatewayClient::new(
-                    "http://127.0.0.1:3001".to_string(),
-                    "test_secret".to_string(),
-                ),
-            ),
+            gateway_client: std::sync::Arc::new(api_infra::feature_gateway::GatewayClient::new(
+                "http://127.0.0.1:3001".to_string(),
+                "test_secret".to_string(),
+            )),
         };
         let response = logout(Extension(claims), State(state)).await;
         assert_eq!(response, StatusCode::OK);
+    }
+
+    #[ignore = "requires a running PostgreSQL database; set DATABASE_URL environment variable"]
+    #[tokio::test]
+    async fn test_register_rejects_grade_from_other_campus() {
+        let app = create_test_app().await;
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let pool = sqlx::PgPool::connect(&database_url)
+            .await
+            .expect("Failed to connect to seed DB");
+
+        let org_a: i64 = sqlx::query_scalar(
+            "INSERT INTO organizations (name, slug) VALUES ('Register Org A', 'register-org-a') RETURNING id",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("failed to insert org A");
+        let campus_a: i64 = sqlx::query_scalar(
+            "INSERT INTO campuses (organization_id, name, slug) VALUES ($1, 'Campus A', 'campus-a') RETURNING id",
+        )
+        .bind(org_a)
+        .fetch_one(&pool)
+        .await
+        .expect("failed to insert campus A");
+        let _grade_a: i64 = sqlx::query_scalar(
+            "INSERT INTO grades (campus_id, name, year_level, academic_year) VALUES ($1, 'Grade A', 1, '2025-2026') RETURNING id",
+        )
+        .bind(campus_a)
+        .fetch_one(&pool)
+        .await
+        .expect("failed to insert grade A");
+
+        let org_b: i64 = sqlx::query_scalar(
+            "INSERT INTO organizations (name, slug) VALUES ('Register Org B', 'register-org-b') RETURNING id",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("failed to insert org B");
+        let campus_b: i64 = sqlx::query_scalar(
+            "INSERT INTO campuses (organization_id, name, slug) VALUES ($1, 'Campus B', 'campus-b') RETURNING id",
+        )
+        .bind(org_b)
+        .fetch_one(&pool)
+        .await
+        .expect("failed to insert campus B");
+        let grade_b: i64 = sqlx::query_scalar(
+            "INSERT INTO grades (campus_id, name, year_level, academic_year) VALUES ($1, 'Grade B', 1, '2025-2026') RETURNING id",
+        )
+        .bind(campus_b)
+        .fetch_one(&pool)
+        .await
+        .expect("failed to insert grade B");
+
+        let body = serde_json::json!({
+            "user_code": "100100000123",
+            "username": "100100000123",
+            "password": "password123",
+            "email": "student@example.com",
+            "display_name": "Student",
+            "organization_id": org_a,
+            "campus_id": campus_a,
+            "grade_id": grade_b,
+        })
+        .to_string();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/register")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(
+            response.status(),
+            StatusCode::BAD_REQUEST,
+            "grade_id from another campus must be rejected"
+        );
     }
 }

@@ -17,6 +17,10 @@ pub fn submissions_router() -> axum::Router<AppState> {
         .route("/", axum::routing::get(list_submissions))
         .route("/stats", axum::routing::get(get_submission_stats))
         .route("/:id", axum::routing::get(get_submission))
+}
+
+pub fn worker_results_router() -> axum::Router<AppState> {
+    axum::Router::new()
         .route("/:id/results", axum::routing::post(update_judge_result))
 }
 
@@ -153,12 +157,14 @@ async fn update_judge_result(
         .await?
         .ok_or_else(|| AppError::Validation("Submission not found".into()))?;
 
-    // 3a. Idempotency: duplicate callback with same status is accepted but ignored (case-insensitive)
-    if current_status.eq_ignore_ascii_case(&result.status) {
+    let target_status = SubmissionService::normalize_judge_status(&result.status);
+
+    // 3a. Idempotency: duplicate callback with same normalized status is accepted but ignored.
+    if current_status.eq_ignore_ascii_case(target_status) {
         return Ok(Json(serde_json::json!({
             "message": "Judge result already processed (idempotent)",
             "submission_id": id,
-            "status": result.status,
+            "status": target_status,
         })));
     }
 

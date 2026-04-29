@@ -1,7 +1,8 @@
 //! HTTP client for the standalone Feature Gateway service.
 //!
-//! Provides `GatewayClient` with TTL-based caching and fail-open behavior
-//! per D-18, D-21, D-23, and D-24.
+//! Provides `GatewayClient` with TTL-based caching and fail-closed behavior.
+//! Per C-07: when the gateway is unavailable, features resolve to disabled
+//! to prevent bypassing feature flag restrictions via DoS.
 
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -80,7 +81,7 @@ struct CachedResolve {
 /// HTTP client for the standalone Feature Gateway service.
 ///
 /// Calls Gateway via REST (D-18), caches results with 10s TTL (D-21),
-/// and returns enabled=true on failure (D-23 fail-open).
+/// and returns enabled=false on failure (C-07 fail-closed).
 /// Authenticates via WORKER_SECRET Bearer token (D-24).
 pub struct GatewayClient {
     http: reqwest::Client,
@@ -125,16 +126,17 @@ impl GatewayClient {
 
     /// Resolve a feature flag via HTTP call to Gateway with TTL cache.
     ///
-    /// Cache key format: `"{slug}:{campus_id:?}:{grade_id:?}"`
+    /// Cache key format: `"{tenant_id}:{slug}:{campus_id:?}:{grade_id:?}"`
     /// TTL: 10 seconds (D-21).
-    /// On failure: returns enabled=true with warning log (D-23 fail-open).
+    /// On failure: returns enabled=false with warning log (C-07 fail-closed).
     pub async fn resolve(
         &self,
         slug: &str,
+        tenant_id: i64,
         campus_id: Option<i64>,
         grade_id: Option<i64>,
     ) -> ResolvedFeature {
-        let cache_key = format!("{}:{:?}:{:?}", slug, campus_id, grade_id);
+        let cache_key = format!("{}:{}:{:?}:{:?}", tenant_id, slug, campus_id, grade_id);
 
         // Check cache
         if let Some(cached) = self.cache.get(&cache_key) {
@@ -146,8 +148,11 @@ impl GatewayClient {
             self.cache.remove(&cache_key);
         }
 
-        // Build URL
-        let mut url = format!("{}/resolve?slug={}", self.base_url, slug);
+        // Build URL — tenant_id is always required for tenant-scoped resolution
+        let mut url = format!(
+            "{}/resolve?slug={}&tenant_id={}",
+            self.base_url, slug, tenant_id
+        );
         if let Some(cid) = campus_id {
             url.push_str(&format!("&campus_id={}", cid));
         }
@@ -186,11 +191,11 @@ impl GatewayClient {
                     }
                     Err(e) => {
                         warn!(
-                            "feature gateway response parse error for slug={}, fail-open: {}",
+                            "feature gateway response parse error for slug={}, fail-closed: {}",
                             slug, e
                         );
                         ResolvedFeature {
-                            enabled: true,
+                            enabled: false,
                             source: FeatureSource::Default,
                         }
                     }
@@ -198,22 +203,22 @@ impl GatewayClient {
             }
             Ok(resp) => {
                 warn!(
-                    "feature gateway returned {} for slug={}, fail-open",
+                    "feature gateway returned {} for slug={}, fail-closed",
                     resp.status(),
                     slug
                 );
                 ResolvedFeature {
-                    enabled: true,
+                    enabled: false,
                     source: FeatureSource::Default,
                 }
             }
             Err(e) => {
                 warn!(
-                    "feature gateway unavailable for slug={}, fail-open: {}",
+                    "feature gateway unavailable for slug={}, fail-closed: {}",
                     slug, e
                 );
                 ResolvedFeature {
-                    enabled: true,
+                    enabled: false,
                     source: FeatureSource::Default,
                 }
             }
@@ -245,21 +250,23 @@ impl GatewayClient {
         &self,
         path: &str,
         body: serde_json::Value,
+        caller_role: Option<&str>,
     ) -> Result<reqwest::Response, (StatusCode, String)> {
         let url = format!("{}{}", self.base_url, path);
-        self.http
+        let mut req = self
+            .http
             .post(&url)
             .header("Authorization", &self.auth_header)
-            .header("Content-Type", "application/json")
-            .json(&body)
-            .send()
-            .await
-            .map_err(|e| {
-                (
-                    StatusCode::BAD_GATEWAY,
-                    format!("Feature gateway unavailable: {}", e),
-                )
-            })
+            .header("Content-Type", "application/json");
+        if let Some(role) = caller_role {
+            req = req.header("X-Caller-Role", role);
+        }
+        req.json(&body).send().await.map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Feature gateway unavailable: {}", e),
+            )
+        })
     }
 
     /// Proxy a DELETE request to the Gateway.
@@ -268,19 +275,22 @@ impl GatewayClient {
     pub async fn delete(
         &self,
         path: &str,
+        caller_role: Option<&str>,
     ) -> Result<reqwest::Response, (StatusCode, String)> {
         let url = format!("{}{}", self.base_url, path);
-        self.http
+        let mut req = self
+            .http
             .delete(&url)
-            .header("Authorization", &self.auth_header)
-            .send()
-            .await
-            .map_err(|e| {
-                (
-                    StatusCode::BAD_GATEWAY,
-                    format!("Feature gateway unavailable: {}", e),
-                )
-            })
+            .header("Authorization", &self.auth_header);
+        if let Some(role) = caller_role {
+            req = req.header("X-Caller-Role", role);
+        }
+        req.send().await.map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Feature gateway unavailable: {}", e),
+            )
+        })
     }
 
     /// Get the configured base URL (for diagnostics).
@@ -312,17 +322,20 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_resolve_fail_open_on_connection_refused() {
+    async fn test_resolve_fail_closed_on_connection_refused() {
         // Use a port that's definitely not listening
         let client = GatewayClient::new(
             "http://127.0.0.1:19999".to_string(),
             "test_secret".to_string(),
         );
 
-        let result = client.resolve("plagiarism", Some(1), Some(2)).await;
+        let result = client.resolve("plagiarism", 1, Some(1), Some(2)).await;
 
-        // D-23: fail-open -- should return enabled=true
-        assert!(result.enabled);
+        // C-07: fail-closed -- should return enabled=false when gateway unavailable
+        assert!(
+            !result.enabled,
+            "Feature should be disabled when gateway is down (fail-closed)"
+        );
         assert_eq!(result.source, FeatureSource::Default);
     }
 
@@ -335,8 +348,8 @@ mod tests {
             "test_secret".to_string(),
         );
 
-        // Pre-populate cache with a known value
-        let cache_key = format!("test_slug:Some(1):Some(2)");
+        // Pre-populate cache with a known value (tenant-scoped key)
+        let cache_key = "1:test_slug:Some(1):Some(2)".to_string();
         client.cache.insert(
             cache_key,
             CachedResolve {
@@ -349,7 +362,7 @@ mod tests {
         );
 
         // resolve() should return the cached value (not fail-open)
-        let result = client.resolve("test_slug", Some(1), Some(2)).await;
+        let result = client.resolve("test_slug", 1, Some(1), Some(2)).await;
         assert!(!result.enabled);
         assert_eq!(result.source, FeatureSource::GradeOverride);
     }

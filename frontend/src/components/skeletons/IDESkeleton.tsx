@@ -65,7 +65,7 @@ export function IDESkeleton({ className }: IDESkeletonProps) {
             {/* Editor toolbar */}
             <div className="flex items-center justify-end gap-3 border-b border-slate-800 px-6 py-4">
               <Skeleton className="h-9 w-36 rounded-xl bg-slate-800" />
-              <Skeleton className="h-9 w-20 rounded-xl bg-blue-700" />
+              <Skeleton className="h-9 w-20 rounded-xl bg-primary" />
             </div>
 
             {/* Editor area */}

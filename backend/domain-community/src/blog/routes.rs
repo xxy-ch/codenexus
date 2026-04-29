@@ -31,13 +31,12 @@ fn verify_campus_scope(
             let cid = claims
                 .campus_id
                 .ok_or((StatusCode::FORBIDDEN, "Missing campus context".to_string()))?;
-            let icid = item_campus_id
-                .ok_or((StatusCode::FORBIDDEN, "Item campus scope unknown".to_string()))?;
+            let icid = item_campus_id.ok_or((
+                StatusCode::FORBIDDEN,
+                "Item campus scope unknown".to_string(),
+            ))?;
             if icid != cid {
-                return Err((
-                    StatusCode::FORBIDDEN,
-                    "Campus scope mismatch".to_string(),
-                ));
+                return Err((StatusCode::FORBIDDEN, "Campus scope mismatch".to_string()));
             }
             Ok(())
         }
@@ -194,7 +193,10 @@ async fn get_article_handler(
 ) -> Result<Json<ArticleDetail>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.get_article_detail(&slug_or_id, claims.school_id).await {
+    match service
+        .get_article_detail(&slug_or_id, claims.school_id)
+        .await
+    {
         Ok(detail) => Ok(Json(detail)),
         Err(e) => {
             if e.to_string().contains("not found") {
@@ -279,18 +281,26 @@ async fn update_article_handler(
     };
 
     let author_campus_id = sqlx::query_scalar::<_, Option<i64>>(
-        "SELECT u.campus_id FROM articles a JOIN users u ON a.author_id = u.id WHERE a.id = $1"
+        "SELECT u.campus_id FROM articles a JOIN users u ON a.author_id = u.id WHERE a.id = $1",
     )
     .bind(id)
     .fetch_optional(&state.db_pool)
     .await
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Scope check failed".to_string()))?
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Scope check failed".to_string(),
+        )
+    })?
     .flatten();
     verify_campus_scope(author_campus_id, &claims)?;
 
     let service = BlogService::new(state.db_pool.clone());
 
-    match service.update_article(id, user_id, claims.school_id, req).await {
+    match service
+        .update_article(id, user_id, claims.school_id, req)
+        .await
+    {
         Ok(article) => Ok(Json(article)),
         Err(e) => {
             if e.to_string().contains("not found") {
@@ -337,12 +347,17 @@ async fn delete_article_handler(
     };
 
     let author_campus_id = sqlx::query_scalar::<_, Option<i64>>(
-        "SELECT u.campus_id FROM articles a JOIN users u ON a.author_id = u.id WHERE a.id = $1"
+        "SELECT u.campus_id FROM articles a JOIN users u ON a.author_id = u.id WHERE a.id = $1",
     )
     .bind(id)
     .fetch_optional(&state.db_pool)
     .await
-    .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "Scope check failed".to_string()))?
+    .map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Scope check failed".to_string(),
+        )
+    })?
     .flatten();
     verify_campus_scope(author_campus_id, &claims)?;
 
@@ -353,7 +368,10 @@ async fn delete_article_handler(
 
     let service = BlogService::new(state.db_pool);
 
-    match service.delete_article(id, user_id, is_admin, claims.school_id).await {
+    match service
+        .delete_article(id, user_id, is_admin, claims.school_id)
+        .await
+    {
         Ok(true) => Ok(axum::http::StatusCode::NO_CONTENT),
         Ok(false) => Err((
             axum::http::StatusCode::FORBIDDEN,
@@ -374,7 +392,10 @@ async fn get_comments_handler(
 ) -> Result<Json<Vec<ArticleComment>>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.get_article_detail(&slug_or_id, claims.school_id).await {
+    match service
+        .get_article_detail(&slug_or_id, claims.school_id)
+        .await
+    {
         Ok(detail) => Ok(Json(detail.comments)),
         Err(e) => {
             tracing::error!("Error fetching comments: {}", e);
@@ -416,7 +437,10 @@ async fn create_comment_handler(
 
     let service = BlogService::new(state.db_pool);
 
-    match service.create_comment(id, user_id, claims.school_id, req).await {
+    match service
+        .create_comment(id, user_id, claims.school_id, req)
+        .await
+    {
         Ok(comment) => {
             // Send WebSocket notification for new comment
             let msg = WebSocketMessage::ArticleComment {
@@ -449,7 +473,10 @@ async fn like_article_handler(
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "article", id, claims.school_id).await {
+    match service
+        .toggle_like(user_id, "article", id, claims.school_id)
+        .await
+    {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);
@@ -467,7 +494,10 @@ async fn like_comment_handler(
 ) -> Result<Json<bool>, (axum::http::StatusCode, String)> {
     let service = BlogService::new(state.db_pool);
 
-    match service.toggle_like(user_id, "comment", comment_id, claims.school_id).await {
+    match service
+        .toggle_like(user_id, "comment", comment_id, claims.school_id)
+        .await
+    {
         Ok(liked) => Ok(Json(liked)),
         Err(e) => {
             tracing::error!("Error toggling like: {}", e);

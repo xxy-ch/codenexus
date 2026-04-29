@@ -85,7 +85,10 @@ pub async fn list_test_cases(
     Path(problem_id): Path<i64>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let problem = load_problem_access(&state, problem_id).await?;
-    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
 
     if is_management_role(&claims.role) {
         ensure_management_problem_read_access(role, &claims, &problem)?;

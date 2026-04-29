@@ -11,7 +11,10 @@ use uuid::Uuid;
 async fn setup_fixture() -> TestFixture {
     let fixture = TestFixture::new().await;
     let migrator = sqlx::migrate!("../api/migrations");
-    migrator.run(&fixture.db_pool).await.expect("Failed to run migrations");
+    migrator
+        .run(&fixture.db_pool)
+        .await
+        .expect("Failed to run migrations");
     fixture
 }
 
@@ -109,9 +112,30 @@ async fn test_list_problems_by_organization() {
     .unwrap();
 
     // Create problems in both orgs
-    insert_problem(&fixture.db_pool, org1_id, user1_id, "Org1 Problem A", "public").await;
-    insert_problem(&fixture.db_pool, org1_id, user1_id, "Org1 Problem B", "private").await;
-    insert_problem(&fixture.db_pool, org2_id, user2_id, "Org2 Problem A", "public").await;
+    insert_problem(
+        &fixture.db_pool,
+        org1_id,
+        user1_id,
+        "Org1 Problem A",
+        "public",
+    )
+    .await;
+    insert_problem(
+        &fixture.db_pool,
+        org1_id,
+        user1_id,
+        "Org1 Problem B",
+        "private",
+    )
+    .await;
+    insert_problem(
+        &fixture.db_pool,
+        org2_id,
+        user2_id,
+        "Org2 Problem A",
+        "public",
+    )
+    .await;
 
     // Verify tenant isolation
     let org1_count: i64 =
@@ -137,8 +161,22 @@ async fn test_problem_visibility_filtering() {
     let (org_id, _campus_id, user_id) = seed_org_and_user(&fixture.db_pool).await;
 
     // Create public and private problems
-    insert_problem(&fixture.db_pool, org_id, user_id, "Public Problem", "public").await;
-    insert_problem(&fixture.db_pool, org_id, user_id, "Private Problem", "private").await;
+    insert_problem(
+        &fixture.db_pool,
+        org_id,
+        user_id,
+        "Public Problem",
+        "public",
+    )
+    .await;
+    insert_problem(
+        &fixture.db_pool,
+        org_id,
+        user_id,
+        "Private Problem",
+        "private",
+    )
+    .await;
 
     // Count public-only
     let public_count: i64 = sqlx::query_scalar(

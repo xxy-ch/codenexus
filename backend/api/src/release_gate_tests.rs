@@ -13,7 +13,10 @@ use chrono::{Duration, Utc};
 use domain_search::models::SearchQuery;
 use domain_search::service::SearchService;
 use sqlx::{postgres::PgPoolOptions, PgPool};
+use std::net::TcpListener;
+use testcontainers::core::IntoContainerPort;
 use testcontainers::runners::SyncRunner;
+use testcontainers::ImageExt;
 use testcontainers::Container;
 use testcontainers_modules::postgres::Postgres;
 use tower::ServiceExt;
@@ -24,12 +27,22 @@ struct TestDb {
     database_url: String,
 }
 
+fn pick_free_port() -> u16 {
+    TcpListener::bind("127.0.0.1:0")
+        .expect("failed to reserve an ephemeral port")
+        .local_addr()
+        .expect("failed to read reserved port")
+        .port()
+}
+
 fn start_test_db() -> TestDb {
+    let host_port = pick_free_port();
     let container = Postgres::default()
+        .with_mapped_port(host_port, 5432_u16.tcp())
         .start()
         .expect("failed to start postgres container");
     let port = container
-        .get_host_port_ipv4(5432)
+        .get_host_port_ipv4(5432_u16.tcp())
         .expect("failed to resolve postgres port");
 
     TestDb {
@@ -85,12 +98,10 @@ fn build_state(pool: PgPool) -> AppState {
         ),
         prometheus_handle: api_infra::metrics::setup_metrics_recorder(),
         preview_cache: std::sync::Arc::new(dashmap::DashMap::new()),
-        gateway_client: std::sync::Arc::new(
-            api_infra::feature_gateway::GatewayClient::new(
-                "http://127.0.0.1:3001".to_string(),
-                "test_secret".to_string(),
-            ),
-        ),
+        gateway_client: std::sync::Arc::new(api_infra::feature_gateway::GatewayClient::new(
+            "http://127.0.0.1:3001".to_string(),
+            "test_secret".to_string(),
+        )),
     }
 }
 
@@ -205,7 +216,13 @@ async fn insert_enrollment(pool: &PgPool, class_id: i64, student_id: Uuid) {
     .expect("failed to insert enrollment");
 }
 
-async fn insert_discussion(pool: &PgPool, problem_id: i64, author_id: Uuid, organization_id: i64, content: &str) {
+async fn insert_discussion(
+    pool: &PgPool,
+    problem_id: i64,
+    author_id: Uuid,
+    organization_id: i64,
+    content: &str,
+) {
     sqlx::query(
         "INSERT INTO discussions (problem_id, author_id, organization_id, content, title, is_pinned) VALUES ($1, $2, $3, $4, 'Test Discussion', false)",
     )

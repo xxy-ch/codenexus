@@ -1,9 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::io::Read;
 
-use crate::models::{
-    ImportItemStatus, ProblemConfig, ProblemImportItem, TestCaseFile,
-};
+use crate::models::{ImportItemStatus, ProblemConfig, ProblemImportItem, TestCaseFile};
 use crate::security::{validate_zip_archive, validate_zip_entry, MAX_ARCHIVE_SIZE, MAX_FILE_SIZE};
 
 use domain_problems::models::CreateProblemRequest;
@@ -50,7 +48,8 @@ pub fn parse_problem_zip(
         if total_raw_size.saturating_add(declared_size) > MAX_ARCHIVE_SIZE {
             return Err(anyhow::anyhow!(
                 "Archive uncompressed size exceeds limit ({} + {} bytes)",
-                total_raw_size, declared_size
+                total_raw_size,
+                declared_size
             ));
         }
 
@@ -59,7 +58,8 @@ pub fn parse_problem_zip(
         file.take(MAX_FILE_SIZE + 1).read_to_end(&mut buf)?;
         if buf.len() > MAX_FILE_SIZE as usize {
             return Err(anyhow::anyhow!(
-                "File '{}' exceeded per-file size limit", name
+                "File '{}' exceeded per-file size limit",
+                name
             ));
         }
 
@@ -79,9 +79,7 @@ pub fn parse_problem_zip(
         .keys()
         .filter(|p| {
             let p = p.trim_end_matches('/');
-            p.starts_with("problems/")
-                && p.ends_with("/config.json")
-                && p.matches('/').count() == 2
+            p.starts_with("problems/") && p.ends_with("/config.json") && p.matches('/').count() == 2
         })
         .cloned()
         .collect();
@@ -99,10 +97,7 @@ pub fn parse_problem_zip(
         let config_bytes = match file_contents.get(config_path) {
             Some(b) => b,
             None => {
-                items.push(make_error_item(
-                    &slug,
-                    "Failed to read config.json",
-                ));
+                items.push(make_error_item(&slug, "Failed to read config.json"));
                 continue;
             }
         };
@@ -297,8 +292,8 @@ mod tests {
     fn build_zip(entries: &[(&str, &[u8])]) -> Vec<u8> {
         let buf = std::io::Cursor::new(Vec::new());
         let mut writer = ZipWriter::new(buf);
-        let options = SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated);
+        let options =
+            SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
 
         for (path, data) in entries {
             writer.start_file(*path, options).unwrap();
@@ -308,11 +303,7 @@ mod tests {
         writer.finish().unwrap().into_inner()
     }
 
-    fn make_config_json(
-        title: &str,
-        difficulty: &str,
-        test_cases: &[(&str, &str)],
-    ) -> String {
+    fn make_config_json(title: &str, difficulty: &str, test_cases: &[(&str, &str)]) -> String {
         let tc_json: Vec<String> = test_cases
             .iter()
             .enumerate()
@@ -339,7 +330,10 @@ mod tests {
         let config = make_config_json("Two Sum", "easy", &[("2 7", "0 1"), ("3 6", "1 2")]);
         let zip_bytes = build_zip(&[
             ("problems/two-sum/config.json", config.as_bytes()),
-            ("problems/two-sum/problem.md", b"Find two numbers that add up to target."),
+            (
+                "problems/two-sum/problem.md",
+                b"Find two numbers that add up to target.",
+            ),
             ("problems/two-sum/testcases/1.in", b"2 7\n"),
             ("problems/two-sum/testcases/1.out", b"0 1\n"),
             ("problems/two-sum/testcases/2.in", b"3 6\n"),
@@ -379,11 +373,17 @@ mod tests {
 
         assert_eq!(items.len(), 2);
 
-        let two_sum = items.iter().find(|i| i.slug == "two-sum").expect("two-sum item");
+        let two_sum = items
+            .iter()
+            .find(|i| i.slug == "two-sum")
+            .expect("two-sum item");
         assert_eq!(two_sum.status, ImportItemStatus::Valid);
         assert_eq!(two_sum.config.title, "Two Sum");
 
-        let add_two = items.iter().find(|i| i.slug == "add-two").expect("add-two item");
+        let add_two = items
+            .iter()
+            .find(|i| i.slug == "add-two")
+            .expect("add-two item");
         assert_eq!(add_two.status, ImportItemStatus::Valid);
         assert_eq!(add_two.config.title, "Add Two Numbers");
     }
@@ -392,7 +392,10 @@ mod tests {
     fn rejects_zip_with_path_traversal() {
         let zip_bytes = build_zip(&[
             ("../../etc/passwd", b"root:x:0:0\n"),
-            ("problems/two-sum/config.json", make_config_json("T", "easy", &[]).as_bytes()),
+            (
+                "problems/two-sum/config.json",
+                make_config_json("T", "easy", &[]).as_bytes(),
+            ),
             ("problems/two-sum/problem.md", b"desc"),
         ]);
 
@@ -416,7 +419,11 @@ mod tests {
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].status, ImportItemStatus::Duplicate);
         assert!(items[0].warning.is_some());
-        assert!(items[0].warning.as_ref().unwrap().contains("already exists"));
+        assert!(items[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("already exists"));
     }
 
     #[test]
@@ -431,7 +438,11 @@ mod tests {
         let items = parse_problem_zip(&zip_bytes, &skip).unwrap();
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].status, ImportItemStatus::Error);
-        assert!(items[0].warning.as_ref().unwrap().contains("Invalid difficulty"));
+        assert!(items[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("Invalid difficulty"));
     }
 
     #[test]
@@ -450,15 +461,17 @@ mod tests {
     #[test]
     fn marks_error_for_missing_problem_md() {
         let config = make_config_json("Test", "easy", &[]);
-        let zip_bytes = build_zip(&[
-            ("problems/test/config.json", config.as_bytes()),
-        ]);
+        let zip_bytes = build_zip(&[("problems/test/config.json", config.as_bytes())]);
 
         let skip = HashSet::new();
         let items = parse_problem_zip(&zip_bytes, &skip).unwrap();
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].status, ImportItemStatus::Error);
-        assert!(items[0].warning.as_ref().unwrap().contains("Missing problem.md"));
+        assert!(items[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("Missing problem.md"));
     }
 
     #[test]
@@ -474,7 +487,11 @@ mod tests {
         let items = parse_problem_zip(&zip_bytes, &skip).unwrap();
         assert_eq!(items.len(), 1);
         assert_eq!(items[0].status, ImportItemStatus::Error);
-        assert!(items[0].warning.as_ref().unwrap().contains("Missing test case file"));
+        assert!(items[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("Missing test case file"));
     }
 
     #[test]

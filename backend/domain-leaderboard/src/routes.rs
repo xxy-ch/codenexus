@@ -22,7 +22,9 @@ fn is_admin(role: &str) -> bool {
 /// SECURITY: Only Root can bypass tenant isolation for leaderboard queries.
 /// CampusAdmin/GradeAdmin see only their own organization — never cross-tenant.
 fn is_root(role: &str) -> bool {
-    role.parse::<Role>().map(|r| r == Role::Root).unwrap_or(false)
+    role.parse::<Role>()
+        .map(|r| r == Role::Root)
+        .unwrap_or(false)
 }
 
 fn is_teacher_plus(role: &str) -> bool {

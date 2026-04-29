@@ -22,16 +22,16 @@ function getProblemColumns(entries: ScoreboardEntry[]): Array<{ id: number; titl
 }
 
 function getRankStyle(rank: number) {
-  if (rank === 1) return 'text-amber-500'
+  if (rank === 1) return 'text-difficulty-medium'
   if (rank === 2) return 'text-muted-foreground'
-  if (rank === 3) return 'text-amber-700'
+  if (rank === 3) return 'text-difficulty-medium'
   return 'text-foreground'
 }
 
 function getRankBg(rank: number) {
-  if (rank === 1) return 'bg-amber-500/5'
+  if (rank === 1) return 'bg-difficulty-medium/5'
   if (rank === 2) return 'bg-muted-foreground/5'
-  if (rank === 3) return 'bg-amber-700/5'
+  if (rank === 3) return 'bg-difficulty-medium/5'
   return ''
 }
 
@@ -77,7 +77,7 @@ export function ScoreboardTable({ entries }: ScoreboardTableProps) {
                   rank % 2 === 0 ? 'bg-muted/20' : ''
                 )}
               >
-                <td className={cn('px-4 py-3 text-sm font-black tabular-nums', getRankStyle(rank))}>
+                <td className={cn('px-4 py-3 text-sm font-bold tabular-nums', getRankStyle(rank))}>
                   #{rank}
                 </td>
                 <td className="px-4 py-3 text-sm font-semibold text-foreground">

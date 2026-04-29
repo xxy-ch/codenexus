@@ -45,7 +45,7 @@ export function ContestScoreboard() {
                 <span className="font-semibold text-foreground">实时榜单</span>
               </div>
               <div>
-                <h1 className="text-3xl font-black tracking-tight text-foreground">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">
                   CodeNexus 实时榜单
                 </h1>
                 <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground font-normal">
@@ -86,7 +86,7 @@ export function ContestScoreboard() {
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-amber-500/10 p-2">
-              <TimerReset className="h-4 w-4 text-amber-500" />
+              <TimerReset className="h-4 w-4 text-difficulty-medium" />
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">刷新间隔</p>

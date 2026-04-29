@@ -30,7 +30,11 @@ impl BlogService {
 
     /// Get articles list with filters
     /// organization_id: tenant isolation — required for SEC-03
-    pub async fn get_articles(&self, filters: ArticleFilters, organization_id: i64) -> Result<ArticleListResponse> {
+    pub async fn get_articles(
+        &self,
+        filters: ArticleFilters,
+        organization_id: i64,
+    ) -> Result<ArticleListResponse> {
         let page = filters.page.unwrap_or(1);
         let limit = filters.limit.unwrap_or(20);
         let offset = (page - 1) * limit;
@@ -130,7 +134,11 @@ impl BlogService {
     }
 
     /// Get article by slug or ID (tenant-scoped)
-    pub async fn get_article_detail(&self, slug_or_id: &str, organization_id: i64) -> Result<ArticleDetail> {
+    pub async fn get_article_detail(
+        &self,
+        slug_or_id: &str,
+        organization_id: i64,
+    ) -> Result<ArticleDetail> {
         // Increment view count (scoped to organization)
         sqlx::query(
             "UPDATE articles SET view_count = view_count + 1 WHERE (id = $1 OR slug = $2) AND organization_id = $3"
@@ -142,15 +150,14 @@ impl BlogService {
             .await?;
 
         // Get article (scoped to organization)
-        let article =
-            sqlx::query_as::<_, Article>(
-                "SELECT * FROM articles WHERE (id = $1 OR slug = $2) AND organization_id = $3"
-            )
-                .bind(slug_or_id.parse::<i64>().unwrap_or(0))
-                .bind(slug_or_id)
-                .bind(organization_id)
-                .fetch_one(&self.pool)
-                .await?;
+        let article = sqlx::query_as::<_, Article>(
+            "SELECT * FROM articles WHERE (id = $1 OR slug = $2) AND organization_id = $3",
+        )
+        .bind(slug_or_id.parse::<i64>().unwrap_or(0))
+        .bind(slug_or_id)
+        .bind(organization_id)
+        .fetch_one(&self.pool)
+        .await?;
 
         // Get comments (tenant-scoped to prevent cross-org data leakage from dirty data)
         let comments = sqlx::query_as::<_, ArticleComment>(
@@ -294,7 +301,13 @@ impl BlogService {
     }
 
     /// Delete article
-    pub async fn delete_article(&self, id: i64, user_id: Uuid, is_admin: bool, organization_id: i64) -> Result<bool> {
+    pub async fn delete_article(
+        &self,
+        id: i64,
+        user_id: Uuid,
+        is_admin: bool,
+        organization_id: i64,
+    ) -> Result<bool> {
         let result = if is_admin {
             sqlx::query("DELETE FROM articles WHERE id = $1 AND organization_id = $2")
                 .bind(id)
@@ -302,12 +315,14 @@ impl BlogService {
                 .execute(&self.pool)
                 .await?
         } else {
-            sqlx::query("DELETE FROM articles WHERE id = $1 AND author_id = $2 AND organization_id = $3")
-                .bind(id)
-                .bind(user_id)
-                .bind(organization_id)
-                .execute(&self.pool)
-                .await?
+            sqlx::query(
+                "DELETE FROM articles WHERE id = $1 AND author_id = $2 AND organization_id = $3",
+            )
+            .bind(id)
+            .bind(user_id)
+            .bind(organization_id)
+            .execute(&self.pool)
+            .await?
         };
 
         Ok(result.rows_affected() > 0)
@@ -372,12 +387,10 @@ impl BlogService {
             "comment" => ("article_comments", "id"),
             _ => return Ok(false),
         };
-        let exists = sqlx::query_scalar::<_, bool>(
-            &format!(
-                "SELECT EXISTS(SELECT 1 FROM {} WHERE id = $1 AND organization_id = $2)",
-                table
-            ),
-        )
+        let exists = sqlx::query_scalar::<_, bool>(&format!(
+            "SELECT EXISTS(SELECT 1 FROM {} WHERE id = $1 AND organization_id = $2)",
+            table
+        ))
         .bind(target_id)
         .bind(organization_id)
         .fetch_one(&self.pool)
@@ -469,7 +482,11 @@ impl BlogService {
     }
 
     /// Get popular tags (tenant-scoped)
-    pub async fn get_popular_tags(&self, limit: i64, organization_id: Option<i64>) -> Result<Vec<(String, i64)>> {
+    pub async fn get_popular_tags(
+        &self,
+        limit: i64,
+        organization_id: Option<i64>,
+    ) -> Result<Vec<(String, i64)>> {
         let rows = if let Some(org_id) = organization_id {
             sqlx::query(
                 r#"
@@ -514,7 +531,11 @@ impl BlogService {
     }
 
     /// Get trending articles (tenant-scoped)
-    pub async fn get_trending_articles(&self, limit: i64, organization_id: Option<i64>) -> Result<Vec<Article>> {
+    pub async fn get_trending_articles(
+        &self,
+        limit: i64,
+        organization_id: Option<i64>,
+    ) -> Result<Vec<Article>> {
         let articles = if let Some(org_id) = organization_id {
             sqlx::query_as::<_, Article>(
                 r#"
@@ -546,7 +567,11 @@ impl BlogService {
     }
 
     /// Get featured articles (tenant-scoped)
-    pub async fn get_featured_articles(&self, limit: i64, organization_id: Option<i64>) -> Result<Vec<Article>> {
+    pub async fn get_featured_articles(
+        &self,
+        limit: i64,
+        organization_id: Option<i64>,
+    ) -> Result<Vec<Article>> {
         let articles = if let Some(org_id) = organization_id {
             sqlx::query_as::<_, Article>(
                 r#"

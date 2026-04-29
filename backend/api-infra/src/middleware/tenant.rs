@@ -1,8 +1,4 @@
-use axum::{
-    http::StatusCode,
-    middleware::Next,
-    response::Response,
-};
+use axum::{http::StatusCode, middleware::Next, response::Response};
 
 use shared::models::Claims;
 
@@ -40,7 +36,9 @@ pub async fn tenant_middleware(
         Some(ctx) => {
             tracing::trace!(
                 "Tenant context established for org {}, campus {:?}, grade {:?}",
-                ctx.tenant_id, ctx.campus_id, ctx.grade_id
+                ctx.tenant_id,
+                ctx.campus_id,
+                ctx.grade_id
             );
             request.extensions_mut().insert(ctx);
             Ok(next.run(request).await)
@@ -238,10 +236,7 @@ mod tests {
     #[tokio::test]
     async fn test_middleware_extracts_campus_and_grade_from_claims() {
         async fn handler(Extension(ctx): Extension<TenantContext>) -> StatusCode {
-            if ctx.tenant_id == 100
-                && ctx.campus_id == Some(200)
-                && ctx.grade_id == Some(300)
-            {
+            if ctx.tenant_id == 100 && ctx.campus_id == Some(200) && ctx.grade_id == Some(300) {
                 StatusCode::OK
             } else {
                 StatusCode::INTERNAL_SERVER_ERROR

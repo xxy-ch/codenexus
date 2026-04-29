@@ -43,7 +43,7 @@ pub async fn handle_heartbeat(
             .iter()
             .zip(expected.iter())
             .fold(0u8, |acc, (a, b)| acc | (a ^ b))
-        == 0;
+            == 0;
     if !secret_valid {
         return Err(AppError::Auth("Invalid or missing worker secret".into()));
     }

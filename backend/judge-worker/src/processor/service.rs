@@ -112,6 +112,16 @@ async fn create_work_dir(submission_id: i64) -> Result<PathBuf> {
     }
 
     fs::create_dir_all(&work_dir).await?;
+
+    // SECURITY (C-01): Restrict work_dir permissions so user code (nobody)
+    // can access its own submission but not other submissions.
+    // 0o711 = owner rwx + group/other execute-only (traverse dir, not list)
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&work_dir, std::fs::Permissions::from_mode(0o711)).await?;
+    }
+
     Ok(work_dir)
 }
 
@@ -144,7 +154,7 @@ pub async fn fetch_test_cases(problem_id: i64) -> Result<Vec<TestCase>> {
         "#,
     )
     .bind(problem_id)
-    .fetch_all(&pool)
+    .fetch_all(pool)
     .await?;
 
     Ok(test_cases)
@@ -156,60 +166,101 @@ async fn compile_code(source_file: &Path, language: &str, work_dir: &Path) -> Re
         _ => work_dir.join("solution_bin"),
     };
 
-    let output = match language {
+    // C-04: Create cgroup for compilation with resource limits
+    let compile_cgroup = crate::sandbox::cgroups::CgroupController::new(
+        &format!(
+            "compile-{}-{}",
+            std::process::id(),
+            source_file
+                .parent()
+                .and_then(|p| p.file_name())
+                .and_then(|n| n.to_str())
+                .unwrap_or("unknown")
+        ),
+        &crate::sandbox::SandboxConfig {
+            cpu_time_limit_ms: 30_000,             // 30 second compile timeout
+            memory_limit_bytes: 512 * 1024 * 1024, // 512MB
+            pids_max: 16,
+            ..Default::default()
+        },
+    )
+    .ok();
+
+    if let Some(ref cg) = compile_cgroup {
+        cg.create().with_context(|| {
+            "Compile cgroup creation failed — refusing to compile without resource limits"
+        })?;
+    } else {
+        tracing::warn!("Cgroup not available for compilation — running without resource limits");
+    }
+
+    let mut command = match language {
         "c" => {
-            Command::new("gcc")
-                .arg(source_file)
-                .arg("-O2")
-                .arg("-o")
-                .arg(&output_path)
-                .current_dir(work_dir)
-                .output()
-                .await?
+            let mut cmd = Command::new("gcc");
+            cmd.arg(source_file).arg("-O2").arg("-o").arg(&output_path);
+            cmd
         }
         "cpp" => {
-            Command::new("g++")
-                .arg(source_file)
+            let mut cmd = Command::new("g++");
+            cmd.arg(source_file)
                 .arg("-O2")
                 .arg("-std=c++17")
                 .arg("-o")
-                .arg(&output_path)
-                .current_dir(work_dir)
-                .output()
-                .await?
+                .arg(&output_path);
+            cmd
         }
         "rust" => {
-            Command::new("rustc")
-                .arg(source_file)
-                .arg("-O")
-                .arg("-o")
-                .arg(&output_path)
-                .current_dir(work_dir)
-                .output()
-                .await?
+            let mut cmd = Command::new("rustc");
+            cmd.arg(source_file).arg("-O").arg("-o").arg(&output_path);
+            cmd
         }
         "go" => {
-            Command::new("go")
-                .arg("build")
+            let mut cmd = Command::new("go");
+            cmd.arg("build")
                 .arg("-o")
                 .arg(&output_path)
-                .arg(source_file)
-                .current_dir(work_dir)
-                .output()
-                .await?
+                .arg(source_file);
+            cmd
         }
         "java" => {
-            Command::new("javac")
-                .arg(source_file)
-                .current_dir(work_dir)
-                .output()
-                .await?
+            let mut cmd = Command::new("javac");
+            cmd.arg(source_file);
+            cmd
         }
         _ => anyhow::bail!("Unsupported compiled language: {}", language),
     };
 
-    if !output.status.success() {
-        anyhow::bail!(String::from_utf8_lossy(&output.stderr).trim().to_string());
+    command.current_dir(work_dir);
+
+    // Apply seccomp and privilege drop to compilation subprocess too (C-04)
+    unsafe {
+        command.pre_exec(|| {
+            crate::sandbox::chroot::drop_privileges_to_nobody()
+                .map_err(|err| std::io::Error::other(err.to_string()))?;
+            crate::sandbox::seccomp::apply_seccomp(0)
+                .map_err(|err| std::io::Error::other(err.to_string()))
+        });
+    }
+
+    let mut child = command.spawn().context("Failed to start compiler")?;
+
+    // Move compiler into cgroup for resource limiting
+    if let (Some(ref cg), Some(pid)) = (&compile_cgroup, child.id()) {
+        let _ = cg.add_process(pid as i32);
+    }
+
+    let output = timeout(Duration::from_secs(30), child.wait())
+        .await
+        .context("Compilation timed out")?
+        .context("Failed to wait for compiler")?;
+
+    // Cleanup compile cgroup
+    if let Some(cg) = compile_cgroup {
+        let _ = cg.destroy();
+    }
+
+    if !output.success() {
+        anyhow::bail!("Compilation failed");
     }
 
     Ok(output_path)
@@ -277,6 +328,8 @@ async fn execute_program(
     let stderr = std::fs::File::create(&stderr_path)?;
 
     // Create cgroup for resource limiting (Linux only, gracefully skip on other platforms).
+    // SECURITY (C-10): Cgroup creation failure is now a hard error — refuse to run
+    // user code without resource limits rather than silently proceeding.
     let cgroup = crate::sandbox::cgroups::CgroupController::new(
         &format!("judge-{}-{}", std::process::id(), submission.submission_id),
         &crate::sandbox::SandboxConfig {
@@ -289,12 +342,21 @@ async fn execute_program(
     .ok();
 
     if let Some(ref cg) = cgroup {
-        let _ = cg.create();
+        cg.create()
+            .with_context(|| "Cgroup creation failed — refusing to run without resource limits")?;
+    } else {
+        tracing::warn!("Cgroup not available — running without resource limits");
     }
 
     let mut command = build_runtime_command(submission, source_file, executable_path, work_dir)?;
     unsafe {
         command.pre_exec(|| {
+            // C-01: Drop privileges to nobody BEFORE applying seccomp.
+            // This ensures user code cannot escalate back to root.
+            crate::sandbox::chroot::drop_privileges_to_nobody()
+                .map_err(|err| std::io::Error::other(err.to_string()))?;
+
+            // C-03: Apply deny-by-default seccomp filter
             crate::sandbox::seccomp::apply_seccomp(0)
                 .map_err(|err| std::io::Error::other(err.to_string()))
         });

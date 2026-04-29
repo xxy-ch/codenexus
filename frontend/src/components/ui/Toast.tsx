@@ -71,27 +71,27 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
   const config = {
     success: {
       icon: CheckCircle,
-      bgColor: 'bg-green-100 dark:bg-green-900/30',
-      textColor: 'text-green-700 dark:text-green-400',
-      borderColor: 'border-green-300 dark:border-green-700',
+      bgColor: 'bg-status-accepted/10',
+      textColor: 'text-status-accepted',
+      borderColor: 'border-status-accepted/20',
     },
     error: {
       icon: XCircle,
-      bgColor: 'bg-red-100 dark:bg-red-900/30',
-      textColor: 'text-red-700 dark:text-red-400',
-      borderColor: 'border-red-300 dark:border-red-700',
+      bgColor: 'bg-destructive/10',
+      textColor: 'text-destructive',
+      borderColor: 'border-destructive/20',
     },
     warning: {
       icon: AlertTriangle,
-      bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-      textColor: 'text-yellow-700 dark:text-yellow-400',
-      borderColor: 'border-yellow-300 dark:border-yellow-700',
+      bgColor: 'bg-status-tle/10',
+      textColor: 'text-status-tle',
+      borderColor: 'border-status-tle/20',
     },
     info: {
       icon: Info,
-      bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-      textColor: 'text-blue-700 dark:text-blue-400',
-      borderColor: 'border-blue-300 dark:border-blue-700',
+      bgColor: 'bg-status-pending/10',
+      textColor: 'text-status-pending',
+      borderColor: 'border-status-pending/20',
     },
   }[toast.type]
 

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 11
-status: executed
-last_updated: "2026-04-21T12:51:54Z"
+status: verifying
+last_updated: "2026-04-21T13:14:53.913Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 16
-  completed_phases: 12
-  total_plans: 63
+  completed_phases: 14
+  total_plans: 69
   completed_plans: 69
   percent: 100
 ---
@@ -38,6 +38,8 @@ progress:
 | 12 | AI Analysis Bounded Context | Planned | 0 plans | 0% |
 | 13 | Tenant Hierarchy Restructure | Executed + Audit Hardened | 5 plans | 100% (5/5), is_admin tightened to Root-only, CampusAdmin campus-scoped |
 | 14 | Grade-Scoped Data Model | Executed + Audit Hardened | 6 plans (4 waves) | 100% (6/6), campus scope on problem/test_cases, grade scope centralized in verify_class_access |
+| 15 | Frontend UI Completion | Executed | 12 plans | 100% (12/12 plans) |
+| 16 | UI Restoration — Fix Tailwind Regression & Brand Rename | Planned | 0 plans | 0% |
 
 ## Project Reference
 
@@ -97,10 +99,16 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Security audit round 14: 2026-04-21 — is_admin tightened to Root-only (CampusAdmin no longer global), campus scope added to ProblemAccessRecord, grade scope centralized in verify_class_access, is_active filter semantics fixed, ROADMAP/STATE evidence chain aligned*
 *Security audit round 15: 2026-04-21 — 5c6fcf8 fail-closed campus scope across all domains (problems/contests/community/classes), XACK fail-closed in judge-worker, notifications FK forward migration 034, community author campus_id proxy via users JOIN, admin test campus_id fix (a9964fa)*
 *Security audit round 16: 2026-04-21 — c7d353e classes full campus scope (verify_campus_scope in verify_class_access chain), contests full-campus isolation on ALL handlers, recovery ACK fail-closed matching main chain*
+*Security audit round 17: 2026-04-23 — eb1a014 restore_root_privileges rename (C-3), messages tenant isolation via users JOIN (C-4), registration org_id validation (C-5), constant-time secret comparison in feature-gateway (C-6), clippy/fmt cleanup across workspace*
+*Security audit round 18: 2026-04-23 — plagiarism ensure_admin fixed to match Role enum (was checking non-existent "admin" role, locking entire module), Redis blacklist fail-closed on connection failure, submission organization_id uses school_id directly instead of COALESCE fallback to 1, registration wrapped in transaction (TOCTOU C-7), update_user_role wrapped in transaction (atomic DELETE+INSERT C-8)*
+*Security audit round 19: 2026-04-23 — Feature Gateway C-05: WORKER_SECRET now required at startup (panics on default), C-06: set_flag/delete_flag enforce X-Caller-Role scope authorization (defense in depth), C-07: client fail-closed (disabled on gateway unavailable), C-10: judge-worker DB pool singleton via OnceLock, H-02: Cookie Secure flag added, H-07: promote_grades wrapped in transaction. Tests updated for fail-closed semantics.*
+*Security audit round 20: 2026-04-23 — Sandbox CRITICAL fixes: C-01 pre_exec drops privileges to nobody (uid/gid 65534) before seccomp, C-02 restore_root_privileges() removed (replaced with drop_privileges_to_nobody), C-03 seccomp switched to deny-by-default (SCMP_ACT_ERRNO) with explicit allowlist (~80 syscalls for runtime needs), C-04 compilation wrapped in cgroup (30s/512MB) with privilege drop + seccomp. Cgroup creation failure now rejects execution. Integration tests: 5/6 pass (pre-existing admin_list_users 401).*
+
 
 ### Roadmap Evolution
 
 - Phase 15 added: 2026-04-20 — Frontend UI completion — remaining pages, polish, and integration testing
+- Phase 16 added: 2026-04-22 — UI Restoration — Fix Tailwind Regression & Brand Rename to CodeNexus
 - Phase 15 discuss-phase completed: 2026-04-20 — 4 decisions: D-15-01 (wave-based all), D-15-02 (production-grade UI), D-15-03 (TDD full coverage), D-15-04 (PC-only)
 
 *Phase 15 plan 02 executed: 2026-04-20 — fixed 32 skipped tests, 170/170 passing*
@@ -125,6 +133,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 *Phase 11 v2 plan 03 executed: 2026-04-21 — Docker Compose integration + workspace build/test verification (commit a0fe4ac)*
 *Phase 11 v2 complete — standalone Gateway architecture fully verified (D-17~D-26)*
 *Phase 11 v2 Plan 04 re-verified: 2026-04-21 — frontend unchanged (D-22), 24/24 tests pass, 10 files confirmed matching specs (commit 22fd54e)*
+*Phase 16 context gathered: 2026-04-22 — 4 decisions: D-16-01 (commit existing), D-16-03 (full token migration), D-16-05 (comprehensive rename), D-16-07 (full Chinese UI)*
 
 ## Decisions
 

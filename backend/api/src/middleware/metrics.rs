@@ -63,10 +63,13 @@ mod tests {
 
         let app = Router::new()
             .route("/health/live", get(ok_handler))
-            .route("/metrics", get(move || {
-                let h = handle.clone();
-                async move { h.render() }
-            }))
+            .route(
+                "/metrics",
+                get(move || {
+                    let h = handle.clone();
+                    async move { h.render() }
+                }),
+            )
             .layer(axum::middleware::from_fn(track_metrics));
 
         // First, make a request to a tracked endpoint to populate histogram data
@@ -156,10 +159,13 @@ mod tests {
         let render_handle = handle.clone();
 
         let app = Router::new()
-            .route("/metrics", get(move || {
-                let h = handle.clone();
-                async move { h.render() }
-            }))
+            .route(
+                "/metrics",
+                get(move || {
+                    let h = handle.clone();
+                    async move { h.render() }
+                }),
+            )
             .layer(axum::middleware::from_fn(track_metrics));
 
         // Hit /metrics multiple times

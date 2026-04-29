@@ -217,5 +217,4 @@ impl NotificationService {
 
         Ok(result)
     }
-
 }

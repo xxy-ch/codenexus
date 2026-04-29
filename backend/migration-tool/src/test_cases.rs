@@ -8,7 +8,6 @@
 ///
 /// Starts at N=1, increments until either input or output file is missing.
 /// Returns an empty Vec (no error) if the problem directory doesn't exist.
-
 use std::path::Path;
 
 use anyhow::Result;
@@ -56,11 +55,7 @@ pub fn read_test_cases(test_case_dir: &Path, problem_id: i64) -> Result<Vec<Test
         idx += 1;
     }
 
-    tracing::info!(
-        "Read {} test cases for problem {}",
-        cases.len(),
-        problem_id
-    );
+    tracing::info!("Read {} test cases for problem {}", cases.len(), problem_id);
 
     Ok(cases)
 }
@@ -162,12 +157,7 @@ mod tests {
     #[test]
     fn test_case_content_with_multiline_input() {
         let dir = TempTestCaseDir::new();
-        dir.add_test_case(
-            5,
-            1,
-            "3\n1 2 3\n",
-            "6\n",
-        );
+        dir.add_test_case(5, 1, "3\n1 2 3\n", "6\n");
 
         let cases = read_test_cases(dir.path(), 5).unwrap();
         assert_eq!(cases.len(), 1);

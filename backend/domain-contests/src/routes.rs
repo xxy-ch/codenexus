@@ -25,8 +25,14 @@ fn is_admin(role: &str) -> bool {
 
 /// Verify campus scope for CampusAdmin/GradeAdmin accessing a contest.
 /// Fail-closed: None campus_id is rejected.
-fn verify_contest_campus_scope(contest: &ContestDetail, claims: &shared::models::auth::Claims) -> Result<(), StatusCode> {
-    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+fn verify_contest_campus_scope(
+    contest: &ContestDetail,
+    claims: &shared::models::auth::Claims,
+) -> Result<(), StatusCode> {
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     match role {
         Role::Root => Ok(()),
         Role::CampusAdmin | Role::GradeAdmin => {
@@ -69,7 +75,10 @@ pub async fn list_contests(
     // Tenant: force organization_id from claims
     query.organization_id = Some(claims.school_id);
     // CampusAdmin/GradeAdmin: force campus_id filter
-    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     if matches!(role, Role::CampusAdmin | Role::GradeAdmin) {
         let cid = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
         query.campus_id = Some(cid);
@@ -120,7 +129,10 @@ pub async fn create_contest(
     // Tenant: force organization_id from claims
     req.organization_id = claims.school_id;
     // CampusAdmin/GradeAdmin: enforce campus scope on creation (fail-closed)
-    let role = claims.role.parse::<Role>().map_err(|_| StatusCode::FORBIDDEN)?;
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
     if matches!(role, Role::CampusAdmin | Role::GradeAdmin) {
         let cid = claims.campus_id.ok_or(StatusCode::FORBIDDEN)?;
         if req.campus_id != Some(cid) {

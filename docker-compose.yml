@@ -86,6 +86,7 @@ services:
     ports:
       - "3000:3000"
     environment:
+      APP_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/online_judge
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-default_jwt_secret_change_me}
@@ -101,7 +102,7 @@ services:
       feature-gateway:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health/ready"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -131,6 +132,7 @@ services:
     ports:
       - "3001:3001"
     environment:
+      APP_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/online_judge
       FEATURE_GATEWAY_ENABLED: "true"
       GATEWAY_BIND_ADDRESS: 0.0.0.0:3001
@@ -140,7 +142,11 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f -H \"Authorization: Bearer $$WORKER_SECRET\" http://localhost:3001/health || exit 1",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -153,6 +159,7 @@ services:
     container_name: online-judge-judge-worker
     restart: unless-stopped
     environment:
+      APP_ENV: production
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/online_judge
       REDIS_URL: redis://redis:6379
       API_URL: http://api:3000
@@ -171,7 +178,11 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "judge-worker"]
+      test:
+        [
+          "CMD-SHELL",
+          "pgrep -f judge-worker >/dev/null && python3 -c \"import socket; s=socket.create_connection(('redis', 6379), 3); s.sendall(b'PING\\r\\n'); assert b'PONG' in s.recv(16); s.close()\" && curl -f http://api:3000/health/ready",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

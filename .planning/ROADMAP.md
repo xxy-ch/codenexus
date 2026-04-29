@@ -2,7 +2,7 @@
 
 **Created:** 2026-04-13
 **Revised:** 2026-04-21 (Phase 11 complete — all 4 plans executed, v2 standalone gateway)
-**Phases:** 15
+**Phases:** 16
 **v1 Requirements:** 50 (all mapped)
 
 ---
@@ -345,7 +345,8 @@ Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each othe
 | 13 | THR-01..08 | 8 |
 | 14 | GSD-01..08 | 8 |
 | 15 | D-15-01-W1, D-15-01-W2, D-15-01-W3, D-15-02, D-15-03, D-15-04 | 6 |
-| **Total** | | **87** |
+| 16 | UI-16-01..04 | 4 |
+| **Total** | | **91** |
 
 > Note: ARCH-04 and ARCH-05 span Phases 2-4. CICD-01..03 are split across Phases 2 and 6. CICD-05 deferred per D-03.
 
@@ -527,6 +528,9 @@ Phase 7 (Test Coverage + Contest Enhancement)
               |
               v
             Phase 15 (Frontend UI Completion)
+              |
+              v
+            Phase 16 (UI Restoration — Fix Tailwind Regression & Brand Rename)
 ```
 
 Phases 1-7 are strictly sequential. Phases 8, 9, 10 are independent of each other and can execute in parallel after Phase 7 completes. Phase 11 depends on Phase 10. Phase 12 depends on Phase 11. Phase 13 depends on Phase 10. Phase 14 depends on Phase 13. Phase 15 depends on Phase 14.
@@ -572,7 +576,29 @@ Plans:
 - [x] 15-11-PLAN.md — Wave 3: Evaluate DailyChallenge/Achievements backend endpoints (Wave 3)
 - [x] 15-12-PLAN.md — Phase verification: full test suite + build + coverage audit (Wave 3)
 
+### Phase 16: UI Restoration — Fix Tailwind Regression & Brand Rename
+
+**Goal:** Restore Tailwind CSS styling across all frontend pages where styles have regressed to browser defaults, and rename the application from "AlgoMaster" to "CodeNexus" in all user-facing text.
+
+**Requirements:**
+- UI-16-01: Restore Tailwind CSS utility classes across all pages with browser-default regression — identify every component that lost its styling and re-apply design system tokens
+- UI-16-02: Brand rename — replace all occurrences of "AlgoMaster" with "CodeNexus" in user-facing UI text (page titles, headers, sidebar, login/register, error pages)
+- UI-16-03: Verify design system consistency — all pages use shared components (Button, Input, Card, Badge, etc.) from the shadcn/CVA design system
+- UI-16-04: Build and test verification — `npm run build` succeeds, `npx vitest --run` passes, visual regression resolved
+
+**Success Criteria:**
+1. All frontend pages render with proper Tailwind styling — no browser-default form elements, tables, or buttons
+2. Application name "CodeNexus" appears consistently in Header, Sidebar, LoginPage, RegisterPage, and error pages
+3. `npm run build` succeeds with 0 errors
+4. `npx vitest --run` passes with 0 failures
+
+**Depends on:** Phase 15
+**Plans:** 0 plans (run /gsd-plan-phase 16 to break down)
+
+Plans:
+- [ ] TBD
+
 ---
 
 *Roadmap created: 2026-04-13*
-*Last updated: 2026-04-21 Phase 11 v2 plan 02 executed (API HTTP client + proxy migration)*
+*Last updated: 2026-04-22 Phase 16 added (UI Restoration)*

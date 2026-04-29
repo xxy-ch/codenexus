@@ -179,7 +179,7 @@ export function GradeManagement() {
               <div className="flex items-end">
                 <Button
                   type="submit"
-                  variant="primary"
+                  variant="default"
                   disabled={createMutation.isPending || !newGrade.name || !newGrade.academic_year}
                   className="w-full"
                 >

@@ -174,8 +174,11 @@ mod tests {
 
         // cache() does not overwrite an existing entry (or_insert semantics)
         map.cache("problem", "42", "100".to_string());
-        assert_eq!(map.get("problem", "42"), Some("99".to_string()),
-            "cache must keep the first value for an existing key");
+        assert_eq!(
+            map.get("problem", "42"),
+            Some("99".to_string()),
+            "cache must keep the first value for an existing key"
+        );
     }
 
     #[tokio::test]
@@ -268,7 +271,10 @@ mod tests {
 
         // Re-instantiating loads existing mappings
         let map2 = IdMap::new(pool.clone()).await.unwrap();
-        assert_eq!(map2.get("user", "alice"), Some("uuid-alice-123".to_string()));
+        assert_eq!(
+            map2.get("user", "alice"),
+            Some("uuid-alice-123".to_string())
+        );
         assert_eq!(map2.len(), 1);
     }
 }

@@ -268,8 +268,8 @@ export function AssignmentReport() {
                       <td className="px-6 py-4 text-right">
                         <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
                           isOverdue
-                            ? 'bg-amber-500/15 text-amber-400'
-                            : 'bg-lime-500/15 text-lime-400'
+                            ? 'bg-difficulty-medium/15 text-difficulty-medium'
+                            : 'bg-status-accepted/15 text-status-accepted'
                         }`}>
                           <ArrowUpRight className="h-3.5 w-3.5" />
                           {formatDate(row.assignment.deadline)}

@@ -19,7 +19,7 @@ export function Input({ className, error, fullWidth = true, disabled, ...props }
         disabled={disabled}
         {...props}
       />
-      {error && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="mt-1 text-sm text-destructive">{error}</p>}
     </div>
   )
 }

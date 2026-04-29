@@ -1,43 +1,45 @@
-import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useProblem } from '@/hooks/useProblems'
-import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
-import { ProblemDetailSkeleton } from '@/components/skeletons/ProblemDetailSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
-import { Clock, Cpu, Star, Play, Lightbulb, ArrowLeft } from 'lucide-react'
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useProblem } from "@/hooks/useProblems";
+import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
+import { ProblemDetailSkeleton } from "@/components/skeletons/ProblemDetailSkeleton";
+import { InlineError } from "@/components/ui/InlineError";
+import { Clock, Cpu, Star, Play, Lightbulb, ArrowLeft } from "lucide-react";
+import { TeachingCardBlock } from "@/components/analysis/TeachingCardBlock";
+import { ClusterOverview } from "@/components/analysis/ClusterOverview";
 
 const difficultyConfig = {
   easy: {
-    label: '简单',
-    bgColor: 'bg-green-100 dark:bg-green-900/30',
-    textColor: 'text-green-700 dark:text-green-400',
-    borderColor: 'border-green-200 dark:border-green-800',
+    label: "简单",
+    bgColor: "bg-difficulty-easy/10",
+    textColor: "text-difficulty-easy",
+    borderColor: "border-difficulty-easy/20",
   },
   medium: {
-    label: '中等',
-    bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-    textColor: 'text-yellow-700 dark:text-yellow-400',
-    borderColor: 'border-yellow-200 dark:border-yellow-800',
+    label: "中等",
+    bgColor: "bg-difficulty-medium/10",
+    textColor: "text-difficulty-medium",
+    borderColor: "border-difficulty-medium/20",
   },
   hard: {
-    label: '困难',
-    bgColor: 'bg-red-100 dark:bg-red-900/30',
-    textColor: 'text-red-700 dark:text-red-400',
-    borderColor: 'border-red-200 dark:border-red-800',
+    label: "困难",
+    bgColor: "bg-difficulty-hard/10",
+    textColor: "text-difficulty-hard",
+    borderColor: "border-difficulty-hard/20",
   },
-}
+};
 
 export function ProblemDetail() {
-  const { problemId } = useParams<{ problemId: string }>()
-  const navigate = useNavigate()
-  const { data: problem, isLoading, error } = useProblem(problemId ?? '')
+  const { problemId } = useParams<{ problemId: string }>();
+  const navigate = useNavigate();
+  const { data: problem, isLoading, error } = useProblem(problemId ?? "");
 
   const handleSolve = () => {
-    navigate(`/problems/${problemId}/solve`)
-  }
+    navigate(`/problems/${problemId}/solve`);
+  };
 
   if (isLoading) {
-    return <ProblemDetailSkeleton />
+    return <ProblemDetailSkeleton />;
   }
 
   if (error || !problem) {
@@ -47,10 +49,11 @@ export function ProblemDetail() {
         message="无法加载题目详情，请稍后重试"
         onRetry={() => window.location.reload()}
       />
-    )
+    );
   }
 
-  const config = difficultyConfig[problem.difficulty]
+  const config = difficultyConfig[problem.difficulty];
+  const numericProblemId = Number(problem.id);
 
   return (
     <div className="space-y-6">
@@ -58,15 +61,15 @@ export function ProblemDetail() {
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               {problem.title}
             </h1>
             <span
               className={cn(
-                'px-3 py-1 rounded-full text-xs font-semibold border',
+                "px-3 py-1 rounded-full text-xs font-semibold border",
                 config.bgColor,
                 config.textColor,
-                config.borderColor
+                config.borderColor,
               )}
             >
               {config.label}
@@ -90,7 +93,7 @@ export function ProblemDetail() {
           </div>
         </div>
 
-        <Button variant="primary" size="lg" onClick={handleSolve}>
+        <Button variant="default" size="lg" onClick={handleSolve}>
           <Play className="w-5 h-5 mr-2" />
           开始解题
         </Button>
@@ -111,9 +114,7 @@ export function ProblemDetail() {
       {/* Problem Description */}
       <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <div className="border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            题目描述
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">题目描述</h2>
         </div>
         <div className="px-6 py-5">
           <div className="prose prose-sm dark:prose-invert max-w-none text-foreground">
@@ -122,19 +123,22 @@ export function ProblemDetail() {
         </div>
       </div>
 
+      {Number.isFinite(numericProblemId) && (
+        <div className="space-y-6">
+          <TeachingCardBlock problemId={numericProblemId} />
+          <ClusterOverview problemId={numericProblemId} />
+        </div>
+      )}
+
       {/* Examples */}
       <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <div className="border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            示例
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">示例</h2>
         </div>
         <div className="px-6 py-5 space-y-6">
           {/* Example 1 */}
           <div>
-            <p className="text-sm font-medium text-foreground mb-3">
-              示例 1:
-            </p>
+            <p className="text-sm font-medium text-foreground mb-3">示例 1:</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-muted rounded-lg p-4">
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
@@ -148,9 +152,7 @@ export function ProblemDetail() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
                   输出:
                 </p>
-                <code className="text-sm text-foreground">
-                  [0,1]
-                </code>
+                <code className="text-sm text-foreground">[0,1]</code>
               </div>
             </div>
             <p className="text-sm text-muted-foreground mt-3">
@@ -160,9 +162,7 @@ export function ProblemDetail() {
 
           {/* Example 2 */}
           <div>
-            <p className="text-sm font-medium text-foreground mb-3">
-              示例 2:
-            </p>
+            <p className="text-sm font-medium text-foreground mb-3">示例 2:</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-muted rounded-lg p-4">
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
@@ -176,9 +176,7 @@ export function ProblemDetail() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
                   输出:
                 </p>
-                <code className="text-sm text-foreground">
-                  [1,2]
-                </code>
+                <code className="text-sm text-foreground">[1,2]</code>
               </div>
             </div>
           </div>
@@ -188,9 +186,7 @@ export function ProblemDetail() {
       {/* Constraints */}
       <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
         <div className="border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            约束条件
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">约束条件</h2>
         </div>
         <div className="px-6 py-5">
           <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
@@ -212,7 +208,8 @@ export function ProblemDetail() {
                 提示
               </h3>
               <p className="text-sm text-muted-foreground">
-                考虑使用哈希表存储你已见过的值。对于每个数字，检查补数（target - number）是否存在于哈希表中。
+                考虑使用哈希表存储你已见过的值。对于每个数字，检查补数（target -
+                number）是否存在于哈希表中。
               </p>
             </div>
           </div>
@@ -229,5 +226,5 @@ export function ProblemDetail() {
         </Link>
       </div>
     </div>
-  )
+  );
 }

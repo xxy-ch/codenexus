@@ -90,14 +90,8 @@ pub async fn run(cli: Cli) -> Result<()> {
     let (org_id, campus_id) = migrator::Migrator::migrate_organization(&cli, &pool).await?;
 
     // Create migrator and run full pipeline
-    let mut migrator = migrator::Migrator::new(
-        pool,
-        dump,
-        org_id,
-        campus_id,
-        cli.test_case_dir.clone(),
-    )
-    .await?;
+    let mut migrator =
+        migrator::Migrator::new(pool, dump, org_id, campus_id, cli.test_case_dir.clone()).await?;
 
     migrator.run().await?;
 
@@ -112,11 +106,16 @@ mod tests {
     fn cli_parses_all_flags() {
         let cli = Cli::try_parse_from([
             "uoj-migrate",
-            "--dump-file", "/path/to/dump.sql",
-            "--database-url", "postgres://localhost/db",
-            "--test-case-dir", "/path/to/tests",
-            "--org-id", "42",
-        ]).unwrap();
+            "--dump-file",
+            "/path/to/dump.sql",
+            "--database-url",
+            "postgres://localhost/db",
+            "--test-case-dir",
+            "/path/to/tests",
+            "--org-id",
+            "42",
+        ])
+        .unwrap();
 
         assert_eq!(cli.dump_file, "/path/to/dump.sql");
         assert_eq!(cli.database_url, "postgres://localhost/db");
@@ -129,10 +128,13 @@ mod tests {
     fn cli_parses_create_default_org() {
         let cli = Cli::try_parse_from([
             "uoj-migrate",
-            "--dump-file", "/path/to/dump.sql",
-            "--database-url", "postgres://localhost/db",
+            "--dump-file",
+            "/path/to/dump.sql",
+            "--database-url",
+            "postgres://localhost/db",
             "--create-default-org",
-        ]).unwrap();
+        ])
+        .unwrap();
 
         assert!(cli.create_default_org);
         assert!(cli.org_id.is_none());
@@ -142,10 +144,14 @@ mod tests {
     fn cli_parses_minimal_flags_with_org_id() {
         let cli = Cli::try_parse_from([
             "uoj-migrate",
-            "--dump-file", "/path/to/dump.sql",
-            "--database-url", "postgres://localhost/db",
-            "--org-id", "1",
-        ]).unwrap();
+            "--dump-file",
+            "/path/to/dump.sql",
+            "--database-url",
+            "postgres://localhost/db",
+            "--org-id",
+            "1",
+        ])
+        .unwrap();
 
         assert_eq!(cli.org_id, Some(1));
         assert!(cli.test_case_dir.is_none());
@@ -155,10 +161,14 @@ mod tests {
     fn cli_env_var_for_database_url() {
         let cli = Cli::try_parse_from([
             "uoj-migrate",
-            "--dump-file", "/path/to/dump.sql",
-            "--database-url", "postgres://env/db",
-            "--org-id", "1",
-        ]).unwrap();
+            "--dump-file",
+            "/path/to/dump.sql",
+            "--database-url",
+            "postgres://env/db",
+            "--org-id",
+            "1",
+        ])
+        .unwrap();
 
         assert_eq!(cli.database_url, "postgres://env/db");
     }
@@ -167,8 +177,10 @@ mod tests {
     fn cli_missing_dump_file_fails() {
         let result = Cli::try_parse_from([
             "uoj-migrate",
-            "--database-url", "postgres://localhost/db",
-            "--org-id", "1",
+            "--database-url",
+            "postgres://localhost/db",
+            "--org-id",
+            "1",
         ]);
         assert!(result.is_err());
     }
@@ -177,8 +189,10 @@ mod tests {
     fn cli_missing_database_url_fails() {
         let result = Cli::try_parse_from([
             "uoj-migrate",
-            "--dump-file", "/path/to/dump.sql",
-            "--org-id", "1",
+            "--dump-file",
+            "/path/to/dump.sql",
+            "--org-id",
+            "1",
         ]);
         assert!(result.is_err());
     }
@@ -188,10 +202,14 @@ mod tests {
         // --org-id accepts a valid i64 value
         let cli = Cli::try_parse_from([
             "uoj-migrate",
-            "--dump-file", "/path/to/dump.sql",
-            "--database-url", "postgres://localhost/db",
-            "--org-id", "42",
-        ]).unwrap();
+            "--dump-file",
+            "/path/to/dump.sql",
+            "--database-url",
+            "postgres://localhost/db",
+            "--org-id",
+            "42",
+        ])
+        .unwrap();
         assert_eq!(cli.org_id, Some(42));
     }
 
@@ -200,10 +218,13 @@ mod tests {
         // --create-default-org is a boolean flag (no value required)
         let cli = Cli::try_parse_from([
             "uoj-migrate",
-            "--dump-file", "/path/to/dump.sql",
-            "--database-url", "postgres://localhost/db",
+            "--dump-file",
+            "/path/to/dump.sql",
+            "--database-url",
+            "postgres://localhost/db",
             "--create-default-org",
-        ]).unwrap();
+        ])
+        .unwrap();
         assert!(cli.create_default_org);
         assert!(cli.org_id.is_none());
     }
@@ -214,11 +235,15 @@ mod tests {
         // Per D-10-4, --org-id takes precedence at runtime.
         let cli = Cli::try_parse_from([
             "uoj-migrate",
-            "--dump-file", "/path/to/dump.sql",
-            "--database-url", "postgres://localhost/db",
-            "--org-id", "1",
+            "--dump-file",
+            "/path/to/dump.sql",
+            "--database-url",
+            "postgres://localhost/db",
+            "--org-id",
+            "1",
             "--create-default-org",
-        ]).unwrap();
+        ])
+        .unwrap();
         assert_eq!(cli.org_id, Some(1));
         assert!(cli.create_default_org);
     }

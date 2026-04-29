@@ -19,9 +19,9 @@ export function PlagiarismReportDetail() {
 
   const riskTone = useMemo(() => {
     const risk = data?.overall_risk?.toLowerCase()
-    if (risk === 'high') return 'border-rose-500/30 bg-rose-500/5 text-rose-400'
-    if (risk === 'medium') return 'border-amber-500/30 bg-amber-500/5 text-amber-400'
-    return 'border-lime-500/30 bg-lime-500/5 text-lime-400'
+    if (risk === 'high') return 'border-destructive/20 bg-destructive/5 text-destructive'
+    if (risk === 'medium') return 'border-difficulty-medium/20 bg-difficulty-medium/5 text-difficulty-medium'
+    return 'border-status-accepted/20 bg-status-accepted/5 text-status-accepted'
   }, [data?.overall_risk])
 
   const riskLabel = useMemo(() => {
@@ -69,7 +69,7 @@ export function PlagiarismReportDetail() {
               <div className={cn('inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-widest', riskTone)}>
                 <span className={cn(
                   'h-2 w-2 rounded-full',
-                  data.overall_risk === 'high' ? 'bg-rose-400' : data.overall_risk === 'medium' ? 'bg-amber-400' : 'bg-lime-400',
+                  data.overall_risk === 'high' ? 'bg-destructive' : data.overall_risk === 'medium' ? 'bg-difficulty-medium' : 'bg-status-accepted',
                 )} />
                 {riskLabel} / {variantTone}
               </div>
@@ -99,7 +99,7 @@ export function PlagiarismReportDetail() {
           <div className="grid gap-4 lg:grid-cols-3">
             <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-rose-500/10 p-2 text-rose-400">
+                <div className="rounded-lg bg-destructive/10 p-2 text-destructive">
                   <ShieldAlert className="h-4 w-4" />
                 </div>
                 <div>
@@ -110,7 +110,7 @@ export function PlagiarismReportDetail() {
             </div>
             <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-amber-500/10 p-2 text-amber-400">
+                <div className="rounded-lg bg-difficulty-medium/10 p-2 text-difficulty-medium">
                   <Layers3 className="h-4 w-4" />
                 </div>
                 <div>
@@ -121,7 +121,7 @@ export function PlagiarismReportDetail() {
             </div>
             <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-blue-500/10 p-2 text-blue-400">
+                <div className="rounded-lg bg-primary/10 p-2 text-primary">
                   <FileSearch className="h-4 w-4" />
                 </div>
                 <div>
@@ -143,7 +143,7 @@ export function PlagiarismReportDetail() {
             <div className="divide-y divide-border">
               {data.top_pairs.length === 0 ? (
                 <div className="px-6 py-16 text-center">
-                  <Flag className="mx-auto h-10 w-10 text-lime-400" />
+                  <Flag className="mx-auto h-10 w-10 text-status-accepted" />
                   <p className="mt-4 text-sm font-semibold text-foreground">当前报告没有可疑提交对</p>
                   <p className="mt-2 text-xs text-muted-foreground">这类报告应呈现为清白结论页。</p>
                 </div>

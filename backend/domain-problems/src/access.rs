@@ -50,7 +50,9 @@ pub fn can_view_management_problem_data(
     }
     match role {
         Role::CampusAdmin | Role::GradeAdmin => {
-            let Some(cid) = claims.campus_id else { return false };
+            let Some(cid) = claims.campus_id else {
+                return false;
+            };
             problem.campus_id == Some(cid)
         }
         _ => role.is_higher_or_equal(Role::Teacher),
@@ -72,7 +74,9 @@ pub fn can_mutate_problem(role: Role, claims: &Claims, problem: &ProblemAccessRe
 
     match role {
         Role::CampusAdmin | Role::GradeAdmin => {
-            let Some(cid) = claims.campus_id else { return false };
+            let Some(cid) = claims.campus_id else {
+                return false;
+            };
             problem.campus_id == Some(cid)
         }
         Role::Teacher => problem.author_id == Some(claims.sub),

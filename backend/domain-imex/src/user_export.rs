@@ -24,7 +24,14 @@ pub fn build_user_csv(users: &[UserExportRow]) -> Result<Vec<u8>> {
         .from_writer(Vec::<u8>::new());
 
     // Write header explicitly to ensure it's always present
-    wtr.write_record(&["username", "role", "campus_id", "grade_id", "display_name", "email"])?;
+    wtr.write_record(&[
+        "username",
+        "role",
+        "campus_id",
+        "grade_id",
+        "display_name",
+        "email",
+    ])?;
 
     for user in users {
         wtr.write_record(&[
