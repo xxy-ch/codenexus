@@ -59,7 +59,7 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full">
+    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
       {toasts.map(toast => (
         <ToastItem key={toast.id} toast={toast} onRemove={() => removeToast(toast.id)} />
       ))}
@@ -67,56 +67,74 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
   )
 }
 
-function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) {
-  const config = {
-    success: {
-      icon: CheckCircle,
-      bgColor: 'bg-status-accepted/10',
-      textColor: 'text-status-accepted',
-      borderColor: 'border-status-accepted/20',
-    },
-    error: {
-      icon: XCircle,
-      bgColor: 'bg-destructive/10',
-      textColor: 'text-destructive',
-      borderColor: 'border-destructive/20',
-    },
-    warning: {
-      icon: AlertTriangle,
-      bgColor: 'bg-status-tle/10',
-      textColor: 'text-status-tle',
-      borderColor: 'border-status-tle/20',
-    },
-    info: {
-      icon: Info,
-      bgColor: 'bg-status-pending/10',
-      textColor: 'text-status-pending',
-      borderColor: 'border-status-pending/20',
-    },
-  }[toast.type]
+const toastConfig: Record<ToastType, {
+  icon: typeof CheckCircle
+  iconColor: string
+  borderColor: string
+  bgAccent: string
+}> = {
+  success: {
+    icon: CheckCircle,
+    iconColor: 'text-status-accepted',
+    borderColor: 'border-status-accepted/30',
+    bgAccent: 'bg-status-accepted/5',
+  },
+  error: {
+    icon: XCircle,
+    iconColor: 'text-destructive',
+    borderColor: 'border-destructive/30',
+    bgAccent: 'bg-destructive/5',
+  },
+  warning: {
+    icon: AlertTriangle,
+    iconColor: 'text-status-tle',
+    borderColor: 'border-status-tle/30',
+    bgAccent: 'bg-status-tle/5',
+  },
+  info: {
+    icon: Info,
+    iconColor: 'text-status-pending',
+    borderColor: 'border-status-pending/30',
+    bgAccent: 'bg-status-pending/5',
+  },
+}
 
+function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) {
+  const config = toastConfig[toast.type]
   const Icon = config.icon
 
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-4 rounded-lg border shadow-lg animate-slide-in',
-        config.bgColor,
-        config.borderColor
+        'flex items-start gap-3 p-4 rounded-xl pointer-events-auto',
+        // Glass effect
+        'bg-background/90 backdrop-blur-xl',
+        'border border-border/50',
+        'shadow-elevated',
+        // Animation
+        'animate-slide-up',
+        // Accent border
+        config.borderColor,
+        config.bgAccent
       )}
     >
-      <Icon className={cn('w-5 h-5', config.textColor)} />
-      <div className="flex-1">
-        <p className={cn('font-medium', config.textColor)}>{toast.title}</p>
+      <Icon className={cn('w-5 h-5 shrink-0 mt-0.5', config.iconColor)} />
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm text-foreground">{toast.title}</p>
         {toast.message && (
-          <p className="text-sm text-muted-foreground mt-1">{toast.message}</p>
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{toast.message}</p>
         )}
       </div>
       <button
         onClick={onRemove}
-        className={cn('hover:opacity-70', config.textColor)}
+        className={cn(
+          'shrink-0 p-0.5 rounded-md',
+          'text-muted-foreground hover:text-foreground',
+          'transition-colors duration-150',
+          'hover:bg-muted/60'
+        )}
       >
-        <X className="w-5 h-5" />
+        <X className="w-4 h-4" />
       </button>
     </div>
   )

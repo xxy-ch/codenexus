@@ -5,14 +5,26 @@ import { cn } from "@/lib/utils"
 function Card({
   className,
   size = "default",
+  variant = "default",
   ...props
-}: React.ComponentProps<"div"> & { size?: "default" | "sm" }) {
+}: React.ComponentProps<"div"> & {
+  size?: "default" | "sm"
+  variant?: "default" | "glass" | "elevated" | "outlined"
+}) {
   return (
     <div
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground shadow-whisper ring-1 ring-foreground/10 transition-shadow duration-200 hover:shadow-elevated has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        "group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground transition-all duration-200 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        // Default variant
+        variant === "default" && "shadow-card ring-1 ring-border/50 hover:shadow-elevated hover:-translate-y-0.5",
+        // Glass variant - frosted glass effect
+        variant === "glass" && "bg-background/60 backdrop-blur-xl border border-border/50 shadow-lg hover:bg-background/80 hover:shadow-xl hover:-translate-y-0.5",
+        // Elevated variant - more prominent shadow
+        variant === "elevated" && "shadow-elevated ring-1 ring-border/30 hover:shadow-prominent hover:-translate-y-1",
+        // Outlined variant - no shadow, just border
+        variant === "outlined" && "ring-1 ring-border hover:ring-border-strong",
         className
       )}
       {...props}
@@ -38,7 +50,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-title"
       className={cn(
-        "font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm",
+        "font-heading text-base leading-snug font-semibold group-data-[size=sm]/card:text-sm",
         className
       )}
       {...props}
@@ -84,7 +96,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-footer"
       className={cn(
-        "flex items-center rounded-b-xl border-t bg-muted/50 p-4 group-data-[size=sm]/card:p-3",
+        "flex items-center rounded-b-xl border-t border-border/50 bg-muted/30 p-4 group-data-[size=sm]/card:p-3",
         className
       )}
       {...props}
