@@ -14,6 +14,7 @@ members = [
     "backend/domain-users",
     "backend/feature-gateway",
     "backend/judge-worker",
+    "backend/llm-worker",
     "backend/migration-tool",
     "backend/shared",
 ]
