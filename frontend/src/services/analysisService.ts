@@ -80,6 +80,25 @@ export interface TriggerFeedbackResponse {
   message: string;
 }
 
+/** A single similar submission from GET /analysis/submissions/:id/similar */
+export interface SimilarSubmission {
+  submission_id: number;
+  problem_id: number;
+  similarity_score: number;
+  embedding_similarity: number;
+  structural_similarity: number;
+  cyclomatic_complexity: number | null;
+  lines_of_code: number | null;
+}
+
+/** Response shape for GET /analysis/submissions/:id/similar */
+export interface SimilarSubmissionsResponse {
+  query_submission_id: number;
+  count: number;
+  elapsed_ms: number;
+  similar_submissions: SimilarSubmission[];
+}
+
 /** A single recommended problem from GET /analysis/problems/:id/recommend */
 export interface RecommendedProblem {
   problem_id: number;
@@ -146,6 +165,17 @@ export const analysisService = {
   async getAiFeedback(submissionId: number) {
     const { data } = await api.get<AiFeedbackResponse>(
       `/analysis/submissions/${submissionId}/ai-feedback`,
+    );
+    return data;
+  },
+
+  /**
+   * Get similar submissions for a given submission (same-problem).
+   * Gated by `ai_analysis_enabled` feature flag on the backend.
+   */
+  async getSimilarSubmissions(submissionId: number) {
+    const { data } = await api.get<SimilarSubmissionsResponse>(
+      `/analysis/submissions/${submissionId}/similar`,
     );
     return data;
   },
