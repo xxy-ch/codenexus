@@ -16,6 +16,7 @@ members = [
     "backend/judge-worker",
     "backend/llm-worker",
     "backend/migration-tool",
+    "backend/monitor-server",
     "backend/shared",
 ]
 resolver = "2"
