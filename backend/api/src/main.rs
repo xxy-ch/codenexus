@@ -97,7 +97,15 @@ async fn main() -> anyhow::Result<()> {
         gateway_client,
     };
 
-    let app = create_router(state, config.clone());
+    // Control-signal pause flag: shared between polling task and middleware.
+    let api_paused: std::sync::Arc<std::sync::atomic::AtomicBool> =
+        std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    middleware::control_signal::start_control_signal_polling(
+        state.redis_pool.clone(),
+        api_paused.clone(),
+    );
+
+    let app = create_router(state, config.clone(), api_paused);
 
     let addr: SocketAddr = config
         .bind_address
@@ -117,7 +125,11 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Router {
+fn create_router(
+    state: AppState,
+    config: api_infra::config::AppConfig,
+    api_paused: std::sync::Arc<std::sync::atomic::AtomicBool>,
+) -> Router {
     if config.cors_origins.contains(&"*".to_string()) {
         tracing::warn!(
             "CORS: Allow-all wildcard is active. This should NOT be used in production."
@@ -170,6 +182,10 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
             .unwrap(),
     );
 
+    // Clone the pause flag for both rate_limited_public and protected_router.
+    let api_paused_public = api_paused.clone();
+    let api_paused_protected = api_paused;
+
     // Unrestricted endpoints: health probes, metrics, worker heartbeat
     // These must not be rate-limited to avoid breaking infrastructure
     let unrestricted_router = Router::new()
@@ -196,6 +212,12 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
         .route("/auth/register", post(auth::register))
         .route("/auth/logout", post(auth::logout))
         .route("/ws", get(websocket::handler::websocket_upgrade_handler))
+        .layer(axum::middleware::from_fn(move |req, next| {
+            let flag = api_paused_public.clone();
+            async move {
+                middleware::control_signal::pause_middleware(flag, req, next).await
+            }
+        }))
         .layer(GovernorLayer {
             config: governor_config.clone(),
         });
@@ -293,6 +315,13 @@ fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Route
             state.clone(),
             middleware::auth::auth_middleware,
         ))
+        // Control-signal pause middleware: returns 503 when paused.
+        .layer(axum::middleware::from_fn(move |req, next| {
+            let flag = api_paused_protected.clone();
+            async move {
+                middleware::control_signal::pause_middleware(flag, req, next).await
+            }
+        }))
         .layer(GovernorLayer {
             config: governor_config,
         });
