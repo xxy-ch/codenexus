@@ -109,6 +109,11 @@ pub struct ControlSignal {
     pub expires_at: Option<DateTime<Utc>>,
     /// Whether the signal has been confirmed (two-step flow).
     pub confirmed: bool,
+    /// Confirmation token (UUID v4). Generated on creation; used to verify
+    /// the second step of the two-step confirmation flow. `None` after
+    /// confirmation (cleared so it cannot be reused).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub confirmation_token: Option<String>,
 }
 
 impl ControlSignal {
@@ -236,6 +241,7 @@ mod tests {
             created_at: now - chrono::Duration::minutes(35),
             expires_at: Some(now - chrono::Duration::minutes(5)),
             confirmed: true,
+            confirmation_token: None,
         };
         assert!(signal.is_expired(now));
     }
@@ -250,6 +256,7 @@ mod tests {
             created_at: now,
             expires_at: None,
             confirmed: true,
+            confirmation_token: None,
         };
         assert!(!signal.is_expired(now));
     }
@@ -264,6 +271,7 @@ mod tests {
             created_at: now,
             expires_at: Some(now + chrono::Duration::minutes(25)),
             confirmed: true,
+            confirmation_token: None,
         };
         assert!(!signal.is_expired(now));
     }
@@ -278,6 +286,7 @@ mod tests {
             created_at: now,
             expires_at: Some(now + default_signal_timeout()),
             confirmed: false,
+            confirmation_token: Some("test-token-123".to_string()),
         };
         let json = signal.to_json().unwrap();
         let parsed = ControlSignal::from_json(&json).unwrap();
@@ -294,6 +303,7 @@ mod tests {
             created_at: now,
             expires_at: None,
             confirmed: true,
+            confirmation_token: None,
         };
         let json = signal.to_json().unwrap();
         let val: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -303,6 +313,8 @@ mod tests {
         assert_eq!(val["confirmed"], true);
         assert!(val["expires_at"].is_null());
         assert!(val["created_at"].is_string());
+        // confirmation_token is None, so skip_serializing_if should omit it
+        assert!(val.get("confirmation_token").is_none());
     }
 
     #[test]
