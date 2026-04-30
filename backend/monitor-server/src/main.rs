@@ -14,6 +14,7 @@ use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use monitor_server::config::ServerConfig;
+use monitor_server::control;
 use monitor_server::routes;
 use monitor_server::state::AppState;
 
@@ -35,6 +36,8 @@ async fn main() -> Result<()> {
     info!(
         bind_addr = %config.bind_addr,
         redis_url = %config.redis_url,
+        signal_timeout_secs = config.signal_timeout_secs,
+        recovery_scan_interval_secs = config.recovery_scan_interval_secs,
         "Configuration loaded"
     );
 
@@ -54,7 +57,19 @@ async fn main() -> Result<()> {
     info!("Connected to Redis at {}", config.redis_url);
 
     // Build shared state
-    let state = AppState::new(pg_pool, redis_pool);
+    let state = AppState::new(pg_pool.clone(), redis_pool.clone());
+
+    // Spawn the auto-recovery background task
+    let recovery_interval = std::time::Duration::from_secs(config.recovery_scan_interval_secs);
+    tokio::spawn(control::run_recovery_task(
+        redis_pool,
+        pg_pool,
+        recovery_interval,
+    ));
+    info!(
+        interval_secs = config.recovery_scan_interval_secs,
+        "Auto-recovery task spawned"
+    );
 
     // Build router and start serving
     let app = routes::build_router(state);

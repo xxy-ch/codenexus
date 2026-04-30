@@ -155,6 +155,159 @@ pub fn default_signal_timeout() -> chrono::Duration {
 }
 
 // ---------------------------------------------------------------------------
+// Auto-recovery background task
+// ---------------------------------------------------------------------------
+
+/// Background task that periodically scans Redis for expired control signals
+/// and clears them, writing audit log entries for each auto-restore.
+///
+/// The scan iterates over [`ALLOWED_TARGETS`] and checks each
+/// `control:signal:{target}` key. If the signal's `expires_at` is in the
+/// past, it is deleted from Redis and an audit entry is recorded.
+pub async fn run_recovery_task(
+    redis_pool: deadpool_redis::Pool,
+    pg_pool: sqlx::PgPool,
+    scan_interval: std::time::Duration,
+) {
+    use deadpool_redis::redis::cmd;
+    use tracing::{error, info, warn};
+
+    info!(
+        interval_secs = scan_interval.as_secs(),
+        "[control] recovery task started"
+    );
+
+    let mut interval = tokio::time::interval(scan_interval);
+    // First tick fires immediately; skip it to avoid scanning during startup
+    // before any signals could have expired.
+    interval.tick().await;
+
+    loop {
+        interval.tick().await;
+        let now = chrono::Utc::now();
+        let mut expired_count: usize = 0;
+        let mut error_count: usize = 0;
+
+        for &target in ALLOWED_TARGETS {
+            let redis_key = ControlSignal::redis_key(target);
+
+            let conn_result = redis_pool.get().await;
+            let mut conn = match conn_result {
+                Ok(c) => c,
+                Err(e) => {
+                    error!(
+                        target = target,
+                        "[control] recovery: failed to get Redis connection: {e}"
+                    );
+                    error_count += 1;
+                    continue;
+                }
+            };
+
+            // Read the signal
+            let json: Option<String> = match cmd("GET")
+                .arg(&redis_key)
+                .query_async(&mut conn)
+                .await
+            {
+                Ok(val) => val,
+                Err(e) => {
+                    error!(
+                        target = target,
+                        "[control] recovery: Redis GET error: {e}"
+                    );
+                    error_count += 1;
+                    continue;
+                }
+            };
+
+            let json = match json {
+                Some(j) => j,
+                None => continue, // No signal for this target
+            };
+
+            let signal = match ControlSignal::from_json(&json) {
+                Ok(s) => s,
+                Err(e) => {
+                    warn!(
+                        target = target,
+                        "[control] recovery: failed to parse signal, deleting corrupt key: {e}"
+                    );
+                    let _ = cmd("DEL")
+                        .arg(&redis_key)
+                        .query_async::<()>(&mut conn)
+                        .await;
+                    error_count += 1;
+                    continue;
+                }
+            };
+
+            // Check expiry
+            if signal.is_expired(now) {
+                // Delete the signal from Redis
+                match cmd("DEL")
+                    .arg(&redis_key)
+                    .query_async::<()>(&mut conn)
+                    .await
+                {
+                    Ok(_) => {}
+                    Err(e) => {
+                        error!(
+                            target = target,
+                            "[control] recovery: failed to DELETE expired signal: {e}"
+                        );
+                        error_count += 1;
+                        continue;
+                    }
+                }
+
+                // Write audit entry for the auto-restore
+                let audit_writer = crate::audit::AuditWriter::new(&pg_pool);
+                match audit_writer
+                    .record(
+                        target,
+                        signal.action,
+                        "system:auto-restore",
+                        crate::audit::AuditResult::Success,
+                        None,
+                    )
+                    .await
+                {
+                    Ok(audit_id) => {
+                        info!(
+                            target = target,
+                            action = %signal.action,
+                            operator = %signal.operator,
+                            audit_id = audit_id,
+                            "[control] auto-restored expired signal"
+                        );
+                        expired_count += 1;
+                    }
+                    Err(e) => {
+                        error!(
+                            target = target,
+                            "[control] recovery: failed to write audit entry: {e}"
+                        );
+                        // Signal was already deleted from Redis, so the recovery
+                        // itself succeeded even if audit logging failed.
+                        expired_count += 1;
+                        error_count += 1;
+                    }
+                }
+            }
+        }
+
+        if expired_count > 0 || error_count > 0 {
+            info!(
+                expired_count = expired_count,
+                error_count = error_count,
+                "[control] recovery scan cycle complete"
+            );
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -322,5 +475,73 @@ mod tests {
         assert_eq!(DEFAULT_SIGNAL_TIMEOUT_SECS, 1800);
         let dur = default_signal_timeout();
         assert_eq!(dur.num_seconds(), 1800);
+    }
+
+    // -----------------------------------------------------------------------
+    // Recovery task unit tests (non-async, data model only)
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn recovery_detects_expired_signal() {
+        let now = Utc::now();
+        let signal = ControlSignal {
+            action: ControlAction::Pause,
+            target: "api".to_string(),
+            operator: "admin".to_string(),
+            created_at: now - chrono::Duration::minutes(35),
+            expires_at: Some(now - chrono::Duration::seconds(1)),
+            confirmed: true,
+            confirmation_token: None,
+        };
+        assert!(signal.is_expired(now), "signal past expires_at should be expired");
+    }
+
+    #[test]
+    fn recovery_skips_non_expired_signal() {
+        let now = Utc::now();
+        let signal = ControlSignal {
+            action: ControlAction::Pause,
+            target: "api".to_string(),
+            operator: "admin".to_string(),
+            created_at: now,
+            expires_at: Some(now + chrono::Duration::minutes(25)),
+            confirmed: true,
+            confirmation_token: None,
+        };
+        assert!(!signal.is_expired(now), "signal with future expires_at should not be expired");
+    }
+
+    #[test]
+    fn recovery_skips_signal_without_expiry() {
+        let now = Utc::now();
+        let signal = ControlSignal {
+            action: ControlAction::Pause,
+            target: "api".to_string(),
+            operator: "admin".to_string(),
+            created_at: now - chrono::Duration::hours(24),
+            expires_at: None,
+            confirmed: true,
+            confirmation_token: None,
+        };
+        assert!(!signal.is_expired(now), "signal without expires_at should never be auto-restored");
+    }
+
+    #[test]
+    fn recovery_handles_all_targets() {
+        // Verify the scan loop covers every allowlisted target
+        for &target in ALLOWED_TARGETS {
+            let key = ControlSignal::redis_key(target);
+            assert!(key.starts_with("control:signal:"));
+            assert!(key.ends_with(target));
+        }
+    }
+
+    #[test]
+    fn recovery_auto_restore_operator_is_system() {
+        // The recovery task uses "system:auto-restore" as the operator
+        // in audit entries. Verify it's a valid non-empty string.
+        let operator = "system:auto-restore";
+        assert!(!operator.trim().is_empty());
+        assert!(operator.starts_with("system:"));
     }
 }

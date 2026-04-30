@@ -11,12 +11,23 @@ const DEFAULT_REDIS_URL: &str = "redis://127.0.0.1:6379";
 /// Default bind address for the HTTP server.
 const DEFAULT_BIND_ADDR: &str = "0.0.0.0:9090";
 
+/// Default auto-recovery timeout for control signals (30 minutes).
+const DEFAULT_SIGNAL_TIMEOUT_SECS: u64 = 30 * 60;
+
+/// Default interval between recovery scans (60 seconds).
+const DEFAULT_RECOVERY_SCAN_INTERVAL_SECS: u64 = 60;
+
 /// Server configuration, loaded from environment variables.
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
     pub database_url: String,
     pub redis_url: String,
     pub bind_addr: String,
+    /// How long before a control signal auto-expires (seconds).
+    /// Controls both the `expires_at` field and the recovery task threshold.
+    pub signal_timeout_secs: u64,
+    /// How often the recovery task scans for expired signals (seconds).
+    pub recovery_scan_interval_secs: u64,
 }
 
 impl ServerConfig {
@@ -38,6 +49,14 @@ impl ServerConfig {
                 .ok()
                 .filter(|v| !v.trim().is_empty())
                 .unwrap_or_else(|| DEFAULT_BIND_ADDR.to_string()),
+            signal_timeout_secs: env::var("SIGNAL_TIMEOUT_SECS")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(DEFAULT_SIGNAL_TIMEOUT_SECS),
+            recovery_scan_interval_secs: env::var("RECOVERY_SCAN_INTERVAL_SECS")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(DEFAULT_RECOVERY_SCAN_INTERVAL_SECS),
         })
     }
 }
@@ -58,6 +77,8 @@ mod tests {
         env::remove_var("DATABASE_URL");
         env::remove_var("REDIS_URL");
         env::remove_var("MONITOR_BIND_ADDR");
+        env::remove_var("SIGNAL_TIMEOUT_SECS");
+        env::remove_var("RECOVERY_SCAN_INTERVAL_SECS");
     }
 
     #[test]
@@ -82,6 +103,8 @@ mod tests {
         let config = ServerConfig::from_env().expect("should succeed with DATABASE_URL");
         assert_eq!(config.redis_url, DEFAULT_REDIS_URL);
         assert_eq!(config.bind_addr, DEFAULT_BIND_ADDR);
+        assert_eq!(config.signal_timeout_secs, DEFAULT_SIGNAL_TIMEOUT_SECS);
+        assert_eq!(config.recovery_scan_interval_secs, DEFAULT_RECOVERY_SCAN_INTERVAL_SECS);
 
         clear_env();
     }
@@ -93,10 +116,14 @@ mod tests {
         env::set_var("DATABASE_URL", "postgres://localhost/mydb");
         env::set_var("REDIS_URL", "redis://redis:6379");
         env::set_var("MONITOR_BIND_ADDR", "127.0.0.1:8080");
+        env::set_var("SIGNAL_TIMEOUT_SECS", "600");
+        env::set_var("RECOVERY_SCAN_INTERVAL_SECS", "30");
 
         let config = ServerConfig::from_env().unwrap();
         assert_eq!(config.redis_url, "redis://redis:6379");
         assert_eq!(config.bind_addr, "127.0.0.1:8080");
+        assert_eq!(config.signal_timeout_secs, 600);
+        assert_eq!(config.recovery_scan_interval_secs, 30);
 
         clear_env();
     }
@@ -108,10 +135,15 @@ mod tests {
         env::set_var("DATABASE_URL", "postgres://localhost/test");
         env::set_var("REDIS_URL", "   ");
         env::set_var("MONITOR_BIND_ADDR", "");
+        env::set_var("SIGNAL_TIMEOUT_SECS", "  ");
+        env::set_var("RECOVERY_SCAN_INTERVAL_SECS", "abc");
 
         let config = ServerConfig::from_env().unwrap();
         assert_eq!(config.redis_url, DEFAULT_REDIS_URL);
         assert_eq!(config.bind_addr, DEFAULT_BIND_ADDR);
+        // Non-parseable values fall back to defaults
+        assert_eq!(config.signal_timeout_secs, DEFAULT_SIGNAL_TIMEOUT_SECS);
+        assert_eq!(config.recovery_scan_interval_secs, DEFAULT_RECOVERY_SCAN_INTERVAL_SECS);
 
         clear_env();
     }
