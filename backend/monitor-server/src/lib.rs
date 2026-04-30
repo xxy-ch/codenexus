@@ -11,4 +11,5 @@ pub mod config;
 pub mod control;
 pub mod models;
 pub mod routes;
+pub mod snapshot;
 pub mod state;
