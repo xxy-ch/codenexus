@@ -5,8 +5,10 @@
 //! internal data collectors for worker heartbeats, stream backlog depth,
 //! AI metrics aggregation, and feature flag visibility.
 
+pub mod audit;
 pub mod collectors;
 pub mod config;
+pub mod control;
 pub mod models;
 pub mod routes;
 pub mod state;
