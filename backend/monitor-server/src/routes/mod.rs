@@ -3,6 +3,7 @@
 pub mod control;
 pub mod health;
 pub mod monitor;
+pub mod ws;
 
 use axum::routing::get;
 use axum::Router;
@@ -17,5 +18,6 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         .route("/api/services", get(monitor::get_full_snapshot))
         .route("/api/services/{target}", get(monitor::get_service_status))
         .nest("/api/control", control::control_routes())
+        .route("/ws/monitor", get(ws::ws_monitor_handler))
         .with_state(state)
 }

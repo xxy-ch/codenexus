@@ -17,6 +17,9 @@ const DEFAULT_SIGNAL_TIMEOUT_SECS: u64 = 30 * 60;
 /// Default interval between recovery scans (60 seconds).
 const DEFAULT_RECOVERY_SCAN_INTERVAL_SECS: u64 = 60;
 
+/// Default WebSocket broadcast push interval (5 seconds).
+const DEFAULT_PUSH_INTERVAL_SECS: u64 = 5;
+
 /// Server configuration, loaded from environment variables.
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
@@ -28,6 +31,8 @@ pub struct ServerConfig {
     pub signal_timeout_secs: u64,
     /// How often the recovery task scans for expired signals (seconds).
     pub recovery_scan_interval_secs: u64,
+    /// How often the WebSocket broadcast task pushes snapshots (seconds).
+    pub push_interval_secs: u64,
 }
 
 impl ServerConfig {
@@ -57,6 +62,10 @@ impl ServerConfig {
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(DEFAULT_RECOVERY_SCAN_INTERVAL_SECS),
+            push_interval_secs: env::var("PUSH_INTERVAL_SECS")
+                .ok()
+                .and_then(|v| v.trim().parse().ok())
+                .unwrap_or(DEFAULT_PUSH_INTERVAL_SECS),
         })
     }
 }
@@ -79,6 +88,7 @@ mod tests {
         env::remove_var("MONITOR_BIND_ADDR");
         env::remove_var("SIGNAL_TIMEOUT_SECS");
         env::remove_var("RECOVERY_SCAN_INTERVAL_SECS");
+        env::remove_var("PUSH_INTERVAL_SECS");
     }
 
     #[test]
@@ -105,6 +115,7 @@ mod tests {
         assert_eq!(config.bind_addr, DEFAULT_BIND_ADDR);
         assert_eq!(config.signal_timeout_secs, DEFAULT_SIGNAL_TIMEOUT_SECS);
         assert_eq!(config.recovery_scan_interval_secs, DEFAULT_RECOVERY_SCAN_INTERVAL_SECS);
+        assert_eq!(config.push_interval_secs, DEFAULT_PUSH_INTERVAL_SECS);
 
         clear_env();
     }
@@ -118,12 +129,14 @@ mod tests {
         env::set_var("MONITOR_BIND_ADDR", "127.0.0.1:8080");
         env::set_var("SIGNAL_TIMEOUT_SECS", "600");
         env::set_var("RECOVERY_SCAN_INTERVAL_SECS", "30");
+        env::set_var("PUSH_INTERVAL_SECS", "3");
 
         let config = ServerConfig::from_env().unwrap();
         assert_eq!(config.redis_url, "redis://redis:6379");
         assert_eq!(config.bind_addr, "127.0.0.1:8080");
         assert_eq!(config.signal_timeout_secs, 600);
         assert_eq!(config.recovery_scan_interval_secs, 30);
+        assert_eq!(config.push_interval_secs, 3);
 
         clear_env();
     }
@@ -144,6 +157,7 @@ mod tests {
         // Non-parseable values fall back to defaults
         assert_eq!(config.signal_timeout_secs, DEFAULT_SIGNAL_TIMEOUT_SECS);
         assert_eq!(config.recovery_scan_interval_secs, DEFAULT_RECOVERY_SCAN_INTERVAL_SECS);
+        assert_eq!(config.push_interval_secs, DEFAULT_PUSH_INTERVAL_SECS);
 
         clear_env();
     }
