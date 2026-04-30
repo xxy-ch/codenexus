@@ -273,12 +273,7 @@ pub fn teaching_card_prompt(
     let code_samples = sample_codes
         .iter()
         .enumerate()
-        .map(|(i, (lang, code))| {
-            format!(
-                "#### 示例 {}（{lang}）\n```{lang}\n{code}\n```",
-                i + 1
-            )
-        })
+        .map(|(i, (lang, code))| format!("#### 示例 {}（{lang}）\n```{lang}\n{code}\n```", i + 1))
         .collect::<Vec<_>>()
         .join("\n\n");
 
@@ -345,7 +340,9 @@ mod tests {
         assert!(!prompt.is_empty(), "system prompt should not be empty");
         // Contains Chinese characters
         assert!(
-            prompt.chars().any(|c| '\u{4e00}' <= c && c <= '\u{9fff}'),
+            prompt
+                .chars()
+                .any(|c| ('\u{4e00}'..='\u{9fff}').contains(&c)),
             "system prompt should contain Chinese characters"
         );
         // Contains safety constraint
@@ -382,7 +379,10 @@ mod tests {
         );
         let user = &msgs[1].content;
         assert!(user.contains("Two Sum"), "should contain problem title");
-        assert!(user.contains("Find two numbers"), "should contain problem description");
+        assert!(
+            user.contains("Find two numbers"),
+            "should contain problem description"
+        );
         assert!(user.contains("Easy"), "should contain difficulty");
         assert!(user.contains("python"), "should contain language");
         assert!(user.contains("def two_sum"), "should contain source code");
@@ -408,9 +408,18 @@ mod tests {
         let msgs = code_review_prompt("Test", "Test desc", None, "java", "class Solution {}");
         let user = &msgs[1].content;
         assert!(user.contains("insights"), "should specify insights field");
-        assert!(user.contains("suggestions"), "should specify suggestions field");
-        assert!(user.contains("complexity"), "should specify complexity field");
-        assert!(user.contains("overall_quality"), "should specify overall_quality field");
+        assert!(
+            user.contains("suggestions"),
+            "should specify suggestions field"
+        );
+        assert!(
+            user.contains("complexity"),
+            "should specify complexity field"
+        );
+        assert!(
+            user.contains("overall_quality"),
+            "should specify overall_quality field"
+        );
     }
 
     #[test]
@@ -428,8 +437,14 @@ mod tests {
         let code = "line1\nline2\nline3\n    indented_line";
         let msgs = code_review_prompt("P", "D", None, "go", code);
         let user = &msgs[1].content;
-        assert!(user.contains("line1\nline2"), "should preserve newlines in code");
-        assert!(user.contains("    indented_line"), "should preserve indentation");
+        assert!(
+            user.contains("line1\nline2"),
+            "should preserve newlines in code"
+        );
+        assert!(
+            user.contains("    indented_line"),
+            "should preserve indentation"
+        );
     }
 
     #[test]
@@ -437,7 +452,10 @@ mod tests {
         let msgs = code_review_prompt("测试题", "描述", None, "python", "pass");
         let user = &msgs[1].content;
         assert!(user.contains("题目"), "should contain Chinese heading");
-        assert!(user.contains("学生代码"), "should contain Chinese code section");
+        assert!(
+            user.contains("学生代码"),
+            "should contain Chinese code section"
+        );
         assert!(user.contains("要求"), "should contain Chinese requirements");
     }
 
@@ -466,26 +484,43 @@ mod tests {
             ],
         );
         let user = &msgs[1].content;
-        assert!(user.contains("Binary Search"), "should contain problem title");
-        assert!(user.contains("未处理空数组边界"), "should contain cluster summary");
-        assert!(user.contains("fn search"), "should contain first sample code");
-        assert!(user.contains("def search"), "should contain second sample code");
+        assert!(
+            user.contains("Binary Search"),
+            "should contain problem title"
+        );
+        assert!(
+            user.contains("未处理空数组边界"),
+            "should contain cluster summary"
+        );
+        assert!(
+            user.contains("fn search"),
+            "should contain first sample code"
+        );
+        assert!(
+            user.contains("def search"),
+            "should contain second sample code"
+        );
     }
 
     #[test]
     fn teaching_card_prompt_contains_json_schema() {
-        let msgs = teaching_card_prompt(
-            "Test",
-            "Summary",
-            &[("go", "func main() {}")],
-        );
+        let msgs = teaching_card_prompt("Test", "Summary", &[("go", "func main() {}")]);
         let user = &msgs[1].content;
         assert!(user.contains("title"), "should specify title field");
         assert!(user.contains("summary"), "should specify summary field");
-        assert!(user.contains("key_concepts"), "should specify key_concepts field");
+        assert!(
+            user.contains("key_concepts"),
+            "should specify key_concepts field"
+        );
         assert!(user.contains("examples"), "should specify examples field");
-        assert!(user.contains("common_mistakes"), "should specify common_mistakes field");
-        assert!(user.contains("improvement_tips"), "should specify improvement_tips field");
+        assert!(
+            user.contains("common_mistakes"),
+            "should specify common_mistakes field"
+        );
+        assert!(
+            user.contains("improvement_tips"),
+            "should specify improvement_tips field"
+        );
     }
 
     #[test]
@@ -493,15 +528,24 @@ mod tests {
         let msgs = teaching_card_prompt("测试", "摘要", &[("python", "pass")]);
         let user = &msgs[1].content;
         assert!(user.contains("题目"), "should contain Chinese heading");
-        assert!(user.contains("聚类摘要"), "should contain Chinese cluster heading");
-        assert!(user.contains("教学卡片"), "should mention teaching card in Chinese");
+        assert!(
+            user.contains("聚类摘要"),
+            "should contain Chinese cluster heading"
+        );
+        assert!(
+            user.contains("教学卡片"),
+            "should mention teaching card in Chinese"
+        );
     }
 
     #[test]
     fn teaching_card_prompt_with_empty_samples() {
         let msgs = teaching_card_prompt("Test", "Summary", &[]);
         let user = &msgs[1].content;
-        assert!(user.contains("Test"), "should still work with no code samples");
+        assert!(
+            user.contains("Test"),
+            "should still work with no code samples"
+        );
         // Should still have the schema section
         assert!(user.contains("key_concepts"));
     }
@@ -618,7 +662,11 @@ mod tests {
         ];
         for (it, expected) in types {
             let json = serde_json::to_string(&it).unwrap();
-            assert_eq!(json, format!("\"{expected}\""), "insight type should serialize as {expected}");
+            assert_eq!(
+                json,
+                format!("\"{expected}\""),
+                "insight type should serialize as {expected}"
+            );
             let parsed: InsightType = serde_json::from_str(&json).unwrap();
             assert_eq!(parsed, it, "should roundtrip");
         }

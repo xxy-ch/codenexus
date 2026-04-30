@@ -15,8 +15,8 @@ use llm_worker::config::WorkerConfig;
 use llm_worker::llm_client::{ChatMessage, LlmClient, LlmError};
 use llm_worker::processor::{convert_messages, is_transient_error};
 use llm_worker::prompts::{
-    self, CodeReviewOutput, TeachingCardOutput, CodeReviewInsight,
-    ComplexityEstimate, InsightType, QualityLevel, LlmMessage,
+    self, CodeReviewInsight, CodeReviewOutput, ComplexityEstimate, InsightType, LlmMessage,
+    QualityLevel, TeachingCardOutput,
 };
 
 use std::time::Duration;
@@ -111,8 +111,14 @@ async fn llm_client_successful_chat() {
     assert!(result.content.contains("Good Solution"));
     assert_eq!(result.usage.prompt_tokens, 100);
     assert_eq!(result.usage.completion_tokens, 50);
-    assert!(result.latency.as_millis() < 5000, "latency should be within timeout");
-    assert!(result.endpoint_used.contains("/v1/chat/completions"), "endpoint_used should be populated");
+    assert!(
+        result.latency.as_millis() < 5000,
+        "latency should be within timeout"
+    );
+    assert!(
+        result.endpoint_used.contains("/v1/chat/completions"),
+        "endpoint_used should be populated"
+    );
 }
 
 #[tokio::test]
@@ -703,7 +709,10 @@ async fn e2e_teaching_card_pipeline_with_structured_output() {
     let prompt_messages = prompts::teaching_card_prompt(
         "Two Sum",
         "大多数学生使用了暴力解法，时间复杂度为 O(n²)。",
-        &[("python", "for i in range(len(nums)):\n    for j in range(i+1, len(nums)):")],
+        &[(
+            "python",
+            "for i in range(len(nums)):\n    for j in range(i+1, len(nums)):",
+        )],
     );
 
     let chat_messages = convert_messages(prompt_messages);
@@ -826,7 +835,10 @@ async fn llm_client_handles_null_content_in_choice() {
     let result = client.chat("system", "user").await;
     // null content deserializes as empty string or causes an error — both are acceptable
     match result {
-        Ok(r) => assert_eq!(r.content, "null", "null content should be deserialized as 'null' string"),
+        Ok(r) => assert_eq!(
+            r.content, "null",
+            "null content should be deserialized as 'null' string"
+        ),
         Err(LlmError::MalformedResponse { .. }) => {} // also acceptable
         Err(other) => panic!("unexpected error: {other}"),
     }
@@ -860,7 +872,10 @@ async fn llm_client_handles_missing_usage_field() {
     // Should succeed with zero-default usage
     let r = result.expect("should handle missing usage");
     assert_eq!(r.content, "response");
-    assert_eq!(r.usage.prompt_tokens, 0, "missing usage should default to 0");
+    assert_eq!(
+        r.usage.prompt_tokens, 0,
+        "missing usage should default to 0"
+    );
     assert_eq!(r.usage.completion_tokens, 0);
 }
 
@@ -1015,7 +1030,10 @@ fn teaching_card_prompt_conversion_preserves_multiple_samples() {
         "学生普遍使用暴力解法。",
         &[
             ("python", "for i in range(n):\n    for j in range(n):"),
-            ("java", "for (int i = 0; i < n; i++) {\n    for (int j = 0; j < n; j++) {"),
+            (
+                "java",
+                "for (int i = 0; i < n; i++) {\n    for (int j = 0; j < n; j++) {",
+            ),
             ("cpp", "for(int i=0;i<n;i++)\n  for(int j=0;j<n;j++)"),
         ],
     );
@@ -1023,11 +1041,17 @@ fn teaching_card_prompt_conversion_preserves_multiple_samples() {
     let chat_messages = convert_messages(prompt_messages);
     let user_content = &chat_messages[1].content;
 
-    assert!(user_content.contains("python"), "should contain python sample");
+    assert!(
+        user_content.contains("python"),
+        "should contain python sample"
+    );
     assert!(user_content.contains("java"), "should contain java sample");
     assert!(user_content.contains("cpp"), "should contain cpp sample");
     assert!(user_content.contains("示例 1"), "should label samples");
-    assert!(user_content.contains("示例 3"), "should label all 3 samples");
+    assert!(
+        user_content.contains("示例 3"),
+        "should label all 3 samples"
+    );
 }
 
 #[test]
@@ -1036,13 +1060,15 @@ fn error_classification_consistency_with_integration_errors() {
 
     // Transient: HTTP errors
     let rt = tokio::runtime::Runtime::new().unwrap();
-    let http_err = rt.block_on(async {
-        reqwest::Client::new()
-            .get("http://127.0.0.1:1")
-            .timeout(std::time::Duration::from_millis(100))
-            .send()
-            .await
-    }).unwrap_err();
+    let http_err = rt
+        .block_on(async {
+            reqwest::Client::new()
+                .get("http://127.0.0.1:1")
+                .timeout(std::time::Duration::from_millis(100))
+                .send()
+                .await
+        })
+        .unwrap_err();
 
     assert!(is_transient_error(&LlmError::Http {
         endpoint: "test".to_string(),
@@ -1137,7 +1163,11 @@ fn teaching_card_output_schema_roundtrip_via_json() {
     let card = TeachingCardOutput {
         title: "双指针模式教学".to_string(),
         summary: "学生在有序数组问题上普遍未能使用双指针优化".to_string(),
-        key_concepts: vec!["双指针".to_string(), "排序数组".to_string(), "滑动窗口".to_string()],
+        key_concepts: vec![
+            "双指针".to_string(),
+            "排序数组".to_string(),
+            "滑动窗口".to_string(),
+        ],
         examples: vec![
             prompts::CodeExample {
                 label: "暴力解法".to_string(),
@@ -1272,7 +1302,7 @@ fn llm_worker_is_decoupled_from_domain_analysis() {
 
     // This test existing in llm-worker's test suite proves decoupling.
     // If domain-analysis were a dependency, cargo would fail to resolve.
-    assert!(true, "llm-worker is fully self-contained");
+    // llm-worker is fully self-contained — this test proves decoupling
 }
 
 /// Verify that the Cargo.toml does not reference domain-analysis or feature-gateway.

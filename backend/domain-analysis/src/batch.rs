@@ -253,11 +253,15 @@ async fn recluster_solutions(
             .await?;
 
             // Partition into vectors with/without embeddings
-            let embedded: Vec<&SubmissionEmbedding> = rows.iter().filter(|r| r.embedding_vector.is_some()).collect();
+            let embedded: Vec<&SubmissionEmbedding> = rows
+                .iter()
+                .filter(|r| r.embedding_vector.is_some())
+                .collect();
 
             if embedded.len() >= 3 {
                 // Embedding-based DBSCAN clustering
-                let vectors: Vec<Vec<f64>> = embedded.iter()
+                let vectors: Vec<Vec<f64>> = embedded
+                    .iter()
                     .map(|r| r.embedding_vector.as_ref().unwrap().0.clone())
                     .collect();
                 let cluster_indices = dbscan_cluster(&vectors, 0.15, 3);
@@ -266,18 +270,28 @@ async fn recluster_solutions(
                     // No dense clusters found — all treated as noise.
                     // Fall back to single "heterogeneous" cluster.
                     let centroid = compute_centroid(&vectors);
-                    insert_cluster(pool, problem_id, *org_id, "heterogeneous", &centroid, vectors.len()).await?;
+                    insert_cluster(
+                        pool,
+                        problem_id,
+                        *org_id,
+                        "heterogeneous",
+                        &centroid,
+                        vectors.len(),
+                    )
+                    .await?;
                     count += 1;
                 } else {
                     for (i, indices) in cluster_indices.iter().enumerate() {
-                        let cluster_vectors: Vec<Vec<f64>> = indices.iter().map(|&idx| vectors[idx].clone()).collect();
+                        let cluster_vectors: Vec<Vec<f64>> =
+                            indices.iter().map(|&idx| vectors[idx].clone()).collect();
                         let centroid = compute_centroid(&cluster_vectors);
                         let name = if cluster_indices.len() == 1 {
                             "homogeneous".to_string()
                         } else {
                             format!("cluster_{}", i)
                         };
-                        insert_cluster(pool, problem_id, *org_id, &name, &centroid, indices.len()).await?;
+                        insert_cluster(pool, problem_id, *org_id, &name, &centroid, indices.len())
+                            .await?;
                         count += 1;
                     }
                 }
@@ -285,14 +299,18 @@ async fn recluster_solutions(
                 let unembedded = rows.len() - embedded.len();
                 if unembedded > 0 {
                     info!(
-                        problem_id, org_id, unembedded,
+                        problem_id,
+                        org_id,
+                        unembedded,
                         "Some submissions lack embeddings; excluded from clustering"
                     );
                 }
             } else {
                 // Not enough embeddings — fall back to complexity bucketing
                 info!(
-                    problem_id, org_id, embedded_count = embedded.len(),
+                    problem_id,
+                    org_id,
+                    embedded_count = embedded.len(),
                     "Insufficient embeddings; falling back to complexity bucketing"
                 );
                 let clusters = sqlx::query_as::<_, (String, i64)>(
@@ -509,10 +527,7 @@ async fn wait_for_llm_result(pool: &PgPool, job_id: i64, timeout: Duration) -> R
         }
 
         if start.elapsed() >= timeout {
-            anyhow::bail!(
-                "LLM job {job_id} timed out after {}ms",
-                timeout.as_millis()
-            );
+            anyhow::bail!("LLM job {job_id} timed out after {}ms", timeout.as_millis());
         }
 
         tokio::time::sleep(poll_interval).await;
@@ -640,7 +655,9 @@ async fn generate_teaching_cards(
                 "Failed to emit LLM task — falling back to placeholder"
             );
             // Clean up the orphaned job row.
-            let _ = service.mark_failed(job_id, &format!("Redis emit failed: {error}")).await;
+            let _ = service
+                .mark_failed(job_id, &format!("Redis emit failed: {error}"))
+                .await;
             let cluster_count = source_cluster_ids.len() as i64;
             insert_placeholder_card(pool, *problem_id, *organization_id, cluster_count).await?;
             fallback_count += 1;
@@ -669,9 +686,7 @@ async fn generate_teaching_cards(
 
                 info!(
                     problem_id,
-                    organization_id,
-                    job_id,
-                    "LLM-generated teaching card completed"
+                    organization_id, job_id, "LLM-generated teaching card completed"
                 );
                 generated += 1;
             }
@@ -679,10 +694,7 @@ async fn generate_teaching_cards(
                 // Job failed — fall back to placeholder.
                 warn!(
                     problem_id,
-                    organization_id,
-                    job_id,
-                    status,
-                    "LLM job failed — falling back to placeholder"
+                    organization_id, job_id, status, "LLM job failed — falling back to placeholder"
                 );
                 let cluster_count = source_cluster_ids.len() as i64;
                 insert_placeholder_card(pool, *problem_id, *organization_id, cluster_count).await?;
@@ -698,7 +710,9 @@ async fn generate_teaching_cards(
                     error = %error,
                     "LLM job timed out — falling back to placeholder"
                 );
-                let _ = service.mark_failed(job_id, &format!("Timed out: {error}")).await;
+                let _ = service
+                    .mark_failed(job_id, &format!("Timed out: {error}"))
+                    .await;
                 let cluster_count = source_cluster_ids.len() as i64;
                 insert_placeholder_card(pool, *problem_id, *organization_id, cluster_count).await?;
                 fallback_count += 1;
@@ -824,7 +838,10 @@ mod tests {
         let _guard = env_lock().lock().unwrap();
         std::env::set_var("EMBEDDING_API_URL", "http://embedding.test");
         let config = BatchConfig::from_env();
-        assert!(config.embedding_enabled, "embedding should be enabled when EMBEDDING_API_URL is set");
+        assert!(
+            config.embedding_enabled,
+            "embedding should be enabled when EMBEDDING_API_URL is set"
+        );
         std::env::remove_var("EMBEDDING_API_URL");
     }
 
@@ -833,7 +850,10 @@ mod tests {
         let _guard = env_lock().lock().unwrap();
         std::env::remove_var("EMBEDDING_API_URL");
         let config = BatchConfig::from_env();
-        assert!(!config.embedding_enabled, "embedding should be disabled when EMBEDDING_API_URL is unset");
+        assert!(
+            !config.embedding_enabled,
+            "embedding should be disabled when EMBEDDING_API_URL is unset"
+        );
     }
 
     #[test]
@@ -841,7 +861,10 @@ mod tests {
         let _guard = env_lock().lock().unwrap();
         std::env::set_var("EMBEDDING_API_URL", "   ");
         let config = BatchConfig::from_env();
-        assert!(!config.embedding_enabled, "whitespace-only URL should disable embedding");
+        assert!(
+            !config.embedding_enabled,
+            "whitespace-only URL should disable embedding"
+        );
         std::env::remove_var("EMBEDDING_API_URL");
     }
 
@@ -913,22 +936,30 @@ def merge_sort(arr):
             })
             .collect();
         let clusters = dbscan_cluster(&vectors, 0.15, 3);
-        assert_eq!(clusters.len(), 1, "five very similar vectors should form one cluster");
-        assert_eq!(clusters[0].len(), 5, "all five points should be in the cluster");
+        assert_eq!(
+            clusters.len(),
+            1,
+            "five very similar vectors should form one cluster"
+        );
+        assert_eq!(
+            clusters[0].len(),
+            5,
+            "all five points should be in the cluster"
+        );
     }
 
     #[test]
     fn dbscan_two_separate_clusters() {
         // Two well-separated groups (cosine distance ~2.0 between groups)
-        let group_a: Vec<Vec<f64>> = (0..4).map(|i| {
-            vec![1.0 + (i as f64) * 0.01, 0.0]
-        }).collect();
-        let group_b: Vec<Vec<f64>> = (0..4).map(|i| {
-            vec![0.0, 1.0 + (i as f64) * 0.01]
-        }).collect();
+        let group_a: Vec<Vec<f64>> = (0..4).map(|i| vec![1.0 + (i as f64) * 0.01, 0.0]).collect();
+        let group_b: Vec<Vec<f64>> = (0..4).map(|i| vec![0.0, 1.0 + (i as f64) * 0.01]).collect();
         let vectors = [group_a, group_b].concat();
         let clusters = dbscan_cluster(&vectors, 0.15, 3);
-        assert_eq!(clusters.len(), 2, "two well-separated groups should form two clusters");
+        assert_eq!(
+            clusters.len(),
+            2,
+            "two well-separated groups should form two clusters"
+        );
         assert_eq!(clusters[0].len(), 4);
         assert_eq!(clusters[1].len(), 4);
     }
@@ -958,16 +989,15 @@ def merge_sort(arr):
         // Only 2 points — can't reach min_samples=3
         let vectors = vec![vec![1.0, 0.0], vec![0.99, 0.01]];
         let clusters = dbscan_cluster(&vectors, 0.15, 3);
-        assert!(clusters.is_empty(), "two points can't satisfy min_samples=3");
+        assert!(
+            clusters.is_empty(),
+            "two points can't satisfy min_samples=3"
+        );
     }
 
     #[test]
     fn centroid_computation() {
-        let vectors = vec![
-            vec![1.0, 3.0],
-            vec![3.0, 7.0],
-            vec![5.0, 11.0],
-        ];
+        let vectors = vec![vec![1.0, 3.0], vec![3.0, 7.0], vec![5.0, 11.0]];
         let c = compute_centroid(&vectors);
         assert!((c[0] - 3.0).abs() < 1e-9, "centroid x should be 3.0");
         assert!((c[1] - 7.0).abs() < 1e-9, "centroid y should be 7.0");
@@ -981,14 +1011,20 @@ def merge_sort(arr):
     #[test]
     fn cosine_distance_identical() {
         let v = vec![1.0, 2.0, 3.0];
-        assert!(cosine_distance(&v, &v).abs() < 1e-9, "identical vectors should have distance ~0");
+        assert!(
+            cosine_distance(&v, &v).abs() < 1e-9,
+            "identical vectors should have distance ~0"
+        );
     }
 
     #[test]
     fn cosine_distance_orthogonal() {
         let a = vec![1.0, 0.0];
         let b = vec![0.0, 1.0];
-        assert!((cosine_distance(&a, &b) - 1.0).abs() < 1e-9, "orthogonal vectors should have distance 1.0");
+        assert!(
+            (cosine_distance(&a, &b) - 1.0).abs() < 1e-9,
+            "orthogonal vectors should have distance 1.0"
+        );
     }
 
     // ── LLM delegation unit tests ──

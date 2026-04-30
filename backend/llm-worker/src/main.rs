@@ -98,6 +98,12 @@ async fn ensure_consumer_group(pool: &Pool) -> Result<()> {
     Ok(())
 }
 
+/// Type alias for the complex Redis XREADGROUP response shape.
+type StreamEntries = Vec<(
+    String,
+    Vec<(String, std::collections::HashMap<String, String>)>,
+)>;
+
 /// Read a batch of messages from the Redis stream via XREADGROUP.
 ///
 /// Returns a vec of (message_id, job_id) pairs for claimed messages.
@@ -109,20 +115,19 @@ async fn read_messages(
     let mut conn = pool.get().await?;
 
     // Use ">" to receive only new messages never delivered to other consumers.
-    let entries: Vec<(String, Vec<(String, std::collections::HashMap<String, String>)>)> =
-        deadpool_redis::redis::cmd("XREADGROUP")
-            .arg("GROUP")
-            .arg(ANALYSIS_GROUP)
-            .arg(consumer_name)
-            .arg("COUNT")
-            .arg(count)
-            .arg("BLOCK")
-            .arg(5000) // 5s block — allows graceful shutdown checks
-            .arg("STREAMS")
-            .arg(ANALYSIS_STREAM)
-            .arg(">")
-            .query_async(&mut *conn)
-            .await?;
+    let entries: StreamEntries = deadpool_redis::redis::cmd("XREADGROUP")
+        .arg("GROUP")
+        .arg(ANALYSIS_GROUP)
+        .arg(consumer_name)
+        .arg("COUNT")
+        .arg(count)
+        .arg("BLOCK")
+        .arg(5000) // 5s block — allows graceful shutdown checks
+        .arg("STREAMS")
+        .arg(ANALYSIS_STREAM)
+        .arg(">")
+        .query_async(&mut *conn)
+        .await?;
 
     let mut messages = Vec::new();
     for (_stream_key, entries) in entries {
@@ -146,7 +151,10 @@ async fn read_messages(
                     warn!(message_id, "Invalid JSON in data field, skipping");
                 }
             } else {
-                warn!(message_id, "Message has neither job_id nor data field, skipping");
+                warn!(
+                    message_id,
+                    "Message has neither job_id nor data field, skipping"
+                );
             }
         }
     }

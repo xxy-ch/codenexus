@@ -6,8 +6,8 @@ use std::cmp::Ordering;
 use crate::extractor::StructuralFeatures;
 use crate::models::{
     AnalysisClassSnapshot, AnalysisJob, AnalysisSolutionCluster, AnalysisSubmissionFeatures,
-    AnalysisTeachingCard, CandidateProblem, FeatureWithProblem, NewAnalysisJob, ProblemRecommendation,
-    SimilarSubmission, SubmissionMeta, UserDifficultyStats,
+    AnalysisTeachingCard, CandidateProblem, FeatureWithProblem, NewAnalysisJob,
+    ProblemRecommendation, SimilarSubmission, SubmissionMeta, UserDifficultyStats,
 };
 
 #[derive(Clone)]
@@ -612,25 +612,13 @@ impl AnalysisService {
 
         // 5. Recommend similar-difficulty unsolved problems (up to 3).
         let similar_candidates = self
-            .fetch_candidate_problems(
-                org_id,
-                &current_difficulty,
-                &solved_ids,
-                &attempted_ids,
-                3,
-            )
+            .fetch_candidate_problems(org_id, &current_difficulty, &solved_ids, &attempted_ids, 3)
             .await?;
 
         // 6. Recommend next-difficulty problems (up to 2).
         let next_difficulty = next_difficulty_level(&current_difficulty, &stats);
         let next_candidates = self
-            .fetch_candidate_problems(
-                org_id,
-                &next_difficulty,
-                &solved_ids,
-                &attempted_ids,
-                2,
-            )
+            .fetch_candidate_problems(org_id, &next_difficulty, &solved_ids, &attempted_ids, 2)
             .await?;
 
         // 7. Combine and build recommendation objects.
@@ -939,7 +927,10 @@ mod similarity_tests {
     fn cosine_similarity_identical_vectors() {
         let v = vec![1.0, 2.0, 3.0];
         let sim = cosine_similarity(&v, &v);
-        assert!((sim - 1.0).abs() < 1e-9, "identical vectors should have cosine sim 1.0, got {sim}");
+        assert!(
+            (sim - 1.0).abs() < 1e-9,
+            "identical vectors should have cosine sim 1.0, got {sim}"
+        );
     }
 
     #[test]
@@ -947,7 +938,10 @@ mod similarity_tests {
         let a = vec![1.0, 0.0];
         let b = vec![0.0, 1.0];
         let sim = cosine_similarity(&a, &b);
-        assert!(sim.abs() < 1e-9, "orthogonal vectors should have cosine sim 0.0, got {sim}");
+        assert!(
+            sim.abs() < 1e-9,
+            "orthogonal vectors should have cosine sim 0.0, got {sim}"
+        );
     }
 
     #[test]
@@ -955,7 +949,10 @@ mod similarity_tests {
         let a = vec![1.0, 0.0];
         let b = vec![-1.0, 0.0];
         let sim = cosine_similarity(&a, &b);
-        assert!((sim - (-1.0)).abs() < 1e-9, "opposite vectors should have cosine sim -1.0, got {sim}");
+        assert!(
+            (sim - (-1.0)).abs() < 1e-9,
+            "opposite vectors should have cosine sim -1.0, got {sim}"
+        );
     }
 
     #[test]
@@ -977,7 +974,10 @@ mod similarity_tests {
     fn structural_similarity_identical() {
         let v = vec![10.0, 50.0, 200.0, 3.0, 2.0, 1.0, 0.5, 15.0, 20.0, 100.0];
         let sim = structural_similarity(&v, &v);
-        assert!((sim - 1.0).abs() < 1e-9, "identical structures should have sim 1.0, got {sim}");
+        assert!(
+            (sim - 1.0).abs() < 1e-9,
+            "identical structures should have sim 1.0, got {sim}"
+        );
     }
 
     #[test]
@@ -985,7 +985,10 @@ mod similarity_tests {
         let a = vec![1.0, 10.0, 50.0, 1.0, 0.0, 0.0, 0.0, 5.0, 8.0, 20.0];
         let b = vec![20.0, 500.0, 2000.0, 15.0, 8.0, 10.0, 3.0, 30.0, 50.0, 500.0];
         let sim = structural_similarity(&a, &b);
-        assert!(sim < 0.6, "very different structures should have low sim, got {sim}");
+        assert!(
+            sim < 0.6,
+            "very different structures should have low sim, got {sim}"
+        );
         assert!(sim < 1.0, "different structures should not be identical");
     }
 
@@ -1011,10 +1014,17 @@ mod similarity_tests {
 
         let results = rank_by_similarity(&target_emb, &target_struct, candidates, Some(100), 10);
 
-        assert_eq!(results.len(), 3, "all candidates have embeddings, should get 3 results");
+        assert_eq!(
+            results.len(),
+            3,
+            "all candidates have embeddings, should get 3 results"
+        );
         assert!(results[0].similarity_score > results[1].similarity_score);
         assert!(results[1].similarity_score > results[2].similarity_score);
-        assert_eq!(results[0].submission_id, 1, "identical embedding should rank first");
+        assert_eq!(
+            results[0].submission_id, 1,
+            "identical embedding should rank first"
+        );
     }
 
     #[test]
@@ -1043,7 +1053,11 @@ mod similarity_tests {
         ];
 
         let results = rank_by_similarity(&target_emb, &target_struct, candidates, Some(100), 10);
-        assert_eq!(results.len(), 1, "candidate without embedding should be skipped");
+        assert_eq!(
+            results.len(),
+            1,
+            "candidate without embedding should be skipped"
+        );
     }
 
     #[test]
@@ -1086,8 +1100,16 @@ mod similarity_tests {
         let r = &results[0];
 
         // embedding_sim should be ~0.0, structural_sim should be ~1.0
-        assert!(r.embedding_similarity.abs() < 1e-9, "embedding should be ~0.0, got {}", r.embedding_similarity);
-        assert!((r.structural_similarity - 1.0).abs() < 1e-9, "structural should be ~1.0, got {}", r.structural_similarity);
+        assert!(
+            r.embedding_similarity.abs() < 1e-9,
+            "embedding should be ~0.0, got {}",
+            r.embedding_similarity
+        );
+        assert!(
+            (r.structural_similarity - 1.0).abs() < 1e-9,
+            "structural should be ~1.0, got {}",
+            r.structural_similarity
+        );
 
         // Weighted: 0.0 * 0.6 + 1.0 * 0.4 = 0.4
         let expected_score = 0.0 * 0.6 + 1.0 * 0.4;
@@ -1105,7 +1127,10 @@ mod similarity_tests {
         // (simulating what happens when no target embedding exists).
         let target_struct = vec![10.0; 10];
         let results = rank_by_similarity(&[], &target_struct, vec![], None, 10);
-        assert!(results.is_empty(), "no embedding should yield empty results");
+        assert!(
+            results.is_empty(),
+            "no embedding should yield empty results"
+        );
     }
 
     #[test]

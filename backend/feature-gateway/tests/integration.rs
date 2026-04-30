@@ -15,9 +15,7 @@
 //! new_with_enabled). These integration tests focus on the public API
 //! surface that doesn't require DB connectivity.
 
-use feature_gateway::models::{
-    FeatureSource, ResolvedFeature,
-};
+use feature_gateway::models::{FeatureSource, ResolvedFeature};
 use feature_gateway::service::FeatureGatewayService;
 use feature_gateway::AppState;
 
@@ -118,12 +116,15 @@ async fn llm_analysis_emergency_off_via_env() {
 async fn emergency_off_applies_to_all_feature_slugs() {
     let gateway = make_emergency_off_gateway();
 
-    for slug in &["llm_analysis", "plagiarism", "discussions", "blog", "direct_messages"] {
+    for slug in &[
+        "llm_analysis",
+        "plagiarism",
+        "discussions",
+        "blog",
+        "direct_messages",
+    ] {
         let result = gateway.resolve(slug, None, None).await;
-        assert!(
-            !result.enabled,
-            "emergency-off should disable '{slug}'"
-        );
+        assert!(!result.enabled, "emergency-off should disable '{slug}'");
         assert_eq!(result.source, FeatureSource::SystemEmergencyOff);
     }
 }
@@ -226,7 +227,7 @@ async fn feature_gateway_is_decoupled_from_llm_worker() {
         source: FeatureSource::Default,
     };
 
-    assert!(true, "feature-gateway is fully self-contained");
+    // feature-gateway is fully self-contained — this test proves decoupling
 }
 
 /// Verify Cargo.toml does not reference llm-worker or domain-analysis.

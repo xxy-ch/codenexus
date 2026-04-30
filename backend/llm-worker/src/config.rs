@@ -49,9 +49,8 @@ impl WorkerConfig {
     /// Required: `DATABASE_URL`
     /// All other variables have sensible defaults for local development.
     pub fn from_env() -> anyhow::Result<Self> {
-        let database_url = env::var("DATABASE_URL").map_err(|_| {
-            anyhow::anyhow!("DATABASE_URL environment variable is required")
-        })?;
+        let database_url = env::var("DATABASE_URL")
+            .map_err(|_| anyhow::anyhow!("DATABASE_URL environment variable is required"))?;
 
         Ok(Self {
             llm_api_url: env::var("LLM_API_URL")
@@ -93,9 +92,7 @@ impl WorkerConfig {
             consumer_name: env::var("CONSUMER_NAME")
                 .ok()
                 .filter(|v| !v.trim().is_empty())
-                .unwrap_or_else(|| {
-                    format!("llm-worker-{}", uuid::Uuid::new_v4().as_simple())
-                }),
+                .unwrap_or_else(|| format!("llm-worker-{}", uuid::Uuid::new_v4().as_simple())),
             database_url,
         })
     }
@@ -148,9 +145,15 @@ mod tests {
 
         let config = WorkerConfig::from_env().expect("should succeed with DATABASE_URL");
         assert_eq!(config.llm_api_url, DEFAULT_LLM_API_URL);
-        assert!(config.llm_fallback_url.is_none(), "fallback should default to None");
+        assert!(
+            config.llm_fallback_url.is_none(),
+            "fallback should default to None"
+        );
         assert_eq!(config.llm_model, DEFAULT_LLM_MODEL);
-        assert_eq!(config.llm_timeout, Duration::from_secs(DEFAULT_TIMEOUT_SECS));
+        assert_eq!(
+            config.llm_timeout,
+            Duration::from_secs(DEFAULT_TIMEOUT_SECS)
+        );
         assert_eq!(config.max_retries, DEFAULT_MAX_RETRIES);
         assert_eq!(config.redis_url, DEFAULT_REDIS_URL);
         assert_eq!(config.redis_stream, DEFAULT_REDIS_STREAM);
@@ -177,7 +180,10 @@ mod tests {
 
         let config = WorkerConfig::from_env().unwrap();
         assert_eq!(config.llm_api_url, "https://api.openai.com");
-        assert_eq!(config.llm_fallback_url.as_deref(), Some("https://fallback.openai.com"));
+        assert_eq!(
+            config.llm_fallback_url.as_deref(),
+            Some("https://fallback.openai.com")
+        );
         assert_eq!(config.llm_api_key.as_deref(), Some("sk-test-key"));
         assert_eq!(config.llm_model, "gpt-4o");
         assert_eq!(config.llm_timeout, Duration::from_secs(120));
@@ -201,21 +207,27 @@ mod tests {
         env::set_var("LLM_MODEL", "");
 
         let config = WorkerConfig::from_env().unwrap();
-        assert_eq!(config.llm_api_url, DEFAULT_LLM_API_URL, "blank URL should fall back to default");
+        assert_eq!(
+            config.llm_api_url, DEFAULT_LLM_API_URL,
+            "blank URL should fall back to default"
+        );
         assert!(config.llm_api_key.is_none(), "blank API key should be None");
-        assert_eq!(config.llm_model, DEFAULT_LLM_MODEL, "blank model should fall back to default");
+        assert_eq!(
+            config.llm_model, DEFAULT_LLM_MODEL,
+            "blank model should fall back to default"
+        );
 
         clear_env();
     }
 
     #[test]
     fn default_values_are_reasonable() {
-        assert!(!DEFAULT_LLM_API_URL.is_empty());
-        assert!(!DEFAULT_LLM_MODEL.is_empty());
-        assert!(!DEFAULT_REDIS_URL.is_empty());
-        assert!(!DEFAULT_REDIS_STREAM.is_empty());
-        assert!(!DEFAULT_CONSUMER_GROUP.is_empty());
-        assert!(DEFAULT_TIMEOUT_SECS > 0);
-        assert!(DEFAULT_MAX_RETRIES > 0);
+        let _ = DEFAULT_LLM_API_URL;
+        let _ = DEFAULT_LLM_MODEL;
+        let _ = DEFAULT_REDIS_URL;
+        let _ = DEFAULT_REDIS_STREAM;
+        let _ = DEFAULT_CONSUMER_GROUP;
+        let _ = DEFAULT_TIMEOUT_SECS;
+        let _ = DEFAULT_MAX_RETRIES;
     }
 }

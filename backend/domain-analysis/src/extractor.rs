@@ -654,7 +654,10 @@ int factorial(int n) {
 }
 "#;
         let features = extract_features(code, "c").unwrap();
-        assert!(features.has_recursion, "should detect factorial calling itself");
+        assert!(
+            features.has_recursion,
+            "should detect factorial calling itself"
+        );
     }
 
     #[test]
@@ -671,7 +674,10 @@ fn main() {
 }
 "#;
         let features = extract_features(code, "rust").unwrap();
-        assert!(!features.has_recursion, "non-recursive code should not flag recursion");
+        assert!(
+            !features.has_recursion,
+            "non-recursive code should not flag recursion"
+        );
     }
 
     #[test]
@@ -684,7 +690,11 @@ function multiply(a, b) {
 const greet = name => `Hello ${name}`;
 "#;
         let features = extract_features(code, "javascript").unwrap();
-        assert!(features.function_count >= 3, "should count arrow and regular functions, got {}", features.function_count);
+        assert!(
+            features.function_count >= 3,
+            "should count arrow and regular functions, got {}",
+            features.function_count
+        );
     }
 
     #[test]
@@ -745,7 +755,11 @@ func main() {
 }
 "#;
         let features = extract_features(code, "go").unwrap();
-        assert!(features.function_count >= 2, "should count Go methods and functions, got {}", features.function_count);
+        assert!(
+            features.function_count >= 2,
+            "should count Go methods and functions, got {}",
+            features.function_count
+        );
     }
 
     #[test]

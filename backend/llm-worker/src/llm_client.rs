@@ -23,17 +23,31 @@ use crate::config::WorkerConfig;
 #[derive(Debug)]
 pub enum LlmError {
     /// HTTP transport error (connection refused, timeout, DNS failure, etc.).
-    Http { endpoint: String, source: reqwest::Error },
+    Http {
+        endpoint: String,
+        source: reqwest::Error,
+    },
     /// The API returned a non-2xx status code.
-    Api { endpoint: String, status: StatusCode, body: String },
+    Api {
+        endpoint: String,
+        status: StatusCode,
+        body: String,
+    },
     /// The response body could not be parsed.
     MalformedResponse { endpoint: String, message: String },
     /// The response contained no choices.
     EmptyResponse { endpoint: String },
     /// The structured JSON output could not be deserialized to the target type.
-    JsonParse { endpoint: String, raw: String, source: serde_json::Error },
+    JsonParse {
+        endpoint: String,
+        raw: String,
+        source: serde_json::Error,
+    },
     /// Both primary and fallback endpoints failed.
-    AllEndpointsFailed { primary_err: String, fallback_err: String },
+    AllEndpointsFailed {
+        primary_err: String,
+        fallback_err: String,
+    },
 }
 
 impl fmt::Display for LlmError {
@@ -42,8 +56,15 @@ impl fmt::Display for LlmError {
             Self::Http { endpoint, source } => {
                 write!(f, "LLM HTTP error for {endpoint}: {source}")
             }
-            Self::Api { endpoint, status, body } => {
-                write!(f, "LLM API error for {endpoint}: status {status}, body: {body}")
+            Self::Api {
+                endpoint,
+                status,
+                body,
+            } => {
+                write!(
+                    f,
+                    "LLM API error for {endpoint}: status {status}, body: {body}"
+                )
             }
             Self::MalformedResponse { endpoint, message } => {
                 write!(f, "LLM malformed response from {endpoint}: {message}")
@@ -51,10 +72,20 @@ impl fmt::Display for LlmError {
             Self::EmptyResponse { endpoint } => {
                 write!(f, "LLM returned no choices from {endpoint}")
             }
-            Self::JsonParse { endpoint, raw, source } => {
-                write!(f, "LLM JSON parse error from {endpoint}: {source} (raw: {raw:.200})")
+            Self::JsonParse {
+                endpoint,
+                raw,
+                source,
+            } => {
+                write!(
+                    f,
+                    "LLM JSON parse error from {endpoint}: {source} (raw: {raw:.200})"
+                )
             }
-            Self::AllEndpointsFailed { primary_err, fallback_err } => {
+            Self::AllEndpointsFailed {
+                primary_err,
+                fallback_err,
+            } => {
                 write!(
                     f,
                     "Both LLM endpoints failed — primary: {primary_err}; fallback: {fallback_err}"
@@ -240,9 +271,13 @@ impl LlmClient {
                 message: format!("{source}"),
             })?;
 
-        let choice = parsed.choices.into_iter().next().ok_or_else(|| LlmError::EmptyResponse {
-            endpoint: url.to_string(),
-        })?;
+        let choice = parsed
+            .choices
+            .into_iter()
+            .next()
+            .ok_or_else(|| LlmError::EmptyResponse {
+                endpoint: url.to_string(),
+            })?;
 
         let usage = parsed.usage.unwrap_or(ChatUsage {
             prompt_tokens: 0,
@@ -271,7 +306,10 @@ impl LlmClient {
     ) -> std::result::Result<LlmResult, LlmError> {
         let primary_url = self.chat_url();
 
-        match self.send_request(&primary_url, messages.clone(), temperature).await {
+        match self
+            .send_request(&primary_url, messages.clone(), temperature)
+            .await
+        {
             Ok(result) => Ok(result),
             Err(primary_err) => {
                 if let Some(ref fallback_base) = self.fallback_url {
@@ -281,7 +319,10 @@ impl LlmClient {
                         fallback_url = %fallback_url,
                         "Primary LLM endpoint failed, trying fallback"
                     );
-                    match self.send_request(&fallback_url, messages, temperature).await {
+                    match self
+                        .send_request(&fallback_url, messages, temperature)
+                        .await
+                    {
                         Ok(result) => {
                             tracing::info!(
                                 latency_ms = result.latency.as_millis() as u64,
@@ -508,7 +549,10 @@ mod tests {
     fn chat_url_joins_correctly() {
         let config = test_config();
         let client = LlmClient::from_config(&config).unwrap();
-        assert_eq!(client.chat_url(), "https://api.example.com/v1/chat/completions");
+        assert_eq!(
+            client.chat_url(),
+            "https://api.example.com/v1/chat/completions"
+        );
     }
 
     #[test]
@@ -516,7 +560,10 @@ mod tests {
         let mut config = test_config();
         config.llm_api_url = "https://api.example.com/".to_string();
         let client = LlmClient::from_config(&config).unwrap();
-        assert_eq!(client.chat_url(), "https://api.example.com/v1/chat/completions");
+        assert_eq!(
+            client.chat_url(),
+            "https://api.example.com/v1/chat/completions"
+        );
     }
 
     // -- Error display tests --

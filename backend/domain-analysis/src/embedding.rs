@@ -482,7 +482,10 @@ mod tests {
         std::env::remove_var("EMBEDDING_MODEL");
 
         let result = EmbeddingClient::from_env().unwrap();
-        assert!(result.is_none(), "should return Ok(None) when EMBEDDING_API_URL is unset");
+        assert!(
+            result.is_none(),
+            "should return Ok(None) when EMBEDDING_API_URL is unset"
+        );
     }
 
     #[test]
@@ -611,16 +614,12 @@ mod tests {
 
     #[tokio::test]
     async fn embed_returns_fallback_error_when_both_endpoints_fail() {
-        let (primary_url, _) = spawn_embedding_server(
-            500,
-            r#"{"error":{"message":"primary down"}}"#.to_string(),
-        )
-        .await;
-        let (fallback_url, _) = spawn_embedding_server(
-            503,
-            r#"{"error":{"message":"fallback down"}}"#.to_string(),
-        )
-        .await;
+        let (primary_url, _) =
+            spawn_embedding_server(500, r#"{"error":{"message":"primary down"}}"#.to_string())
+                .await;
+        let (fallback_url, _) =
+            spawn_embedding_server(503, r#"{"error":{"message":"fallback down"}}"#.to_string())
+                .await;
         let client = EmbeddingClient::new(
             primary_url,
             Some(fallback_url),

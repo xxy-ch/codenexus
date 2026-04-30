@@ -8,13 +8,13 @@
 //! - **JSON parse failures**: record raw LLM response in error_message, mark as permanently failed
 //! - **DB failures** (card insert, status update): return Err — message is NOT ACKed, stays in PEL
 
-use anyhow::Result;
-use sqlx::PgPool;
-use tracing::{error, info, warn};
 use crate::config::WorkerConfig;
 use crate::db;
 use crate::llm_client::{ChatMessage, LlmClient, LlmError};
 use crate::prompts::{self, CodeReviewOutput};
+use anyhow::Result;
+use sqlx::PgPool;
+use tracing::{error, info, warn};
 
 /// Classify an LLM error as transient (retryable) or permanent.
 ///
@@ -23,9 +23,7 @@ use crate::prompts::{self, CodeReviewOutput};
 pub fn is_transient_error(err: &LlmError) -> bool {
     matches!(
         err,
-        LlmError::Http { .. }
-            | LlmError::Api { .. }
-            | LlmError::AllEndpointsFailed { .. }
+        LlmError::Http { .. } | LlmError::Api { .. } | LlmError::AllEndpointsFailed { .. }
     )
 }
 
@@ -60,15 +58,16 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
     let submission = db::get_submission_code(pool, job.submission_id)
         .await?
         .ok_or_else(|| {
-            anyhow::anyhow!("submission {} not found for job {job_id}", job.submission_id)
+            anyhow::anyhow!(
+                "submission {} not found for job {job_id}",
+                job.submission_id
+            )
         })?;
 
     // 3. Fetch problem info
     let problem = db::get_problem_info(pool, job.problem_id)
         .await?
-        .ok_or_else(|| {
-            anyhow::anyhow!("problem {} not found for job {job_id}", job.problem_id)
-        })?;
+        .ok_or_else(|| anyhow::anyhow!("problem {} not found for job {job_id}", job.problem_id))?;
 
     // 4. Build the prompt messages and convert to wire format
     let prompt_messages = prompts::code_review_prompt(
@@ -161,7 +160,9 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
                 pool,
                 job_id,
                 "failed",
-                Some(&format!("LLM JSON parse error. Raw response:\n{raw_preview}")),
+                Some(&format!(
+                    "LLM JSON parse error. Raw response:\n{raw_preview}"
+                )),
                 None,
             )
             .await?;
@@ -246,7 +247,10 @@ mod tests {
             raw: "not json".to_string(),
             source: serde_json::from_str::<serde_json::Value>("bad json").unwrap_err(),
         };
-        assert!(!is_transient_error(&err), "JSON parse errors should be permanent");
+        assert!(
+            !is_transient_error(&err),
+            "JSON parse errors should be permanent"
+        );
     }
 
     #[test]

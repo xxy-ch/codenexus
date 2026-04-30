@@ -96,10 +96,7 @@ pub async fn get_submission_code(
 }
 
 /// Fetch problem metadata by its ID.
-pub async fn get_problem_info(
-    pool: &PgPool,
-    problem_id: i64,
-) -> Result<Option<ProblemInfo>> {
+pub async fn get_problem_info(pool: &PgPool, problem_id: i64) -> Result<Option<ProblemInfo>> {
     let row = sqlx::query_as::<_, ProblemInfo>(
         "SELECT id, title, description, difficulty, time_limit_ms, memory_limit_kb \
          FROM problems WHERE id = $1",
@@ -111,10 +108,7 @@ pub async fn get_problem_info(
 }
 
 /// Fetch a pending analysis job by ID (for claim-and-process).
-pub async fn get_analysis_job(
-    pool: &PgPool,
-    job_id: i64,
-) -> Result<Option<AnalysisJobRow>> {
+pub async fn get_analysis_job(pool: &PgPool, job_id: i64) -> Result<Option<AnalysisJobRow>> {
     let row = sqlx::query_as::<_, AnalysisJobRow>(
         "SELECT id, submission_id, problem_id, user_id, organization_id, \
                 campus_id, grade_id, contest_id, status, error_message, \

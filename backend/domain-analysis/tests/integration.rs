@@ -139,7 +139,10 @@ fn test_structural_features_empty_input() {
 fn test_structural_features_halstead_volume() {
     let code = "int main() { int x = 1 + 2; return x; }";
     let features = extractor::extract_features(code, "c").unwrap();
-    assert!(features.halstead_volume > 0.0, "non-trivial code should have positive Halstead volume");
+    assert!(
+        features.halstead_volume > 0.0,
+        "non-trivial code should have positive Halstead volume"
+    );
     assert!(features.distinct_operators > 0);
     assert!(features.distinct_operands > 0);
 }
@@ -249,7 +252,7 @@ fn domain_analysis_is_decoupled_from_llm_worker() {
         Duration::from_secs(5),
     );
 
-    assert!(true, "domain-analysis is fully self-contained");
+    // domain-analysis is fully self-contained — this test proves decoupling
 }
 
 /// Verify Cargo.toml does not reference llm-worker or feature-gateway.
