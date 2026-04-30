@@ -46,6 +46,10 @@ jobs:
         run: cargo test --workspace
         env:
           DATABASE_URL: postgres://dummy:dummy@localhost/dummy
+          LLM_API_URL: https://api.openai.com
+          LLM_API_KEY: dummy-key-for-ci
+          LLM_MODEL: gpt-4o
+          REDIS_URL: redis://localhost:6379
 
   frontend:
     name: Frontend (lint + test + build)
@@ -133,6 +137,9 @@ jobs:
           REDIS_URL: redis://127.0.0.1:6379
           JWT_SECRET: test-jwt-secret-for-ci
           WORKER_SECRET: test-worker-secret-for-ci
+          LLM_API_URL: https://api.openai.com
+          LLM_API_KEY: dummy-key-for-ci
+          LLM_MODEL: gpt-4o
 
   docker:
     name: Docker Build Verification
@@ -149,6 +156,12 @@ jobs:
 
       - name: Build Judge Worker image
         run: docker build -f backend/judge-worker/Dockerfile ./backend --no-cache
+
+      - name: Build LLM Worker image
+        run: docker build -f backend/llm-worker/Dockerfile ./backend --no-cache
+
+      - name: Build Feature Gateway image
+        run: docker build -f backend/feature-gateway/Dockerfile ./backend --no-cache
 
       - name: Build Frontend image
         run: docker build -f frontend/Dockerfile ./frontend --no-cache
