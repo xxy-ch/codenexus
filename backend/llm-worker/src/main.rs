@@ -185,6 +185,19 @@ async fn run_loop(pg_pool: sqlx::PgPool, redis_pool: Pool, config: &WorkerConfig
     );
 
     loop {
+        // Check control signal before each iteration. When paused, skip job
+        // pulling entirely and sleep 5 s (matching the normal XREADGROUP BLOCK
+        // cadence). Fail-open: Redis errors are treated as "not paused" so a
+        // Redis outage doesn't halt all processing.
+        if llm_worker::control_signal::check_paused(&redis_pool)
+            .await
+            .unwrap_or(false)
+        {
+            tracing::info!("[control] llm-worker is paused, skipping job pull");
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            continue;
+        }
+
         match read_messages(&redis_pool, &config.consumer_name, 10).await {
             Ok(messages) => {
                 consecutive_errors = 0;
