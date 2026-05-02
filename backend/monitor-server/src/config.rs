@@ -2,8 +2,43 @@
 //!
 //! Reads environment variables with sensible defaults.
 //! Follows the same pattern as llm-worker config.
+//!
+//! In production (`APP_ENV=production`), `MONITOR_API_KEY` is mandatory —
+//! the server will refuse to start without it. Development mode allows
+//! no-auth with a warning.
 
 use std::env;
+
+// ---------------------------------------------------------------------------
+// AppEnv — duplicated locally per MEM049 (monitor-server is independent)
+// ---------------------------------------------------------------------------
+
+/// Application environment mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AppEnv {
+    Production,
+    Development,
+    Test,
+}
+
+impl AppEnv {
+    /// Read APP_ENV from environment. Defaults to Development if unset or invalid.
+    pub fn from_env() -> Self {
+        match env::var("APP_ENV").as_deref() {
+            Ok("production") => AppEnv::Production,
+            Ok("test") => AppEnv::Test,
+            _ => AppEnv::Development,
+        }
+    }
+
+    pub fn is_production(&self) -> bool {
+        matches!(self, AppEnv::Production)
+    }
+
+    pub fn is_test(&self) -> bool {
+        matches!(self, AppEnv::Test)
+    }
+}
 
 /// Default Redis URL.
 const DEFAULT_REDIS_URL: &str = "redis://127.0.0.1:6379";
@@ -23,6 +58,8 @@ const DEFAULT_PUSH_INTERVAL_SECS: u64 = 5;
 /// Server configuration, loaded from environment variables.
 #[derive(Debug, Clone)]
 pub struct ServerConfig {
+    /// Detected application environment.
+    pub app_env: AppEnv,
     pub database_url: String,
     pub redis_url: String,
     pub bind_addr: String,
@@ -42,12 +79,28 @@ impl ServerConfig {
     /// Build configuration from environment variables.
     ///
     /// Required: `DATABASE_URL`
+    /// Required in production: `MONITOR_API_KEY`
     /// All other variables have sensible defaults for local development.
     pub fn from_env() -> anyhow::Result<Self> {
+        let app_env = AppEnv::from_env();
+
         let database_url = env::var("DATABASE_URL")
             .map_err(|_| anyhow::anyhow!("DATABASE_URL environment variable is required"))?;
 
+        let monitor_api_key = env::var("MONITOR_API_KEY")
+            .ok()
+            .filter(|v| !v.trim().is_empty());
+
+        // Production: refuse to start without an API key
+        if app_env.is_production() && monitor_api_key.is_none() {
+            anyhow::bail!(
+                "MONITOR_API_KEY is required in production (APP_ENV=production). \
+                 Set a strong API key before starting monitor-server."
+            );
+        }
+
         Ok(Self {
+            app_env,
             database_url,
             redis_url: env::var("REDIS_URL")
                 .ok()
@@ -69,9 +122,7 @@ impl ServerConfig {
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(DEFAULT_PUSH_INTERVAL_SECS),
-            monitor_api_key: env::var("MONITOR_API_KEY")
-                .ok()
-                .filter(|v| !v.trim().is_empty()),
+            monitor_api_key,
         })
     }
 }
@@ -89,6 +140,7 @@ mod tests {
     static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn clear_env() {
+        env::remove_var("APP_ENV");
         env::remove_var("DATABASE_URL");
         env::remove_var("REDIS_URL");
         env::remove_var("MONITOR_BIND_ADDR");
@@ -178,5 +230,111 @@ mod tests {
         assert!(config.monitor_api_key.is_none());
 
         clear_env();
+    }
+
+    // ----- Production enforcement tests -----
+
+    #[test]
+    fn production_refuses_missing_api_key() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        clear_env();
+        env::set_var("APP_ENV", "production");
+        env::set_var("DATABASE_URL", "postgres://localhost/test");
+        // MONITOR_API_KEY intentionally not set
+
+        let result = ServerConfig::from_env();
+        assert!(result.is_err(), "Should fail without MONITOR_API_KEY in production");
+        let err_msg = result.unwrap_err().to_string();
+        assert!(
+            err_msg.contains("MONITOR_API_KEY"),
+            "Error should mention MONITOR_API_KEY, got: {err_msg}"
+        );
+        assert!(
+            err_msg.contains("production"),
+            "Error should mention production, got: {err_msg}"
+        );
+
+        clear_env();
+    }
+
+    #[test]
+    fn production_refuses_blank_api_key() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        clear_env();
+        env::set_var("APP_ENV", "production");
+        env::set_var("DATABASE_URL", "postgres://localhost/test");
+        env::set_var("MONITOR_API_KEY", "   ");
+
+        let result = ServerConfig::from_env();
+        assert!(result.is_err(), "Blank MONITOR_API_KEY should fail in production");
+
+        clear_env();
+    }
+
+    #[test]
+    fn production_accepts_with_api_key() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        clear_env();
+        env::set_var("APP_ENV", "production");
+        env::set_var("DATABASE_URL", "postgres://localhost/test");
+        env::set_var("MONITOR_API_KEY", "a-real-production-key");
+
+        let config = ServerConfig::from_env().unwrap();
+        assert_eq!(config.app_env, AppEnv::Production);
+        assert_eq!(config.monitor_api_key.as_deref(), Some("a-real-production-key"));
+
+        clear_env();
+    }
+
+    #[test]
+    fn development_allows_missing_api_key() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        clear_env();
+        // APP_ENV unset => defaults to Development
+        env::set_var("DATABASE_URL", "postgres://localhost/test");
+        // MONITOR_API_KEY intentionally not set
+
+        let config = ServerConfig::from_env().unwrap();
+        assert_eq!(config.app_env, AppEnv::Development);
+        assert!(config.monitor_api_key.is_none());
+
+        clear_env();
+    }
+
+    #[test]
+    fn test_mode_allows_missing_api_key() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        clear_env();
+        env::set_var("APP_ENV", "test");
+        env::set_var("DATABASE_URL", "postgres://localhost/test");
+
+        let config = ServerConfig::from_env().unwrap();
+        assert_eq!(config.app_env, AppEnv::Test);
+        assert!(config.monitor_api_key.is_none());
+
+        clear_env();
+    }
+
+    #[test]
+    fn app_env_defaults_to_development() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        clear_env();
+        assert_eq!(AppEnv::from_env(), AppEnv::Development);
+    }
+
+    #[test]
+    fn app_env_reads_production() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        env::set_var("APP_ENV", "production");
+        assert_eq!(AppEnv::from_env(), AppEnv::Production);
+        env::remove_var("APP_ENV");
+    }
+
+    #[test]
+    fn app_env_reads_test() {
+        let _lock = ENV_LOCK.lock().unwrap();
+        env::set_var("APP_ENV", "test");
+        assert_eq!(AppEnv::from_env(), AppEnv::Test);
+        env::remove_var("APP_ENV");
     }
 }

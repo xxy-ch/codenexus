@@ -38,6 +38,7 @@ async fn main() -> Result<()> {
     // Load configuration from environment
     let config = ServerConfig::from_env()?;
     info!(
+        app_env = ?config.app_env,
         bind_addr = %config.bind_addr,
         redis_url = %config.redis_url,
         signal_timeout_secs = config.signal_timeout_secs,
@@ -95,7 +96,11 @@ async fn main() -> Result<()> {
     if auth_state.is_enabled() {
         info!("Control-plane API key authentication: enabled");
     } else {
-        info!("Control-plane API key authentication: disabled (set MONITOR_API_KEY to enable)");
+        tracing::warn!(
+            "Control-plane API key authentication: DISABLED. \
+             Set MONITOR_API_KEY to secure the control plane. \
+             This will be a hard error in production (APP_ENV=production)."
+        );
     }
     let app = routes::build_router(state, auth_state);
     let listener = tokio::net::TcpListener::bind(&config.bind_addr).await?;
