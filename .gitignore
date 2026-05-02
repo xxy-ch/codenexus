@@ -16,7 +16,10 @@ release/
 !.github/workflows/
 *.swp
 *.swo
-*~
+# Environment
+.env
+.env.*
+!.env.example
 
 # OS
 .DS_Store
@@ -80,3 +83,6 @@ venv/
 vendor/
 coverage/
 tmp/
+
+# ── GSD baseline (auto-generated) ──
+*~

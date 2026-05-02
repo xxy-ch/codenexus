@@ -282,4 +282,219 @@ mod tests {
         assert_eq!(view.target, "api");
         assert!(view.confirmed);
     }
+
+    // -----------------------------------------------------------------------
+    // Extended tests for task T01: S06 integration + control_signal tests
+    // -----------------------------------------------------------------------
+
+    /// Simulates a router with business routes (affected by pause) and
+    /// health/metrics/internal routes (exempt from pause).
+    fn test_router_with_exempt_routes(
+        is_paused: Arc<AtomicBool>,
+    ) -> (Router, Router) {
+        // Business routes — wrapped in pause middleware
+        let business = Router::new()
+            .route("/api/problems", get(|| async { "problems" }))
+            .route("/api/submissions", get(|| async { "submissions" }))
+            .layer(axum::middleware::from_fn(move |req, next| {
+                let flag = is_paused.clone();
+                async move { pause_middleware(flag, req, next).await }
+            }));
+
+        // Health/metrics/internal — NOT wrapped in pause middleware
+        let exempt = Router::new()
+            .route("/health", get(|| async { "healthy" }))
+            .route("/metrics", get(|| async { "# HELP test test\n" }))
+            .route("/internal/debug", get(|| async { "debug" }));
+
+        (business, exempt)
+    }
+
+    #[tokio::test]
+    async fn pause_middleware_503_on_business_routes_when_paused() {
+        let is_paused = Arc::new(AtomicBool::new(true));
+        let (business, _) = test_router_with_exempt_routes(is_paused);
+
+        // Business routes should return 503 when paused
+        for uri in &["/api/problems", "/api/submissions"] {
+            let resp = business
+                .clone()
+                .oneshot(
+                    axum::http::Request::builder()
+                        .uri(*uri)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(
+                resp.status(),
+                StatusCode::SERVICE_UNAVAILABLE,
+                "business route {} should return 503 when paused",
+                uri
+            );
+            let body = to_bytes(resp.into_body(), 1024).await.unwrap();
+            let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+            assert_eq!(json["status"], "paused");
+        }
+    }
+
+    #[tokio::test]
+    async fn exempt_routes_return_200_even_when_paused() {
+        let is_paused = Arc::new(AtomicBool::new(true));
+        let (_, exempt) = test_router_with_exempt_routes(is_paused);
+
+        // Health, metrics, and internal routes should NOT be wrapped
+        // in pause middleware, so they always return 200.
+        for uri in &["/health", "/metrics", "/internal/debug"] {
+            let resp = exempt
+                .clone()
+                .oneshot(
+                    axum::http::Request::builder()
+                        .uri(*uri)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+            assert_eq!(
+                resp.status(),
+                StatusCode::OK,
+                "exempt route {} should return 200 even when paused",
+                uri
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn resume_restores_business_routes_to_200() {
+        let is_paused = Arc::new(AtomicBool::new(true));
+        let (business, _) = test_router_with_exempt_routes(is_paused.clone());
+
+        // First verify paused
+        let resp = business
+            .clone()
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/problems")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+
+        // Resume (flip the flag)
+        is_paused.store(false, Ordering::Relaxed);
+
+        // Rebuild router with the same flag to test the new state
+        let (business_after, _) =
+            test_router_with_exempt_routes(is_paused.clone());
+
+        let resp = business_after
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/problems")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.status(),
+            StatusCode::OK,
+            "business routes should return 200 after resume"
+        );
+        let body = to_bytes(resp.into_body(), 1024).await.unwrap();
+        assert_eq!(&body[..], b"problems");
+    }
+
+    #[tokio::test]
+    async fn fail_open_when_redis_unavailable() {
+        // The start_control_signal_polling function accepts Option<Pool>.
+        // When pool is None, the polling loop just continues without changing
+        // the pause state. This is the fail-open behavior:
+        // - No Redis → no signal → no pause change → service stays as-is.
+        //
+        // We verify the contract: calling start_control_signal_polling with
+        // None should not panic or block, and the initial state should be
+        // preserved.
+
+        let is_paused = Arc::new(AtomicBool::new(false));
+
+        // Spawn with None — should not panic
+        start_control_signal_polling(None, is_paused.clone());
+
+        // Give the spawned task a moment to settle
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+        // State should remain unchanged (fail-open: don't crash, don't pause)
+        assert!(
+            !is_paused.load(Ordering::Relaxed),
+            "fail-open: state should not change when Redis is unavailable"
+        );
+    }
+
+    #[tokio::test]
+    async fn fail_open_preserves_paused_state_when_redis_unavailable() {
+        // If the service was paused and Redis goes down, it should stay paused
+        // (fail-open means don't change state, not "unpause on Redis failure").
+        let is_paused = Arc::new(AtomicBool::new(true));
+
+        start_control_signal_polling(None, is_paused.clone());
+
+        // Give the spawned task a moment to settle
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+        assert!(
+            is_paused.load(Ordering::Relaxed),
+            "fail-open: paused state should be preserved when Redis is unavailable"
+        );
+    }
+
+    #[tokio::test]
+    async fn pause_middleware_503_response_has_correct_json_body() {
+        let is_paused = Arc::new(AtomicBool::new(true));
+        let app = test_router(is_paused);
+
+        let resp = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/test")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(resp.status(), StatusCode::SERVICE_UNAVAILABLE);
+        let body = to_bytes(resp.into_body(), 1024).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
+
+        // Verify the full response shape
+        assert_eq!(json["status"], "paused");
+        assert_eq!(json["target"], "api");
+        // Ensure no unexpected fields
+        assert_eq!(json.as_object().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn pause_middleware_preserves_response_body_when_not_paused() {
+        let is_paused = Arc::new(AtomicBool::new(false));
+        let app = test_router(is_paused);
+
+        let resp = app
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/test")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(resp.status(), StatusCode::OK);
+        let body = to_bytes(resp.into_body(), 1024).await.unwrap();
+        assert_eq!(&body[..], b"ok", "response body should pass through unchanged");
+    }
 }
