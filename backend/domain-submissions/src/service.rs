@@ -181,17 +181,48 @@ impl SubmissionService {
         .fetch_one(&self.pool)
         .await?;
 
-        // Send to judge queue
-        self.queue_for_judging(
-            submission.id,
-            req.problem_id,
-            user_id,
-            school_id,
-            &req.code,
-            normalized_language,
-            req.contest_id,
-        )
-        .await?;
+        // Send to judge queue; on failure, compensate by deleting the orphaned row
+        if let Err(e) = self
+            .queue_for_judging(
+                submission.id,
+                req.problem_id,
+                user_id,
+                school_id,
+                &req.code,
+                normalized_language,
+                req.contest_id,
+            )
+            .await
+        {
+            // Compensation: remove the submission row so the DB is not left with an
+            // orphaned record that will never be judged.
+            tracing::warn!(
+                submission_id = submission.id,
+                error = %e,
+                "queue_for_judging failed after DB INSERT — compensating by deleting submission row"
+            );
+            match sqlx::query("DELETE FROM submissions WHERE id = $1")
+                .bind(submission.id)
+                .execute(&self.pool)
+                .await
+            {
+                Ok(result) => {
+                    tracing::info!(
+                        submission_id = submission.id,
+                        rows_deleted = result.rows_affected(),
+                        "Compensation DELETE succeeded"
+                    );
+                }
+                Err(delete_err) => {
+                    tracing::error!(
+                        submission_id = submission.id,
+                        error = %delete_err,
+                        "Compensation DELETE also failed — orphaned submission may need manual cleanup"
+                    );
+                }
+            }
+            return Err(e);
+        }
 
         Ok(submission)
     }
