@@ -38,6 +38,7 @@ async fn build_contest_app(pool: PgPool) -> (axum::Router, api::auth::JwtService
             "http://127.0.0.1:3001".to_string(),
             "test_secret".to_string(),
         )),
+        app_env: api_infra::config::AppEnv::Test,
     };
 
     // Mirror create_router's protected_router structure: auth -> tenant -> contest routes

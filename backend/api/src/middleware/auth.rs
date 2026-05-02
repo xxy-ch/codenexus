@@ -152,6 +152,7 @@ mod tests {
                 "http://127.0.0.1:3001".to_string(),
                 "test_secret".to_string(),
             )),
+            app_env: api_infra::config::AppEnv::Test,
         };
         Router::new()
             .route("/protected", get(protected_handler))

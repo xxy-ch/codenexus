@@ -6,6 +6,7 @@
 use std::any::Any;
 use std::sync::Arc;
 
+use crate::config::AppEnv;
 use crate::feature_gateway::GatewayClient;
 use crate::traits::class_repo::ClassMembershipChecker;
 use crate::traits::token_service::TokenService;
@@ -40,4 +41,7 @@ pub struct AppState {
     pub preview_cache: Arc<PreviewCache>,
     /// Feature gateway HTTP client for runtime feature flag resolution via standalone Gateway.
     pub gateway_client: Arc<GatewayClient>,
+    /// Application environment (Production / Development / Test).
+    /// Used to conditionally enable security features like the Secure cookie flag.
+    pub app_env: AppEnv,
 }

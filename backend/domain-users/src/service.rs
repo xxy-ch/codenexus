@@ -362,6 +362,34 @@ impl UserService {
         })
     }
 
+    /// Validate that an email address has a plausible format.
+    /// Checks: exactly one `@`, non-empty local part, non-empty domain
+    /// with at least one `.` in the domain portion.
+    pub(crate) fn validate_email_format(email: &str) -> Result<()> {
+        let parts: Vec<&str> = email.split('@').collect();
+        if parts.len() != 2 {
+            return Err(anyhow::anyhow!("Invalid email format: must contain exactly one @"));
+        }
+        let local = parts[0];
+        let domain = parts[1];
+        if local.is_empty() {
+            return Err(anyhow::anyhow!("Invalid email format: empty local part before @"));
+        }
+        if domain.is_empty() {
+            return Err(anyhow::anyhow!("Invalid email format: empty domain after @"));
+        }
+        if !domain.contains('.') {
+            return Err(anyhow::anyhow!(
+                "Invalid email format: domain must contain at least one dot"
+            ));
+        }
+        // Ensure the last domain segment (TLD) is non-empty
+        if domain.rsplit('.').next().unwrap_or("").is_empty() {
+            return Err(anyhow::anyhow!("Invalid email format: missing TLD"));
+        }
+        Ok(())
+    }
+
     pub async fn update_user_profile(
         &self,
         user_id: Uuid,
@@ -404,6 +432,7 @@ impl UserService {
         let mut query_builder = sqlx::query(&update_query);
 
         if let Some(email) = &updates.email {
+            Self::validate_email_format(email)?;
             query_builder = query_builder.bind(email);
         }
 
@@ -1136,5 +1165,63 @@ mod tests {
             unique_first.len() >= 2,
             "passwords should not all start with the same character"
         );
+    }
+
+    // ===================== Email Format Validation Tests =====================
+
+    #[test]
+    fn test_email_validation_valid() {
+        assert!(
+            UserService::validate_email_format("user@example.com").is_ok(),
+            "standard email should be valid"
+        );
+    }
+
+    #[test]
+    fn test_email_validation_valid_subdomain() {
+        assert!(
+            UserService::validate_email_format("user@mail.example.com").is_ok(),
+            "subdomain email should be valid"
+        );
+    }
+
+    #[test]
+    fn test_email_validation_missing_at() {
+        let result = UserService::validate_email_format("userexample.com");
+        assert!(result.is_err(), "email without @ should be rejected");
+        assert!(
+            result.unwrap_err().to_string().contains("exactly one @"),
+            "error should mention @ requirement"
+        );
+    }
+
+    #[test]
+    fn test_email_validation_double_at() {
+        let result = UserService::validate_email_format("user@@example.com");
+        assert!(result.is_err(), "email with double @ should be rejected");
+    }
+
+    #[test]
+    fn test_email_validation_empty_local() {
+        let result = UserService::validate_email_format("@example.com");
+        assert!(result.is_err(), "email with empty local part should be rejected");
+    }
+
+    #[test]
+    fn test_email_validation_empty_domain() {
+        let result = UserService::validate_email_format("user@");
+        assert!(result.is_err(), "email with empty domain should be rejected");
+    }
+
+    #[test]
+    fn test_email_validation_missing_tld() {
+        let result = UserService::validate_email_format("user@example");
+        assert!(result.is_err(), "email without TLD dot should be rejected");
+    }
+
+    #[test]
+    fn test_email_validation_trailing_dot() {
+        let result = UserService::validate_email_format("user@example.");
+        assert!(result.is_err(), "email with trailing dot (empty TLD) should be rejected");
     }
 }

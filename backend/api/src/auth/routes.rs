@@ -8,11 +8,15 @@ use shared::models::{
     Claims, LoginRequest, LoginResponse, RefreshRequest, RefreshResponse, UserPublic,
 };
 
-fn make_cookie_header(name: &str, value: &str, max_age: u32, path: &str) -> String {
-    format!(
+fn make_cookie_header(name: &str, value: &str, max_age: u32, path: &str, secure: bool) -> String {
+    let mut cookie = format!(
         "{}={}; HttpOnly; SameSite=Strict; Path={}; Max-Age={}",
         name, value, path, max_age
-    )
+    );
+    if secure {
+        cookie.push_str("; Secure");
+    }
+    cookie
 }
 
 pub async fn login(
@@ -32,9 +36,10 @@ pub async fn login(
     track_refresh_token(&state, &response.refresh_token).await;
 
     let mut headers = axum::http::HeaderMap::new();
+    let secure = state.app_env.is_production();
     headers.insert(
         axum::http::header::SET_COOKIE,
-        make_cookie_header("access_token", &response.token, 14400, "/")
+        make_cookie_header("access_token", &response.token, 14400, "/", secure)
             .parse()
             .unwrap(),
     );
@@ -45,6 +50,7 @@ pub async fn login(
             &response.refresh_token,
             604800,
             "/api/auth/refresh",
+            secure,
         )
         .parse()
         .unwrap(),
@@ -106,9 +112,10 @@ pub async fn refresh(
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
     let mut resp_headers = axum::http::HeaderMap::new();
+    let secure = state.app_env.is_production();
     resp_headers.insert(
         axum::http::header::SET_COOKIE,
-        make_cookie_header("access_token", &response.token, 14400, "/")
+        make_cookie_header("access_token", &response.token, 14400, "/", secure)
             .parse()
             .unwrap(),
     );
@@ -191,15 +198,16 @@ pub async fn register(
     track_refresh_token(&state, &refresh_token).await;
 
     let mut headers = axum::http::HeaderMap::new();
+    let secure = state.app_env.is_production();
     headers.insert(
         axum::http::header::SET_COOKIE,
-        make_cookie_header("access_token", &token, 14400, "/")
+        make_cookie_header("access_token", &token, 14400, "/", secure)
             .parse()
             .unwrap(),
     );
     headers.insert(
         axum::http::header::SET_COOKIE,
-        make_cookie_header("refresh_token", &refresh_token, 604800, "/api/auth/refresh")
+        make_cookie_header("refresh_token", &refresh_token, 604800, "/api/auth/refresh", secure)
             .parse()
             .unwrap(),
     );
@@ -370,6 +378,7 @@ mod tests {
                 "http://127.0.0.1:3001".to_string(),
                 "test_secret".to_string(),
             )),
+            app_env: api_infra::config::AppEnv::Test,
         };
 
         Router::new()
@@ -594,6 +603,7 @@ mod tests {
                 "http://127.0.0.1:3001".to_string(),
                 "test_secret".to_string(),
             )),
+            app_env: api_infra::config::AppEnv::Test,
         };
         let empty_headers = axum::http::HeaderMap::new();
         let response = logout(Extension(claims), State(state), empty_headers).await;
@@ -680,5 +690,29 @@ mod tests {
             StatusCode::BAD_REQUEST,
             "grade_id from another campus must be rejected"
         );
+    }
+
+    #[test]
+    fn test_make_cookie_header_without_secure() {
+        let cookie = make_cookie_header("access_token", "tok123", 14400, "/", false);
+        assert!(
+            !cookie.contains("Secure"),
+            "cookie should NOT contain Secure flag when secure=false: {}",
+            cookie
+        );
+        assert!(cookie.contains("HttpOnly"));
+        assert!(cookie.contains("SameSite=Strict"));
+    }
+
+    #[test]
+    fn test_make_cookie_header_with_secure() {
+        let cookie = make_cookie_header("access_token", "tok123", 14400, "/", true);
+        assert!(
+            cookie.contains("; Secure"),
+            "cookie SHOULD contain Secure flag when secure=true: {}",
+            cookie
+        );
+        assert!(cookie.contains("HttpOnly"));
+        assert!(cookie.contains("SameSite=Strict"));
     }
 }

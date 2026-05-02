@@ -95,6 +95,7 @@ async fn main() -> anyhow::Result<()> {
         prometheus_handle,
         preview_cache,
         gateway_client,
+        app_env: config.app_env,
     };
 
     // Control-signal pause flag: shared between polling task and middleware.
@@ -439,6 +440,7 @@ mod tests {
                         "test_secret".to_string(),
                     ),
                 ),
+                app_env: api_infra::config::AppEnv::Test,
             })
     }
 
