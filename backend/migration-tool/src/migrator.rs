@@ -706,9 +706,30 @@ impl Migrator {
             };
             let (status, verdict) = crate::mapper::map_status_verdict(result_str);
 
-            // Parse numeric fields
-            let time_ms: Option<i32> = used_time.parse().ok();
-            let memory_kb: Option<i32> = used_memory.parse().ok();
+            // Parse numeric fields — parse to i64 first, then clamp to i32::MAX
+            // to prevent silent data loss when legacy UOJ time values exceed i32 range (#23).
+            let time_ms: Option<i32> = used_time.parse::<i64>().ok().map(|v| {
+                if v > i32::MAX as i64 {
+                    tracing::warn!(
+                        "Submission {}: used_time {} exceeds i32::MAX, clamping to {}",
+                        old_id, v, i32::MAX
+                    );
+                    i32::MAX
+                } else {
+                    v as i32
+                }
+            });
+            let memory_kb: Option<i32> = used_memory.parse::<i64>().ok().map(|v| {
+                if v > i32::MAX as i64 {
+                    tracing::warn!(
+                        "Submission {}: used_memory {} exceeds i32::MAX, clamping to {}",
+                        old_id, v, i32::MAX
+                    );
+                    i32::MAX
+                } else {
+                    v as i32
+                }
+            });
 
             // Use old ID as new ID
             let new_id: i64 = match old_id.parse() {
