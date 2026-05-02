@@ -415,9 +415,13 @@ impl SubmissionService {
         query.push_str(&condition_str);
         count_query.push_str(&condition_str);
 
+        param_count += 1;
+        let limit_param = param_count;
+        param_count += 1;
+        let offset_param = param_count;
         query.push_str(&format!(
-            " ORDER BY created_at DESC LIMIT {} OFFSET {}",
-            limit, offset
+            " ORDER BY created_at DESC LIMIT ${} OFFSET ${}",
+            limit_param, offset_param
         ));
 
         // Execute count query (must bind the same filter parameters as the main query)
@@ -453,6 +457,8 @@ impl SubmissionService {
         if let Some(language) = &language {
             query_builder = query_builder.bind(language);
         }
+
+        query_builder = query_builder.bind(limit).bind(offset);
 
         let submissions = query_builder.fetch_all(&self.pool).await?;
 
