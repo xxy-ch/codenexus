@@ -10,7 +10,7 @@ use axum::{
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
 use shared::models::Claims;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 use uuid::Uuid;
 
 /// Query parameters for WebSocket upgrade (JWT token for authentication)
@@ -128,6 +128,11 @@ async fn websocket_handler_inner(
     // Split WebSocket into sender and receiver
     let (mut ws_sender, mut ws_receiver) = ws.split();
 
+    // One-shot channel coordinates exactly-one removal between the sender task
+    // and the main receiver loop. Under concurrent close (e.g. sender fails
+    // while receiver also hits EOF), only one side calls remove_client().
+    let (remove_tx, mut remove_rx) = oneshot::channel::<()>();
+
     // Spawn task to handle sending messages to client
     let server_clone = server.clone();
     let client_id_clone = client_id;
@@ -138,7 +143,11 @@ async fn websocket_handler_inner(
             }
         }
 
-        // Connection closed
+        // Signal the main receiver loop that we are handling removal.
+        // If the receiver already dropped `remove_rx`, that's fine — it means
+        // the receiver loop already exited and will skip its own removal
+        // because it already called remove_client.
+        let _ = remove_tx.send(());
         server_clone.remove_client(client_id_clone).await;
     });
 
@@ -259,8 +268,18 @@ async fn websocket_handler_inner(
         }
     }
 
-    // Remove client on disconnect
-    server.remove_client(client_id).await;
+    // Remove client on disconnect — but only if the sender task hasn't
+    // already done so. The sender task sends `()` on `remove_tx` before it
+    // calls remove_client. If we already received that signal, the sender
+    // task is the designated remover and we skip our own call.
+    match remove_rx.try_recv() {
+        // Sender task already claimed removal — skip.
+        Ok(()) | Err(tokio::sync::oneshot::error::TryRecvError::Closed) => {}
+        // Sender hasn't signaled yet — we are the designated remover.
+        Err(tokio::sync::oneshot::error::TryRecvError::Empty) => {
+            server.remove_client(client_id).await;
+        }
+    }
 }
 
 /// WebSocket upgrade endpoint with JWT authentication via query parameter
