@@ -2,9 +2,10 @@ use super::models::*;
 use anyhow::Result;
 use api_infra::traits::token_service::TokenService;
 use md5::Digest;
+use rand::Rng;
 use sqlx::PgPool;
 use std::sync::Arc;
-use tracing::warn;
+use tracing::{info, warn};
 use uuid::Uuid;
 
 pub struct UserService {
@@ -742,10 +743,15 @@ impl UserService {
     ) -> Result<BatchCreateUsersResponse> {
         let mut created = Vec::new();
         let mut skipped = Vec::new();
+
+        // SECURITY (#18): When no default_password is provided, generate a unique
+        // cryptographically random password for each user instead of using a
+        // predictable hardcoded default.
+        let use_generated = request.default_password.is_none();
         let default_password = request
             .default_password
             .clone()
-            .unwrap_or_else(|| "ChangeMe123".to_string());
+            .unwrap_or_default(); // placeholder; real password generated per-user below
 
         for entry in request.users {
             let user_code = entry.user_code.trim().to_string();
@@ -773,15 +779,20 @@ impl UserService {
                 continue;
             }
 
-            let password = entry
-                .password
-                .clone()
-                .unwrap_or_else(|| default_password.clone());
+            // Determine password: per-user override > admin-provided default > generated
+            let password = if let Some(ref pw) = entry.password {
+                pw.clone()
+            } else if use_generated {
+                generate_random_password()
+            } else {
+                default_password.clone()
+            };
+
             let profile = self
                 .register(RegisterRequest {
                     user_code: Some(user_code.clone()),
                     username: user_code.clone(),
-                    password,
+                    password: password.clone(),
                     email: entry.email.clone(),
                     display_name: entry
                         .display_name
@@ -805,7 +816,17 @@ impl UserService {
                 }
             }
 
-            created.push(self.get_user_profile(profile.id).await?);
+            created.push(BatchCreatedUser {
+                profile: self.get_user_profile(profile.id).await?,
+                password,
+            });
+        }
+
+        if use_generated {
+            info!(
+                count = created.len(),
+                "Batch user creation with randomly generated passwords"
+            );
         }
 
         Ok(BatchCreateUsersResponse { created, skipped })
@@ -828,6 +849,37 @@ fn verify_md5_password(password: &str, md5_hash: &str) -> bool {
     let digest = md5::Md5::digest(password.as_bytes());
     let computed: String = digest.iter().map(|b| format!("{:02x}", b)).collect();
     computed == md5_hash
+}
+
+/// Generate a cryptographically random 16-character password containing
+/// uppercase, lowercase, digits, and a guaranteed symbol set.
+/// Used for batch user creation when no explicit password is provided.
+fn generate_random_password() -> String {
+    const UPPER: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const LOWER: &[u8] = b"abcdefghijklmnopqrstuvwxyz";
+    const DIGITS: &[u8] = b"0123456789";
+    const SYMBOLS: &[u8] = b"!@#$%^&*";
+    const ALL: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+
+    let mut rng = rand::thread_rng();
+
+    // Guarantee at least one character from each category (4 chars)
+    let mut chars: Vec<u8> = Vec::with_capacity(16);
+    chars.push(UPPER[rng.gen_range(0..UPPER.len())]);
+    chars.push(LOWER[rng.gen_range(0..LOWER.len())]);
+    chars.push(DIGITS[rng.gen_range(0..DIGITS.len())]);
+    chars.push(SYMBOLS[rng.gen_range(0..SYMBOLS.len())]);
+
+    // Fill remaining 12 chars from the full set
+    for _ in 0..12 {
+        chars.push(ALL[rng.gen_range(0..ALL.len())]);
+    }
+
+    // Shuffle to avoid predictable positions
+    use rand::seq::SliceRandom;
+    chars.shuffle(&mut rng);
+
+    String::from_utf8(chars).expect("generated password is valid UTF-8")
 }
 
 #[cfg(test)]
@@ -1011,6 +1063,77 @@ mod tests {
         assert!(
             !bcrypt::verify("wrongpassword", &bcrypt_hash).expect("bcrypt verify must not error"),
             "bcrypt must reject wrong password"
+        );
+    }
+
+    // ===================== Random Password Generation Tests (#18) =====================
+
+    #[test]
+    fn test_generate_random_password_length() {
+        let pw = generate_random_password();
+        assert_eq!(pw.len(), 16, "password must be exactly 16 characters");
+    }
+
+    #[test]
+    fn test_generate_random_password_has_uppercase() {
+        let pw = generate_random_password();
+        assert!(
+            pw.chars().any(|c| c.is_ascii_uppercase()),
+            "password must contain at least one uppercase letter"
+        );
+    }
+
+    #[test]
+    fn test_generate_random_password_has_lowercase() {
+        let pw = generate_random_password();
+        assert!(
+            pw.chars().any(|c| c.is_ascii_lowercase()),
+            "password must contain at least one lowercase letter"
+        );
+    }
+
+    #[test]
+    fn test_generate_random_password_has_digit() {
+        let pw = generate_random_password();
+        assert!(
+            pw.chars().any(|c| c.is_ascii_digit()),
+            "password must contain at least one digit"
+        );
+    }
+
+    #[test]
+    fn test_generate_random_password_has_symbol() {
+        let pw = generate_random_password();
+        assert!(
+            pw.chars().any(|c| "!@#$%^&*".contains(c)),
+            "password must contain at least one symbol"
+        );
+    }
+
+    #[test]
+    fn test_generate_random_password_uniqueness() {
+        let passwords: Vec<String> = (0..10).map(|_| generate_random_password()).collect();
+        // All 10 passwords should be unique (extremely likely with 16-char random)
+        for i in 0..passwords.len() {
+            for j in (i + 1)..passwords.len() {
+                assert_ne!(
+                    passwords[i], passwords[j],
+                    "generated passwords must be unique"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_generate_random_password_no_predictable_pattern() {
+        // Verify passwords don't start with the same character sequence
+        let passwords: Vec<String> = (0..5).map(|_| generate_random_password()).collect();
+        let first_chars: Vec<char> = passwords.iter().map(|p| p.chars().next().unwrap()).collect();
+        // At least 2 distinct first characters across 5 passwords
+        let unique_first: std::collections::HashSet<char> = first_chars.into_iter().collect();
+        assert!(
+            unique_first.len() >= 2,
+            "passwords should not all start with the same character"
         );
     }
 }

@@ -146,9 +146,20 @@ pub struct BatchCreateUserInput {
     pub role: Option<String>,
 }
 
+/// A user created via batch creation, including the generated (or provided) password
+/// so admins can distribute credentials to users.
+#[derive(Debug, Serialize)]
+pub struct BatchCreatedUser {
+    #[serde(flatten)]
+    pub profile: UserProfile,
+    /// The plaintext password used for this user (generated if not provided).
+    /// Only populated during batch creation for credential distribution.
+    pub password: String,
+}
+
 #[derive(Debug, Serialize)]
 pub struct BatchCreateUsersResponse {
-    pub created: Vec<UserProfile>,
+    pub created: Vec<BatchCreatedUser>,
     pub skipped: Vec<BatchCreateUserSkip>,
 }
 
