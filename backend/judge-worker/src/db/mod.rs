@@ -13,15 +13,14 @@ pub async fn get_db_connection() -> Result<&'static PgPool, sqlx::Error> {
     DB_POOL.get_or_init(|| {
         let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         tokio::task::block_in_place(|| {
-            tokio::runtime::Handle::current()
-                .block_on(async {
-                    PgPoolOptions::new()
-                        .max_connections(5)
-                        .acquire_timeout(Duration::from_secs(30))
-                        .connect(&database_url)
-                        .await
-                        .expect("Failed to create DB connection pool")
-                })
+            tokio::runtime::Handle::current().block_on(async {
+                PgPoolOptions::new()
+                    .max_connections(5)
+                    .acquire_timeout(Duration::from_secs(30))
+                    .connect(&database_url)
+                    .await
+                    .expect("Failed to create DB connection pool")
+            })
         })
     });
     // Second get() always succeeds because get_or_init guarantees initialization.

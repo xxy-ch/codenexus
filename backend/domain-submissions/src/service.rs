@@ -771,13 +771,12 @@ impl SubmissionService {
         let mut tx = self.pool.begin().await?;
 
         // 1. Lock the submission row and read current status.
-        let current_status: Option<String> = sqlx::query_scalar(
-            "SELECT status FROM submissions WHERE id = $1 FOR UPDATE",
-        )
-        .bind(submission_id)
-        .fetch_optional(&mut *tx)
-        .await?
-        .flatten();
+        let current_status: Option<String> =
+            sqlx::query_scalar("SELECT status FROM submissions WHERE id = $1 FOR UPDATE")
+                .bind(submission_id)
+                .fetch_optional(&mut *tx)
+                .await?
+                .flatten();
 
         let current_status = current_status.ok_or(JudgeUpdateError::NotFound)?;
 
@@ -795,7 +794,8 @@ impl SubmissionService {
         }
 
         // 4. Only allow valid transitions: pending/queued/judging → terminal.
-        let is_valid_transition = matches!(current_status.as_str(), "pending" | "queued" | "judging");
+        let is_valid_transition =
+            matches!(current_status.as_str(), "pending" | "queued" | "judging");
         if !is_valid_transition {
             return Err(JudgeUpdateError::InvalidTransition {
                 current_status,
@@ -820,9 +820,10 @@ impl SubmissionService {
 
         // 6. Insert test case results within the same transaction.
         for tc in test_case_results {
-            let verdict = map_verdict(&tc.status).ok_or_else(|| JudgeUpdateError::InvalidTestCaseStatus {
-                status: tc.status.clone(),
-            })?;
+            let verdict =
+                map_verdict(&tc.status).ok_or_else(|| JudgeUpdateError::InvalidTestCaseStatus {
+                    status: tc.status.clone(),
+                })?;
 
             sqlx::query(
                 r#"

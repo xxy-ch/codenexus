@@ -6,11 +6,8 @@
 //! Backpressure is handled by the broadcast channel — slow consumers
 //! receive a `RecvError::Lagged` and continue with the next snapshot.
 
-use axum::{
-    extract::State,
-    response::IntoResponse,
-};
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
+use axum::{extract::State, response::IntoResponse};
 use futures_util::{SinkExt, StreamExt};
 use std::sync::Arc;
 use tokio::sync::broadcast;
@@ -41,7 +38,10 @@ async fn handle_ws(socket: WebSocket, tx: broadcast::Sender<String>) {
     let (mut sender, mut receiver) = socket.split();
     let mut rx = tx.subscribe();
 
-    info!("[ws-monitor] client connected, subscriber count = {}", tx.receiver_count());
+    info!(
+        "[ws-monitor] client connected, subscriber count = {}",
+        tx.receiver_count()
+    );
 
     loop {
         tokio::select! {
@@ -49,7 +49,7 @@ async fn handle_ws(socket: WebSocket, tx: broadcast::Sender<String>) {
             result = rx.recv() => {
                 match result {
                     Ok(snapshot_json) => {
-                        if sender.send(Message::Text(snapshot_json.into())).await.is_err() {
+                        if sender.send(Message::Text(snapshot_json)).await.is_err() {
                             // Client disconnected
                             info!("[ws-monitor] client send failed, closing connection");
                             break;
@@ -83,7 +83,10 @@ async fn handle_ws(socket: WebSocket, tx: broadcast::Sender<String>) {
         }
     }
 
-    info!("[ws-monitor] connection ended, remaining subscribers = {}", tx.receiver_count());
+    info!(
+        "[ws-monitor] connection ended, remaining subscribers = {}",
+        tx.receiver_count()
+    );
 }
 
 // ---------------------------------------------------------------------------

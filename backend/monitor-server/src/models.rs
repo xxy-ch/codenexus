@@ -124,10 +124,7 @@ mod tests {
 
     #[test]
     fn health_status_serializes_to_lowercase() {
-        assert_eq!(
-            serde_json::to_string(&HealthStatus::Ok).unwrap(),
-            "\"ok\""
-        );
+        assert_eq!(serde_json::to_string(&HealthStatus::Ok).unwrap(), "\"ok\"");
         assert_eq!(
             serde_json::to_string(&HealthStatus::Degraded).unwrap(),
             "\"degraded\""

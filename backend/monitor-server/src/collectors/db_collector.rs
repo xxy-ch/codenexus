@@ -83,7 +83,11 @@ impl DbCollector {
                 "completed" => completed = row.count,
                 "failed" => failed = row.count,
                 other => {
-                    debug!(status = other, count = row.count, "Unknown analysis job status");
+                    debug!(
+                        status = other,
+                        count = row.count,
+                        "Unknown analysis job status"
+                    );
                 }
             }
         }

@@ -179,7 +179,10 @@ mod tests {
     #[test]
     fn control_signal_included_in_single_service_response() {
         let mut signals = HashMap::new();
-        signals.insert("judge-worker".to_string(), "pause:judge-worker (by admin, confirmed=true)".to_string());
+        signals.insert(
+            "judge-worker".to_string(),
+            "pause:judge-worker (by admin, confirmed=true)".to_string(),
+        );
 
         let snapshot = MonitorSnapshot {
             timestamp: "2026-04-30T12:00:00Z".to_string(),

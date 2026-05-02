@@ -174,20 +174,16 @@ async fn update_judge_result(
         )
         .await
     {
-        Ok(crate::service::JudgeUpdateOutcome::Updated) => {
-            Ok(Json(serde_json::json!({
-                "message": "Judge result updated successfully",
-                "submission_id": id,
-                "status": result.status,
-            })))
-        }
-        Ok(crate::service::JudgeUpdateOutcome::AlreadyProcessed) => {
-            Ok(Json(serde_json::json!({
-                "message": "Judge result already processed (idempotent)",
-                "submission_id": id,
-                "status": SubmissionService::normalize_judge_status(&result.status),
-            })))
-        }
+        Ok(crate::service::JudgeUpdateOutcome::Updated) => Ok(Json(serde_json::json!({
+            "message": "Judge result updated successfully",
+            "submission_id": id,
+            "status": result.status,
+        }))),
+        Ok(crate::service::JudgeUpdateOutcome::AlreadyProcessed) => Ok(Json(serde_json::json!({
+            "message": "Judge result already processed (idempotent)",
+            "submission_id": id,
+            "status": SubmissionService::normalize_judge_status(&result.status),
+        }))),
         Err(crate::service::JudgeUpdateError::NotFound) => {
             Err(AppError::Validation("Submission not found".into()))
         }
@@ -204,12 +200,9 @@ async fn update_judge_result(
             "Invalid state transition from '{}' to '{}'",
             current_status, target_status
         ))),
-        Err(crate::service::JudgeUpdateError::InvalidTestCaseStatus { status }) => {
-            Err(AppError::Validation(format!(
-                "Unsupported test case status: {}",
-                status
-            )))
-        }
+        Err(crate::service::JudgeUpdateError::InvalidTestCaseStatus { status }) => Err(
+            AppError::Validation(format!("Unsupported test case status: {}", status)),
+        ),
         Err(crate::service::JudgeUpdateError::Database(err)) => {
             tracing::error!(submission_id = id, error = %err, "Database error during transactional judge result update");
             Err(AppError::Database(format!(

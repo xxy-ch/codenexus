@@ -20,10 +20,7 @@ use crate::state::AppState;
 /// and WebSocket endpoints are always accessible.
 pub fn build_router(state: Arc<AppState>, auth_state: Arc<AuthState>) -> Router {
     let control_routes = control::control_routes()
-        .layer(middleware::from_fn_with_state(
-            auth_state,
-            require_api_key,
-        ));
+        .layer(middleware::from_fn_with_state(auth_state, require_api_key));
 
     Router::new()
         .route("/health", get(health::health_check))

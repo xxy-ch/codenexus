@@ -77,9 +77,7 @@ pub async fn require_api_key(
             request
                 .uri()
                 .query()
-                .and_then(|q| {
-                    urlencoded_query_get(q, "api_key")
-                })
+                .and_then(|q| urlencoded_query_get(q, "api_key"))
         });
 
     match provided {
@@ -87,9 +85,7 @@ pub async fn require_api_key(
             next.run(request).await
         }
         Some(_) => {
-            tracing::warn!(
-                "[auth] rejected control-plane request: invalid API key"
-            );
+            tracing::warn!("[auth] rejected control-plane request: invalid API key");
             (
                 StatusCode::UNAUTHORIZED,
                 axum::Json(AuthErrorResponse {
@@ -99,9 +95,7 @@ pub async fn require_api_key(
                 .into_response()
         }
         None => {
-            tracing::warn!(
-                "[auth] rejected control-plane request: no API key provided"
-            );
+            tracing::warn!("[auth] rejected control-plane request: no API key provided");
             (
                 StatusCode::UNAUTHORIZED,
                 axum::Json(AuthErrorResponse {
@@ -132,9 +126,7 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 /// Minimal parser — handles `key=value&key2=value2` without full URL decoding.
 fn urlencoded_query_get(query: &str, key: &str) -> Option<String> {
     for pair in query.split('&') {
-        let mut parts = pair.splitn(2, '=');
-        let k = parts.next()?;
-        let v = parts.next()?;
+        let (k, v) = pair.split_once('=')?;
         if k == key {
             return Some(v.to_string());
         }
@@ -158,8 +150,7 @@ mod tests {
 
     /// Helper: build a test router with auth middleware wrapping a dummy handler.
     fn test_router(api_key: Option<&str>) -> Router {
-        let auth_state =
-            AuthState::from_env_value(api_key.map(|s| s.to_string()));
+        let auth_state = AuthState::from_env_value(api_key.map(|s| s.to_string()));
 
         async fn ok_handler() -> &'static str {
             "ok"
@@ -167,10 +158,7 @@ mod tests {
 
         Router::new()
             .route("/test", post(ok_handler))
-            .layer(middleware::from_fn_with_state(
-                auth_state,
-                require_api_key,
-            ))
+            .layer(middleware::from_fn_with_state(auth_state, require_api_key))
     }
 
     async fn body_string(body: Body) -> String {

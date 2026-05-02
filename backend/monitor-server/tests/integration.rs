@@ -13,8 +13,7 @@ use axum::http::{Request, StatusCode};
 use http_body_util::BodyExt;
 use monitor_server::audit::AuditResult;
 use monitor_server::control::{
-    is_valid_target, ControlAction, ControlSignal, ALLOWED_TARGETS,
-    DEFAULT_SIGNAL_TIMEOUT_SECS,
+    is_valid_target, ControlAction, ControlSignal, ALLOWED_TARGETS, DEFAULT_SIGNAL_TIMEOUT_SECS,
 };
 use monitor_server::state::AppState;
 use serde_json::Value;
@@ -337,7 +336,9 @@ fn audit_log_response_shape() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn create_pause_signal_writes_to_redis() {
-    let state = build_live_state().await.expect("Redis and PostgreSQL must be available");
+    let state = build_live_state()
+        .await
+        .expect("Redis and PostgreSQL must be available");
     let app = build_router(state.clone());
 
     let resp = app
@@ -385,7 +386,9 @@ async fn create_pause_signal_writes_to_redis() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn reject_invalid_target() {
-    let state = build_live_state().await.expect("Redis and PostgreSQL must be available");
+    let state = build_live_state()
+        .await
+        .expect("Redis and PostgreSQL must be available");
     let app = build_router(state);
 
     let resp = app
@@ -409,7 +412,9 @@ async fn reject_invalid_target() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn reject_invalid_action() {
-    let state = build_live_state().await.expect("Redis and PostgreSQL must be available");
+    let state = build_live_state()
+        .await
+        .expect("Redis and PostgreSQL must be available");
     let app = build_router(state);
 
     let resp = app
@@ -430,7 +435,9 @@ async fn reject_invalid_action() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn reject_empty_operator() {
-    let state = build_live_state().await.expect("Redis and PostgreSQL must be available");
+    let state = build_live_state()
+        .await
+        .expect("Redis and PostgreSQL must be available");
     let app = build_router(state);
 
     let resp = app
@@ -454,7 +461,9 @@ async fn reject_empty_operator() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn unconfirmed_signal_returned_by_status() {
-    let state = build_live_state().await.expect("Redis and PostgreSQL must be available");
+    let state = build_live_state()
+        .await
+        .expect("Redis and PostgreSQL must be available");
     let app = build_router(state.clone());
 
     // Create an unconfirmed signal directly in Redis
@@ -508,7 +517,9 @@ async fn unconfirmed_signal_returned_by_status() {
 #[tokio::test]
 #[ignore = "requires running Redis and PostgreSQL"]
 async fn two_step_confirmation_flow() {
-    let state = build_live_state().await.expect("Redis and PostgreSQL must be available");
+    let state = build_live_state()
+        .await
+        .expect("Redis and PostgreSQL must be available");
     let app = build_router(state.clone());
 
     // Step 1: Create pending signal
@@ -606,7 +617,9 @@ async fn two_step_confirmation_flow() {
 #[tokio::test]
 #[ignore = "requires running Redis and PostgreSQL"]
 async fn audit_log_records_control_action() {
-    let state = build_live_state().await.expect("Redis and PostgreSQL must be available");
+    let state = build_live_state()
+        .await
+        .expect("Redis and PostgreSQL must be available");
     let app = build_router(state.clone());
 
     // Create a signal (this should write an audit entry)
@@ -651,7 +664,9 @@ async fn audit_log_records_control_action() {
 #[tokio::test]
 #[ignore = "requires running Redis and PostgreSQL"]
 async fn get_services_returns_snapshot() {
-    let state = build_live_state().await.expect("Redis and PostgreSQL must be available");
+    let state = build_live_state()
+        .await
+        .expect("Redis and PostgreSQL must be available");
     let app = build_router(state);
 
     let resp = app
@@ -676,7 +691,9 @@ async fn get_services_returns_snapshot() {
 #[tokio::test]
 #[ignore = "requires running Redis"]
 async fn status_returns_null_when_no_signal() {
-    let state = build_live_state().await.expect("Redis and PostgreSQL must be available");
+    let state = build_live_state()
+        .await
+        .expect("Redis and PostgreSQL must be available");
 
     // Ensure no signal exists for domain-analysis
     let mut conn = state.redis_pool.get().await.unwrap();
