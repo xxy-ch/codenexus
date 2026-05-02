@@ -28,6 +28,9 @@ pub async fn login(
         .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
+    // Track refresh token JTI in Redis so we can revoke it on logout
+    track_refresh_token(&state, &response.refresh_token).await;
+
     let mut headers = axum::http::HeaderMap::new();
     headers.insert(
         axum::http::header::SET_COOKIE,
@@ -88,9 +91,17 @@ pub async fn refresh(
 
     let refresh_token = refresh_token.ok_or(StatusCode::UNAUTHORIZED)?;
 
+    // Check if refresh token has been revoked (blacklisted)
+    if is_refresh_token_revoked(&state, &refresh_token).await {
+        tracing::warn!("Refresh token rejected — JTI has been revoked (logout)");
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
     let service = UserService::new(state.db_pool.clone(), state.jwt_service.clone());
     let response = service
-        .refresh_token(RefreshTokenRequest { refresh_token })
+        .refresh_token(RefreshTokenRequest {
+            refresh_token: refresh_token.clone(),
+        })
         .await
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
@@ -113,7 +124,9 @@ pub async fn refresh(
 pub async fn logout(
     Extension(claims): Extension<Claims>,
     State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
 ) -> StatusCode {
+    // Blacklist access token JTI
     let ttl = claims.exp - chrono::Utc::now().timestamp();
     if ttl > 0 {
         if let Some(redis_pool) = &state.redis_pool {
@@ -129,6 +142,12 @@ pub async fn logout(
             }
         }
     }
+
+    // Also revoke the refresh token if present (in cookie or already decoded)
+    if let Some(refresh_token_str) = extract_refresh_token_from_headers(&headers) {
+        revoke_refresh_token(&state, &refresh_token_str).await;
+    }
+
     StatusCode::OK
 }
 
@@ -168,6 +187,9 @@ pub async fn register(
         .generate_refresh_token(&shared_user)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
+    // Track refresh token JTI in Redis so we can revoke it on logout
+    track_refresh_token(&state, &refresh_token).await;
+
     let mut headers = axum::http::HeaderMap::new();
     headers.insert(
         axum::http::header::SET_COOKIE,
@@ -190,6 +212,115 @@ pub async fn register(
             user: profile,
         }),
     ))
+}
+
+/// Redis key prefix for refresh token tracking. 30-day TTL matches REFRESH_TOKEN_EXPIRATION_DAYS.
+const REFRESH_TOKEN_TTL_SECS: i64 = 30 * 24 * 60 * 60; // 2_592_000 seconds
+
+/// Store refresh token JTI in Redis with a 30-day TTL so it can be revoked on logout.
+async fn track_refresh_token(state: &AppState, refresh_token: &str) {
+    if let Some(redis_pool) = &state.redis_pool {
+        let claims = match state.jwt_service.validate_token(refresh_token) {
+            Ok(c) => c,
+            Err(_) => return,
+        };
+        let remaining_secs = claims.exp - chrono::Utc::now().timestamp();
+        if remaining_secs <= 0 {
+            return;
+        }
+        let ttl = remaining_secs.min(REFRESH_TOKEN_TTL_SECS);
+        if let Ok(mut conn) = redis_pool.get().await {
+            let _: () = deadpool_redis::redis::cmd("SET")
+                .arg(format!("rt:{}", claims.jti))
+                .arg("1")
+                .arg("EX")
+                .arg(ttl)
+                .query_async(&mut conn)
+                .await
+                .unwrap_or(());
+        }
+    }
+}
+
+/// Check if a refresh token has been revoked via blacklist.
+async fn is_refresh_token_revoked(state: &AppState, refresh_token: &str) -> bool {
+    if let Some(redis_pool) = &state.redis_pool {
+        let claims = match state.jwt_service.validate_token(refresh_token) {
+            Ok(c) => c,
+            Err(_) => return true, // Invalid token = treat as revoked
+        };
+        match redis_pool.get().await {
+            Ok(mut conn) => {
+                let blacklisted: bool = deadpool_redis::redis::cmd("EXISTS")
+                    .arg(format!("bl:{}", claims.jti))
+                    .query_async(&mut conn)
+                    .await
+                    .unwrap_or(false);
+                if blacklisted {
+                    tracing::info!(
+                        user_id = %claims.sub,
+                        "Refresh token revoked — JTI found in blacklist"
+                    );
+                }
+                blacklisted
+            }
+            Err(e) => {
+                // Fail-closed: if Redis is unavailable, treat as revoked
+                tracing::warn!(
+                    "Redis unavailable during refresh token blacklist check — rejecting (fail-closed): {}",
+                    e
+                );
+                true
+            }
+        }
+    } else {
+        false // No Redis configured = no blacklist capability
+    }
+}
+
+/// Revoke a refresh token by blacklisting its JTI on logout.
+async fn revoke_refresh_token(state: &AppState, refresh_token: &str) {
+    if let Some(redis_pool) = &state.redis_pool {
+        let claims = match state.jwt_service.validate_token(refresh_token) {
+            Ok(c) => c,
+            Err(_) => return,
+        };
+        let remaining_secs = claims.exp - chrono::Utc::now().timestamp();
+        if remaining_secs <= 0 {
+            return;
+        }
+        if let Ok(mut conn) = redis_pool.get().await {
+            let _: () = deadpool_redis::redis::cmd("SET")
+                .arg(format!("bl:{}", claims.jti))
+                .arg("1")
+                .arg("EX")
+                .arg(remaining_secs)
+                .query_async(&mut conn)
+                .await
+                .unwrap_or(());
+            tracing::info!(
+                user_id = %claims.sub,
+                "Refresh token revoked on logout — JTI blacklisted"
+            );
+        }
+    }
+}
+
+/// Extract refresh token string from cookie header.
+fn extract_refresh_token_from_headers(headers: &axum::http::HeaderMap) -> Option<String> {
+    headers
+        .get("cookie")
+        .and_then(|c| c.to_str().ok())
+        .and_then(|c| {
+            c.split(';').find_map(|cookie| {
+                let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
+                if parts.len() == 2 && parts[0] == "refresh_token" {
+                    Some(parts[1].to_string())
+                } else {
+                    None
+                }
+            })
+        })
 }
 
 #[cfg(test)]
@@ -464,7 +595,8 @@ mod tests {
                 "test_secret".to_string(),
             )),
         };
-        let response = logout(Extension(claims), State(state)).await;
+        let empty_headers = axum::http::HeaderMap::new();
+        let response = logout(Extension(claims), State(state), empty_headers).await;
         assert_eq!(response, StatusCode::OK);
     }
 
