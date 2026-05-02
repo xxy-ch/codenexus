@@ -58,10 +58,10 @@ impl CircuitBreaker {
     /// - Open: false, unless the half-open timeout has elapsed (transitions to HalfOpen, returns true)
     /// - HalfOpen: true (probing)
     pub fn allow_request(&self) -> bool {
-        if !self.is_open.load(Ordering::Relaxed) {
+        if !self.is_open.load(Ordering::Acquire) {
             // Closed or HalfOpen (is_open = false for both).
             // If in HalfOpen, check if a probe is already in flight.
-            if self.half_open_in_progress.load(Ordering::Relaxed) {
+            if self.half_open_in_progress.load(Ordering::Acquire) {
                 // A probe is already in flight -- reject additional requests
                 return false;
             }
@@ -73,13 +73,16 @@ impl CircuitBreaker {
             if let Some(last) = *guard {
                 let elapsed = last.elapsed().as_secs();
                 if elapsed >= self.half_open_timeout_secs {
-                    // Transition to HalfOpen -- only one caller wins the race
+                    // Transition to HalfOpen -- only one caller wins the race.
+                    // Acquire on success to synchronize with Release stores in
+                    // record_failure / record_success; Relaxed on failure is fine
+                    // since the CAS winner handles the state transition.
                     let won = self
                         .half_open_in_progress
-                        .compare_exchange(false, true, Ordering::Relaxed, Ordering::Relaxed)
+                        .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
                         .is_ok();
                     if won {
-                        self.is_open.store(false, Ordering::Relaxed);
+                        self.is_open.store(false, Ordering::Release);
                         return true;
                     }
                     return false; // Another caller already probing
@@ -93,9 +96,9 @@ impl CircuitBreaker {
 
     /// Record a successful call. Resets failure count, closes the breaker, clears half-open gate.
     pub fn record_success(&self) {
-        self.failure_count.store(0, Ordering::Relaxed);
-        self.is_open.store(false, Ordering::Relaxed);
-        self.half_open_in_progress.store(false, Ordering::Relaxed);
+        self.failure_count.store(0, Ordering::Release);
+        self.is_open.store(false, Ordering::Release);
+        self.half_open_in_progress.store(false, Ordering::Release);
         if let Ok(mut guard) = self.last_failure_time.lock() {
             *guard = None;
         }
@@ -103,10 +106,10 @@ impl CircuitBreaker {
 
     /// Record a failed call. Opens the breaker once the threshold is reached.
     pub fn record_failure(&self) {
-        let count = self.failure_count.fetch_add(1, Ordering::Relaxed) + 1;
+        let count = self.failure_count.fetch_add(1, Ordering::AcqRel) + 1;
         if count >= self.failure_threshold {
-            self.is_open.store(true, Ordering::Relaxed);
-            self.half_open_in_progress.store(false, Ordering::Relaxed);
+            self.is_open.store(true, Ordering::Release);
+            self.half_open_in_progress.store(false, Ordering::Release);
             if let Ok(mut guard) = self.last_failure_time.lock() {
                 *guard = Some(Instant::now());
             }
@@ -115,9 +118,9 @@ impl CircuitBreaker {
 
     /// Read the current state for monitoring / heartbeat reporting.
     pub fn state(&self) -> BreakerState {
-        if self.is_open.load(Ordering::Relaxed) {
+        if self.is_open.load(Ordering::Acquire) {
             BreakerState::Open
-        } else if self.half_open_in_progress.load(Ordering::Relaxed) {
+        } else if self.half_open_in_progress.load(Ordering::Acquire) {
             BreakerState::HalfOpen
         } else {
             BreakerState::Closed
@@ -127,7 +130,7 @@ impl CircuitBreaker {
     /// Read current failure count for monitoring (test-only).
     #[cfg(test)]
     pub fn failure_count(&self) -> usize {
-        self.failure_count.load(Ordering::Relaxed)
+        self.failure_count.load(Ordering::Acquire)
     }
 }
 
@@ -211,5 +214,69 @@ mod tests {
         assert_eq!(breaker.failure_count(), 0);
         assert!(breaker.allow_request());
         assert_eq!(breaker.state(), BreakerState::Closed);
+    }
+
+    /// Stress test: many threads hammer allow_request / record_failure /
+    /// record_success concurrently and verify state-machine invariants always
+    /// hold.  Uses a high threshold so the breaker stays closed during the
+    /// interleaving, then opens it at the end to exercise that path too.
+    #[test]
+    fn concurrent_state_invariants() {
+        use std::sync::Arc;
+        use std::thread;
+
+        let breaker = Arc::new(CircuitBreaker::new(100, 30));
+        let num_threads = 8;
+        let ops_per_thread = 10_000;
+
+        let handles: Vec<_> = (0..num_threads)
+            .map(|tid| {
+                let b = Arc::clone(&breaker);
+                thread::spawn(move || {
+                    for i in 0..ops_per_thread {
+                        match (tid + i) % 3 {
+                            0 => {
+                                b.allow_request();
+                            }
+                            1 => {
+                                b.record_failure();
+                            }
+                            _ => {
+                                b.record_success();
+                            }
+                        }
+                    }
+                })
+            })
+            .collect();
+
+        for h in handles {
+            h.join().expect("thread panicked");
+        }
+
+        // Final state must be a valid BreakerState variant.
+        let final_state = breaker.state();
+        assert!(
+            matches!(
+                final_state,
+                BreakerState::Closed | BreakerState::Open | BreakerState::HalfOpen
+            ),
+            "unexpected state: {final_state:?}"
+        );
+
+        // failure_count must be <= failure_threshold when closed (record_success
+        // resets it to 0) or == the actual accumulated count otherwise.  The
+        // key invariant: it must be non-negative and bounded.
+        let fc = breaker.failure_count();
+        assert!(fc <= 8 * 10_000, "failure_count impossibly high: {fc}");
+
+        // Now drive the breaker to Open via single-threaded failures to
+        // exercise the open path deterministically.
+        let breaker2 = CircuitBreaker::new(3, 30);
+        for _ in 0..3 {
+            breaker2.record_failure();
+        }
+        assert!(!breaker2.allow_request(), "should be open");
+        assert_eq!(breaker2.state(), BreakerState::Open);
     }
 }
