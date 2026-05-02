@@ -15,7 +15,8 @@
     "dev": "vite",
     "build": "tsc -p tsconfig.app.json --noEmit && vite build && esbuild src/server.ts --bundle --platform=node --format=esm --outfile=dist/server.js --external:node:net --external:node:http --external:node:fs --external:node:path --external:node:url --external:node:module",
     "preview": "vite preview",
-    "start": "node bin/monitor.js"
+    "start": "node bin/monitor.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "lucide-react": "^0.577.0",
