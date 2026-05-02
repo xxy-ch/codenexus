@@ -33,6 +33,9 @@ pub struct ServerConfig {
     pub recovery_scan_interval_secs: u64,
     /// How often the WebSocket broadcast task pushes snapshots (seconds).
     pub push_interval_secs: u64,
+    /// API key for control-plane authentication. If empty or missing, auth is
+    /// disabled (local dev mode). **Production must set a strong key.**
+    pub monitor_api_key: Option<String>,
 }
 
 impl ServerConfig {
@@ -66,6 +69,9 @@ impl ServerConfig {
                 .ok()
                 .and_then(|v| v.trim().parse().ok())
                 .unwrap_or(DEFAULT_PUSH_INTERVAL_SECS),
+            monitor_api_key: env::var("MONITOR_API_KEY")
+                .ok()
+                .filter(|v| !v.trim().is_empty()),
         })
     }
 }
@@ -89,6 +95,7 @@ mod tests {
         env::remove_var("SIGNAL_TIMEOUT_SECS");
         env::remove_var("RECOVERY_SCAN_INTERVAL_SECS");
         env::remove_var("PUSH_INTERVAL_SECS");
+        env::remove_var("MONITOR_API_KEY");
     }
 
     #[test]
@@ -116,6 +123,7 @@ mod tests {
         assert_eq!(config.signal_timeout_secs, DEFAULT_SIGNAL_TIMEOUT_SECS);
         assert_eq!(config.recovery_scan_interval_secs, DEFAULT_RECOVERY_SCAN_INTERVAL_SECS);
         assert_eq!(config.push_interval_secs, DEFAULT_PUSH_INTERVAL_SECS);
+        assert!(config.monitor_api_key.is_none());
 
         clear_env();
     }
@@ -130,6 +138,7 @@ mod tests {
         env::set_var("SIGNAL_TIMEOUT_SECS", "600");
         env::set_var("RECOVERY_SCAN_INTERVAL_SECS", "30");
         env::set_var("PUSH_INTERVAL_SECS", "3");
+        env::set_var("MONITOR_API_KEY", "test-secret-key");
 
         let config = ServerConfig::from_env().unwrap();
         assert_eq!(config.redis_url, "redis://redis:6379");
@@ -137,6 +146,7 @@ mod tests {
         assert_eq!(config.signal_timeout_secs, 600);
         assert_eq!(config.recovery_scan_interval_secs, 30);
         assert_eq!(config.push_interval_secs, 3);
+        assert_eq!(config.monitor_api_key.as_deref(), Some("test-secret-key"));
 
         clear_env();
     }
@@ -150,6 +160,7 @@ mod tests {
         env::set_var("MONITOR_BIND_ADDR", "");
         env::set_var("SIGNAL_TIMEOUT_SECS", "  ");
         env::set_var("RECOVERY_SCAN_INTERVAL_SECS", "abc");
+        env::set_var("MONITOR_API_KEY", "  ");
 
         let config = ServerConfig::from_env().unwrap();
         assert_eq!(config.redis_url, DEFAULT_REDIS_URL);
@@ -158,6 +169,7 @@ mod tests {
         assert_eq!(config.signal_timeout_secs, DEFAULT_SIGNAL_TIMEOUT_SECS);
         assert_eq!(config.recovery_scan_interval_secs, DEFAULT_RECOVERY_SCAN_INTERVAL_SECS);
         assert_eq!(config.push_interval_secs, DEFAULT_PUSH_INTERVAL_SECS);
+        assert!(config.monitor_api_key.is_none());
 
         clear_env();
     }

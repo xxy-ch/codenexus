@@ -10,6 +10,7 @@ pub mod collectors;
 pub mod config;
 pub mod control;
 pub mod models;
+pub mod middleware;
 pub mod routes;
 pub mod snapshot;
 pub mod state;

@@ -57,8 +57,11 @@ async fn build_live_state() -> Option<Arc<AppState>> {
 }
 
 /// Build the full Axum router from the monitor-server routes module.
+/// Uses auth-disabled mode for testing.
 fn build_router(state: Arc<AppState>) -> axum::Router {
-    monitor_server::routes::build_router(state)
+    use monitor_server::middleware::auth::AuthState;
+    let auth_state = AuthState::from_env_value(None);
+    monitor_server::routes::build_router(state, auth_state)
 }
 
 /// Extract body bytes from a response.

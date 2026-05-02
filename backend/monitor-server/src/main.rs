@@ -17,6 +17,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use monitor_server::config::ServerConfig;
 use monitor_server::control;
+use monitor_server::middleware::auth::AuthState;
 use monitor_server::routes;
 use monitor_server::snapshot::assemble_snapshot;
 use monitor_server::state::AppState;
@@ -90,7 +91,13 @@ async fn main() -> Result<()> {
     );
 
     // Build router and start serving
-    let app = routes::build_router(state);
+    let auth_state = AuthState::from_env_value(config.monitor_api_key.clone());
+    if auth_state.is_enabled() {
+        info!("Control-plane API key authentication: enabled");
+    } else {
+        info!("Control-plane API key authentication: disabled (set MONITOR_API_KEY to enable)");
+    }
+    let app = routes::build_router(state, auth_state);
     let listener = tokio::net::TcpListener::bind(&config.bind_addr).await?;
     info!(addr = %config.bind_addr, "HTTP server listening");
 
