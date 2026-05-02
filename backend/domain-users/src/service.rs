@@ -157,9 +157,32 @@ impl UserService {
         .execute(&mut *tx)
         .await?;
 
+        // Query the newly created user from the transaction to build profile before commit.
+        // This avoids a post-commit error where the user exists but we return an error
+        // because get_user_profile (using a separate pool connection) fails.
+        let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&mut *tx)
+            .await?;
+
+        let profile = UserProfile {
+            id: user.id,
+            user_code: user.user_code,
+            username: user.username,
+            email: user.email,
+            display_name: user.display_name,
+            organization_id: user.organization_id,
+            campus_id: user.campus_id,
+            grade_id: user.grade_id,
+            role: "student".to_string(),
+            status: user.status,
+            created_at: user.created_at,
+            updated_at: user.updated_at,
+        };
+
         tx.commit().await?;
 
-        self.get_user_profile(user_id).await
+        Ok(profile)
     }
 
     pub async fn login(&self, req: LoginRequest) -> Result<AuthResponse> {

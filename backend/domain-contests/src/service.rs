@@ -312,24 +312,19 @@ impl ContestService {
         let now = chrono::Utc::now();
 
         // Per D-03: Freeze is active only during the freeze window, NOT after contest ends
-        let is_frozen = contest.freeze_minutes.is_some()
-            && (contest.end_time
-                - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64))
-                < now
-            && now < contest.end_time;
+        if let Some(fm) = contest.freeze_minutes {
+            let freeze_time = contest.end_time - chrono::Duration::minutes(fm as i64);
+            if freeze_time < now && now < contest.end_time {
+                // Per D-03: Lazy compute -- check for existing snapshot first
+                if let Some(snapshot) = self.get_frozen_snapshot(contest_id).await? {
+                    return Ok(snapshot);
+                }
 
-        if is_frozen {
-            // Per D-03: Lazy compute -- check for existing snapshot first
-            if let Some(snapshot) = self.get_frozen_snapshot(contest_id).await? {
-                return Ok(snapshot);
+                // No snapshot yet -- compute rankings up to freeze cutoff and store
+                let rankings = self.compute_rankings(contest_id, freeze_time).await?;
+                self.store_frozen_snapshot(contest_id, &rankings).await?;
+                return Ok(rankings);
             }
-
-            // No snapshot yet -- compute rankings up to freeze cutoff and store
-            let freeze_cutoff = contest.end_time
-                - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64);
-            let rankings = self.compute_rankings(contest_id, freeze_cutoff).await?;
-            self.store_frozen_snapshot(contest_id, &rankings).await?;
-            return Ok(rankings);
         }
 
         // Not frozen -- compute live rankings (includes all submissions)
@@ -580,9 +575,8 @@ impl ContestService {
             None
         };
 
-        let is_frozen = if contest.freeze_minutes.is_some() {
-            let freeze_time = contest.end_time
-                - chrono::Duration::minutes(contest.freeze_minutes.unwrap() as i64);
+        let is_frozen = if let Some(fm) = contest.freeze_minutes {
+            let freeze_time = contest.end_time - chrono::Duration::minutes(fm as i64);
             now >= freeze_time && now <= contest.end_time
         } else {
             false
