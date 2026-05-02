@@ -1,5 +1,5 @@
 use super::message::WebSocketMessage;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::net::IpAddr;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
@@ -32,6 +32,10 @@ pub struct WebSocketServer {
     /// Topic subscriptions: topic -> vec of client_ids
     topic_subscriptions: Arc<RwLock<HashMap<String, Vec<Uuid>>>>,
 
+    /// Reverse index: client_id -> set of topics this client is subscribed to.
+    /// Enables O(1) client removal without scanning all topics.
+    client_topics: Arc<RwLock<HashMap<Uuid, HashSet<String>>>>,
+
     /// Per-user connection counts (used for fast limit checks)
     user_conn_counts: Arc<Mutex<HashMap<Uuid, usize>>>,
 
@@ -55,6 +59,7 @@ impl WebSocketServer {
             clients: Arc::new(RwLock::new(HashMap::new())),
             user_connections: Arc::new(RwLock::new(HashMap::new())),
             topic_subscriptions: Arc::new(RwLock::new(HashMap::new())),
+            client_topics: Arc::new(RwLock::new(HashMap::new())),
             user_conn_counts: Arc::new(Mutex::new(HashMap::new())),
             ip_conn_counts: Arc::new(Mutex::new(HashMap::new())),
         }
@@ -148,10 +153,24 @@ impl WebSocketServer {
                 }
             }
 
-            // Remove from all topic subscriptions
+            // Remove from all topic subscriptions using reverse index (O(1) lookup)
             let mut topics = self.topic_subscriptions.write().await;
-            for (_, client_ids) in topics.iter_mut() {
-                client_ids.retain(|id| *id != client_id);
+            let mut client_topics = self.client_topics.write().await;
+
+            if let Some(subscribed_topics) = client_topics.remove(&client_id) {
+                for topic in subscribed_topics {
+                    if let Some(client_ids) = topics.get_mut(&topic) {
+                        client_ids.retain(|id| *id != client_id);
+                        if client_ids.is_empty() {
+                            topics.remove(&topic);
+                            tracing::debug!(
+                                "Removed empty topic '{}' after client {} disconnect",
+                                topic,
+                                client_id
+                            );
+                        }
+                    }
+                }
             }
 
             tracing::info!(
@@ -172,16 +191,19 @@ impl WebSocketServer {
         drop(clients);
 
         let mut topics = self.topic_subscriptions.write().await;
+        let mut client_topics = self.client_topics.write().await;
+
         let already_subscribed = topics
             .get(&topic)
             .map(|subscribers| subscribers.contains(&client_id))
             .unwrap_or(false);
 
         if !already_subscribed {
-            let current_subscription_count = topics
-                .values()
-                .filter(|subscribers| subscribers.contains(&client_id))
-                .count();
+            // Use reverse index for O(1) subscription count check
+            let current_subscription_count = client_topics
+                .get(&client_id)
+                .map(|s| s.len())
+                .unwrap_or(0);
 
             if current_subscription_count >= MAX_TOPICS_PER_CLIENT {
                 tracing::warn!(
@@ -193,9 +215,13 @@ impl WebSocketServer {
             }
         }
 
-        let subscribers = topics.entry(topic).or_insert_with(Vec::new);
+        let subscribers = topics.entry(topic.clone()).or_insert_with(Vec::new);
         if !subscribers.contains(&client_id) {
             subscribers.push(client_id);
+            client_topics
+                .entry(client_id)
+                .or_insert_with(HashSet::new)
+                .insert(topic);
         }
 
         tracing::debug!("Client {} subscribed to topic", client_id);
@@ -205,8 +231,25 @@ impl WebSocketServer {
     /// Unsubscribe a client from a topic
     pub async fn unsubscribe(&self, client_id: Uuid, topic: &str) {
         let mut topics = self.topic_subscriptions.write().await;
+        let mut client_topics = self.client_topics.write().await;
+
         if let Some(client_ids) = topics.get_mut(topic) {
             client_ids.retain(|id| *id != client_id);
+            if client_ids.is_empty() {
+                topics.remove(topic);
+                tracing::debug!(
+                    "Removed empty topic '{}' after client {} unsubscribed",
+                    topic,
+                    client_id
+                );
+            }
+        }
+
+        if let Some(topics_set) = client_topics.get_mut(&client_id) {
+            topics_set.remove(topic);
+            if topics_set.is_empty() {
+                client_topics.remove(&client_id);
+            }
         }
 
         tracing::debug!("Client {} unsubscribed from topic {}", client_id, topic);
@@ -561,5 +604,91 @@ mod tests {
         assert!(rx_a.try_recv().is_ok());
         // User B (tenant 2) should NOT receive
         assert!(rx_b.try_recv().is_err());
+    }
+
+    #[tokio::test]
+    async fn test_reverse_index_removal_and_empty_topic_cleanup() {
+        let server = WebSocketServer::new();
+
+        // Create 100 clients each subscribed to a unique topic
+        let mut client_ids = Vec::new();
+        for idx in 0..100 {
+            let client_id = Uuid::new_v4();
+            let user_id = Uuid::new_v4();
+            let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
+            server
+                .add_client(client_id, user_id, 1, format!("127.0.0.{idx}").parse().unwrap(), tx)
+                .await;
+            let topic = format!("unique-topic-{idx}");
+            assert!(
+                server.subscribe(client_id, topic).await,
+                "client {idx} should subscribe"
+            );
+            client_ids.push(client_id);
+        }
+
+        // Verify all topics have exactly 1 subscriber
+        for idx in 0..100 {
+            assert_eq!(
+                server.topic_subscriber_count(&format!("unique-topic-{idx}")).await,
+                1
+            );
+        }
+
+        // Remove all clients — each removal should clean up the now-empty topic
+        for client_id in &client_ids {
+            server.remove_client(*client_id).await;
+        }
+
+        // After removing all clients, all topics should be cleaned up
+        for idx in 0..100 {
+            assert_eq!(
+                server.topic_subscriber_count(&format!("unique-topic-{idx}")).await,
+                0,
+                "topic unique-topic-{idx} should be cleaned up"
+            );
+        }
+
+        // No clients remain
+        assert_eq!(server.client_count().await, 0);
+
+        // The reverse index should be empty too
+        let client_topics = server.client_topics.read().await;
+        assert!(client_topics.is_empty(), "client_topics should be empty after all clients removed");
+    }
+
+    #[tokio::test]
+    async fn test_remove_client_cleans_only_subscribed_topics() {
+        let server = WebSocketServer::new();
+
+        // Client A subscribes to topic "alpha"
+        // Client B subscribes to topic "beta"
+        let (tx_a, _rx_a) = tokio::sync::mpsc::unbounded_channel();
+        let (tx_b, _rx_b) = tokio::sync::mpsc::unbounded_channel();
+        let client_a = Uuid::new_v4();
+        let client_b = Uuid::new_v4();
+        let user_a = Uuid::new_v4();
+        let user_b = Uuid::new_v4();
+
+        server.add_client(client_a, user_a, 1, "127.0.0.1".parse().unwrap(), tx_a).await;
+        server.add_client(client_b, user_b, 1, "127.0.0.2".parse().unwrap(), tx_b).await;
+
+        server.subscribe(client_a, "alpha".to_string()).await;
+        server.subscribe(client_b, "beta".to_string()).await;
+
+        // Remove client A — only "alpha" should be cleaned up, "beta" untouched
+        server.remove_client(client_a).await;
+        assert_eq!(server.topic_subscriber_count("alpha").await, 0);
+        assert_eq!(server.topic_subscriber_count("beta").await, 1);
+
+        // Client B's reverse index should still have "beta"
+        let client_topics = server.client_topics.read().await;
+        assert!(client_topics.get(&client_a).is_none());
+        assert_eq!(client_topics.get(&client_b).unwrap().len(), 1);
+        drop(client_topics);
+
+        // Remove client B — "beta" cleaned up
+        server.remove_client(client_b).await;
+        assert_eq!(server.topic_subscriber_count("beta").await, 0);
     }
 }
