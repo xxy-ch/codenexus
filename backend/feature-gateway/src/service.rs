@@ -214,12 +214,16 @@ impl FeatureGatewayService {
             return resolved;
         }
 
-        // Fallback to registry default
+        // Fallback to registry default and cache at global scope (#17)
         let default_enabled = self.query_registry_default(slug).await;
-        ResolvedFeature {
+        let resolved = ResolvedFeature {
             enabled: default_enabled,
             source: FeatureSource::Default,
-        }
+        };
+        // Cache the default at the global key so subsequent resolves avoid hitting DB
+        let global_key = Self::cache_key(slug, "global");
+        self.cache.insert(global_key, resolved.clone());
+        resolved
     }
 
     /// Query feature_flags for the most specific override.
@@ -379,6 +383,13 @@ impl FeatureGatewayService {
         }
 
         self.invalidate(slug, &Self::scope_cache_segment(scope, scope_id));
+        // #17: Also invalidate the global default cache on any write, because a
+        // stale cached default at `{slug}:global` can mask this new override on
+        // the next resolve (global cache is checked before DB fallback).
+        if scope != "global" {
+            self.invalidate(slug, "global");
+        }
+
         Ok(())
     }
 
@@ -402,6 +413,13 @@ impl FeatureGatewayService {
         .await?;
 
         self.invalidate(slug, &Self::scope_cache_segment(scope, scope_id));
+        // #17: Also invalidate the global default cache on any delete, because a
+        // stale cached default at `{slug}:global` can mask the removal on the
+        // next resolve (global cache is checked before DB fallback).
+        if scope != "global" {
+            self.invalidate(slug, "global");
+        }
+
         Ok(())
     }
 }
@@ -594,5 +612,76 @@ mod tests {
             .await;
         assert!(!result.enabled);
         assert_eq!(result.source, FeatureSource::ClassOverride);
+    }
+
+    /// #17: Verify that a registry default cached at the global scope key is
+    /// returned on subsequent resolves without hitting the DB again.
+    #[tokio::test]
+    async fn test_default_is_cached_at_global_scope() {
+        let pool = make_test_pool();
+        let service = FeatureGatewayService::new_with_enabled(pool, true);
+
+        // Simulate a cached registry default at the global key (as resolve_from_db would do)
+        let global_key = FeatureGatewayService::cache_key("my_feature", "global");
+        let default_resolved = ResolvedFeature {
+            enabled: true,
+            source: FeatureSource::Default,
+        };
+        service.cache.insert(global_key.clone(), default_resolved.clone());
+
+        // resolve() should return the cached default without DB query
+        let result = service.resolve("my_feature", None, None).await;
+        assert!(result.enabled);
+        assert_eq!(result.source, FeatureSource::Default);
+
+        // Verify the cache entry still exists
+        assert!(service.cache.contains_key(&global_key));
+    }
+
+    /// #17: Verify that invalidate() on a non-global scope does NOT remove
+    /// the cached default at global scope.
+    #[tokio::test]
+    async fn test_scoped_invalidate_preserves_default_cache() {
+        let pool = make_test_pool();
+        let service = FeatureGatewayService::new_with_enabled(pool, true);
+
+        // Simulate a cached registry default
+        let global_key = FeatureGatewayService::cache_key("my_feature", "global");
+        service.cache.insert(
+            global_key.clone(),
+            ResolvedFeature {
+                enabled: true,
+                source: FeatureSource::Default,
+            },
+        );
+
+        // Invalidate a campus scope — should NOT touch the global default
+        service.invalidate("my_feature", "campus:1");
+        assert!(
+            service.cache.contains_key(&global_key),
+            "global default cache should survive scoped invalidation"
+        );
+    }
+
+    /// #17: Verify that invalidate() on the global scope removes the cached default.
+    #[tokio::test]
+    async fn test_global_invalidate_removes_default_cache() {
+        let pool = make_test_pool();
+        let service = FeatureGatewayService::new_with_enabled(pool, true);
+
+        let global_key = FeatureGatewayService::cache_key("my_feature", "global");
+        service.cache.insert(
+            global_key.clone(),
+            ResolvedFeature {
+                enabled: true,
+                source: FeatureSource::Default,
+            },
+        );
+
+        service.invalidate("my_feature", "global");
+        assert!(
+            !service.cache.contains_key(&global_key),
+            "global default cache should be removed on global invalidation"
+        );
     }
 }

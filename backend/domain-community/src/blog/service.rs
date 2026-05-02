@@ -180,6 +180,15 @@ impl BlogService {
         organization_id: i64,
         req: CreateArticleRequest,
     ) -> Result<Article> {
+        // #20: Validate content length before DB insert
+        const MAX_ARTICLE_CONTENT_LEN: usize = 100_000;
+        if req.content.len() > MAX_ARTICLE_CONTENT_LEN {
+            anyhow::bail!(
+                "Article content exceeds maximum length of {} characters",
+                MAX_ARTICLE_CONTENT_LEN
+            );
+        }
+
         let slug = Self::generate_slug(&req.title);
 
         let published_at = if req.is_published.unwrap_or(false) {
@@ -336,6 +345,15 @@ impl BlogService {
         organization_id: i64,
         req: CreateCommentRequest,
     ) -> Result<ArticleComment> {
+        // #20: Validate content length before DB insert
+        const MAX_COMMENT_CONTENT_LEN: usize = 10_000;
+        if req.content.len() > MAX_COMMENT_CONTENT_LEN {
+            anyhow::bail!(
+                "Comment content exceeds maximum length of {} characters",
+                MAX_COMMENT_CONTENT_LEN
+            );
+        }
+
         let mut tx = self.pool.begin().await?;
 
         // Verify article belongs to the caller's organization
@@ -613,5 +631,131 @@ impl BlogService {
         .await?;
 
         Ok(article)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_test_pool() -> PgPool {
+        PgPool::connect_lazy("postgres://localhost/nonexistent_test_db")
+            .expect("lazy connect should not fail")
+    }
+
+    fn make_article_request(content: &str) -> CreateArticleRequest {
+        CreateArticleRequest {
+            title: "Test Article".to_string(),
+            content: content.to_string(),
+            summary: None,
+            cover_image: None,
+            tags: vec![],
+            category: Some("general".to_string()),
+            is_published: Some(false),
+            is_featured: Some(false),
+        }
+    }
+
+    fn make_comment_request(content: &str) -> CreateCommentRequest {
+        CreateCommentRequest {
+            content: content.to_string(),
+            parent_id: None,
+        }
+    }
+
+    /// #20: Article content at exactly 100,000 chars should be accepted (boundary)
+    #[tokio::test]
+    async fn test_article_content_at_max_length_accepted() {
+        let pool = make_test_pool();
+        let service = BlogService::new(pool);
+
+        let req = make_article_request(&"a".repeat(100_000));
+        // Will fail at DB query, but should NOT fail at validation
+        let result = service
+            .create_article(Uuid::new_v4(), 1, req)
+            .await;
+        // The error should be a DB error, not a validation error
+        let err = result.unwrap_err();
+        assert!(
+            !err.to_string().contains("exceeds maximum length"),
+            "Expected DB error, got validation error: {}",
+            err
+        );
+    }
+
+    /// #20: Article content exceeding 100,000 chars should be rejected
+    #[tokio::test]
+    async fn test_article_content_over_max_length_rejected() {
+        let pool = make_test_pool();
+        let service = BlogService::new(pool);
+
+        let req = make_article_request(&"a".repeat(100_001));
+        let result = service
+            .create_article(Uuid::new_v4(), 1, req)
+            .await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.to_string().contains("exceeds maximum length"),
+            "Expected validation error, got: {}",
+            err
+        );
+    }
+
+    /// #20: Empty article content should be accepted (DB constraint handles minimum)
+    #[tokio::test]
+    async fn test_article_content_empty_accepted() {
+        let pool = make_test_pool();
+        let service = BlogService::new(pool);
+
+        let req = make_article_request("");
+        let result = service
+            .create_article(Uuid::new_v4(), 1, req)
+            .await;
+        // Will fail at DB query, but should NOT fail at validation
+        let err = result.unwrap_err();
+        assert!(
+            !err.to_string().contains("exceeds maximum length"),
+            "Expected DB error, got validation error: {}",
+            err
+        );
+    }
+
+    /// #20: Comment content at exactly 10,000 chars should be accepted (boundary)
+    #[tokio::test]
+    async fn test_comment_content_at_max_length_accepted() {
+        let pool = make_test_pool();
+        let service = BlogService::new(pool);
+
+        let req = make_comment_request(&"a".repeat(10_000));
+        let result = service
+            .create_comment(1, Uuid::new_v4(), 1, req)
+            .await;
+        // Will fail at DB query, but should NOT fail at validation
+        let err = result.unwrap_err();
+        assert!(
+            !err.to_string().contains("exceeds maximum length"),
+            "Expected DB error, got validation error: {}",
+            err
+        );
+    }
+
+    /// #20: Comment content exceeding 10,000 chars should be rejected
+    #[tokio::test]
+    async fn test_comment_content_over_max_length_rejected() {
+        let pool = make_test_pool();
+        let service = BlogService::new(pool);
+
+        let req = make_comment_request(&"a".repeat(10_001));
+        let result = service
+            .create_comment(1, Uuid::new_v4(), 1, req)
+            .await;
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.to_string().contains("exceeds maximum length"),
+            "Expected validation error, got: {}",
+            err
+        );
     }
 }
