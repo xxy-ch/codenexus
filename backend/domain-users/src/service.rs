@@ -844,7 +844,8 @@ impl UserService {
 }
 
 /// Check if a password matches an {MD5}-prefixed hash (without the prefix).
-/// Used for transparent MD5→bcrypt migration on first login (D-10-2).
+/// Preserved as legacy documentation of the {MD5} format.
+#[allow(dead_code)]
 fn verify_md5_password(password: &str, md5_hash: &str) -> bool {
     let digest = md5::Md5::digest(password.as_bytes());
     let computed: String = digest.iter().map(|b| format!("{:02x}", b)).collect();

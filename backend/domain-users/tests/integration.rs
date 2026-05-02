@@ -163,6 +163,7 @@ async fn test_user_email_uniqueness() {
 
 /// Verify an MD5-hashed password against its plaintext.
 /// Mirrors the domain-users::service::verify_md5_password function.
+#[allow(dead_code)]
 fn verify_md5_password(password: &str, md5_hash: &str) -> bool {
     use md5::Digest;
     let digest = md5::Md5::digest(password.as_bytes());

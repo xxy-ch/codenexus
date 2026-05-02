@@ -7,7 +7,7 @@ use std::time::Instant;
 use tokio::fs;
 use tokio::process::Command;
 use tokio::time::{timeout, Duration};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 const DEFAULT_MEMORY_KB: i32 = 262_144;
 
@@ -23,7 +23,29 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
     info!("Processing submission {}", submission.submission_id);
 
     let work_dir = create_work_dir(submission.submission_id).await?;
-    let source_file = save_source_code(&work_dir, submission).await?;
+    let result = process_submission_inner(submission, &work_dir).await;
+
+    // Best-effort cleanup of workdir — failure to remove should not fail the submission.
+    if let Err(e) = fs::remove_dir_all(&work_dir).await {
+        warn!(
+            "Failed to clean up workdir {:?} for submission {}: {}",
+            work_dir, submission.submission_id, e
+        );
+    } else {
+        info!(
+            "Cleaned up workdir for submission {}",
+            submission.submission_id
+        );
+    }
+
+    result
+}
+
+async fn process_submission_inner(
+    submission: &SubmissionMessage,
+    work_dir: &Path,
+) -> Result<JudgeResult> {
+    let source_file = save_source_code(work_dir, submission).await?;
     let test_cases = fetch_test_cases(submission.problem_id).await?;
 
     if test_cases.is_empty() {
@@ -39,7 +61,7 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
 
     let executable_path = match submission.language.as_str() {
         "c" | "cpp" | "rust" | "go" | "java" => {
-            match compile_code(&source_file, &submission.language, &work_dir).await {
+            match compile_code(&source_file, &submission.language, work_dir).await {
                 Ok(path) => Some(path),
                 Err(err) => {
                     error!(
@@ -72,7 +94,7 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
             &source_file,
             executable_path.as_deref(),
             test_case,
-            &work_dir,
+            work_dir,
         )
         .await?;
 
@@ -383,40 +405,25 @@ async fn execute_program(
 
     let runtime_ms = started.elapsed().as_millis() as i32;
 
-    // Get memory usage from cgroup (primary) or getrusage (fallback).
+    // Get memory usage from cgroup memory.peak — this is the per-submission accurate reading.
+    // Do NOT fall back to getrusage(RUSAGE_CHILDREN) — it is cumulative across ALL children
+    // since process start, so concurrent submissions would read each other's memory usage.
     let cgroup_memory_kb = cgroup
         .as_ref()
         .and_then(|cg| cg.get_max_memory_usage().ok())
         .map(|bytes| (bytes / 1024) as i32)
         .unwrap_or(0);
 
-    // Measure actual peak memory usage via getrusage(RUSAGE_CHILDREN).
-    // This returns the max resident set size (in KB on Linux) of any child process.
-    let rusage_memory_kb = {
-        let mut usage: libc::rusage = unsafe { std::mem::zeroed() };
-        let ret = unsafe { libc::getrusage(libc::RUSAGE_CHILDREN, &mut usage) };
-        if ret == 0 {
-            // On Linux ru_maxrss is in KB; on macOS it is in bytes.
-            #[cfg(target_os = "linux")]
-            {
-                usage.ru_maxrss as i32
-            }
-            #[cfg(not(target_os = "linux"))]
-            {
-                (usage.ru_maxrss / 1024) as i32
-            }
-        } else {
-            // Fallback to the configured memory limit if getrusage fails
-            DEFAULT_MEMORY_KB.min((submission.memory_limit_mb.saturating_mul(1024)) as i32)
-        }
-    }
-    .max(0);
-
-    // Use cgroup memory if available, otherwise fall back to getrusage.
+    // When cgroup returns 0 (e.g. kernel < 4.5 missing memory.peak), fall back to the
+    // configured memory limit as a conservative estimate rather than cumulative getrusage.
     let memory_kb = if cgroup_memory_kb > 0 {
         cgroup_memory_kb
     } else {
-        rusage_memory_kb
+        tracing::debug!(
+            "cgroup memory.peak returned 0 for submission {}, falling back to memory limit estimate",
+            submission.submission_id
+        );
+        (submission.memory_limit_mb * 1024) as i32
     };
 
     // Always clean up the cgroup.
