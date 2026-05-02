@@ -158,7 +158,7 @@ async fn test_user_email_uniqueness() {
 }
 
 // ---------------------------------------------------------------------------
-// Test: MD5 login upgrade integration (D-10-2)
+// Test: MD5 login rejection integration (#8)
 // ---------------------------------------------------------------------------
 
 /// Verify an MD5-hashed password against its plaintext.
@@ -170,17 +170,18 @@ fn verify_md5_password(password: &str, md5_hash: &str) -> bool {
     computed == md5_hash
 }
 
-/// End-to-end test for the transparent MD5-to-bcrypt password upgrade flow.
+/// End-to-end test for MD5 password rejection flow.
 ///
-/// Simulates the full login upgrade cycle:
-/// 1. Insert a user with `{MD5}` prefixed password hash (as the migrator does)
-/// 2. Verify the password matches via MD5 (simulating login's first path)
-/// 3. Upgrade the password hash to bcrypt (simulating login's upgrade step)
-/// 4. Verify the new hash is bcrypt format (starts with "$2b$")
-/// 5. Verify the same password still works via bcrypt verification
+/// After the security fix (#8), MD5-hashed users can no longer log in.
+/// Instead:
+/// 1. Login detects the {MD5} prefix and rejects the attempt
+/// 2. The user's password_needs_reset flag is set to true
+/// 3. An admin must reset the password (upgrade to bcrypt) before login works
+///
+/// This test validates the DB-level behavior of the migration and rejection.
 #[tokio::test]
 #[ignore = "requires Docker -- run with `cargo test -p domain-users --test integration -- --ignored`"]
-async fn test_md5_login_upgrade_integration() {
+async fn test_md5_login_rejection_integration() {
     let fixture = setup_fixture().await;
     let (org_id, campus_id) = seed_org_and_campus(&fixture.db_pool).await;
 
@@ -212,8 +213,7 @@ async fn test_md5_login_upgrade_integration() {
     .await
     .unwrap();
 
-    // Step 2: Verify the password matches via MD5.
-    // This simulates what UserService::login does when it detects the {MD5} prefix.
+    // Step 2: Verify the stored hash is MD5 format.
     let stored_hash: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
         .bind(user_id)
         .fetch_one(&fixture.db_pool)
@@ -222,66 +222,68 @@ async fn test_md5_login_upgrade_integration() {
 
     assert!(
         stored_hash.starts_with("{MD5}"),
-        "Password hash must start with {{MD5}} prefix before upgrade, got: {}",
+        "Password hash must start with {{MD5}} prefix, got: {}",
         &stored_hash[..stored_hash.len().min(20)]
     );
 
-    let md5_part = &stored_hash[5..]; // strip "{MD5}" prefix
-    assert!(
-        verify_md5_password("password", md5_part),
-        "MD5 verification must succeed for correct password"
-    );
-    assert!(
-        !verify_md5_password("wrongpassword", md5_part),
-        "MD5 verification must fail for incorrect password"
-    );
-
-    // Step 3: Upgrade the password hash to bcrypt (simulating what login does).
-    let bcrypt_hash = bcrypt::hash("password", bcrypt::DEFAULT_COST).unwrap();
-    sqlx::query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2")
-        .bind(&bcrypt_hash)
+    // Step 3: Simulate the rejection — mark user as needing reset.
+    // (In production, UserService::login does this when it detects {MD5})
+    sqlx::query("UPDATE users SET password_needs_reset = true, updated_at = NOW() WHERE id = $1")
         .bind(user_id)
         .execute(&fixture.db_pool)
         .await
         .unwrap();
 
-    // Step 4: Verify the new hash is bcrypt format.
-    let upgraded_hash: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
-        .bind(user_id)
-        .fetch_one(&fixture.db_pool)
-        .await
-        .unwrap();
-
-    assert!(
-        upgraded_hash.starts_with("$2b$"),
-        "Upgraded password hash must be bcrypt (start with $2b$), got: {}",
-        &upgraded_hash[..upgraded_hash.len().min(20)]
-    );
-    assert!(
-        !upgraded_hash.starts_with("{MD5}"),
-        "Upgraded password hash must NOT have {{MD5}} prefix"
-    );
-
-    // Step 5: Verify the same password still works via bcrypt verification.
-    assert!(
-        bcrypt::verify("password", &upgraded_hash).unwrap(),
-        "Bcrypt verification must succeed for the same password after upgrade"
-    );
-    assert!(
-        !bcrypt::verify("wrongpassword", &upgraded_hash).unwrap(),
-        "Bcrypt verification must fail for incorrect password"
-    );
-
-    // Step 6 (extra): Verify the user record is otherwise unchanged.
-    let user: (Uuid, String, i64, String) =
-        sqlx::query_as("SELECT id, username, organization_id, status FROM users WHERE id = $1")
+    // Step 4: Verify password_needs_reset flag is set.
+    let needs_reset: bool =
+        sqlx::query_scalar("SELECT password_needs_reset FROM users WHERE id = $1")
             .bind(user_id)
             .fetch_one(&fixture.db_pool)
             .await
             .unwrap();
 
-    assert_eq!(user.0, user_id);
-    assert_eq!(user.1, "md5user");
-    assert_eq!(user.2, org_id);
-    assert_eq!(user.3, "active");
+    assert!(
+        needs_reset,
+        "password_needs_reset must be true for MD5 user"
+    );
+
+    // Step 5: Simulate admin password reset (upgrade to bcrypt).
+    let bcrypt_hash = bcrypt::hash("newpassword", bcrypt::DEFAULT_COST).unwrap();
+    sqlx::query(
+        "UPDATE users SET password_hash = $1, password_needs_reset = false, updated_at = NOW() WHERE id = $2",
+    )
+    .bind(&bcrypt_hash)
+    .bind(user_id)
+    .execute(&fixture.db_pool)
+    .await
+    .unwrap();
+
+    // Step 6: Verify the new hash is bcrypt format and needs_reset is cleared.
+    let (upgraded_hash, reset_after): (String, bool) = sqlx::query_as(
+        "SELECT password_hash, password_needs_reset FROM users WHERE id = $1",
+    )
+    .bind(user_id)
+    .fetch_one(&fixture.db_pool)
+    .await
+    .unwrap();
+
+    assert!(
+        upgraded_hash.starts_with("$2b$"),
+        "Upgraded password hash must be bcrypt, got: {}",
+        &upgraded_hash[..upgraded_hash.len().min(20)]
+    );
+    assert!(
+        !reset_after,
+        "password_needs_reset must be false after admin reset"
+    );
+
+    // Step 7: Verify the new password works via bcrypt.
+    assert!(
+        bcrypt::verify("newpassword", &upgraded_hash).unwrap(),
+        "Bcrypt verification must succeed for the new password"
+    );
+    assert!(
+        !bcrypt::verify("password", &upgraded_hash).unwrap(),
+        "Old MD5-crackable password must NOT work after reset"
+    );
 }

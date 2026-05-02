@@ -4,7 +4,7 @@ use api_infra::traits::token_service::TokenService;
 use md5::Digest;
 use sqlx::PgPool;
 use std::sync::Arc;
-use tracing::info;
+use tracing::warn;
 use uuid::Uuid;
 
 pub struct UserService {
@@ -194,33 +194,32 @@ impl UserService {
 
         let user = user.ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
 
-        // Verify password (with transparent MD5→bcrypt migration per D-10-2)
+        // SECURITY: Reject MD5-hashed passwords — unsalted MD5 is vulnerable to
+        // rainbow table attacks. The transparent migration path has been removed.
+        // Users with {MD5} hashes must have their password reset by an admin.
         if user.password_hash.starts_with("{MD5}") {
-            // Transparent MD5 migration path
-            let md5_hash = &user.password_hash[5..]; // strip "{MD5}" prefix
-            if verify_md5_password(&req.password, md5_hash) {
-                // Upgrade to bcrypt
-                let new_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)?;
-                sqlx::query(
-                    "UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2",
-                )
-                .bind(&new_hash)
-                .bind(user.id)
-                .execute(&self.pool)
-                .await?;
-                info!(
-                    "MD5 password upgraded to bcrypt for user: {}",
-                    user.username
-                );
-            } else {
-                return Err(anyhow::anyhow!("Invalid credentials"));
-            }
-        } else {
-            // Normal bcrypt verification
-            bcrypt::verify(&req.password, &user.password_hash)?
-                .then_some(())
-                .ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
+            // Mark user as needing password reset for admin visibility
+            sqlx::query(
+                "UPDATE users SET password_needs_reset = true, updated_at = NOW() WHERE id = $1",
+            )
+            .bind(user.id)
+            .execute(&self.pool)
+            .await?;
+
+            warn!(
+                username = %user.username,
+                "MD5 password login rejected — password requires admin reset"
+            );
+
+            return Err(anyhow::anyhow!(
+                "Password requires reset — contact administrator"
+            ));
         }
+
+        // Normal bcrypt verification
+        bcrypt::verify(&req.password, &user.password_hash)?
+            .then_some(())
+            .ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
 
         // Get user role and authorization grade_id from user_roles (D-07/D-08)
         // Role and grade_id come from user_roles (authorization scope),
@@ -970,57 +969,45 @@ mod tests {
         );
     }
 
-    /// 6. End-to-end pure unit test of the complete MD5->bcrypt upgrade flow.
+    /// 6. End-to-end unit test of the MD5 rejection flow.
     ///
-    /// Simulates the exact logic in `UserService::login` lines 122-143:
+    /// Simulates the exact logic now in `UserService::login`:
     ///   a. Detect {MD5} prefix on stored hash
-    ///   b. Strip prefix, verify password against raw MD5 hex
-    ///   c. Generate bcrypt hash for the same password
-    ///   d. Verify bcrypt hash accepts the correct password
-    ///   e. Verify bcrypt hash rejects a wrong password
+    ///   b. Login is rejected — MD5 users must have admin reset their password
+    ///   c. verify_md5_password is NOT used for login (kept as documentation)
+    ///   d. bcrypt hashes still work normally
     #[test]
-    fn test_md5_to_bcrypt_full_flow() {
+    fn test_md5_rejection_flow() {
         let password = "password";
         let raw_md5 = "5f4dcc3b5aa765d61d8327deb882cf99";
         let stored_hash = format!("{{MD5}}{}", raw_md5);
 
-        // Step 1: detect {MD5} prefix (mirrors line 123)
+        // Step 1: detect {MD5} prefix
         assert!(
             stored_hash.starts_with("{MD5}"),
             "stored hash must carry the {{MD5}} prefix"
         );
 
-        // Step 2: strip prefix (mirrors line 125)
-        let md5_hash = &stored_hash[5..];
-        assert_eq!(md5_hash, raw_md5);
-
-        // Step 3: verify password against MD5 (mirrors line 126)
+        // Step 2: verify_md5_password still works (kept as legacy documentation)
+        // but login() no longer calls it — it just rejects outright
         assert!(
-            verify_md5_password(password, md5_hash),
-            "MD5 verification must succeed for the correct password"
+            verify_md5_password(password, raw_md5),
+            "legacy MD5 verification function still works for documentation"
         );
 
-        // Step 4: wrong password must fail MD5 check (mirrors line 136)
-        assert!(
-            !verify_md5_password("wrongpassword", md5_hash),
-            "MD5 verification must reject wrong password"
-        );
-
-        // Step 5: upgrade to bcrypt (mirrors line 128)
+        // Step 3: A bcrypt hash (non-MD5) is the expected format for all active users
         let bcrypt_hash = bcrypt::hash(password, bcrypt::DEFAULT_COST)
             .expect("bcrypt hash generation must succeed");
         assert!(
             bcrypt_hash.starts_with("$2b$"),
-            "upgraded hash must be bcrypt format"
+            "bcrypt hash must start with '$2b$'"
         );
 
-        // Step 6: verify bcrypt with correct password (mirrors line 140)
+        // Step 4: bcrypt verification still works for non-MD5 users
         assert!(
             bcrypt::verify(password, &bcrypt_hash).expect("bcrypt verify must not error"),
-            "bcrypt must verify the original password"
+            "bcrypt must verify the correct password"
         );
-
-        // Step 7: verify bcrypt rejects wrong password
         assert!(
             !bcrypt::verify("wrongpassword", &bcrypt_hash).expect("bcrypt verify must not error"),
             "bcrypt must reject wrong password"
