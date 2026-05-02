@@ -2,7 +2,76 @@ use crate::models::*;
 use crate::queue::{self, SubmissionMessage};
 use anyhow::Result;
 use sqlx::{PgPool, Row};
+use std::fmt;
 use uuid::Uuid;
+
+/// Outcome of a transactional judge result update.
+#[derive(Debug, PartialEq)]
+pub enum JudgeUpdateOutcome {
+    /// Submission was updated successfully.
+    Updated,
+    /// Submission was already in the target state (idempotent — no changes made).
+    AlreadyProcessed,
+}
+
+/// Errors from a transactional judge result update.
+#[derive(Debug)]
+pub enum JudgeUpdateError {
+    /// No submission row found for the given id.
+    NotFound,
+    /// Submission is in a terminal state and cannot be overwritten.
+    TerminalState { current_status: String },
+    /// The status transition is not allowed by the state machine.
+    InvalidTransition {
+        current_status: String,
+        target_status: String,
+    },
+    /// A test case callback carried an unsupported status string.
+    InvalidTestCaseStatus { status: String },
+    /// A database error occurred (transaction will have been rolled back).
+    Database(sqlx::Error),
+}
+
+impl From<sqlx::Error> for JudgeUpdateError {
+    fn from(err: sqlx::Error) -> Self {
+        JudgeUpdateError::Database(err)
+    }
+}
+
+impl fmt::Display for JudgeUpdateError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            JudgeUpdateError::NotFound => write!(f, "Submission not found"),
+            JudgeUpdateError::TerminalState { current_status } => write!(
+                f,
+                "Submission is in terminal state '{}' and cannot be overwritten",
+                current_status
+            ),
+            JudgeUpdateError::InvalidTransition {
+                current_status,
+                target_status,
+            } => write!(
+                f,
+                "Invalid state transition from '{}' to '{}'",
+                current_status, target_status
+            ),
+            JudgeUpdateError::InvalidTestCaseStatus { status } => {
+                write!(f, "Unsupported test case status: {}", status)
+            }
+            JudgeUpdateError::Database(err) => write!(f, "Database error: {}", err),
+        }
+    }
+}
+
+impl std::error::Error for JudgeUpdateError {}
+
+/// Lightweight input for a single test case result within a transactional update.
+pub struct TestCaseResultInput {
+    pub test_case_id: i64,
+    pub status: String,
+    pub runtime_ms: Option<i32>,
+    pub memory_kb: Option<i32>,
+}
 
 pub struct SubmissionService {
     pool: PgPool,
@@ -682,6 +751,112 @@ impl SubmissionService {
         .await?;
 
         Ok(result_id)
+    }
+
+    /// Transactional judge result update: acquires a row-level lock on the submission,
+    /// validates the state transition, updates the submission row, and inserts all
+    /// test case results — all within a single database transaction so that concurrent
+    /// callbacks for the same submission are serialized.
+    ///
+    /// On `Err`, the transaction is rolled back automatically (sqlx drops the `Transaction`).
+    pub async fn update_judge_result_transactional(
+        &self,
+        submission_id: i64,
+        status: &str,
+        score: Option<i32>,
+        runtime_ms: Option<i32>,
+        memory_kb: Option<i32>,
+        test_case_results: &[TestCaseResultInput],
+    ) -> Result<JudgeUpdateOutcome, JudgeUpdateError> {
+        let mut tx = self.pool.begin().await?;
+
+        // 1. Lock the submission row and read current status.
+        let current_status: Option<String> = sqlx::query_scalar(
+            "SELECT status FROM submissions WHERE id = $1 FOR UPDATE",
+        )
+        .bind(submission_id)
+        .fetch_optional(&mut *tx)
+        .await?
+        .flatten();
+
+        let current_status = current_status.ok_or(JudgeUpdateError::NotFound)?;
+
+        let target_status = Self::normalize_judge_status(status);
+
+        // 2. Idempotency: duplicate callback with same normalized status → no-op.
+        if current_status.eq_ignore_ascii_case(target_status) {
+            // Drop tx (rollback) — no changes needed.
+            return Ok(JudgeUpdateOutcome::AlreadyProcessed);
+        }
+
+        // 3. Terminal states cannot be overwritten.
+        if Self::is_terminal_status(&current_status) {
+            return Err(JudgeUpdateError::TerminalState { current_status });
+        }
+
+        // 4. Only allow valid transitions: pending/queued/judging → terminal.
+        let is_valid_transition = matches!(current_status.as_str(), "pending" | "queued" | "judging");
+        if !is_valid_transition {
+            return Err(JudgeUpdateError::InvalidTransition {
+                current_status,
+                target_status: target_status.to_string(),
+            });
+        }
+
+        // 5. Update submission row.
+        sqlx::query(
+            "UPDATE submissions
+             SET status = $1, verdict = $2, score = $3, time_ms = $4, memory_kb = $5, updated_at = NOW()
+             WHERE id = $6",
+        )
+        .bind(Self::normalize_judge_status(status))
+        .bind(map_verdict(status))
+        .bind(score)
+        .bind(runtime_ms)
+        .bind(memory_kb)
+        .bind(submission_id)
+        .execute(&mut *tx)
+        .await?;
+
+        // 6. Insert test case results within the same transaction.
+        for tc in test_case_results {
+            let verdict = map_verdict(&tc.status).ok_or_else(|| JudgeUpdateError::InvalidTestCaseStatus {
+                status: tc.status.clone(),
+            })?;
+
+            sqlx::query(
+                r#"
+                INSERT INTO test_case_results (
+                    submission_id, test_case_id, verdict, time_ms, memory_kb
+                )
+                VALUES ($1, $2, $3, $4, $5)
+                ON CONFLICT (submission_id, test_case_id)
+                DO UPDATE SET
+                    verdict = EXCLUDED.verdict,
+                    time_ms = EXCLUDED.time_ms,
+                    memory_kb = EXCLUDED.memory_kb
+                "#,
+            )
+            .bind(submission_id)
+            .bind(tc.test_case_id)
+            .bind(verdict)
+            .bind(tc.runtime_ms)
+            .bind(tc.memory_kb)
+            .execute(&mut *tx)
+            .await?;
+        }
+
+        // 7. Commit.
+        tx.commit().await?;
+
+        tracing::info!(
+            submission_id,
+            status,
+            test_case_count = test_case_results.len(),
+            "Transactionally updated judge result"
+        );
+
+        Ok(JudgeUpdateOutcome::Updated)
     }
 }
 

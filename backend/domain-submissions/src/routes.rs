@@ -150,70 +150,72 @@ async fn update_judge_result(
 
     let service = SubmissionService::new(state.db_pool);
 
-    // 3. State machine: check current status
-    let current_status = service
-        .get_submission_status(id)
-        .await?
-        .ok_or_else(|| AppError::Validation("Submission not found".into()))?;
+    // 3. Map callback test cases into service-layer input structs.
+    let test_case_inputs: Vec<crate::service::TestCaseResultInput> = result
+        .test_case_results
+        .iter()
+        .map(|tc| crate::service::TestCaseResultInput {
+            test_case_id: tc.test_case_id,
+            status: tc.status.clone(),
+            runtime_ms: tc.runtime_ms,
+            memory_kb: tc.memory_kb,
+        })
+        .collect();
 
-    let target_status = SubmissionService::normalize_judge_status(&result.status);
-
-    // 3a. Idempotency: duplicate callback with same normalized status is accepted but ignored.
-    if current_status.eq_ignore_ascii_case(target_status) {
-        return Ok(Json(serde_json::json!({
-            "message": "Judge result already processed (idempotent)",
-            "submission_id": id,
-            "status": target_status,
-        })));
-    }
-
-    // 3b. Terminal states cannot be overwritten
-    if SubmissionService::is_terminal_status(&current_status) {
-        return Err(AppError::Validation(format!(
-            "Submission {} is in terminal state '{}' and cannot be overwritten",
-            id, current_status
-        )));
-    }
-
-    // 3c. Only allow valid transitions: pending/queued -> judging -> terminal
-    let is_valid_transition = matches!(current_status.as_str(), "pending" | "queued" | "judging");
-    if !is_valid_transition {
-        return Err(AppError::Validation(format!(
-            "Invalid state transition from '{}' to '{}'",
-            current_status, result.status
-        )));
-    }
-
-    // 4. Update submission status and score
-    service
-        .update_judge_result(
+    // 4. Execute the entire update within a single transaction (SELECT FOR UPDATE → UPDATE → INSERT → COMMIT).
+    match service
+        .update_judge_result_transactional(
             id,
             &result.status,
             result.score,
             result.runtime_ms,
             result.memory_kb,
+            &test_case_inputs,
         )
-        .await?;
-
-    // 5. Store test case results
-    for test_result in result.test_case_results {
-        service
-            .store_test_case_result(
-                id,
-                test_result.test_case_id,
-                &test_result.status,
-                test_result.expected_output,
-                test_result.actual_output,
-                test_result.error_message,
-                test_result.runtime_ms,
-                test_result.memory_kb,
-            )
-            .await?;
+        .await
+    {
+        Ok(crate::service::JudgeUpdateOutcome::Updated) => {
+            Ok(Json(serde_json::json!({
+                "message": "Judge result updated successfully",
+                "submission_id": id,
+                "status": result.status,
+            })))
+        }
+        Ok(crate::service::JudgeUpdateOutcome::AlreadyProcessed) => {
+            Ok(Json(serde_json::json!({
+                "message": "Judge result already processed (idempotent)",
+                "submission_id": id,
+                "status": SubmissionService::normalize_judge_status(&result.status),
+            })))
+        }
+        Err(crate::service::JudgeUpdateError::NotFound) => {
+            Err(AppError::Validation("Submission not found".into()))
+        }
+        Err(crate::service::JudgeUpdateError::TerminalState { current_status }) => {
+            Err(AppError::Validation(format!(
+                "Submission {} is in terminal state '{}' and cannot be overwritten",
+                id, current_status
+            )))
+        }
+        Err(crate::service::JudgeUpdateError::InvalidTransition {
+            current_status,
+            target_status,
+        }) => Err(AppError::Validation(format!(
+            "Invalid state transition from '{}' to '{}'",
+            current_status, target_status
+        ))),
+        Err(crate::service::JudgeUpdateError::InvalidTestCaseStatus { status }) => {
+            Err(AppError::Validation(format!(
+                "Unsupported test case status: {}",
+                status
+            )))
+        }
+        Err(crate::service::JudgeUpdateError::Database(err)) => {
+            tracing::error!(submission_id = id, error = %err, "Database error during transactional judge result update");
+            Err(AppError::Database(format!(
+                "Failed to update judge result for submission {}: {}",
+                id, err
+            )))
+        }
     }
-
-    Ok(Json(serde_json::json!({
-        "message": "Judge result updated successfully",
-        "submission_id": id,
-        "status": result.status,
-    })))
 }
