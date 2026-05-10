@@ -137,6 +137,7 @@ async fn setup_fixture() -> TestFixture {
 // -----------------------------------------------------------------------
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_list_contests_unauthenticated() {
     let fixture = setup_fixture().await;
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
@@ -161,6 +162,7 @@ async fn test_list_contests_unauthenticated() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_list_contests_authenticated_returns_200() {
     let fixture = setup_fixture().await;
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
@@ -206,6 +208,7 @@ async fn test_list_contests_authenticated_returns_200() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_create_contest_requires_teacher_plus() {
     let fixture = setup_fixture().await;
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);

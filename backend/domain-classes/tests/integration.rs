@@ -73,6 +73,7 @@ async fn seed_org_with_teacher_and_student(pool: &PgPool) -> (i64, i64, Uuid, Uu
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_create_and_get_class() {
     let fixture = setup_fixture().await;
     let (org_id, campus_id, teacher_id, _student_id) =
@@ -102,6 +103,7 @@ async fn test_create_and_get_class() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_enroll_student_in_class() {
     let fixture = setup_fixture().await;
     let (org_id, _campus_id, teacher_id, student_id) =
@@ -154,6 +156,7 @@ async fn test_enroll_student_in_class() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_list_classes_by_teacher() {
     let fixture = setup_fixture().await;
     let (org_id, _campus_id, teacher1_id, _student_id) =

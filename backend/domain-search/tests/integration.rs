@@ -57,6 +57,7 @@ async fn seed_org_with_problem(
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_search_returns_tenant_results_only() {
     let fixture = setup_fixture().await;
 
@@ -98,6 +99,7 @@ async fn test_search_returns_tenant_results_only() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_search_empty_query_returns_empty() {
     let fixture = setup_fixture().await;
     let (_org_id, _u, _p) =

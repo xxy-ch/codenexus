@@ -63,6 +63,7 @@ async fn seed_user_with_ac_submission(pool: &PgPool, email_suffix: &str) -> (i64
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_global_leaderboard_tenant_isolated() {
     let fixture = setup_fixture().await;
 
@@ -101,6 +102,7 @@ async fn test_global_leaderboard_tenant_isolated() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_problem_leaderboard_tenant_isolated() {
     let fixture = setup_fixture().await;
 

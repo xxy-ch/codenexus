@@ -118,6 +118,7 @@ async fn seed_submission(
 // -----------------------------------------------------------------------
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_contest_list_tenant_isolated() {
     let fixture = setup_fixture().await;
 
@@ -201,6 +202,7 @@ async fn test_contest_list_tenant_isolated() {
 // -----------------------------------------------------------------------
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_problem_list_tenant_isolated() {
     let fixture = setup_fixture().await;
 
@@ -261,6 +263,7 @@ async fn test_problem_list_tenant_isolated() {
 // -----------------------------------------------------------------------
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_user_list_tenant_isolated() {
     let fixture = setup_fixture().await;
 
@@ -309,6 +312,7 @@ async fn test_user_list_tenant_isolated() {
 // -----------------------------------------------------------------------
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_submission_list_tenant_isolated() {
     let fixture = setup_fixture().await;
 
@@ -365,6 +369,7 @@ async fn test_submission_list_tenant_isolated() {
 // -----------------------------------------------------------------------
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_leaderboard_global_tenant_isolated() {
     let fixture = setup_fixture().await;
 

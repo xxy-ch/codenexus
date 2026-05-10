@@ -82,6 +82,7 @@ async fn insert_submission(
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_create_and_get_submission() {
     let fixture = setup_fixture().await;
     let (org_id, _campus_id, user_id, problem_id) = seed_full_chain(&fixture.db_pool).await;
@@ -114,6 +115,7 @@ async fn test_create_and_get_submission() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_list_submissions_by_user() {
     let fixture = setup_fixture().await;
     let (org_id, _campus_id, user1_id, problem_id) = seed_full_chain(&fixture.db_pool).await;
@@ -176,6 +178,7 @@ async fn test_list_submissions_by_user() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_submission_status_update() {
     let fixture = setup_fixture().await;
     let (org_id, _campus_id, user_id, problem_id) = seed_full_chain(&fixture.db_pool).await;

@@ -50,6 +50,7 @@ async fn seed_org_user_problem(pool: &PgPool) -> (i64, Uuid, i64) {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_create_and_get_discussion() {
     let fixture = setup_fixture().await;
     let (_org_id, user_id, problem_id) = seed_org_user_problem(&fixture.db_pool).await;
@@ -90,6 +91,7 @@ async fn test_create_and_get_discussion() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_list_discussions_by_problem() {
     let fixture = setup_fixture().await;
     let (_org_id, user_id, problem1_id) = seed_org_user_problem(&fixture.db_pool).await;
@@ -189,6 +191,7 @@ async fn test_list_discussions_by_problem() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_blog_article_crud() {
     let fixture = setup_fixture().await;
     let (_org_id, user_id, _problem_id) = seed_org_user_problem(&fixture.db_pool).await;

@@ -11,6 +11,7 @@ use queue::SubmissionMessage;
 ///
 /// Verifies that judge-worker returns actual memory values instead of None
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_judge_worker_memory_tracking() {
     // This test verifies that TestCaseResult contains actual memory values
     // The implementation changed memory_kb from None to Some(262144)

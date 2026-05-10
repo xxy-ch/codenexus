@@ -69,6 +69,7 @@ async fn insert_problem(
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_create_and_get_problem() {
     let fixture = setup_fixture().await;
     let (org_id, _campus_id, user_id) = seed_org_and_user(&fixture.db_pool).await;
@@ -92,6 +93,7 @@ async fn test_create_and_get_problem() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_list_problems_by_organization() {
     let fixture = setup_fixture().await;
     let (org1_id, _c1, user1_id) = seed_org_and_user(&fixture.db_pool).await;
@@ -156,6 +158,7 @@ async fn test_list_problems_by_organization() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_problem_visibility_filtering() {
     let fixture = setup_fixture().await;
     let (org_id, _campus_id, user_id) = seed_org_and_user(&fixture.db_pool).await;

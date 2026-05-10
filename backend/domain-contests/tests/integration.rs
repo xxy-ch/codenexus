@@ -94,6 +94,7 @@ fn make_create_request(
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_create_and_get_contest() {
     let fixture = setup_fixture().await;
     let (org_id, campus_id, _user_id) = seed_org_and_user(&fixture.db_pool).await;
@@ -121,6 +122,7 @@ async fn test_create_and_get_contest() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_list_contests_by_organization() {
     let fixture = setup_fixture().await;
     let (org1_id, _c1, _u1) = seed_org_and_user(&fixture.db_pool).await;
@@ -180,6 +182,7 @@ async fn test_list_contests_by_organization() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_register_for_contest() {
     let fixture = setup_fixture().await;
     let (org_id, _campus_id, user_id) = seed_org_and_user(&fixture.db_pool).await;
@@ -215,6 +218,7 @@ async fn test_register_for_contest() {
 }
 
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_contest_status_transitions() {
     let fixture = setup_fixture().await;
     let (org_id, _campus_id, _user_id) = seed_org_and_user(&fixture.db_pool).await;
@@ -405,6 +409,7 @@ async fn link_contest_submission_sql(
 
 /// Test: During the freeze window, get_contest_rankings only counts pre-freeze submissions.
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_freeze_snapshot_stored_during_freeze_window() {
     let fixture = setup_fixture().await;
     let now = Utc::now();
@@ -481,6 +486,7 @@ async fn test_freeze_snapshot_stored_during_freeze_window() {
 
 /// Test: Second call during freeze returns the same cached snapshot.
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_freeze_snapshot_is_cached() {
     let fixture = setup_fixture().await;
     let now = Utc::now();
@@ -544,6 +550,7 @@ async fn test_freeze_snapshot_is_cached() {
 
 /// Test: After contest ends, freeze is lifted and all submissions appear in rankings.
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_freeze_auto_reveals_after_contest_ends() {
     let fixture = setup_fixture().await;
     let now = Utc::now();
@@ -619,6 +626,7 @@ async fn test_freeze_auto_reveals_after_contest_ends() {
 
 /// Test: Post-contest submissions are automatically tagged is_upsolving=true.
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_upsolving_submission_tagged_after_contest_ends() {
     let fixture = setup_fixture().await;
     let now = Utc::now();
@@ -653,6 +661,7 @@ async fn test_upsolving_submission_tagged_after_contest_ends() {
 
 /// Test: Upsolving submissions are excluded from official contest rankings.
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_upsolving_excluded_from_official_rankings() {
     let fixture = setup_fixture().await;
     let now = Utc::now();
@@ -705,6 +714,7 @@ async fn test_upsolving_excluded_from_official_rankings() {
 
 /// Test: Attempting to link a submission to a future (not-yet-started) contest fails.
 #[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
 async fn test_pre_contest_submissions_blocked() {
     let fixture = setup_fixture().await;
     let now = Utc::now();
