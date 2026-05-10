@@ -5,6 +5,12 @@ use uuid::Uuid;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum WebSocketMessage {
+    /// Explicit topic subscription request from clients.
+    Subscribe { topic: String },
+
+    /// Explicit topic unsubscription request from clients.
+    Unsubscribe { topic: String },
+
     /// Submission status update
     SubmissionUpdate {
         submission_id: i64,
@@ -105,6 +111,8 @@ impl WebSocketMessage {
     /// Get message type string
     pub fn message_type(&self) -> &'static str {
         match self {
+            WebSocketMessage::Subscribe { .. } => "subscribe",
+            WebSocketMessage::Unsubscribe { .. } => "unsubscribe",
             WebSocketMessage::SubmissionUpdate { .. } => "submission_update",
             WebSocketMessage::LeaderboardUpdate { .. } => "leaderboard_update",
             WebSocketMessage::Notification { .. } => "notification",

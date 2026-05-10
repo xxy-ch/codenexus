@@ -6,7 +6,6 @@
 import type {
   WebSocketMessage,
   WebSocketEventHandlers,
-  SubmissionUpdateMessage,
 } from '../types/websocket'
 import { ConnectionStatus, WS_CONFIG } from './config'
 
@@ -116,16 +115,16 @@ class WebSocketService {
   }
 
   /**
-   * Subscribe to a topic (by sending a message of that type)
+   * Subscribe to explicit server-side topics.
    */
   subscribe(submissionId?: number, contestId?: number): void {
     if (submissionId !== undefined) {
       const topic = `submission:${submissionId}`
       if (!this.subscriptions.has(topic)) {
         this.send({
-          type: 'SubmissionUpdate',
-          data: { submission_id: submissionId, user_id: '', problem_id: 0, status: '' }
-        } as SubmissionUpdateMessage)
+          type: 'Subscribe',
+          data: { topic },
+        })
         this.subscriptions.add(topic)
         console.log('[WebSocket] Subscribed to:', topic)
       }
@@ -135,13 +134,22 @@ class WebSocketService {
       const topic = `contest:${contestId}`
       if (!this.subscriptions.has(topic)) {
         this.send({
-          type: 'ContestUpdate',
-          data: { contest_id: contestId, status: 'started' }
+          type: 'Subscribe',
+          data: { topic },
         })
         this.subscriptions.add(topic)
         console.log('[WebSocket] Subscribed to:', topic)
       }
     }
+  }
+
+  unsubscribe(topic: string): void {
+    if (!this.subscriptions.has(topic)) return
+    this.send({
+      type: 'Unsubscribe',
+      data: { topic },
+    })
+    this.subscriptions.delete(topic)
   }
 
   /**

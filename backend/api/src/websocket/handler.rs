@@ -55,6 +55,60 @@ fn extract_client_ip(headers: &axum::http::HeaderMap) -> std::net::IpAddr {
     }
 }
 
+async fn authorize_topic_subscription(
+    db_pool: &sqlx::PgPool,
+    topic: &str,
+    user_id: Uuid,
+    school_id: i64,
+) -> bool {
+    if let Some(submission_id) = topic
+        .strip_prefix("submission:")
+        .and_then(|id| id.parse::<i64>().ok())
+    {
+        return sqlx::query_scalar::<_, uuid::Uuid>(
+            "SELECT user_id FROM submissions WHERE id = $1",
+        )
+        .bind(submission_id)
+        .fetch_optional(db_pool)
+        .await
+        .ok()
+        .flatten()
+        .map(|uid| uid == user_id)
+        .unwrap_or(false);
+    }
+
+    if let Some(contest_id) = topic
+        .strip_prefix("contest:")
+        .and_then(|id| id.parse::<i64>().ok())
+    {
+        return sqlx::query_scalar::<_, i64>("SELECT organization_id FROM contests WHERE id = $1")
+            .bind(contest_id)
+            .fetch_optional(db_pool)
+            .await
+            .ok()
+            .flatten()
+            .map(|org_id| org_id == school_id)
+            .unwrap_or(false);
+    }
+
+    if let Some(contest_id) = topic
+        .strip_prefix("contest:")
+        .and_then(|rest| rest.strip_suffix(":chat"))
+        .and_then(|id| id.parse::<i64>().ok())
+    {
+        return sqlx::query_scalar::<_, i64>("SELECT organization_id FROM contests WHERE id = $1")
+            .bind(contest_id)
+            .fetch_optional(db_pool)
+            .await
+            .ok()
+            .flatten()
+            .map(|org_id| org_id == school_id)
+            .unwrap_or(false);
+    }
+
+    false
+}
+
 /// Handle WebSocket connection (internal, after auth verified)
 async fn websocket_handler_inner(
     state: crate::AppState,
@@ -172,6 +226,26 @@ async fn websocket_handler_inner(
 
                         // Handle topic subscription requests.
                         // All subscriptions are validated against the authenticated user_id.
+                        WebSocketMessage::Subscribe { topic } => {
+                            if authorize_topic_subscription(&db_pool, &topic, user_id, school_id)
+                                .await
+                            {
+                                server.subscribe(client_id, topic).await;
+                            } else {
+                                tracing::warn!(
+                                    "WS subscription denied: user {} tried to subscribe to topic {}",
+                                    user_id,
+                                    topic
+                                );
+                            }
+                        }
+
+                        WebSocketMessage::Unsubscribe { topic } => {
+                            server.unsubscribe(client_id, &topic).await;
+                        }
+
+                        // Backward compatibility: older clients used business update messages as
+                        // subscription requests. Keep support while new clients use Subscribe.
                         WebSocketMessage::SubmissionUpdate { submission_id, .. } => {
                             // H-03: Verify submission belongs to this user
                             let owner_ok = sqlx::query_scalar::<_, uuid::Uuid>(

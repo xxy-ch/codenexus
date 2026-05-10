@@ -4,6 +4,8 @@
  */
 
 export type WebSocketMessage =
+  | SubscribeMessage
+  | UnsubscribeMessage
   | SubmissionUpdateMessage
   | LeaderboardUpdateMessage
   | NotificationMessage
@@ -16,6 +18,20 @@ export type WebSocketMessage =
   | PingMessage
   | PongMessage
   | ErrorMessage
+
+export interface SubscribeMessage {
+  type: 'Subscribe'
+  data: {
+    topic: string
+  }
+}
+
+export interface UnsubscribeMessage {
+  type: 'Unsubscribe'
+  data: {
+    topic: string
+  }
+}
 
 export interface SubmissionUpdateMessage {
   type: 'SubmissionUpdate'
