@@ -33,6 +33,10 @@ vi.mock('@/services/classes', () => ({
   },
 }))
 
+vi.mock('@/components/analysis/ClassCognitionPanel', () => ({
+  ClassCognitionPanel: () => <div data-testid="class-cognition-panel" />,
+}))
+
 describe('ClassManagement', () => {
   let queryClient: QueryClient
 

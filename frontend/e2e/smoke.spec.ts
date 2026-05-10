@@ -86,17 +86,12 @@ test.describe('delivery smoke', () => {
     await loginAsAdmin(page)
 
     const submissionId = await page.evaluate(async () => {
-      const token = localStorage.getItem('oj_token')
-      if (!token) {
-        throw new Error('missing auth token')
-      }
-
       const response = await fetch('/api/submissions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           problem_id: 1,
           language: 'cpp',

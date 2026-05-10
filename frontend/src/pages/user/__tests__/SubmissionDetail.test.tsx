@@ -11,6 +11,14 @@ vi.mock('@/services/problems', () => ({
   },
 }))
 
+vi.mock('@/components/analysis/AiCodeFeedback', () => ({
+  AiCodeFeedback: () => <div data-testid="ai-code-feedback" />,
+}))
+
+vi.mock('@/components/analysis/SimilarSubmissions', () => ({
+  SimilarSubmissions: () => <div data-testid="similar-submissions" />,
+}))
+
 import { problemsService } from '@/services/problems'
 
 describe('SubmissionDetail', () => {

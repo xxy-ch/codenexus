@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 
 // Use vi.hoisted so mock functions are available when vi.mock factory runs
@@ -45,6 +45,7 @@ import { useWebSocket } from '@/hooks/useWebSocket'
 
 describe('useWebSocket', () => {
   beforeEach(() => {
+    vi.useFakeTimers()
     mockConnect.mockReset()
     mockDisconnect.mockReset()
     mockGetStatus.mockReset()
@@ -58,17 +59,30 @@ describe('useWebSocket', () => {
     mockConnect.mockResolvedValue(undefined)
   })
 
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function renderUseWebSocket() {
+    let rendered: ReturnType<typeof renderHook<ReturnType<typeof useWebSocket>, unknown>> | undefined
+    await act(async () => {
+      rendered = renderHook(() => useWebSocket())
+      await Promise.resolve()
+    })
+    return rendered!
+  }
+
   it('connects on mount', async () => {
     mockGetStatus.mockReturnValue('connected')
 
-    renderHook(() => useWebSocket())
+    await renderUseWebSocket()
 
     // The hook calls connect on mount
     expect(mockConnect).toHaveBeenCalledTimes(1)
   })
 
-  it('disconnects on unmount', () => {
-    const { unmount } = renderHook(() => useWebSocket())
+  it('disconnects on unmount', async () => {
+    const { unmount } = await renderUseWebSocket()
 
     unmount()
 
@@ -77,32 +91,28 @@ describe('useWebSocket', () => {
 
   it('reflects connection error when connect fails', async () => {
     mockConnect.mockRejectedValue(new Error('Connection refused'))
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    const { result } = renderHook(() => useWebSocket())
+    const { result } = await renderUseWebSocket()
 
-    // Wait for the connect promise to reject and status to update
-    await waitFor(() => {
-      expect(mockConnect).toHaveBeenCalledTimes(1)
-    })
-
+    expect(mockConnect).toHaveBeenCalledTimes(1)
+    expect(result.current.status).toBe('error')
     expect(result.current.isConnected).toBe(false)
+    consoleSpy.mockRestore()
   })
 
   it('polls status at regular intervals', async () => {
-    renderHook(() => useWebSocket())
+    await renderUseWebSocket()
 
-    // The hook sets up a 100ms interval to poll getStatus.
-    // Wait for at least one polling cycle with real timers.
-    await waitFor(
-      () => {
-        expect(mockGetStatus).toHaveBeenCalled()
-      },
-      { timeout: 500 },
-    )
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
+
+    expect(mockGetStatus).toHaveBeenCalled()
   })
 
   it('exposes setHandlers to configure event handlers', async () => {
-    const { result } = renderHook(() => useWebSocket())
+    const { result } = await renderUseWebSocket()
 
     const handlers = {
       onSubmissionUpdate: vi.fn(),
@@ -117,7 +127,7 @@ describe('useWebSocket', () => {
   })
 
   it('exposes subscribe for topic subscription', async () => {
-    const { result } = renderHook(() => useWebSocket())
+    const { result } = await renderUseWebSocket()
 
     await act(async () => {
       result.current.subscribe(42, 7)
@@ -128,7 +138,7 @@ describe('useWebSocket', () => {
 
   it('exposes send for message transmission', async () => {
     mockSend.mockReturnValue(true)
-    const { result } = renderHook(() => useWebSocket())
+    const { result } = await renderUseWebSocket()
 
     let sendResult: boolean = false
     await act(async () => {
@@ -140,7 +150,7 @@ describe('useWebSocket', () => {
   })
 
   it('exposes the underlying websocket service', async () => {
-    const { result } = renderHook(() => useWebSocket())
+    const { result } = await renderUseWebSocket()
 
     expect(result.current.service).toBeDefined()
     expect(result.current.service.connect).toBe(mockConnect)
@@ -150,19 +160,17 @@ describe('useWebSocket', () => {
   it('reflects connected status when service reports connected', async () => {
     mockGetStatus.mockReturnValue('connected')
 
-    const { result } = renderHook(() => useWebSocket())
+    const { result } = await renderUseWebSocket()
 
-    // Wait for the polling interval to pick up the connected status
-    await waitFor(() => {
-      expect(result.current.isConnected).toBe(true)
-      expect(result.current.status).toBe('connected')
-    })
+    expect(result.current.isConnected).toBe(true)
+    expect(result.current.status).toBe('connected')
   })
 
   it('reflects disconnected status when not connected', async () => {
     mockGetStatus.mockReturnValue('disconnected')
+    mockConnect.mockImplementation(() => new Promise(() => {}))
 
-    const { result } = renderHook(() => useWebSocket())
+    const { result } = await renderUseWebSocket()
 
     expect(result.current.isConnected).toBe(false)
     expect(result.current.status).toBe('disconnected')
