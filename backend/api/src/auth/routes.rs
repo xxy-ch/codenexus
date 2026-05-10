@@ -148,6 +148,14 @@ pub async fn logout(
                     .unwrap_or(());
             }
         }
+
+        if let Err(err) = revoke_jti_in_db(&state, &claims, "access").await {
+            tracing::error!(
+                user_id = %claims.sub,
+                error = %err,
+                "Failed to persist access token revocation"
+            );
+        }
     }
 
     // Also revoke the refresh token if present (in cookie or already decoded)
@@ -207,9 +215,15 @@ pub async fn register(
     );
     headers.insert(
         axum::http::header::SET_COOKIE,
-        make_cookie_header("refresh_token", &refresh_token, 604800, "/api/auth/refresh", secure)
-            .parse()
-            .unwrap(),
+        make_cookie_header(
+            "refresh_token",
+            &refresh_token,
+            604800,
+            "/api/auth/refresh",
+            secure,
+        )
+        .parse()
+        .unwrap(),
     );
 
     Ok((
@@ -247,16 +261,21 @@ async fn track_refresh_token(state: &AppState, refresh_token: &str) {
                 .await
                 .unwrap_or(());
         }
+    } else if state.app_env.is_production() {
+        tracing::warn!(
+            "Redis is not configured in production; refresh-token tracking relies on database revocation fallback"
+        );
     }
 }
 
 /// Check if a refresh token has been revoked via blacklist.
 async fn is_refresh_token_revoked(state: &AppState, refresh_token: &str) -> bool {
+    let claims = match state.jwt_service.validate_token(refresh_token) {
+        Ok(c) => c,
+        Err(_) => return true, // Invalid token = treat as revoked
+    };
+
     if let Some(redis_pool) = &state.redis_pool {
-        let claims = match state.jwt_service.validate_token(refresh_token) {
-            Ok(c) => c,
-            Err(_) => return true, // Invalid token = treat as revoked
-        };
         match redis_pool.get().await {
             Ok(mut conn) => {
                 let blacklisted: bool = deadpool_redis::redis::cmd("EXISTS")
@@ -282,21 +301,22 @@ async fn is_refresh_token_revoked(state: &AppState, refresh_token: &str) -> bool
             }
         }
     } else {
-        false // No Redis configured = no blacklist capability
+        is_jti_revoked_in_db(state, claims.jti).await
     }
 }
 
 /// Revoke a refresh token by blacklisting its JTI on logout.
 async fn revoke_refresh_token(state: &AppState, refresh_token: &str) {
+    let claims = match state.jwt_service.validate_token(refresh_token) {
+        Ok(c) => c,
+        Err(_) => return,
+    };
+    let remaining_secs = claims.exp - chrono::Utc::now().timestamp();
+    if remaining_secs <= 0 {
+        return;
+    }
+
     if let Some(redis_pool) = &state.redis_pool {
-        let claims = match state.jwt_service.validate_token(refresh_token) {
-            Ok(c) => c,
-            Err(_) => return,
-        };
-        let remaining_secs = claims.exp - chrono::Utc::now().timestamp();
-        if remaining_secs <= 0 {
-            return;
-        }
         if let Ok(mut conn) = redis_pool.get().await {
             let _: () = deadpool_redis::redis::cmd("SET")
                 .arg(format!("bl:{}", claims.jti))
@@ -312,6 +332,59 @@ async fn revoke_refresh_token(state: &AppState, refresh_token: &str) {
             );
         }
     }
+
+    if let Err(err) = revoke_jti_in_db(state, &claims, "refresh").await {
+        tracing::error!(
+            user_id = %claims.sub,
+            error = %err,
+            "Failed to persist refresh token revocation"
+        );
+    }
+}
+
+pub(crate) async fn is_jti_revoked_in_db(state: &AppState, jti: uuid::Uuid) -> bool {
+    match sqlx::query_scalar::<_, bool>(
+        "SELECT EXISTS(SELECT 1 FROM token_revocations WHERE jti = $1 AND expires_at > NOW())",
+    )
+    .bind(jti)
+    .fetch_one(&state.db_pool)
+    .await
+    {
+        Ok(revoked) => revoked,
+        Err(err) => {
+            tracing::warn!(
+                error = %err,
+                "Database unavailable during token revocation check — rejecting (fail-closed)"
+            );
+            true
+        }
+    }
+}
+
+pub(crate) async fn revoke_jti_in_db(
+    state: &AppState,
+    claims: &Claims,
+    token_type: &str,
+) -> Result<(), sqlx::Error> {
+    let expires_at = chrono::DateTime::<chrono::Utc>::from_timestamp(claims.exp, 0)
+        .unwrap_or_else(chrono::Utc::now);
+    sqlx::query(
+        r#"
+        INSERT INTO token_revocations (jti, user_id, token_type, expires_at)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (jti) DO UPDATE
+        SET expires_at = EXCLUDED.expires_at,
+            token_type = EXCLUDED.token_type
+        "#,
+    )
+    .bind(claims.jti)
+    .bind(claims.sub)
+    .bind(token_type)
+    .bind(expires_at)
+    .execute(&state.db_pool)
+    .await?;
+
+    Ok(())
 }
 
 /// Extract refresh token string from cookie header.

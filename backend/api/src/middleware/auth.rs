@@ -2,7 +2,7 @@ use axum::{async_trait, extract::FromRequestParts, http::StatusCode, response::R
 use shared::models::Claims;
 use std::sync::Arc;
 
-use crate::auth::JwtService;
+use crate::auth::{routes::is_jti_revoked_in_db, JwtService};
 
 pub struct AuthExtractor(pub Claims);
 
@@ -89,7 +89,8 @@ pub async fn auth_middleware(
         .validate_token(&token)
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
-    // Check JWT blacklist (revoked tokens) — fail-closed when Redis is configured but unavailable
+    // Check JWT blacklist (revoked tokens) — fail-closed when Redis is configured but unavailable.
+    // If Redis is intentionally disabled, use the persistent database revocation fallback.
     if let Some(redis_pool) = &state.redis_pool {
         let conn_result = redis_pool.get().await;
         match conn_result {
@@ -108,6 +109,10 @@ pub async fn auth_middleware(
                 return Err(StatusCode::UNAUTHORIZED);
             }
         }
+    } else if !matches!(state.app_env, api_infra::config::AppEnv::Test)
+        && is_jti_revoked_in_db(&state, claims.jti).await
+    {
+        return Err(StatusCode::UNAUTHORIZED);
     }
 
     let mut request = request;
