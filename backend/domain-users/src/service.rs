@@ -25,24 +25,26 @@ impl UserService {
         }
 
         // Validate organization exists
-        let org_exists = sqlx::query_scalar::<_, i64>("SELECT 1 FROM organizations WHERE id = $1")
+        let org_exists = sqlx::query_scalar::<_, bool>(
+            "SELECT EXISTS(SELECT 1 FROM organizations WHERE id = $1)",
+        )
             .bind(req.organization_id)
-            .fetch_optional(&self.pool)
+            .fetch_one(&self.pool)
             .await?;
-        if org_exists.is_none() {
+        if !org_exists {
             return Err(anyhow::anyhow!("Organization not found"));
         }
 
         // Validate campus belongs to organization (if provided)
         if let Some(campus_id) = req.campus_id {
-            let campus_valid = sqlx::query_scalar::<_, i64>(
-                "SELECT 1 FROM campuses WHERE id = $1 AND organization_id = $2",
+            let campus_valid = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM campuses WHERE id = $1 AND organization_id = $2)",
             )
             .bind(campus_id)
             .bind(req.organization_id)
-            .fetch_optional(&self.pool)
+            .fetch_one(&self.pool)
             .await?;
-            if campus_valid.is_none() {
+            if !campus_valid {
                 return Err(anyhow::anyhow!(
                     "Campus not found or does not belong to organization"
                 ));
@@ -55,14 +57,14 @@ impl UserService {
             let campus_id = req
                 .campus_id
                 .ok_or_else(|| anyhow::anyhow!("Grade requires campus_id"))?;
-            let grade_valid = sqlx::query_scalar::<_, i64>(
-                "SELECT 1 FROM grades WHERE id = $1 AND campus_id = $2",
+            let grade_valid = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM grades WHERE id = $1 AND campus_id = $2)",
             )
             .bind(grade_id)
             .bind(campus_id)
-            .fetch_optional(&self.pool)
+            .fetch_one(&self.pool)
             .await?;
-            if grade_valid.is_none() {
+            if !grade_valid {
                 return Err(anyhow::anyhow!(
                     "Grade not found or does not belong to campus"
                 ));
@@ -368,15 +370,21 @@ impl UserService {
     pub(crate) fn validate_email_format(email: &str) -> Result<()> {
         let parts: Vec<&str> = email.split('@').collect();
         if parts.len() != 2 {
-            return Err(anyhow::anyhow!("Invalid email format: must contain exactly one @"));
+            return Err(anyhow::anyhow!(
+                "Invalid email format: must contain exactly one @"
+            ));
         }
         let local = parts[0];
         let domain = parts[1];
         if local.is_empty() {
-            return Err(anyhow::anyhow!("Invalid email format: empty local part before @"));
+            return Err(anyhow::anyhow!(
+                "Invalid email format: empty local part before @"
+            ));
         }
         if domain.is_empty() {
-            return Err(anyhow::anyhow!("Invalid email format: empty domain after @"));
+            return Err(anyhow::anyhow!(
+                "Invalid email format: empty domain after @"
+            ));
         }
         if !domain.contains('.') {
             return Err(anyhow::anyhow!(
@@ -777,10 +785,7 @@ impl UserService {
         // cryptographically random password for each user instead of using a
         // predictable hardcoded default.
         let use_generated = request.default_password.is_none();
-        let default_password = request
-            .default_password
-            .clone()
-            .unwrap_or_default(); // placeholder; real password generated per-user below
+        let default_password = request.default_password.clone().unwrap_or_default(); // placeholder; real password generated per-user below
 
         for entry in request.users {
             let user_code = entry.user_code.trim().to_string();
@@ -1158,7 +1163,10 @@ mod tests {
     fn test_generate_random_password_no_predictable_pattern() {
         // Verify passwords don't start with the same character sequence
         let passwords: Vec<String> = (0..5).map(|_| generate_random_password()).collect();
-        let first_chars: Vec<char> = passwords.iter().map(|p| p.chars().next().unwrap()).collect();
+        let first_chars: Vec<char> = passwords
+            .iter()
+            .map(|p| p.chars().next().unwrap())
+            .collect();
         // At least 2 distinct first characters across 5 passwords
         let unique_first: std::collections::HashSet<char> = first_chars.into_iter().collect();
         assert!(
@@ -1204,13 +1212,19 @@ mod tests {
     #[test]
     fn test_email_validation_empty_local() {
         let result = UserService::validate_email_format("@example.com");
-        assert!(result.is_err(), "email with empty local part should be rejected");
+        assert!(
+            result.is_err(),
+            "email with empty local part should be rejected"
+        );
     }
 
     #[test]
     fn test_email_validation_empty_domain() {
         let result = UserService::validate_email_format("user@");
-        assert!(result.is_err(), "email with empty domain should be rejected");
+        assert!(
+            result.is_err(),
+            "email with empty domain should be rejected"
+        );
     }
 
     #[test]
@@ -1222,6 +1236,9 @@ mod tests {
     #[test]
     fn test_email_validation_trailing_dot() {
         let result = UserService::validate_email_format("user@example.");
-        assert!(result.is_err(), "email with trailing dot (empty TLD) should be rejected");
+        assert!(
+            result.is_err(),
+            "email with trailing dot (empty TLD) should be rejected"
+        );
     }
 }

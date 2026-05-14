@@ -67,14 +67,16 @@ describe('Settings', () => {
     const user = userEvent.setup()
     await user.click(screen.getByRole('button', { name: /偏好/ }))
 
-    // The theme select should reflect "dark" (the Chinese option text is "深色")
     await waitFor(() => {
-      const themeSelect = screen.getByDisplayValue('深色')
-      expect(themeSelect).toBeInTheDocument()
+      expect(screen.getByText('界面与编辑器偏好')).toBeInTheDocument()
     })
 
-    // The font size select should reflect "large" (Chinese: "大")
-    expect(screen.getByDisplayValue('大')).toBeInTheDocument()
+    // The custom select buttons should reflect stored values.
+    await waitFor(() => {
+      const selects = screen.getAllByRole('combobox')
+      expect(selects[0]).toHaveTextContent('深色')
+      expect(selects[1]).toHaveTextContent('大')
+    })
   })
 
   it('writes preferences to localStorage when clicking save', async () => {

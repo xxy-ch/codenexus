@@ -1,4 +1,5 @@
 use crate::AppState;
+use api_infra::error::AppError;
 use axum::{extract::State, http::StatusCode, response::Json, Extension};
 use domain_users::{
     models::{LoginRequest as DbLoginRequest, RefreshTokenRequest, RegisterRequest},
@@ -174,13 +175,13 @@ pub async fn register(
         axum::http::HeaderMap,
         Json<domain_users::models::AuthResponse>,
     ),
-    StatusCode,
+    AppError,
 > {
     let service = UserService::new(state.db_pool.clone(), state.jwt_service.clone());
-    let profile = service
-        .register(request)
-        .await
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
+    let profile = service.register(request).await.map_err(|err| {
+        tracing::warn!(error = %err, "registration rejected");
+        AppError::Validation(err.to_string())
+    })?;
 
     let shared_user = shared::models::User {
         id: profile.id,
@@ -196,11 +197,11 @@ pub async fn register(
     let token = state
         .jwt_service
         .generate_access_token(&shared_user)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|err| AppError::Internal(err.to_string()))?;
     let refresh_token = state
         .jwt_service
         .generate_refresh_token(&shared_user)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|err| AppError::Internal(err.to_string()))?;
 
     // Track refresh token JTI in Redis so we can revoke it on logout
     track_refresh_token(&state, &refresh_token).await;

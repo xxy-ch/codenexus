@@ -1,6 +1,8 @@
 import api from './api'
 import type { Grade, CreateGradeRequest, UpdateGradeRequest } from '@/types/grade'
 
+const GRADES_BASE = '/classes/grades'
+
 export interface ListGradesResponse {
   grades: Grade[]
   total: number
@@ -8,7 +10,7 @@ export interface ListGradesResponse {
 
 export const gradesService = {
   async listGrades(campusId: number): Promise<ListGradesResponse> {
-    const response = await api.get<ListGradesResponse>(`/grades?campus_id=${campusId}`)
+    const response = await api.get<ListGradesResponse>(`${GRADES_BASE}?campus_id=${campusId}`)
     return {
       grades: (response.data.grades || []).map((g: Grade) => ({
         id: Number(g.id),
@@ -25,22 +27,22 @@ export const gradesService = {
   },
 
   async createGrade(data: CreateGradeRequest): Promise<Grade> {
-    const response = await api.post<Grade>('/grades', data)
+    const response = await api.post<Grade>(GRADES_BASE, data)
     return response.data
   },
 
   async updateGrade(id: number, data: UpdateGradeRequest): Promise<Grade> {
-    const response = await api.put<Grade>(`/grades/${id}`, data)
+    const response = await api.put<Grade>(`${GRADES_BASE}/${id}`, data)
     return response.data
   },
 
   async deactivateGrade(id: number): Promise<Grade> {
-    const response = await api.post<Grade>(`/grades/${id}/deactivate`)
+    const response = await api.post<Grade>(`${GRADES_BASE}/${id}/deactivate`)
     return response.data
   },
 
   async graduateGrades(gradeIds: number[], suspendStudents = false) {
-    const response = await api.post('/grades/batch/graduate', {
+    const response = await api.post(`${GRADES_BASE}/batch/graduate`, {
       grade_ids: gradeIds,
       suspend_students: suspendStudents,
     })
@@ -48,7 +50,7 @@ export const gradesService = {
   },
 
   async promoteGrades(gradeIds: number[]) {
-    const response = await api.post('/grades/batch/promote', {
+    const response = await api.post(`${GRADES_BASE}/batch/promote`, {
       grade_ids: gradeIds,
     })
     return response.data
@@ -59,7 +61,7 @@ export const gradesService = {
     academic_year: string
     template_from?: string
   }) {
-    const response = await api.post('/grades/batch/create-year', data)
+    const response = await api.post(`${GRADES_BASE}/batch/create-year`, data)
     return response.data
   },
 }

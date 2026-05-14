@@ -47,6 +47,8 @@ pub struct AnalysisJobRow {
     pub contest_id: Option<i64>,
     pub status: String,
     pub error_message: Option<String>,
+    pub analysis_type: Option<String>,
+    pub source_cluster_ids: Option<Vec<i64>>,
     pub llm_model: Option<String>,
     pub prompt_tokens: Option<i32>,
     pub completion_tokens: Option<i32>,
@@ -55,6 +57,15 @@ pub struct AnalysisJobRow {
     pub max_retries: Option<i32>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+/// A representative submission from a cluster, used for teaching card generation.
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct ClusterRepresentative {
+    pub cluster_name: Option<String>,
+    pub member_count: i32,
+    pub code: String,
+    pub language: String,
 }
 
 /// Parameters for `insert_teaching_card`.
@@ -112,6 +123,7 @@ pub async fn get_analysis_job(pool: &PgPool, job_id: i64) -> Result<Option<Analy
     let row = sqlx::query_as::<_, AnalysisJobRow>(
         "SELECT id, submission_id, problem_id, user_id, organization_id, \
                 campus_id, grade_id, contest_id, status, error_message, \
+                analysis_type, source_cluster_ids, \
                 llm_model, prompt_tokens, completion_tokens, latency_ms, \
                 retry_count, max_retries, \
                 created_at, updated_at \
@@ -204,6 +216,7 @@ pub async fn claim_job(pool: &PgPool, job_id: i64) -> Result<Option<AnalysisJobR
          WHERE id = $2 AND status = 'pending' \
          RETURNING id, submission_id, problem_id, user_id, organization_id, \
                    campus_id, grade_id, contest_id, status, error_message, \
+                   analysis_type, source_cluster_ids, \
                    llm_model, prompt_tokens, completion_tokens, latency_ms, \
                    retry_count, max_retries, \
                    created_at, updated_at",
@@ -213,6 +226,36 @@ pub async fn claim_job(pool: &PgPool, job_id: i64) -> Result<Option<AnalysisJobR
     .fetch_optional(pool)
     .await?;
     Ok(row)
+}
+
+/// Fetch representative submissions from clusters for teaching card generation.
+///
+/// Returns up to `limit` representative code samples across all clusters
+/// for a given problem + organization pair.
+pub async fn get_cluster_representatives(
+    pool: &PgPool,
+    problem_id: i64,
+    organization_id: i64,
+    cluster_ids: &[i64],
+    limit: i64,
+) -> Result<Vec<ClusterRepresentative>> {
+    let rows = sqlx::query_as::<_, ClusterRepresentative>(
+        "SELECT sc.cluster_name, sc.member_count, s.code, s.language \
+         FROM analysis_solution_clusters sc \
+         JOIN analysis_cluster_members cm ON cm.cluster_id = sc.id \
+         JOIN submissions s ON s.id = cm.submission_id \
+         WHERE sc.problem_id = $1 AND sc.organization_id = $2 \
+           AND sc.id = ANY($3) \
+         ORDER BY cm.distance_to_centroid ASC NULLS LAST \
+         LIMIT $4",
+    )
+    .bind(problem_id)
+    .bind(organization_id)
+    .bind(cluster_ids)
+    .bind(limit)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
 }
 
 /// Increment the retry_count and reset a failed job back to "pending" for retry.

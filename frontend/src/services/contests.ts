@@ -1,5 +1,6 @@
 import api from './api'
 import type { Contest, ContestDetail, ContestRegistration, ContestEntry } from '@/types/contests'
+import { isTeacherOrAbove, type Role } from '@/types/auth'
 
 export interface ContestFilters {
   status?: 'upcoming' | 'ongoing' | 'completed' | 'all'
@@ -166,23 +167,29 @@ export const contestsService = {
   },
 
   async getContestDetail(contestId: string): Promise<ContestDetail> {
-    const [detailResponse, problemsResponse, participantsResponse] = await Promise.all([
+    const [detailResponse, problemsResponse] = await Promise.all([
       api.get<BackendContestDetail>(`/contests/${contestId}`),
       api.get<BackendContestProblem[]>(`/contests/${contestId}/problems`),
-      api.get<BackendContestParticipant[]>(`/contests/${contestId}/participants`),
     ])
 
     let currentUserId: string | null = null
+    let canViewParticipants = false
     try {
-      const meResponse = await api.get<{ id?: string }>('/users/me')
+      const meResponse = await api.get<{ id?: string; role?: Role }>('/users/me')
       currentUserId = meResponse.data?.id ?? null
+      canViewParticipants = meResponse.data?.role
+        ? isTeacherOrAbove(meResponse.data.role)
+        : false
     } catch {
       currentUserId = null
+      canViewParticipants = false
     }
 
     const detail = detailResponse.data
     const problems = problemsResponse.data || []
-    const participants = participantsResponse.data || []
+    const participants = canViewParticipants
+      ? (await api.get<BackendContestParticipant[]>(`/contests/${contestId}/participants`)).data || []
+      : []
     const summary = buildContestSummary(detail, detail, problems)
 
     return {

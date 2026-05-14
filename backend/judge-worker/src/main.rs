@@ -688,9 +688,12 @@ async fn send_result_to_api(
     result: &queue::JudgeResult,
 ) -> Result<()> {
     let url = format!("{}/submissions/{}/results", api_url, result.submission_id);
+    let worker_secret = env::var("WORKER_SECRET")
+        .map_err(|_| anyhow::anyhow!("WORKER_SECRET must be set for judge result callback"))?;
 
     let response = client
         .post(&url)
+        .header("X-Worker-Secret", worker_secret)
         .json(result)
         .send()
         .await

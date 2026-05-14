@@ -174,11 +174,12 @@ fn create_router(
             .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
     };
 
-    // Rate limit: 30 requests per minute per IP (user-facing endpoints only)
+    // Rate limit user-facing endpoints per IP while allowing normal SPA page
+    // hydration, which fans out multiple API calls after login/navigation.
     let governor_config = std::sync::Arc::new(
         GovernorConfigBuilder::default()
-            .per_second(1)
-            .burst_size(30)
+            .per_second(50)
+            .burst_size(1000)
             .finish()
             .unwrap(),
     );
@@ -211,7 +212,6 @@ fn create_router(
         .route("/auth/login", post(auth::login))
         .route("/auth/refresh", post(auth::refresh))
         .route("/auth/register", post(auth::register))
-        .route("/auth/logout", post(auth::logout))
         .route("/ws", get(websocket::handler::websocket_upgrade_handler))
         .layer(axum::middleware::from_fn(move |req, next| {
             let flag = api_paused_public.clone();
@@ -286,6 +286,7 @@ fn create_router(
         ));
 
     let protected_router = Router::new()
+        .route("/auth/logout", post(auth::logout))
         .nest("/users", domain_users::user_router())
         .nest("/problems", domain_problems::problems_router())
         .nest("/contests", domain_contests::contests_router())

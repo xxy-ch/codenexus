@@ -91,7 +91,13 @@ async fn get_submission(
     Path(id): Path<i64>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SubmissionService::new(state.db_pool);
-    let submission = service.get_submission(id, claims.sub).await?;
+    let submission = service.get_submission(id, claims.sub).await.map_err(|err| {
+        if err.to_string().contains("Submission not found") {
+            AppError::NotFound("Submission not found".to_string())
+        } else {
+            AppError::Internal(err.to_string())
+        }
+    })?;
     Ok(Json(submission))
 }
 

@@ -5,7 +5,8 @@ FROM rust:1.88-alpine AS builder
 RUN apk add --no-cache \
     musl-dev \
     pkgconf \
-    openssl-dev
+    openssl-dev \
+    openssl-libs-static
 
 WORKDIR /app
 
@@ -16,6 +17,7 @@ COPY shared ./shared
 # Copy stub Cargo.toml for other workspace members (only needed for workspace resolution)
 COPY api/Cargo.toml ./api/Cargo.toml
 COPY api-infra/Cargo.toml ./api-infra/Cargo.toml
+COPY domain-analysis/Cargo.toml ./domain-analysis/Cargo.toml
 COPY domain-classes/Cargo.toml ./domain-classes/Cargo.toml
 COPY domain-community/Cargo.toml ./domain-community/Cargo.toml
 COPY domain-contests/Cargo.toml ./domain-contests/Cargo.toml
@@ -26,18 +28,21 @@ COPY domain-search/Cargo.toml ./domain-search/Cargo.toml
 COPY domain-submissions/Cargo.toml ./domain-submissions/Cargo.toml
 COPY domain-users/Cargo.toml ./domain-users/Cargo.toml
 COPY judge-worker/Cargo.toml ./judge-worker/Cargo.toml
+COPY llm-worker/Cargo.toml ./llm-worker/Cargo.toml
 COPY migration-tool/Cargo.toml ./migration-tool/Cargo.toml
+COPY monitor-server/Cargo.toml ./monitor-server/Cargo.toml
 
 # Create dummy source files for all workspace members
 RUN mkdir -p feature-gateway/src api/src api-infra/src \
+    domain-analysis/src \
     domain-classes/src domain-community/src domain-contests/src \
     domain-imex/src domain-leaderboard/src domain-problems/src \
     domain-search/src domain-submissions/src domain-users/src \
-    judge-worker/src migration-tool/src && \
+    judge-worker/src llm-worker/src migration-tool/src monitor-server/src && \
     printf 'fn main() {}\n' > feature-gateway/src/main.rs && \
-    for dir in api api-infra domain-classes domain-community domain-contests \
+    for dir in api api-infra domain-analysis domain-classes domain-community domain-contests \
         domain-imex domain-leaderboard domain-problems domain-search \
-        domain-submissions domain-users judge-worker migration-tool; do \
+        domain-submissions domain-users judge-worker llm-worker migration-tool monitor-server; do \
         printf '' > ${dir}/src/lib.rs; \
     done
 

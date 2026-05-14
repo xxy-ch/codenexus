@@ -1,5 +1,6 @@
-import { Navigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
+import { useEffect, useState } from 'react'
+import { Navigate, useLocation } from 'react-router-dom'
+import { useAuth } from '@/hooks/useAuth'
 import { Loading } from '@/components/ui/Loading'
 import { isAdmin } from '@/types/auth'
 
@@ -8,14 +9,31 @@ interface AdminRouteProps {
 }
 
 export function AdminRoute({ children }: AdminRouteProps) {
-  const { user, isLoading } = useAuthStore()
+  const { user, isAuthenticated, isLoading, checkAuth } = useAuth()
+  const location = useLocation()
+  const [isChecking, setIsChecking] = useState(true)
 
-  if (isLoading) {
+  useEffect(() => {
+    const verifyAuth = async () => {
+      if (!isAuthenticated) {
+        const hasValidToken = await checkAuth()
+        if (!hasValidToken) {
+          setIsChecking(false)
+          return
+        }
+      }
+      setIsChecking(false)
+    }
+
+    verifyAuth()
+  }, [isAuthenticated, checkAuth])
+
+  if (isLoading || isChecking) {
     return <Loading message="加载中..." />
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" state={{ from: location }} replace />
   }
 
   if (!isAdmin(user.role)) {

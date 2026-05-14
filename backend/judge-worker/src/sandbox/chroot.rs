@@ -64,6 +64,25 @@ impl ChrootEnvironment {
 pub fn drop_privileges_to_nobody() -> Result<()> {
     #[cfg(target_os = "linux")]
     {
+        let current_uid = unsafe { libc::getuid() };
+        let current_gid = unsafe { libc::getgid() };
+
+        if current_uid != 0 {
+            if current_gid == 0 {
+                return Err(anyhow::anyhow!(
+                    "Privilege drop verification failed: running with root group (uid={}, gid={})",
+                    current_uid,
+                    current_gid
+                ));
+            }
+            tracing::debug!(
+                "Child process already unprivileged (uid={}, gid={}); skipping setuid/setgid",
+                current_uid,
+                current_gid
+            );
+            return Ok(());
+        }
+
         let nobody_uid = Uid::from_raw(65534);
         let nobody_gid = Gid::from_raw(65534);
 

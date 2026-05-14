@@ -712,7 +712,9 @@ impl Migrator {
                 if v > i32::MAX as i64 {
                     tracing::warn!(
                         "Submission {}: used_time {} exceeds i32::MAX, clamping to {}",
-                        old_id, v, i32::MAX
+                        old_id,
+                        v,
+                        i32::MAX
                     );
                     i32::MAX
                 } else {
@@ -723,7 +725,9 @@ impl Migrator {
                 if v > i32::MAX as i64 {
                     tracing::warn!(
                         "Submission {}: used_memory {} exceeds i32::MAX, clamping to {}",
-                        old_id, v, i32::MAX
+                        old_id,
+                        v,
+                        i32::MAX
                     );
                     i32::MAX
                 } else {

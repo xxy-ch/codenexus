@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import type { LoginRequest, RegisterRequest } from '@/types/auth'
 
+const authHeaders = () => {
+  const token = localStorage.getItem('access_token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 export function useAuth() {
   const navigate = useNavigate()
   const {
@@ -54,6 +59,7 @@ export function useAuth() {
   const checkAuthentication = useCallback(async () => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/users/me`, {
+        headers: authHeaders(),
         credentials: 'include',
       })
 

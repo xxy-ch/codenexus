@@ -200,10 +200,8 @@ impl WebSocketServer {
 
         if !already_subscribed {
             // Use reverse index for O(1) subscription count check
-            let current_subscription_count = client_topics
-                .get(&client_id)
-                .map(|s| s.len())
-                .unwrap_or(0);
+            let current_subscription_count =
+                client_topics.get(&client_id).map(|s| s.len()).unwrap_or(0);
 
             if current_subscription_count >= MAX_TOPICS_PER_CLIENT {
                 tracing::warn!(
@@ -617,7 +615,13 @@ mod tests {
             let user_id = Uuid::new_v4();
             let (tx, _rx) = tokio::sync::mpsc::unbounded_channel();
             server
-                .add_client(client_id, user_id, 1, format!("127.0.0.{idx}").parse().unwrap(), tx)
+                .add_client(
+                    client_id,
+                    user_id,
+                    1,
+                    format!("127.0.0.{idx}").parse().unwrap(),
+                    tx,
+                )
                 .await;
             let topic = format!("unique-topic-{idx}");
             assert!(
@@ -630,7 +634,9 @@ mod tests {
         // Verify all topics have exactly 1 subscriber
         for idx in 0..100 {
             assert_eq!(
-                server.topic_subscriber_count(&format!("unique-topic-{idx}")).await,
+                server
+                    .topic_subscriber_count(&format!("unique-topic-{idx}"))
+                    .await,
                 1
             );
         }
@@ -643,7 +649,9 @@ mod tests {
         // After removing all clients, all topics should be cleaned up
         for idx in 0..100 {
             assert_eq!(
-                server.topic_subscriber_count(&format!("unique-topic-{idx}")).await,
+                server
+                    .topic_subscriber_count(&format!("unique-topic-{idx}"))
+                    .await,
                 0,
                 "topic unique-topic-{idx} should be cleaned up"
             );
@@ -654,7 +662,10 @@ mod tests {
 
         // The reverse index should be empty too
         let client_topics = server.client_topics.read().await;
-        assert!(client_topics.is_empty(), "client_topics should be empty after all clients removed");
+        assert!(
+            client_topics.is_empty(),
+            "client_topics should be empty after all clients removed"
+        );
     }
 
     #[tokio::test]
@@ -670,8 +681,12 @@ mod tests {
         let user_a = Uuid::new_v4();
         let user_b = Uuid::new_v4();
 
-        server.add_client(client_a, user_a, 1, "127.0.0.1".parse().unwrap(), tx_a).await;
-        server.add_client(client_b, user_b, 1, "127.0.0.2".parse().unwrap(), tx_b).await;
+        server
+            .add_client(client_a, user_a, 1, "127.0.0.1".parse().unwrap(), tx_a)
+            .await;
+        server
+            .add_client(client_b, user_b, 1, "127.0.0.2".parse().unwrap(), tx_b)
+            .await;
 
         server.subscribe(client_a, "alpha".to_string()).await;
         server.subscribe(client_b, "beta".to_string()).await;

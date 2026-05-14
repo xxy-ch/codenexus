@@ -671,9 +671,7 @@ mod tests {
 
         let req = make_article_request(&"a".repeat(100_000));
         // Will fail at DB query, but should NOT fail at validation
-        let result = service
-            .create_article(Uuid::new_v4(), 1, req)
-            .await;
+        let result = service.create_article(Uuid::new_v4(), 1, req).await;
         // The error should be a DB error, not a validation error
         let err = result.unwrap_err();
         assert!(
@@ -690,9 +688,7 @@ mod tests {
         let service = BlogService::new(pool);
 
         let req = make_article_request(&"a".repeat(100_001));
-        let result = service
-            .create_article(Uuid::new_v4(), 1, req)
-            .await;
+        let result = service.create_article(Uuid::new_v4(), 1, req).await;
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(
@@ -709,9 +705,7 @@ mod tests {
         let service = BlogService::new(pool);
 
         let req = make_article_request("");
-        let result = service
-            .create_article(Uuid::new_v4(), 1, req)
-            .await;
+        let result = service.create_article(Uuid::new_v4(), 1, req).await;
         // Will fail at DB query, but should NOT fail at validation
         let err = result.unwrap_err();
         assert!(
@@ -728,9 +722,7 @@ mod tests {
         let service = BlogService::new(pool);
 
         let req = make_comment_request(&"a".repeat(10_000));
-        let result = service
-            .create_comment(1, Uuid::new_v4(), 1, req)
-            .await;
+        let result = service.create_comment(1, Uuid::new_v4(), 1, req).await;
         // Will fail at DB query, but should NOT fail at validation
         let err = result.unwrap_err();
         assert!(
@@ -747,9 +739,7 @@ mod tests {
         let service = BlogService::new(pool);
 
         let req = make_comment_request(&"a".repeat(10_001));
-        let result = service
-            .create_comment(1, Uuid::new_v4(), 1, req)
-            .await;
+        let result = service.create_comment(1, Uuid::new_v4(), 1, req).await;
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(

@@ -16,6 +16,14 @@ const api = axios.create({
 // Token refresh mutex — concurrent 401s share one refresh promise
 let refreshPromise: Promise<string> | null = null
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('access_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 // Response interceptor to handle 401 with automatic token refresh
 api.interceptors.response.use(
   (response) => response,
@@ -35,9 +43,11 @@ api.interceptors.response.use(
         }
 
         const newToken = await refreshPromise
+        localStorage.setItem('access_token', newToken)
         originalRequest.headers.Authorization = `Bearer ${newToken}`
         return api(originalRequest)
       } catch {
+        localStorage.removeItem('access_token')
         // Refresh failed — redirect to login
         window.location.href = '/login'
         return Promise.reject(error)

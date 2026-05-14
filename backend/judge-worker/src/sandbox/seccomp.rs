@@ -1,4 +1,9 @@
+#[cfg(target_os = "linux")]
+use anyhow::Context;
 use anyhow::Result;
+
+#[cfg(target_os = "linux")]
+use std::ffi::CString;
 
 #[cfg(target_os = "linux")]
 const PR_SET_NO_NEW_PRIVS: libc::c_ulong = 38;
@@ -46,7 +51,7 @@ pub fn apply_seccomp(_pid: u32) -> Result<()> {
     #[cfg(target_os = "linux")]
     {
         let ctx = unsafe {
-            libseccomp_sys::seccomp_init(libseccomp_sys::SCMP_ACT_ERRNO(libc::EPERM as u32))
+            libseccomp_sys::seccomp_init(libseccomp_sys::SCMP_ACT_ERRNO(libc::EPERM as u16))
         };
         if ctx.is_null() {
             return Err(anyhow::anyhow!("Failed to initialize seccomp context"));
@@ -55,129 +60,146 @@ pub fn apply_seccomp(_pid: u32) -> Result<()> {
         // Allowed syscalls — minimum set for user program execution.
         // Thread creation (clone) is allowed but namespace flags will fail
         // because the process runs as nobody with no-new-privs.
-        let allowed: &[libc::c_int] = &[
+        let allowed: &[&str] = &[
             // File I/O
-            libc::SYS_read,
-            libc::SYS_write,
-            libc::SYS_close,
-            libc::SYS_open,
-            libc::SYS_openat,
-            libc::SYS_stat,
-            libc::SYS_fstat,
-            libc::SYS_lstat,
-            libc::SYS_newfstatat,
-            libc::SYS_lseek,
-            libc::SYS_pread64,
-            libc::SYS_pwrite64,
-            libc::SYS_dup,
-            libc::SYS_dup2,
-            libc::SYS_dup3,
-            libc::SYS_pipe,
-            libc::SYS_pipe2,
-            libc::SYS_readlink,
-            libc::SYS_readlinkat,
-            libc::SYS_fcntl,
-            libc::SYS_ioctl,
-            libc::SYS_getdents64,
+            "read",
+            "write",
+            "close",
+            "open",
+            "openat",
+            "stat",
+            "fstat",
+            "lstat",
+            "newfstatat",
+            "lseek",
+            "pread64",
+            "pwrite64",
+            "dup",
+            "dup2",
+            "dup3",
+            "pipe",
+            "pipe2",
+            "readlink",
+            "readlinkat",
+            "fcntl",
+            "ioctl",
+            "getdents64",
             // Memory management
-            libc::SYS_mmap,
-            libc::SYS_munmap,
-            libc::SYS_mprotect,
-            libc::SYS_brk,
-            libc::SYS_madvise,
+            "mmap",
+            "munmap",
+            "mprotect",
+            "brk",
+            "madvise",
             // Process lifecycle
-            libc::SYS_exit,
-            libc::SYS_exit_group,
-            libc::SYS_execve,
-            libc::SYS_arch_prctl,
-            libc::SYS_set_tid_address,
-            libc::SYS_futex,
-            libc::SYS_set_robust_list,
-            libc::SYS_get_robust_list,
-            libc::SYS_rseq,
+            "exit",
+            "exit_group",
+            "execve",
+            "arch_prctl",
+            "set_tid_address",
+            "futex",
+            "set_robust_list",
+            "get_robust_list",
+            "rseq",
             // Signals
-            libc::SYS_rt_sigaction,
-            libc::SYS_rt_sigprocmask,
-            libc::SYS_sigaltstack,
-            libc::SYS_rt_sigreturn,
+            "rt_sigaction",
+            "rt_sigprocmask",
+            "sigaltstack",
+            "rt_sigreturn",
             // Time
-            libc::SYS_clock_gettime,
-            libc::SYS_clock_nanosleep,
-            libc::SYS_gettimeofday,
-            libc::SYS_nanosleep,
+            "clock_gettime",
+            "clock_nanosleep",
+            "gettimeofday",
+            "nanosleep",
             // System info
-            libc::SYS_getrlimit,
-            libc::SYS_sysinfo,
-            libc::SYS_uname,
-            libc::SYS_umask,
-            libc::SYS_sched_yield,
-            libc::SYS_getpid,
-            libc::SYS_gettid,
-            libc::SYS_getppid,
-            libc::SYS_getuid,
-            libc::SYS_getgid,
-            libc::SYS_geteuid,
-            libc::SYS_getegid,
-            libc::SYS_getgroups,
+            "getrlimit",
+            "sysinfo",
+            "uname",
+            "umask",
+            "sched_yield",
+            "getpid",
+            "gettid",
+            "getppid",
+            "getuid",
+            "getgid",
+            "geteuid",
+            "getegid",
+            "getgroups",
             // Thread creation (namespace flags fail due to no privs)
-            libc::SYS_clone,
-            libc::SYS_clone3,
+            "clone",
+            "clone3",
             // Access checks
-            libc::SYS_access,
-            libc::SYS_faccessat,
+            "access",
+            "faccessat",
             // IPC (needed by Python, Node.js)
-            libc::SYS_socketpair,
-            libc::SYS_recvmsg,
-            libc::SYS_sendmsg,
+            "socketpair",
+            "recvmsg",
+            "sendmsg",
             // Event polling (needed by Python, Node.js runtimes)
-            libc::SYS_epoll_create1,
-            libc::SYS_epoll_ctl,
-            libc::SYS_epoll_wait,
-            libc::SYS_epoll_pwait,
-            libc::SYS_eventfd2,
-            libc::SYS_timerfd_create,
-            libc::SYS_timerfd_settime,
-            libc::SYS_timerfd_gettime,
-            libc::SYS_poll,
-            libc::SYS_ppoll,
+            "epoll_create1",
+            "epoll_ctl",
+            "epoll_wait",
+            "epoll_pwait",
+            "eventfd2",
+            "timerfd_create",
+            "timerfd_settime",
+            "timerfd_gettime",
+            "poll",
+            "ppoll",
             // Additional syscalls needed by runtimes
-            libc::SYS_mkdir,
-            libc::SYS_mknod,
-            libc::SYS_unlink,
-            libc::SYS_rename,
-            libc::SYS_chmod,
-            libc::SYS_fchmod,
-            libc::SYS_ftruncate,
-            libc::SYS_flock,
-            libc::SYS_sync,
-            libc::SYS_fsync,
-            libc::SYS_fdatasync,
-            libc::SYS_getcwd,
-            libc::SYS_chdir,
-            libc::SYS_fchdir,
-            libc::SYS_writev,
-            libc::SYS_readv,
-            libc::SYS_pwritev,
-            libc::SYS_preadv,
-            libc::SYS_copy_file_range,
-            libc::SYS_getrandom,
-            libc::SYS_clock_getres,
-            libc::SYS_getcpu,
-            libc::SYS_sched_getaffinity,
-            libc::SYS_sched_setaffinity,
-            libc::SYS_mremap,
-            libc::SYS_getrlimit,
-            libc::SYS_prlimit64,
-            libc::SYS_getrusage,
-            libc::SYS_times,
-            libc::SYS_getsid,
-            libc::SYS_setsid,
-            libc::SYS_getpgid,
-            libc::SYS_setpgid,
-            libc::SYS_wait4,
+            "mkdir",
+            "mknod",
+            "unlink",
+            "rename",
+            "chmod",
+            "fchmod",
+            "ftruncate",
+            "flock",
+            "sync",
+            "fsync",
+            "fdatasync",
+            "getcwd",
+            "chdir",
+            "fchdir",
+            "writev",
+            "readv",
+            "pwritev",
+            "preadv",
+            "copy_file_range",
+            "getrandom",
+            "clock_getres",
+            "getcpu",
+            "sched_getaffinity",
+            "sched_setaffinity",
+            "mremap",
+            "getrlimit",
+            "prlimit64",
+            "getrusage",
+            "times",
+            "getsid",
+            "setsid",
+            "getpgid",
+            "setpgid",
+            "wait4",
         ];
 
-        for &syscall in allowed {
+        let native_arch = unsafe { libseccomp_sys::seccomp_arch_native() };
+        for &syscall_name in allowed {
+            let syscall_name_c =
+                CString::new(syscall_name).expect("static syscall names cannot contain NUL bytes");
+            let syscall = unsafe {
+                libseccomp_sys::seccomp_syscall_resolve_name_rewrite(
+                    native_arch,
+                    syscall_name_c.as_ptr(),
+                )
+            };
+            if syscall == libseccomp_sys::__NR_SCMP_ERROR {
+                tracing::debug!(
+                    "seccomp: syscall {} is unavailable on this architecture",
+                    syscall_name
+                );
+                continue;
+            }
+
             let ret = unsafe {
                 libseccomp_sys::seccomp_rule_add_exact(
                     ctx,
@@ -188,7 +210,12 @@ pub fn apply_seccomp(_pid: u32) -> Result<()> {
             };
             // Ignore ENOTSUP — syscall may not exist on this architecture.
             if ret != 0 && ret != -(libc::ENOTSUP as i32) {
-                tracing::warn!("seccomp: failed to allow syscall {}: ret={}", syscall, ret);
+                tracing::warn!(
+                    "seccomp: failed to allow syscall {} ({}): ret={}",
+                    syscall_name,
+                    syscall,
+                    ret
+                );
             }
         }
 

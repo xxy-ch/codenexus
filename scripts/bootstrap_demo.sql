@@ -10,6 +10,21 @@ INSERT INTO campuses (id, organization_id, name, slug)
 VALUES (1, 1, 'Main Campus', 'main')
 ON CONFLICT (id) DO NOTHING;
 
+-- Reset stale demo identities first. Older demo seeds used the same usernames
+-- with random UUIDs, which prevents the fixed-id demo graph below from upserting.
+DELETE FROM users
+WHERE id NOT IN (
+    '11111111-1111-1111-1111-111111111111',
+    '22222222-2222-2222-2222-222222222222',
+    '33333333-3333-3333-3333-333333333333',
+    '44444444-4444-4444-4444-444444444444'
+  )
+  AND (
+    username IN ('1001', '2001', '2002', '3001')
+    OR user_code IN ('240101070014', '240101070015', '240101070016', '240101070017')
+    OR email IN ('admin@example.com', 'student1@example.com', 'student2@example.com', 'teacher@example.com')
+  );
+
 INSERT INTO users (id, user_code, username, email, password_hash, display_name, organization_id, campus_id, status)
 VALUES
   ('11111111-1111-1111-1111-111111111111', '240101070014', '1001', 'admin@example.com', '$2b$12$NqrZ4WB0u47q5v1sx8eDhOaSPZNsRNffBl5ANqIXZGWj0qzwlY6gO', '管理员', 1, 1, 'active'),
@@ -34,7 +49,7 @@ VALUES
   ('22222222-2222-2222-2222-222222222222', 1, 1, 'student'),
   ('33333333-3333-3333-3333-333333333333', 1, 1, 'student'),
   ('44444444-4444-4444-4444-444444444444', 1, 1, 'teacher')
-ON CONFLICT (user_id, organization_id, campus_id) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 INSERT INTO direct_conversations (id, user1_id, user2_id)
 VALUES ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222')
@@ -60,9 +75,17 @@ INSERT INTO plagiarism_scan_configs (
 VALUES (1, TRUE, 'all', 0.85, 5, 30, TRUE, TRUE, 100)
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO classes (id, organization_id, campus_id, name, teacher_id, semester)
-VALUES (1, 1, 1, '示范班级', '44444444-4444-4444-4444-444444444444', '2026 Spring')
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO classes (id, organization_id, campus_id, name, teacher_id, semester, code)
+VALUES (1, 1, 1, '示范班级', '44444444-4444-4444-4444-444444444444', '2026 Spring', 'DEMO-CLASS-1')
+ON CONFLICT (id) DO UPDATE
+SET
+  organization_id = EXCLUDED.organization_id,
+  campus_id = EXCLUDED.campus_id,
+  name = EXCLUDED.name,
+  teacher_id = EXCLUDED.teacher_id,
+  semester = EXCLUDED.semester,
+  code = EXCLUDED.code,
+  updated_at = NOW();
 
 INSERT INTO class_enrollments (class_id, student_id)
 VALUES
@@ -133,13 +156,15 @@ VALUES
   (1, '33333333-3333-3333-3333-333333333333')
 ON CONFLICT (contest_id, user_id) DO NOTHING;
 
-INSERT INTO discussions (id, problem_id, user_id, content, is_pinned)
+INSERT INTO discussions (id, title, problem_id, author_id, content, organization_id, is_pinned)
 VALUES
   (
     1,
+    'Two Sum 解题思路',
     1,
     '22222222-2222-2222-2222-222222222222',
     'Two Sum 这题可以先用哈希表记录已经出现过的数字，再在一次遍历里找补数。',
+    1,
     TRUE
   )
 ON CONFLICT (id) DO NOTHING;
@@ -181,7 +206,17 @@ VALUES
     15,
     9216
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  organization_id = EXCLUDED.organization_id,
+  user_id = EXCLUDED.user_id,
+  problem_id = EXCLUDED.problem_id,
+  language = EXCLUDED.language,
+  code = EXCLUDED.code,
+  status = EXCLUDED.status,
+  verdict = EXCLUDED.verdict,
+  time_ms = EXCLUDED.time_ms,
+  memory_kb = EXCLUDED.memory_kb;
+SELECT setval('submissions_id_seq', GREATEST((SELECT COALESCE(MAX(id), 1) FROM submissions), 2), true);
 
 INSERT INTO contest_submissions (contest_id, submission_id, penalty_time)
 VALUES
@@ -197,6 +232,7 @@ INSERT INTO articles (
   content,
   summary,
   author_id,
+  organization_id,
   tags,
   category,
   is_published,
@@ -210,6 +246,7 @@ VALUES (
   '这是一篇用于本地交付验收的示范文章，覆盖博客列表、详情与编辑链路。',
   '用于本地交付验收的博客示范内容。',
   '11111111-1111-1111-1111-111111111111',
+  1,
   ARRAY['delivery','release','blog'],
   'engineering',
   TRUE,
@@ -222,6 +259,7 @@ ON CONFLICT (id) DO UPDATE SET
   content = EXCLUDED.content,
   summary = EXCLUDED.summary,
   author_id = EXCLUDED.author_id,
+  organization_id = EXCLUDED.organization_id,
   tags = EXCLUDED.tags,
   category = EXCLUDED.category,
   is_published = EXCLUDED.is_published,
@@ -233,18 +271,21 @@ INSERT INTO article_comments (
   article_id,
   parent_id,
   content,
-  author_id
+  author_id,
+  organization_id
 )
 VALUES (
   1,
   1,
   NULL,
   '这条评论用于验证文章详情页和评论区域。',
-  '22222222-2222-2222-2222-222222222222'
+  '22222222-2222-2222-2222-222222222222',
+  1
 )
 ON CONFLICT (id) DO UPDATE SET
   content = EXCLUDED.content,
-  author_id = EXCLUDED.author_id;
+  author_id = EXCLUDED.author_id,
+  organization_id = EXCLUDED.organization_id;
 
 INSERT INTO plagiarism_scan_reports (
   id,

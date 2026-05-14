@@ -627,7 +627,9 @@ mod tests {
             enabled: true,
             source: FeatureSource::Default,
         };
-        service.cache.insert(global_key.clone(), default_resolved.clone());
+        service
+            .cache
+            .insert(global_key.clone(), default_resolved.clone());
 
         // resolve() should return the cached default without DB query
         let result = service.resolve("my_feature", None, None).await;

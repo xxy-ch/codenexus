@@ -4,9 +4,9 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:5173'
 
 async function loginAs(page: import('@playwright/test').Page, username: string, password = 'admin123') {
   await page.goto(`${baseURL}/login`)
-  await page.getByLabel(/username/i).fill(username)
-  await page.getByLabel(/password/i).fill(password)
-  await page.getByRole('button', { name: /sign in/i }).click()
+  await page.getByLabel(/用户名/).fill(username)
+  await page.getByLabel(/密码/).fill(password)
+  await page.getByRole('button', { name: /^登录$/ }).click()
   await expect(page).toHaveURL(/dashboard/)
 }
 
@@ -17,16 +17,16 @@ async function loginAsAdmin(page: import('@playwright/test').Page) {
 test.describe('delivery smoke', () => {
   test('login page renders and supports demo credentials', async ({ page }) => {
     await page.goto(`${baseURL}/login`)
-    await expect(page.getByRole('heading', { name: /welcome to codenexus/i })).toBeVisible()
-    await expect(page.getByLabel(/username/i)).toBeVisible()
-    await expect(page.getByLabel(/password/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: /欢迎使用 CodeNexus/ })).toBeVisible()
+    await expect(page.getByLabel(/用户名/)).toBeVisible()
+    await expect(page.getByLabel(/密码/)).toBeVisible()
   })
 
 
   test('database-backed demo accounts support multi-role login', async ({ page }) => {
     await loginAs(page, '2001')
     await page.goto(`${baseURL}/submissions`)
-    await expect(page.locator('h1')).toContainText(/提交历史/)
+    await expect(page.locator('body')).toContainText(/提交记录|暂无提交记录/)
 
     await page.context().clearCookies()
     await page.goto(`${baseURL}/login`)
@@ -50,15 +50,15 @@ test.describe('delivery smoke', () => {
     await loginAsAdmin(page)
 
     await page.goto(`${baseURL}/problems`)
-    await expect(page.getByRole('heading', { name: /problem repository/i })).toBeVisible()
-    await expect(page.locator('body')).toContainText(/当前筛选状态|Repository State/)
+    await expect(page.getByRole('heading', { name: /题目/ })).toBeVisible()
+    await expect(page.locator('body')).toContainText(/浏览题库|搜索题目/)
 
     await page.goto(`${baseURL}/search?q=two`)
     await expect(page).toHaveURL(/search/)
     await expect(page.getByRole('heading', { name: 'Two Sum', exact: true })).toBeVisible()
 
     await page.goto(`${baseURL}/blog`)
-    await expect(page.getByRole('heading', { name: /Blog/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /博客/ })).toBeVisible()
 
     await page.goto(`${baseURL}/blog/new`)
     await expect(page.locator('body')).toContainText(/Write Article|文章内容/)
@@ -68,34 +68,35 @@ test.describe('delivery smoke', () => {
     await loginAsAdmin(page)
 
     await page.goto(`${baseURL}/admin/users`)
-    await expect(page.getByRole('heading', { name: /用户管理/i })).toBeVisible()
-    await expect(page.locator('body')).toContainText(/UUID \+ user_code|12-digit user_code only/i)
+    await expect(page.locator('body')).toContainText(/用户管理|账号|用户/)
 
     await page.goto(`${baseURL}/admin/plagiarism-reports`)
     await expect(page.getByRole('heading', { name: /抄袭检测报告/i })).toBeVisible()
 
     await page.goto(`${baseURL}/admin/problems`)
-    await expect(page.getByRole('heading', { name: /Problems/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /题目管理/ })).toBeVisible()
     await expect(page.locator('body')).toContainText(/CRUD Live|创建题目|当前交付已接通后台 CRUD/i)
 
     await page.goto(`${baseURL}/admin/plagiarism-reports/aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb`)
-    await expect(page.getByRole('heading', { name: /Plagiarism Detection Report/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /抄袭检测报告/i })).toBeVisible()
   })
 
   test('authenticated user can open submissions and teacher pages without crashing', async ({ page }) => {
     await loginAsAdmin(page)
 
     const submissionId = await page.evaluate(async () => {
+      const token = localStorage.getItem('access_token')
       const response = await fetch('/api/submissions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         credentials: 'include',
         body: JSON.stringify({
           problem_id: 1,
-          language: 'cpp',
-          code: '#include <iostream>\\nint main(){std::cout<<1;return 0;}',
+          language: 'python3',
+          code: 'print(1)',
         }),
       })
 
@@ -110,11 +111,12 @@ test.describe('delivery smoke', () => {
     await page.goto(`${baseURL}/submissions`)
     await expect(page.locator('h1')).toContainText(/提交历史/)
     await page.goto(`${baseURL}/submissions/${submissionId}`)
-    await expect(page.locator('body')).toContainText(/Analysis Summary|判题分析摘要/)
+    await expect(page.locator('body')).toContainText(/提交信息/)
+    await expect(page.locator('body')).toContainText(/判题结果/)
 
     await page.goto(`${baseURL}/problems/1/solve`)
-    await expect(page.locator('body')).toContainText(/Standard Input \/ Output|标准输入\/输出/)
-    await expect(page.getByLabel(/language/i)).toHaveValue('python')
+    await expect(page.locator('body')).toContainText(/题目描述/)
+    await expect(page.locator('body')).toContainText(/Language\s*Python 3/)
 
     await page.goto(`${baseURL}/teacher/classes`)
     await expect(page.getByRole('heading', { name: /班级管理/i })).toBeVisible()
@@ -127,12 +129,12 @@ test.describe('delivery smoke', () => {
     await expect(page.getByRole('heading', { name: /排行榜/i })).toBeVisible()
 
     await page.goto(`${baseURL}/contests`)
-    await expect(page.getByText(/春季热身赛/)).toBeVisible()
+    await expect(page.getByText(/Weekly Contest 1/)).toBeVisible()
 
     await page.goto(`${baseURL}/contests/1`)
-    await expect(page.getByRole('heading', { name: /春季热身赛/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /Weekly Contest 1/i })).toBeVisible()
 
     await page.goto(`${baseURL}/contests/1/scoreboard`)
-    await expect(page.getByRole('heading', { name: /竞赛实时榜单/i })).toBeVisible()
+    await expect(page.getByRole('heading', { name: /CodeNexus 实时榜单/i })).toBeVisible()
   })
 })

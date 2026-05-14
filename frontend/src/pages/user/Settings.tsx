@@ -10,10 +10,30 @@ import { usersService } from '@/services/users'
 
 type TabType = 'account' | 'preferences' | 'notifications' | 'security'
 
-function loadFromStorage<T>(key: string, fallback: T): T {
+const DEFAULT_PREFERENCES = {
+  theme: 'light' as 'light' | 'dark' | 'system',
+  language: 'zh-CN',
+  fontSize: 'medium' as 'small' | 'medium' | 'large',
+  autoSave: true,
+  showLineNumbers: true,
+  wordWrap: false,
+}
+
+const themeLabels: Record<typeof DEFAULT_PREFERENCES.theme, string> = {
+  light: '浅色',
+  dark: '深色',
+  system: '跟随系统',
+}
+
+const languageLabels: Record<string, string> = {
+  'zh-CN': '简体中文',
+  'en-US': 'English',
+}
+
+function loadFromStorage<T extends object>(key: string, fallback: T): T {
   try {
     const stored = localStorage.getItem(key)
-    return stored ? JSON.parse(stored) : fallback
+    return stored ? { ...fallback, ...JSON.parse(stored) } : fallback
   } catch {
     return fallback
   }
@@ -45,14 +65,7 @@ export function Settings() {
   }, [profile])
 
   const [preferences, setPreferences] = useState(() =>
-    loadFromStorage('oj_preferences', {
-      theme: 'light' as 'light' | 'dark' | 'system',
-      language: 'zh-CN',
-      fontSize: 'medium' as 'small' | 'medium' | 'large',
-      autoSave: true,
-      showLineNumbers: true,
-      wordWrap: false,
-    })
+    loadFromStorage('oj_preferences', DEFAULT_PREFERENCES)
   )
 
   const [notifications, setNotifications] = useState(() =>
@@ -134,11 +147,13 @@ export function Settings() {
             <div className="grid gap-3 sm:grid-cols-3 shrink-0">
               <div className="rounded-lg border border-border bg-background px-4 py-3">
                 <p className="text-xs text-muted-foreground">主题</p>
-                <p className="mt-1 text-sm font-medium text-card-foreground">{preferences.theme}</p>
+                <p className="mt-1 text-sm font-medium text-card-foreground">{themeLabels[preferences.theme]}</p>
               </div>
               <div className="rounded-lg border border-border bg-background px-4 py-3">
                 <p className="text-xs text-muted-foreground">语言</p>
-                <p className="mt-1 text-sm font-medium text-card-foreground">{preferences.language}</p>
+                <p className="mt-1 text-sm font-medium text-card-foreground">
+                  {languageLabels[preferences.language] || preferences.language}
+                </p>
               </div>
               <div className="rounded-lg border border-border bg-background px-4 py-3">
                 <p className="text-xs text-muted-foreground">通知</p>

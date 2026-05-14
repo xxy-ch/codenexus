@@ -623,14 +623,16 @@ async fn generate_teaching_cards(
 
         // Create an analysis job row for the llm-worker to claim.
         let job_id: i64 = sqlx::query_scalar(
-            "INSERT INTO analysis_jobs (submission_id, problem_id, user_id, organization_id, status)
-             VALUES ($1, $2, $3, $4, 'pending')
+            "INSERT INTO analysis_jobs \
+             (submission_id, problem_id, user_id, organization_id, status, analysis_type, source_cluster_ids) \
+             VALUES ($1, $2, $3, $4, 'pending', 'teaching_card', $5) \
              RETURNING id",
         )
         .bind(rep.submission_id)
         .bind(problem_id)
         .bind(batch_user_id)
         .bind(organization_id)
+        .bind(&source_cluster_ids)
         .fetch_one(pool)
         .await?;
 

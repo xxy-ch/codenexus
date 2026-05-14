@@ -243,7 +243,10 @@ mod tests {
         // MONITOR_API_KEY intentionally not set
 
         let result = ServerConfig::from_env();
-        assert!(result.is_err(), "Should fail without MONITOR_API_KEY in production");
+        assert!(
+            result.is_err(),
+            "Should fail without MONITOR_API_KEY in production"
+        );
         let err_msg = result.unwrap_err().to_string();
         assert!(
             err_msg.contains("MONITOR_API_KEY"),
@@ -266,7 +269,10 @@ mod tests {
         env::set_var("MONITOR_API_KEY", "   ");
 
         let result = ServerConfig::from_env();
-        assert!(result.is_err(), "Blank MONITOR_API_KEY should fail in production");
+        assert!(
+            result.is_err(),
+            "Blank MONITOR_API_KEY should fail in production"
+        );
 
         clear_env();
     }
@@ -281,7 +287,10 @@ mod tests {
 
         let config = ServerConfig::from_env().unwrap();
         assert_eq!(config.app_env, AppEnv::Production);
-        assert_eq!(config.monitor_api_key.as_deref(), Some("a-real-production-key"));
+        assert_eq!(
+            config.monitor_api_key.as_deref(),
+            Some("a-real-production-key")
+        );
 
         clear_env();
     }

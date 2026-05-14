@@ -11,7 +11,7 @@
 use crate::config::WorkerConfig;
 use crate::db;
 use crate::llm_client::{ChatMessage, LlmClient, LlmError};
-use crate::prompts::{self, CodeReviewOutput};
+use crate::prompts::{self, CodeReviewOutput, TeachingCardOutput};
 use anyhow::Result;
 use sqlx::PgPool;
 use tracing::{error, info, warn};
@@ -54,7 +54,26 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
 
     info!(job_id, "claimed analysis job");
 
-    // 2. Fetch submission code
+    let analysis_type = job
+        .analysis_type
+        .as_deref()
+        .unwrap_or("code_review")
+        .to_string();
+
+    match analysis_type.as_str() {
+        "teaching_card" => process_teaching_card_job(pool, config, job_id, &job).await,
+        _ => process_code_review_job(pool, config, job_id, &job).await,
+    }
+}
+
+/// Process a code review job: single-submission analysis producing a CodeReviewOutput.
+async fn process_code_review_job(
+    pool: &PgPool,
+    config: &WorkerConfig,
+    job_id: i64,
+    job: &db::AnalysisJobRow,
+) -> Result<()> {
+    // Fetch submission code
     let submission = db::get_submission_code(pool, job.submission_id)
         .await?
         .ok_or_else(|| {
@@ -64,12 +83,12 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
             )
         })?;
 
-    // 3. Fetch problem info
+    // Fetch problem info
     let problem = db::get_problem_info(pool, job.problem_id)
         .await?
         .ok_or_else(|| anyhow::anyhow!("problem {} not found for job {job_id}", job.problem_id))?;
 
-    // 4. Build the prompt messages and convert to wire format
+    // Build the prompt messages and convert to wire format
     let prompt_messages = prompts::code_review_prompt(
         &problem.title,
         &problem.description,
@@ -79,7 +98,7 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
     );
     let chat_messages = convert_messages(prompt_messages);
 
-    // 5. Call LLM with structured output parsing
+    // Call LLM with structured output parsing
     let client = LlmClient::from_config(config)?;
     match client
         .chat_completion_structured::<CodeReviewOutput>(chat_messages, "")
@@ -93,16 +112,14 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
                 completion_tokens = result.usage.completion_tokens,
                 latency_ms = result.latency.as_millis() as u64,
                 endpoint_used = %result.endpoint_used,
-                "LLM call succeeded"
+                "LLM code review succeeded"
             );
 
-            // 6. Serialize the structured output for storage
             let content = serde_json::to_value(&review).unwrap_or_else(|e| {
                 error!(job_id, error = %e, "failed to serialize CodeReviewOutput");
                 serde_json::json!({ "raw_content": "serialization error" })
             });
 
-            // 7. Insert teaching card — propagate error so message is NOT ACKed
             let card = db::NewTeachingCard {
                 problem_id: job.problem_id,
                 organization_id: job.organization_id,
@@ -113,7 +130,6 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
             };
             db::insert_teaching_card(pool, &card).await?;
 
-            // 8. Mark job completed with usage metrics
             let usage = db::LlmUsage {
                 model: result.model,
                 prompt_tokens: result.usage.prompt_tokens,
@@ -124,10 +140,107 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
 
             Ok(())
         }
+        Err(e) => handle_llm_error(pool, job_id, &e).await,
+    }
+}
 
+/// Process a cluster-based teaching card job: aggregate submissions into a TeachingCardOutput.
+async fn process_teaching_card_job(
+    pool: &PgPool,
+    config: &WorkerConfig,
+    job_id: i64,
+    job: &db::AnalysisJobRow,
+) -> Result<()> {
+    // Fetch problem info
+    let problem = db::get_problem_info(pool, job.problem_id)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("problem {} not found for job {job_id}", job.problem_id))?;
+
+    // Fetch cluster representative submissions
+    let cluster_ids: Vec<i64> = job.source_cluster_ids.clone().unwrap_or_default();
+    let representatives = if cluster_ids.is_empty() {
+        vec![]
+    } else {
+        db::get_cluster_representatives(pool, job.problem_id, job.organization_id, &cluster_ids, 5)
+            .await?
+    };
+
+    if representatives.is_empty() {
+        warn!(
+            job_id,
+            "no cluster representatives found, falling back to code review"
+        );
+        return process_code_review_job(pool, config, job_id, job).await;
+    }
+
+    // Build cluster summary from representative data
+    let cluster_summary = format!(
+        "共 {} 个聚类，{} 份代表性提交",
+        cluster_ids.len(),
+        representatives.len(),
+    );
+
+    // Collect sample codes for the teaching card prompt
+    let sample_codes: Vec<(&str, &str)> = representatives
+        .iter()
+        .map(|r| (r.language.as_str(), r.code.as_str()))
+        .collect();
+
+    let prompt_messages =
+        prompts::teaching_card_prompt(&problem.title, &cluster_summary, &sample_codes);
+    let chat_messages = convert_messages(prompt_messages);
+
+    let client = LlmClient::from_config(config)?;
+    match client
+        .chat_completion_structured::<TeachingCardOutput>(chat_messages, "")
+        .await
+    {
+        Ok((card_output, result)) => {
+            info!(
+                job_id,
+                model = %result.model,
+                prompt_tokens = result.usage.prompt_tokens,
+                completion_tokens = result.usage.completion_tokens,
+                latency_ms = result.latency.as_millis() as u64,
+                endpoint_used = %result.endpoint_used,
+                "LLM teaching card succeeded"
+            );
+
+            let content = serde_json::to_value(&card_output).unwrap_or_else(|e| {
+                error!(job_id, error = %e, "failed to serialize TeachingCardOutput");
+                serde_json::json!({ "raw_content": "serialization error" })
+            });
+
+            let card = db::NewTeachingCard {
+                problem_id: job.problem_id,
+                organization_id: job.organization_id,
+                card_type: "cluster_insight".to_string(),
+                title: card_output.title.clone(),
+                content,
+                source_cluster_ids: cluster_ids,
+            };
+            db::insert_teaching_card(pool, &card).await?;
+
+            let usage = db::LlmUsage {
+                model: result.model,
+                prompt_tokens: result.usage.prompt_tokens,
+                completion_tokens: result.usage.completion_tokens,
+                latency_ms: result.latency.as_millis() as i32,
+            };
+            db::update_job_with_usage(pool, job_id, "completed", None, Some(&usage)).await?;
+
+            Ok(())
+        }
+        Err(e) => handle_llm_error(pool, job_id, &e).await,
+    }
+}
+
+/// Handle LLM errors with retry/transient classification.
+async fn handle_llm_error(pool: &PgPool, job_id: i64, e: &LlmError) -> Result<()> {
+    match e {
         // Transient errors — mark for retry, return Err to prevent ACK
-        Err(e) if is_transient_error(&e) => {
-            warn!(job_id, error = %e, "LLM call failed with transient error, scheduling retry");
+        err if is_transient_error(err) => {
+            warn!(job_id, error = %err, "LLM call failed with transient error, scheduling retry");
             let retried = db::retry_job(pool, job_id).await?;
             if !retried {
                 db::update_job_with_usage(
@@ -139,18 +252,19 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
                 )
                 .await?;
             }
-            Err(anyhow::anyhow!("LLM transient error, retry scheduled: {e}"))
+            Err(anyhow::anyhow!(
+                "LLM transient error, retry scheduled: {err}"
+            ))
         }
 
         // JSON parse failure — record raw response, mark permanently failed
-        Err(LlmError::JsonParse { raw, endpoint, .. }) => {
+        LlmError::JsonParse { raw, endpoint, .. } => {
             error!(
                 job_id,
                 raw_length = raw.len(),
                 endpoint = %endpoint,
                 "LLM response was not valid JSON — recording raw response"
             );
-            // Store the raw LLM response (truncated to 4000 chars) in error_message
             let raw_preview = if raw.len() > 4000 {
                 format!("{}...[truncated, total {} bytes]", &raw[..4000], raw.len())
             } else {
@@ -166,15 +280,13 @@ pub async fn process_job(pool: &PgPool, config: &WorkerConfig, job_id: i64) -> R
                 None,
             )
             .await?;
-            // Permanent failure — ACK is OK
             Ok(())
         }
 
         // Other permanent errors (MalformedResponse, EmptyResponse, etc.)
-        Err(e) => {
-            error!(job_id, error = %e, "LLM call failed with permanent error");
-            db::update_job_with_usage(pool, job_id, "failed", Some(&e.to_string()), None).await?;
-            // Permanent failure — ACK is OK
+        err => {
+            error!(job_id, error = %err, "LLM call failed with permanent error");
+            db::update_job_with_usage(pool, job_id, "failed", Some(&err.to_string()), None).await?;
             Ok(())
         }
     }

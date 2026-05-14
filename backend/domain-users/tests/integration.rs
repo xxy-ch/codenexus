@@ -260,13 +260,12 @@ async fn test_md5_login_rejection_integration() {
     .unwrap();
 
     // Step 6: Verify the new hash is bcrypt format and needs_reset is cleared.
-    let (upgraded_hash, reset_after): (String, bool) = sqlx::query_as(
-        "SELECT password_hash, password_needs_reset FROM users WHERE id = $1",
-    )
-    .bind(user_id)
-    .fetch_one(&fixture.db_pool)
-    .await
-    .unwrap();
+    let (upgraded_hash, reset_after): (String, bool) =
+        sqlx::query_as("SELECT password_hash, password_needs_reset FROM users WHERE id = $1")
+            .bind(user_id)
+            .fetch_one(&fixture.db_pool)
+            .await
+            .unwrap();
 
     assert!(
         upgraded_hash.starts_with("$2b$"),

@@ -3,6 +3,12 @@ import type { User, AuthResponse } from '@/types/auth'
 import { API_CONFIG } from '@/services/config'
 
 const buildApiUrl = (path: string) => `${API_CONFIG.baseURL}${path}`
+const accessTokenKey = 'access_token'
+
+const authHeaders = () => {
+  const token = localStorage.getItem(accessTokenKey)
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
 interface AuthState {
   user: User | null
@@ -45,6 +51,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       }
 
       const data: AuthResponse = await response.json()
+      localStorage.setItem(accessTokenKey, data.token)
       set({
         user: data.user,
         isAuthenticated: true,
@@ -75,6 +82,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
       }
 
       const authData: AuthResponse = await response.json()
+      localStorage.setItem(accessTokenKey, authData.token)
       set({
         user: authData.user,
         isAuthenticated: true,
@@ -94,8 +102,10 @@ export const useAuthStore = create<AuthState>()((set) => ({
     // Call backend logout to blacklist the token
     fetch(buildApiUrl('/auth/logout'), {
       method: 'POST',
+      headers: authHeaders(),
       credentials: 'include',
     }).catch(() => {})
+    localStorage.removeItem(accessTokenKey)
     set({
       user: null,
       isAuthenticated: false,
@@ -109,6 +119,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
     set({ isLoading: true })
     try {
       const response = await fetch(buildApiUrl('/users/me'), {
+        headers: authHeaders(),
         credentials: 'include',
       })
 

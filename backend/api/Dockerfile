@@ -8,6 +8,7 @@ RUN apk add --no-cache \
     postgresql-client \
     pkgconf \
     openssl-dev \
+    openssl-libs-static \
     curl
 
 WORKDIR /app
@@ -25,10 +26,13 @@ COPY domain-submissions/Cargo.toml ./domain-submissions/Cargo.toml
 COPY domain-contests/Cargo.toml ./domain-contests/Cargo.toml
 COPY domain-classes/Cargo.toml ./domain-classes/Cargo.toml
 COPY domain-leaderboard/Cargo.toml ./domain-leaderboard/Cargo.toml
+COPY domain-analysis/Cargo.toml ./domain-analysis/Cargo.toml
 COPY domain-imex/Cargo.toml ./domain-imex/Cargo.toml
 COPY feature-gateway/Cargo.toml ./feature-gateway/Cargo.toml
 COPY judge-worker/Cargo.toml ./judge-worker/Cargo.toml
+COPY llm-worker/Cargo.toml ./llm-worker/Cargo.toml
 COPY migration-tool/Cargo.toml ./migration-tool/Cargo.toml
+COPY monitor-server/Cargo.toml ./monitor-server/Cargo.toml
 
 # Copy real source for crates that `api` links against so Cargo resolves the
 # actual public APIs during the cached dependency build.
@@ -42,14 +46,17 @@ COPY domain-submissions ./domain-submissions
 COPY domain-contests ./domain-contests
 COPY domain-classes ./domain-classes
 COPY domain-leaderboard ./domain-leaderboard
+COPY domain-analysis ./domain-analysis
 COPY domain-imex ./domain-imex
 
 # Create dummy source files only for workspace members not needed by the API build.
-RUN mkdir -p api/src feature-gateway/src judge-worker/src migration-tool/src && \
+RUN mkdir -p api/src feature-gateway/src judge-worker/src llm-worker/src migration-tool/src monitor-server/src && \
     printf 'fn main() {}\n' > api/src/main.rs && \
     printf 'fn main() {}\n' > feature-gateway/src/main.rs && \
     printf 'fn main() {}\n' > judge-worker/src/main.rs && \
-    printf 'fn main() {}\n' > migration-tool/src/main.rs
+    printf 'fn main() {}\n' > llm-worker/src/main.rs && \
+    printf 'fn main() {}\n' > migration-tool/src/main.rs && \
+    printf 'fn main() {}\n' > monitor-server/src/main.rs
 
 # Build dependencies only (cached layer)
 RUN cargo build --release -p api 2>/dev/null || true
@@ -66,6 +73,7 @@ COPY domain-submissions ./domain-submissions
 COPY domain-contests ./domain-contests
 COPY domain-classes ./domain-classes
 COPY domain-leaderboard ./domain-leaderboard
+COPY domain-analysis ./domain-analysis
 COPY domain-imex ./domain-imex
 COPY feature-gateway ./feature-gateway
 
