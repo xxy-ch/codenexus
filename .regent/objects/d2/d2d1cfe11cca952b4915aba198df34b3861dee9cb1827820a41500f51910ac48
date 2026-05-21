@@ -1,0 +1,10 @@
+{
+  "active": true,
+  "started_at": "2026-04-19T04:36:19.582Z",
+  "original_prompt": "/ultrawork 生产环境确定不需要mock数据",
+  "session_id": "f0d76397-5776-47b7-837c-3d22da52418b",
+  "project_path": "/Users/xiexingyu/Documents/项目/Online_Judge/backend",
+  "reinforcement_count": 0,
+  "awaiting_confirmation": true,
+  "last_checked_at": "2026-04-19T04:36:19.583Z"
+}

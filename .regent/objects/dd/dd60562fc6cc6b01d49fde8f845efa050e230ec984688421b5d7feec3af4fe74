@@ -1,0 +1,1 @@
+{"command":"find frontend/src/services backend/judge-worker/src -type f -mtime -2 | sort"}

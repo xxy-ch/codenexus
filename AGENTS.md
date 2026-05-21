@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Online_Judge** (7128 symbols, 14745 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Online_Judge** (7190 symbols, 14931 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -104,17 +104,16 @@ To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.
 <claude-mem-context>
 # Memory Context
 
-# [Online_Judge] recent context, 2026-05-14 8:22pm GMT+8
+# [Online_Judge] recent context, 2026-05-15 10:44pm GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (9,840t read) | 1,033,145t work | 99% savings
+Stats: 50 obs (9,859t read) | 1,008,746t work | 99% savings
 
 ### Apr 8, 2026
-269 6:30p 🟣 Add admin authorization to problem deletion endpoint
-270 " 🟣 Add role-based authorization helpers for test case endpoints
+270 6:30p 🟣 Add role-based authorization helpers for test case endpoints
 271 6:31p 🟣 Implement role-based test case visibility for student/management views
 272 " 🟣 Implement role-based test case visibility for student/management views
 ### Apr 9, 2026
@@ -180,10 +179,7 @@ S202 Parallel code reviews and build verification for Online Judge backend (Apr 
 611 " 🔵 Backend dependency check initiated
 ### May 7, 2026
 618 6:41a 🔵 Examined test skill definition
-**619** " 🔵 **Test suite execution results**
-The user ran the test suite via cargo test in the Online_Judge Rust project. The output shows that the library unit tests (src/lib.rs) had 78 passed, 0 failed, 9 ignored, mainly because some tests require a running PostgreSQL database. The binary unit tests (src/main.rs) showed a similar pattern. This indicates that the core logic is testable and passes when external dependencies are not required, while integration tests needing PostgreSQL are ignored.
-~206t 🔍 10,282
-
+619 " 🔵 Test suite execution results
 **621** 6:44a 🔵 **Test suite passes with no failures**
 The user continued running the test suite in the Online_Judge Rust project via cargo test. The output reveals that numerous unit and integration tests pass with zero failures. Ignored tests are solely due to missing external services (PostgreSQL, Redis, Docker). This indicates the codebase is stable and recent changes have not introduced regressions.
 ~218t 🔍 24,706
@@ -202,6 +198,10 @@ Read the seccomp.rs file to understand the sandboxing mechanism used by the judg
 Read the processor service to understand how submissions are judged. The service orchestrates the entire judging pipeline: creating isolated work directories, saving source code, compiling compiled languages with resource limits and sandboxing, fetching test cases from the database, and executing each test case within a cgroup with enforced CPU and memory limits. Before execution, it drops privileges to the nobody user and applies a deny-by-default seccomp filter to restrict syscalls. Output is compared against expected output to determine verdicts (accepted, wrong answer, runtime error, time limit exceeded, etc.). The design emphasizes security and isolation through multiple layers: per-submission directories, privilege dropping, seccomp, and cgroups.
 ~392t 🔍 26,256
 
+**691** 8:32p 🔵 **Security Bounty Hunter Command Initiated**
+The user has initiated a security bounty hunting session using the everything-claude-code toolset's security-bounty-hunter command. This suggests the user intends to perform security testing, vulnerability assessment, or bug bounty-style activities within their codebase or target systems. The command likely launches a specialized workflow or set of tools designed for security analysis.
+~198t 🔍 4,458
 
-Access 1033k tokens of past work via get_observations([IDs]) or mem-search skill.
+
+Access 1009k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

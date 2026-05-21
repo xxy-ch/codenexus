@@ -166,15 +166,19 @@ async fn recover_stream(
     api_url: &str,
     recovery_idle_ms: u64,
 ) {
-    match queue::recovery::recover_pending_submissions(
-        &mut *conn.lock().await,
-        stream_name,
-        group_name,
-        consumer_name,
-        recovery_idle_ms,
-    )
-    .await
-    {
+    let recovery_result = {
+        let mut locked_conn = conn.lock().await;
+        queue::recovery::recover_pending_submissions(
+            &mut locked_conn,
+            stream_name,
+            group_name,
+            consumer_name,
+            recovery_idle_ms,
+        )
+        .await
+    };
+
+    match recovery_result {
         Ok(recovered) => {
             if !recovered.is_empty() {
                 info!(

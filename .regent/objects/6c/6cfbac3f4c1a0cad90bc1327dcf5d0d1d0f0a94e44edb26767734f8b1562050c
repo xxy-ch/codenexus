@@ -1,0 +1,4 @@
+[     513ms] [ERROR] Loading the script 'https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js' violates the following Content Security Policy directive: "script-src 'self'". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The action has been blocked. @ http://localhost:5173/assets/editor-core-BFD4j7dN.js:10
+[     514ms] [ERROR] Monaco initialization: error: Event @ http://localhost:5173/assets/editor-core-BFD4j7dN.js:10
+[     515ms] Event
+[  111415ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/grades?campus_id=1:0

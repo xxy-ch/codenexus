@@ -93,56 +93,56 @@ export function SubmissionHistory() {
   const averageMemory = data.submissions.reduce((sum, submission) => sum + (submission.memory_kb ?? 0), 0) / Math.max(1, data.submissions.length)
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="bg-card border border-border rounded-xl p-5 shadow-whisper">
+    <div className="space-y-6 p-6 min-h-screen bg-background animate-fade-in-up">
+      {/* Header / Summary Card */}
+      <div className="glass shadow-card rounded-xl p-6 border border-border/50">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-1.5">
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-semibold tracking-tight text-foreground">
                 提交历史
               </h1>
-              <span className="rounded-full bg-status-accepted/10 px-2.5 py-1 text-xs font-medium text-status-accepted">
+              <span className="rounded-full bg-status-accepted/10 border border-status-accepted/20 px-2.5 py-1 text-xs font-semibold text-status-accepted shadow-[0_0_10px_rgba(16,185,129,0.1)]">
                 {data.total} 条记录
               </span>
             </div>
-            <p className="text-sm font-normal text-muted-foreground">
+            <p className="text-sm font-normal text-text-tertiary">
               查看最近的提交状态、运行表现和语言分布。已通过 {acceptedCount} 条。
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="border border-border rounded-lg bg-background px-3 py-2">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">通过</p>
-              <p className="text-lg font-semibold tabular-nums text-status-accepted">{acceptedCount}</p>
+          <div className="flex items-center gap-3">
+            <div className="glass shadow-whisper px-4 py-2 border border-border/40 hover-lift rounded-lg text-center min-w-[80px]">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">通过</p>
+              <p className="text-lg font-semibold tabular-nums text-status-accepted mt-0.5">{acceptedCount}</p>
             </div>
-            <div className="border border-border rounded-lg bg-background px-3 py-2">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">平均耗时</p>
-              <p className="text-lg font-semibold tabular-nums text-foreground">{Math.round(averageRuntime)}ms</p>
+            <div className="glass shadow-whisper px-4 py-2 border border-border/40 hover-lift rounded-lg text-center min-w-[80px]">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">平均耗时</p>
+              <p className="text-lg font-semibold tabular-nums text-foreground mt-0.5">{Math.round(averageRuntime)}ms</p>
             </div>
-            <div className="border border-border rounded-lg bg-background px-3 py-2">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">平均内存</p>
-              <p className="text-lg font-semibold tabular-nums text-foreground">{Math.round(averageMemory / 1024)}MB</p>
+            <div className="glass shadow-whisper px-4 py-2 border border-border/40 hover-lift rounded-lg text-center min-w-[80px]">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">平均内存</p>
+              <p className="text-lg font-semibold tabular-nums text-foreground mt-0.5">{Math.round(averageMemory / 1024)}MB</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filter bar */}
-      <div className="bg-card border border-border rounded-xl px-4 py-3 shadow-whisper">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+      <div className="glass shadow-whisper rounded-xl px-5 py-4 border border-border/50">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
               状态
             </span>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               <button
                 onClick={() => handleStatusFilter('all')}
                 className={cn(
-                  'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+                  'rounded-full px-3.5 py-1 text-xs font-medium transition-all button-press border',
                   statusFilter === 'all'
-                    ? 'bg-foreground text-background'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground border-primary/30 shadow-whisper'
+                    : 'text-text-tertiary hover:bg-white/[0.03] hover:text-foreground border-transparent'
                 )}
               >
                 全部
@@ -150,10 +150,10 @@ export function SubmissionHistory() {
               <button
                 onClick={() => handleStatusFilter('accepted')}
                 className={cn(
-                  'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+                  'rounded-full px-3.5 py-1 text-xs font-medium transition-all button-press border',
                   statusFilter === 'accepted'
-                    ? 'bg-status-accepted/10 text-status-accepted'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-status-accepted/10 text-status-accepted border-status-accepted/30 shadow-[0_0_8px_rgba(16,185,129,0.15)]'
+                    : 'text-text-tertiary hover:bg-white/[0.03] hover:text-foreground border-transparent'
                 )}
               >
                 通过
@@ -161,10 +161,10 @@ export function SubmissionHistory() {
               <button
                 onClick={() => handleStatusFilter('wrong_answer')}
                 className={cn(
-                  'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+                  'rounded-full px-3.5 py-1 text-xs font-medium transition-all button-press border',
                   statusFilter === 'wrong_answer'
-                    ? 'bg-destructive/10 text-destructive'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? 'bg-destructive/10 text-destructive border-destructive/30 shadow-[0_0_8px_rgba(239,68,68,0.15)]'
+                    : 'text-text-tertiary hover:bg-white/[0.03] hover:text-foreground border-transparent'
                 )}
               >
                 答案错误
@@ -172,17 +172,15 @@ export function SubmissionHistory() {
             </div>
           </div>
 
-          <div className="h-4 w-px bg-border" />
-
-          <div className="flex items-center gap-2">
-            <label htmlFor="language-filter" className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <label htmlFor="language-filter" className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
               语言
             </label>
             <select
               id="language-filter"
               value={languageFilter}
               onChange={(e) => handleLanguageFilter(e.target.value)}
-              className="rounded-lg border border-border bg-background px-2.5 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-foreground/20"
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
             >
               <option value="all">全部语言</option>
               {Object.entries(LANGUAGE_CONFIG).map(([key, config]) => (
@@ -196,32 +194,32 @@ export function SubmissionHistory() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-whisper">
+      <div className="glass shadow-elevated rounded-xl overflow-hidden border border-border/50">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="border-b border-border-subtle">
+            <thead className="border-b border-border/40 bg-white/[0.01]">
               <tr>
-                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                <th className="px-5 py-3.5 text-left text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   状态
                 </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                <th className="px-5 py-3.5 text-left text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   题目
                 </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                <th className="px-5 py-3.5 text-left text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   语言
                 </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                <th className="px-5 py-3.5 text-left text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   运行时间
                 </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                <th className="px-5 py-3.5 text-left text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   内存
                 </th>
-                <th className="px-4 py-2.5 text-left text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                <th className="px-5 py-3.5 text-left text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
                   提交时间
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-subtle">
+            <tbody className="divide-y divide-border/30">
               {data.submissions.map((submission) => {
                 const statusConfig = getSubmissionStatusConfig(submission.status)
                 const languageConfig = LANGUAGE_CONFIG[submission.language as keyof typeof LANGUAGE_CONFIG] || {
@@ -231,27 +229,27 @@ export function SubmissionHistory() {
                 const IconComponent = languageConfig.icon
 
                 const statusPillClass = cn(
-                  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+                  'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium border',
                   submission.status === 'accepted'
-                    ? 'bg-status-accepted/10 text-status-accepted'
+                    ? 'bg-status-accepted/10 text-status-accepted border-status-accepted/20 shadow-[0_0_12px_rgba(16,185,129,0.15)]'
                     : submission.status === 'wrong_answer'
-                      ? 'bg-destructive/10 text-destructive'
+                      ? 'bg-destructive/10 text-destructive border-destructive/20 shadow-[0_0_12px_rgba(239,68,68,0.15)]'
                       : submission.status === 'pending' || submission.status === 'queued'
-                        ? 'bg-status-pending/10 text-status-pending'
+                        ? 'bg-status-pending/10 text-status-pending border-status-pending/20 animate-pulse'
                         : submission.status === 'time_limit_exceeded'
-                          ? 'bg-status-tle/10 text-status-tle'
+                          ? 'bg-status-tle/10 text-status-tle border-status-tle/20 shadow-[0_0_12px_rgba(245,158,11,0.15)]'
                           : submission.status === 'runtime_error'
-                            ? 'bg-status-re/10 text-status-re'
-                            : 'bg-muted text-muted-foreground'
+                            ? 'bg-status-re/10 text-status-re border-status-re/20 shadow-[0_0_12px_rgba(139,92,246,0.15)]'
+                            : 'bg-muted text-muted-foreground border-transparent'
                 )
 
                 return (
                   <tr
                     key={submission.id}
-                    className="hover:bg-background-alt transition-colors cursor-pointer"
+                    className="hover:bg-white/[0.03] transition-all cursor-pointer hover:translate-x-0.5 duration-150"
                     onClick={() => navigate(`/submissions/${submission.id}`)}
                   >
-                    <td className="px-4 py-2.5 whitespace-nowrap">
+                    <td className="px-5 py-3 whitespace-nowrap">
                       <div className={statusPillClass}>
                         {statusConfig.icon === 'check_circle' && <CheckCircle className="w-3.5 h-3.5" />}
                         {statusConfig.icon === 'cancel' && <XCircle className="w-3.5 h-3.5" />}
@@ -260,29 +258,29 @@ export function SubmissionHistory() {
                         {statusConfig.label}
                       </div>
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-5 py-3">
                       <span className="text-sm font-medium text-foreground">
                         {submission.problem_title}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
-                      <div className="inline-flex items-center gap-1.5 rounded-full bg-background-subtle px-2 py-0.5 text-sm text-secondary">
-                        <IconComponent className="w-3.5 h-3.5" />
-                        <span className="font-mono text-xs">{languageConfig.label}</span>
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5 rounded bg-white/[0.04] border border-border/30 px-2 py-0.5 text-xs text-text-secondary">
+                        <IconComponent className="w-3.5 h-3.5 text-text-tertiary" />
+                        <span className="font-mono text-[11px] font-medium">{languageConfig.label}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
-                      <span className="font-mono text-sm tabular-nums text-secondary">
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <span className="font-mono text-sm tabular-nums text-text-secondary">
                         {submission.time_ms ? `${submission.time_ms}ms` : '-'}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
-                      <span className="font-mono text-sm tabular-nums text-secondary">
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <span className="font-mono text-sm tabular-nums text-text-secondary">
                         {submission.memory_kb ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 whitespace-nowrap">
-                      <span className="text-xs text-tertiary">
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <span className="text-xs text-text-tertiary">
                         {new Date(submission.created_at).toLocaleString('zh-CN', {
                           year: 'numeric',
                           month: '2-digit',
@@ -300,14 +298,16 @@ export function SubmissionHistory() {
         </div>
 
         {totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-border-subtle flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-mono">
-              {page} / {totalPages}
+          <div className="px-5 py-3.5 border-t border-border/40 flex items-center justify-between bg-white/[0.01]">
+            <span className="text-xs text-text-tertiary font-mono">
+              第 <span className="font-semibold text-foreground">{page}</span> 页，共{' '}
+              <span className="font-semibold text-foreground">{totalPages}</span> 页
             </span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
+                className="glass-interactive button-press"
                 onClick={() => handlePageChange(page - 1)}
                 disabled={page === 1}
               >
@@ -317,6 +317,7 @@ export function SubmissionHistory() {
               <Button
                 variant="outline"
                 size="sm"
+                className="glass-interactive button-press"
                 onClick={() => handlePageChange(page + 1)}
                 disabled={page === totalPages}
               >

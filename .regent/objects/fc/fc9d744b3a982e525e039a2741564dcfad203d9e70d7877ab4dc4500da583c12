@@ -1,0 +1,1 @@
+{"command":"cargo build --release --target aarch64-unknown-linux-musl -p judge-worker > /tmp/oj-cross.log 2>&1; code=$?; printf 'code=%s\\n' \"$code\"; tail -160 /tmp/oj-cross.log"}

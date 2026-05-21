@@ -1,0 +1,1 @@
+{"command":"docker exec online-judge-postgres psql -U postgres -d online_judge -c \"select id,user_id,problem_id,language,status,verdict,score,created_at,updated_at from submissions where id >= 16 order by id;\""}

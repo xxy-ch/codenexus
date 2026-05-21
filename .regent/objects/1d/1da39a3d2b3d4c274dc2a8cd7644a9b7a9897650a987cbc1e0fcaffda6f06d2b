@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"docker ps -a --filter \\\"status=exited\\\" --format \\\"table {{.ID}}\\\\t{{.Image}}\\\\t{{.Status}}\\\\t{{.CreatedAt}}\\\"\",\"description\":\"List all stopped containers\"}",
+  "error": "Exit code 1\nfailed to connect to the docker API at unix:///Users/xiexingyu/.docker/run/docker.sock; check if the path is correct and if the daemon is running: dial unix /Users/xiexingyu/.docker/run/docker.sock: connect: no such file or directory",
+  "timestamp": "2026-05-15T12:10:08.250Z",
+  "retry_count": 1
+}

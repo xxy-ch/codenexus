@@ -45,66 +45,75 @@ export function ProblemSet() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6 min-h-screen animate-fade-in-up">
       {/* Header — Vercel clean minimalism */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
             题库
           </span>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
             题目
           </h1>
-          <p className="mt-1 text-sm text-muted-foreground max-w-lg">
+          <p className="mt-1 text-sm text-text-tertiary max-w-lg font-normal">
             浏览题库。按难度和主题筛选，然后开始解题。
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" render={<Link to="/submissions" />}>
-              <History className="w-4 h-4 mr-1.5" />
-              提交记录
+          <Button
+            variant="outline"
+            size="sm"
+            className="glass-interactive button-press"
+            render={<Link to="/submissions" />}
+          >
+            <History className="w-4 h-4 mr-1.5" />
+            提交记录
           </Button>
-          <Button size="sm" render={<Link to="/contests" />}>
-              <Trophy className="w-4 h-4 mr-1.5" />
-              竞赛
+          <Button
+            size="sm"
+            className="button-press bg-primary text-primary-foreground hover:bg-primary/90 shadow-whisper"
+            render={<Link to="/contests" />}
+          >
+            <Trophy className="w-4 h-4 mr-1.5" />
+            竞赛
           </Button>
         </div>
       </div>
 
-      {/* Stats row — Vercel shadow-as-border */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      {/* Stats row — glass interactive panels with dynamic difficulty glows */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="glass-interactive hover-lift rounded-xl p-5 border border-border/60">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-text-tertiary">
             总计
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{total}</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">{total}</p>
         </div>
 
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-widest text-difficulty-easy">
+        <div className="glass-interactive hover-lift rounded-xl p-5 border border-border/60 hover:border-difficulty-easy/30 hover:bg-difficulty-easy/[0.02]">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-difficulty-easy">
             简单
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{easyCount}</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">{easyCount}</p>
         </div>
 
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-widest text-difficulty-medium">
+        <div className="glass-interactive hover-lift rounded-xl p-5 border border-border/60 hover:border-difficulty-medium/30 hover:bg-difficulty-medium/[0.02]">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-difficulty-medium">
             中等
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{mediumCount}</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">{mediumCount}</p>
         </div>
 
-        <div className="bg-card rounded-lg border border-border p-4 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-widest text-difficulty-hard">
+        <div className="glass-interactive hover-lift rounded-xl p-5 border border-border/60 hover:border-difficulty-hard/30 hover:bg-difficulty-hard/[0.02]">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-difficulty-hard">
             困难
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{hardCount}</p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums text-foreground">{hardCount}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-card rounded-lg border border-border p-4 shadow-sm lg:sticky lg:top-2 lg:z-10">
+      <div className="glass shadow-elevated rounded-xl p-5 border border-border/50 backdrop-blur-md lg:sticky lg:top-4 lg:z-10">
         <ProblemFilters
           filters={filters}
           onFiltersChange={handleFiltersChange}
@@ -113,16 +122,16 @@ export function ProblemSet() {
       </div>
 
       {/* Results */}
-      <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
-        <div className="border-b border-border px-6 py-4">
+      <div className="glass shadow-card rounded-xl border border-border/50 overflow-hidden">
+        <div className="border-b border-border/50 px-6 py-4 bg-white/[0.01]">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-foreground">结果</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
+              <p className="mt-0.5 text-xs text-text-tertiary">
                 {visibleProblems} / {total} 道题目
               </p>
             </div>
-            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
               筛选: {filters.sort || 'recent'}
             </span>
           </div>
@@ -136,16 +145,17 @@ export function ProblemSet() {
       </div>
 
       {/* Pagination */}
-      <div className="bg-card rounded-lg border border-border px-5 py-3 shadow-sm">
+      <div className="glass shadow-card rounded-xl border border-border/50 px-5 py-3.5">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-muted-foreground">
-            第 <span className="font-medium text-foreground">{page}</span> 页，共{' '}
-            <span className="font-medium text-foreground">{totalPages}</span> 页
+          <p className="text-xs text-text-tertiary">
+            第 <span className="font-semibold text-foreground">{page}</span> 页，共{' '}
+            <span className="font-semibold text-foreground">{totalPages}</span> 页
           </p>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
+              className="glass-interactive button-press"
               disabled={page <= 1}
               onClick={() => setFilters((prev) => ({ ...prev, page: Math.max(1, page - 1) }))}
             >
@@ -154,6 +164,7 @@ export function ProblemSet() {
             <Button
               variant="outline"
               size="sm"
+              className="glass-interactive button-press"
               disabled={page >= totalPages}
               onClick={() => setFilters((prev) => ({ ...prev, page: Math.min(totalPages, page + 1) }))}
             >

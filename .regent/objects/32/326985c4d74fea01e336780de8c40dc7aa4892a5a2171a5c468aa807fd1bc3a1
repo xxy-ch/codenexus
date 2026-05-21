@@ -1,0 +1,1 @@
+{"command":"docker exec online-judge-postgres psql -U postgres -d online_judge -c \"select id,problem_id,language,status,verdict,score,updated_at from submissions order by id desc limit 5;\""}

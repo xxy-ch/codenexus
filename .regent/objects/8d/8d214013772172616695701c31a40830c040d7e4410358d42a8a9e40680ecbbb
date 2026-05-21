@@ -1,0 +1,387 @@
+---
+phase: 09-judge-concurrency-fault-tolerance
+plan: 04
+type: execute
+wave: 3
+depends_on:
+  - 09-03
+files_modified:
+  - frontend/src/pages/admin/JudgeQueue.tsx
+  - frontend/src/services/admin.ts
+  - frontend/src/layouts/AdminLayout.tsx
+  - frontend/src/services/problems.ts
+  - frontend/src/pages/user/ProblemIDEEnhanced.tsx
+autonomous: true
+requirements:
+  - JCON-02
+  - FTOL-03
+  - JCON-01
+
+must_haves:
+  truths:
+    - "Admin dashboard has a Judge Queue navigation entry"
+    - "Judge Queue page shows three tabs: Queue Status, Workers, Dead Letters"
+    - "Queue Status tab shows normal and contest stream depths with average wait time"
+    - "Workers tab shows active workers with last heartbeat age and breaker states"
+    - "Dead Letters tab shows DLQ items with retry and discard action buttons"
+    - "Contest submissions pass contestId in the API call so backend routes to priority queue"
+  artifacts:
+    - path: "frontend/src/pages/admin/JudgeQueue.tsx"
+      provides: "Tabbed admin component for judge monitoring and DLQ management"
+      min_lines: 150
+    - path: "frontend/src/services/admin.ts"
+      provides: "judgeQueueService methods for status, DLQ list, retry, discard"
+      contains: "judgeQueueService"
+    - path: "frontend/src/layouts/AdminLayout.tsx"
+      provides: "Navigation entry for Judge Queue in admin sidebar"
+      contains: "judge-queue"
+  key_links:
+    - from: "frontend/src/pages/admin/JudgeQueue.tsx"
+      to: "frontend/src/services/admin.ts"
+      via: "judgeQueueService method calls"
+      pattern: "judgeQueueService"
+    - from: "frontend/src/layouts/AdminLayout.tsx"
+      to: "frontend/src/pages/admin/JudgeQueue.tsx"
+      via: "Link to /admin/judge-queue"
+      pattern: "/admin/judge-queue"
+    - from: "frontend/src/pages/user/ProblemIDEEnhanced.tsx"
+      to: "frontend/src/services/problems.ts"
+      via: "submitCode with contestId from URL params"
+      pattern: "contestId"
+---
+
+<objective>
+Build the frontend admin dashboard section for judge queue monitoring and DLQ management.
+
+Purpose: Provide admins a visual interface to monitor judge queue status, active workers, and manage dead letter queue items (per D-14). This is a tabbed section within the existing admin layout, not a standalone page.
+
+Output: JudgeQueue.tsx component with three tabs, admin service methods, and navigation entry in AdminLayout.
+</objective>
+
+<execution_context>
+@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@$HOME/.claude/get-shit-done/templates/summary.md
+</execution_context>
+
+<context>
+@.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
+@.planning/phases/09-judge-concurrency-fault-tolerance/09-CONTEXT.md
+@.planning/phases/09-judge-concurrency-fault-tolerance/09-RESEARCH.md
+@.planning/phases/09-judge-concurrency-fault-tolerance/09-03-SUMMARY.md
+
+<interfaces>
+<!-- Key types and contracts the executor needs -->
+
+From api/src/judge_monitor/routes.rs (API response shapes, per Plan 03):
+```json
+// GET /admin/judge/status
+{
+  "queues": { "normal_depth": 0, "contest_depth": 0 },
+  "active_judges": 1,
+  "total_active_judgements": 2,
+  "avg_wait_ms": 150,
+  "workers": [
+    {
+      "worker_id": "worker-abc123",
+      "active_judgements": "2",
+      "total_processed": "42",
+      "avg_wait_ms": "150",
+      "redis_breaker_state": "Closed",
+      "api_breaker_state": "Closed",
+      "last_seen": "2026-04-17T10:00:00+00:00"
+    }
+  ]
+}
+
+// GET /admin/judge/dlq
+{
+  "items": [
+    {
+      "id": "1700000000000-0",
+      "submission_id": "123",
+      "error_reason": "API returned error",
+      "source_stream": "submissions",
+      "submitted_at": "2026-04-17T09:59:00+00:00",
+      "failed_at": "2026-04-17T10:00:00+00:00"
+    }
+  ],
+  "count": 1
+}
+
+// POST /admin/judge/dlq/:id/retry
+{ "message": "DLQ entry retried", "entry_id": "...", "target_stream": "submissions" }
+
+// DELETE /admin/judge/dlq/:id
+{ "message": "DLQ entry discarded", "entry_id": "..." }
+```
+
+From frontend/src/layouts/AdminLayout.tsx (navigation pattern):
+```tsx
+const navigation = [
+  { name: '仪表板', href: '/admin', icon: 'dashboard' },
+  { name: '用户管理', href: '/admin/users', icon: 'group' },
+  { name: '题目管理', href: '/admin/problems', icon: 'library_books' },
+  { name: '判题设置', href: '/admin/judge-settings', icon: 'tune' },
+  { name: '题面配置', href: '/admin/problem-content', icon: 'edit_document' },
+]
+```
+
+From frontend/src/services/admin.ts (service pattern):
+```tsx
+export const adminService = {
+  async getStats(): Promise<AdminStats> { ... },
+  // ... other methods using api.get / api.post / api.patch / api.delete
+}
+```
+
+From frontend/src/services/api.ts (base axios instance):
+```tsx
+import api from './api'
+```
+</interfaces>
+</context>
+
+<tasks>
+
+<task type="auto">
+  <name>Task 1: Create judgeQueueService in admin.ts and JudgeQueue.tsx component</name>
+  <files>frontend/src/services/admin.ts, frontend/src/pages/admin/JudgeQueue.tsx</files>
+  <read_first>
+    - frontend/src/services/admin.ts (existing admin service pattern)
+    - frontend/src/layouts/AdminLayout.tsx (navigation structure and icon naming)
+    - frontend/src/services/api.ts (axios instance import pattern)
+    - frontend/src/types/admin.ts (existing admin type definitions)
+    - .planning/phases/09-judge-concurrency-fault-tolerance/09-CONTEXT.md (D-14: tabbed view in admin dashboard)
+  </read_first>
+  <acceptance_criteria>
+    - `frontend/src/services/admin.ts` exports a `judgeQueueService` object with methods: `getStatus`, `getDlqEntries`, `retryDlqEntry`, `deleteDlqEntry`
+    - `frontend/src/pages/admin/JudgeQueue.tsx` exists and exports `JudgeQueue` component
+    - `JudgeQueue.tsx` has three tab sections: Queue Status, Workers, Dead Letters
+    - Queue Status tab displays: normal_depth, contest_depth, avg_wait_ms, active_judges count
+    - Workers tab displays a table of workers with columns: worker_id, active_judgements, total_processed, avg_wait_ms, breaker states, last_seen
+    - Dead Letters tab displays a table of DLQ items with columns: submission_id, error_reason, source_stream, submitted_at, failed_at, and action buttons (Retry, Discard)
+    - Uses `@tanstack/react-query` for data fetching with `useQuery` for GET endpoints and `useMutation` for retry/discard
+    - Auto-refreshes queue status and DLQ every 10 seconds (matching heartbeat interval)
+    - Uses shadcn/tailwind styling consistent with existing admin pages
+    - `cd frontend && npx tsc --noEmit` passes
+  </acceptance_criteria>
+  <action>
+    1. **Add `judgeQueueService` to `frontend/src/services/admin.ts`:**
+       Add at the end of the file, before the mock functions:
+       ```typescript
+       export const judgeQueueService = {
+         async getStatus() {
+           const response = await api.get('/admin/judge/status')
+           return response.data
+         },
+
+         async getDlqEntries(count = 50, startId?: string) {
+           const params = new URLSearchParams()
+           params.append('count', String(count))
+           if (startId) params.append('start_id', startId)
+           const response = await api.get(`/admin/judge/dlq?${params}`)
+           return response.data
+         },
+
+         async retryDlqEntry(entryId: string) {
+           const response = await api.post(`/admin/judge/dlq/${entryId}/retry`)
+           return response.data
+         },
+
+         async deleteDlqEntry(entryId: string) {
+           const response = await api.delete(`/admin/judge/dlq/${entryId}`)
+           return response.data
+         },
+       }
+       ```
+
+    2. **Create `frontend/src/pages/admin/JudgeQueue.tsx`:**
+       A single-file component with three tab sections. Use the following structure:
+       - State: `activeTab` = 'status' | 'workers' | 'dlq'
+       - `useQuery` for judge status with 10s refetchInterval
+       - `useQuery` for DLQ entries with 10s refetchInterval
+       - `useMutation` for retry and discard, both invalidate the DLQ query on success and show toast notification
+       - Three tab buttons at the top styled with `cn()` for active state (matching existing admin UI patterns)
+       - **Queue Status tab:** Cards showing normal_depth, contest_depth, avg_wait_ms, active_judges. Use Tailwind grid layout (2 cols on md, 1 on mobile). Each card has a label and value.
+       - **Workers tab:** Table with columns: Worker ID (truncated), Active, Processed, Wait (ms), Redis Breaker, API Breaker, Last Seen. Color-code breaker states: Closed = green, HalfOpen = yellow, Open = red. Format last_seen as relative time (e.g., "3s ago").
+       - **Dead Letters tab:** Table with columns: Submission ID, Error, Stream, Submitted, Failed, Actions. Actions column has two buttons: "Retry" (primary) and "Discard" (destructive variant). Empty state message when no items.
+       - Use `react-hot-toast` for success/error notifications on retry/discard actions.
+       - Use Tailwind classes consistent with existing admin pages: `bg-white dark:bg-slate-900`, `border`, `rounded-lg`, `text-sm`, `px-4 py-3`.
+
+       Import patterns to follow:
+       ```typescript
+       import { useState } from 'react'
+       import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+       import toast from 'react-hot-toast'
+       import { judgeQueueService } from '@/services/admin'
+       import { cn } from '@/lib/utils'
+       ```
+  </action>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge/frontend && npx tsc --noEmit 2>&1 | tail -20</automated>
+  </verify>
+  <done>
+    - judgeQueueService exported from admin.ts with getStatus, getDlqEntries, retryDlqEntry, deleteDlqEntry
+    - JudgeQueue.tsx component with three tabs: Queue Status, Workers, Dead Letters
+    - Auto-refresh every 10 seconds
+    - TypeScript compiles without errors
+  </done>
+</task>
+
+<task type="auto">
+  <name>Task 2: Add Judge Queue navigation entry and route registration</name>
+  <files>frontend/src/layouts/AdminLayout.tsx, frontend/src/App.tsx</files>
+  <read_first>
+    - frontend/src/layouts/AdminLayout.tsx (navigation array, see line 8-20)
+    - frontend/src/App.tsx (route definitions, admin routes section)
+    - .planning/phases/09-judge-concurrency-fault-tolerance/09-CONTEXT.md (D-14: section in existing admin dashboard)
+  </read_first>
+  <acceptance_criteria>
+    - `frontend/src/layouts/AdminLayout.tsx` navigation array contains `{ name: '判题队列', href: '/admin/judge-queue', icon: 'dns' }`
+    - `frontend/src/App.tsx` has a route for `/admin/judge-queue` rendering `JudgeQueue` component under `AdminLayout`
+    - Route is lazy-loaded using `React.lazy` (consistent with existing admin routes)
+    - Navigation entry appears after '判题设置' and before '题面配置' in the sidebar
+    - `cd frontend && npx tsc --noEmit` passes
+  </acceptance_criteria>
+  <action>
+    1. **Modify `frontend/src/layouts/AdminLayout.tsx`:**
+       Add a new navigation item in the `navigation` array, after the '判题设置' entry:
+       ```typescript
+       { name: '判题队列', href: '/admin/judge-queue', icon: 'dns' },
+       ```
+       This places it between '判题设置' and '题面配置' in the sidebar. The `dns` material icon represents a queue/server concept.
+
+    2. **Modify `frontend/src/App.tsx`:**
+       a. Find the admin routes section (look for `AdminLayout` and existing admin routes like `/admin`, `/admin/users`, etc.)
+       b. Add a lazy import at the top of the file (or in the route definition, matching existing pattern):
+          ```typescript
+          const JudgeQueue = React.lazy(() => import('@/pages/admin/JudgeQueue').then(m => ({ default: m.JudgeQueue })))
+          ```
+          Or if the existing pattern uses direct imports, follow that convention.
+       c. Add the route:
+          ```tsx
+          <Route path="/admin/judge-queue" element={<JudgeQueue />} />
+          ```
+          Place it alongside other admin routes under the `AdminLayout` parent route.
+  </action>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge/frontend && npx tsc --noEmit 2>&1 | tail -20</automated>
+  </verify>
+  <done>
+    - AdminLayout sidebar has '判题队列' navigation entry linking to /admin/judge-queue
+    - /admin/judge-queue route renders JudgeQueue component
+    - Route is properly nested under AdminLayout
+    - TypeScript compiles without errors
+  </done>
+</task>
+
+<task type="auto">
+  <name>Task 3: Update frontend submission service to pass contestId for priority queue routing</name>
+  <files>frontend/src/services/problems.ts, frontend/src/pages/user/ProblemIDEEnhanced.tsx</files>
+  <read_first>
+    - frontend/src/services/problems.ts (submitCode method, line 111-116)
+    - frontend/src/pages/user/ProblemIDEEnhanced.tsx (handleSubmit, line 89)
+    - frontend/src/pages/user/ContestDetail.tsx (contest context and problem navigation)
+    - frontend/src/App.tsx (route pattern for contest problems: contests/:contestId)
+    - .planning/phases/09-judge-concurrency-fault-tolerance/09-CONTEXT.md (D-01: API routes based on contest context)
+  </read_first>
+  <acceptance_criteria>
+    - `frontend/src/services/problems.ts` `submitCode` method accepts optional `contestId?: string` parameter
+    - `frontend/src/services/problems.ts` includes `contest_id` in the POST body when `contestId` is provided
+    - `frontend/src/pages/user/ProblemIDEEnhanced.tsx` extracts `contestId` from URL params using `useParams`
+    - `frontend/src/pages/user/ProblemIDEEnhanced.tsx` passes `contestId` to `problemsService.submitCode` when present
+    - `cd frontend && npx tsc --noEmit` passes
+  </acceptance_criteria>
+  <action>
+    1. **Modify `frontend/src/services/problems.ts`:**
+       Update `submitCode` to accept and pass optional `contestId`:
+       ```typescript
+       async submitCode(data: {
+         problemId: string
+         code: string
+         language: string
+         contestId?: string
+       }) {
+         const response = await api.post<ProblemSubmission>('/submissions', {
+           problem_id: data.problemId,
+           code: data.code,
+           language: data.language,
+           ...(data.contestId ? { contest_id: parseInt(data.contestId) } : {}),
+         })
+       ```
+       This sends `contest_id` as an integer when provided, matching the backend `CreateSubmissionRequest.contest_id: Option<i64>` added in Plan 02.
+
+    2. **Modify `frontend/src/pages/user/ProblemIDEEnhanced.tsx`:**
+       a. Import `useParams` from `react-router-dom` (if not already imported):
+          ```typescript
+          import { useParams } from 'react-router-dom'
+          ```
+       b. In the component, extract `contestId` from URL params:
+          ```typescript
+          const { contestId } = useParams()
+          ```
+       c. Update the `submitCode` call (around line 89) to pass `contestId`:
+          ```typescript
+          const submission = await problemsService.submitCode({
+            problemId: String(problem.id),
+            code,
+            language: selectedLanguage,
+            ...(contestId ? { contestId } : {}),
+          })
+          ```
+       d. The component is used both standalone (no contestId) and within contest pages (with contestId in URL). The optional spread ensures it works in both cases.
+
+    NOTE: This task depends on Plan 02's backend change (`CreateSubmissionRequest` with optional `contest_id`). Since Plan 04 (Wave 3) runs after Plan 02 (Wave 1), the backend will already accept the field. The `serde(default)` on the backend ensures backward compatibility during intermediate states.
+  </action>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge/frontend && npx tsc --noEmit 2>&1 | tail -20</automated>
+  </verify>
+  <done>
+    - submitCode service accepts optional contestId parameter
+    - contest_id sent in POST body when contestId is present
+    - ProblemIDEEnhanced extracts contestId from URL params and passes to submitCode
+    - TypeScript compiles without errors
+  </done>
+</task>
+
+</tasks>
+
+<threat_model>
+## Trust Boundaries
+
+| Boundary | Description |
+|----------|-------------|
+| Browser -> API admin endpoints | JWT-authenticated admin requests |
+
+## STRIDE Threat Register
+
+| Threat ID | Category | Component | Disposition | Mitigation Plan |
+|-----------|----------|-----------|-------------|-----------------|
+| T-09-09 | Information Disclosure | DLQ items in frontend | accept | Admin-only access; DLQ items contain submission IDs and error reasons but no source code in the list endpoint |
+| T-09-10 | Denial of Service | DLQ retry spam | accept | Rate limiting already in place via GovernorLayer (30 req/min/IP); admin-only access limits exposure |
+</threat_model>
+
+<verification>
+1. `cd frontend && npx tsc --noEmit` -- TypeScript compiles without errors
+2. Grep: `grep "judgeQueueService" frontend/src/services/admin.ts` confirms service export
+3. Grep: `grep "judge-queue" frontend/src/layouts/AdminLayout.tsx` confirms navigation entry
+4. Grep: `grep "JudgeQueue" frontend/src/App.tsx` confirms route registration
+5. Grep: `grep "judgeQueueService" frontend/src/pages/admin/JudgeQueue.tsx` confirms service usage
+</verification>
+
+<success_criteria>
+1. Admin sidebar has '判题队列' entry linking to /admin/judge-queue (D-14)
+2. JudgeQueue page shows three tabs: Queue Status, Workers, Dead Letters (D-14)
+3. Queue Status displays stream depths and wait time from API (JCON-02)
+4. Workers tab shows active workers with breaker states (JCON-04)
+5. Dead Letters tab shows DLQ items with retry and discard actions (FTOL-03, D-11)
+6. Data auto-refreshes every 10 seconds
+7. Frontend submission service passes contestId when submitting from contest context (JCON-01, D-01)
+8. TypeScript compiles without errors
+</success_criteria>
+
+<output>
+After completion, create `.planning/phases/09-judge-concurrency-fault-tolerance/09-04-SUMMARY.md`
+</output>

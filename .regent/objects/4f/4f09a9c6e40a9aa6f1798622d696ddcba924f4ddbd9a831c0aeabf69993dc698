@@ -1,0 +1,1 @@
+{"command":"open -a Docker; for i in {1..60}; do docker info >/dev/null 2>&1 && { echo docker-ready; exit 0; }; sleep 2; done; echo docker-not-ready; docker info 2>&1 | tail -40"}

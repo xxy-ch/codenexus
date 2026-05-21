@@ -1,0 +1,1 @@
+{"command":"docker compose ps judge-worker redis api; docker inspect --format '{{.State.Status}} {{.State.Health.Status}} {{range .State.Health.Log}}{{.End}} {{.ExitCode}} {{.Output}}{{end}}' online-judge-judge-worker"}

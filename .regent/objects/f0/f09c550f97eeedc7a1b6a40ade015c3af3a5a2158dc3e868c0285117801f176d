@@ -1,0 +1,1 @@
+{"command":"which zig || true; which cross || true; which cargo-zigbuild || true"}

@@ -10,7 +10,7 @@ interface MonacoEditorProps {
   value: string
   onChange: (value: string) => void
   height?: string | number
-  theme?: 'vs-dark' | 'light'
+  theme?: string
   readOnly?: boolean
   fontSize?: number
   minimap?: boolean
@@ -39,7 +39,7 @@ export function MonacoEditor({
   value,
   onChange,
   height = '100%',
-  theme = 'vs-dark',
+  theme = 'custom-dark',
   readOnly = false,
   fontSize = 14,
   minimap = true,
@@ -98,12 +98,12 @@ export function MonacoEditor({
         { token: 'variable', foreground: '9CDCFE' },
       ],
       colors: {
-        'editor.background': '#1e1e1e',
+        'editor.background': '#08090a',
         'editor.foreground': '#d4d4d4',
-        'editor.lineHighlightBackground': '#2a2d2e',
-        'editorCursor.foreground': '#aeafad',
-        'editor.selectionBackground': '#264f78',
-        'editor.inactiveSelectionBackground': '#3a3d41',
+        'editor.lineHighlightBackground': '#141618',
+        'editorCursor.foreground': '#5e6ad2',
+        'editor.selectionBackground': '#262930',
+        'editor.inactiveSelectionBackground': '#1b1d20',
       },
     })
 

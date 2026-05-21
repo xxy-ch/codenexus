@@ -1,0 +1,12 @@
+{"t":0,"agent":"a64e0cd","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a20483a","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"a9f6938","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"adcddc7","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"system","event":"keyword_detected","keyword":"ultrawork"}
+{"t":0,"agent":"system","event":"mode_change","mode_from":"none","mode_to":"ultrawork"}
+{"t":0,"agent":"a4a42ee","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"oh-my-claudecode:cancel"}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"oh-my-claudecode:cancel"}
+{"t":0,"agent":"a4bb38c","agent_type":"unknown","event":"agent_stop","success":true}
+{"t":0,"agent":"system","event":"skill_invoked","skill_name":"oh-my-claudecode:cancel"}
+{"t":0,"agent":"a24c837","agent_type":"unknown","event":"agent_stop","success":true}

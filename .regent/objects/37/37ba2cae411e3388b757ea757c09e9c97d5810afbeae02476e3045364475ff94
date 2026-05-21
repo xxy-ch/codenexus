@@ -1,0 +1,76 @@
+- generic [ref=e3]:
+  - complementary "Global sidebar" [ref=e4]:
+    - generic [ref=e5]:
+      - link "管理中心首页" [ref=e6] [cursor=pointer]:
+        - /url: /admin
+        - generic [ref=e8]: shield
+        - generic [ref=e9]:
+          - generic [ref=e10]: 管理中心
+          - generic [ref=e11]: 运营与审核
+      - button "收起侧栏" [ref=e12]:
+        - generic [ref=e13]: chevron_left
+    - navigation "管理导航" [ref=e14]:
+      - link "总览" [ref=e15] [cursor=pointer]:
+        - /url: /admin
+        - generic [ref=e16]: dashboard
+        - generic [ref=e17]: 总览
+      - link "用户" [ref=e18] [cursor=pointer]:
+        - /url: /admin/users
+        - generic [ref=e19]: group
+        - generic [ref=e20]: 用户
+      - link "题目管理" [ref=e21] [cursor=pointer]:
+        - /url: /admin/problems
+        - generic [ref=e22]: library_books
+        - generic [ref=e23]: 题目管理
+      - link "判题设置" [ref=e24] [cursor=pointer]:
+        - /url: /admin/judge-settings
+        - generic [ref=e25]: tune
+        - generic [ref=e26]: 判题设置
+      - link "题面配置" [ref=e27] [cursor=pointer]:
+        - /url: /admin/problem-content
+        - generic [ref=e28]: edit_document
+        - generic [ref=e29]: 题面配置
+      - link "相似度扫描" [ref=e30] [cursor=pointer]:
+        - /url: /admin/similarity-scan
+        - generic [ref=e31]: monitoring
+        - generic [ref=e32]: 相似度扫描
+      - link "查重报告" [ref=e33] [cursor=pointer]:
+        - /url: /admin/plagiarism-reports
+        - generic [ref=e34]: find_in_page
+        - generic [ref=e35]: 查重报告
+    - generic [ref=e36]:
+      - link "返回用户工作台" [ref=e37] [cursor=pointer]:
+        - /url: /dashboard
+        - generic [ref=e38]: arrow_back
+        - generic [ref=e39]: 返回用户工作台
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]: "1"
+          - generic [ref=e43]:
+            - link "1001" [ref=e44] [cursor=pointer]:
+              - /url: /profile
+            - paragraph [ref=e45]: 管理后台
+        - generic [ref=e46]:
+          - link "设置" [ref=e47] [cursor=pointer]:
+            - /url: /settings
+            - generic [ref=e48]: settings
+            - generic [ref=e49]: 设置
+          - button "退出登录" [ref=e50]:
+            - generic [ref=e51]: logout
+            - generic [ref=e52]: 退出登录
+  - main [ref=e53]:
+    - generic [ref=e55]:
+      - generic [ref=e56]:
+        - generic [ref=e57]: 管理台
+        - generic [ref=e58]: 运营与审核中心
+      - link "返回用户工作台" [ref=e59] [cursor=pointer]:
+        - /url: /dashboard
+        - generic [ref=e60]: arrow_back
+        - generic [ref=e61]: 返回用户工作台
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - heading "管理台加载失败" [level=1] [ref=e70]
+        - paragraph [ref=e71]: 当前无法读取后台运行概览。
+      - button "重新加载" [ref=e72] [cursor=pointer]:
+        - img [ref=e73]
+        - text: 重新加载

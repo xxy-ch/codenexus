@@ -134,7 +134,7 @@ export function ProblemManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Admin</span>
           <ChevronRight className="h-3.5 w-3.5" />
@@ -142,7 +142,7 @@ export function ProblemManagement() {
         </div>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">题目管理</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">题目管理</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
               管理题库的创建、编辑、删除与基础可见性维护。当前已接入真实后端写操作。
             </p>
@@ -182,53 +182,53 @@ export function ProblemManagement() {
 
       {/* Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">总题目</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">总题目</span>
             <LibraryBig className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-foreground">{total}</div>
-          <p className="mt-2 text-xs text-muted-foreground">当前分页条件下的总题目量。</p>
+          <div className="mt-4 text-2xl font-bold text-foreground">{total}</div>
+          <p className="mt-2 text-[13px] text-muted-foreground">当前分页条件下的总题目量。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">已发布</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">已发布</span>
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="mt-4 flex items-center gap-2">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-status-accepted" />
-            <span className="text-3xl font-bold text-status-accepted">{stats.publishedCount}</span>
+            <span className="text-2xl font-bold text-status-accepted">{stats.publishedCount}</span>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">当前列表中的公开题目数量。</p>
+          <p className="mt-2 text-[13px] text-muted-foreground">当前列表中的公开题目数量。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">草稿/隐藏</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">草稿/隐藏</span>
             <EyeOff className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-difficulty-medium">{stats.draftCount}</div>
-          <p className="mt-2 text-xs text-muted-foreground">非公开条目数。</p>
+          <div className="mt-4 text-2xl font-bold text-difficulty-medium">{stats.draftCount}</div>
+          <p className="mt-2 text-[13px] text-muted-foreground">非公开条目数。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">低通过率</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">低通过率</span>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-destructive">{stats.lowCoverageCount}</div>
-          <p className="mt-2 text-xs text-muted-foreground">通过率低于 30% 或暂无提交的题目。</p>
+          <div className="mt-4 text-2xl font-bold text-destructive">{stats.lowCoverageCount}</div>
+          <p className="mt-2 text-[13px] text-muted-foreground">通过率低于 30% 或暂无提交的题目。</p>
         </div>
       </div>
 
       {/* Form + Table */}
       <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         {/* Create/Edit Form */}
-        <aside className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <aside className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-foreground">
                 {formMode === 'create' ? '新建题目' : `编辑题目 #${editingId}`}
               </h2>
-              <p className="mt-1 text-xs text-muted-foreground">维护题目核心信息。</p>
+              <p className="mt-1 text-[13px] text-muted-foreground">维护题目核心信息。</p>
             </div>
             {formMode === 'edit' && (
               <button
@@ -314,8 +314,8 @@ export function ProblemManagement() {
         </aside>
 
         {/* Problem Table */}
-        <div className="rounded-xl border border-border bg-card shadow-sm">
-          <div className="flex flex-col gap-4 border-b border-border px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-sm">
+          <div className="flex flex-col gap-4 border-b border-border/40 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-1 flex-col gap-4 lg:flex-row lg:items-center">
               <div className="relative max-w-xl flex-1">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -359,13 +359,13 @@ export function ProblemManagement() {
                 </select>
               </div>
             </div>
-            <div className="inline-flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">
               <SlidersHorizontal className="h-3.5 w-3.5" />
               平均通过率 {stats.averageAcceptance}%
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-b border-border px-6 py-3">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border/40 px-5 py-3">
             {[
               { value: 'recent', label: '最新' },
               { value: 'title', label: '标题' },
@@ -377,7 +377,7 @@ export function ProblemManagement() {
                 type="button"
                 onClick={() => setSortBy(option.value as SortType)}
                 className={cn(
-                  'rounded-lg px-3 py-1.5 text-xs font-medium transition',
+                  'rounded-lg px-3 py-1.5 text-[13px] font-medium transition',
                   sortBy === option.value ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent',
                 )}
               >
@@ -387,18 +387,18 @@ export function ProblemManagement() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-border">
+            <table className="min-w-full divide-y divide-border/40">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">ID / 标题</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">难度</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">状态</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">标签</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">统计</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">ID / 标题</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">难度</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">状态</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">标签</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">统计</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border bg-card">
+              <tbody className="divide-y divide-border/40 bg-transparent">
                 {problems.map((problem) => {
                   const acceptanceRate = problem.submissions_count > 0
                     ? Math.round((problem.accepted_count / problem.submissions_count) * 100)
@@ -406,21 +406,21 @@ export function ProblemManagement() {
 
                   return (
                     <tr key={problem.id} className="transition hover:bg-muted/50">
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <div className="text-sm font-medium text-foreground">
                           #{problem.id} {problem.title}
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">作者: {problem.author_username || 'system'}</div>
+                        <div className="mt-1 text-[13px] text-muted-foreground">作者: {problem.author_username || 'system'}</div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={cn('rounded-full px-3 py-1 text-xs font-medium', DIFFICULTY_CONFIG[problem.difficulty as DifficultyType]?.color)}>
+                      <td className="px-5 py-4">
+                        <span className={cn('rounded-full px-3 py-1 text-[13px] font-medium', DIFFICULTY_CONFIG[problem.difficulty as DifficultyType]?.color)}>
                           {DIFFICULTY_CONFIG[problem.difficulty as DifficultyType]?.label ?? problem.difficulty}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <span
                           className={cn(
-                            'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium',
+                            'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium',
                             problem.status === 'published' && 'bg-status-accepted/10 text-status-accepted',
                             problem.status === 'draft' && 'bg-difficulty-medium/10 text-difficulty-medium',
                             problem.status === 'archived' && 'bg-muted text-muted-foreground',
@@ -430,31 +430,31 @@ export function ProblemManagement() {
                           {problem.status === 'published' ? '已发布' : problem.status === 'draft' ? '草稿' : '已归档'}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <div className="flex max-w-xs flex-wrap gap-1.5">
                           {problem.tags.length > 0 ? (
                             problem.tags.slice(0, 3).map((tag) => (
-                              <span key={tag} className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                              <span key={tag} className="rounded-md bg-muted px-2 py-0.5 text-[13px] text-muted-foreground">
                                 {tag}
                               </span>
                             ))
                           ) : (
-                            <span className="text-xs text-muted-foreground">无标签</span>
+                            <span className="text-[13px] text-muted-foreground">无标签</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-xs text-muted-foreground">
+                      <td className="px-5 py-4">
+                        <div className="text-[13px] text-muted-foreground">
                           <div>{problem.submissions_count} 次提交</div>
                           <div className="mt-0.5">{problem.accepted_count} 通过 / {acceptanceRate}%</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-5 py-4">
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
                             onClick={() => startEdit(problem)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-border/40 px-3 py-1.5 text-[13px] font-medium text-foreground hover:bg-muted transition-colors"
                           >
                             <Pencil className="h-3.5 w-3.5" />
                             编辑
@@ -466,7 +466,7 @@ export function ProblemManagement() {
                                 deleteMutation.mutate(problem.id)
                               }
                             }}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/15 transition-colors"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-[13px] font-medium text-destructive hover:bg-destructive/15 transition-colors"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             删除
@@ -484,8 +484,8 @@ export function ProblemManagement() {
             <EmptyState icon={FolderOpen} title="暂无题目" description="还没有创建任何题目" />
           )}
 
-          <div className="flex flex-col gap-4 border-t border-border px-6 py-4 md:flex-row md:items-center md:justify-between">
-            <div className="text-xs text-muted-foreground">
+          <div className="flex flex-col gap-4 border-t border-border/40 px-5 py-4 md:flex-row md:items-center md:justify-between">
+            <div className="text-[13px] text-muted-foreground">
               已接通后台 CRUD，第 {page} / {totalPages} 页
             </div>
             <div className="flex items-center gap-3">
@@ -493,7 +493,7 @@ export function ProblemManagement() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-xs font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-lg border border-border/40 px-4 py-2 text-[13px] font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 上一页
@@ -502,7 +502,7 @@ export function ProblemManagement() {
                 type="button"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
               >
                 下一页
                 <ArrowRight className="h-3.5 w-3.5" />

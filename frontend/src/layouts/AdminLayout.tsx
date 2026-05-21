@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useFeatureEnabled } from '@/hooks/useFeatureGate'
+import { AmbientBackground } from '@/components/layout/AmbientBackground'
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   dashboard: LayoutDashboard,
@@ -47,9 +48,10 @@ export function AdminLayout() {
   ]
 
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen relative z-0 flex flex-col text-foreground bg-background">
+      <AmbientBackground />
       {/* Admin Header */}
-      <header className="bg-card border-b sticky top-0 z-10">
+      <header className="sticky top-0 z-10 glass-subtle border-b border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
@@ -66,10 +68,10 @@ export function AdminLayout() {
                       key={item.href}
                       to={item.href}
                       className={cn(
-                        'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                        'flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-colors',
                         isActive
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:bg-secondary'
+                          ? 'bg-primary text-primary-foreground shadow-md'
+                          : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
                       )}
                     >
                       <IconComponent className="h-4 w-4" />
@@ -82,7 +84,7 @@ export function AdminLayout() {
             <div className="flex items-center gap-4">
               <Link
                 to="/dashboard"
-                className="text-sm text-muted-foreground hover:text-primary"
+                className="text-[14px] text-muted-foreground hover:text-primary transition-colors"
               >
                 返回用户界面
               </Link>
@@ -92,7 +94,7 @@ export function AdminLayout() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full relative z-0">
         <Outlet />
       </main>
     </div>

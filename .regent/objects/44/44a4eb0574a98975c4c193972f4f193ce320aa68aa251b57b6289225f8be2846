@@ -1,0 +1,1 @@
+{"command":"docker compose logs --since=5m api --tail=300"}

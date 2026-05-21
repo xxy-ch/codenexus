@@ -1,0 +1,497 @@
+---
+phase: 06-full-ci-cd-observability
+plan: 03
+type: execute
+wave: 2
+depends_on: ["06-02"]
+files_modified:
+  - api/Cargo.toml
+  - api-infra/Cargo.toml
+  - api-infra/src/state.rs
+  - api-infra/src/metrics.rs
+  - api/src/middleware/metrics.rs
+  - api/src/middleware/mod.rs
+  - api/src/main.rs
+autonomous: true
+requirements:
+  - OBS-02
+
+must_haves:
+  truths:
+    - "GET /metrics returns Prometheus-formatted text with http_request_duration_seconds histogram"
+    - "GET /metrics returns submission_queue_depth gauge"
+    - "Every HTTP request increments http_requests_total counter and records in http_request_duration_seconds histogram"
+    - "Metrics labels include method, path (matched route pattern), and status"
+    - "/metrics endpoint itself is NOT tracked by metrics middleware (no self-reference)"
+  artifacts:
+    - path: "api-infra/src/metrics.rs"
+      provides: "Prometheus recorder setup with configurable histogram buckets"
+      exports: ["setup_metrics_recorder"]
+    - path: "api/src/middleware/metrics.rs"
+      provides: "HTTP metrics middleware recording duration, count, and status"
+      exports: ["track_metrics"]
+    - path: "api-infra/src/state.rs"
+      provides: "AppState with prometheus_handle field"
+      contains: "prometheus_handle"
+  key_links:
+    - from: "api/src/main.rs"
+      to: "api-infra/src/metrics.rs"
+      via: "setup_metrics_recorder() called in main() before create_router"
+      pattern: "setup_metrics_recorder"
+    - from: "api/src/main.rs"
+      to: "api/src/middleware/metrics.rs"
+      via: "track_metrics in route_layer"
+      pattern: "track_metrics"
+    - from: "api/src/main.rs"
+      to: "/metrics"
+      via: "route registration using state.prometheus_handle.render()"
+      pattern: '"/metrics"'
+---
+
+<objective>
+Add full Prometheus observability to the API server (OBS-02).
+
+Purpose: Production monitoring requires real-time metrics on request latency, error rates, and queue depth. Per D-04, implement comprehensive Prometheus metrics using the `metrics` + `metrics-exporter-prometheus` crate ecosystem with a custom Axum middleware layer.
+
+Output: /metrics endpoint exposing Prometheus-formatted metrics, HTTP metrics middleware recording per-request duration/count/status, and business metrics helpers for submission queue depth.
+</objective>
+
+<execution_context>
+@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@$HOME/.claude/get-shit-done/templates/summary.md
+</execution_context>
+
+<context>
+@.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
+@.planning/phases/06-full-ci-cd-observability/06-CONTEXT.md
+@.planning/phases/06-full-ci-cd-observability/06-RESEARCH.md
+@.planning/phases/06-full-ci-cd-observability/06-02-SUMMARY.md
+
+<interfaces>
+<!-- AppState after Plan 02 modifies it (current state, since Plan 02 runs first) -->
+From api-infra/src/state.rs (CURRENT -- Plan 03 will add prometheus_handle):
+```rust
+#[derive(Clone)]
+pub struct AppState {
+    pub db_pool: PgPool,
+    pub redis_pool: Option<deadpool_redis::Pool>,
+    pub redis_url: String,
+    pub jwt_service: Arc<dyn TokenService>,
+    pub jwt_secret: String,
+    pub worker_secret: String,
+    pub websocket_server: Arc<crate::websocket::WebSocketServer>,
+    pub class_membership_checker: Arc<dyn ClassMembershipChecker>,
+}
+```
+
+<!-- main.rs create_router signature (current) -->
+```rust
+fn create_router(state: AppState, config: api_infra::config::AppConfig) -> Router
+```
+
+<!-- After Plan 02, middleware layering will be:
+     CORS -> Rate Limit -> Request ID -> (Auth -> Tenant inside protected_router) -> Handler
+     Plan 03 adds Metrics layer between Request ID and the public/protected merge
+-->
+
+<!-- Metrics crate API (from RESEARCH.md) -->
+```rust
+// Counter: metrics::counter!("name", &[("label", "value")]).increment(1);
+// Histogram: metrics::histogram!("name", &[("label", "value")]).record(f64_value);
+// Gauge: metrics::gauge!("name", &[("label", "value")]).set(f64_value);
+//   or: .increment(1.0) / .decrement(1.0)
+```
+
+<!-- PrometheusHandle API -->
+```rust
+use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
+// PrometheusBuilder::new()
+//   .set_buckets_for_metric(Matcher::Full("name".into()), &[buckets])
+//   .install_recorder()  // NOT install() -- avoids test panic
+//   -> PrometheusHandle
+// handle.render() -> String  (Prometheus text format)
+```
+
+<!-- MatchedPath usage for low-cardinality route labels -->
+```rust
+use axum::extract::MatchedPath;
+// req.extensions().get::<MatchedPath>() -> Option<&MatchedPath>
+// matched_path.as_str() -> "/users/:id" (pattern, not actual ID)
+```
+</interfaces>
+</context>
+
+<tasks>
+
+<task type="auto">
+  <name>Task 1: Add metrics crate dependencies and PrometheusHandle to AppState</name>
+  <files>api/Cargo.toml, api-infra/Cargo.toml, api-infra/src/state.rs, api-infra/src/metrics.rs</files>
+  <read_first>
+    api/Cargo.toml
+    api-infra/Cargo.toml
+    api-infra/src/state.rs
+    api-infra/src/lib.rs
+  </read_first>
+  <acceptance_criteria>
+    - api-infra/Cargo.toml has metrics = "0.24" and metrics-exporter-prometheus = "0.18" as dependencies
+    - api/Cargo.toml has metrics = "0.24" as dependency
+    - api-infra/src/metrics.rs exists with setup_metrics_recorder() function returning PrometheusHandle
+    - Histogram buckets configured for http_request_duration_seconds: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
+    - Uses install_recorder() (not install()) to avoid test-time panics
+    - Spawns background upkeep task for histogram maintenance every 5 seconds
+    - api-infra/src/lib.rs re-exports the metrics module
+    - AppState has new field: pub prometheus_handle: metrics_exporter_prometheus::PrometheusHandle
+    - `cargo check -p api-infra -p api` passes
+  </acceptance_criteria>
+  <action>Add Prometheus metrics dependencies and state support:
+
+1. Add to `api-infra/Cargo.toml` [dependencies]:
+   ```
+   metrics = "0.24"
+   metrics-exporter-prometheus = "0.18"
+   ```
+
+2. Add to `api/Cargo.toml` [dependencies]:
+   ```
+   metrics = "0.24"
+   ```
+
+3. Create `api-infra/src/metrics.rs`:
+   ```rust
+   use metrics_exporter_prometheus::{Matcher, PrometheusBuilder, PrometheusHandle};
+
+   /// Histogram buckets for HTTP request duration.
+   /// Covers 5ms to 10s with exponential-like spacing.
+   const HTTP_DURATION_BUCKETS: &[f64] = &[
+       0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
+   ];
+
+   /// Initialize the Prometheus metrics recorder.
+   /// Returns a PrometheusHandle used to render metrics and store in AppState.
+   /// Uses install_recorder() (not install()) to avoid panics on double-init in tests.
+   pub fn setup_metrics_recorder() -> PrometheusHandle {
+       let handle = PrometheusBuilder::new()
+           .set_buckets_for_metric(
+               Matcher::Full("http_request_duration_seconds".to_string()),
+               HTTP_DURATION_BUCKETS,
+           )
+           .expect("Failed to set histogram buckets")
+           .install_recorder()
+           .expect("Failed to install Prometheus recorder");
+
+       // Periodic upkeep for histogram maintenance
+       let upkeep_handle = handle.clone();
+       tokio::spawn(async move {
+           let mut interval = tokio::time::interval(std::time::Duration::from_secs(5));
+           loop {
+               interval.tick().await;
+               upkeep_handle.run_upkeep();
+           }
+       });
+
+       handle
+   }
+   ```
+
+4. Update `api-infra/src/lib.rs` to add `pub mod metrics;` (check existing modules first -- add alongside existing module declarations).
+
+5. Update `api-infra/src/state.rs`:
+   - Add import: `use metrics_exporter_prometheus::PrometheusHandle;`
+   - Add field to AppState struct: `pub prometheus_handle: PrometheusHandle,`
+
+This task creates the foundation (recorder setup + state field). The middleware and route registration happen in Task 2.
+  </action>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge && cargo check -p api-infra -p api 2>&1 | tail -5</automated>
+  </verify>
+  <done>
+    - metrics and metrics-exporter-prometheus crates added to api-infra and api
+    - setup_metrics_recorder() function in api-infra/src/metrics.rs
+    - AppState has prometheus_handle field
+    - `cargo check -p api-infra -p api` passes
+  </done>
+</task>
+
+<task type="auto" tdd="true">
+  <name>Task 2: Add HTTP metrics middleware and /metrics endpoint</name>
+  <files>api/src/middleware/metrics.rs, api/src/middleware/mod.rs, api/src/main.rs</files>
+  <read_first>
+    api/src/main.rs
+    api/src/middleware/request_id.rs
+    api/src/middleware/mod.rs
+    api-infra/src/metrics.rs
+    api-infra/src/state.rs
+  </read_first>
+  <behavior>
+    - Test 1: GET /metrics returns 200 with content-type text/plain and Prometheus text format containing http_request_duration_seconds_bucket
+    - Test 2: After a GET /health/live request, /metrics shows http_requests_total with method=GET, path=/health/live, status=200
+    - Test 3: /metrics endpoint is NOT tracked in its own metrics (no self-reference noise)
+    - Test 4: After multiple requests, http_request_duration_seconds_count is > 0
+    - Test 5: MatchedPath is used for path label (e.g., /submissions/:id not /submissions/abc-123)
+  </behavior>
+  <acceptance_criteria>
+    - api/src/middleware/metrics.rs with track_metrics function
+    - Uses MatchedPath for path label (falls back to raw URI if no match)
+    - Records http_requests_total counter with method, path, status labels
+    - Records http_request_duration_seconds histogram with method, path, status labels
+    - /metrics route in public_router uses state.prometheus_handle.render()
+    - /metrics route is NOT wrapped by the metrics middleware (avoids self-reference)
+    - Middleware mod.rs updated with pub mod metrics
+    - main.rs: prometheus_handle initialized in main(), passed to AppState, used in metrics route and track_metrics layer
+    - Updated middleware layering: CORS -> Rate Limit -> Request ID -> Metrics -> (Auth -> Tenant inside protected) -> Handler
+    - `cargo check -p api` passes
+    - `cargo clippy -p api --all-targets` passes on new code
+  </acceptance_criteria>
+  <action>Add the HTTP metrics middleware and /metrics endpoint per D-04:
+
+1. Create `api/src/middleware/metrics.rs`:
+   ```rust
+   use axum::{
+       extract::{MatchedPath, Request},
+       middleware::{self, Next},
+       response::IntoResponse,
+   };
+   use std::time::Instant;
+
+   /// HTTP metrics middleware that records request duration, count, and status.
+   /// Uses MatchedPath for low-cardinality route labels (e.g., /users/:id not /users/abc-123).
+   pub async fn track_metrics(req: Request, next: Next) -> impl IntoResponse {
+       let start = Instant::now();
+       let path = if let Some(matched_path) = req.extensions().get::<MatchedPath>() {
+           matched_path.as_str().to_owned()
+       } else {
+           req.uri().path().to_owned()
+       };
+       let method = req.method().clone();
+       let response = next.run(req).await;
+       let latency = start.elapsed().as_secs_f64();
+       let status = response.status().as_u16().to_string();
+
+       let labels = [
+           ("method", method.to_string()),
+           ("path", path),
+           ("status", status),
+       ];
+
+       metrics::counter!("http_requests_total", &labels).increment(1);
+       metrics::histogram!("http_request_duration_seconds", &labels).record(latency);
+       response
+   }
+   ```
+
+2. Update `api/src/middleware/mod.rs`: add `pub mod metrics;`
+
+3. Update `api/src/main.rs`:
+
+   a. Add imports:
+   - `use api_infra::metrics::setup_metrics_recorder;`
+   - `use api::middleware::metrics::track_metrics;` (or reference via `middleware::metrics::track_metrics`)
+
+   b. In `main()`, BEFORE `create_router()` call:
+   ```rust
+   let prometheus_handle = setup_metrics_recorder();
+   ```
+   Then add `prometheus_handle` to the AppState struct initialization:
+   ```rust
+   let state = AppState {
+       db_pool,
+       redis_pool,
+       redis_url: config.redis_url.clone(),
+       jwt_service: std::sync::Arc::new(jwt_service),
+       jwt_secret: config.jwt_secret.clone(),
+       worker_secret: config.worker_secret.clone(),
+       websocket_server,
+       class_membership_checker,
+       prometheus_handle,
+   };
+   ```
+
+   c. Add metrics_handler function:
+   ```rust
+   async fn metrics_handler(State(state): State<AppState>) -> String {
+       state.prometheus_handle.render()
+   }
+   ```
+
+   d. In `create_router()`, update public_router:
+   ```rust
+   let public_router = Router::new()
+       // Health endpoints (from Plan 02)
+       .route("/health/live", get(health_live))
+       .route("/health/ready", get(health_ready))
+       .route("/health", get(health_redirect))
+       .route("/status", get(status_redirect))
+       // Metrics endpoint -- in public router (not behind auth)
+       .route("/metrics", get(metrics_handler))
+       // ... other public routes ...
+   ```
+
+   e. In `create_router()`, add the metrics middleware layer. CRITICAL: The metrics layer must wrap the protected routes and public routes EXCEPT /metrics itself. The simplest approach is to add the metrics layer between the request_id layer and the rate limit layer, but ONLY on routes that are NOT /metrics. Since /metrics is in public_router and the metrics middleware is applied as a route_layer on the merged result, we need to exclude /metrics.
+
+   The cleanest approach per RESEARCH.md: Put the metrics layer as a route_layer on the protected_router only, plus on public routes except /metrics. This is complex. Simpler: add a path check in the middleware itself:
+
+   Actually, the simplest correct approach: Apply the metrics route_layer AFTER the public_router is constructed but BEFORE merging with protected_router. Construct it like this:
+
+   ```rust
+   // Metrics-instrumented routes: everything except /metrics itself
+   let health_router = Router::new()
+       .route("/health/live", get(health_live))
+       .route("/health/ready", get(health_ready))
+       .route("/health", get(health_redirect))
+       .route("/status", get(status_redirect))
+       .route_layer(axum::middleware::from_fn(track_metrics));
+
+   let metrics_router = Router::new()
+       .route("/metrics", get(metrics_handler));
+
+   let auth_router = Router::new()
+       .route("/auth/login", post(auth::login))
+       // ... other public auth routes ...
+       .route("/ws", get(websocket::handler::websocket_upgrade_handler))
+       .route_layer(axum::middleware::from_fn(track_metrics));
+
+   let public_router = health_router
+       .merge(metrics_router)
+       .merge(auth_router);
+
+   let protected_router = Router::new()
+       // ... domain routes ...
+       .route_layer(axum::middleware::from_fn(
+           middleware::tenant::tenant_middleware,
+       ))
+       .route_layer(axum::middleware::from_fn_with_state(
+           state.clone(),
+           middleware::auth::auth_middleware,
+       ))
+       .route_layer(axum::middleware::from_fn(track_metrics));
+   ```
+
+   Wait -- this restructures the router significantly. A simpler approach that avoids restructuring: add a path check at the top of track_metrics:
+
+   ```rust
+   pub async fn track_metrics(req: Request, next: Next) -> impl IntoResponse {
+       // Skip self-referential metrics for the /metrics endpoint
+       if req.uri().path() == "/metrics" {
+           return next.run(req).await;
+       }
+       // ... rest of metrics recording
+   }
+   ```
+
+   This is the approach used in the axum official example and is the simplest. Use this approach. The overhead of one string comparison per request is negligible.
+
+   f. Apply the metrics middleware in create_router() as a route_layer on the merged result, BEFORE the request_id layer (so request_id wraps everything):
+   ```rust
+   public_router
+       .merge(protected_router)
+       .route_layer(axum::middleware::from_fn(track_metrics))
+       .route_layer(axum::middleware::from_fn(request_id_middleware))
+       .layer(GovernorLayer { ... })
+       .layer(cors)
+       .with_state(state)
+   ```
+
+   Wait -- the request_id layer should be outermost (wrapping even metrics). And metrics should wrap everything except itself. So:
+   - Request ID (outermost) -> Rate Limit -> Metrics -> (Auth -> Tenant inside protected) -> Handler
+
+   ```rust
+   public_router
+       .merge(protected_router)
+       .route_layer(axum::middleware::from_fn(track_metrics))
+       .route_layer(axum::middleware::from_fn(request_id_middleware))
+       .layer(GovernorLayer { ... })
+       .layer(cors)
+       .with_state(state)
+   ```
+
+   Actually, layer ordering in Axum: outer layers are added LAST (bottom-up). The current code has:
+   ```rust
+   .layer(GovernorLayer { ... })  // applied second
+   .layer(cors)                    // applied first (outermost)
+   ```
+   Wait no -- in Axum, layers wrap from bottom to top. The LAST .layer() call wraps the outermost. Let me re-read the current code:
+   ```rust
+   public_router
+       .merge(protected_router)
+       .layer(GovernorLayer { ... })  // wraps merged result
+       .layer(cors)                    // wraps everything (outermost)
+       .with_state(state)
+   ```
+   So cors is outermost, then GovernorLayer. For route_layer (which is like layer but scoped to routes):
+
+   ```rust
+   public_router
+       .merge(protected_router)
+       // Metrics wraps all routes (except /metrics via path check)
+       .route_layer(axum::middleware::from_fn(track_metrics))
+       // Request ID wraps everything including metrics
+       .route_layer(axum::middleware::from_fn(request_id_middleware))
+       .layer(GovernorLayer { ... })
+       .layer(cors)
+       .with_state(state)
+   ```
+
+   Execution order: CORS -> Rate Limit -> Request ID -> Metrics -> Handler
+
+   This matches RESEARCH.md recommendation.
+  </action>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge && cargo check -p api 2>&1 | tail -5</automated>
+  </verify>
+  <done>
+    - GET /metrics returns Prometheus text format with http_request_duration_seconds histogram
+    - Every HTTP request (except /metrics itself) records counter + histogram
+    - Path labels use MatchedPath (route patterns) for low cardinality
+    - AppState includes prometheus_handle initialized at startup
+    - Metrics middleware uses path check to skip self-referencing
+    - `cargo check -p api` passes
+    - `cargo clippy -p api --all-targets` passes on new code
+  </done>
+</task>
+
+</tasks>
+
+<threat_model>
+## Trust Boundaries
+
+| Boundary | Description |
+|----------|-------------|
+| Prometheus scraper -> /metrics | Unauthenticated access to metrics endpoint must not expose secrets or PII |
+| Client -> API (metrics labels) | High-cardinality paths could exhaust Prometheus memory |
+
+## STRIDE Threat Register
+
+| Threat ID | Category | Component | Disposition | Mitigation Plan |
+|-----------|----------|-----------|-------------|-----------------|
+| T-06-06 | Information Disclosure | /metrics endpoint | mitigate | Metrics contain only aggregate counters/histograms; no PII, no connection strings, no user data. Metric labels use MatchedPath (route patterns) not actual path values |
+| T-06-07 | Denial of Service | metrics middleware | accept | Label cardinality bounded by number of routes (not number of requests). MatchedPath ensures /users/:id is one series, not one per user |
+| T-06-08 | Denial of Service | /metrics endpoint | accept | render() is lightweight. Rate limiting via GovernorLayer covers /metrics as well |
+
+</threat_model>
+
+<verification>
+1. `cargo check -p api` passes
+2. `cargo clippy -p api --all-targets` passes on new code
+3. `GET /metrics` returns 200 with Prometheus text format containing:
+   - `http_request_duration_seconds_bucket` histogram
+   - `http_request_duration_seconds_count`
+   - `http_request_duration_seconds_sum`
+4. After hitting `/health/live`, `/metrics` shows `http_requests_total{method="GET",path="/health/live",status="200"}`
+5. `/metrics` response does NOT contain entries for path="/metrics" itself
+6. `cargo test -p api --lib` passes (existing tests still pass)
+</verification>
+
+<success_criteria>
+- /metrics endpoint serves Prometheus-formatted metrics on the same port (3000)
+- HTTP request duration histogram with method/path/status labels
+- HTTP request counter with method/path/status labels
+- /metrics not self-referencing in its own metrics
+- No existing API behavior changed
+- Metrics crate dependencies match RESEARCH.md recommendations (metrics 0.24, metrics-exporter-prometheus 0.18)
+</success_criteria>
+
+<output>
+After completion, create `.planning/phases/06-full-ci-cd-observability/06-03-SUMMARY.md`
+</output>

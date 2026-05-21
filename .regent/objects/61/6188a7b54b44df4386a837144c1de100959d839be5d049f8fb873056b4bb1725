@@ -1,0 +1,473 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1778341617506,
+  "projectRoot": "/Users/xiexingyu/Documents/项目/Online_Judge/frontend",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "react",
+        "version": "19.2.0",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.2.0",
+        "category": "frontend"
+      },
+      {
+        "name": "@playwright/test",
+        "version": "1.55.0",
+        "category": "testing"
+      },
+      {
+        "name": "vite",
+        "version": "7.3.1",
+        "category": "build"
+      },
+      {
+        "name": "vitest",
+        "version": "1.0.2",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "typecheck": "tsc -p tsconfig.release.json --noEmit",
+      "lint": "eslint src/services src/components/messages src/pages/community/DirectMessages.tsx src/pages/admin/SimilarityScanConfig.tsx src/pages/admin/PlagiarismReportList.tsx src/pages/admin/PlagiarismReportDetail.tsx src/pages/admin/JudgeSettings.tsx src/pages/admin/ProblemContentConfig.tsx",
+      "preview": "vite preview",
+      "test": "vitest",
+      "test:run": "vitest --run",
+      "test:coverage": "vitest --coverage",
+      "test:e2e": "playwright test"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": "type-based"
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "public",
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "master",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "dist": {
+      "path": "dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 4,
+      "lastAccessed": 1778341617495,
+      "keyFiles": [
+        "index.html",
+        "review.html",
+        "theme-init.js",
+        "vite.svg"
+      ]
+    },
+    "e2e": {
+      "path": "e2e",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1778341617495,
+      "keyFiles": [
+        "contest-freeze.spec.ts",
+        "contest-upsolving.spec.ts",
+        "smoke.spec.ts"
+      ]
+    },
+    "playwright-report": {
+      "path": "playwright-report",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1778341617500,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 3,
+      "lastAccessed": 1778341617501,
+      "keyFiles": [
+        "review.html",
+        "theme-init.js",
+        "vite.svg"
+      ]
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 5,
+      "lastAccessed": 1778341617501,
+      "keyFiles": [
+        "App.css",
+        "App.tsx",
+        "index.css",
+        "main.tsx",
+        "vite-env.d.ts"
+      ]
+    },
+    "test-results": {
+      "path": "test-results",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1778341617502,
+      "keyFiles": []
+    },
+    "dist/assets": {
+      "path": "dist/assets",
+      "purpose": "Static assets",
+      "fileCount": 86,
+      "lastAccessed": 1778341617502,
+      "keyFiles": [
+        "AdminDashboard-Mz_zkWDO.js",
+        "AssignmentReport-B4-Ms6TT.js",
+        "BatchOperations-DpeCJStX.js"
+      ]
+    },
+    "src/assets": {
+      "path": "src/assets",
+      "purpose": "Static assets",
+      "fileCount": 1,
+      "lastAccessed": 1778341617503,
+      "keyFiles": [
+        "react.svg"
+      ]
+    },
+    "src/components": {
+      "path": "src/components",
+      "purpose": "UI components",
+      "fileCount": 0,
+      "lastAccessed": 1778341617503,
+      "keyFiles": []
+    },
+    "src/lib": {
+      "path": "src/lib",
+      "purpose": "Library code",
+      "fileCount": 4,
+      "lastAccessed": 1778341617503,
+      "keyFiles": [
+        "design-tokens.ts",
+        "submissionStatus.ts",
+        "theme-persistence.ts"
+      ]
+    },
+    "src/pages": {
+      "path": "src/pages",
+      "purpose": "Page components",
+      "fileCount": 0,
+      "lastAccessed": 1778341617504,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/components/layout/Sidebar.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1777469782479,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/user/Settings.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1777469888832,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/auth/RegisterPage.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1777469969042,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/admin/BatchOperations.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1777470019810,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/StatusBadge.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1777470405717,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Tooltip.test.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1777470612317,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Badge.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777469279265,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/dialog.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777469345306,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/dropdown-menu.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777469345964,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/tabs.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777469402823,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Toast.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777469403430,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/table.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777469404045,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/separator.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777469404721,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Select.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777470390314,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Input.test.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777470536891,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Textarea.test.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777470537678,
+      "type": "file"
+    },
+    {
+      "path": "src/index.css",
+      "accessCount": 1,
+      "lastAccessed": 1777469235860,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/auth/LoginPage.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777469662829,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/user/ProblemSet.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777469662875,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/user/DashboardEnhanced.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777469663235,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/admin/AdminDashboard.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777469682890,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/error/NotFound.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777469682944,
+      "type": "file"
+    },
+    {
+      "path": "src/pages/error/ServerError.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777469683051,
+      "type": "file"
+    },
+    {
+      "path": "src/App.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470175868,
+      "type": "file"
+    },
+    {
+      "path": "vite.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1777470175982,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/EmptyState.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470313822,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/primitives.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470313904,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Card.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470356413,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Button.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470356480,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Input.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470356523,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Checkbox.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470390182,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Textarea.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470390422,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Radio.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470390491,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Switch.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470390541,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Tooltip.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470390627,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/badge.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470405359,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/Loading.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470405651,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Button.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470520051,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Card.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470520782,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Checkbox.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470522051,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Switch.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470522755,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Select.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470523922,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Radio.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470524543,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/Badge.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470526009,
+      "type": "file"
+    },
+    {
+      "path": "src/components/ui/__tests__/StatusBadge.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777470526573,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

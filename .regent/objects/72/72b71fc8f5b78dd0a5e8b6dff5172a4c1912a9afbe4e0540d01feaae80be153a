@@ -1,0 +1,49 @@
+# Context Snapshot — P4+ closure and assertion alignment
+
+## Task statement
+Create a consensus plan to close phases P4 and later (P4-P7), with special focus on backend authorization/scope gaps and aligning assertions/release gates with actual runtime behavior.
+
+## Desired outcome
+A concrete, reviewable execution plan that sequences remaining work, tests, docs, and review checkpoints so P4-P7 can be closed truthfully.
+
+## Known facts / evidence
+- `cargo check -p api --offline` passes.
+- `cargo check -p judge-worker --offline` passes.
+- `cd frontend && npm run typecheck` passes.
+- `cd frontend && npm run build` passes.
+- Targeted vitest suite for smoke core flows and admin service passes.
+- P3 recent fixes already landed in working tree: submission list status normalization; test_case_results schema alignment; idempotent per-testcase result upsert; WS upgrade cookie auth fallback; submission detail polls queued/compiling.
+- Independent review findings still flag unresolved P3-P6 blockers:
+  1. callback trust missing on `/submissions/:id/results`
+  2. callback path/body/state-machine validation incomplete
+  3. classes/assignments read paths still naked
+  4. assignment/enrollment owner checks incomplete
+  5. contest writes still role-only, not owner/tenant-bounded
+  6. contest participants/rankings visibility still loose
+  7. leaderboard endpoints remain scope-blind
+  8. search/community realtime still below phase goal
+- Shared phase docs P4-P7 still show `State: ready` and need truthful closure artifacts.
+
+## Constraints
+- Do not revert unrelated existing edits.
+- No new dependencies without explicit request.
+- Need an independent review agent for review tasks.
+- Assertions/docs must match real behavior; no false closure.
+- Prefer small, reviewable diffs and targeted tests.
+
+## Unknowns / open questions
+- Exact owner/tenant policy details for class reads, assignment reads, contest rankings, and leaderboard visibility.
+- Whether community realtime should be completed or explicitly de-scoped/removed for truthful closure.
+- Whether release gate should require new dedicated integration tests or can reuse/extend existing suites.
+
+## Likely codebase touchpoints
+- `api/src/submissions/{routes.rs,service.rs}`
+- `api/src/classes/{routes.rs,service.rs,models.rs}`
+- `api/src/contests/{routes.rs,service.rs,models.rs}`
+- `api/src/leaderboard/{routes.rs,service.rs}`
+- `api/src/search/{routes.rs,service.rs}`
+- `api/src/websocket/{handler.rs,message.rs,server.rs}`
+- `frontend/src/services/websocket.ts`
+- `frontend/src/hooks/{useWebSocket.ts,useCommunityUpdates.ts}`
+- `shared/phases/P4-*.md` through `P7-*.md`
+- `docs/delivery/*`

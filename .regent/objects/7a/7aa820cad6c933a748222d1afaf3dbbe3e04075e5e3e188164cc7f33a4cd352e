@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "superconductor": {
+      "type": "http",
+      "url": "http://localhost:31418/mcp?sc_token=c8e68b2dc9f5dff53c99870b8991a7eb&worktree=%2FUsers%2Fxiexingyu%2FDocuments%2F%E9%A1%B9%E7%9B%AE%2FOnline%5FJudge%2F"
+    },
+    "gsd-workflow": {
+      "command": "/opt/homebrew/Cellar/node/25.8.1_1/bin/node",
+      "args": [
+        "/opt/homebrew/lib/node_modules/gsd-pi/packages/mcp-server/dist/cli.js"
+      ],
+      "cwd": "/Users/xiexingyu/Documents/项目/Online_Judge",
+      "env": {
+        "GSD_CLI_PATH": "/opt/homebrew/bin/gsd",
+        "GSD_WORKFLOW_EXECUTORS_MODULE": "/Users/xiexingyu/.gsd/agent/extensions/gsd/tools/workflow-tool-executors.js",
+        "GSD_WORKFLOW_WRITE_GATE_MODULE": "/Users/xiexingyu/.gsd/agent/extensions/gsd/bootstrap/write-gate.js",
+        "GSD_PERSIST_WRITE_GATE_STATE": "1",
+        "GSD_WORKFLOW_PROJECT_ROOT": "/Users/xiexingyu/Documents/项目/Online_Judge"
+      }
+    }
+  }
+}

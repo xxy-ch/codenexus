@@ -1,0 +1,1 @@
+{"command":"kill 76200 || true; lsof -nP -iTCP:5174 -sTCP:LISTEN || true; lsof -nP -iTCP:5175 -sTCP:LISTEN || true"}

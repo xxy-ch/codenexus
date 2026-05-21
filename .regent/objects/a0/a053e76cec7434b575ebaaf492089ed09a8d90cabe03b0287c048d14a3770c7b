@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Submission History - Online Judge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d59f2",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Scrollbar for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200 font-display antialiased min-h-screen flex flex-col">
+<!-- Navbar -->
+<nav class="sticky top-0 z-50 bg-white dark:bg-[#151c2c] border-b border-slate-200 dark:border-slate-800 shadow-sm">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="flex justify-between h-16">
+<div class="flex">
+<div class="flex-shrink-0 flex items-center gap-2">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold text-lg">OJ</div>
+<span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white">AlgoJudge</span>
+</div>
+<div class="hidden sm:ml-8 sm:flex sm:space-x-8">
+<a class="border-transparent text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-slate-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors" href="#">
+                            Problems
+                        </a>
+<a class="border-transparent text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-slate-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors" href="#">
+                            Contests
+                        </a>
+<a aria-current="page" class="border-primary text-slate-900 dark:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors" href="#">
+                            Submissions
+                        </a>
+<a class="border-transparent text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:text-slate-700 dark:hover:text-slate-200 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors" href="#">
+                            Leaderboard
+                        </a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full text-slate-400 hover:text-slate-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+<span class="sr-only">View notifications</span>
+<span class="material-icons text-xl">notifications</span>
+</button>
+<div class="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-4">
+<div class="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
+                            JD
+                        </div>
+<span class="hidden md:block text-sm font-medium text-slate-700 dark:text-slate-300">John Doe</span>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-1 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<!-- Header Section -->
+<div class="md:flex md:items-center md:justify-between mb-8">
+<div class="min-w-0 flex-1">
+<h2 class="text-2xl font-bold leading-7 text-slate-900 dark:text-white sm:truncate sm:text-3xl sm:tracking-tight">
+                        Submission History
+                    </h2>
+<p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                        View and analyze your past coding attempts across all problems.
+                    </p>
+</div>
+<div class="mt-4 flex md:ml-4 md:mt-0">
+<button class="inline-flex items-center rounded-md bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-900 dark:text-white shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700" type="button">
+<span class="material-icons text-base mr-2 text-slate-400">download</span>
+                        Export CSV
+                    </button>
+<button class="ml-3 inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" type="button">
+<span class="material-icons text-base mr-2">code</span>
+                        New Submission
+                    </button>
+</div>
+</div>
+<!-- Stats Overview -->
+<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+<!-- Stat Card 1 -->
+<div class="relative overflow-hidden rounded-lg bg-white dark:bg-[#151c2c] px-4 py-5 shadow sm:px-6 sm:py-6 border border-slate-200 dark:border-slate-800">
+<dt>
+<div class="absolute rounded-md bg-green-100 dark:bg-green-900/30 p-3">
+<span class="material-icons text-green-600 dark:text-green-400">check_circle</span>
+</div>
+<p class="ml-16 truncate text-sm font-medium text-slate-500 dark:text-slate-400">Accepted</p>
+</dt>
+<dd class="ml-16 flex items-baseline pb-1 sm:pb-2">
+<p class="text-2xl font-semibold text-slate-900 dark:text-white">128</p>
+<p class="ml-2 flex items-baseline text-sm font-semibold text-green-600 dark:text-green-400">
+<span class="material-icons text-xs">arrow_upward</span>
+<span class="sr-only">Increased by</span>
+                            12%
+                        </p>
+</dd>
+</div>
+<!-- Stat Card 2 -->
+<div class="relative overflow-hidden rounded-lg bg-white dark:bg-[#151c2c] px-4 py-5 shadow sm:px-6 sm:py-6 border border-slate-200 dark:border-slate-800">
+<dt>
+<div class="absolute rounded-md bg-primary/10 p-3">
+<span class="material-icons text-primary">data_usage</span>
+</div>
+<p class="ml-16 truncate text-sm font-medium text-slate-500 dark:text-slate-400">Total Submissions</p>
+</dt>
+<dd class="ml-16 flex items-baseline pb-1 sm:pb-2">
+<p class="text-2xl font-semibold text-slate-900 dark:text-white">405</p>
+</dd>
+</div>
+<!-- Stat Card 3 -->
+<div class="relative overflow-hidden rounded-lg bg-white dark:bg-[#151c2c] px-4 py-5 shadow sm:px-6 sm:py-6 border border-slate-200 dark:border-slate-800">
+<dt>
+<div class="absolute rounded-md bg-yellow-100 dark:bg-yellow-900/30 p-3">
+<span class="material-icons text-yellow-600 dark:text-yellow-400">timer</span>
+</div>
+<p class="ml-16 truncate text-sm font-medium text-slate-500 dark:text-slate-400">Avg Runtime</p>
+</dt>
+<dd class="ml-16 flex items-baseline pb-1 sm:pb-2">
+<p class="text-2xl font-semibold text-slate-900 dark:text-white">45ms</p>
+</dd>
+</div>
+<!-- Stat Card 4 -->
+<div class="relative overflow-hidden rounded-lg bg-white dark:bg-[#151c2c] px-4 py-5 shadow sm:px-6 sm:py-6 border border-slate-200 dark:border-slate-800">
+<dt>
+<div class="absolute rounded-md bg-red-100 dark:bg-red-900/30 p-3">
+<span class="material-icons text-red-600 dark:text-red-400">bug_report</span>
+</div>
+<p class="ml-16 truncate text-sm font-medium text-slate-500 dark:text-slate-400">Wrong Answer</p>
+</dt>
+<dd class="ml-16 flex items-baseline pb-1 sm:pb-2">
+<p class="text-2xl font-semibold text-slate-900 dark:text-white">84</p>
+</dd>
+</div>
+</div>
+<!-- Main Layout Container: Filters + Table -->
+<div class="bg-white dark:bg-[#151c2c] shadow rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
+<!-- Filters Toolbar -->
+<div class="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row gap-4 items-center justify-between">
+<div class="flex flex-1 gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+<!-- Search -->
+<div class="relative rounded-md shadow-sm min-w-[200px]">
+<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+<span class="material-icons text-slate-400 text-lg">search</span>
+</div>
+<input class="block w-full rounded-md border-0 py-2 pl-10 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary dark:bg-slate-800 dark:text-white dark:ring-slate-700 sm:text-sm sm:leading-6" id="search" name="search" placeholder="Search Problem or ID" type="text"/>
+</div>
+<!-- Status Filter -->
+<select class="block rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:text-white dark:ring-slate-700 sm:text-sm sm:leading-6" id="status" name="status">
+<option>All Verdicts</option>
+<option>Accepted</option>
+<option>Wrong Answer</option>
+<option>Time Limit Exceeded</option>
+<option>Runtime Error</option>
+</select>
+<!-- Language Filter -->
+<select class="block rounded-md border-0 py-2 pl-3 pr-10 text-slate-900 ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:text-white dark:ring-slate-700 sm:text-sm sm:leading-6" id="language" name="language">
+<option>All Languages</option>
+<option>C++</option>
+<option>Java</option>
+<option>Python 3</option>
+<option>Go</option>
+</select>
+</div>
+<div class="flex items-center gap-2 w-full md:w-auto justify-end">
+<span class="text-sm text-slate-500 dark:text-slate-400 hidden sm:inline">Showing 1-10 of 405</span>
+<div class="relative inline-block text-left">
+<button aria-expanded="true" aria-haspopup="true" class="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white dark:bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-900 dark:text-white shadow-sm ring-1 ring-inset ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700" id="sort-menu-button" type="button">
+<span class="material-icons text-lg text-slate-400">filter_list</span>
+                                Filter
+                            </button>
+</div>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+<thead class="bg-slate-50 dark:bg-slate-900/50">
+<tr>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">ID / Date</th>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Problem</th>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Verdict</th>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Runtime</th>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Memory</th>
+<th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Lang</th>
+<th class="relative px-6 py-3" scope="col">
+<span class="sr-only">Actions</span>
+</th>
+</tr>
+</thead>
+<tbody class="bg-white dark:bg-[#151c2c] divide-y divide-slate-200 dark:divide-slate-800">
+<!-- Row 1: AC -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-primary">#294821</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">2 mins ago</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<a class="text-sm font-semibold text-slate-900 dark:text-white hover:text-primary transition-colors" href="#">1. Two Sum</a>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="inline-flex items-center rounded-sm bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300">Easy</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 dark:bg-green-900/20 px-2.5 py-1 text-xs font-medium text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/20">
+<span class="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400"></span>
+                                        Accepted
+                                    </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    12 ms
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    4.2 MB
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<!-- Using a simple colored dot for language -->
+<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+<span class="text-sm text-slate-700 dark:text-slate-300">C++</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<a class="text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-end" href="#">
+<span class="material-icons text-xl">visibility</span>
+</a>
+</td>
+</tr>
+<!-- Row 2: WA -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-primary">#294820</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">15 mins ago</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<a class="text-sm font-semibold text-slate-900 dark:text-white hover:text-primary transition-colors" href="#">51. N-Queens</a>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="inline-flex items-center rounded-sm bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:text-red-400">Hard</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-900/20 px-2.5 py-1 text-xs font-medium text-red-700 dark:text-red-400 ring-1 ring-inset ring-red-600/20">
+<span class="w-1.5 h-1.5 rounded-full bg-red-600 dark:bg-red-400"></span>
+                                        Wrong Answer
+                                    </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    N/A
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    N/A
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+<span class="text-sm text-slate-700 dark:text-slate-300">Python 3</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<a class="text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-end" href="#">
+<span class="material-icons text-xl">visibility</span>
+</a>
+</td>
+</tr>
+<!-- Row 3: TLE -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-primary">#294819</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">1 hour ago</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<a class="text-sm font-semibold text-slate-900 dark:text-white hover:text-primary transition-colors" href="#">787. Cheapest Flights...</a>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="inline-flex items-center rounded-sm bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 text-[10px] font-medium text-yellow-700 dark:text-yellow-400">Medium</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 dark:bg-yellow-900/20 px-2.5 py-1 text-xs font-medium text-yellow-700 dark:text-yellow-400 ring-1 ring-inset ring-yellow-600/20">
+<span class="w-1.5 h-1.5 rounded-full bg-yellow-600 dark:bg-yellow-400"></span>
+                                        Time Limit Exceeded
+                                    </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    2000 ms
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    128 MB
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-orange-500"></span>
+<span class="text-sm text-slate-700 dark:text-slate-300">Java</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<a class="text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-end" href="#">
+<span class="material-icons text-xl">visibility</span>
+</a>
+</td>
+</tr>
+<!-- Row 4: AC -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-primary">#294815</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">Yesterday</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<a class="text-sm font-semibold text-slate-900 dark:text-white hover:text-primary transition-colors" href="#">206. Reverse Linked List</a>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="inline-flex items-center rounded-sm bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:text-slate-300">Easy</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 dark:bg-green-900/20 px-2.5 py-1 text-xs font-medium text-green-700 dark:text-green-400 ring-1 ring-inset ring-green-600/20">
+<span class="w-1.5 h-1.5 rounded-full bg-green-600 dark:bg-green-400"></span>
+                                        Accepted
+                                    </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    8 ms
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    7.1 MB
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+<span class="text-sm text-slate-700 dark:text-slate-300">C++</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<a class="text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-end" href="#">
+<span class="material-icons text-xl">visibility</span>
+</a>
+</td>
+</tr>
+<!-- Row 5: Compilation Error -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="text-sm font-medium text-primary">#294812</div>
+<div class="text-xs text-slate-500 dark:text-slate-400">Yesterday</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<a class="text-sm font-semibold text-slate-900 dark:text-white hover:text-primary transition-colors" href="#">15. 3Sum</a>
+<div class="flex items-center gap-1 mt-0.5">
+<span class="inline-flex items-center rounded-sm bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 text-[10px] font-medium text-yellow-700 dark:text-yellow-400">Medium</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-xs font-medium text-slate-700 dark:text-slate-300 ring-1 ring-inset ring-slate-600/20">
+<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                        Compilation Error
+                                    </span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    -
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                                    -
+                                </td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+<span class="text-sm text-slate-700 dark:text-slate-300">Go</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+<a class="text-slate-400 hover:text-primary transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-end" href="#">
+<span class="material-icons text-xl">visibility</span>
+</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="flex items-center justify-between border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#151c2c] px-4 py-3 sm:px-6">
+<div class="flex flex-1 justify-between sm:hidden">
+<a class="relative inline-flex items-center rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700" href="#">Previous</a>
+<a class="relative ml-3 inline-flex items-center rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700" href="#">Next</a>
+</div>
+<div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+<div>
+<p class="text-sm text-slate-700 dark:text-slate-400">
+                                Showing
+                                <span class="font-medium">1</span>
+                                to
+                                <span class="font-medium">10</span>
+                                of
+                                <span class="font-medium">97</span>
+                                results
+                            </p>
+</div>
+<div>
+<nav aria-label="Pagination" class="isolate inline-flex -space-x-px rounded-md shadow-sm">
+<a class="relative inline-flex items-center rounded-l-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 focus:z-20 focus:outline-offset-0" href="#">
+<span class="sr-only">Previous</span>
+<span class="material-icons text-sm">chevron_left</span>
+</a>
+<a aria-current="page" class="relative z-10 inline-flex items-center bg-primary px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" href="#">1</a>
+<a class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 dark:text-slate-300 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 focus:z-20 focus:outline-offset-0" href="#">2</a>
+<a class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 dark:text-slate-300 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 focus:z-20 focus:outline-offset-0" href="#">3</a>
+<span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-400 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 focus:outline-offset-0">...</span>
+<a class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-slate-900 dark:text-slate-300 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 focus:z-20 focus:outline-offset-0" href="#">10</a>
+<a class="relative inline-flex items-center rounded-r-md px-2 py-2 text-slate-400 ring-1 ring-inset ring-slate-300 dark:ring-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 focus:z-20 focus:outline-offset-0" href="#">
+<span class="sr-only">Next</span>
+<span class="material-icons text-sm">chevron_right</span>
+</a>
+</nav>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Section / Legend -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-500 dark:text-slate-400">
+<div class="bg-white dark:bg-[#151c2c] rounded-lg p-4 shadow-sm border border-slate-200 dark:border-slate-800">
+<h3 class="font-semibold text-slate-900 dark:text-slate-300 mb-2">Verdict Legend</h3>
+<div class="flex flex-wrap gap-4">
+<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-green-500"></span> Accepted</div>
+<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500"></span> Wrong Answer</div>
+<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-yellow-500"></span> Time Limit Exceeded</div>
+<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-slate-500"></span> Compilation Error</div>
+</div>
+</div>
+<div class="bg-white dark:bg-[#151c2c] rounded-lg p-4 shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+<div>
+<h3 class="font-semibold text-slate-900 dark:text-slate-300 mb-1">Need Help?</h3>
+<p>Check the system documentation or forum.</p>
+</div>
+<button class="text-primary font-medium hover:underline">View Documentation</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

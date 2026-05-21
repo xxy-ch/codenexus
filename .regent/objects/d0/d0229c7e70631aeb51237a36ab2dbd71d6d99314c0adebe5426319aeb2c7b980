@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"docker exec $(docker ps -q -f name=postgres) psql -U postgres -c \\\"DROP DATABASE online_judge;\\\" && docker exec $(docker ps -q -f name=postgres) psql -U postgres -c \\\"CREATE DATABASE onlin...",
+  "error": "Exit code 1\nERROR:  database \"online_judge\" is being accessed by other users\nDETAIL:  There are 2 other sessions using the database.",
+  "timestamp": "2026-04-21T13:44:25.694Z",
+  "retry_count": 1
+}

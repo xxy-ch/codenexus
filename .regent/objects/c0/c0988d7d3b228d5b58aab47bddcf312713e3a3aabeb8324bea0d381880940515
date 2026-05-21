@@ -1,0 +1,1 @@
+{"command":"ps -ef | rg \"docker compose build|docker-buildx|buildx bake\""}

@@ -1,0 +1,139 @@
+---
+plan: 14-01
+title: "DB Schema + Shared Models"
+wave: 1
+phase: 14
+status: pending
+---
+
+# Plan 14-01: DB Schema + Shared Models
+
+**Wave:** 1 (foundation — all other plans depend on this)
+**Goal:** Create `grades` table, add `grade_id` columns to users/user_roles/classes, update shared model structs (Claims, User, UserPublic, TenantContext) so downstream plans can reference them.
+
+## Context
+
+- Phase 14 CONTEXT.md decisions D-01 through D-07
+- Latest migration: `030_reorg_to_gradeadmin.sql`
+- `campuses` table pattern (migration 002) is the template for grades
+- `TenantContext` currently only has `tenant_id: i64` (missing campus_id, grade_id)
+- `Claims` struct has `campus_id: Option<i64>` but no `grade_id`
+- `shared::models::User` has `campus_id: Option<i64>` but no `grade_id`
+
+## Tasks
+
+### Task 1: Create migration 031 — grades table + grade_id columns
+
+**Files:**
+- NEW `backend/api/migrations/031_create_grades_and_add_grade_id.sql`
+
+**SQL DDL:**
+```sql
+-- 1. Create grades table (campus-scoped, analogous to campuses at org level)
+CREATE TABLE grades (
+    id BIGSERIAL PRIMARY KEY,
+    campus_id BIGINT NOT NULL REFERENCES campuses(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,              -- e.g. '高一', 'IGCSE Year 1'
+    year_level INT NOT NULL DEFAULT 1,  -- 1/2/3 for sorting
+    academic_year TEXT NOT NULL,     -- e.g. '2025-2026'
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(campus_id, name, academic_year)
+);
+
+CREATE INDEX idx_grades_campus_id ON grades(campus_id);
+CREATE INDEX idx_grades_is_active ON grades(is_active) WHERE is_active = true;
+
+-- FK: grade must belong to same org as campus
+ALTER TABLE grades ADD CONSTRAINT fk_grades_campus_org
+    FOREIGN KEY (campus_id) REFERENCES campuses(id) ON DELETE CASCADE;
+
+-- Updated_at trigger
+CREATE TRIGGER update_grades_updated_at
+    BEFORE UPDATE ON grades
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- 2. Add grade_id to users (nullable FK)
+ALTER TABLE users ADD COLUMN grade_id BIGINT REFERENCES grades(id) ON DELETE SET NULL;
+CREATE INDEX idx_users_grade_id ON users(grade_id);
+
+-- 3. Add grade_id to user_roles (nullable FK)
+ALTER TABLE user_roles ADD COLUMN grade_id BIGINT REFERENCES grades(id) ON DELETE SET NULL;
+
+-- 4. Update user_roles unique constraint to include grade_id
+ALTER TABLE user_roles DROP CONSTRAINT user_roles_user_id_organization_id_campus_id_key;
+ALTER TABLE user_roles ADD CONSTRAINT user_roles_unique_scope
+    UNIQUE(user_id, organization_id, campus_id, grade_id);
+
+-- 5. Add grade_id to classes (nullable FK — class belongs to a grade)
+ALTER TABLE classes ADD COLUMN grade_id BIGINT REFERENCES grades(id) ON DELETE SET NULL;
+CREATE INDEX idx_classes_grade_id ON classes(grade_id);
+
+-- 6. Partial unique index: one GradeAdmin per grade per campus (D-06)
+CREATE UNIQUE INDEX idx_one_gradeadmin_per_grade
+    ON user_roles (campus_id, grade_id)
+    WHERE role = 'gradeadmin' AND grade_id IS NOT NULL;
+```
+
+**Verification:** Run `cargo build` to confirm migration compiles via `sqlx::migrate!()`.
+
+### Task 2: Update shared models — Claims, User, UserPublic
+
+**Files:**
+- EDIT `backend/shared/src/models/auth.rs`
+- EDIT `backend/shared/src/models/user.rs`
+
+**Changes in `auth.rs` Claims:**
+- Add `grade_id: Option<i64>` field with `#[serde(skip_serializing_if = "Option::is_none")]`
+
+**Changes in `user.rs` User struct:**
+- Add `grade_id: Option<i64>` field
+
+**Changes in `user.rs` UserPublic struct:**
+- Add `grade_id: Option<i64>` field
+- Update `From<User> for UserPublic` impl to propagate grade_id
+
+### Task 3: Update TenantContext — add campus_id + grade_id
+
+**Files:**
+- EDIT `backend/api-infra/src/middleware/tenant.rs`
+
+**Changes:**
+- Add `campus_id: Option<i64>` to `TenantContext`
+- Add `grade_id: Option<i64>` to `TenantContext`
+- Update `extract_tenant_id_from_request` → `extract_tenant_context_from_request`
+  - Extract `school_id`, `campus_id`, `grade_id` from `Claims`
+  - Return `TenantContext { tenant_id, campus_id, grade_id }`
+- Update `tenant_middleware` to use new extraction function
+- Update ALL existing test Claims constructions to include `grade_id: None`
+- Add new test: tenant context includes campus_id and grade_id from claims
+
+### Task 4: Fix all Claims construction sites across codebase
+
+**Files (all locations that construct `Claims`):**
+- EDIT `backend/api/src/auth/jwt_service.rs` — add `grade_id: user.grade_id` (lines 32-41, 53-62)
+- EDIT `backend/api/src/auth/routes.rs` — update `UserPublic` construction to include `grade_id` (line 55-63)
+- EDIT any test files that construct `Claims` directly (search for `Claims {`)
+
+**Pattern:** Every `Claims { ... }` literal must now include `grade_id: <value>`.
+Every `User { ... }` and `UserPublic { ... }` must include `grade_id`.
+
+**Verification:** `cargo build` across entire workspace.
+
+## Dependencies
+
+- None (Wave 1 foundation)
+
+## Estimated Files
+
+- 1 new migration file
+- 3-5 edited Rust source files
+- ~10 test sites updated
+
+## Commit Message
+
+```
+feat(db): add grades table, grade_id to users/user_roles/classes, update shared models
+```

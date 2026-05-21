@@ -1,0 +1,1 @@
+{"command":"docker exec online-judge-postgres psql -U postgres -d online_judge -c \"select id,problem_id,language,status,verdict,score,updated_at from submissions where id in (16,17) order by id;\"; docker exec online-judge-redis redis-cli XPENDING submissions judge_workers; docker exec online-judge-redis redis-cli XINFO GROUPS submissions"}

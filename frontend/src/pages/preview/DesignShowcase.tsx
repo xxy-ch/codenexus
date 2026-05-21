@@ -439,7 +439,7 @@ function Section({ title, subtitle, children, style }: { title: string; subtitle
 /* ------------------------------------------------------------------ */
 
 export default function DesignShowcase() {
-  const [key, setKey] = useState('linear')
+  const [key, setKey] = useState('cursor')
   const t = THEMES[key]
 
   // Each theme auto-sets its native mode

@@ -1,0 +1,169 @@
+use anyhow::Result;
+
+#[cfg(target_os = "linux")]
+const PR_SET_NO_NEW_PRIVS: libc::c_ulong = 38;
+
+#[cfg(target_os = "linux")]
+fn prctl(
+    option: libc::c_ulong,
+    arg2: libc::c_ulong,
+    arg3: libc::c_ulong,
+    arg4: libc::c_ulong,
+    arg5: libc::c_ulong,
+) -> Result<()> {
+    let rc = unsafe { libc::syscall(libc::SYS_prctl, option, arg2, arg3, arg4, arg5) };
+
+    if rc != 0 {
+        return Err(std::io::Error::last_os_error()).context("prctl syscall failed");
+    }
+
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn set_no_new_privs() -> Result<()> {
+    prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn set_no_new_privs() -> Result<()> {
+    Ok(())
+}
+
+pub fn apply_seccomp(_pid: u32) -> Result<()> {
+    set_no_new_privs()?;
+
+    #[cfg(target_os = "linux")]
+    {
+        // Deny-by-default: kill processes that invoke unallowed syscalls.
+        let ctx = unsafe { libseccomp_sys::seccomp_init(libseccomp_sys::SCMP_ACT_ERRNO(1)) };
+        if ctx.is_null() {
+            return Err(anyhow::anyhow!("Failed to initialize seccomp context"));
+        }
+
+        // Allow syscalls required for typical code execution (file I/O, memory, etc.)
+        let allowed_syscalls: &[libc::c_int] = &[
+            // File I/O
+            libc::SYS_read,
+            libc::SYS_write,
+            libc::SYS_close,
+            libc::SYS_openat,
+            libc::SYS_fstat,
+            libc::SYS_lseek,
+            libc::SYS_readv,
+            libc::SYS_writev,
+            libc::SYS_pread64,
+            libc::SYS_pwrite64,
+            libc::SYS_fcntl,
+            libc::SYS_dup,
+            libc::SYS_dup2,
+            libc::SYS_dup3,
+            libc::SYS_pipe,
+            libc::SYS_pipe2,
+            libc::SYS_getdents64,
+            libc::SYS_access,
+            libc::SYS_faccessat,
+            libc::SYS_faccessat2,
+            libc::SYS_stat,
+            libc::SYS_lstat,
+            libc::SYS_newfstatat,
+            libc::SYS_readlink,
+            libc::SYS_readlinkat,
+            libc::SYS_getcwd,
+            libc::SYS_chdir,
+            libc::SYS_fchdir,
+            // Memory management
+            libc::SYS_mmap,
+            libc::SYS_munmap,
+            libc::SYS_mprotect,
+            libc::SYS_brk,
+            libc::SYS_mremap,
+            libc::SYS_madvise,
+            // Process basics
+            libc::SYS_exit,
+            libc::SYS_exit_group,
+            libc::SYS_arch_prctl,
+            libc::SYS_set_tid_address,
+            libc::SYS_set_robust_list,
+            libc::SYS_getpid,
+            libc::SYS_getppid,
+            libc::SYS_getuid,
+            libc::SYS_geteuid,
+            libc::SYS_getgid,
+            libc::SYS_getegid,
+            libc::SYS_getresuid,
+            libc::SYS_getresgid,
+            libc::SYS_getgroups,
+            // Signals
+            libc::SYS_rt_sigaction,
+            libc::SYS_rt_sigprocmask,
+            libc::SYS_rt_sigreturn,
+            libc::SYS_sigaltstack,
+            libc::SYS_kill,
+            libc::SYS_tkill,
+            libc::SYS_tgkill,
+            // Time
+            libc::SYS_clock_gettime,
+            libc::SYS_clock_getres,
+            libc::SYS_gettimeofday,
+            libc::SYS_nanosleep,
+            libc::SYS_clock_nanosleep,
+            libc::SYS_time,
+            // Other essentials
+            libc::SYS_ioctl,
+            libc::SYS_getrandom,
+            libc::SYS_poll,
+            libc::SYS_epoll_create1,
+            libc::SYS_epoll_ctl,
+            libc::SYS_epoll_wait,
+            libc::SYS_futex,
+            libc::SYS_sched_yield,
+            libc::SYS_rseq,
+            libc::SYS_prlimit64,
+            libc::SYS_getrlimit,
+            libc::SYS_sysinfo,
+            libc::SYS_uname,
+        ];
+
+        for &syscall in allowed_syscalls {
+            let ret = unsafe {
+                libseccomp_sys::seccomp_rule_add_exact(
+                    ctx,
+                    libseccomp_sys::SCMP_ACT_ALLOW,
+                    syscall,
+                    0,
+                )
+            };
+            // Ignore ENOTSUP — syscall may not exist on this architecture.
+            if ret != 0 && ret != -(libc::ENOTSUP as i32) {
+                tracing::warn!(
+                    "seccomp: failed to allow syscall {}: ret={}",
+                    syscall,
+                    ret
+                );
+            }
+        }
+
+        let ret = unsafe { libseccomp_sys::seccomp_load(ctx) };
+        unsafe { libseccomp_sys::seccomp_release(ctx) };
+
+        if ret != 0 {
+            return Err(anyhow::anyhow!("Failed to load seccomp filter"));
+        }
+    }
+
+    Ok(())
+}
+
+pub fn cleanup_seccomp() {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_mode_enables_no_new_privs_without_strict_filter() {
+        std::env::remove_var("JUDGE_SECCOMP_MODE");
+        apply_seccomp(0).expect("default seccomp application should succeed");
+    }
+}

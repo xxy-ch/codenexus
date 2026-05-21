@@ -1,0 +1,1 @@
+{"command":"cargo test -p judge-worker --lib"}

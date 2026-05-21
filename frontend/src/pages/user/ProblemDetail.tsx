@@ -67,7 +67,7 @@ export function ProblemDetail() {
             </h1>
             <span
               className={cn(
-                "px-3 py-1 rounded-full text-xs font-semibold border",
+                "px-3 py-1 rounded-full text-[13px] font-semibold border",
                 config.bgColor,
                 config.textColor,
                 config.borderColor,
@@ -105,7 +105,7 @@ export function ProblemDetail() {
         {problem.tags.map((tag) => (
           <span
             key={tag}
-            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground"
+            className="inline-flex items-center px-3 py-1 rounded-full text-[13px] font-medium bg-muted text-muted-foreground"
           >
             {tag}
           </span>
@@ -113,9 +113,9 @@ export function ProblemDetail() {
       </div>
 
       {/* Problem Description */}
-      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-foreground">题目描述</h2>
+      <div className="bg-background/60 backdrop-blur-xl rounded-lg shadow-sm border border-border/40 overflow-hidden">
+        <div className="border-b border-border/40 px-6 py-4">
+          <h2 className="text-base font-semibold text-foreground">题目描述</h2>
         </div>
         <div className="px-6 py-5">
           <div className="prose prose-sm dark:prose-invert max-w-none text-foreground">
@@ -133,9 +133,9 @@ export function ProblemDetail() {
       )}
 
       {/* Examples */}
-      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-foreground">示例</h2>
+      <div className="bg-background/60 backdrop-blur-xl rounded-lg shadow-sm border border-border/40 overflow-hidden">
+        <div className="border-b border-border/40 px-6 py-4">
+          <h2 className="text-base font-semibold text-foreground">示例</h2>
         </div>
         <div className="px-6 py-5 space-y-6">
           {/* Example 1 */}
@@ -143,7 +143,7 @@ export function ProblemDetail() {
             <p className="text-sm font-medium text-foreground mb-3">示例 1:</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-muted rounded-lg p-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
                   输入:
                 </p>
                 <code className="text-sm text-foreground">
@@ -151,7 +151,7 @@ export function ProblemDetail() {
                 </code>
               </div>
               <div className="bg-muted rounded-lg p-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
                   输出:
                 </p>
                 <code className="text-sm text-foreground">[0,1]</code>
@@ -167,7 +167,7 @@ export function ProblemDetail() {
             <p className="text-sm font-medium text-foreground mb-3">示例 2:</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-muted rounded-lg p-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
                   输入:
                 </p>
                 <code className="text-sm text-foreground">
@@ -175,7 +175,7 @@ export function ProblemDetail() {
                 </code>
               </div>
               <div className="bg-muted rounded-lg p-4">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
                   输出:
                 </p>
                 <code className="text-sm text-foreground">[1,2]</code>
@@ -186,9 +186,9 @@ export function ProblemDetail() {
       </div>
 
       {/* Constraints */}
-      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
-        <div className="border-b border-border px-6 py-4">
-          <h2 className="text-lg font-semibold text-foreground">约束条件</h2>
+      <div className="bg-background/60 backdrop-blur-xl rounded-lg shadow-sm border border-border/40 overflow-hidden">
+        <div className="border-b border-border/40 px-6 py-4">
+          <h2 className="text-base font-semibold text-foreground">约束条件</h2>
         </div>
         <div className="px-6 py-5">
           <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
@@ -201,7 +201,7 @@ export function ProblemDetail() {
       </div>
 
       {/* Hints */}
-      <div className="bg-muted rounded-lg border border-border overflow-hidden">
+      <div className="bg-muted rounded-lg border border-border/40 overflow-hidden">
         <div className="px-6 py-4">
           <div className="flex items-start gap-3">
             <Lightbulb className="w-5 h-5 text-muted-foreground mt-0.5" />

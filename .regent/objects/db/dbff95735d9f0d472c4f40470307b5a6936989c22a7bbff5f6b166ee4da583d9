@@ -1,0 +1,8 @@
+[     613ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:5173/api/admin/stats:0
+[     614ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:5173/api/admin/system/health:0
+[     616ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:5173/api/admin/reports?page=1&limit=4:0
+[    1620ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:5173/api/admin/stats:0
+[    1620ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:5173/api/admin/system/health:0
+[    1629ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:5173/api/admin/reports?page=1&limit=4:0
+[  128524ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://127.0.0.1:5173/src/pages/admin/AdminDashboard.tsx?t=1774451462833:0
+[  128525ms] [ERROR] [vite] Failed to reload /src/pages/admin/AdminDashboard.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://127.0.0.1:5173/@vite/client:808

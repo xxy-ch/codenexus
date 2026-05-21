@@ -192,24 +192,29 @@ export function ContestDetail() {
   return (
     <div className="space-y-5">
       {/* Hero Header — ClickHouse high-energy */}
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-[#3ecf8e]/5" />
+      <div className="relative overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-sm">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(94,106,210,0.15),_transparent_40%)]" />
         {isLive && (
-          <div className="h-1 bg-gradient-to-r from-[#3ecf8e] via-primary to-[#3ecf8e]" />
+          <div className="h-[2px] bg-gradient-to-r from-status-accepted via-primary to-status-accepted animate-pulse" />
         )}
         <div className="relative px-6 py-6">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-3 min-w-0">
-              <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="shrink-0">
-                <ArrowLeft className="w-5 h-5" />
+            <div className="flex items-center gap-3 min-w-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(-1)}
+                className="shrink-0 button-press rounded-xl hover:bg-muted"
+              >
+                <ArrowLeft className="w-5 h-5 text-muted-foreground" />
               </Button>
-              <div className="min-w-0">
-                <div className="flex items-center gap-3 mb-2">
+              <div className="min-w-0 space-y-1">
+                <div className="flex items-center flex-wrap gap-2.5">
                   <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">
                     {contest.name}
                   </h1>
                   <span className={cn(
-                    'rounded-full px-2.5 py-1 text-xs font-semibold border shrink-0',
+                    'rounded-full px-2.5 py-0.5 text-[13px] font-semibold',
                     difficultyConfig.bgColor,
                     difficultyConfig.textColor,
                     difficultyConfig.borderColor
@@ -217,22 +222,22 @@ export function ContestDetail() {
                     {difficultyConfig.label}
                   </span>
                   <span className={cn(
-                    'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold border shrink-0',
+                    'inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-[13px] font-semibold',
                     statusConfig.bgColor,
                     statusConfig.textColor,
                     statusConfig.borderColor
                   )}>
                     {isLive && (
                       <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#3ecf8e] opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#3ecf8e]"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-accepted opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-status-accepted"></span>
                       </span>
                     )}
                     {statusConfig.label}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground font-normal">
-                  竞赛 ID: <span className="font-mono">{contest.id}</span>
+                <p className="text-[13px] text-muted-foreground font-semibold">
+                  竞赛 ID: <span className="font-mono text-primary/80">{contest.id}</span>
                 </p>
               </div>
             </div>
@@ -243,17 +248,17 @@ export function ContestDetail() {
       {/* Countdown — oversized bold timer */}
       {countdown && contest.status !== 'completed' && (
         <div className={cn(
-          'rounded-xl border-2 px-6 py-5 text-center',
+          'rounded-xl border px-6 py-5 text-center transition-all glass shadow-sm',
           isLive
-            ? 'bg-[#3ecf8e]/5 border-[#3ecf8e]/20'
-            : 'bg-status-pending/5 border-status-pending/20'
+            ? 'bg-status-accepted/5 border-status-accepted/20 text-status-accepted shadow-[0_0_20px_rgba(16,185,129,0.06)]'
+            : 'bg-primary/5 border-primary/20 text-primary'
         )}>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+          <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
             {contest.status === 'upcoming' ? '距离竞赛开始还有' : '竞赛剩余时间'}
           </p>
           <p className={cn(
-            'text-3xl font-bold tabular-nums tracking-tight',
-            isLive ? 'text-[#3ecf8e]' : 'text-status-pending'
+            'text-2xl font-extrabold tabular-nums tracking-tight',
+            isLive ? 'text-status-accepted' : 'text-primary'
           )}>
             {countdown}
           </p>
@@ -262,38 +267,38 @@ export function ContestDetail() {
 
       {/* Contest Stats — oversized numbers, ClickHouse energy */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <div className="mx-auto mb-2 w-fit rounded-lg bg-primary/10 p-2">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 text-center hover-lift transition-card-hover">
+          <div className="mx-auto mb-2 w-fit rounded-xl bg-primary/10 border border-primary/20 p-2">
             <Clock className="w-5 h-5 text-primary" />
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">开始时间</p>
+          <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground font-medium">开始时间</p>
           <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
             {new Date(contest.start_time).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <div className="mx-auto mb-2 w-fit rounded-lg bg-difficulty-medium/10 p-2">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 text-center hover-lift transition-card-hover">
+          <div className="mx-auto mb-2 w-fit rounded-xl bg-difficulty-medium/10 border border-difficulty-medium/20 p-2">
             <Timer className="w-5 h-5 text-difficulty-medium" />
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">竞赛时长</p>
+          <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground font-medium">竞赛时长</p>
           <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
             {formatDuration(contest.duration_minutes)}
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <div className="mx-auto mb-2 w-fit rounded-lg bg-[#3ecf8e]/10 p-2">
-            <Code2 className="w-5 h-5 text-[#3ecf8e]" />
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 text-center hover-lift transition-card-hover">
+          <div className="mx-auto mb-2 w-fit rounded-xl bg-status-accepted/10 border border-status-accepted/20 p-2">
+            <Code2 className="w-5 h-5 text-status-accepted" />
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">题目数量</p>
+          <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground font-medium">题目数量</p>
           <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
             {contest.problems_count} 题
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <div className="mx-auto mb-2 w-fit rounded-lg bg-difficulty-hard/10 p-2">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 text-center hover-lift transition-card-hover">
+          <div className="mx-auto mb-2 w-fit rounded-xl bg-difficulty-hard/10 border border-difficulty-hard/20 p-2">
             <Trophy className="w-5 h-5 text-difficulty-hard" />
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">参与人数</p>
+          <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground font-medium">参与人数</p>
           <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
             {contest.participants_count} 人
           </p>
@@ -308,7 +313,7 @@ export function ContestDetail() {
               variant="default"
               onClick={() => registerMutation.mutate()}
               disabled={registerMutation.isPending}
-              className="font-bold"
+              className="font-bold button-press px-5 rounded-xl shadow-md shadow-primary/20"
             >
               {registerMutation.isPending ? (
                 <>
@@ -325,7 +330,7 @@ export function ContestDetail() {
           )}
 
           {contest.status === 'upcoming' && contest.is_registered && (
-            <Button variant="outline" disabled>
+            <Button variant="outline" disabled className="px-5 rounded-xl">
               <CircleCheck className="w-4 h-4 mr-2" />
               已注册
             </Button>
@@ -336,7 +341,7 @@ export function ContestDetail() {
               variant="default"
               onClick={() => enterMutation.mutate()}
               disabled={enterMutation.isPending}
-              className="font-bold bg-[#3ecf8e] text-slate-950 hover:bg-[#3ecf8e]/90"
+              className="font-bold button-press px-6 rounded-xl bg-status-accepted text-slate-950 hover:bg-status-accepted/90 shadow-md shadow-status-accepted/20"
             >
               {enterMutation.isPending ? (
                 <>
@@ -345,7 +350,7 @@ export function ContestDetail() {
                 </>
               ) : (
                 <>
-                  <Flame className="w-4 h-4 mr-2" />
+                  <Flame className="w-4 h-4 mr-2 text-slate-950 animate-pulse" />
                   进入竞赛
                 </>
               )}
@@ -353,35 +358,35 @@ export function ContestDetail() {
           )}
 
           <Link to={`/contests/${contest.id}/scoreboard`}>
-            <Button variant="outline" className="font-bold">
+            <Button variant="outline" className="font-bold button-press px-5 rounded-xl">
               <BarChart3 className="w-4 h-4 mr-2" />
               查看榜单
             </Button>
           </Link>
         </div>
 
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" className="button-press rounded-xl text-muted-foreground hover:text-foreground">
           <Share2 className="w-4 h-4 mr-2" />
           分享
         </Button>
       </div>
 
       {/* Description */}
-      <div className="bg-card border border-border rounded-xl p-5">
-        <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+      <div className="bg-background/60 backdrop-blur-xl border border-border/40 rounded-xl p-5 shadow-sm">
+        <h3 className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
           竞赛介绍
         </h3>
-        <p className="text-sm leading-6 text-foreground font-normal">
+        <p className="text-sm leading-7 text-muted-foreground font-normal">
           {contest.description}
         </p>
 
         {/* Rules */}
         {contest.rules && (
-          <div className="mt-5 rounded-lg border border-border bg-background p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+          <div className="mt-5 rounded-xl border border-border/40 bg-muted/30 p-5 glass">
+            <h3 className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
               竞赛规则
             </h3>
-            <pre className="text-sm text-foreground whitespace-pre-wrap font-sans">
+            <pre className="text-sm text-foreground whitespace-pre-wrap font-sans leading-relaxed">
               {contest.rules}
             </pre>
           </div>
@@ -389,11 +394,11 @@ export function ContestDetail() {
 
         {/* Prizes */}
         {contest.prizes && (
-          <div className="mt-5 rounded-lg border border-difficulty-medium/20 bg-difficulty-medium/5 p-4">
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-difficulty-medium mb-2">
+          <div className="mt-5 rounded-xl border border-difficulty-medium/20 bg-difficulty-medium/5 p-5">
+            <h3 className="text-[13px] font-semibold uppercase tracking-widest text-difficulty-medium mb-3">
               奖励
             </h3>
-            <p className="text-sm text-difficulty-medium">
+            <p className="text-sm text-difficulty-medium font-semibold leading-relaxed">
               {contest.prizes}
             </p>
           </div>
@@ -401,13 +406,13 @@ export function ContestDetail() {
       </div>
 
       {/* Problems List — prominent cards */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-border">
+      <div className="bg-background/60 backdrop-blur-xl border border-border/40 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-border/40 bg-muted/30">
           <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
             竞赛题目
           </h2>
         </div>
-        <div className="divide-y divide-border">
+        <div className="divide-y divide-border/60">
           {contest.problems.map((problem, index) => {
             const problemDifficultyConfig = DIFFICULTY_CONFIG[problem.difficulty]
             const passRate = getPassRate(problem.accepted_count, problem.submission_count)
@@ -416,42 +421,44 @@ export function ContestDetail() {
               <Link
                 key={problem.id}
                 to={`/contests/${contestId}/problems/${problem.id}/solve`}
-                className="flex items-center justify-between px-5 py-4 hover:bg-muted/50 transition-colors group"
+                className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors group"
               >
                 <div className="flex items-center gap-4">
                   <span className={cn(
-                    'flex items-center justify-center w-9 h-9 rounded-lg text-sm font-bold tabular-nums',
+                    'flex items-center justify-center w-9 h-9 rounded-xl text-sm font-extrabold tabular-nums border',
                     problemDifficultyConfig.bgColor,
-                    problemDifficultyConfig.textColor
+                    problemDifficultyConfig.textColor,
+                    problemDifficultyConfig.borderColor
                   )}>
                     {index + 1}
                   </span>
-                  <div>
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
                       {problem.title}
                     </h3>
-                    <div className="flex items-center gap-3 mt-1">
+                    <div className="flex items-center gap-3">
                       <span className={cn(
-                        'rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                        'rounded-full px-2.5 py-0.5 text-[13px] font-semibold border',
                         problemDifficultyConfig.bgColor,
-                        problemDifficultyConfig.textColor
+                        problemDifficultyConfig.textColor,
+                        problemDifficultyConfig.borderColor
                       )}>
                         {problemDifficultyConfig.label}
                       </span>
-                      <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                      <span className="text-[13px] font-semibold tabular-nums text-muted-foreground">
                         {problem.points} 分
                       </span>
-                      <span className="text-xs tabular-nums text-muted-foreground">
+                      <span className="text-[13px] font-semibold tabular-nums text-muted-foreground">
                         通过率 {passRate}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-bold tabular-nums text-foreground">
+                <div className="text-right shrink-0 transition-transform group-hover:translate-x-[-4px]">
+                  <p className="text-sm font-extrabold tabular-nums text-foreground">
                     {problem.accepted_count} <span className="text-muted-foreground font-normal">/ {problem.submission_count}</span>
                   </p>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-widest">
+                  <p className="text-[13px] text-muted-foreground uppercase tracking-wider font-semibold">
                     通过 / 提交
                   </p>
                 </div>
@@ -462,32 +469,32 @@ export function ContestDetail() {
       </div>
 
       {/* Contest Statistics — oversized numbers */}
-      <div className="bg-card border border-border rounded-xl p-6">
-        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-5">
+      <div className="bg-background/60 backdrop-blur-xl border border-border/40 rounded-xl p-5 shadow-sm">
+        <h2 className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground mb-5">
           竞赛统计
         </h2>
         <div className="grid grid-cols-3 gap-6">
-          <div className="text-center">
-            <p className="text-3xl font-bold tabular-nums text-primary mb-1">
+          <div className="text-center rounded-xl bg-muted/20 border border-border/40 py-4 hover-lift transition-card-hover">
+            <p className="text-2xl font-extrabold tabular-nums text-primary mb-1">
               {contest.participants_count}
             </p>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">
               参与人数
             </p>
           </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold tabular-nums text-[#3ecf8e] mb-1">
+          <div className="text-center rounded-xl bg-muted/20 border border-border/40 py-4 hover-lift transition-card-hover">
+            <p className="text-2xl font-extrabold tabular-nums text-status-accepted mb-1">
               {contest.problems_count}
             </p>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">
               题目总数
             </p>
           </div>
-          <div className="text-center">
-            <p className="text-3xl font-bold tabular-nums text-difficulty-medium mb-1">
+          <div className="text-center rounded-xl bg-muted/20 border border-border/40 py-4 hover-lift transition-card-hover">
+            <p className="text-2xl font-extrabold tabular-nums text-difficulty-medium mb-1">
               {contest.problems.reduce((sum, p) => sum + p.points, 0)}
             </p>
-            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">
               总分值
             </p>
           </div>

@@ -1,0 +1,1 @@
+{"command":"ls ~/.cargo/registry; ls ~/.cargo/registry/src/*/async-trait-* 2>/dev/null | head; docker run --rm -v \"$HOME/.cargo/registry:/usr/local/cargo/registry:ro\" online_judge-judge-worker:latest sh -lc 'ls /usr/local/cargo/registry; find /usr/local/cargo/registry -maxdepth 3 -name \"async-trait-*\" | head'"}

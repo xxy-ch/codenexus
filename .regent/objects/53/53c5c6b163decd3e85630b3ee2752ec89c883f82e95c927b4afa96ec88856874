@@ -1,0 +1,392 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1777041467431,
+  "projectRoot": "/Users/xiexingyu/Documents/项目/Online_Judge/.claude/worktrees/keen-bardeen-bee1dd",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": {
+      "defaultBranch": "master",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1777041467394,
+      "keyFiles": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "rust-toolchain.toml"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1777041467395,
+      "keyFiles": [
+        "README.md"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 20,
+      "lastAccessed": 1777041467396,
+      "keyFiles": [
+        "Dockerfile",
+        "README.md",
+        "components.json",
+        "eslint.config.js",
+        "index.html"
+      ]
+    },
+    "references": {
+      "path": "references",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1777041467406,
+      "keyFiles": [
+        "app_uoj233.sql"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 2,
+      "lastAccessed": 1777041467406,
+      "keyFiles": [
+        "bootstrap_demo.sh",
+        "bootstrap_demo.sql"
+      ]
+    },
+    "backend/api": {
+      "path": "backend/api",
+      "purpose": "API routes",
+      "fileCount": 5,
+      "lastAccessed": 1777041467415,
+      "keyFiles": [
+        "Cargo.toml",
+        "Dockerfile",
+        "docker-entrypoint.sh"
+      ]
+    },
+    "docs/api": {
+      "path": "docs/api",
+      "purpose": "API routes",
+      "fileCount": 3,
+      "lastAccessed": 1777041467422,
+      "keyFiles": [
+        "CONTEST_API.md",
+        "LEADERBOARD_API.md",
+        "PROBLEMS_API.md"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "frontend/src/pages/user/ContestDetail.tsx",
+      "accessCount": 23,
+      "lastAccessed": 1777117273800,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/user/ProblemSet.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1777117081177,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/user/Ranking.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1777117475235,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/user/Profile.tsx",
+      "accessCount": 10,
+      "lastAccessed": 1777117706580,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/contest/ContestScoreboard.tsx",
+      "accessCount": 9,
+      "lastAccessed": 1777117201436,
+      "type": "file"
+    },
+    {
+      "path": "backend/api/src/auth/routes.rs",
+      "accessCount": 8,
+      "lastAccessed": 1777043672546,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/user/Settings.tsx",
+      "accessCount": 7,
+      "lastAccessed": 1777117753195,
+      "type": "file"
+    },
+    {
+      "path": "backend/api/src/websocket/handler.rs",
+      "accessCount": 6,
+      "lastAccessed": 1777043659644,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/user/ProblemDetail.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1777117105298,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/components/layout/MobileNav.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1777117212653,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/components/layout/Sidebar.tsx",
+      "accessCount": 6,
+      "lastAccessed": 1777117212698,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/community/BlogDetail.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1777117064751,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/community/DirectMessages.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1777117099154,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/community/CreateArticle.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1777117121502,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/user/ProblemIDEEnhanced.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1777117141304,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/components/layout/Header.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1777117202030,
+      "type": "file"
+    },
+    {
+      "path": "backend/api/src/middleware/auth.rs",
+      "accessCount": 4,
+      "lastAccessed": 1777043643821,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src/pages/user/SubmissionDetail.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1777116846293,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/community/CreateDiscussion.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1777117142133,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/search/SearchResults.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1777117246499,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/auth/RegisterPage.tsx",
+      "accessCount": 4,
+      "lastAccessed": 1777117371538,
+      "type": "file"
+    },
+    {
+      "path": "backend/api/src",
+      "accessCount": 3,
+      "lastAccessed": 1777042253313,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src/pages/user/ContestList.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1777116828965,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/auth/UnauthorizedPage.tsx",
+      "accessCount": 3,
+      "lastAccessed": 1777117378868,
+      "type": "file"
+    },
+    {
+      "path": "backend/domain-community/src/discussions/service.rs",
+      "accessCount": 2,
+      "lastAccessed": 1777042183625,
+      "type": "directory"
+    },
+    {
+      "path": "backend/domain-community/src/blog/service.rs",
+      "accessCount": 2,
+      "lastAccessed": 1777042183734,
+      "type": "directory"
+    },
+    {
+      "path": "backend/domain-classes/src/routes.rs",
+      "accessCount": 2,
+      "lastAccessed": 1777042447884,
+      "type": "directory"
+    },
+    {
+      "path": "backend/domain-contests/src/routes.rs",
+      "accessCount": 2,
+      "lastAccessed": 1777042447913,
+      "type": "directory"
+    },
+    {
+      "path": "backend/judge-worker/src/sandbox/seccomp.rs",
+      "accessCount": 2,
+      "lastAccessed": 1777042708039,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/community/DiscussionList.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777116805562,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/community/DiscussionDetail.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777116806646,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/community/EditArticle.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777117158936,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/auth/LoginPage.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777117364964,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/error/NotFound.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777117382154,
+      "type": "file"
+    },
+    {
+      "path": "frontend/src/pages/error/ServerError.tsx",
+      "accessCount": 2,
+      "lastAccessed": 1777117384910,
+      "type": "file"
+    },
+    {
+      "path": "backend/api-infra/src/websocket/message.rs",
+      "accessCount": 1,
+      "lastAccessed": 1777041944030,
+      "type": "file"
+    },
+    {
+      "path": "backend/api-infra/src/websocket/server.rs",
+      "accessCount": 1,
+      "lastAccessed": 1777041944136,
+      "type": "file"
+    },
+    {
+      "path": "backend/api/src/websocket",
+      "accessCount": 1,
+      "lastAccessed": 1777041976856,
+      "type": "directory"
+    },
+    {
+      "path": "backend/api/src/lib.rs",
+      "accessCount": 1,
+      "lastAccessed": 1777042263872,
+      "type": "file"
+    },
+    {
+      "path": "backend/api-infra/src/state.rs",
+      "accessCount": 1,
+      "lastAccessed": 1777042273206,
+      "type": "file"
+    },
+    {
+      "path": "backend/shared/src/models",
+      "accessCount": 1,
+      "lastAccessed": 1777042336863,
+      "type": "directory"
+    },
+    {
+      "path": "backend/shared/src/models/auth.rs",
+      "accessCount": 1,
+      "lastAccessed": 1777042346799,
+      "type": "file"
+    },
+    {
+      "path": "backend/domain-contests/src/service.rs",
+      "accessCount": 1,
+      "lastAccessed": 1777042417151,
+      "type": "directory"
+    },
+    {
+      "path": "backend/domain-classes/src/service.rs",
+      "accessCount": 1,
+      "lastAccessed": 1777042417173,
+      "type": "directory"
+    },
+    {
+      "path": "backend/domain-users/src/service.rs",
+      "accessCount": 1,
+      "lastAccessed": 1777042495949,
+      "type": "directory"
+    },
+    {
+      "path": "frontend/src/pages/user/LearningRoadmap.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1777117156556,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

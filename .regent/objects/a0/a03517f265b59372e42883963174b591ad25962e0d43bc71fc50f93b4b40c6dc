@@ -1,0 +1,1 @@
+{"command":"sed -n '1,260p' backend/domain-analysis/src/routes.rs"}

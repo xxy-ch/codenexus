@@ -1,0 +1,393 @@
+---
+phase: 12
+plan: 03
+type: execute
+wave: 3
+depends_on: [12-02]
+files_modified:
+  - backend/domain-analysis/src/batch.rs
+  - backend/domain-analysis/src/service.rs
+autonomous: true
+requirements:
+  - AIA-03
+  - AIA-07
+---
+
+# Plan 12-03: Nightly Batch Processing + Embedding + Rerank + LLM Layers
+
+<objective>
+Implement Layers 2-5 of the analysis stack: embedding index construction, similarity-based reranking, base LLM generation for teaching cards, and the nightly batch orchestrator that runs full reclustering, cluster naming, teaching-card refresh, class-level cognition snapshots, and stale artifact invalidation.
+
+The batch processor is a standalone async loop that runs on a schedule (default: 02:00 UTC) and processes all pending analysis data.
+</objective>
+
+<threat_model>
+**Attack Surface:** Nightly batch process with DB read/write access, potential external LLM API calls.
+**Threats:**
+- LLM API key exposure (HIGH) — API key must be in env var, never hardcoded
+- LLM prompt injection through user-submitted code included in prompts (HIGH) — must sanitize input
+- Unbounded batch processing consuming all DB resources (MEDIUM)
+- Cross-tenant data in batch queries (HIGH)
+**Mitigations:**
+- LLM API key loaded from `AI_API_KEY` env var, required at startup if batch enabled
+- User code in LLM prompts truncated to 500 chars, stripped of control characters
+- Batch processes organizations sequentially, with configurable batch size
+- All queries filter by organization_id
+**Block on:** HIGH — LLM API key exposure and prompt injection
+</threat_model>
+
+<tasks>
+
+<task id="1" type="execute">
+<read_first>
+- backend/domain-analysis/src/models.rs
+- backend/domain-analysis/src/service.rs
+- backend/domain-analysis/src/batch.rs
+</read_first>
+<objective>Implement nightly batch orchestrator</objective>
+<action>
+Replace `backend/domain-analysis/src/batch.rs` with:
+
+```rust
+use std::env;
+use std::time::Duration;
+
+use anyhow::Result;
+use chrono::{Utc, NaiveDate};
+use sqlx::PgPool;
+use tracing::{info, warn, error};
+use uuid::Uuid;
+
+use crate::models::*;
+use crate::service::AnalysisService;
+use crate::extractor;
+
+/// Configuration for the nightly batch processor.
+pub struct BatchConfig {
+    /// Whether batch processing is enabled (requires ai_analysis_enabled feature flag)
+    pub enabled: bool,
+    /// Hour of day to run batch (UTC, 0-23)
+    pub run_hour_utc: u32,
+    /// Maximum submissions to process per organization per batch run
+    pub batch_size: i64,
+    /// Whether LLM-based generation is enabled (requires AI_API_KEY)
+    pub llm_enabled: bool,
+}
+
+impl Default for BatchConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            run_hour_utc: 2,
+            batch_size: 1000,
+            llm_enabled: false,
+        }
+    }
+}
+
+impl BatchConfig {
+    pub fn from_env() -> Self {
+        Self {
+            enabled: env::var("AI_BATCH_ENABLED").unwrap_or_default() == "true",
+            run_hour_utc: env::var("AI_BATCH_HOUR")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(2),
+            batch_size: env::var("AI_BATCH_SIZE")
+                .ok()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(1000),
+            llm_enabled: env::var("AI_API_KEY").ok().map(|k| !k.is_empty()).unwrap_or(false),
+        }
+    }
+}
+
+/// Run the nightly batch process for all organizations.
+/// Processes: feature backfill, reclustering, cluster naming,
+/// teaching-card refresh, class snapshots, stale cleanup.
+pub async fn run_nightly_batch(pool: PgPool, config: &BatchConfig) -> Result<()> {
+    if !config.enabled {
+        info!("Nightly batch disabled — skipping");
+        return Ok(());
+    }
+
+    let service = AnalysisService::new(pool.clone());
+    let now = Utc::now();
+    let today = now.date_naive();
+
+    info!(date = %today, "Starting nightly analysis batch");
+
+    // Step 1: Backfill features for pending jobs
+    match backfill_pending_features(&service, &pool, config.batch_size).await {
+        Ok(count) => info!(count, "Feature backfill complete"),
+        Err(e) => error!(error = %e, "Feature backfill failed"),
+    }
+
+    // Step 2: Recluster solutions per problem per organization
+    match recluster_solutions(&service, &pool, config.batch_size).await {
+        Ok(count) => info!(count, "Reclustering complete"),
+        Err(e) => error!(error = %e, "Reclustering failed"),
+    }
+
+    // Step 3: Generate teaching cards (if LLM enabled)
+    if config.llm_enabled {
+        match generate_teaching_cards(&service, &pool).await {
+            Ok(count) => info!(count, "Teaching card generation complete"),
+            Err(e) => error!(error = %e, "Teaching card generation failed"),
+        }
+    }
+
+    // Step 4: Build class cognition snapshots
+    match build_class_snapshots(&service, &pool, today).await {
+        Ok(count) => info!(count, "Class snapshot build complete"),
+        Err(e) => error!(error = %e, "Class snapshot build failed"),
+    }
+
+    // Step 5: Invalidate stale artifacts
+    match invalidate_stale(&pool).await {
+        Ok(count) => info!(count, "Stale artifact cleanup complete"),
+        Err(e) => error!(error = %e, "Stale cleanup failed"),
+    }
+
+    info!("Nightly analysis batch complete");
+    Ok(())
+}
+
+async fn backfill_pending_features(service: &AnalysisService, pool: &PgPool, batch_size: i64) -> Result<u64> {
+    // Find pending jobs and extract features
+    let pending = sqlx::query_as::<_, AnalysisJob>(
+        "SELECT * FROM analysis_jobs WHERE status = 'pending' ORDER BY created_at ASC LIMIT $1"
+    )
+    .bind(batch_size)
+    .fetch_all(pool)
+    .await?;
+
+    let mut processed = 0u64;
+    for job in &pending {
+        if let Err(e) = process_job(service, pool, job).await {
+            warn!(job_id = job.id, error = %e, "Failed to process analysis job");
+        } else {
+            processed += 1;
+        }
+    }
+    Ok(processed)
+}
+
+async fn process_job(service: &AnalysisService, pool: &PgPool, job: &AnalysisJob) -> Result<()> {
+    service.mark_processing(job.id).await?;
+
+    // Fetch submission source code
+    let source: Option<(String, String)> = sqlx::query_as(
+        "SELECT s.source_code, s.language FROM submissions s WHERE s.id = $1"
+    )
+    .bind(job.submission_id)
+    .fetch_optional(pool)
+    .await?;
+
+    if let Some((source_code, language)) = source {
+        let features = tokio::task::spawn_blocking(move || {
+            extractor::extract_features(&source_code, &language)
+        })
+        .await??;
+
+        service.store_features(job.submission_id, job.organization_id, &features).await?;
+    }
+
+    service.mark_completed(job.id).await?;
+    Ok(())
+}
+
+async fn recluster_solutions(service: &AnalysisService, pool: &PgPool, _batch_size: i64) -> Result<u64> {
+    // Placeholder: Real implementation would use embedding-based clustering
+    // For v1, we do a simplified grouping by cyclomatic_complexity buckets
+    let orgs: Vec<(i64,)> = sqlx::query_as("SELECT DISTINCT organization_id FROM analysis_submission_features")
+        .fetch_all(pool)
+        .await?;
+
+    let mut count = 0u64;
+    for (org_id,) in &orgs {
+        let problems: Vec<(i64,)> = sqlx::query_as(
+            "SELECT DISTINCT aj.problem_id FROM analysis_jobs aj
+             JOIN analysis_submission_features af ON af.submission_id = aj.submission_id
+             WHERE aj.organization_id = $1 AND aj.status = 'completed'"
+        )
+        .bind(org_id)
+        .fetch_all(pool)
+        .await?;
+
+        for (problem_id,) in problems {
+            // Delete old clusters for this problem+org
+            sqlx::query("DELETE FROM analysis_solution_clusters WHERE problem_id = $1 AND organization_id = $2")
+                .bind(problem_id)
+                .bind(org_id)
+                .execute(pool)
+                .await?;
+
+            // Group submissions by complexity bucket
+            let clusters = sqlx::query_as::<_, (String, i32)>(
+                "SELECT CASE
+                    WHEN cyclomatic_complexity < 3 THEN 'simple'
+                    WHEN cyclomatic_complexity < 8 THEN 'moderate'
+                    ELSE 'complex'
+                END as bucket, COUNT(*) as cnt
+                FROM analysis_submission_features af
+                JOIN analysis_jobs aj ON aj.submission_id = af.submission_id
+                WHERE aj.problem_id = $1 AND aj.organization_id = $2
+                GROUP BY bucket"
+            )
+            .bind(problem_id)
+            .bind(org_id)
+            .fetch_all(pool)
+            .await?;
+
+            for (bucket_name, member_count) in clusters {
+                let cluster = sqlx::query_as::<_, AnalysisSolutionCluster>(
+                    "INSERT INTO analysis_solution_clusters (problem_id, organization_id, cluster_name, member_count)
+                     VALUES ($1, $2, $3, $4) RETURNING *"
+                )
+                .bind(problem_id)
+                .bind(org_id)
+                .bind(&bucket_name)
+                .bind(member_count)
+                .fetch_one(pool)
+                .await?;
+
+                // Assign members
+                sqlx::query(
+                    "INSERT INTO analysis_cluster_members (cluster_id, submission_id, organization_id)
+                     SELECT $1, aj.submission_id, $2
+                     FROM analysis_jobs aj
+                     JOIN analysis_submission_features af ON af.submission_id = aj.submission_id
+                     WHERE aj.problem_id = $3 AND aj.organization_id = $2
+                       AND CASE
+                         WHEN $4 = 'simple' THEN af.cyclomatic_complexity < 3
+                         WHEN $4 = 'moderate' THEN af.cyclomatic_complexity >= 3 AND af.cyclomatic_complexity < 8
+                         WHEN $4 = 'complex' THEN af.cyclomatic_complexity >= 8
+                         ELSE false
+                       END"
+                )
+                .bind(cluster.id)
+                .bind(org_id)
+                .bind(problem_id)
+                .bind(&bucket_name)
+                .execute(pool)
+                .await?;
+
+                count += 1;
+            }
+        }
+    }
+    Ok(count)
+}
+
+async fn generate_teaching_cards(_service: &AnalysisService, _pool: &PgPool) -> Result<u64> {
+    // v1 placeholder: Teaching cards require LLM integration.
+    // Full implementation: read cluster data, construct prompt, call LLM, store result.
+    // This task will be implemented when AI_API_KEY integration is available.
+    info!("Teaching card generation: LLM integration pending (v1 placeholder)");
+    Ok(0)
+}
+
+async fn build_class_snapshots(service: &AnalysisService, pool: &PgPool, date: NaiveDate) -> Result<u64> {
+    let classes: Vec<(i64, i64)> = sqlx::query_as(
+        "SELECT DISTINCT ce.class_id, c.organization_id
+         FROM class_enrollments ce
+         JOIN classes c ON c.id = ce.class_id
+         WHERE c.is_active = true"
+    )
+    .fetch_all(pool)
+    .await?;
+
+    let mut count = 0u64;
+    for (class_id, org_id) in &classes {
+        // Compute avg complexity for the class
+        let stats = sqlx::query_as::<_, (i32, Option<f64>)>(
+            "SELECT COUNT(DISTINCT af.submission_id), AVG(af.cyclomatic_complexity)
+             FROM analysis_submission_features af
+             JOIN submissions s ON s.id = af.submission_id
+             JOIN class_enrollments ce ON ce.user_id = s.user_id
+             WHERE ce.class_id = $1 AND af.organization_id = $2"
+        )
+        .bind(class_id)
+        .bind(org_id)
+        .fetch_one(pool)
+        .await?;
+
+        let (student_count, avg_complexity) = stats;
+        let cognition_profile = serde_json::json!({
+            "student_count": student_count,
+            "avg_complexity": avg_complexity,
+            "snapshot_type": "simplified_v1"
+        });
+
+        sqlx::query(
+            "INSERT INTO analysis_class_snapshots (class_id, organization_id, snapshot_date, cognition_profile, student_count, avg_complexity)
+             VALUES ($1, $2, $3, $4, $5, $6)
+             ON CONFLICT (class_id, snapshot_date) DO UPDATE SET
+                cognition_profile = $4, student_count = $5, avg_complexity = $6"
+        )
+        .bind(class_id)
+        .bind(org_id)
+        .bind(date)
+        .bind(serde_json::to_value(&cognition_profile)?)
+        .bind(student_count)
+        .bind(avg_complexity)
+        .execute(pool)
+        .await?;
+
+        count += 1;
+    }
+    Ok(count)
+}
+
+async fn invalidate_stale(pool: &PgPool) -> Result<u64> {
+    // Mark analysis_jobs older than 30 days as expired
+    let result = sqlx::query(
+        "UPDATE analysis_jobs SET status = 'expired', updated_at = NOW()
+         WHERE status IN ('pending', 'processing') AND created_at < NOW() - INTERVAL '30 days'"
+    )
+    .execute(pool)
+    .await?;
+    Ok(result.rows_affected())
+}
+```
+</action>
+<acceptance_criteria>
+- `grep -q 'pub async fn run_nightly_batch' backend/domain-analysis/src/batch.rs`
+- `grep -q 'pub struct BatchConfig' backend/domain-analysis/src/batch.rs`
+- `grep -q 'AI_BATCH_ENABLED' backend/domain-analysis/src/batch.rs`
+- `grep -q 'AI_API_KEY' backend/domain-analysis/src/batch.rs`
+- `grep -q 'organization_id' backend/domain-analysis/src/batch.rs` (tenant isolation in batch queries)
+- `grep -q 'spawn_blocking' backend/domain-analysis/src/batch.rs` (feature extraction offloaded)
+- `grep -q 'fn recluster_solutions' backend/domain-analysis/src/batch.rs`
+- `grep -q 'fn build_class_snapshots' backend/domain-analysis/src/batch.rs`
+- `grep -q 'fn invalidate_stale' backend/domain-analysis/src/batch.rs`
+- `cargo check -p domain-analysis` succeeds
+</acceptance_criteria>
+</task>
+
+</tasks>
+
+<verification>
+1. `cargo check --workspace` compiles without errors
+2. Batch processor can be enabled via `AI_BATCH_ENABLED=true`
+3. All batch queries filter by organization_id
+4. Feature extraction runs in spawn_blocking (non-blocking async runtime)
+5. Teaching card generation is safely stubbed for v1
+6. Stale artifact cleanup has a 30-day retention window
+</verification>
+
+<success_criteria>
+- Nightly batch processes pending jobs, reclusters solutions, builds class snapshots
+- Batch is disabled by default, enabled via env var
+- All data operations respect tenant boundaries
+- Teaching card LLM integration is safely stubbed
+</success_criteria>
+
+<must_haves>
+- Batch must be disabled by default (AI_BATCH_ENABLED defaults to false)
+- All batch SQL must filter by organization_id
+- LLM API key must come from env var, never hardcoded
+- Feature extraction must use spawn_blocking
+- Batch failures must be per-step (one step failure doesn't abort the entire batch)
+</must_haves>

@@ -1,0 +1,119 @@
+---
+plan: 14-02
+title: "Auth Flow + Tenant Middleware"
+wave: 2
+phase: 14
+status: pending
+---
+
+# Plan 14-02: Auth Flow + Tenant Middleware
+
+**Wave:** 2 (depends on Plan 14-01)
+**Goal:** Wire grade_id through the authentication pipeline — login queries grade_id from user_roles, JWT includes it, tenant middleware extracts it, all downstream handlers can access grade scope.
+
+## Context
+
+- Plan 14-01 adds `grade_id` to Claims, User, UserPublic, TenantContext
+- Current login flow: `UserService::login()` → queries `user_roles` for role → constructs `shared::User` → `JwtService` creates Claims
+- Currently `campus_id` in Claims comes from `users.campus_id` (user's identity campus)
+- Per D-07/D-08: grade_id should come from `user_roles.grade_id` (authorization scope)
+
+## Key Design Decision (D-07/D-08)
+
+- `users.grade_id` = identity (which grade this user belongs to)
+- `user_roles.grade_id` = authorization (which grade this role applies to)
+- JWT `grade_id` should come from `user_roles.grade_id` (authorization scope for GradeAdmin filtering)
+- This is the same pattern as how `role` already comes from `user_roles`, not from a `users.role` column
+
+## Tasks
+
+### Task 1: Update domain-users login to query and inject grade_id
+
+**Files:**
+- EDIT `backend/domain-users/src/service.rs` (login function, ~lines 113-187)
+
+**Changes:**
+- After querying role from `user_roles` (line 146-151), also query `grade_id`:
+  ```rust
+  let role_row = sqlx::query_as::<_, (String, Option<i64>)>(
+      "SELECT role, grade_id FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1"
+  )
+      .bind(user.id)
+      .fetch_one(&self.pool)
+      .await?;
+  let (role, grade_id) = role_row;
+  ```
+- Update `shared_user` construction (line 169-177) to include `grade_id` from user_roles
+- Update `UserProfile` construction (line 154-166) to include `grade_id` from user record (identity)
+
+### Task 2: Update domain-users models for grade_id
+
+**Files:**
+- EDIT `backend/domain-users/src/models.rs`
+
+**Changes:**
+- Add `grade_id: Option<i64>` to `UserProfile` struct
+- Add `grade_id: Option<i64>` to `User` struct (DB row already has it after migration)
+- Add `grade_id: Option<i64>` to `AdminUserRow` struct
+- Add `grade_id: Option<i64>` to `BatchCreateUserInput` and `RegisterRequest`
+
+### Task 3: Update JWT token generation
+
+**Files:**
+- EDIT `backend/api/src/auth/jwt_service.rs`
+
+**Changes:**
+- `generate_access_token` and `generate_refresh_token` already pass `user.grade_id` to Claims (fixed in Plan 14-01 Task 4)
+- Verify both functions propagate `grade_id` correctly
+- Update tests to include `grade_id` in User construction
+
+### Task 4: Update auth routes response
+
+**Files:**
+- EDIT `backend/api/src/auth/routes.rs`
+
+**Changes:**
+- Update `login` handler's `UserPublic` construction (~line 55-63) to include `grade_id` from `response.user.grade_id`
+- Update any other Claims or UserPublic construction sites
+
+### Task 5: Update tenant middleware extraction
+
+**Files:**
+- EDIT `backend/api-infra/src/middleware/tenant.rs`
+
+**Note:** Plan 14-01 Task 3 already adds `campus_id` + `grade_id` to TenantContext struct. This task verifies the extraction is correct and all consumers work.
+
+**Changes (if not already done in 14-01):**
+- Ensure `tenant_middleware` extracts both `campus_id` and `grade_id` from Claims
+- Verify all existing TenantContext consumers still compile
+
+### Task 6: Update TenantContext consumers across domain crates
+
+**Files (search for `TenantContext` usage):**
+- `backend/domain-classes/src/routes.rs` or `service.rs`
+- `backend/domain-problems/src/routes.rs` or `service.rs`
+- `backend/domain-submissions/src/routes.rs` or `service.rs`
+- `backend/domain-contests/src/routes.rs` or `service.rs`
+- `backend/domain-community/src/routes.rs` or `service.rs`
+- `backend/domain-search/src/routes.rs` or `service.rs`
+- `backend/domain-leaderboard/src/service.rs`
+- `backend/domain-users/src/routes.rs`
+
+**Pattern:** No behavior change needed in this plan. Just ensure compilation passes with the new TenantContext fields. Grade filtering is Plan 14-03.
+
+**Verification:** `cargo build` across workspace.
+
+## Dependencies
+
+- Plan 14-01 (DB schema + shared models)
+
+## Estimated Files
+
+- 6-10 edited Rust files
+- Focus: domain-users (service.rs, models.rs), api (auth/), api-infra (middleware/tenant.rs)
+
+## Commit Message
+
+```
+feat(auth): wire grade_id through login, JWT claims, and tenant middleware
+```

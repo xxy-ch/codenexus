@@ -1,0 +1,1 @@
+{"command":"sed -n '1,120p' frontend/src/services/api.ts; sed -n '1,120p' frontend/src/services/config.ts; sed -n '1,100p' frontend/vite.config.ts"}

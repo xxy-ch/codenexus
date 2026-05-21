@@ -21,7 +21,7 @@ export function AdminDashboard() {
   if (user?.role && !isAdmin(user.role)) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="rounded-xl border border-border bg-card p-8 text-center shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-8 text-center shadow-sm">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <ShieldAlert className="h-7 w-7" />
           </div>
@@ -82,7 +82,7 @@ export function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+      <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-6 shadow-sm">
         <div className="flex flex-col gap-1 text-sm text-muted-foreground">
           <span className="flex items-center gap-2">
             <span>Admin</span>
@@ -99,7 +99,7 @@ export function AdminDashboard() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-border bg-background p-4">
+            <div className="rounded-lg border border-border/40 bg-background/40 p-4">
               <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">活跃模块</div>
               <div className="mt-3 text-3xl font-bold text-foreground">{modules.length}</div>
               <div className="mt-1 text-xs text-muted-foreground">已接入真实后端的管理模块</div>
@@ -118,12 +118,12 @@ export function AdminDashboard() {
 
       {/* Status Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-widest text-secondary">题目管理</div>
           <div className="mt-4 text-3xl font-bold text-foreground">CRUD</div>
           <p className="mt-2 text-xs leading-5 text-tertiary">题目管理当前已接通创建、编辑、删除与测试数据维护。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-widest text-secondary">抄袭检测</div>
           <div className="mt-4 flex items-center gap-2">
             <span className={`inline-block h-2.5 w-2.5 rounded-full ${plagiarismEnabled ? 'bg-lime-400' : 'bg-muted-foreground/40'}`} />
@@ -131,12 +131,12 @@ export function AdminDashboard() {
           </div>
           <p className="mt-2 text-xs leading-5 text-tertiary">相似度扫描和报告页都已经接入真实接口。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-widest text-secondary">未开放</div>
           <div className="mt-4 text-3xl font-bold text-foreground">2</div>
           <p className="mt-2 text-xs leading-5 text-tertiary">用户管理和举报管理已从主入口移除。</p>
         </div>
-        <div className="rounded-xl border border-border bg-accent/50 p-5 shadow-card">
+        <div className="rounded-xl border border-border/40 bg-accent/40 backdrop-blur-xl p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-widest text-foreground">运行策略</div>
           <div className="mt-4 text-3xl font-bold text-foreground">Real API</div>
           <p className="mt-2 text-xs leading-5 text-tertiary">不再为管理端页面提供用户可见的 mock fallback。</p>
@@ -156,7 +156,7 @@ export function AdminDashboard() {
             <Link
               key={module.href}
               to={module.href}
-              className="group rounded-xl border border-border bg-card p-6 shadow-whisper transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
+              className="group rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated"
             >
               <div className={`inline-flex rounded-lg ${module.bg} p-3`}>
                 <Icon className={`h-5 w-5 ${module.accent}`} />

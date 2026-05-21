@@ -1,0 +1,58 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e16]: 当前状态：已就绪
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: architecture
+        - generic [ref=e20]: 建筑算法学社
+      - heading "在结构化训练里 保持代码表达的精确度。" [level=1] [ref=e21]:
+        - text: 在结构化训练里
+        - generic [ref=e22]: 保持代码表达的精确度。
+      - paragraph [ref=e23]: 统一进入题库、竞赛、课程与讨论区，在同一套工作台里完成算法训练与提交。
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - img "成员头像 1" [ref=e26]
+        - img "成员头像 2" [ref=e27]
+        - img "成员头像 3" [ref=e28]
+      - generic [ref=e29]: 本周已有 12k+ 用户继续训练计划
+  - generic [ref=e30]:
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - paragraph [ref=e33]: 账号登录
+        - heading "欢迎回来" [level=2] [ref=e34]
+        - paragraph [ref=e35]: 继续你的刷题、竞赛与课程协作流程。
+      - generic [ref=e36]:
+        - button "Google 登录" [disabled] [ref=e37]:
+          - generic [ref=e38]: public
+          - generic [ref=e39]: Google 登录
+        - button "GitHub 登录" [disabled] [ref=e40]:
+          - generic [ref=e41]: code
+          - generic [ref=e42]: GitHub 登录
+      - generic [ref=e45]: 或使用账号密码
+      - generic [ref=e47]:
+        - generic [ref=e48]:
+          - generic [ref=e49]: 用户名 / 学号
+          - generic [ref=e50]:
+            - img
+            - textbox "Username / User ID" [ref=e52]:
+              - /placeholder: 1001 或 alice
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - generic [ref=e55]: 密码
+            - link "找回账号" [ref=e56] [cursor=pointer]:
+              - /url: /account-recovery
+          - generic [ref=e57]:
+            - img
+            - textbox "Password" [ref=e59]:
+              - /placeholder: 请输入密码
+        - button "进入工作台" [ref=e61] [cursor=pointer]:
+          - text: 进入工作台
+          - img [ref=e62]
+      - generic [ref=e64]:
+        - text: 还没有账号？
+        - link "立即注册" [ref=e65] [cursor=pointer]:
+          - /url: /register
+    - generic [ref=e67]:
+      - generic [ref=e68]: 隐私说明
+      - generic [ref=e69]: 服务状态
+      - generic [ref=e70]: 版本记录

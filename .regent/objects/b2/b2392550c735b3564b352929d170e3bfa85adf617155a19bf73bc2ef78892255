@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "active": true,
+  "skill": "ultrawork",
+  "keyword": "$ultrawork",
+  "phase": "code-review-findings",
+  "activated_at": "2026-04-11T04:36:44.042Z",
+  "updated_at": "2026-04-11T04:36:44.042Z",
+  "source": "keyword-detector",
+  "session_id": "019d79d2-cab1-76a2-b6c5-c26ecc43b4e5",
+  "turn_id": "019d7ad3-a24f-7c30-aaa2-c28b32d526ab",
+  "active_skills": [
+    {
+      "skill": "ultrawork",
+      "phase": "code-review-findings",
+      "active": true,
+      "activated_at": "2026-04-11T04:36:44.042Z",
+      "updated_at": "2026-04-11T04:36:44.042Z",
+      "session_id": "019d79d2-cab1-76a2-b6c5-c26ecc43b4e5"
+    }
+  ],
+  "initialized_mode": "ultrawork",
+  "initialized_state_path": ".omx/state/sessions/019d79bd-d79a-7741-bb93-aa8dea54d955/ultrawork-state.json",
+  "iteration": 2,
+  "last_turn_at": "2026-04-11T04:37:06.360Z"
+}

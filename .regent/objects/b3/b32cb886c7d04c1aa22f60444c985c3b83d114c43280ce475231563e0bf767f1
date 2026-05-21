@@ -1,0 +1,1 @@
+{"command":"docker system df","description":"Check Docker disk usage after cleanup"}

@@ -1,0 +1,134 @@
+---
+plan: 14-03
+title: "Domain Service Grade Filtering"
+wave: 2
+phase: 14
+status: pending
+---
+
+# Plan 14-03: Domain Service Grade Filtering
+
+**Wave:** 2 (depends on Plan 14-01, parallel with Plan 14-02)
+**Goal:** Add `WHERE grade_id = $N` filtering to all domain service queries when the requesting user is a GradeAdmin. CampusAdmin and Root bypass grade filtering.
+
+## Context
+
+- D-08: Grade-scoped query filtering applies only to GradeAdmin
+- When `tenant_ctx.grade_id.is_some()` AND `claims.role == "gradeadmin"`, add grade filter
+- CampusAdmin and Root see all grades in their scope (no additional filter)
+- Pattern: existing `WHERE organization_id = $1` gets `AND grade_id = $2` for GradeAdmin
+- Plan 14-01 adds `grade_id` to TenantContext
+- Plan 14-02 wires grade_id through auth pipeline
+
+## Design Pattern
+
+```rust
+// Helper function to add grade filter conditionally
+fn grade_filter(grade_id: Option<i64>, param_idx: usize) -> String {
+    match grade_id {
+        Some(gid) => format!("AND grade_id = ${}", param_idx),
+        None => String::new(),
+    }
+}
+```
+
+Or more cleanly — accept TenantContext in service functions and check `grade_id` field.
+
+**Alternative (preferred):** Add `grade_id: Option<i64>` parameter to service functions that need grade scoping, alongside existing `tenant_id`. Route handlers pass `tenant_ctx.grade_id`.
+
+## Tasks
+
+### Task 1: Grade filtering for domain-classes
+
+**Files:**
+- EDIT `backend/domain-classes/src/service.rs`
+- EDIT `backend/domain-classes/src/routes.rs`
+
+**Queries affected:**
+- `create_class` — set `grade_id` on new class from request
+- `list_classes` — filter by `grade_id` when GradeAdmin
+- `get_class` — verify grade access for GradeAdmin
+- Class models: add `grade_id: Option<i64>` to CreateClassRequest, Class struct
+
+### Task 2: Grade filtering for domain-problems
+
+**Files:**
+- EDIT `backend/domain-problems/src/service.rs`
+- EDIT `backend/domain-problems/src/routes.rs`
+
+**Queries affected:**
+- `list_problems` — GradeAdmin sees only problems created by users in their grade, or problems assigned to classes in their grade
+- Note: problems don't have a direct `grade_id` column. Filtering is via assignment/class linkage or creator's grade. **Decision: for v1.0, GradeAdmin sees all problems in their campus scope (same as before). Grade filtering for problems is indirect through classes/assignments.**
+
+### Task 3: Grade filtering for domain-submissions
+
+**Files:**
+- EDIT `backend/domain-submissions/src/service.rs`
+- EDIT `backend/domain-submissions/src/routes.rs`
+
+**Queries affected:**
+- `list_submissions` — GradeAdmin sees submissions from users in their grade
+- Join: `submissions JOIN users ON submissions.user_id = users.id WHERE users.grade_id = $N`
+- Or simpler: filter by `users.grade_id` when listing
+
+### Task 4: Grade filtering for domain-contests
+
+**Files:**
+- EDIT `backend/domain-contests/src/service.rs`
+- EDIT `backend/domain-contests/src/routes.rs`
+
+**Queries affected:**
+- `list_contests` — GradeAdmin sees contests scoped to their grade
+- Note: contests may need a `grade_id` column for direct filtering, or filter through participants
+
+### Task 5: Grade filtering for domain-leaderboard
+
+**Files:**
+- EDIT `backend/domain-leaderboard/src/service.rs`
+
+**Queries affected:**
+- Grade-scoped leaderboard queries filter by `users.grade_id`
+
+### Task 6: Grade filtering for domain-community
+
+**Files:**
+- EDIT `backend/domain-community/src/service.rs` (discussions, blogs)
+
+**Queries affected:**
+- GradeAdmin sees discussions/blogs from users in their grade scope
+
+### Task 7: Grade filtering for domain-search
+
+**Files:**
+- EDIT `backend/domain-search/src/service.rs`
+
+**Queries affected:**
+- Search results filtered by grade scope for GradeAdmin
+
+## Implementation Strategy
+
+Each task follows the same pattern:
+
+1. **Route layer:** Extract `TenantContext` from extensions, pass `grade_id` to service call
+2. **Service layer:** Accept `grade_id: Option<i64>` parameter. When `Some(gid)`, append `AND grade_id = $N` (or equivalent join) to the query
+3. **No behavior change** when `grade_id` is `None` (CampusAdmin, Root, Teacher)
+
+## Important Notes
+
+- **Problems** have no direct `grade_id`. GradeAdmin access to problems is through class assignments (Task 2 is a no-op for v1.0).
+- **Contests** may need `grade_id` added to the `contests` table for direct filtering. If not, filter through participants.
+- All changes are additive — existing queries are unchanged when `grade_id` is `None`.
+
+## Dependencies
+
+- Plan 14-01 (TenantContext has grade_id)
+
+## Estimated Files
+
+- 10-14 edited Rust files across 6 domain crates
+
+## Commit Message
+
+```
+feat(rbac): add grade-scoped query filtering for GradeAdmin across all domain services
+```

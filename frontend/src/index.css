@@ -86,142 +86,142 @@
 /* ─── Light Theme (Frosted Glass — clean white, subtle depth) ─────────── */
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #fdfdfc;
+  --foreground: #1c1a17;
 
-  --card: rgba(255, 255, 255, 0.8);
-  --card-foreground: #0f172a;
+  --card: rgba(255, 255, 255, 0.75);
+  --card-foreground: #1c1a17;
 
-  --popover: rgba(255, 255, 255, 0.9);
-  --popover-foreground: #0f172a;
+  --popover: rgba(255, 255, 255, 0.95);
+  --popover-foreground: #1c1a17;
 
   --primary: #f54e00;
   --primary-foreground: #ffffff;
 
-  --secondary: rgba(241, 245, 249, 0.8);
-  --secondary-foreground: #0f172a;
+  --secondary: rgba(30, 29, 27, 0.02);
+  --secondary-foreground: #2d2b27;
 
-  --muted: rgba(241, 245, 249, 0.6);
-  --muted-foreground: #64748b;
+  --muted: rgba(30, 29, 27, 0.02);
+  --muted-foreground: #74726e;
 
-  --accent: rgba(241, 245, 249, 0.8);
-  --accent-foreground: #0f172a;
+  --accent: rgba(30, 29, 27, 0.03);
+  --accent-foreground: #1c1a17;
 
-  --destructive: #ef4444;
+  --destructive: #df382b;
 
-  --border: rgba(226, 232, 240, 0.8);
-  --input: rgba(226, 232, 240, 0.8);
+  --border: rgba(30, 29, 27, 0.08);
+  --input: rgba(30, 29, 27, 0.04);
   --ring: #f54e00;
 
   --chart-1: #f54e00;
   --chart-2: #10b981;
   --chart-3: #f59e0b;
-  --chart-4: #64748b;
-  --chart-5: #94a3b8;
+  --chart-4: #74726e;
+  --chart-5: #9c9a96;
 
   --radius: 0.75rem;
 
-  --sidebar: rgba(248, 250, 252, 0.9);
-  --sidebar-foreground: #0f172a;
+  --sidebar: #f7f6f3;
+  --sidebar-foreground: #2d2b27;
   --sidebar-primary: #f54e00;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 255, 255, 0.8);
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: rgba(226, 232, 240, 0.6);
+  --sidebar-accent: rgba(30, 29, 27, 0.02);
+  --sidebar-accent-foreground: #1c1a17;
+  --sidebar-border: rgba(30, 29, 27, 0.06);
   --sidebar-ring: #f54e00;
 
   --status-accepted: #10b981;
-  --status-wrong: #ef4444;
-  --status-pending: #64748b;
+  --status-wrong: #df382b;
+  --status-pending: #9c9a96;
   --status-tle: #f59e0b;
   --status-re: #8b5cf6;
 
   --difficulty-easy: #10b981;
   --difficulty-medium: #f59e0b;
-  --difficulty-hard: #ef4444;
+  --difficulty-hard: #df382b;
 
   /* Extended surface tokens */
-  --background-alt: rgba(241, 245, 249, 0.5);
-  --background-subtle: rgba(241, 245, 249, 0.3);
-  --border-subtle: rgba(226, 232, 240, 0.4);
-  --border-strong: rgba(203, 213, 225, 0.8);
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
+  --background-alt: rgba(30, 29, 27, 0.02);
+  --background-subtle: rgba(30, 29, 27, 0.01);
+  --border-subtle: rgba(30, 29, 27, 0.04);
+  --border-strong: rgba(30, 29, 27, 0.15);
+  --text-secondary: #6e6d6a;
+  --text-tertiary: #9c9a96;
 
   /* Glass effect variables */
   --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.5);
-  --glass-blur: 12px;
-  --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --glass-border: rgba(30, 29, 27, 0.08);
+  --glass-blur: 20px;
+  --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
-/* ─── Dark Theme (Frosted Glass — deep blue-black, luminous depth) ────── */
+/* ─── Dark Theme (Cursor-Style Rich Warm Dark Mode) ──────────────────── */
 
 .dark {
-  --background: #0a0e1a;
-  --foreground: #e2e8f0;
+  --background: #0a0908;
+  --foreground: #f4f4f0;
 
-  --card: rgba(15, 23, 42, 0.8);
-  --card-foreground: #e2e8f0;
+  --card: rgba(18, 17, 15, 0.65);
+  --card-foreground: #f4f4f0;
 
-  --popover: rgba(15, 23, 42, 0.9);
-  --popover-foreground: #e2e8f0;
+  --popover: rgba(18, 17, 15, 0.9);
+  --popover-foreground: #f4f4f0;
 
   --primary: #f54e00;
   --primary-foreground: #ffffff;
 
-  --secondary: rgba(30, 41, 59, 0.8);
-  --secondary-foreground: #e2e8f0;
+  --secondary: rgba(242, 241, 237, 0.02);
+  --secondary-foreground: #e4e3de;
 
-  --muted: rgba(30, 41, 59, 0.6);
-  --muted-foreground: #94a3b8;
+  --muted: rgba(242, 241, 237, 0.02);
+  --muted-foreground: #a8a6a1;
 
-  --accent: rgba(30, 41, 59, 0.8);
-  --accent-foreground: #e2e8f0;
+  --accent: rgba(242, 241, 237, 0.04);
+  --accent-foreground: #f4f4f0;
 
-  --destructive: #ef4444;
+  --destructive: #e23b2c;
 
-  --border: rgba(51, 65, 85, 0.6);
-  --input: rgba(51, 65, 85, 0.6);
+  --border: rgba(242, 241, 237, 0.08);
+  --input: rgba(242, 241, 237, 0.03);
   --ring: #f54e00;
 
   --chart-1: #f54e00;
   --chart-2: #10b981;
   --chart-3: #f59e0b;
-  --chart-4: #94a3b8;
-  --chart-5: #64748b;
+  --chart-4: #a8a6a1;
+  --chart-5: #74726e;
 
-  --sidebar: rgba(10, 14, 26, 0.95);
-  --sidebar-foreground: #e2e8f0;
+  --sidebar: #0f0e0d;
+  --sidebar-foreground: #e4e3de;
   --sidebar-primary: #f54e00;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(15, 23, 42, 0.8);
-  --sidebar-accent-foreground: #e2e8f0;
-  --sidebar-border: rgba(51, 65, 85, 0.4);
+  --sidebar-accent: rgba(242, 241, 237, 0.03);
+  --sidebar-accent-foreground: #f4f4f0;
+  --sidebar-border: rgba(242, 241, 237, 0.05);
   --sidebar-ring: #f54e00;
 
   --status-accepted: #10b981;
-  --status-wrong: #ef4444;
-  --status-pending: #94a3b8;
+  --status-wrong: #e23b2c;
+  --status-pending: #a8a6a1;
   --status-tle: #f59e0b;
   --status-re: #a78bfa;
 
   --difficulty-easy: #10b981;
   --difficulty-medium: #f59e0b;
-  --difficulty-hard: #ef4444;
+  --difficulty-hard: #e23b2c;
 
-  --background-alt: rgba(30, 41, 59, 0.4);
-  --background-subtle: rgba(30, 41, 59, 0.2);
-  --border-subtle: rgba(51, 65, 85, 0.3);
-  --border-strong: rgba(71, 85, 105, 0.6);
-  --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  --background-alt: rgba(242, 241, 237, 0.02);
+  --background-subtle: rgba(242, 241, 237, 0.01);
+  --border-subtle: rgba(242, 241, 237, 0.05);
+  --border-strong: rgba(242, 241, 237, 0.12);
+  --text-secondary: #e4e3de;
+  --text-tertiary: #a8a6a1;
 
   /* Glass effect variables - dark */
-  --glass-bg: rgba(15, 23, 42, 0.6);
-  --glass-border: rgba(51, 65, 85, 0.4);
-  --glass-blur: 16px;
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --glass-bg: rgba(18, 17, 15, 0.65);
+  --glass-border: rgba(242, 241, 237, 0.08);
+  --glass-blur: 20px;
+  --glass-shadow: rgba(0, 0, 0, 0.3) 0px 0px 0px 1px, rgba(0, 0, 0, 0.5) 0px 8px 32px;
 }
 
 /* ─── Base Layer ───────────────────────────────────────────────────────── */
@@ -330,6 +330,62 @@
   -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
+}
+
+.glass-interactive {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: background 250ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 250ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-interactive:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(245, 78, 0, 0.25);
+  box-shadow: rgba(0, 0, 0, 0.3) 0px 0px 0px 1px, rgba(245, 78, 0, 0.06) 0px 8px 32px;
+  transform: translateY(-2px);
+}
+
+.dark .glass-interactive:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(245, 78, 0, 0.3);
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 0px 1px, rgba(245, 78, 0, 0.12) 0px 12px 40px;
+}
+
+.glass-interactive:active {
+  transform: translateY(0);
+}
+
+/* ─── Mathematical Inner Corner Radii (R_inner = R_outer - padding) ──────── */
+.rounded-outer-2xl {
+  border-radius: 16px;
+}
+.rounded-outer-xl {
+  border-radius: 12px;
+}
+
+/* Inner rounding alignment class based on outer card (16px) and padding */
+.rounded-inner-p4 {
+  border-radius: 0px; /* 16px - 16px = 0px */
+}
+.rounded-inner-p3 {
+  border-radius: 4px; /* 16px - 12px = 4px */
+}
+.rounded-inner-p2 {
+  border-radius: 8px; /* 16px - 8px = 8px */
+}
+
+/* Inner rounding alignment class based on outer card (12px) and padding */
+.rounded-inner-p3-outer-xl {
+  border-radius: 0px; /* 12px - 12px = 0px */
+}
+.rounded-inner-p2-outer-xl {
+  border-radius: 4px; /* 12px - 8px = 4px */
 }
 
 .glass-subtle {

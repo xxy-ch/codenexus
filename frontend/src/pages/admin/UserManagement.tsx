@@ -130,7 +130,7 @@ export function UserManagement() {
     }
     const c = config[roleValue] ?? config.student
 
-    return <span className={cn('rounded-full px-3 py-1 text-xs font-medium', c.color)}>{c.label}</span>
+    return <span className={cn('rounded-full px-3 py-1 text-[13px] font-medium', c.color)}>{c.label}</span>
   }
 
   const getStatusBadge = (statusValue: string) => {
@@ -141,7 +141,7 @@ export function UserManagement() {
     }
     const entry = map[statusValue] ?? map.inactive
 
-    return <span className={cn('rounded-full px-3 py-1 text-xs font-medium', entry.color)}>{entry.label}</span>
+    return <span className={cn('rounded-full px-3 py-1 text-[13px] font-medium', entry.color)}>{entry.label}</span>
   }
 
   if (isLoading) return <TableSkeleton rows={8} columns={7} />
@@ -153,7 +153,7 @@ export function UserManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-card">
+      <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-card">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Admin</span>
           <ChevronRight className="h-3.5 w-3.5" />
@@ -161,7 +161,7 @@ export function UserManagement() {
         </div>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">用户管理</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">用户管理</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-secondary">
               管理平台用户账号、角色分配、状态开关和批量建号流程。内部主键使用 UUID，外部业务编号使用 12 位 user_code。
             </p>
@@ -179,37 +179,37 @@ export function UserManagement() {
 
       {/* Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-secondary">活跃用户</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-secondary">活跃用户</span>
             <Users className="h-4 w-4 text-secondary" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-foreground">{overview.activeCount}</div>
-          <p className="mt-2 text-xs text-tertiary">当前筛选结果中的活跃账号。</p>
+          <div className="mt-4 text-2xl font-bold text-foreground">{overview.activeCount}</div>
+          <p className="mt-2 text-[13px] text-tertiary">当前筛选结果中的活跃账号。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-secondary">管理员</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-secondary">管理员</span>
             <ShieldPlus className="h-4 w-4 text-secondary" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-destructive">{overview.adminCount}</div>
-          <p className="mt-2 text-xs text-tertiary">具备后台权限的账号数。</p>
+          <div className="mt-4 text-2xl font-bold text-destructive">{overview.adminCount}</div>
+          <p className="mt-2 text-[13px] text-tertiary">具备后台权限的账号数。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-secondary">教师</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-secondary">教师</span>
             <UserCog className="h-4 w-4 text-secondary" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-primary">{overview.teacherCount}</div>
-          <p className="mt-2 text-xs text-tertiary">教师角色账号数量。</p>
+          <div className="mt-4 text-2xl font-bold text-primary">{overview.teacherCount}</div>
+          <p className="mt-2 text-[13px] text-tertiary">教师角色账号数量。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-card">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-secondary">业务号</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-secondary">业务号</span>
             <BadgeCheck className="h-4 w-4 text-secondary" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-status-accepted">{overview.codedCount}</div>
-          <p className="mt-2 text-xs text-tertiary">已分配 12 位业务号的账号数。</p>
+          <div className="mt-4 text-2xl font-bold text-status-accepted">{overview.codedCount}</div>
+          <p className="mt-2 text-[13px] text-tertiary">已分配 12 位业务号的账号数。</p>
         </div>
       </div>
 
@@ -227,15 +227,15 @@ export function UserManagement() {
               </p>
             </div>
           </div>
-          <div className="rounded-lg border border-difficulty-medium/20 bg-difficulty-medium/10 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-difficulty-medium">
+          <div className="rounded-lg border border-difficulty-medium/20 bg-difficulty-medium/10 px-3 py-2 text-[13px] font-semibold uppercase tracking-widest text-difficulty-medium">
             12-digit user_code
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="rounded-xl border border-border bg-card shadow-card">
-        <div className="grid gap-6 border-b border-border-subtle px-6 py-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-card">
+        <div className="grid gap-6 border-b border-border/40 px-5 py-5 xl:grid-cols-[minmax(0,1fr)_300px]">
           {/* Filters */}
           <div className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -291,7 +291,7 @@ export function UserManagement() {
                   type="button"
                   onClick={() => setSortBy(option.value as SortType)}
                   className={cn(
-                    'rounded-lg px-3 py-1.5 text-xs font-medium transition',
+                    'rounded-lg px-3 py-1.5 text-[13px] font-medium transition',
                     sortBy === option.value ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-accent',
                   )}
                 >
@@ -302,13 +302,13 @@ export function UserManagement() {
           </div>
 
           {/* Bulk Create */}
-          <div className="rounded-xl border border-border bg-background p-5">
+          <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-foreground">批量创建账户</h2>
-                <p className="mt-1 text-xs text-tertiary">格式：user_code,display_name,email,role</p>
+                <p className="mt-1 text-[13px] text-tertiary">格式：user_code,display_name,email,role</p>
               </div>
-              <div className="rounded-full bg-muted px-3 py-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              <div className="rounded-full bg-muted px-3 py-1 text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">
                 UUID auto
               </div>
             </div>
@@ -319,24 +319,24 @@ export function UserManagement() {
                 onChange={(e) => setBulkInput(e.target.value)}
                 rows={8}
                 placeholder={'240101070014,张三,zhangsan@example.com,user\n240101070015,李四,,teacher'}
-                className="w-full rounded-lg border border-border bg-card px-4 py-3 font-mono text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-lg border border-border/40 bg-transparent px-4 py-3 font-mono text-[13px] text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
 
               <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground">默认密码</label>
+                <label className="mb-2 block text-[13px] font-medium text-muted-foreground">默认密码</label>
                 <input
                   value={defaultPassword}
                   onChange={(e) => setDefaultPassword(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-border/40 bg-transparent px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground">指定年级</label>
+                <label className="mb-2 block text-[13px] font-medium text-muted-foreground">指定年级</label>
                 <select
                   value={selectedGradeId}
                   onChange={(e) => setSelectedGradeId(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-border/40 bg-transparent px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="">不指定年级</option>
                   {activeGrades.map((g) => (
@@ -345,16 +345,16 @@ export function UserManagement() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-muted-foreground">
+                <p className="mt-1 text-[13px] text-muted-foreground">
                   学生和教师角色需要指定年级；管理员角色无需指定。
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground">
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
+              <div className="grid grid-cols-2 gap-3 text-[13px] text-muted-foreground">
+                <div className="rounded-lg border border-border/40 bg-transparent px-3 py-2">
                   待创建 <span className="font-semibold text-foreground">{parsedBulkUsers.length}</span>
                 </div>
-                <div className="rounded-lg border border-border bg-card px-3 py-2">
+                <div className="rounded-lg border border-border/40 bg-transparent px-3 py-2">
                   跳过 <span className="font-semibold text-foreground">{batchCreateMutation.data?.skipped?.length ?? 0}</span>
                 </div>
               </div>
@@ -383,43 +383,43 @@ export function UserManagement() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
+          <table className="min-w-full divide-y divide-border/40">
             <thead className="bg-background-alt">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-secondary">身份</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-secondary">角色</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-secondary">年级</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-secondary">状态</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-secondary">活动</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-secondary">创建时间</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-secondary">操作</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">身份</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">角色</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">年级</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">状态</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">活动</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">创建时间</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border-subtle bg-card">
+            <tbody className="divide-y divide-border/40 bg-transparent">
               {users.map((user) => (
                 <tr key={user.id} className="transition hover:bg-muted/50">
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-[13px] font-semibold text-primary-foreground">
                         {(user.display_name || user.username).charAt(0).toUpperCase()}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-foreground">{user.display_name || user.username}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">@{user.username}</p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
+                        <p className="mt-0.5 text-[13px] text-muted-foreground">@{user.username}</p>
+                        <p className="mt-0.5 text-[13px] text-muted-foreground">
                           {user.user_code || '无 user_code'} / {user.email || '无邮箱'}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-4">
                     <div className="space-y-2">
                       {getRoleBadge(user.role)}
                       <select
                         value={user.role}
                         onChange={(e) => updateRoleMutation.mutate({ userId: user.id, role: e.target.value as RoleType })}
                         disabled={updateRoleMutation.isPending}
-                        className="block rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        className="block rounded-lg border border-border/40 bg-transparent px-3 py-2 text-[13px] text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                       >
                         <option value="student">学生</option>
                         <option value="teacher">教师</option>
@@ -427,22 +427,22 @@ export function UserManagement() {
                       </select>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">
+                  <td className="px-5 py-4 text-sm text-muted-foreground">
                     {user.grade_id ? (gradeNameMap.get(Number(user.grade_id)) || `#${user.grade_id}`) : '--'}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-4">
                     {getStatusBadge(user.status)}
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="text-xs text-muted-foreground">
+                  <td className="px-5 py-4">
+                    <div className="text-[13px] text-muted-foreground">
                       <div>{user.submissions_count} 次提交</div>
                       <div className="mt-0.5">{user.problems_solved} 题通过</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-xs text-muted-foreground">
+                  <td className="px-5 py-4 text-[13px] text-muted-foreground">
                     {new Date(user.created_at).toLocaleDateString('zh-CN')}
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-4">
                     <Button
                       variant="outline"
                       size="sm"
@@ -463,8 +463,8 @@ export function UserManagement() {
         )}
 
         {/* Pagination */}
-        <div className="flex flex-col gap-4 border-t border-border-subtle px-6 py-4 md:flex-row md:items-center md:justify-between">
-          <div className="text-xs text-muted-foreground">
+        <div className="flex flex-col gap-4 border-t border-border/40 px-5 py-4 md:flex-row md:items-center md:justify-between">
+          <div className="text-[13px] text-muted-foreground">
             第 {page} 页 / 共 {totalPages} 页
           </div>
           <div className="flex items-center gap-3">
@@ -472,7 +472,7 @@ export function UserManagement() {
               type="button"
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               disabled={page === 1}
-              className="rounded-lg border border-border px-4 py-2 text-xs font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg border border-border/40 px-4 py-2 text-[13px] font-medium text-foreground disabled:cursor-not-allowed disabled:opacity-40"
             >
               上一页
             </button>
@@ -480,7 +480,7 @@ export function UserManagement() {
               type="button"
               onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
               disabled={page >= totalPages}
-              className="rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40"
             >
               下一页
             </button>

@@ -1,0 +1,1 @@
+{"command":"npx gitnexus impact --help; npx gitnexus impact send_result_with_retry --direction upstream"}

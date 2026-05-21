@@ -1,0 +1,24 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - img [ref=e7]
+    - heading "欢迎使用 CodeNexus" [level=1] [ref=e11]
+    - paragraph [ref=e12]: 登录以继续你的编程之旅
+  - generic [ref=e13]:
+    - generic [ref=e15]: 登录
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - generic [ref=e19]: 用户名
+          - textbox "用户名" [ref=e21]:
+            - /placeholder: 请输入用户名
+        - generic [ref=e22]:
+          - generic [ref=e23]: 密码
+          - textbox "密码" [ref=e25]:
+            - /placeholder: 请输入密码
+        - button "登录" [ref=e26]:
+          - generic [ref=e27]:
+            - img
+            - text: 登录
+      - generic [ref=e30]: 还没有账号？
+      - link "创建新账号" [ref=e32] [cursor=pointer]:
+        - /url: /register

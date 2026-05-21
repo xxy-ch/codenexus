@@ -1,0 +1,1 @@
+{"command":"sed -n '1,220p' .claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md; npx gitnexus --help"}

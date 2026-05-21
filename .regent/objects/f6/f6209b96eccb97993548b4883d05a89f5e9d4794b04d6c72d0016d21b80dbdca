@@ -1,0 +1,6 @@
+
+
+## WORKING MEMORY
+[2026-04-10T23:43:32.889Z] 2026-04-11: Audited shared P0-P3 docs + discussions. Added shared/reviews/2026-04-11-p0-p3-phase-audit.md, advanced P3 brief with audit snapshot/remaining blockers, normalized roadmap/P1 canonical role wording, and fixed shared/PHASE-SUMMARY-TEMPLATE.md path references in P1-P3.
+
+[2026-04-11T04:37:06.282Z] Code review findings: api offline check fails at auth::refresh extractor order; frontend websocket client still connects without required ?token; P3 callback persistence still mismatches test_case_results schema; class/assignment routes still lack read/ownership/tenant enforcement; contest/leaderboard/search scopes remain tenant/visibility blind.

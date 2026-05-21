@@ -100,43 +100,58 @@ export function SubmissionDetail() {
   const statusLabel = statusConfig.label
 
   const statusPillClass = cn(
-    'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+    'inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-semibold uppercase tracking-wider border transition-all duration-200 button-press',
     submission.status === 'accepted'
-      ? 'bg-status-accepted/10 text-status-accepted'
+      ? 'bg-status-accepted/10 border-status-accepted/30 text-status-accepted shadow-[0_0_12px_rgba(62,207,142,0.15)]'
       : submission.status === 'wrong_answer'
-        ? 'bg-destructive/10 text-destructive'
+        ? 'bg-destructive/10 border-destructive/30 text-destructive shadow-[0_0_12px_rgba(239,68,68,0.1)]'
         : submission.status === 'pending' || submission.status === 'queued'
-          ? 'bg-status-pending/10 text-status-pending'
+          ? 'bg-status-pending/10 border-status-pending/30 text-status-pending animate-pulse'
           : submission.status === 'time_limit_exceeded'
-            ? 'bg-status-tle/10 text-status-tle'
+            ? 'bg-status-tle/10 border-status-tle/30 text-status-tle shadow-[0_0_12px_rgba(245,158,11,0.1)]'
             : submission.status === 'runtime_error'
-              ? 'bg-status-re/10 text-status-re'
-              : 'bg-muted text-muted-foreground'
+              ? 'bg-status-re/10 border-status-re/30 text-status-re shadow-[0_0_12px_rgba(239,68,68,0.1)]'
+              : 'bg-muted border-border/40 text-muted-foreground'
   )
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="bg-card border border-border rounded-xl p-4 shadow-card">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-5 animate-fade-in">
+      {/* Header Panel */}
+      <div className="border border-border/40 rounded-xl bg-background/60 backdrop-blur-xl/60 p-4 shadow-sm glass">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft className="w-4 h-4" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="rounded-full hover:bg-muted/50 p-2 h-9 w-9 transition button-press"
+            >
+              <ArrowLeft className="w-4 h-4 text-foreground" />
             </Button>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <button type="button" className="hover:text-foreground transition-colors" onClick={() => navigate('/problems')}>
-                题目
+            <div className="flex items-center gap-2 text-[13px] text-muted-foreground font-medium">
+              <button
+                type="button"
+                className="hover:text-foreground transition-colors"
+                onClick={() => navigate('/problems')}
+              >
+                题目列表
               </button>
-              <span className="text-border">/</span>
-              <button type="button" className="hover:text-foreground transition-colors" onClick={() => navigate(`/problems/${submission.problem_id}`)}>
+              <span className="text-border-subtle font-normal">/</span>
+              <button
+                type="button"
+                className="hover:text-foreground transition-colors max-w-[200px] truncate"
+                onClick={() => navigate(`/problems/${submission.problem_id}`)}
+              >
                 {submission.problem_title}
               </button>
-              <span className="text-border">/</span>
-              <span className="font-mono text-foreground">#{submission.id}</span>
+              <span className="text-border-subtle font-normal">/</span>
+              <span className="font-mono text-foreground font-semibold bg-muted/40 px-2 py-0.5 rounded border border-border/30">
+                #{submission.id}
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className={statusPillClass}>
               {statusConfig.icon === 'check_circle' && <CheckCircle className="w-3.5 h-3.5" />}
               {statusConfig.icon === 'cancel' && <XCircle className="w-3.5 h-3.5" />}
@@ -145,7 +160,11 @@ export function SubmissionDetail() {
               {statusLabel}
             </div>
             <Link to={`/problems/${submission.problem_id}/solve`}>
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-border/40 bg-background/60 backdrop-blur-xl/50 hover:bg-muted transition-all button-press text-[13px] font-semibold px-4 py-2"
+              >
                 <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
                 再次挑战
               </Button>
@@ -155,46 +174,81 @@ export function SubmissionDetail() {
       </div>
 
       {/* Stats row — tight metric cards */}
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <div className="border border-border rounded-lg bg-card px-3 py-2.5">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">判题结果</p>
-          <p className={cn(
-            'mt-1 text-base font-semibold tabular-nums',
-            submission.status === 'accepted' ? 'text-status-accepted' : 'text-foreground'
-          )}>
-            {statusLabel}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {/* Card 1: Verdict */}
+        <div className={cn(
+          "relative overflow-hidden rounded-xl border p-4 glass-interactive hover-lift transition-card-hover",
+          submission.status === 'accepted'
+            ? 'border-status-accepted/20 bg-gradient-to-br from-status-accepted/5 to-card shadow-[0_0_15px_rgba(62,207,142,0.05)]'
+            : 'border-border/40 bg-background/60 backdrop-blur-xl/60'
+        )}>
+          <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">判题结果</p>
+          <div className="mt-2 flex items-center gap-2">
+            <span className={cn(
+              'text-base font-black tracking-tight',
+              submission.status === 'accepted' ? 'text-status-accepted' : 'text-foreground'
+            )}>
+              {statusLabel}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 2: Runtime */}
+        <div className="relative overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl/60 p-4 glass-interactive hover-lift transition-card-hover">
+          <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">运行时间</p>
+          <p className="mt-2 text-base font-black tracking-tight text-foreground font-mono">
+            {submission.time_ms !== undefined ? (
+              <>
+                {submission.time_ms}
+                <span className="text-[13px] font-normal text-muted-foreground ml-0.5">ms</span>
+              </>
+            ) : '-'}
           </p>
         </div>
-        <div className="border border-border rounded-lg bg-card px-3 py-2.5">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">运行时间</p>
-          <p className="mt-1 text-base font-semibold tabular-nums text-foreground font-mono">
-            {submission.time_ms !== undefined ? `${submission.time_ms}ms` : '-'}
+
+        {/* Card 3: Memory */}
+        <div className="relative overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl/60 p-4 glass-interactive hover-lift transition-card-hover">
+          <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">内存占用</p>
+          <p className="mt-2 text-base font-black tracking-tight text-foreground font-mono">
+            {submission.memory_kb !== undefined ? (
+              <>
+                {Math.round(submission.memory_kb / 1024 * 10) / 10}
+                <span className="text-[13px] font-normal text-muted-foreground ml-0.5">MB</span>
+              </>
+            ) : '-'}
           </p>
         </div>
-        <div className="border border-border rounded-lg bg-card px-3 py-2.5">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">内存占用</p>
-          <p className="mt-1 text-base font-semibold tabular-nums text-foreground font-mono">
-            {submission.memory_kb !== undefined ? `${Math.round(submission.memory_kb / 1024)}MB` : '-'}
-          </p>
-        </div>
-        <div className="border border-border rounded-lg bg-card px-3 py-2.5">
-          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">测试用例</p>
-          <p className="mt-1 text-base font-semibold tabular-nums text-foreground">
-            <span className={passedTestCases === totalTestCases ? 'text-status-accepted' : ''}>{passedTestCases}</span>
-            <span className="text-muted-foreground">/{totalTestCases}</span>
-          </p>
+
+        {/* Card 4: Testcases */}
+        <div className="relative overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl/60 p-4 glass-interactive hover-lift transition-card-hover">
+          <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">测试用例</p>
+          <div className="mt-2 flex items-baseline gap-1">
+            <span className={cn(
+              'text-base font-black tracking-tight font-mono',
+              passedTestCases === totalTestCases ? 'text-status-accepted' : 'text-foreground'
+            )}>
+              {passedTestCases}
+            </span>
+            <span className="text-[13px] font-medium text-muted-foreground">/ {totalTestCases}</span>
+          </div>
         </div>
       </div>
 
       {/* Test Cases — developer-panel style */}
       {submission.test_cases && submission.test_cases.length > 0 && (
-        <div className="border border-border rounded-xl bg-card overflow-hidden shadow-whisper">
-          <div className="px-4 py-3 border-b border-border-subtle">
-            <h3 className="text-sm font-medium text-foreground">
-              测试用例详情
-            </h3>
+        <div className="border border-border/40 rounded-xl bg-background/60 backdrop-blur-xl/60 overflow-hidden shadow-sm glass">
+          <div className="px-5 py-4 border-b border-border/40 bg-muted/20 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Cpu className="w-4 h-4 text-primary animate-pulse" />
+              <h3 className="text-sm font-semibold tracking-tight text-foreground">
+                测试用例执行矩阵
+              </h3>
+            </div>
+            <span className="text-[13px] font-mono text-muted-foreground uppercase tracking-wider">
+              Matrix view
+            </span>
           </div>
-          <div className="divide-y divide-border-subtle">
+          <div className="divide-y divide-border/40">
             {submission.test_cases.map((testCase, index) => {
               const isExpanded = expandedTestCases.has(index)
               const isPassed = testCase.status === 'passed'
@@ -203,76 +257,82 @@ export function SubmissionDetail() {
                 <div
                   key={testCase.id}
                   className={cn(
-                    isPassed ? '' : ''
+                    'transition-all duration-200 border-l-2',
+                    isPassed ? 'border-l-status-accepted bg-status-accepted/[0.01]' : 'border-l-destructive bg-destructive/[0.01]',
+                    isExpanded ? 'bg-muted/10' : 'hover:bg-muted/5'
                   )}
                 >
                   {/* Test Case Header */}
                   <div
-                    className="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between px-5 py-3 cursor-pointer select-none"
                     onClick={() => toggleTestCase(index)}
                   >
-                    <div className="flex items-center gap-2.5">
-                      {isPassed ? (
-                        <CheckCircle className="w-4 h-4 text-status-accepted" />
-                      ) : (
-                        <XCircle className="w-4 h-4 text-destructive" />
-                      )}
-                      <span className="text-sm font-medium text-foreground">
-                        测试用例 {testCase.id}
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        'flex h-6 w-6 items-center justify-center rounded-lg border text-[13px] font-bold font-mono',
+                        isPassed
+                          ? 'bg-status-accepted/10 border-status-accepted/20 text-status-accepted'
+                          : 'bg-destructive/10 border-destructive/20 text-destructive'
+                      )}>
+                        {testCase.id}
+                      </div>
+                      <span className="text-sm font-semibold text-foreground">
+                        测试用例 #{testCase.id}
                       </span>
                       {testCase.time_ms !== undefined && (
-                        <span className="font-mono text-xs tabular-nums text-muted-foreground">
-                          {testCase.time_ms}ms
+                        <span className="font-mono text-[13px] tabular-nums text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-md border border-border/30">
+                          {testCase.time_ms} ms
                         </span>
                       )}
                     </div>
-                    <span className={cn(
-                      'rounded-full px-2.5 py-1 text-xs font-medium',
-                      isPassed
-                        ? 'bg-[#3ecf8e]/10 text-status-accepted'
-                        : 'bg-destructive/10 text-destructive'
-                    )}>
-                      {isPassed ? '通过' : '失败'}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className={cn(
+                        'rounded-full px-2.5 py-0.5 text-[13px] font-bold tracking-wider uppercase',
+                        isPassed
+                          ? 'bg-status-accepted/10 text-status-accepted border border-status-accepted/20'
+                          : 'bg-destructive/10 text-destructive border border-destructive/20'
+                      )}>
+                        {isPassed ? 'Passed' : 'Failed'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Test Case Details */}
                   {isExpanded && (
-                    <div className="px-4 pb-3 space-y-2.5">
+                    <div className="px-5 pb-4 pt-1 space-y-4 border-t border-border/20 animate-slide-down">
                       {!isPassed && testCase.error && (
-                        <div className="text-xs text-destructive font-mono">
+                        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3.5 text-[13px] text-destructive font-mono leading-relaxed whitespace-pre-wrap shadow-inner">
+                          <div className="text-[13px] font-black uppercase tracking-wider text-destructive/80 mb-1">Error Logs:</div>
                           {testCase.error}
                         </div>
                       )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div>
-                          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-1">
-                            输入
-                          </p>
-                          <pre className="text-xs bg-background border border-border p-2.5 rounded-lg font-mono overflow-x-auto text-foreground">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">输入数据</p>
+                          </div>
+                          <pre className="text-[13px] bg-zinc-950 border border-zinc-800 p-3.5 rounded-xl font-mono overflow-x-auto text-zinc-100 shadow-inner max-h-48 leading-relaxed">
                             {testCase.input}
                           </pre>
                         </div>
-                        <div>
-                          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-1">
-                            期望输出
-                          </p>
-                          <pre className="text-xs bg-background border border-border p-2.5 rounded-lg font-mono overflow-x-auto text-foreground">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between">
+                            <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">期望输出</p>
+                          </div>
+                          <pre className="text-[13px] bg-zinc-950 border border-zinc-800 p-3.5 rounded-xl font-mono overflow-x-auto text-zinc-100 shadow-inner max-h-48 leading-relaxed">
                             {testCase.expected_output}
                           </pre>
                         </div>
                       </div>
 
                       {testCase.actual_output && (
-                        <div>
-                          <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground mb-1">
-                            实际输出
-                          </p>
+                        <div className="space-y-1.5">
+                          <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">实际输出</p>
                           <pre className={cn(
-                            'text-xs p-2.5 rounded-lg font-mono overflow-x-auto border',
+                            'text-[13px] p-3.5 rounded-xl font-mono overflow-x-auto border shadow-inner max-h-48 leading-relaxed',
                             testCase.actual_output === testCase.expected_output
-                              ? 'bg-[#3ecf8e]/5 border-[#3ecf8e]/20 text-status-accepted'
+                              ? 'bg-status-accepted/5 border-status-accepted/20 text-status-accepted'
                               : 'bg-destructive/5 border-destructive/20 text-destructive'
                           )}>
                             {testCase.actual_output}
@@ -288,13 +348,14 @@ export function SubmissionDetail() {
         </div>
       )}
 
-      {/* Code section — terminal/IDE feel */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="overflow-hidden border border-border rounded-xl bg-card shadow-whisper">
-          <div className="flex items-center justify-between border-b border-border-subtle px-4 py-2.5">
+      {/* Code section & sidebar */}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="overflow-hidden border border-border/40 rounded-xl bg-background/60 backdrop-blur-xl/60 shadow-sm glass">
+          <div className="flex items-center justify-between border-b border-border/40 bg-muted/20 px-5 py-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-foreground">提交代码</span>
-              <span className="text-[11px] font-mono text-muted-foreground">
+              <Code2 className="w-4 h-4 text-primary animate-pulse" />
+              <span className="text-sm font-semibold tracking-tight text-foreground">提交代码</span>
+              <span className="inline-flex items-center rounded-md border border-border/80 bg-muted/50 px-2.5 py-0.5 text-[13px] font-semibold font-mono text-muted-foreground">
                 {submission.language}
               </span>
             </div>
@@ -302,10 +363,11 @@ export function SubmissionDetail() {
               variant="outline"
               size="sm"
               onClick={handleCopyCode}
+              className="rounded-full border-border/40 bg-background/60 backdrop-blur-xl/50 hover:bg-muted transition-all button-press text-[13px] font-semibold px-4 py-2"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 mr-1" />
+                  <Check className="w-3.5 h-3.5 mr-1 text-status-accepted animate-scale-in" />
                   已复制
                 </>
               ) : (
@@ -316,54 +378,69 @@ export function SubmissionDetail() {
               )}
             </Button>
           </div>
-          <div className="p-4">
-            <pre className="overflow-x-auto rounded-lg bg-zinc-950 border border-zinc-800 p-3 font-mono text-[13px] leading-5 text-zinc-100 shadow-whisper">
-              <code>{submission.code}</code>
-            </pre>
+          <div className="p-4 bg-zinc-950">
+            <div className="relative flex rounded-xl border border-zinc-800/80 bg-black/60 font-mono text-[13px] leading-6 text-zinc-100 shadow-inner overflow-hidden">
+              {/* Line Numbers gutter */}
+              <div className="hidden sm:block select-none text-right px-4 py-4 bg-zinc-900/30 border-r border-zinc-800/50 text-zinc-600 font-mono text-[13px] text-opacity-50">
+                {submission.code.split('\n').map((_, i) => (
+                  <div key={i}>{i + 1}</div>
+                ))}
+              </div>
+              {/* Actual Code content */}
+              <pre className="flex-1 overflow-x-auto p-4 font-mono text-[13px] leading-6 text-zinc-200">
+                <code>{submission.code}</code>
+              </pre>
+            </div>
           </div>
         </div>
 
-        <div className="space-y-3">
-          {/* Submission metadata sidebar */}
-          <div className="border border-border rounded-xl bg-card p-4">
-            <h3 className="text-sm font-medium text-foreground mb-3">提交信息</h3>
-            <div className="space-y-3">
+        <div className="space-y-4">
+          {/* Metadata Sidebar Card */}
+          <div className="border border-border/40 rounded-xl bg-background/60 backdrop-blur-xl/60 p-5 shadow-sm glass">
+            <h3 className="text-sm font-semibold tracking-tight text-foreground mb-4 flex items-center gap-2">
+              <span>提交元数据</span>
+            </h3>
+            <div className="space-y-4">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">提交时间</p>
-                <p className="mt-0.5 text-xs text-foreground">
+                <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">提交时间</p>
+                <p className="mt-1 text-[13px] font-semibold text-foreground font-mono">
                   {new Date(submission.created_at).toLocaleString('zh-CN')}
                 </p>
               </div>
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">更新时间</p>
-                <p className="mt-0.5 text-xs text-foreground">
+                <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">更新时间</p>
+                <p className="mt-1 text-[13px] font-semibold text-foreground font-mono">
                   {new Date(submission.updated_at).toLocaleString('zh-CN')}
                 </p>
               </div>
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">提交用户</p>
-                <p className="mt-0.5 text-xs text-foreground">{submission.username}</p>
+                <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">提交作者</p>
+                <p className="mt-1 text-[13px] font-semibold text-foreground">{submission.username}</p>
               </div>
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">题目 ID</p>
-                <p className="mt-0.5 text-xs font-mono text-foreground">{submission.problem_id}</p>
+                <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">题目 ID</p>
+                <p className="mt-1 text-[13px] font-mono font-semibold text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/30 inline-block">
+                  {submission.problem_id}
+                </p>
               </div>
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-widest text-muted-foreground">提交 ID</p>
-                <p className="mt-0.5 text-xs font-mono text-foreground">{submission.id}</p>
+                <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">提交 ID</p>
+                <p className="mt-1 text-[13px] font-mono font-semibold text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/30 inline-block">
+                  #{submission.id}
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Error message if present */}
+          {/* Error message card */}
           {(submission.status === 'compilation_error' ||
             submission.status === 'runtime_error' ||
             submission.status === 'wrong_answer') && submission.error_message && (
-            <div className="border border-destructive/20 rounded-xl bg-destructive/5 p-4">
-              <h3 className="text-sm font-medium text-destructive mb-2">
-                错误信息
+            <div className="border border-destructive/20 rounded-xl bg-destructive/5 p-5 shadow-sm glass animate-slide-up">
+              <h3 className="text-sm font-semibold tracking-tight text-destructive mb-3">
+                错误诊断控制台
               </h3>
-              <pre className="text-xs text-destructive whitespace-pre-wrap font-mono">
+              <pre className="text-[13px] text-destructive whitespace-pre-wrap font-mono bg-black/40 p-3 rounded-xl border border-destructive/15 leading-relaxed overflow-x-auto shadow-inner max-h-96">
                 {submission.error_message}
               </pre>
             </div>
@@ -373,7 +450,7 @@ export function SubmissionDetail() {
 
       {/* AI Analysis — feedback + similar submissions */}
       {Number.isFinite(Number(submissionId)) && (
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-2 animate-slide-up">
           <AiCodeFeedback submissionId={Number(submissionId)} />
           <SimilarSubmissions submissionId={Number(submissionId)} />
         </div>

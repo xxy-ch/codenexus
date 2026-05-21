@@ -1,0 +1,141 @@
+- generic [ref=e7]:
+  - banner [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - heading "Design System Showcase" [level=1] [ref=e12]
+          - paragraph [ref=e13]: 选择你最喜欢的设计方向
+        - generic [ref=e14]: Light native
+      - generic [ref=e15]:
+        - button "Linear" [ref=e16] [cursor=pointer]
+        - button "Vercel" [ref=e17] [cursor=pointer]
+        - button "ClickHouse" [ref=e18] [cursor=pointer]
+        - button "Stripe" [active] [ref=e19] [cursor=pointer]
+        - button "Supabase" [ref=e20] [cursor=pointer]
+        - button "Sentry" [ref=e21] [cursor=pointer]
+        - button "Cursor" [ref=e22] [cursor=pointer]
+        - button "Notion" [ref=e23] [cursor=pointer]
+        - button "PostHog" [ref=e24] [cursor=pointer]
+      - paragraph [ref=e25]: "Blue-tinted shadows rgba(50,50,93,0.25) · Weight 300 headlines · sohne-var ss01 · Deep navy #061b31 headings · Conservative radius 4-8px · Purple #533afd brand"
+  - main [ref=e26]:
+    - generic [ref=e27]:
+      - generic [ref=e28]: Typography & first impression
+      - heading "Hero / 首页" [level=2] [ref=e29]
+      - generic [ref=e30]:
+        - heading "Financial infrastructure for the internet" [level=1] [ref=e156]
+        - paragraph [ref=e32]: Millions of companies use Stripe to accept payments, grow their revenue, and accelerate new business opportunities.
+        - generic [ref=e33]:
+          - button "Start now" [ref=e157] [cursor=pointer]
+          - button "Contact sales" [ref=e158] [cursor=pointer]
+          - button "Documentation" [ref=e159] [cursor=pointer]
+    - generic [ref=e37]:
+      - generic [ref=e38]: Depth & elevation system
+      - heading "Shadow Philosophy / 阴影哲学" [level=2] [ref=e39]
+      - paragraph [ref=e40]: "Blue-tinted shadows: rgba(50,50,93,0.25) — elevation feels brand-colored. Multi-layer: blue far + neutral near for depth parallax"
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]: Aa
+          - generic [ref=e44]: Flat (Level 0)
+        - generic [ref=e45]:
+          - generic [ref=e46]: Aa
+          - generic [ref=e47]: Subtle (Level 1-2)
+        - generic [ref=e48]:
+          - generic [ref=e49]: Aa
+          - generic [ref=e50]: Elevated (Level 3+)
+    - generic [ref=e51]:
+      - generic [ref=e52]: Notice shadow, border, radius, and weight differences
+      - heading "Button Construction / 按钮构造" [level=2] [ref=e53]
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - button "Start now" [ref=e160] [cursor=pointer]
+          - generic [ref=e57]: Primary
+        - generic [ref=e58]:
+          - button "Contact sales" [ref=e161] [cursor=pointer]
+          - generic [ref=e60]: Secondary
+        - generic [ref=e61]:
+          - button "Documentation" [ref=e162] [cursor=pointer]
+          - generic [ref=e63]: Ghost
+    - generic [ref=e64]:
+      - generic [ref=e65]: Standard vs Elevated — compare shadow and border treatments
+      - heading "Card Construction / 卡片构造" [level=2] [ref=e66]
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]: "128"
+          - generic [ref=e70]: 总提交
+        - generic [ref=e71]:
+          - heading "竞赛信息" [level=3] [ref=e72]
+          - generic [ref=e73]:
+            - generic [ref=e74]:
+              - generic [ref=e75]: 状态
+              - generic [ref=e76]: Accepted
+            - generic [ref=e77]:
+              - generic [ref=e78]: 参与人数
+              - generic [ref=e79]: 128 人
+            - generic [ref=e80]:
+              - generic [ref=e81]: 题目数量
+              - generic [ref=e82]: 5 题
+        - generic [ref=e83]:
+          - heading "快速操作" [level=3] [ref=e84]
+          - generic [ref=e85]:
+            - button "创建题目" [ref=e86] [cursor=pointer]
+            - button "导出数据" [ref=e87] [cursor=pointer]
+    - generic [ref=e88]:
+      - generic [ref=e89]: Note radius, background opacity, border weight differences
+      - heading "Badge Construction / 徽章构造" [level=2] [ref=e90]
+      - generic [ref=e91]:
+        - generic [ref=e92]: Primary
+        - generic [ref=e93]: Accepted
+        - generic [ref=e94]: Outline
+    - generic [ref=e95]:
+      - generic [ref=e96]: Focus ring, border treatment, inner shadow differences
+      - heading "Input / 输入框" [level=2] [ref=e97]
+      - generic [ref=e98]:
+        - textbox "请输入用户名" [ref=e99]
+        - textbox "禁用状态" [ref=e100]
+    - generic [ref=e101]:
+      - generic [ref=e102]: Row borders, hover states, header treatment
+      - heading "Table / 表格" [level=2] [ref=e103]
+      - table [ref=e105]:
+        - rowgroup [ref=e106]:
+          - row "ID 名称 难度 通过率" [ref=e107]:
+            - columnheader "ID" [ref=e108]
+            - columnheader "名称" [ref=e109]
+            - columnheader "难度" [ref=e110]
+            - columnheader "通过率" [ref=e111]
+        - rowgroup [ref=e112]:
+          - row "1001 两数之和 简单 78%" [ref=e113]:
+            - cell "1001" [ref=e114]
+            - cell "两数之和" [ref=e115]
+            - cell "简单" [ref=e116]:
+              - generic [ref=e117]: 简单
+            - cell "78%" [ref=e118]
+          - row "1002 反转链表 中等 56%" [ref=e119]:
+            - cell "1002" [ref=e120]
+            - cell "反转链表" [ref=e121]
+            - cell "中等" [ref=e122]:
+              - generic [ref=e123]: 中等
+            - cell "56%" [ref=e124]
+          - row "1003 动态规划 困难 23%" [ref=e125]:
+            - cell "1003" [ref=e126]
+            - cell "动态规划" [ref=e127]
+            - cell "困难" [ref=e128]:
+              - generic [ref=e129]: 困难
+            - cell "23%" [ref=e130]
+    - generic [ref=e131]:
+      - generic [ref=e132]: Complete form with label, input, and action buttons
+      - heading "Form / 表单" [level=2] [ref=e133]
+      - generic [ref=e134]:
+        - heading "创建题目" [level=3] [ref=e135]
+        - generic [ref=e136]:
+          - generic [ref=e137]: 题目名称
+          - textbox "请输入题目名称" [ref=e138]
+        - generic [ref=e139]:
+          - generic [ref=e140]:
+            - generic [ref=e141]: 难度
+            - textbox [ref=e142]: 中等 ▾
+          - generic [ref=e143]:
+            - generic [ref=e144]: 时间限制
+            - textbox [ref=e145]: 1000 ms
+        - generic [ref=e146]:
+          - button "取消" [ref=e147] [cursor=pointer]
+          - button "创建" [ref=e148] [cursor=pointer]

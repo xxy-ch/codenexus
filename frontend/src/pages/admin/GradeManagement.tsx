@@ -71,7 +71,7 @@ export function GradeManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Admin</span>
           <ChevronRight className="h-3.5 w-3.5" />
@@ -79,7 +79,7 @@ export function GradeManagement() {
         </div>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">年级管理</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">年级管理</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
               管理校区下的年级：创建、停用、学年升级和毕业操作。每个校区可有不同的年级体系。
             </p>
@@ -98,9 +98,9 @@ export function GradeManagement() {
 
       {/* Batch operations */}
       {activeGrades.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-foreground">学年操作</h2>
-          <p className="mt-1 text-xs text-muted-foreground">对当前所有活跃年级执行学年升级或毕业。</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">对当前所有活跃年级执行学年升级或毕业。</p>
           <div className="mt-4 flex flex-wrap gap-3">
             <Button
               variant="outline"
@@ -127,7 +127,7 @@ export function GradeManagement() {
       )}
 
       {/* Create grade form */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">创建年级</h2>
           <Button
@@ -143,18 +143,18 @@ export function GradeManagement() {
           <form onSubmit={handleCreateSubmit} className="mt-4 space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground">年级名称</label>
+                <label className="mb-2 block text-[13px] font-medium text-muted-foreground">年级名称</label>
                 <input
                   type="text"
                   value={newGrade.name}
                   onChange={(e) => setNewGrade((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder="如：高一、Grade 10"
                   required
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-border/40 bg-transparent px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground">年级层级</label>
+                <label className="mb-2 block text-[13px] font-medium text-muted-foreground">年级层级</label>
                 <input
                   type="number"
                   value={newGrade.year_level}
@@ -162,18 +162,18 @@ export function GradeManagement() {
                   min={1}
                   max={12}
                   required
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-border/40 bg-transparent px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <div>
-                <label className="mb-2 block text-xs font-medium text-muted-foreground">学年</label>
+                <label className="mb-2 block text-[13px] font-medium text-muted-foreground">学年</label>
                 <input
                   type="text"
                   value={newGrade.academic_year}
                   onChange={(e) => setNewGrade((prev) => ({ ...prev, academic_year: e.target.value }))}
                   placeholder="如：2025-2026"
                   required
-                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  className="w-full rounded-lg border border-border/40 bg-transparent px-3 py-2 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
               <div className="flex items-end">
@@ -192,41 +192,41 @@ export function GradeManagement() {
       </div>
 
       {/* Active grades table */}
-      <div className="rounded-xl border border-border bg-card shadow-sm">
-        <div className="border-b border-border px-6 py-4">
+      <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-sm">
+        <div className="border-b border-border/40 px-5 py-4">
           <h2 className="text-sm font-semibold text-foreground">活跃年级</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border">
+          <table className="min-w-full divide-y divide-border/40">
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">名称</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">层级</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">学年</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">状态</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">名称</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">层级</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">学年</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">状态</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border bg-card">
+            <tbody className="divide-y divide-border/40 bg-transparent">
               {activeGrades.map((grade) => (
                 <tr key={grade.id} className="transition hover:bg-muted/50">
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-[13px] font-semibold text-primary">
                         {grade.name.charAt(0)}
                       </div>
                       <span className="text-sm font-medium text-foreground">{grade.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{grade.year_level}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{grade.academic_year}</td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-lime-500/15 px-3 py-1 text-xs font-medium text-lime-400">
+                  <td className="px-5 py-4 text-sm text-muted-foreground">{grade.year_level}</td>
+                  <td className="px-5 py-4 text-sm text-muted-foreground">{grade.academic_year}</td>
+                  <td className="px-5 py-4">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-lime-500/15 px-3 py-1 text-[13px] font-medium text-lime-400">
                       <span className="h-1.5 w-1.5 rounded-full bg-lime-400" />
                       活跃
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="px-5 py-4">
                     <Button
                       variant="outline"
                       size="sm"
@@ -244,7 +244,7 @@ export function GradeManagement() {
               ))}
               {activeGrades.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={5} className="px-5 py-10 text-center text-sm text-muted-foreground">
                     暂无活跃年级。点击上方「新建」按钮创建第一个年级。
                   </td>
                 </tr>
@@ -256,30 +256,30 @@ export function GradeManagement() {
 
       {/* Inactive grades */}
       {inactiveGrades.length > 0 && (
-        <div className="rounded-xl border border-border bg-card shadow-sm">
-          <div className="border-b border-border px-6 py-4">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-sm">
+          <div className="border-b border-border/40 px-5 py-4">
             <h2 className="text-sm font-semibold text-muted-foreground">已停用年级</h2>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-border">
+            <table className="min-w-full divide-y divide-border/40">
               <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">名称</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">层级</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">学年</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">状态</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">名称</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">层级</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">学年</th>
+                  <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">状态</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border bg-card">
+              <tbody className="divide-y divide-border/40 bg-transparent">
                 {inactiveGrades.map((grade) => (
                   <tr key={grade.id} className="transition hover:bg-muted/50 opacity-60">
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-4">
                       <span className="text-sm font-medium text-muted-foreground">{grade.name}</span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">{grade.year_level}</td>
-                    <td className="px-6 py-4 text-sm text-muted-foreground">{grade.academic_year}</td>
-                    <td className="px-6 py-4">
-                      <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">已停用</span>
+                    <td className="px-5 py-4 text-sm text-muted-foreground">{grade.year_level}</td>
+                    <td className="px-5 py-4 text-sm text-muted-foreground">{grade.academic_year}</td>
+                    <td className="px-5 py-4">
+                      <span className="rounded-full bg-muted px-3 py-1 text-[13px] font-medium text-muted-foreground">已停用</span>
                     </td>
                   </tr>
                 ))}

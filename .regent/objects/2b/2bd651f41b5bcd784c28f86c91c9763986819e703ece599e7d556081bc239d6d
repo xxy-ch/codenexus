@@ -1,0 +1,1 @@
+{"command":"docker image prune -a -f","description":"Remove all unused images (not referenced by any container)","timeout":120000}

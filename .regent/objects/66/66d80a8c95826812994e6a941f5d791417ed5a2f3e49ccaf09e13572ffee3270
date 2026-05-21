@@ -1,0 +1,1 @@
+{"command":"rg --files frontend/src/pages frontend/src/hooks | rg 'ProblemIDEEnhanced|ProblemSolve|ProblemDetail|useProblems'"}

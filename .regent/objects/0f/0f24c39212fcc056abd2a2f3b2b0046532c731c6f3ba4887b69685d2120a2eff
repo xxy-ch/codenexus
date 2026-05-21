@@ -1,0 +1,10 @@
+{"t":0,"agent":"a73ae51","agent_type":"everything-claude-code:security-reviewer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a3af219","agent_type":"everything-claude-code:security-reviewer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a1da79f","agent_type":"everything-claude-code:security-reviewer","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a1da79f","agent_type":"everything-claude-code:security-reviewer","event":"agent_stop","success":true,"duration_ms":77661}
+{"t":0,"agent":"a3af219","agent_type":"everything-claude-code:security-reviewer","event":"agent_stop","success":true,"duration_ms":122895}
+{"t":0,"agent":"a73ae51","agent_type":"everything-claude-code:security-reviewer","event":"agent_stop","success":true,"duration_ms":161144}
+{"t":0,"agent":"ac03752","agent_type":"general-purpose","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a2702ec","agent_type":"general-purpose","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"aee7833","agent_type":"general-purpose","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a771b84","agent_type":"general-purpose","event":"agent_start","parent_mode":"none"}

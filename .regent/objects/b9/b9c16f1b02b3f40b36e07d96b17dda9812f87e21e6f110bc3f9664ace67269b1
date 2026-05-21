@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Live Contest Scoreboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&amp;family=Google+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a73e8",
+                        "primary-hover": "#1557b0",
+                        "background-light": "#f8f9fa",
+                        "surface": "#ffffff",
+                        "text-primary": "#202124",
+                        "text-secondary": "#5f6368",
+                        "border-color": "#dadce0",
+                        "rank-gold": "#fbbc04",
+                        "rank-silver": "#9aa0a6",
+                        "rank-bronze": "#ce9158",
+                        "status-ac": "#1e8e3e", 
+                        "status-ac-bg": "#e6f4ea",
+                        "status-wa": "#d93025", 
+                        "status-wa-bg": "#fce8e6",
+                        "status-tle": "#f9ab00",
+                        "status-pending": "#1a73e8",
+                        "status-pending-bg": "#e8f0fe",
+                    },
+                    fontFamily: {
+                        "sans": ["Roboto", "sans-serif"],
+                        "display": ["Google Sans", "sans-serif"]
+                    },
+                    boxShadow: {
+                        "card": "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+                        "elevation-1": "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+                        "elevation-2": "0 1px 2px 0 rgba(60,64,67,0.3), 0 2px 6px 2px rgba(60,64,67,0.15)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #dadce0;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #bdc1c6;
+        }
+        .sidebar-item-active {
+            background-color: #e8f0fe;
+            color: #1967d2;
+            font-weight: 500;
+        }
+        .sidebar-item-active .material-symbols-outlined {
+            color: #1967d2;
+            font-variation-settings: 'FILL' 1;
+        }
+        .rank-gold-gradient {
+            background: linear-gradient(135deg, #FFF9C4 0%, #FFF176 100%);
+            border: 1px solid #FBC02D;
+            color: #F57F17;
+        }
+        .rank-silver-gradient {
+            background: linear-gradient(135deg, #F5F5F5 0%, #E0E0E0 100%);
+            border: 1px solid #BDBDBD;
+            color: #616161;
+        }
+        .rank-bronze-gradient {
+            background: linear-gradient(135deg, #FFECB3 0%, #FFE082 100%);
+            border: 1px solid #FFCA28;
+            color: #E65100;
+        }
+    </style>
+</head>
+<body class="bg-background-light text-text-primary font-sans min-h-screen flex overflow-hidden">
+<aside class="w-64 bg-surface border-r border-border-color flex-shrink-0 flex flex-col z-20 h-screen">
+<div class="h-16 flex items-center px-6 border-b border-border-color">
+<div class="flex items-center gap-2 text-primary font-display font-bold text-xl">
+<span class="material-symbols-outlined text-3xl">code_blocks</span>
+<span>OJ System</span>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto py-4">
+<div class="px-4 mb-2">
+<p class="text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 px-2">Contest</p>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-symbols-outlined">description</span>
+                    Problems
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-symbols-outlined">send</span>
+                    Submissions
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm sidebar-item-active" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+                    Scoreboard
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-symbols-outlined">clarify</span>
+                    Clarifications
+                </a>
+</div>
+<div class="my-2 border-t border-border-color mx-6"></div>
+<div class="px-4 mt-2">
+<p class="text-xs font-bold text-text-secondary uppercase tracking-wider mb-2 px-2">Practice</p>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-symbols-outlined">folder_open</span>
+                    Problem Set
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-full text-sm text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-symbols-outlined">school</span>
+                    Tutorials
+                </a>
+</div>
+</nav>
+<div class="p-4 border-t border-border-color">
+<div class="flex items-center gap-3 px-2 py-2">
+<img class="w-9 h-9 rounded-full object-cover border border-border-color" data-alt="User Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGO0Ig11YqO7kM57AojRxs5iGraFJUOracuSkj6CNccHDKPKRvUdLiV3e8ulU5oQTSTlAg4EG5bu8rA_wCcfBKcfg-aLDwuBiYLveK6iuF-HF4RmBRnhl079t1EWorF7gEH1RAs-3FmhX4N13cprdN3UTAPr1TutSgrT3PBavG3CGWrI_5D_xzQPTCmtGANWJeRyMOYOQC9I3Es6y-UT800ln4M69Xe73rlVBp6OHFBaLXX6k4JIIBai1ndUnrGoT9HHS6QelKijU"/>
+<div class="flex-1 min-w-0">
+<p class="text-sm font-medium text-text-primary truncate">Admin User</p>
+<p class="text-xs text-text-secondary truncate">Administrator</p>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col h-screen overflow-hidden bg-background-light relative">
+<header class="bg-surface border-b border-border-color h-16 flex items-center justify-between px-6 flex-shrink-0 shadow-sm z-10">
+<div>
+<h1 class="font-display text-lg font-medium text-text-primary">ICPC Regional Finals 2024</h1>
+<p class="text-xs text-text-secondary">Arena 1 • Live Updates</p>
+</div>
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+<div class="bg-gray-800 text-white px-4 py-1.5 rounded-md font-mono text-xl font-bold tracking-wider shadow-md flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">timer</span>
+                    00:45:12
+                </div>
+<span class="text-[10px] font-bold text-text-secondary uppercase tracking-widest mt-1">Remaining</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1.5 bg-status-tle/10 border border-status-tle/20 rounded-full">
+<span class="w-2 h-2 rounded-full bg-status-tle animate-pulse"></span>
+<span class="text-xs font-bold text-status-tle uppercase">Frozen</span>
+</div>
+<button class="p-2 text-text-secondary hover:bg-gray-100 rounded-full">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<div class="flex-1 flex flex-col p-6 overflow-hidden">
+<div class="flex flex-wrap items-center justify-between mb-4 gap-4 flex-shrink-0">
+<div class="flex items-center gap-1">
+<button class="px-4 py-1.5 bg-primary text-white rounded-full text-sm font-medium shadow-sm hover:shadow hover:bg-primary-hover transition-all">Top 50</button>
+<button class="px-4 py-1.5 text-text-secondary bg-white border border-border-color hover:bg-gray-50 rounded-full text-sm font-medium transition-all ml-2">Friends</button>
+<button class="px-4 py-1.5 text-text-secondary bg-white border border-border-color hover:bg-gray-50 rounded-full text-sm font-medium transition-all ml-2">My University</button>
+</div>
+<div class="flex items-center gap-4 text-xs font-medium text-text-secondary bg-surface px-4 py-2 rounded-full border border-border-color shadow-sm">
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-status-ac"></div>
+<span>Accepted</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-status-wa"></div>
+<span>Wrong Answer</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-status-tle"></div>
+<span>Time Limit</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-status-pending border border-status-pending bg-status-pending-bg animate-pulse"></div>
+<span>Pending</span>
+</div>
+<div class="flex items-center gap-1.5 border-l border-border-color pl-3 ml-1">
+<div class="w-3 h-3 rounded-sm bg-primary text-white flex items-center justify-center text-[8px] font-bold">FB</div>
+<span>First Blood</span>
+</div>
+</div>
+</div>
+<div class="flex-1 bg-surface rounded-lg shadow-card border border-border-color flex flex-col overflow-hidden">
+<div class="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-border-color text-xs font-bold text-text-secondary uppercase tracking-wider sticky top-0 z-10">
+<div class="col-span-1 text-center">Rank</div>
+<div class="col-span-4 pl-2">Team</div>
+<div class="col-span-1 text-center">Solved</div>
+<div class="col-span-1 text-center">Penalty</div>
+<div class="col-span-5 pl-4">Problems</div>
+</div>
+<div class="overflow-y-auto custom-scrollbar flex-1">
+<div class="group grid grid-cols-12 gap-4 px-6 py-3 items-center border-b border-border-color hover:bg-blue-50/30 transition duration-150">
+<div class="col-span-1 text-center flex justify-center">
+<div class="w-8 h-8 rounded-full rank-gold-gradient flex items-center justify-center font-bold text-sm shadow-sm">1</div>
+</div>
+<div class="col-span-4 flex items-center gap-3 pl-2">
+<img class="w-10 h-10 rounded-full object-cover border border-gray-200" data-alt="Team Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAC4vL3uBA-mpKpsxck0vdirDK-vU-U-nQii0mybnua0tmX7KEeDxbcXKZo7XN0pkkNw5mauRI86H93R7taF96rjVCyekU10fg2laiPp7wbeHsjSSPwEnMX5RHOKzoxw9V7rFVpnc94RJ7_Tj6BFhLanCNnVD-Gv4Bedf1pVaNCliTyopqB7XXks55J0SSFK16O3VzHzfNZRA_MIVS3pSU6uUC3kjdZPRPcqfN4Jx7Vv9oeA7-IQQUp4B4neAnhaoFMtMGD18W2hb8"/>
+<div>
+<div class="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">Code Wizards</div>
+<div class="flex items-center gap-1.5 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px]">school</span>
+<span>MIT University</span>
+</div>
+</div>
+</div>
+<div class="col-span-1 text-center font-bold text-lg text-primary">8</div>
+<div class="col-span-1 text-center font-mono text-sm text-text-secondary">1240</div>
+<div class="col-span-5 flex gap-1.5 pl-4">
+<div class="w-8 h-8 rounded bg-status-ac flex flex-col items-center justify-center text-white relative shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
+<span class="text-[10px] font-bold leading-none">A</span>
+<span class="text-[8px] opacity-90 leading-none mt-0.5">12</span>
+<div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-primary text-white text-[6px] flex items-center justify-center rounded-full border border-white font-bold" title="First Blood">FB</div>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
+<span class="text-[10px] font-bold leading-none">B</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">45</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-wa-bg border border-status-wa/30 flex flex-col items-center justify-center text-status-wa relative hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
+<span class="text-[10px] font-bold leading-none">C</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">-2</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
+<span class="text-[10px] font-bold leading-none">D</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">102</span>
+</div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex flex-col items-center justify-center text-gray-400 relative">
+<span class="text-[10px] font-bold leading-none">E</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
+<span class="text-[10px] font-bold leading-none">F</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">55</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-pending-bg border border-status-pending/50 animate-pulse flex flex-col items-center justify-center text-status-pending relative hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
+<span class="text-[10px] font-bold leading-none">G</span>
+<span class="material-symbols-outlined text-[12px]">hourglass_empty</span>
+</div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex flex-col items-center justify-center text-gray-400 relative">
+<span class="text-[10px] font-bold leading-none">H</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer">
+<span class="text-[10px] font-bold leading-none">I</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">201</span>
+</div>
+</div>
+</div>
+<div class="group grid grid-cols-12 gap-4 px-6 py-3 items-center border-b border-border-color hover:bg-blue-50/30 transition duration-150">
+<div class="col-span-1 text-center flex justify-center">
+<div class="w-8 h-8 rounded-full rank-silver-gradient flex items-center justify-center font-bold text-sm shadow-sm">2</div>
+</div>
+<div class="col-span-4 flex items-center gap-3 pl-2">
+<img class="w-10 h-10 rounded-full object-cover border border-gray-200" data-alt="Team Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfoNfXnQfK5_lsYFYthFRV0hTFNs0Mn0Vunw4vnbVS0Fa1ifCq4x6qgWGoyXvaRtAwIdh3BDy9L4PnN1aUV58WXqoSn84KNXb7eBalIVjzPDVXVEAIQNGiErgc374_BMxv7DMR2XIZ1ZErt-qRZbD2OsISjFw5m3shg4HCfKbuEG_3znUp6FigYignafzXrFTI7nUYNGXLubzKaHIO1g5EbPWg3a8XDiQjacrADl-Q0xg1kGD6dYukYkzc4KyspECoNloHuM8CJPw"/>
+<div>
+<div class="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">Null Pointers</div>
+<div class="flex items-center gap-1.5 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px]">school</span>
+<span>Stanford University</span>
+</div>
+</div>
+</div>
+<div class="col-span-1 text-center font-bold text-lg text-text-primary">7</div>
+<div class="col-span-1 text-center font-mono text-sm text-text-secondary">980</div>
+<div class="col-span-5 flex gap-1.5 pl-4">
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">A</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">20</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">B</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">51</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">C</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">80</span>
+</div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex flex-col items-center justify-center text-gray-400">
+<span class="text-[10px] font-bold leading-none">D</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">E</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">110</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-tle/10 border border-status-tle/30 flex flex-col items-center justify-center text-status-tle relative">
+<span class="text-[10px] font-bold leading-none">F</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">-4</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">G</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">140</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">H</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">160</span>
+</div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex flex-col items-center justify-center text-gray-400">
+<span class="text-[10px] font-bold leading-none">I</span>
+</div>
+</div>
+</div>
+<div class="group grid grid-cols-12 gap-4 px-6 py-3 items-center border-b border-border-color hover:bg-blue-50/30 transition duration-150">
+<div class="col-span-1 text-center flex justify-center">
+<div class="w-8 h-8 rounded-full rank-bronze-gradient flex items-center justify-center font-bold text-sm shadow-sm">3</div>
+</div>
+<div class="col-span-4 flex items-center gap-3 pl-2">
+<img class="w-10 h-10 rounded-full object-cover border border-gray-200" data-alt="Team Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmohiHyjr0AVWeaF7w_iCFQs45amZqNUkKGUlDnWdkPAPZgiScATZZd30H1pUh4054xR6d_jlYt1nV2m3A8YOY_lwwadIH6EJ5egJiYrQQHawnfGoQw_V_p6PwjjRWrbUh9AWL-KEL0Ugu4SfDnHLlTL4fDTuo4JQLne0OvvoG9eHijI6cGQFMpTtup1YvUyIv-5wTn49SUEF5e84Lqji70-knHBHCV-eO7cejyNivx3I_tvH-uEqT1BGuq1JjyFfbPfOFbaFPt5s"/>
+<div>
+<div class="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">Byte Busters</div>
+<div class="flex items-center gap-1.5 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px]">school</span>
+<span>Tsinghua University</span>
+</div>
+</div>
+</div>
+<div class="col-span-1 text-center font-bold text-lg text-text-primary">6</div>
+<div class="col-span-1 text-center font-mono text-sm text-text-secondary">845</div>
+<div class="col-span-5 flex gap-1.5 pl-4">
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">A</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">15</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">B</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">32</span>
+</div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex flex-col items-center justify-center text-gray-400">
+<span class="text-[10px] font-bold leading-none">C</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">D</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">85</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-wa-bg border border-status-wa/30 flex flex-col items-center justify-center text-status-wa relative">
+<span class="text-[10px] font-bold leading-none">E</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">-1</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">F</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">120</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">G</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">155</span>
+</div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative">
+<span class="text-[10px] font-bold leading-none">H</span>
+<span class="text-[8px] font-medium leading-none mt-0.5">190</span>
+</div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex flex-col items-center justify-center text-gray-400">
+<span class="text-[10px] font-bold leading-none">I</span>
+</div>
+</div>
+</div>
+<div class="group grid grid-cols-12 gap-4 px-6 py-3 items-center border-b border-border-color hover:bg-blue-50/30 transition duration-150">
+<div class="col-span-1 text-center flex justify-center">
+<div class="w-8 h-8 rounded-full text-text-secondary bg-gray-100 border border-border-color flex items-center justify-center font-bold text-sm">4</div>
+</div>
+<div class="col-span-4 flex items-center gap-3 pl-2">
+<img class="w-10 h-10 rounded-full object-cover border border-gray-200 grayscale group-hover:grayscale-0 transition-all" data-alt="Team Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDR8NzYmCCogCFHJg5O_qFVrASnDkZCYnmE1OoOhJWhKX_UBaOfwAGRdFW40K4V2QdUcQDq_kwrsJw7iEaD_WvU8UGQGxX51gzVeU33XHeFiO23zDCMrn970GkqChWFnEf1k_xdyOcGsYQQdBQ4WvXL8j2OLh_WGZPv9BlAT3AUrtRcF08oEVN5np5aNUBO6XQJlxUj1ujMLqxilNQCsfFCImuMD71uV0PUNVFZ06kcPAz5-rT9onZ7fqGQw4pEuPYkPGnP5_Jeb68"/>
+<div>
+<div class="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">SegFault Squad</div>
+<div class="flex items-center gap-1.5 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px]">school</span>
+<span>Univ. of Waterloo</span>
+</div>
+</div>
+</div>
+<div class="col-span-1 text-center font-bold text-lg text-text-primary">5</div>
+<div class="col-span-1 text-center font-mono text-sm text-text-secondary">720</div>
+<div class="col-span-5 flex gap-1.5 pl-4">
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">A</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">B</span></div>
+<div class="w-8 h-8 rounded bg-status-wa-bg border border-status-wa/30 flex flex-col items-center justify-center text-status-wa relative"><span class="text-[10px] font-bold">C</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">D</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">E</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">F</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">G</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">H</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">I</span></div>
+</div>
+</div>
+<div class="group grid grid-cols-12 gap-4 px-6 py-3 items-center border-b border-border-color hover:bg-blue-50/30 transition duration-150">
+<div class="col-span-1 text-center flex justify-center">
+<div class="w-8 h-8 rounded-full text-text-secondary bg-gray-100 border border-border-color flex items-center justify-center font-bold text-sm">5</div>
+</div>
+<div class="col-span-4 flex items-center gap-3 pl-2">
+<img class="w-10 h-10 rounded-full object-cover border border-gray-200 grayscale group-hover:grayscale-0 transition-all" data-alt="Team Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsUzObZaRKn8FBvmE72JaZLAKqAlA5XLGYiG0777nu_9AIYpcqH9a9iVndYu3qSjYGrnxBy5e5sPJ7AOY94vAhG-c8NH7jRI_39oyhH_NCnMZp3PlztpEVgotYEBsU4efUIxxJY1ccFo16fl5rTuhftxGYWJLK50zN9a2YQe-ywfxFgPIFMrBlkoeQk0_hdKnDQeX8wE1LBu99tJbq16NQS5pi31w4rcJa8MCbSGhzPBVO990iDbKW1BvJD1WLzCLYsIsaKHnFrAo"/>
+<div>
+<div class="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">Recursion Raiders</div>
+<div class="flex items-center gap-1.5 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px]">school</span>
+<span>ETH Zurich</span>
+</div>
+</div>
+</div>
+<div class="col-span-1 text-center font-bold text-lg text-text-primary">4</div>
+<div class="col-span-1 text-center font-mono text-sm text-text-secondary">650</div>
+<div class="col-span-5 flex gap-1.5 pl-4">
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">A</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">B</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">C</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">D</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">E</span></div>
+<div class="w-8 h-8 rounded bg-status-pending-bg border border-status-pending/50 animate-pulse flex flex-col items-center justify-center text-status-pending relative"><span class="text-[10px] font-bold">F</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">G</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">H</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">I</span></div>
+</div>
+</div>
+<div class="group grid grid-cols-12 gap-4 px-6 py-3 items-center border-b border-border-color hover:bg-blue-50/30 transition duration-150">
+<div class="col-span-1 text-center flex justify-center">
+<div class="w-8 h-8 rounded-full text-text-secondary bg-gray-100 border border-border-color flex items-center justify-center font-bold text-sm">6</div>
+</div>
+<div class="col-span-4 flex items-center gap-3 pl-2">
+<img class="w-10 h-10 rounded-full object-cover border border-gray-200 grayscale group-hover:grayscale-0 transition-all" data-alt="Team Avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQYORotiJ4Kb7LvmL_NUnjEfIhksEVTpv42oXOKVcNX1Y7u_CLMNx9nh-W8INvkZFSRkIYimywbGnxM76Caolye3qmIbamCJcQh3HMLbfiTSTepmC0FNPXA2P5oAQTU4N205-3fP0rXvY4-nXivcjb3DObW_ts7XkCz7UOQIOTZuFDfzf3Wpe9uBuSP9Fr1GYKF5t1Xc94IjtAkCXORDRUXWGD-UoYNQPeOH0OglsM3SXvX1-UCEPdvS2w-18KRB6l6PQVhjGnYNs"/>
+<div>
+<div class="text-sm font-bold text-text-primary group-hover:text-primary transition-colors">While True</div>
+<div class="flex items-center gap-1.5 text-xs text-text-secondary">
+<span class="material-symbols-outlined text-[14px]">school</span>
+<span>Oxford University</span>
+</div>
+</div>
+</div>
+<div class="col-span-1 text-center font-bold text-lg text-text-primary">4</div>
+<div class="col-span-1 text-center font-mono text-sm text-text-secondary">680</div>
+<div class="col-span-5 flex gap-1.5 pl-4">
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">A</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">B</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">C</span></div>
+<div class="w-8 h-8 rounded bg-status-wa-bg border border-status-wa/30 flex items-center justify-center text-status-wa"><span class="text-[10px] font-bold">D</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">E</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">F</span></div>
+<div class="w-8 h-8 rounded bg-status-ac-bg border border-status-ac/30 flex flex-col items-center justify-center text-status-ac relative"><span class="text-[10px] font-bold">G</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">H</span></div>
+<div class="w-8 h-8 rounded bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400"><span class="text-[10px] font-bold">I</span></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="h-10 bg-white border-t border-border-color flex items-center overflow-hidden relative flex-shrink-0 z-10">
+<div class="absolute left-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-r from-white to-transparent"></div>
+<div class="absolute right-0 top-0 bottom-0 w-16 z-10 bg-gradient-to-l from-white to-transparent"></div>
+<div class="flex whitespace-nowrap animate-marquee">
+<div class="flex items-center gap-2 mx-8 text-primary font-medium text-sm">
+<span class="material-symbols-outlined text-sm">bolt</span>
+<span class="text-text-secondary">Team <strong class="text-text-primary">CodeWizards</strong> just solved <strong class="text-text-primary">Problem I</strong> (First Blood)!</span>
+</div>
+<div class="flex items-center gap-2 mx-8 text-text-secondary font-medium text-sm">
+<span class="material-symbols-outlined text-sm">info</span>
+<span>The contest will be frozen in 15 minutes.</span>
+</div>
+<div class="flex items-center gap-2 mx-8 text-status-ac font-medium text-sm">
+<span class="material-symbols-outlined text-sm">check_circle</span>
+<span class="text-text-secondary">Team <strong class="text-text-primary">Recursion Raiders</strong> accepted on <strong class="text-text-primary">Problem G</strong>.</span>
+</div>
+<div class="flex items-center gap-2 mx-8 text-text-secondary font-medium text-sm">
+<span class="material-symbols-outlined text-sm">schedule</span>
+<span>Lunch will be served at 1:00 PM in the main hall.</span>
+</div>
+<div class="flex items-center gap-2 mx-8 text-primary font-medium text-sm">
+<span class="material-symbols-outlined text-sm">bolt</span>
+<span class="text-text-secondary">Team <strong class="text-text-primary">Null Pointers</strong> just solved <strong class="text-text-primary">Problem H</strong>!</span>
+</div>
+</div>
+</div>
+</main>
+<script>
+        tailwind.config.theme.extend.animation = {
+            'marquee': 'marquee 30s linear infinite',
+            'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        }
+        tailwind.config.theme.extend.keyframes = {
+            marquee: {
+                '0%': { transform: 'translateX(100%)' },
+                '100%': { transform: 'translateX(-100%)' },
+            }
+        }
+    </script>
+
+</body></html>

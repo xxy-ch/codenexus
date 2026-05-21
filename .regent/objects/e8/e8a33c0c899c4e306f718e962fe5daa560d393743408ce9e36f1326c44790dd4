@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "active": true,
+  "skill": "ultrawork",
+  "keyword": "$ultrawork",
+  "phase": "planning",
+  "activated_at": "2026-04-25T11:28:00.761Z",
+  "updated_at": "2026-04-25T11:39:11.705Z",
+  "source": "keyword-detector",
+  "session_id": "019dc465-821f-7fb3-b2ea-faa6890f16f9",
+  "thread_id": "",
+  "turn_id": "019dc46f-bfe3-7692-bdbc-94bc0278e1ed",
+  "active_skills": [
+    {
+      "skill": "ultrawork",
+      "phase": "planning",
+      "active": true,
+      "activated_at": "2026-04-25T11:28:00.761Z",
+      "updated_at": "2026-04-25T11:39:11.705Z",
+      "session_id": "019dc465-821f-7fb3-b2ea-faa6890f16f9",
+      "thread_id": "",
+      "turn_id": "019dc46f-bfe3-7692-bdbc-94bc0278e1ed"
+    }
+  ],
+  "initialized_mode": "ultrawork",
+  "initialized_state_path": ".omx/state/sessions/019dc465-821f-7fb3-b2ea-faa6890f16f9/ultrawork-state.json"
+}

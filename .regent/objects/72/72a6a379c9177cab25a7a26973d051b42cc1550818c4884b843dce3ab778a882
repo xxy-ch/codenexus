@@ -1,0 +1,69 @@
+---
+wave: 1
+depends_on: []
+files_modified:
+  - frontend/src/**/*.tsx
+  - frontend/src/**/*.ts
+autonomous: true
+---
+
+# Phase 16 Plan 01: Commit Existing Changes + Fix Test Failures
+
+## Objective
+
+Commit the 60 files with in-progress UI improvements (design tokens, Lucide icons, CodeNexus branding, Chinese localization) and fix the 25 failing tests.
+
+## Tasks
+
+### Task 1: Fix failing tests
+
+<read_first>
+- frontend/src/pages/user/__tests__/SubmissionHistory.test.tsx
+- frontend/src/pages/user/SubmissionHistory.tsx
+</read_first>
+
+<action>
+Run `npx vitest --run` from the frontend directory to identify all 9 failing test files and 25 failing tests. Read each failing test file and its corresponding source file. Fix test failures caused by:
+1. Component output changes (e.g., text content changed from English to Chinese, class names changed from hardcoded to design tokens)
+2. Missing mock updates (e.g., component now imports Lucide icons instead of Material Symbols)
+3. DOM structure changes (e.g., wrapper elements added/removed during styling migration)
+
+Update test assertions to match the new Chinese UI text and updated component structure. Do NOT revert the component changes — fix the tests to match the new implementation.
+</action>
+
+<acceptance_criteria>
+- `cd frontend && npx vitest --run` exits with 0 failures
+- All 235+ tests pass
+- No test files are skipped
+</acceptance_criteria>
+
+### Task 2: Commit all frontend UI restoration changes
+
+<read_first>
+- frontend/src/components/layout/Sidebar.tsx (reference for completed styling pattern)
+</read_first>
+
+<action>
+Stage and commit all modified frontend files. The changes include:
+- Design token migration (hardcoded slate/gray colors → semantic tokens like `text-foreground`, `bg-card`, `border-border`)
+- Material Symbols → Lucide React icon migration
+- "AlgoMaster" → "CodeNexus" brand rename
+- English → Chinese UI text localization
+- Updated spacing and border-radius values for consistency
+
+Use commit message: `feat(16): UI restoration — design tokens, Lucide icons, CodeNexus brand, Chinese localization`
+</action>
+
+<acceptance_criteria>
+- `git status` shows no unstaged frontend changes
+- Commit exists with all 60+ modified frontend files
+- `cd frontend && npm run build` succeeds
+- `cd frontend && npx vitest --run` passes
+</acceptance_criteria>
+
+## Verification
+
+- [ ] `cd frontend && npm run build` exits 0
+- [ ] `cd frontend && npx vitest --run` exits 0 (all tests pass)
+- [ ] No "AlgoMaster" references in `frontend/src/`
+- [ ] No "material-symbols-outlined" in `frontend/src/`

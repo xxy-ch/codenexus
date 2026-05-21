@@ -1,0 +1,31 @@
+[features]
+hooks = true
+
+[hooks]
+[[hooks.PostToolUse]]
+matcher = ''
+
+[[hooks.PostToolUse.hooks]]
+command = 'rgt codex-hook'
+type = 'command'
+
+[[hooks.SessionStart]]
+matcher = ''
+
+[[hooks.SessionStart.hooks]]
+command = 'rgt codex-hook'
+type = 'command'
+
+[[hooks.Stop]]
+matcher = ''
+
+[[hooks.Stop.hooks]]
+command = 'rgt codex-hook'
+type = 'command'
+
+[[hooks.UserPromptSubmit]]
+matcher = ''
+
+[[hooks.UserPromptSubmit.hooks]]
+command = 'rgt codex-hook'
+type = 'command'

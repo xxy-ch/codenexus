@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Help Center &amp; Documentation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a73e8","primary-dark": "#1557b0",
+                        "background-light": "#f8f9fa",
+                        "background-dark": "#101622",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1a2234",
+                        "text-main": "#202124",
+                        "text-secondary": "#5f6368",
+                    },
+                    fontFamily: {
+                        "display": ["Space Grotesk", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "mono": ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", "monospace"],
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem", "2xl": "1.5rem"},
+                    boxShadow: {
+                        "card": "0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15)",
+                        "floating": "0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15)",
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Space Grotesk', sans-serif; }
+        .article-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: #202124;
+        }
+        .article-content h3 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: #202124;
+        }
+        .article-content p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+            color: #3c4043;
+        }
+        .article-content ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+            color: #3c4043;
+        }
+        .article-content code {
+            background-color: #f1f3f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: 'ui-monospace', monospace;
+            font-size: 0.875em;
+            color: #c5221f;
+        }
+        .article-content pre {
+            background-color: #f8f9fa;
+            border: 1px solid #dadce0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+        .article-content pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #202124;
+            font-size: 0.875rem;
+        }::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dadce0;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #bdc1c6;
+        }
+    </style>
+</head>
+<body class="bg-background-light text-text-main min-h-screen flex overflow-hidden">
+<aside class="w-20 lg:w-64 flex-shrink-0 flex flex-col border-r border-gray-200 bg-surface-light transition-all duration-300 z-20">
+<div class="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-gray-200">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold text-xl mr-0 lg:mr-3 shadow-sm">
+                OJ
+            </div>
+<span class="text-xl font-bold tracking-tight hidden lg:block text-gray-800">Nexus<span class="text-primary">Judge</span></span>
+</div>
+<nav class="flex-1 overflow-y-auto py-6 flex flex-col gap-1 px-3">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-icons text-[22px]">dashboard</span>
+<span class="hidden lg:block font-medium text-sm">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-icons text-[22px]">code</span>
+<span class="hidden lg:block font-medium text-sm">Problems</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-icons text-[22px]">emoji_events</span>
+<span class="hidden lg:block font-medium text-sm">Contests</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-icons text-[22px]">policy</span>
+<span class="hidden lg:block font-medium text-sm">Plagiarism</span>
+</a>
+<div class="my-2 border-t border-gray-200 mx-3"></div>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 text-primary font-medium" href="#">
+<span class="material-icons text-[22px]">menu_book</span>
+<span class="hidden lg:block font-medium text-sm">Documentation</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-text-secondary hover:bg-gray-100 transition-colors" href="#">
+<span class="material-icons text-[22px]">support_agent</span>
+<span class="hidden lg:block font-medium text-sm">Support</span>
+</a>
+</nav>
+<div class="p-4 border-t border-gray-200">
+<div class="flex items-center gap-3 px-2">
+<img alt="User" class="w-8 h-8 rounded-full border border-gray-200" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzo2UDMepAwRSg3I0KtfQB6egLEM2Sii9YYn0v6UXQZzJAsHk-TasJcg9_X938XW2LFvX57Q6XzlHXLOGIx-3S0t5F0P8KvsOuwk6FQYDEmvmPNAekLA1o08eojGj4_umYjVcTITBnWCupoiLagmrW7iUZ9iFGM6E-4Z2AirZlUIZ4TKUgzQCXD_phKBopvFSBVCYEwbweqlUTcri6eM2VFjO-9s-ifI8rhUaz0EEocF6buyvT8fvpUYg2totEwaAUauLPJTi0UHQ"/>
+<div class="hidden lg:block overflow-hidden">
+<p class="text-sm font-medium text-gray-900 truncate">Alex Developer</p>
+<p class="text-xs text-gray-500 truncate">Pro Account</p>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 flex flex-col h-screen overflow-hidden bg-white">
+<header class="h-16 flex-shrink-0 border-b border-gray-200 bg-white flex items-center justify-between px-8 z-10">
+<div class="flex items-center gap-4 w-full max-w-3xl">
+<div class="relative w-full group">
+<span class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-gray-100 border-none rounded-lg py-2.5 pl-11 pr-4 text-sm text-gray-800 focus:bg-white focus:ring-2 focus:ring-primary/20 focus:shadow-sm transition-all placeholder-gray-500" placeholder="Search documentation, API references, or FAQs..." type="text"/>
+<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+<kbd class="hidden sm:inline-block border border-gray-300 rounded px-1.5 py-0.5 text-[10px] font-mono text-gray-500 bg-white">Ctrl</kbd>
+<kbd class="hidden sm:inline-block border border-gray-300 rounded px-1.5 py-0.5 text-[10px] font-mono text-gray-500 bg-white">K</kbd>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4 ml-6">
+<button class="text-gray-500 hover:text-gray-700 transition-colors">
+<span class="material-icons">notifications_none</span>
+</button>
+<div class="h-8 w-px bg-gray-200"></div>
+<button class="text-sm font-medium text-primary hover:text-primary-dark transition-colors">
+                    API Status
+                </button>
+</div>
+</header>
+<div class="flex-1 flex overflow-hidden">
+<nav class="w-64 flex-shrink-0 bg-gray-50 border-r border-gray-200 overflow-y-auto py-6 hidden md:block">
+<div class="px-6 mb-2">
+<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Getting Started</h3>
+<ul class="space-y-1">
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium bg-white text-primary shadow-sm border border-gray-200" href="#">Introduction</a>
+</li>
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Platform Overview</a>
+</li>
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Your First Submission</a>
+</li>
+</ul>
+</div>
+<div class="px-6 mt-8 mb-2">
+<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Language Specs</h3>
+<ul class="space-y-1">
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 flex justify-between items-center" href="#">
+                                C++ Standards
+                                <span class="text-[10px] bg-gray-200 text-gray-600 px-1.5 rounded">C++20</span>
+</a>
+</li>
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Java Environment</a>
+</li>
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Python 3.x Support</a>
+</li>
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Go &amp; Rust</a>
+</li>
+</ul>
+</div>
+<div class="px-6 mt-8 mb-2">
+<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">System Reference</h3>
+<ul class="space-y-1">
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Judge Status Codes</a>
+</li>
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Time &amp; Memory Limits</a>
+</li>
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Interactive Problems</a>
+</li>
+</ul>
+</div>
+<div class="px-6 mt-8 mb-2">
+<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">FAQ &amp; Support</h3>
+<ul class="space-y-1">
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Common Errors</a>
+</li>
+<li>
+<a class="block px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900" href="#">Contest Rules</a>
+</li>
+</ul>
+</div>
+</nav>
+<div class="flex-1 overflow-y-auto bg-white relative">
+<div class="max-w-4xl mx-auto px-8 py-12 pb-24">
+<div class="flex items-center text-sm text-gray-500 mb-6">
+<a class="hover:text-primary hover:underline" href="#">Documentation</a>
+<span class="material-icons text-base mx-2 text-gray-400">chevron_right</span>
+<a class="hover:text-primary hover:underline" href="#">Getting Started</a>
+<span class="material-icons text-base mx-2 text-gray-400">chevron_right</span>
+<span class="text-gray-800 font-medium">Introduction to NexusJudge</span>
+</div>
+<h1 class="text-4xl font-bold text-gray-900 mb-4 tracking-tight">Introduction to NexusJudge System</h1>
+<div class="flex items-center gap-4 mb-8 pb-8 border-b border-gray-100">
+<div class="flex items-center gap-2 text-sm text-gray-500">
+<span class="material-icons text-base">schedule</span>
+                            Last updated: Oct 24, 2023
+                        </div>
+<div class="flex items-center gap-2 text-sm text-gray-500">
+<span class="material-icons text-base">timer</span>
+                            5 min read
+                        </div>
+<span class="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium">v4.2 Stable</span>
+</div>
+<article class="article-content text-gray-700">
+<p class="text-lg leading-relaxed text-gray-600 mb-8">
+                            NexusJudge is an advanced, high-performance online judge designed for competitive programming, educational assessments, and technical interviews. Our platform supports over 20 programming languages and features real-time evaluation with detailed feedback.
+                        </p>
+<h2>Standard Input and Output</h2>
+<p>
+                            Most problems on NexusJudge require you to read input from <code>stdin</code> (Standard Input) and write the result to <code>stdout</code> (Standard Output). It is crucial to follow the input/output format specified in the problem statement exactly.
+                        </p>
+<div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-r-lg">
+<div class="flex">
+<span class="material-icons text-blue-500 mr-3">info</span>
+<div>
+<p class="text-sm text-blue-900 font-medium">Important Note</p>
+<p class="text-sm text-blue-800 mt-1">Do not print any extra text like "Enter number:" as it will be considered part of your output and result in a <code>Wrong Answer</code> verdict.</p>
+</div>
+</div>
+</div>
+<h3>Example: A + B Problem</h3>
+<p>
+                            Here is a simple example showing how to read two integers and print their sum in different languages.
+                        </p>
+<div class="mt-6 mb-8 border border-gray-200 rounded-lg overflow-hidden">
+<div class="bg-gray-50 border-b border-gray-200 px-4 py-2 flex gap-4">
+<button class="text-sm font-medium text-primary border-b-2 border-primary pb-2 -mb-2.5">C++ 17</button>
+<button class="text-sm font-medium text-gray-500 hover:text-gray-700 pb-2">Java</button>
+<button class="text-sm font-medium text-gray-500 hover:text-gray-700 pb-2">Python 3</button>
+</div>
+<div class="bg-gray-50 p-4 overflow-x-auto">
+<pre class="!mb-0 !bg-transparent !border-none !p-0"><code class="language-cpp">#include &lt;iostream&gt;
+using namespace std;
+int main() {
+    long long a, b;
+    // Fast I/O
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    while (cin &gt;&gt; a &gt;&gt; b) {
+        cout &lt;&lt; a + b &lt;&lt; "\n";
+    }
+    return 0;
+}</code></pre>
+</div>
+</div>
+<h2>Return Codes</h2>
+<p>
+                            When your program finishes execution, it must return <code>0</code>. Returning a non-zero value typically indicates a runtime error to the operating system.
+                        </p>
+<ul>
+<li><strong>Accepted (AC):</strong> Your program produced the correct output.</li>
+<li><strong>Wrong Answer (WA):</strong> The output differs from the expected answer.</li>
+<li><strong>Time Limit Exceeded (TLE):</strong> Your program ran longer than the allowed time limit.</li>
+<li><strong>Runtime Error (RE):</strong> Your program crashed (e.g., division by zero, invalid memory access).</li>
+</ul>
+<h2>Compiler Options</h2>
+<p>
+                            We use the latest stable compilers. For C++, we use <code>g++</code> with the following flags:
+                        </p>
+<pre><code>g++ -std=c++17 -O2 -Wall -lm -static -DONLINE_JUDGE source.cpp -o executable</code></pre>
+</article>
+<div class="mt-12 pt-8 border-t border-gray-200">
+<div class="flex items-center justify-between">
+<div>
+<h4 class="text-sm font-medium text-gray-900">Was this article helpful?</h4>
+<p class="text-sm text-gray-500 mt-1">Your feedback helps us improve our documentation.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors">
+<span class="material-icons text-lg">thumb_up</span>
+                                    Yes
+                                </button>
+<button class="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors">
+<span class="material-icons text-lg">thumb_down</span>
+                                    No
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<div class="hidden xl:block absolute top-0 right-0 w-64 h-full pt-12 pr-6 overflow-y-auto">
+<h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4 pl-4">On this page</h5>
+<ul class="border-l border-gray-200 space-y-3 text-sm">
+<li><a class="block pl-4 text-primary font-medium border-l-2 border-primary -ml-[1px]" href="#">Introduction</a></li>
+<li><a class="block pl-4 text-gray-500 hover:text-gray-900" href="#">Standard Input/Output</a></li>
+<li><a class="block pl-4 text-gray-500 hover:text-gray-900" href="#">Example: A + B Problem</a></li>
+<li><a class="block pl-4 text-gray-500 hover:text-gray-900" href="#">Return Codes</a></li>
+<li><a class="block pl-4 text-gray-500 hover:text-gray-900" href="#">Compiler Options</a></li>
+</ul>
+</div>
+</div>
+</div>
+</main>
+
+</body></html>

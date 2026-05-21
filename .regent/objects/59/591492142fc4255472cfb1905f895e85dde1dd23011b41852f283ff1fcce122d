@@ -1,0 +1,115 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1777039180201,
+  "projectRoot": "/Users/xiexingyu/Documents/项目/Online_Judge/.claude/worktrees/jovial-leakey-63329d",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": {
+      "defaultBranch": "master",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "backend": {
+      "path": "backend",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1777039180172,
+      "keyFiles": [
+        "Cargo.lock",
+        "Cargo.toml",
+        "rust-toolchain.toml"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1777039180175,
+      "keyFiles": [
+        "README.md"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 20,
+      "lastAccessed": 1777039180176,
+      "keyFiles": [
+        "Dockerfile",
+        "README.md",
+        "components.json",
+        "eslint.config.js",
+        "index.html"
+      ]
+    },
+    "references": {
+      "path": "references",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1777039180176,
+      "keyFiles": [
+        "app_uoj233.sql"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 2,
+      "lastAccessed": 1777039180178,
+      "keyFiles": [
+        "bootstrap_demo.sh",
+        "bootstrap_demo.sql"
+      ]
+    },
+    "backend/api": {
+      "path": "backend/api",
+      "purpose": "API routes",
+      "fileCount": 5,
+      "lastAccessed": 1777039180180,
+      "keyFiles": [
+        "Cargo.toml",
+        "Dockerfile",
+        "docker-entrypoint.sh"
+      ]
+    },
+    "docs/api": {
+      "path": "docs/api",
+      "purpose": "API routes",
+      "fileCount": 3,
+      "lastAccessed": 1777039180180,
+      "keyFiles": [
+        "CONTEST_API.md",
+        "LEADERBOARD_API.md",
+        "PROBLEMS_API.md"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

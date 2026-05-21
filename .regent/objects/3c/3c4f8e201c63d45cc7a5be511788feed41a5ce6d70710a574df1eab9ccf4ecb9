@@ -1,0 +1,271 @@
+# UI重构需求文档
+
+## 概述
+
+对AlgoMaster Online Judge前端进行完全重构，采用Linear风格设计语言，保留shadcn组件库但重新设计所有组件样式和变体，打造精致、专业的在线评测平台体验。
+
+## 设计决策
+
+| 决策项 | 选择 | 说明 |
+|--------|------|------|
+| 组件库 | shadcn/ui | 保留，重新设计所有组件样式和变体 |
+| 样式方案 | Tailwind CSS v4 | 保留，使用hex格式Token确保Chrome 109+兼容 |
+| 设计风格 | Linear风格 | 精致体验，微交互丰富，视觉层次分明 |
+| 主色调 | 橙色 #f54e00 | 保留现有品牌色 |
+| 深色模式 | 支持 | 浅色/深色双主题 |
+| 响应式 | 仅桌面端 | 最小宽度1024px |
+| 浏览器兼容 | Chrome 109+ | 2023年1月版本，不使用oklch等新特性 |
+
+## Chrome 109兼容性约束
+
+以下CSS特性**不可用**（Chrome 111+才支持）：
+- `oklch()` / `oklab()` 颜色函数
+- CSS Nesting（原生嵌套）
+- `color-mix()` 函数
+- `@scope` 规则
+
+以下CSS特性**可用**：
+- CSS Custom Properties（Chrome 49+）
+- `@supports`（Chrome 29+）
+- `@layer`（Chrome 99+）
+- `:is()` 伪类（Chrome 88+）
+- Grid/Flexbox（Chrome 57+）
+
+**实现方案**：
+- Tailwind v4的@theme inline使用CSS变量，所有颜色使用hex/rgb格式
+- 不依赖Tailwind默认的oklch色彩系统，自定义Token全部使用hex
+- 保留@supports检测，为支持oklch的浏览器提供增强
+
+## Linear设计语言规范
+
+### 核心特征
+
+| 特征 | 实现方式 |
+|------|----------|
+| 精致留白 | 大量使用间距token(16/24/32/48px)，内容呼吸感强 |
+| 清晰层次 | 通过阴影、边框、背景色区分层级 |
+| 微交互 | hover提升、点击反馈、状态过渡动画 |
+| 信息密度 | 合理的信息密度，不过度稀疏也不过度拥挤 |
+| 一致性 | 所有组件遵循统一的设计语言 |
+
+### 色彩系统
+
+**浅色主题**：
+```
+主色: #f54e00 (橙色)
+主色前景: #ffffff
+背景: #ffffff
+前景: #1a1a2e
+卡片: #ffffff
+次级: #f0f4f8
+弱化文字: #525f7f
+边框: #e3e8ef
+破坏性: #cf2d56
+```
+
+**深色主题**：
+```
+主色: #f54e00 (橙色)
+主色前景: #ffffff
+背景: #0f1117
+前景: #e8ecf1
+卡片: #171b26
+次级: #1e2333
+弱化文字: #7b8ca8
+边框: #2a3042
+破坏性: #cf2d56
+```
+
+**状态色**：
+```
+通过: #1f8a65 (绿色)
+错误: #cf2d56 (红色)
+等待: #52788f (蓝灰)
+超时: #c08532 (橙黄)
+运行时错误: #7c5cbf (紫色)
+```
+
+**难度色**：
+```
+简单: #1f8a65
+中等: #c08532
+困难: #cf2d56
+```
+
+### 字体系统
+
+```
+字体族: Inter, -apple-system, BlinkMacSystemFont, sans-serif
+等宽字体: Fira Code, SF Mono, Monaco, Courier New, monospace
+
+Display: 48px / 700 / 1.10 / -0.025em
+H1: 36px / 700 / 1.15 / -0.02em
+H2: 28px / 600 / 1.20 / -0.015em
+H3: 22px / 600 / 1.25 / -0.01em
+H4: 18px / 600 / 1.30 / -0.005em
+Body Large: 16px / 400 / 1.50
+Body: 15px / 400 / 1.50
+Body Medium: 14px / 500 / 1.50
+Caption: 13px / 400 / 1.40 / +0.01em
+Badge: 12px / 600 / 1.33 / +0.02em
+Code: 14px / 500 / 1.50 / +0.02em
+```
+
+### 间距系统
+
+```
+4px / 8px / 12px / 16px / 24px / 32px / 48px / 64px
+```
+
+### 圆角系统
+
+```
+基准: 0.5rem (8px)
+sm: 0.3rem (4.8px)
+md: 0.4rem (6.4px)
+lg: 0.5rem (8px)
+xl: 0.7rem (11.2px)
+2xl: 0.9rem (14.4px)
+3xl: 1.1rem (17.6px)
+4xl: 1.3rem (20.8px)
+```
+
+### 阴影系统
+
+```
+whisper: 0 1px 2px rgba(50,50,93,0.08), 0 0 0.5px rgba(0,0,0,0.06)
+card: 0 2px 4px rgba(50,50,93,0.1), 0 1px 1.5px rgba(0,0,0,0.07)
+elevated: 0 7px 14px rgba(50,50,93,0.1), 0 3px 6px rgba(0,0,0,0.08)
+prominent: 0 15px 35px rgba(50,50,93,0.12), 0 5px 15px rgba(0,0,0,0.08)
+overlay: 0 30px 60px rgba(50,50,93,0.2), 0 10px 20px rgba(0,0,0,0.12)
+focus: 0 0 0 3px rgba(245,78,0,0.15)
+```
+
+## 组件清单
+
+### 基础组件
+
+| 组件 | 说明 | 关键变体 |
+|------|------|----------|
+| Button | 按钮 | variant: default/outline/secondary/ghost/destructive/link; size: xs/sm/default/lg/icon |
+| Input | 输入框 | variant: default/error; size: sm/default/lg |
+| Select | 下拉选择 | 需新建 |
+| Checkbox | 复选框 | 需新建 |
+| Radio | 单选框 | 需新建 |
+| Switch | 开关 | 需新建 |
+| Textarea | 文本域 | 需新建 |
+
+### 展示组件
+
+| 组件 | 说明 | 关键变体 |
+|------|------|----------|
+| Card | 卡片 | variant: default/elevated/outlined |
+| Badge | 徽章 | variant: default/secondary/destructive/outline; 需扩展status/difficulty变体 |
+| StatusBadge | 状态徽章 | accepted/wrong/pending/tle/re |
+| Skeleton | 骨架屏 | 支持shimmer动画 |
+| EmptyState | 空状态 | 需统一设计 |
+| Loading | 加载状态 | spinner/skeleton/progress |
+| Tooltip | 提示框 | 需新建，Linear风格必备 |
+| Separator | 分隔符 | 保留现有 |
+
+### 交互组件
+
+| 组件 | 说明 | 关键变体 |
+|------|------|----------|
+| Dialog | 对话框 | 需重新设计动画和布局 |
+| DropdownMenu | 下拉菜单 | 需统一风格 |
+| Tabs | 标签页 | variant: default/pills/underline |
+| Toast | 提示 | variant: success/error/warning/info |
+| Table | 表格 | 需统一风格 |
+
+### 布局组件
+
+| 组件 | 说明 |
+|------|------|
+| MainLayout | 主布局（侧边栏+内容区） |
+| AdminLayout | 管理后台布局 |
+| Sidebar | 侧边栏导航 |
+| Header | 头部导航 |
+| PageTransition | 页面过渡动画（已有实现） |
+
+## 非目标
+
+- 不修改后端API接口
+- 不改变现有功能逻辑
+- 不进行移动端适配
+- 不引入新的状态管理方案
+- 不进行无障碍(a11y)审计
+
+## 实施计划
+
+### 阶段一：设计Token重构（第1周）
+
+1. 将oklch颜色转换为hex/rgb格式（Chrome 109兼容）
+2. 重新设计色彩系统（浅色+深色主题）
+3. 完善字体/间距/圆角/阴影Token
+4. 配置Tailwind v4主题
+
+### 阶段二：基础组件重设计（第2-3周）
+
+1. 重新设计Button组件（所有变体+状态）
+2. 重新设计Input/Select/Textarea等表单组件
+3. 创建缺失组件（Checkbox/Radio/Switch）
+4. 重新设计Card/Badge/StatusBadge等展示组件
+5. 为所有组件编写完整交互状态规范
+
+### 阶段三：交互组件重设计（第4周）
+
+1. 重新设计Dialog（动画+布局）
+2. 重新设计DropdownMenu/Tabs
+3. 重新设计Toast（通知系统）
+4. 重新设计Table（统一风格）
+
+### 阶段四：页面迁移（第5-6周）
+
+1. 迁移核心页面（Dashboard/ProblemSet/Submission）
+2. 迁移管理页面
+3. 迁移社区页面
+4. 消除所有内联样式
+
+### 阶段五：优化与文档（第7-8周）
+
+1. 对Monaco Editor/Recharts实现组件级按需加载
+2. 编写组件使用文档
+3. 性能测试和优化
+4. 单元测试/组件测试（确保80%+覆盖率）
+5. E2E测试（核心用户流程）
+
+## 成功指标
+
+| 指标 | 测量方法 | 目标 |
+|------|----------|------|
+| 组件覆盖 | 组件清单检查 | 100%组件按新规范实现 |
+| 主题支持 | 手动测试 | 浅色/深色主题完整支持 |
+| 浏览器兼容 | Chrome 109测试 | 所有功能正常 |
+| 内联样式 | grep检查 | 0个文件使用style= |
+| 设计一致性 | 视觉审查 | 所有页面遵循Linear设计语言 |
+
+## 风险和缓解
+
+| 风险 | 影响 | 缓解措施 |
+|------|------|----------|
+| oklch转换导致色彩偏差 | 中 | 使用精确的hex/rgb转换工具 |
+| 深色模式工作量大 | 中 | 复用shadcn深色主题模式 |
+| 页面迁移工作量大 | 高 | 分批迁移，优先核心页面 |
+| 设计不一致 | 中 | 建立设计规范文档，代码审查 |
+
+## 附录
+
+### 相关文件
+
+- `frontend/src/index.css` - 设计Token和主题配置
+- `frontend/tailwind.config.js` - Tailwind配置
+- `frontend/src/components/ui/` - UI组件库
+- `frontend/src/components/layout/` - 布局组件
+- `frontend/src/pages/` - 页面组件
+
+### 参考资源
+
+- Linear设计系统
+- shadcn/ui 组件文档
+- Tailwind CSS 文档

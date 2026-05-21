@@ -1,0 +1,11 @@
+{
+  "active": false,
+  "started_at": "2026-04-22T00:19:12.432Z",
+  "original_prompt": "/ultrawork 现在的前端组件绝大多数都回退了浏览器默认样式，且软件名应为“CodeNexus”，直接改前端，从“/Users/xiexingyu/Documents/项目/Online_Judge/backend/shared/frontend-skill”里读取前端的设计skill文件。",
+  "session_id": "c0ccedc1-d726-4375-ae77-0849967fd573",
+  "project_path": "/Users/xiexingyu/Documents/项目/Online_Judge/frontend",
+  "reinforcement_count": 9,
+  "awaiting_confirmation": true,
+  "last_checked_at": "2026-04-22T00:49:28.956Z",
+  "deactivated_reason": "task_completion"
+}

@@ -1,0 +1,1 @@
+"node:internal/process/promises:394\n    triggerUncaughtException(err, true /* fromPromise */);\n    ^\n\nresponse.text: Target page, context or browser has been closed\n    at Page.<anonymous> (/Users/xiexingyu/Documents/项目/Online_Judge/frontend/[eval1]:10:153)\n\nNode.js v24.9.0\n"

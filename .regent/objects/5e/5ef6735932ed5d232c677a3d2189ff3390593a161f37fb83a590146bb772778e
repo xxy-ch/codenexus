@@ -1,0 +1,55 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e16]: "STATUS: ACCEPTED"
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]: architecture
+        - generic [ref=e20]: Online Judge
+      - heading "Where Code Meets Architectural Precision." [level=1] [ref=e21]
+      - paragraph [ref=e22]: Access the world's most sophisticated editorial workspace for competitive programming and deep-work algorithmic design.
+    - generic [ref=e23]:
+      - generic [ref=e24]:
+        - img "Contributor avatar 1" [ref=e25]
+        - img "Contributor avatar 2" [ref=e26]
+        - img "Contributor avatar 3" [ref=e27]
+      - generic [ref=e28]: Joined by 12k+ scholars this week
+  - generic [ref=e29]:
+    - generic [ref=e30]:
+      - generic [ref=e31]:
+        - heading "Welcome back" [level=2] [ref=e32]
+        - paragraph [ref=e33]: Continue your deep-work journey.
+      - generic [ref=e34]:
+        - button "Google" [disabled] [ref=e35]:
+          - generic [ref=e36]: public
+          - generic [ref=e37]: Google
+        - button "GitHub" [disabled] [ref=e38]:
+          - generic [ref=e39]: code
+          - generic [ref=e40]: GitHub
+      - generic [ref=e43]: or use email
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - generic [ref=e47]: Username / User ID
+          - generic [ref=e48]:
+            - generic: person
+            - textbox "Username / User ID" [ref=e50]:
+              - /placeholder: 1001 or alice
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]: Password
+            - link "Forgot password?" [ref=e54] [cursor=pointer]:
+              - /url: /account-recovery
+          - generic [ref=e55]:
+            - generic: lock
+            - textbox "Password" [ref=e57]:
+              - /placeholder: Enter your password
+        - button "arrow_forward Sign In" [ref=e59] [cursor=pointer]:
+          - generic [ref=e61]: arrow_forward
+          - text: Sign In
+      - generic [ref=e62]:
+        - text: Don't have an account?
+        - link "Sign up" [ref=e63] [cursor=pointer]:
+          - /url: /register
+    - generic [ref=e65]:
+      - generic [ref=e66]: Privacy
+      - generic [ref=e67]: Terms
+      - generic [ref=e68]: Status

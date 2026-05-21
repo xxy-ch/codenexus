@@ -1,0 +1,74 @@
+[package]
+name = "api"
+version = "0.1.0"
+edition = "2021"
+autotests = false
+
+[dependencies]
+axum = { workspace = true, features = ["ws"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+shared = { path = "../shared" }
+api-infra = { path = "../api-infra" }
+domain-problems = { path = "../domain-problems" }
+domain-users = { path = "../domain-users" }
+domain-community = { path = "../domain-community" }
+domain-search = { path = "../domain-search" }
+domain-classes = { path = "../domain-classes" }
+domain-contests = { path = "../domain-contests" }
+domain-leaderboard = { path = "../domain-leaderboard" }
+domain-submissions = { path = "../domain-submissions" }
+domain-imex = { path = "../domain-imex" }
+domain-analysis = { path = "../domain-analysis" }
+sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "migrate"] }
+dotenvy = "0.15"
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+deadpool-redis = { version = "0.22", features = ["serde"] }
+tower = "0.5"
+tower-http = { version = "0.5", features = ["fs", "trace", "cors"] }
+tower_governor = "0.4"
+governor = "0.7"
+bcrypt = "0.16"
+jsonwebtoken = "9"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.11", features = ["v4", "serde"] }
+anyhow = "1.0"
+once_cell = "1.20"
+headers = "0.4"
+hyper = "1"
+hyper-util = { version = "0.1", features = ["full"] }
+rand = "0.8"
+# WebSocket support
+tokio-tungstenite = "0.24"
+futures-util = "0.3"
+async-trait = "0.1"
+# Search functionality
+regex = "1.11"
+# Prometheus metrics
+metrics = "0.24"
+# Preview cache for import/export
+dashmap = "6"
+# utoipa = { version = "5", features = ["axum_extras"] }
+# utoipa-swagger-ui = { version = "8", features = ["axum"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+hyper = "1"
+testcontainers = { version = "0.23", features = ["blocking"] }
+testcontainers-modules = { version = "0.11", features = ["postgres"] }
+tokio-test = "0.4"
+env_logger = "0.11"
+api-infra = { path = "../api-infra", features = ["testkit"] }
+bcrypt = "0.16"
+chrono = { version = "0.4", features = ["serde"] }
+
+[[test]]
+name = "tenant_isolation"
+path = "tests/tenant_isolation.rs"
+
+[[test]]
+name = "handlers"
+path = "tests/handlers/mod.rs"

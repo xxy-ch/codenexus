@@ -1,0 +1,17 @@
+{
+  "active": false,
+  "started_at": "2026-04-08T20:52:30+08:00",
+  "task": "Resume P1/P2 closure with restored quota",
+  "scope": [
+    "tenant enforcement",
+    "problem/test-case write scoping",
+    "tests",
+    "phase closure"
+  ],
+  "iteration": 4,
+  "last_turn_at": "2026-04-08T22:58:55.586Z",
+  "note": "Fallback to local parallel execution",
+  "focus": "repair problem access integration, then verify and align docs",
+  "completed_at": "2026-04-09T07:04:00+08:00",
+  "task_description": "Close P1/P2 problem-domain tenant/ownership/write-scope gaps, verify, and align shared phase/review markers"
+}

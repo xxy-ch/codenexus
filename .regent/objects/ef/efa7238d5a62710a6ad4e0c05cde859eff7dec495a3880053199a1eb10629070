@@ -1,0 +1,211 @@
+---
+phase: 15
+plan: 06
+type: tdd
+wave: 2
+depends_on: ["15-01", "15-02", "15-03", "15-04"]
+files_modified:
+  - frontend/src/components/error/ErrorBoundary.tsx
+  - frontend/src/components/error/__tests__/ErrorBoundary.test.tsx
+  - frontend/src/App.tsx
+autonomous: true
+requirements:
+  - D-15-02
+  - D-15-03
+
+must_haves:
+  truths:
+    - "ErrorBoundary catches render errors and displays fallback UI instead of white screen"
+    - "ErrorBoundary shows heading, description, and refresh button"
+    - "App.tsx wraps route content with ErrorBoundary"
+  artifacts:
+    - path: "frontend/src/components/error/ErrorBoundary.tsx"
+      provides: "React class-based error boundary"
+      contains: "componentDidCatch"
+    - path: "frontend/src/App.tsx"
+      provides: "ErrorBoundary wrapping route content"
+      contains: "ErrorBoundary"
+  key_links:
+    - from: "frontend/src/App.tsx"
+      to: "frontend/src/components/error/ErrorBoundary.tsx"
+      via: "import ErrorBoundary"
+      pattern: "ErrorBoundary"
+---
+
+<objective>
+Create a global ErrorBoundary component and wrap route content in App.tsx.
+
+Purpose: Per D-15-02, the app currently has no error boundary -- render errors crash to white screen. This plan adds a global boundary that catches render errors and shows a user-friendly fallback with Chinese copy per UI-SPEC.md.
+
+Output: ErrorBoundary.tsx component, test, and App.tsx updated to wrap routes.
+</objective>
+
+<execution_context>
+@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@$HOME/.claude/get-shit-done/templates/summary.md
+</execution_context>
+
+<context>
+@.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-CONTEXT.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-UI-SPEC.md
+@frontend/src/App.tsx
+@frontend/src/test/test-utils.tsx
+</context>
+
+<interfaces>
+<!-- Key exports from App.tsx that executor needs to know -->
+
+From frontend/src/App.tsx (current structure):
+```typescript
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public, Protected, Admin, Error Routes */}
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
+    </QueryClientProvider>
+  )
+}
+```
+
+The ErrorBoundary should wrap the `<Routes>` block inside `<BrowserRouter>`, so it catches errors from route rendering but does not break BrowserRouter context.
+</interfaces>
+
+<tasks>
+
+<task type="auto" tdd="true">
+  <name>Task 1: Create ErrorBoundary component with TDD tests, then wire into App.tsx</name>
+  <files>frontend/src/components/error/__tests__/ErrorBoundary.test.tsx, frontend/src/components/error/ErrorBoundary.tsx, frontend/src/App.tsx</files>
+  <read_first>
+    - frontend/src/App.tsx
+    - frontend/src/test/test-utils.tsx
+    - .planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-UI-SPEC.md
+  </read_first>
+  <behavior>
+    - Test 1: ErrorBoundary renders children when no error occurs
+    - Test 2: ErrorBoundary renders fallback UI when child throws during render (use a component that throws: `throw new Error("test error")`)
+    - Test 3: Fallback contains heading "页面出现错误"
+    - Test 4: Fallback contains description "抱歉，页面加载时遇到问题。请刷新页面重试。"
+    - Test 5: Fallback contains a "刷新页面" button
+    - Test 6: Custom fallback prop is rendered when provided instead of default UI
+  </behavior>
+  <action>
+    RED PHASE:
+    1. Create directory `frontend/src/components/error/` and `frontend/src/components/error/__tests__/`.
+    2. Create `frontend/src/components/error/__tests__/ErrorBoundary.test.tsx` with 6 tests above.
+    3. For tests 2-5, create a helper component `ThrowError` that throws in render:
+       ```
+       function ThrowError() { throw new Error("test error") }
+       ```
+    4. Run tests -- they FAIL because ErrorBoundary does not exist.
+
+    GREEN PHASE:
+    5. Create `frontend/src/components/error/ErrorBoundary.tsx` as a React class component:
+       ```typescript
+       import { Component, type ErrorInfo, type ReactNode } from 'react'
+       import { AlertCircle } from 'lucide-react'
+       import { Button } from '@/components/ui/Button'
+
+       interface Props {
+         children: ReactNode
+         fallback?: ReactNode
+       }
+
+       interface State {
+         hasError: boolean
+         error: Error | null
+       }
+
+       export class ErrorBoundary extends Component<Props, State> {
+         constructor(props: Props) {
+           super(props)
+           this.state = { hasError: false, error: null }
+         }
+
+         static getDerivedStateFromError(error: Error): State {
+           return { hasError: true, error }
+         }
+
+         componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+           console.error('ErrorBoundary caught:', error, errorInfo)
+         }
+
+         render() {
+           if (this.state.hasError) {
+             if (this.props.fallback) return this.props.fallback
+             return (
+               <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-8">
+                 <AlertCircle className="h-12 w-12 text-destructive" />
+                 <h2 className="text-lg font-semibold">页面出现错误</h2>
+                 <p className="text-sm text-muted-foreground">抱歉，页面加载时遇到问题。请刷新页面重试。</p>
+                 <Button variant="outline" onClick={() => window.location.reload()}>刷新页面</Button>
+               </div>
+             )
+           }
+           return this.props.children
+         }
+       }
+       ```
+    6. Run tests -- they PASS.
+
+    WIRE PHASE:
+    7. In `frontend/src/App.tsx`:
+       a. Add import: `import { ErrorBoundary } from './components/error/ErrorBoundary'`
+       b. Wrap the `<Routes>` block with `<ErrorBoundary>`:
+          Change:
+          ```
+          <BrowserRouter>
+            <Routes>
+          ```
+          To:
+          ```
+          <BrowserRouter>
+            <ErrorBoundary>
+              <Routes>
+          ```
+          And close it:
+          ```
+              </Routes>
+            </ErrorBoundary>
+          </BrowserRouter>
+          ```
+    8. Run ALL tests to verify no regressions.
+  </action>
+  <acceptance_criteria>
+    - File `frontend/src/components/error/ErrorBoundary.tsx` exists with class component
+    - File exports `ErrorBoundary` as named export
+    - Component uses `getDerivedStateFromError` and `componentDidCatch`
+    - Fallback shows "页面出现错误" heading, description text, and "刷新页面" button
+    - `App.tsx` imports and wraps `<Routes>` with `<ErrorBoundary>`
+    - 6 tests pass with 0 skipped
+    - All existing tests still pass: `npx vitest --run`
+  </acceptance_criteria>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge/frontend && npx vitest --run 2>&1 | tail -5</automated>
+  </verify>
+  <done>ErrorBoundary catches render errors with Chinese fallback UI. App.tsx wraps routes. 6 tests pass.</done>
+</task>
+
+</tasks>
+
+<verification>
+Full test suite passes with ErrorBoundary tests included.
+</verification>
+
+<success_criteria>
+- ErrorBoundary.tsx class component created per UI-SPEC.md
+- ErrorBoundary wraps Routes in App.tsx
+- 6 ErrorBoundary tests pass
+- All existing tests still pass
+</success_criteria>
+
+<output>
+After completion, create `.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-06-SUMMARY.md`
+</output>

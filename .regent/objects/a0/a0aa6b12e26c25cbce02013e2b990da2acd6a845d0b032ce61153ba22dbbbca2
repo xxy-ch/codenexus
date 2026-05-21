@@ -1,0 +1,297 @@
+---
+phase: 16
+slug: ui-restoration
+status: draft
+shadcn_initialized: true
+preset: cursor
+created: 2026-04-22
+updated: 2026-04-22
+---
+
+# Phase 16 — UI Design Contract (Cursor)
+
+> Visual and interaction contract for UI Restoration phase. Applies Cursor's warm minimalist design language — warm cream canvas, orange accent, atmospheric shadows, oklab borders — across all frontend components.
+
+---
+
+## Design System
+
+| Property | Value |
+|----------|-------|
+| Tool | shadcn (base-ui primitives) + custom CVA components |
+| Preset | Cursor — warm minimalism with atmospheric depth |
+| Component library | @base-ui/react (shadcn wrappers) |
+| Icon library | Lucide React (`lucide-react`) |
+| Font | Inter Variable (`cv01`, `ss03`) + Fira Code (mono) |
+| Philosophy | Warm surfaces, diffused shadows, oklab borders, hover-to-crimson |
+
+---
+
+## Spacing Scale
+
+8px base system with sub-8px fine scale:
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| xs | 4px | Icon gaps, inline padding |
+| sm | 8px | Compact element spacing |
+| md | 16px | Default element spacing |
+| lg | 24px | Section padding |
+| xl | 32px | Layout gaps |
+| 2xl | 48px | Major section breaks |
+| 3xl | 64px | Page-level spacing |
+
+Sub-8px fine scale for micro-alignment: 1.5px, 2px, 2.5px, 3px, 5px, 6px
+
+---
+
+## Typography
+
+Adapted from Cursor's three-voice system to our Inter/Fira Code stack:
+
+| Role | Size | Weight | Line Height | Notes |
+|------|------|--------|-------------|-------|
+| Display Hero | 48-64px | 700 | 1.1 | Tight tracking, hero statements |
+| Section Heading | 24-36px | 600 | 1.2-1.3 | Feature sections, CTA headlines |
+| Body | 14px (text-sm) | 400 | 1.5 | Standard body text |
+| Body Sans | 16px (text-base) | 400 | 1.5 | UI body text, descriptions |
+| Label | 12px (text-xs) | 500 | 1 | Micro labels, metadata |
+| Mono Body | 13-14px | 400 | 1.67 | Code blocks, submission details |
+| Button Label | 14px (text-sm) | 500 | 1 | Primary button text |
+
+---
+
+## Color
+
+All colors defined in `index.css` using oklch with sRGB fallbacks.
+
+### Light Theme (Cursor — warm cream canvas)
+
+| Role | Value | Usage |
+|------|-------|-------|
+| Dominant (60%) | `--background: oklch(0.968 0.006 90)` (#f2f1ed) | Page backgrounds — warm cream |
+| Secondary (30%) | `--card: oklch(1 0 0)` (#ffffff) | Cards, panels, elevated surfaces |
+| Accent (10%) | `--primary: oklch(0.648 0.222 50)` (#f54e00) | CTAs, active nav, brand marks, links — warm orange |
+| Destructive | `--destructive: oklch(0.520 0.220 10)` (#cf2d56) | Error states, delete confirmations — warm crimson |
+
+### Dark Theme (Cursor — warm dark)
+
+| Role | Value | Usage |
+|------|-------|-------|
+| Dominant (60%) | `--background: oklch(0.120 0.010 90)` (#1a1914) | Page backgrounds — warm dark |
+| Secondary (30%) | `--card: oklch(0.155 0.012 90)` (#222119) | Cards, panels, elevated surfaces |
+| Accent (10%) | `--primary: oklch(0.648 0.222 50)` (#f54e00) | Same orange — works on both themes |
+| Destructive | `--destructive: oklch(0.520 0.220 10)` (#cf2d56) | Warm crimson — consistent across themes |
+
+Accent reserved for: CTAs (Button variant="primary"), active navigation items, brand logo, links, focus rings, badge counts, progress indicators
+
+### Surface Scale (Light)
+
+| Surface | Value | Usage |
+|---------|-------|-------|
+| Surface 100 | #ffffff | Cards, elevated surfaces |
+| Surface 200 | #f2f1ed | Page background |
+| Surface 300 | #ebeae5 | Button backgrounds, secondary surfaces |
+| Surface 400 | #e6e5e0 | Muted backgrounds, secondary buttons |
+| Surface 500 | #d6d5d0 | Borders, input fields |
+
+### OJ Status Colors
+
+| Status | Value | Usage |
+|--------|-------|-------|
+| Accepted | `--status-accepted: #1f8a65` | Accepted verdict, success — muted teal |
+| Wrong Answer | `--status-wrong: #cf2d56` | Wrong answer — warm crimson |
+| Pending | `--status-pending: #9fbbe0` | Queued/running — soft blue |
+| TLE | `--status-tle: #dfa88f` | Time limit exceeded — warm peach |
+| Runtime Error | `--status-re: #c0a8dd` | Runtime error — soft lavender |
+
+### OJ Difficulty Colors
+
+| Difficulty | Value | Usage |
+|-----------|-------|-------|
+| Easy | `--difficulty-easy: #1f8a65` | Easy problem badges — teal |
+| Medium | `--difficulty-medium: #c08532` | Medium problem badges — warm gold |
+| Hard | `--difficulty-hard: #cf2d56` | Hard problem badges — crimson |
+
+---
+
+## Depth & Elevation (Cursor Shadow Philosophy)
+
+Cursor uses dramatically large blur values with moderate opacity for diffused, atmospheric lift — cards feel like the page gently opened a space for them.
+
+| Level | Treatment | Use |
+|-------|-----------|-----|
+| Flat (Level 0) | No shadow | Page background, text blocks |
+| Border Ring (Level 1) | `rgba(38,37,30,0.1) 0 0 0 1px` | Standard card/container border — warm oklab |
+| Border Medium (Level 1b) | `rgba(38,37,30,0.2) 0 0 0 1px` | Emphasized borders, active states |
+| Ambient (Level 2) | `rgba(0,0,0,0.02) 0 0 16px, rgba(0,0,0,0.008) 0 0 8px` | Floating elements, subtle glow |
+| Elevated Card (Level 3) | `rgba(0,0,0,0.14) 0 28px 70px, rgba(0,0,0,0.1) 0 14px 32px` | Modals, popovers, elevated cards |
+| Focus | `rgba(0,0,0,0.1) 0 4px 12px` | Interactive focus feedback |
+
+Dark theme shadows use same pattern with warm dark base:
+- Border Ring: `rgba(242,241,237,0.06) 0 0 0 1px`
+- Ambient: `rgba(0,0,0,0.3) 0 0 16px, rgba(0,0,0,0.15) 0 0 8px`
+- Elevated: `rgba(0,0,0,0.5) 0 28px 70px, rgba(0,0,0,0.3) 0 14px 32px`
+
+---
+
+## Component Stylings
+
+### Buttons
+
+**Primary (Warm Surface)**
+- Background: `var(--secondary)` (#ebeae5 light / #2d2c26 dark)
+- Text: `var(--foreground)` (#26251e light / #f2f1ed dark)
+- Radius: 8px (rounded-lg)
+- Hover: text shifts to `var(--destructive)` (#cf2d56) — Cursor's signature hover-to-crimson
+- Focus: `rgba(0,0,0,0.1) 0 4px 12px` shadow
+
+**Accent Primary (Brand Orange)**
+- Background: `var(--primary)` (#f54e00)
+- Text: `var(--primary-foreground)` (#ffffff)
+- Radius: 8px
+- Hover: opacity 0.9 or background shift to `#e54700`
+- Use: CTAs, submit buttons, key actions
+
+**Ghost**
+- Background: transparent
+- Text: `var(--muted-foreground)`
+- Hover: `var(--muted)` background + `var(--foreground)` text
+
+**Destructive**
+- Background: `var(--destructive/10)`
+- Text: `var(--destructive)`
+- Hover: `var(--destructive/20)` background
+
+**Pill / Tag**
+- Background: `var(--muted)`
+- Text: `var(--muted-foreground)`
+- Radius: full pill (9999px)
+- Hover: text shifts to `var(--destructive)` (Cursor pattern)
+
+### Cards & Containers
+- Background: `var(--card)` (#ffffff light / #222119 dark)
+- Border: `1px solid var(--border)` — warm tinted
+- Radius: 8px (rounded-lg) standard, 4px compact, 10px featured
+- Shadow: ambient (Level 2) for floating cards, none for inline cards
+- Hover: shadow intensification (ambient -> elevated)
+
+### Inputs & Forms
+- Background: transparent or `var(--muted)`
+- Text: `var(--foreground)`
+- Border: `1px solid var(--border)`
+- Focus: border shifts to `var(--ring)` (#f54e00) with warm focus shadow
+- Radius: 8px (rounded-lg)
+
+### Navigation
+- Background: `var(--background)` — warm cream/dark
+- Active nav: `var(--primary)` text or left border accent
+- Hover: warm crimson text shift on interactive nav items
+- Sidebar: `var(--sidebar)` background with warm borders
+
+---
+
+## Interaction Patterns
+
+### Hover States
+- Buttons: text color shifts to `var(--destructive)` (#cf2d56) — Cursor's warm crimson hover
+- Links: color shift to `var(--primary)` (#f54e00) orange
+- Cards: shadow intensification (ambient -> elevated)
+
+### Focus States
+- Shadow-based: `rgba(0,0,0,0.1) 0 4px 12px` for depth-based focus
+- Border-based: `var(--ring)` ring for inputs
+- Consistent warm tone — no cold blue focus rings
+
+### Transitions
+- Color: 150ms ease
+- Shadow: 200ms ease
+- Transform: subtle scale for interactive feedback
+
+---
+
+## Token Migration Rules
+
+Rules for converting hardcoded color classes to semantic tokens:
+
+| Hardcoded Pattern | Semantic Token | Notes |
+|-------------------|---------------|-------|
+| `text-slate-900`, `text-gray-900`, `text-slate-950` | `text-foreground` | Primary text |
+| `text-slate-600`, `text-gray-600`, `text-slate-500` | `text-muted-foreground` | Secondary/muted text |
+| `text-slate-400`, `text-gray-400`, `text-slate-300` | `text-muted-foreground` | Tertiary text |
+| `text-white`, `dark:text-white` | `text-foreground` (dark) or `text-primary-foreground` (on accent bg) | Context-dependent |
+| `bg-white`, `dark:bg-slate-950` | `bg-card` | Card/panel surfaces |
+| `bg-slate-50`, `bg-gray-50` | `bg-muted` | Muted backgrounds |
+| `border-slate-200`, `border-gray-200` | `border-border` | Standard borders |
+| `dark:border-slate-800`, `dark:border-slate-700` | `border-border` | Dark mode borders |
+| `bg-slate-100`, `bg-gray-100` | `bg-secondary` | Secondary backgrounds |
+| `rounded-2xl`, `rounded-[28px]` | `rounded-lg` (8px) | Cursor uses 8px base radius |
+| `material-symbols-outlined` | Lucide React icon component | Replace with equivalent Lucide icon |
+| `AlgoMaster` | `CodeNexus` | Brand rename |
+
+### Cursor-Specific Shadow Additions
+
+Components that need Cursor's atmospheric depth added:
+
+| Component | Shadow Level | CSS |
+|-----------|-------------|-----|
+| Elevated cards (dashboard stats) | Ambient | `shadow-[0_0_16px_rgba(0,0,0,0.02),0_0_8px_rgba(0,0,0,0.008)]` |
+| Modals/popovers | Elevated | `shadow-[0_28px_70px_rgba(0,0,0,0.14),0_14px_32px_rgba(0,0,0,0.1)]` |
+| Buttons on focus | Focus | `shadow-[0_4px_12px_rgba(0,0,0,0.1)]` |
+| Standard cards | Border Ring | `shadow-[0_0_0_1px_rgba(38,37,30,0.1)]` dark: `shadow-[0_0_0_1px_rgba(242,241,237,0.06)]` |
+
+---
+
+## Copywriting Contract
+
+All user-facing text in Chinese. Technical terms remain English.
+
+| Element | Copy |
+|---------|------|
+| Brand name | CodeNexus |
+| Primary CTA (submit) | 提交 |
+| Primary CTA (login) | 登录 |
+| Primary CTA (save) | 保存 |
+| Primary CTA (create) | 创建 |
+| Empty state heading | 暂无{entity} |
+| Empty state body | {context-specific guidance} |
+| Error state | {problem} — 请稍后重试或联系管理员 |
+| Destructive confirmation | 确认删除: 此操作不可撤销 |
+| Loading state | 加载中... |
+| Sidebar brand | CodeNexus |
+
+---
+
+## Component Reference
+
+Pages that serve as quality benchmarks (already correctly styled):
+
+| Component | Path | Pattern |
+|-----------|------|---------|
+| Sidebar | `components/layout/Sidebar.tsx` | Design tokens, Lucide icons, Chinese labels, CodeNexus branding |
+| Login Page | `pages/auth/LoginPage.tsx` | Card layout, form styling, Chinese text, CodeNexus branding |
+| Not Found | `pages/error/NotFound.tsx` | Error page layout, semantic tokens, Chinese text |
+| Toast | `components/ui/Toast.tsx` | Lucide icons, semantic colors |
+
+---
+
+## Registry Safety
+
+| Registry | Blocks Used | Safety Gate |
+|----------|-------------|-------------|
+| shadcn official | Button, Card, Input, Badge, Dialog, Tabs, Table, Separator | not required |
+| Custom components | Loading, Skeleton, EmptyState, InlineError, ErrorBoundary, FormSkeleton | internal — no external registry |
+| lucide-react | Full icon set via tree-shaking | not required |
+
+---
+
+## Checker Sign-Off
+
+- [ ] Dimension 1 Copywriting: PASS
+- [ ] Dimension 2 Visuals: PASS
+- [ ] Dimension 3 Color: PASS
+- [ ] Dimension 4 Typography: PASS
+- [ ] Dimension 5 Spacing: PASS
+- [ ] Dimension 6 Registry Safety: PASS
+
+**Approval:** pending

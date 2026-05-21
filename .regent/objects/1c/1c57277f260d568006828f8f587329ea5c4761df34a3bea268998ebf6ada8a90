@@ -1,0 +1,1 @@
+{"command":"docker images --format \"table {{.Repository}}\\t{{.Tag}}\\t{{.ID}}\\t{{.CreatedSince}}\\t{{.Size}}\" | head -30","description":"List Docker images with sizes"}

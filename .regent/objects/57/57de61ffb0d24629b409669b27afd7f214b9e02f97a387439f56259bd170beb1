@@ -1,0 +1,260 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e37]:
+    - complementary [ref=e38]:
+      - generic [ref=e39]:
+        - img [ref=e41]
+        - generic [ref=e45]: CodeNexus
+      - navigation [ref=e46]:
+        - generic [ref=e47]:
+          - link "仪表板" [ref=e48] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e49]
+            - generic [ref=e54]: 仪表板
+          - link "题库" [ref=e55] [cursor=pointer]:
+            - /url: /problems
+            - img [ref=e56]
+            - generic [ref=e58]: 题库
+          - link "提交记录" [ref=e59] [cursor=pointer]:
+            - /url: /submissions
+            - img [ref=e60]
+            - generic [ref=e64]: 提交记录
+          - link "竞赛 2" [ref=e65] [cursor=pointer]:
+            - /url: /contests
+            - img [ref=e66]
+            - generic [ref=e72]: 竞赛
+            - generic [ref=e73]: "2"
+          - link "排行榜" [ref=e74] [cursor=pointer]:
+            - /url: /ranking
+            - img [ref=e75]
+            - generic [ref=e77]: 排行榜
+          - link "学习路线" [ref=e78] [cursor=pointer]:
+            - /url: /roadmap
+            - img [ref=e79]
+            - generic [ref=e81]: 学习路线
+          - link "讨论区" [ref=e82] [cursor=pointer]:
+            - /url: /discussions
+            - img [ref=e83]
+            - generic [ref=e85]: 讨论区
+          - link "博客" [ref=e86] [cursor=pointer]:
+            - /url: /blog
+            - img [ref=e87]
+            - generic [ref=e89]: 博客
+          - link "消息" [ref=e90] [cursor=pointer]:
+            - /url: /messages
+            - img [ref=e91]
+            - generic [ref=e94]: 消息
+      - generic [ref=e96]:
+        - link "20" [ref=e97] [cursor=pointer]:
+          - /url: /profile
+        - generic [ref=e98]:
+          - link "2001" [ref=e99] [cursor=pointer]:
+            - /url: /profile
+          - paragraph [ref=e100]: 学生
+        - generic [ref=e101]:
+          - link "设置" [ref=e102] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e103]
+          - button "退出登录" [ref=e115]:
+            - img [ref=e116]
+    - main [ref=e119]:
+      - generic [ref=e121]:
+        - button "通知" [ref=e122]:
+          - img [ref=e123]
+        - button [ref=e126]:
+          - img [ref=e127]
+      - generic [ref=e130]:
+        - generic [ref=e131]:
+          - generic [ref=e133]:
+            - generic [ref=e134]:
+              - generic [ref=e135]: 仪表盘概览
+              - generic [ref=e136]:
+                - heading "欢迎回来，继续把这周的通过数往上推。" [level=1] [ref=e137]
+                - paragraph [ref=e138]: 过去 7 天共提交 0 次，成功通过 0 次。当前连续活跃 0 天，保持今天的节奏就能继续拉高排名。
+              - generic [ref=e139]:
+                - generic [ref=e140]:
+                  - paragraph [ref=e141]: 全球排名
+                  - paragraph [ref=e142]: "#1"
+                - generic [ref=e143]:
+                  - paragraph [ref=e144]: 总积分
+                  - paragraph [ref=e145]: "0"
+            - generic [ref=e146]:
+              - generic [ref=e149]: 周五
+              - generic [ref=e152]: 周六
+              - generic [ref=e155]: 周日
+              - generic [ref=e158]: 周一
+              - generic [ref=e161]: 周二
+              - generic [ref=e164]: 周三
+              - generic [ref=e167]: 周四
+          - generic [ref=e168]:
+            - generic [ref=e169]:
+              - generic [ref=e170]:
+                - paragraph [ref=e171]: 当前连续
+                - paragraph [ref=e172]: 0 天
+                - paragraph [ref=e173]: 最高纪录 0 天，今天再完成 1 道题就能继续保持。
+              - img [ref=e175]
+            - generic [ref=e177]:
+              - generic [ref=e178]:
+                - generic [ref=e179]: 周五
+                - generic [ref=e180]: "-"
+              - generic [ref=e181]:
+                - generic [ref=e182]: 周六
+                - generic [ref=e183]: "-"
+              - generic [ref=e184]:
+                - generic [ref=e185]: 周日
+                - generic [ref=e186]: "-"
+              - generic [ref=e187]:
+                - generic [ref=e188]: 周一
+                - generic [ref=e189]: "-"
+              - generic [ref=e190]:
+                - generic [ref=e191]: 周二
+                - generic [ref=e192]: "-"
+              - generic [ref=e193]:
+                - generic [ref=e194]: 周三
+                - generic [ref=e195]: "-"
+              - generic [ref=e196]:
+                - generic [ref=e197]: 周四
+                - generic [ref=e198]: "-"
+        - generic [ref=e199]:
+          - link "开始刷题" [ref=e200] [cursor=pointer]:
+            - /url: /problems
+            - button "开始刷题" [ref=e201]:
+              - img
+              - text: 开始刷题
+          - link "查看竞赛" [ref=e202] [cursor=pointer]:
+            - /url: /contests
+            - button "查看竞赛" [ref=e203]:
+              - img
+              - text: 查看竞赛
+        - generic [ref=e204]:
+          - generic [ref=e205]:
+            - generic [ref=e206]:
+              - generic [ref=e207]:
+                - paragraph [ref=e208]: 本周重点
+                - heading "本周推进面板" [level=2] [ref=e209]
+                - paragraph [ref=e210]: 活跃天数、推荐题和最近提交放在同一层级，减少来回跳页。
+              - generic [ref=e211]: 实时数据
+            - generic [ref=e212]:
+              - generic [ref=e213]:
+                - paragraph [ref=e214]: 本周通过
+                - paragraph [ref=e215]: "0"
+                - paragraph [ref=e216]: 来自最近 7 天的通过记录。
+              - generic [ref=e217]:
+                - paragraph [ref=e218]: 推荐队列
+                - paragraph [ref=e219]: "1"
+                - paragraph [ref=e220]: 当前实时推荐题目数量。
+              - generic [ref=e221]:
+                - paragraph [ref=e222]: 最近活动
+                - paragraph [ref=e223]: "0"
+                - paragraph [ref=e224]: 最新活动流条目数。
+          - generic [ref=e225]:
+            - paragraph [ref=e226]: 进度快照
+            - heading "刷题进度快照" [level=2] [ref=e227]
+            - generic [ref=e228]:
+              - generic [ref=e230]:
+                - generic [ref=e231]: 简单
+                - generic [ref=e232]: "0"
+              - generic [ref=e234]:
+                - generic [ref=e235]: 中等
+                - generic [ref=e236]: "0"
+              - generic [ref=e238]:
+                - generic [ref=e239]: 困难
+                - generic [ref=e240]: "0"
+            - generic [ref=e241]: 当前仪表盘已覆盖真实统计、活动流和推荐题数据。
+        - generic [ref=e242]:
+          - generic [ref=e243]:
+            - generic [ref=e244]:
+              - img [ref=e246]
+              - generic [ref=e249]: 已解决
+            - paragraph [ref=e250]: "0"
+            - paragraph [ref=e251]: 道题目
+          - generic [ref=e252]:
+            - generic [ref=e253]:
+              - img [ref=e255]
+              - generic [ref=e258]: 总提交
+            - paragraph [ref=e259]: "0"
+            - paragraph [ref=e260]: 次提交
+          - generic [ref=e261]:
+            - generic [ref=e262]:
+              - img [ref=e264]
+              - generic [ref=e267]: 准确率
+            - paragraph [ref=e268]: 0%
+            - paragraph [ref=e269]: 通过率
+          - generic [ref=e270]:
+            - generic [ref=e271]:
+              - img [ref=e273]
+              - generic [ref=e275]: 连续天数
+            - paragraph [ref=e276]: "0"
+            - paragraph [ref=e277]: 天 (最高 0 天)
+        - generic [ref=e278]:
+          - generic [ref=e279]:
+            - heading "本周学习活动" [level=3] [ref=e280]
+            - generic [ref=e282]:
+              - list [ref=e284]:
+                - listitem [ref=e285]:
+                  - img "提交 legend icon" [ref=e286]
+                  - text: 提交
+                - listitem [ref=e288]:
+                  - img "通过 legend icon" [ref=e289]
+                  - text: 通过
+              - application [ref=e291]:
+                - generic [ref=e303]:
+                  - generic [ref=e304]:
+                    - generic [ref=e306]: 周五
+                    - generic [ref=e308]: 周六
+                    - generic [ref=e310]: 周日
+                    - generic [ref=e312]: 周一
+                    - generic [ref=e314]: 周二
+                    - generic [ref=e316]: 周三
+                    - generic [ref=e318]: 周四
+                  - generic [ref=e319]:
+                    - generic [ref=e321]: "0"
+                    - generic [ref=e323]: "1"
+                    - generic [ref=e325]: "2"
+                    - generic [ref=e327]: "3"
+                    - generic [ref=e329]: "4"
+          - generic [ref=e330]:
+            - heading "难度分布" [level=3] [ref=e331]
+            - application [ref=e334]
+            - generic [ref=e335]:
+              - generic [ref=e337]: "简单: 0"
+              - generic [ref=e339]: "中等: 0"
+              - generic [ref=e341]: "困难: 0"
+        - generic [ref=e342]:
+          - generic [ref=e343]:
+            - generic [ref=e344]:
+              - heading "最近活动" [level=3] [ref=e345]
+              - link "查看全部" [ref=e346] [cursor=pointer]:
+                - /url: /submissions
+            - generic [ref=e348]:
+              - img [ref=e349]
+              - heading "暂无最近活动" [level=3] [ref=e351]
+              - paragraph [ref=e352]: 开始做题后这里会显示你的活动记录
+          - generic [ref=e354]:
+            - heading "排名与积分" [level=3] [ref=e355]
+            - generic [ref=e356]:
+              - generic [ref=e357]:
+                - generic [ref=e358]:
+                  - img [ref=e359]
+                  - generic [ref=e365]: 当前排名
+                - generic [ref=e366]: "#1"
+              - generic [ref=e367]:
+                - generic [ref=e368]:
+                  - img [ref=e369]
+                  - generic [ref=e371]: 总积分
+                - generic [ref=e372]: "0"
+        - generic [ref=e373]:
+          - generic [ref=e374]:
+            - generic [ref=e375]:
+              - heading "推荐题目" [level=3] [ref=e376]
+              - paragraph [ref=e377]: 根据您的学习进度智能推荐
+            - link "浏览更多题目" [ref=e378] [cursor=pointer]:
+              - /url: /problems
+          - link "Two Sum 简单 0 分 通过率 0% 基于当前学习进度推荐" [ref=e380] [cursor=pointer]:
+            - /url: /problems/1
+            - heading "Two Sum" [level=4] [ref=e382]
+            - generic [ref=e383]:
+              - generic [ref=e384]: 简单
+              - generic [ref=e385]: 0 分
+            - generic [ref=e387]: 通过率 0%
+            - paragraph [ref=e388]: 基于当前学习进度推荐
+  - generic [ref=e389]: "0"

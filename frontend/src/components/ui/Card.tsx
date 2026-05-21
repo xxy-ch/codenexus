@@ -16,15 +16,15 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground transition-all duration-200 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
-        // Default variant
-        variant === "default" && "shadow-card ring-1 ring-border/50 hover:shadow-elevated hover:-translate-y-0.5",
-        // Glass variant - frosted glass effect
-        variant === "glass" && "bg-background/60 backdrop-blur-xl border border-border/50 shadow-lg hover:bg-background/80 hover:shadow-xl hover:-translate-y-0.5",
+        "group/card flex flex-col gap-6 overflow-hidden rounded-[10px] bg-card backdrop-blur-xl py-6 text-[14px] text-card-foreground transition-all duration-250 ease-out has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-[9px] *:[img:last-child]:rounded-b-[9px]",
+        // Default variant - sleek warm dark border
+        variant === "default" && "shadow-card border border-border/50 hover:shadow-elevated hover:border-[#f54e00]/20 hover:-translate-y-0.5",
+        // Glass variant - frosted glass effect (explicitly more blur)
+        variant === "glass" && "bg-background/65 backdrop-blur-2xl border border-border/60 shadow-lg hover:bg-background/75 hover:shadow-xl hover:border-[#f54e00]/30 hover:-translate-y-0.5",
         // Elevated variant - more prominent shadow
-        variant === "elevated" && "shadow-elevated ring-1 ring-border/30 hover:shadow-prominent hover:-translate-y-1",
+        variant === "elevated" && "shadow-elevated border border-border/30 hover:shadow-prominent hover:border-[#f54e00]/30 hover:-translate-y-1",
         // Outlined variant - no shadow, just border
-        variant === "outlined" && "ring-1 ring-border hover:ring-border-strong",
+        variant === "outlined" && "border border-border hover:border-[#f54e00]/30",
         className
       )}
       {...props}
@@ -37,7 +37,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-header"
       className={cn(
-        "group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-4 group-data-[size=sm]/card:px-3 has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-4 group-data-[size=sm]/card:[.border-b]:pb-3",
+        "group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-[9px] px-6 group-data-[size=sm]/card:px-4 has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-6 group-data-[size=sm]/card:[.border-b]:pb-4",
         className
       )}
       {...props}
@@ -50,7 +50,7 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-title"
       className={cn(
-        "font-heading text-base leading-snug font-semibold group-data-[size=sm]/card:text-sm",
+        "font-heading text-[18px] leading-snug font-semibold group-data-[size=sm]/card:text-[16px]",
         className
       )}
       {...props}
@@ -62,7 +62,7 @@ function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-[14px] text-muted-foreground leading-[1.4]", className)}
       {...props}
     />
   )
@@ -85,7 +85,7 @@ function CardContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-content"
-      className={cn("px-4 group-data-[size=sm]/card:px-3", className)}
+      className={cn("px-6 group-data-[size=sm]/card:px-4", className)}
       {...props}
     />
   )
@@ -96,7 +96,7 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="card-footer"
       className={cn(
-        "flex items-center rounded-b-xl border-t border-border/50 bg-muted/30 p-4 group-data-[size=sm]/card:p-3",
+        "flex items-center rounded-b-[9px] border-t border-border/50 bg-muted/30 p-6 group-data-[size=sm]/card:p-4",
         className
       )}
       {...props}

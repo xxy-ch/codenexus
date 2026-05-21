@@ -1,0 +1,29 @@
+import { Outlet, useLocation } from 'react-router-dom'
+import { Sidebar } from '@/components/layout/Sidebar'
+import { Header } from '@/components/layout/Header'
+import { PageTransition } from '@/components/layout/PageTransition'
+
+const FULL_WIDTH_ROUTES = ['/solve']
+
+function isFullWidth(pathname: string): boolean {
+  return FULL_WIDTH_ROUTES.some(segment => pathname.includes(segment))
+}
+
+export function MainLayout() {
+  const location = useLocation()
+  const fullWidth = isFullWidth(location.pathname)
+
+  return (
+    <div className="bg-background text-foreground antialiased h-screen flex overflow-hidden">
+      <Sidebar />
+      <main className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+        {!fullWidth && <Header />}
+        <div className={fullWidth ? 'flex-1 overflow-hidden' : 'flex-1 overflow-y-auto p-6'}>
+          <PageTransition key={location.pathname}>
+            <Outlet />
+          </PageTransition>
+        </div>
+      </main>
+    </div>
+  )
+}

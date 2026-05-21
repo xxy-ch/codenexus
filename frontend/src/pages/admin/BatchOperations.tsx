@@ -292,7 +292,7 @@ function ProblemImportTab() {
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
-        className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border transition-colors hover:border-primary/50 hover:bg-primary/5"
+        className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/40 transition-colors hover:border-primary/50 hover:bg-primary/5"
         onClick={() => fileInputRef.current?.click()}
         role="button"
         tabIndex={0}
@@ -727,7 +727,7 @@ function UserImportTab() {
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
-        className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border transition-colors hover:border-primary/50 hover:bg-primary/5"
+        className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border/40 transition-colors hover:border-primary/50 hover:bg-primary/5"
         onClick={() => fileInputRef.current?.click()}
         role="button"
         tabIndex={0}
@@ -781,7 +781,7 @@ function UserImportTab() {
             {showPassword ? 'Hide' : 'Show'}
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[13px] text-muted-foreground">
           All imported users will receive this password. They should change it on first login.
         </p>
       </div>
@@ -888,7 +888,7 @@ function FormatDescription({ type }: { type: 'problem' | 'user' }) {
         </CardHeader>
         {expanded && (
           <CardContent>
-            <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto font-mono">
+            <pre className="rounded-md bg-muted p-3 text-[13px] overflow-x-auto font-mono">
 {`problem-folder/
   problem.md        # Problem description (Markdown)
   config.json       # Title, difficulty, time/memory limits
@@ -918,7 +918,7 @@ function FormatDescription({ type }: { type: 'problem' | 'user' }) {
       </CardHeader>
       {expanded && (
         <CardContent>
-          <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto font-mono">
+          <pre className="rounded-md bg-muted p-3 text-[13px] overflow-x-auto font-mono">
 {`username,role,campus_id,display_name,email
 jdoe,student,1,John Doe,jdoe@example.com
 asmith,teacher,1,Alice Smith,asmith@example.com`}
@@ -938,7 +938,7 @@ export function BatchOperations() {
   const showUserTabs = user?.role ? isAdmin(user.role) : false
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-5">
       {/* Page title section */}
       <div className="space-y-1">
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -946,7 +946,7 @@ export function BatchOperations() {
           <ChevronRight className="size-3.5" />
           <span className="font-medium text-foreground">批量操作</span>
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">批量操作</h1>
+        <h1 className="text-xl font-bold tracking-tight text-foreground">批量操作</h1>
         <p className="text-sm text-muted-foreground max-w-3xl">
           批量导入导出题目和用户。上传文件后先预览再确认提交。
         </p>

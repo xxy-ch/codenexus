@@ -1,0 +1,1 @@
+{"command":"for i in $(seq 1 30); do docker info &>/dev/null && echo \"Docker is ready\" && break; echo \"Waiting... ($i)\"; sleep 2; done","description":"Wait for Docker daemon to be ready (up to 60s)","timeout":90000}

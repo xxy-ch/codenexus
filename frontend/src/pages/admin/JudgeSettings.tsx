@@ -71,7 +71,7 @@ export function JudgeSettings() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+      <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Admin</span>
           <ChevronRight className="h-3.5 w-3.5" />
@@ -81,7 +81,7 @@ export function JudgeSettings() {
         </div>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">测试数据与判题设置</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">测试数据与判题设置</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
               管理测试用例、时间空间限制与评测参数。当前交付范围限定为测试用例维护。
             </p>
@@ -111,40 +111,40 @@ export function JudgeSettings() {
 
       {/* Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">测试用例</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">测试用例</span>
             <Database className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-foreground">{stats.total}</div>
-          <p className="mt-2 text-xs text-muted-foreground">当前题目的测试用例总数。</p>
+          <div className="mt-4 text-2xl font-bold text-foreground">{stats.total}</div>
+          <p className="mt-2 text-[13px] text-muted-foreground">当前题目的测试用例总数。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">可见</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">可见</span>
             <Settings2 className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="mt-4 flex items-center gap-2">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-status-accepted" />
-            <span className="text-3xl font-bold text-status-accepted">{stats.visible}</span>
+            <span className="text-2xl font-bold text-status-accepted">{stats.visible}</span>
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">普通测试点。</p>
+          <p className="mt-2 text-[13px] text-muted-foreground">普通测试点。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">隐藏</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">隐藏</span>
             <EyeOff className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-difficulty-medium">{stats.hidden}</div>
-          <p className="mt-2 text-xs text-muted-foreground">隐藏测试点用于真实判题覆盖。</p>
+          <div className="mt-4 text-2xl font-bold text-difficulty-medium">{stats.hidden}</div>
+          <p className="mt-2 text-[13px] text-muted-foreground">隐藏测试点用于真实判题覆盖。</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">总分值</span>
+            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">总分值</span>
             <FileArchive className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="mt-4 text-3xl font-bold text-foreground">{stats.totalScore}</div>
-          <p className="mt-2 text-xs text-muted-foreground">当前测试点分值总和。</p>
+          <div className="mt-4 text-2xl font-bold text-foreground">{stats.totalScore}</div>
+          <p className="mt-2 text-[13px] text-muted-foreground">当前测试点分值总和。</p>
         </div>
       </div>
 
@@ -152,15 +152,15 @@ export function JudgeSettings() {
       <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
         <aside className="space-y-6">
           {/* Problem Selector */}
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-            <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">题目选择</div>
+          <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
+            <div className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">题目选择</div>
             <p className="mt-1 text-sm text-muted-foreground">先输入题目 ID，再管理对应测试数据。</p>
             <div className="mt-4 flex gap-3">
               <input
                 value={problemId}
                 onChange={(e) => setProblemId(e.target.value.trim())}
                 placeholder="输入题目 ID"
-                className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="w-full rounded-lg border border-border/40 bg-transparent px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <button
                 type="button"
@@ -174,15 +174,15 @@ export function JudgeSettings() {
           </div>
 
           {/* Language Permissions */}
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-            <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">语言权限</div>
+          <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
+            <div className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">语言权限</div>
             <p className="mt-1 text-sm text-muted-foreground">Python 为默认语言，C/C++ 可在此开启或关闭。</p>
             <div className="mt-4 space-y-3">
               {languageSettings.map((language) => (
-                <label key={language.id} className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground">
+                <label key={language.id} className="flex items-center justify-between rounded-lg border border-border/40 bg-transparent px-4 py-3 text-sm text-foreground">
                   <div>
                     <div className="text-sm font-medium text-foreground">{language.name}</div>
-                    <div className="text-xs text-muted-foreground">{language.is_default ? '默认语言' : '可选语言'}</div>
+                    <div className="text-[13px] text-muted-foreground">{language.is_default ? '默认语言' : '可选语言'}</div>
                   </div>
                   <input
                     type="checkbox"
@@ -201,32 +201,32 @@ export function JudgeSettings() {
           </div>
 
           {/* Add Test Case */}
-          <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-            <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">添加测试用例</div>
+          <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
+            <div className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">添加测试用例</div>
             <div className="mt-4 space-y-4">
               <textarea
                 value={newInput}
                 onChange={(e) => setNewInput(e.target.value)}
                 placeholder="输入数据"
-                className="min-h-[120px] w-full rounded-lg border border-border bg-background px-4 py-3 font-mono text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="min-h-[120px] w-full rounded-lg border border-border/40 bg-transparent px-4 py-3 font-mono text-[13px] text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <textarea
                 value={newOutput}
                 onChange={(e) => setNewOutput(e.target.value)}
                 placeholder="期望输出"
-                className="min-h-[120px] w-full rounded-lg border border-border bg-background px-4 py-3 font-mono text-xs text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="min-h-[120px] w-full rounded-lg border border-border/40 bg-transparent px-4 py-3 font-mono text-[13px] text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
               <div className="grid grid-cols-2 gap-4">
                 <label className="text-sm">
-                  <span className="text-xs text-muted-foreground">分值</span>
+                  <span className="text-[13px] text-muted-foreground">分值</span>
                   <input
                     type="number"
                     value={newScore}
                     onChange={(e) => setNewScore(Number(e.target.value))}
-                    className="mt-1 w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    className="mt-1 w-full rounded-lg border border-border/40 bg-transparent px-4 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
                   />
                 </label>
-                <label className="flex items-end gap-3 rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground">
+                <label className="flex items-end gap-3 rounded-lg border border-border/40 bg-transparent px-4 py-2.5 text-sm text-foreground">
                   <input type="checkbox" checked={newHidden} onChange={(e) => setNewHidden(e.target.checked)} />
                   隐藏用例
                 </label>
@@ -236,47 +236,47 @@ export function JudgeSettings() {
         </aside>
 
         {/* Case Table */}
-        <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+        <div className="overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-sm">
           {isLoading ? (
             <FormSkeleton rows={4} />
           ) : error ? (
             <InlineError title="配置加载失败" onRetry={() => refetch()} />
           ) : (
             <>
-              <div className="border-b border-border px-6 py-5">
+              <div className="border-b border-border/40 px-5 py-4">
                 <h2 className="text-sm font-semibold text-foreground">用例列表</h2>
-                <p className="mt-1 text-xs text-muted-foreground">当前只交付真实 test case 管理。</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">当前只交付真实 test case 管理。</p>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-border">
+                <table className="min-w-full divide-y divide-border/40">
                   <thead className="bg-muted/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">输入</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-widest text-muted-foreground">输出</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">分值</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">隐藏</th>
-                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
+                      <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">#</th>
+                      <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">输入</th>
+                      <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">输出</th>
+                      <th className="px-5 py-3 text-right text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">分值</th>
+                      <th className="px-5 py-3 text-center text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">隐藏</th>
+                      <th className="px-5 py-3 text-right text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border bg-card">
+                  <tbody className="divide-y divide-border/40 bg-transparent">
                     {cases.map((tc) => (
                       <tr key={tc.id} className="transition hover:bg-muted/50">
-                        <td className="px-6 py-4 text-xs text-muted-foreground">{tc.order}</td>
-                        <td className="px-6 py-4 whitespace-pre-wrap font-mono text-xs text-foreground">{tc.input || '-'}</td>
-                        <td className="px-6 py-4 whitespace-pre-wrap font-mono text-xs text-foreground">{tc.expected_output || '-'}</td>
-                        <td className="px-6 py-4 text-right text-sm font-medium text-foreground">{tc.score}</td>
-                        <td className="px-6 py-4 text-center text-xs">
+                        <td className="px-5 py-4 text-[13px] text-muted-foreground">{tc.order}</td>
+                        <td className="px-5 py-4 whitespace-pre-wrap font-mono text-[13px] text-foreground">{tc.input || '-'}</td>
+                        <td className="px-5 py-4 whitespace-pre-wrap font-mono text-[13px] text-foreground">{tc.expected_output || '-'}</td>
+                        <td className="px-5 py-4 text-right text-sm font-medium text-foreground">{tc.score}</td>
+                        <td className="px-5 py-4 text-center text-[13px]">
                           {tc.is_hidden
                             ? <span className="rounded-full bg-difficulty-medium/10 px-2 py-0.5 text-difficulty-medium">是</span>
                             : <span className="text-muted-foreground">否</span>}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td className="px-5 py-4 text-right">
                           <button
                             type="button"
                             onClick={() => deleteMutation.mutate(tc.id)}
                             disabled={deleteMutation.isPending}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-[13px] font-medium text-destructive disabled:opacity-50"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             删除
@@ -286,14 +286,14 @@ export function JudgeSettings() {
                     ))}
                     {problemId && cases.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-14 text-center text-sm text-muted-foreground">
+                        <td colSpan={6} className="px-5 py-14 text-center text-sm text-muted-foreground">
                           当前题目暂无测试用例
                         </td>
                       </tr>
                     )}
                     {!problemId && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-14 text-center text-sm text-muted-foreground">
+                        <td colSpan={6} className="px-5 py-14 text-center text-sm text-muted-foreground">
                           先输入题目 ID 再查看测试数据
                         </td>
                       </tr>

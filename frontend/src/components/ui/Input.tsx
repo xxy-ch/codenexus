@@ -20,21 +20,21 @@ export function Input({
     <div className={cn(fullWidth ? 'w-full' : 'w-fit')}>
       <input
         className={cn(
-          'w-full rounded-lg border px-4 py-2.5 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
-          // Default variant
+          'w-full rounded-[8px] border px-[14px] py-[10px] text-[14px] text-foreground outline-none transition-all duration-250 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50',
+          // Default variant - frosted glass input with Cursor focus ring
           variant === 'default' && [
-            'bg-card shadow-sm',
-            'focus:border-primary focus:ring-4 focus:ring-primary/20 focus:shadow-md',
-            error ? 'border-destructive focus:ring-destructive/20' : 'border-border',
+            'bg-background/60 backdrop-blur-xl border-border/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25)]',
+            'focus:bg-background/80 focus:border-primary focus:ring-[3px] focus:ring-primary/20 focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),0_0_0_1px_rgba(245,78,0,0.1)] dark:focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2),0_0_0_1px_rgba(245,78,0,0.15)]',
+            error ? 'border-destructive focus:ring-destructive/20' : 'border-border/40 hover:border-border/80',
           ],
-          // Glass variant - frosted glass effect
+          // Glass variant - identical to default but kept for backwards compatibility
           variant === 'glass' && [
-            'bg-background/60 backdrop-blur-sm border-border/50 shadow-sm',
-            'focus:bg-background/80 focus:border-primary focus:ring-4 focus:ring-primary/20 focus:shadow-md',
-            error ? 'border-destructive focus:ring-destructive/20' : 'border-border/50',
+            'bg-background/60 backdrop-blur-xl border-border/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.25)]',
+            'focus:bg-background/80 focus:border-primary focus:ring-[3px] focus:ring-primary/20 focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.1),0_0_0_1px_rgba(245,78,0,0.1)] dark:focus:shadow-[inset_0_2px_4px_rgba(0,0,0,0.2),0_0_0_1px_rgba(245,78,0,0.15)]',
+            error ? 'border-destructive focus:ring-destructive/20' : 'border-border/40 hover:border-border/80',
           ],
           // Disabled state
-          disabled && 'bg-muted/50 text-muted-foreground',
+          disabled && 'bg-muted/30 text-muted-foreground border-border/20 cursor-not-allowed shadow-none',
           className
         )}
         disabled={disabled}

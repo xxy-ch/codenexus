@@ -1,0 +1,1 @@
+{"command":"docker ps -a --filter \"status=exited\" --format \"table {{.ID}}\\t{{.Image}}\\t{{.Status}}\\t{{.CreatedAt}}\"","description":"List all stopped containers"}

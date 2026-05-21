@@ -1,0 +1,125 @@
+---
+phase: 15
+plan: 03
+type: tdd
+wave: 1
+depends_on: ["15-01"]
+files_modified:
+  - frontend/src/pages/admin/UserManagement.tsx
+  - frontend/src/pages/admin/__tests__/UserManagement.test.tsx
+autonomous: true
+requirements:
+  - D-15-01-W1
+  - D-15-03
+
+must_haves:
+  truths:
+    - "UserManagement grade dropdown uses campus_id from the logged-in admin's JWT, not hardcoded 1"
+    - "When admin has no campus_id, grade dropdown shows no grades gracefully"
+    - "When admin has a campus_id, grades are fetched for that campus"
+  artifacts:
+    - path: "frontend/src/pages/admin/UserManagement.tsx"
+      provides: "Fixed campus_id derivation from authStore user"
+      contains: "useAuthStore"
+    - path: "frontend/src/pages/admin/__tests__/UserManagement.test.tsx"
+      provides: "Tests for campus-aware grade dropdown"
+  key_links:
+    - from: "frontend/src/pages/admin/UserManagement.tsx"
+      to: "frontend/src/store/authStore.ts"
+      via: "useAuthStore import"
+      pattern: "useAuthStore"
+---
+
+<objective>
+Fix the hardcoded campus_id in UserManagement and add tests verifying the fix.
+
+Purpose: Per D-15-01-W1, TODO #1 at UserManagement.tsx:29 hardcodes `gradeCampusId = 1`. The admin's JWT already contains `campus_id` (confirmed in authStore User type). This plan wires the grade dropdown to the real campus_id.
+
+Output: UserManagement.tsx derives campus_id from `useAuthStore().user.campus_id`. Test verifies correct behavior.
+</objective>
+
+<execution_context>
+@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@$HOME/.claude/get-shit-done/templates/summary.md
+</execution_context>
+
+<context>
+@.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-CONTEXT.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-01-SUMMARY.md
+@frontend/src/pages/admin/UserManagement.tsx
+@frontend/src/store/authStore.ts
+@frontend/src/types/auth.ts
+@frontend/src/test/test-utils.tsx
+</context>
+
+<tasks>
+
+<task type="auto" tdd="true">
+  <name>Task 1: Write tests for UserManagement campus-aware grade dropdown, then fix the TODO</name>
+  <files>frontend/src/pages/admin/__tests__/UserManagement.test.tsx, frontend/src/pages/admin/UserManagement.tsx</files>
+  <read_first>
+    - frontend/src/pages/admin/UserManagement.tsx
+    - frontend/src/store/authStore.ts
+    - frontend/src/types/auth.ts
+    - frontend/src/services/admin.ts
+    - frontend/src/services/grades.ts
+    - frontend/src/test/test-utils.tsx
+  </read_first>
+  <behavior>
+    - Test 1: When admin has campus_id=2, the grade query uses campus_id=2 (verify gradesService.listGrades is called with 2)
+    - Test 2: When admin has campus_id=null, no grades query fires or empty state shown
+    - Test 3: When admin has campus_id=1, grades for campus 1 are fetched and rendered in the grade dropdown
+    - Test 4: Page renders loading state, then user table
+    - Test 5: Batch create sends correct campus_id from admin's campus
+  </behavior>
+  <action>
+    RED PHASE:
+    1. Create `frontend/src/pages/admin/__tests__/UserManagement.test.tsx`.
+    2. Mock `@/store/authStore` to return admin users with different campus_id values.
+    3. Mock `@/services/admin` and `@/services/grades`.
+    4. Write 5 tests covering the behaviors above.
+    5. Run tests -- they should FAIL because `gradeCampusId` is still hardcoded.
+
+    GREEN PHASE:
+    6. In `frontend/src/pages/admin/UserManagement.tsx`:
+       a. Add `import { useAuthStore } from '@/store/authStore'` at the top.
+       b. Inside the component, add: `const { user } = useAuthStore()`
+       c. Replace line 29 `const gradeCampusId = 1` with: `const gradeCampusId = user?.campus_id ?? 1`
+       d. Also update the batchCreateMutation's `campus_id: 1` to `campus_id: user?.campus_id ?? 1`
+       e. Remove the TODO comment on line 28.
+    7. Run tests -- they should now PASS.
+
+    The fallback `?? 1` ensures the page works if authStore hasn't loaded yet (defensive coding).
+  </action>
+  <acceptance_criteria>
+    - File `frontend/src/pages/admin/__tests__/UserManagement.test.tsx` exists with 5+ passing tests
+    - `UserManagement.tsx` line 29 no longer contains `const gradeCampusId = 1`
+    - `UserManagement.tsx` imports `useAuthStore` from `@/store/authStore`
+    - `UserManagement.tsx` derives campus_id from `user?.campus_id`
+    - `UserManagement.tsx` has no `TODO` comments about campus
+    - `npx vitest --run src/pages/admin/__tests__/UserManagement.test.tsx` passes with 0 skipped
+  </acceptance_criteria>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge/frontend && npx vitest --run src/pages/admin/__tests__/UserManagement.test.tsx 2>&1 | tail -3</automated>
+  </verify>
+  <done>UserManagement campus_id derived from JWT via authStore. 5+ tests pass. No hardcoded campus_id remains.</done>
+</task>
+
+</tasks>
+
+<verification>
+`npx vitest --run` shows all tests passing including new UserManagement tests.
+</verification>
+
+<success_criteria>
+- UserManagement.tsx uses `user?.campus_id ?? 1` instead of hardcoded `1`
+- UserManagement test file exists with 5+ passing tests
+- No `TODO` comments about campus in UserManagement.tsx
+</success_criteria>
+
+<output>
+After completion, create `.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-03-SUMMARY.md`
+</output>

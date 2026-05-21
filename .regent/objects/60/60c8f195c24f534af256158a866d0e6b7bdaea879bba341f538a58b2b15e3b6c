@@ -1,0 +1,1 @@
+{"command":"rg -n \"TODO|FIXME|Phase 11|feature gateway|X-Worker-Secret|smoke|Monaco|register|participant|roster|plagiarism|AI|LLM\" shared frontend backend api judge-worker"}

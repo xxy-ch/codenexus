@@ -1,0 +1,13 @@
+[      61ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=db9bba37:20102
+[     132ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/features/resolved:0
+[     431ms] [ERROR] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at Button (http://localhost:5173/src/components/ui/Button.tsx:40:26)
+    at ProblemSet (http://localhost:5173/src/pages/user/ProblemSet.tsx:72:25)
+    at renderLazy (http://localhost:5173/src/App.tsx:134:39)
+    at App (http://localhost:5173/src/App.tsx:243:70) @ http://localhost:5173/node_modules/.vite/deps/chunk-WLSPTKVJ.js?v=db9bba37:139
+[     431ms] [ERROR] Base UI: A component that acts as a button expected a native <button> because the `nativeButton` prop is true. Rendering a non-<button> removes native button semantics, which can impact forms and accessibility. Use a real <button> in the `render` prop, or set `nativeButton` to `false`.
+    at Button (http://localhost:5173/src/components/ui/Button.tsx:40:26)
+    at ProblemSet (http://localhost:5173/src/pages/user/ProblemSet.tsx:88:25)
+    at renderLazy (http://localhost:5173/src/App.tsx:134:39)
+    at App (http://localhost:5173/src/App.tsx:243:70) @ http://localhost:5173/node_modules/.vite/deps/chunk-WLSPTKVJ.js?v=db9bba37:139
+[    1150ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/features/resolved:0

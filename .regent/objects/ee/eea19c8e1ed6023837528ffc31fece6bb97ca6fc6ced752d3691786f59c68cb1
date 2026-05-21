@@ -1,0 +1,1 @@
+{"command":"docker compose ps; curl -sS http://localhost:3000/health/ready; printf '\\n'; curl -sS -H 'Authorization: Bearer default_worker_secret_change_me' http://localhost:3001/health; printf '\\n'"}

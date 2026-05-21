@@ -1,0 +1,1090 @@
+# AlgoMaster Online Judge - System Architecture
+
+## 1. System Overview
+
+AlgoMaster is a multi-tenant online judge platform designed for educational institutions. It supports six programming languages (C, C++, Java, Python, Go, JavaScript), provides sandboxed code execution using cgroups/seccomp, and delivers isolated service across schools/campuses.
+
+The system uses a distributed multi-service architecture communicating via REST API, Redis Streams, WebSocket, and HTTP:
+
+```
++----------------+       REST + WebSocket        +------------------+       Redis Streams + HTTP        +------------------+
+|                | <---------------------------> |                  | <-----------------------------> |                  |
+|   Frontend     |     :5173 (dev) / :80 (prod)  |   API Service     |     POST /submissions/{id}/results|  Judge Worker    |
+|   React 19     |                              |   Axum + Rust    |                              |   Standalone     |
+|   TypeScript   |                              |   :3000          |                              |  (Linux sandbox) |
++----------------+                              +--------+---------+                              +------------------+
+                                                         |                                            |
+                                                         |  sqlx (PgPool)                              |  sqlx (PgPool)
+                                                         v                                            v
+                                               +------------------+                        +------------------+
+                                               |   PostgreSQL 16  |                        |   PostgreSQL 16  |
+                                               +------------------+                        +------------------+
+                                                         |
+                                                         |  deadpool-redis
+                                                         v
+                                               +------------------+
+                                               |    Redis 7       |
+                                               | (cache, queues,  |
+                                               |  JWT blacklist)  |
+                                               +------------------+
+
++------------------+       HTTP (feature flags)      +------------------+
+|                  | <----------------------------> |                  |
+|   API Service    |     :3000 (gateway client)     | Feature Gateway  |
+|                  |                              |   Standalone     |
++------------------+                              +   :3001          |
+                                                 +--------+---------+
+                                                          |
+                                                          |  sqlx (PgPool)
+                                                          v
+                                                +------------------+
+                                                |   PostgreSQL 16  |
+                                                +------------------+
+```
+
+**Core Architectural Features:**
+
+- **Multi-tenant Data Isolation**: Query-level isolation ensures all domain queries filter by `organization_id`, preventing data leakage between tenants
+- **Async Decoupled Judging**: Submissions flow to workers via Redis Streams, completely decoupling API from judging
+- **In-process WebSocket**: WebSocket server runs co-located with API for millisecond real-time push
+- **Workspace-level Shared Types**: Rust workspace shares core types (`Claims`, `Role`, `Permission`) via `shared` crate
+- **Feature Gateway**: Standalone service for runtime feature flag resolution with scoped hierarchy
+
+---
+
+## 2. Backend Architecture (Rust Workspace)
+
+Backend uses Cargo workspace with 17 crates organized into infrastructure, business domain, judging, and tooling layers.
+
+### 2.1 Workspace Structure
+
+```
+backend/
+├── Cargo.toml              # Workspace definition
+├── Cargo.lock              # Dependency lock file
+├── rust-toolchain.toml     # Rust toolchain version
+│
+├── api/                    # HTTP + WebSocket server (entry point)
+├── api-infra/              # Shared infrastructure (AppState, middleware, errors, WebSocket, testkit)
+│
+├── domain-users/           # User domain: profiles, admin user management
+├── domain-problems/        # Problem domain: CRUD, test cases, access control
+├── domain-contests/        # Contest domain: lifecycle, scoring, leaderboard snapshots
+├── domain-submissions/     # Submission domain: code submission, results, rejudge
+├── domain-classes/         # Class domain: class management, enrollment, assignments
+├── domain-community/       # Community domain: discussions, blog, direct messages
+├── domain-search/          # Search domain: full-text search (problems, discussions, users)
+├── domain-leaderboard/     # Leaderboard domain: multi-dimensional rankings
+├── domain-imex/            # Import/Export domain: bulk problem/user operations
+├── domain-analysis/        # Analysis domain: AI-powered code analysis
+│
+├── judge-worker/           # Standalone judge worker (Redis Streams consumer + sandbox)
+├── feature-gateway/        # Standalone feature gateway service
+├── migration-tool/         # MySQL to PostgreSQL migration CLI
+└── shared/                 # Cross-crate shared models (Claims, Role, Permission, User)
+```
+
+### 2.2 API Service (`api/`)
+
+Central HTTP and WebSocket server built on Axum framework. Handles authentication, CRUD operations, and real-time push notifications.
+
+**Responsibilities:**
+
+- User authentication (JWT issuance, refresh, logout with Redis blacklist)
+- Tenant extraction from JWT Claims (never from client headers)
+- REST endpoints: problems, contests, submissions, classes, discussions, blog, search, notifications, messages
+- WebSocket server: real-time judge progress, leaderboard, notifications, chat
+- Prometheus metrics endpoint `/metrics`
+- Kubernetes-style health probes `/health/live` and `/health/ready`
+- Enqueue submissions to Redis Streams for worker consumption
+- Receive worker HTTP callbacks and write judge results
+- Aggregate worker heartbeats (stored in Redis, 30s TTL)
+
+**Key Files:**
+
+| File | Purpose |
+|------|---------|
+| `api/src/main.rs` | Route registration, middleware stacking, server startup, DB migrations |
+| `api/src/auth/` | JWT service, login/register/refresh/logout handlers |
+| `api/src/middleware/` | Auth, tenant, request ID, metrics middleware |
+| `api/src/websocket/` | WebSocket upgrade and message broadcasting |
+| `api/src/db/` | Connection pool, schema migrations (`sqlx::migrate!()`) |
+| `api/src/error.rs` | Re-exports `AppError` from `api-infra` |
+| `api/src/notifications/` | In-app notifications |
+| `api/src/plagiarism/` | Code similarity detection |
+| `api/src/judge_monitor/` | Admin judge monitoring |
+| `api/src/worker_heartbeat.rs` | Worker heartbeat handling |
+
+**Route Registration:**
+
+```rust
+let protected_router = Router::new()
+    .nest("/users", domain_users::user_router())
+    .nest("/problems", domain_problems::problems_router())
+    .nest("/contests", domain_contests::contests_router())
+    .nest("/leaderboard", domain_leaderboard::leaderboard_router())
+    .nest("/submissions", domain_submissions::submissions_router())
+    .nest("/analysis", domain_analysis::routes::analysis_router()
+        .route_layer(axum::middleware::from_fn(
+            api_infra::feature_gateway::middleware::feature_gate(
+                "ai_analysis_enabled",
+                analysis_gateway_client,
+            ),
+        )))
+    .nest("/classes", domain_classes::classes_router())
+    .nest("/discussions", domain_community::discussions_router())
+    .nest("/blog", domain_community::blog_router())
+    .nest("/search", domain_search::search_router())
+    .nest("/notifications", notifications::notifications_router())
+    .nest("/messages", domain_community::messages_router())
+    .nest("/imex", domain_imex::imex_router())
+    .nest("/admin/plagiarism", plagiarism::plagiarism_router())
+    .nest("/admin/judge", judge_monitor::judge_monitor_router())
+    .nest("/features", api_infra::feature_gateway::features_router())
+    .route_layer(tenant_middleware)
+    .route_layer(auth_middleware)
+    .layer(rate_limit);
+```
+
+### 2.3 Shared Infrastructure (`api-infra/`)
+
+Provides common infrastructure for API and all domain crates, preventing domain crates from depending on the API crate itself.
+
+**Module Structure:**
+
+| Module | Purpose |
+|--------|---------|
+| `state.rs` | `AppState` definition with shared resource references |
+| `error.rs` | `AppError` unified error type mapping to HTTP status codes |
+| `config.rs` | `AppConfig` environment config loading and validation |
+| `rbac.rs` | `RbacService` — in-memory role-permission matrix |
+| `metrics.rs` | Prometheus metric registration and recording |
+| `middleware/auth.rs` | JWT authentication middleware |
+| `middleware/tenant.rs` | Tenant extraction middleware |
+| `middleware/authz.rs` | RBAC permission check middleware |
+| `middleware/permission.rs` | Permission middleware re-export |
+| `feature_gateway/` | Feature gateway HTTP client and middleware |
+| `websocket/` | WebSocket server and message type definitions |
+| `testkit/` | Integration testing toolkit |
+| `traits/` | Cross-crate interfaces (e.g., `ClassMembershipChecker`, `TokenService`) |
+
+**AppState Structure:**
+
+```rust
+pub struct AppState {
+    pub db_pool: PgPool,                                  // PostgreSQL connection pool
+    pub redis_pool: Option<deadpool_redis::Pool>,         // Redis connection pool (optional)
+    pub redis_url: String,                                // Redis URL
+    pub jwt_service: Arc<dyn TokenService>,               // JWT service (trait object)
+    pub jwt_secret: String,                               // JWT signing secret
+    pub worker_secret: String,                            // Worker shared secret
+    pub websocket_server: Arc<WebSocketServer>,           // WebSocket server
+    pub class_membership_checker: Arc<dyn ClassMembershipChecker>,  // Class membership checker
+    pub prometheus_handle: PrometheusHandle,              // Prometheus metrics handle
+    pub preview_cache: Arc<PreviewCache>,                 // Import preview cache
+    pub gateway_client: Arc<GatewayClient>,               // Feature gateway HTTP client
+}
+```
+
+### 2.4 Domain Crate Pattern
+
+Each business domain follows a consistent **three-layer module structure**:
+
+```
+domain-{name}/
+  src/
+    mod.rs            -- Re-exports public route functions and key types
+    routes.rs         -- Thin Axum route handlers (HTTP layer)
+    models.rs         -- Request/response DTOs and DB row structs (serde + sqlx derives)
+    service.rs        -- Business logic, SQL queries, WebSocket notifications
+    {feature}.rs      -- Domain-specific modules (e.g., access.rs, test_cases.rs)
+```
+
+**Domain Crate Overview:**
+
+| Crate | Route Function | Domain Description |
+|-------|---------------|-------------------|
+| `domain-users` | `user_router()` | User profiles, admin user management |
+| `domain-problems` | `problems_router()` | Problem CRUD, test case management, access control |
+| `domain-contests` | `contests_router()` | Contest lifecycle, scoring, leaderboard snapshots |
+| `domain-submissions` | `submissions_router()` | Code submission, result retrieval, rejudge, Redis enqueue |
+| `domain-classes` | `classes_router()` | Class management, enrollment, assignments |
+| `domain-community` | `discussions_router()` + `blog_router()` + `messages_router()` | Discussions, blog articles, direct messages |
+| `domain-search` | `search_router()` | Full-text search (problems, discussions, users) |
+| `domain-leaderboard` | `leaderboard_router()` | Multi-dimensional leaderboards (global/problem/contest/class) |
+| `domain-imex` | `imex_router()` | Bulk import/export problems and users |
+| `domain-analysis` | `analysis_router()` | AI-powered code analysis (feature-gated) |
+
+### 2.5 Judge Worker (`judge-worker/`)
+
+Standalone Rust binary consuming submission messages from Redis Streams, executing code in sandbox, and callbacking results to API.
+
+**Module Structure:**
+
+| Module | Purpose |
+|--------|---------|
+| `main.rs` | Worker lifecycle, concurrent processing loop, crash recovery |
+| `queue/consumer.rs` | Redis Streams XREADGROUP, dual-stream priority consumer |
+| `queue/dlq.rs` | Dead letter queue write/read/delete |
+| `queue/recovery.rs` | XPENDING/XCLAIM crash recovery |
+| `queue/producer.rs` | Message sending (test utility) |
+| `processor/service.rs` | Compilation, execution, output comparison |
+| `processor/main.rs` | Processor entry point |
+| `compiler/` | Language detection and compilation config (gcc, g++, javac, go build) |
+| `sandbox/cgroups.rs` | cgroups CPU/memory limits |
+| `sandbox/chroot.rs` | chroot filesystem isolation |
+| `sandbox/seccomp.rs` | seccomp syscall filtering |
+| `sandbox/executor.rs` | Process executor |
+| `circuit_breaker.rs` | In-memory circuit breakers (Closed/Open/HalfOpen) |
+| `heartbeat.rs` | Background heartbeat reporting task (every 10s) |
+| `db/` | Direct PostgreSQL connection (fetch test cases) |
+
+**Core Design Features:**
+
+- **Dual-stream Priority Consumption**: Contest submissions prioritized over normal submissions
+- **Concurrent Semaphore Control**: Limits concurrent judging via `tokio::sync::Semaphore` (default 4)
+- **Fire-and-forget Task Scheduling**: Messages spawn async tasks immediately, no waiting
+- **RAII Active Counter**: `ActiveGuard` increments on creation, decrements on destruction
+- **Exponential Moving Average Wait Time**: Lock-free CAS loop updates `avg_wait_ms`
+- **Exponential Backoff Retry**: API callback failures retry with 2s, 4s, 8s + random jitter
+
+### 2.6 Feature Gateway (`feature-gateway/`)
+
+Standalone service providing runtime feature flag resolution with scoped hierarchy precedence.
+
+**Module Structure:**
+
+| Module | Purpose |
+|--------|---------|
+| `main.rs` | Service entry point, HTTP server, worker secret auth |
+| `service.rs` | Feature flag resolution with caching |
+| `routes.rs` | HTTP endpoints for flag management |
+| `models.rs` | Feature registry and flag data models |
+| `batch.rs` | Batch operations for feature flags |
+| `embedding.rs` | Feature flag embedding utilities |
+
+**Core Features:**
+
+- **Scoped Hierarchy Precedence**: class > grade > campus > global > default
+- **DashMap In-process Caching**: Sub-millisecond reads with cache invalidation
+- **Emergency-off Short-circuit**: `FEATURE_GATEWAY_ENABLED` env var bypasses all queries
+- **Direct PostgreSQL Access**: No dependency on API service
+- **Worker Secret Authentication**: Uses `WORKER_SECRET` via `X-Worker-Secret` header
+
+### 2.7 Analysis Domain (`domain-analysis/`)
+
+AI-powered code analysis service for extracting structural features and generating teaching insights.
+
+**Module Structure:**
+
+| Module | Purpose |
+|--------|---------|
+| `service.rs` | Analysis job management and feature storage |
+| `routes.rs` | HTTP endpoints for analysis operations |
+| `models.rs` | Analysis job, feature, and result data models |
+| `extractor.rs` | Structural feature extraction from code |
+| `embedding.rs` | Code embedding generation |
+| `queue.rs` | Analysis job queue management |
+| `batch.rs` | Batch analysis operations |
+
+**Analysis Features:**
+
+- **Structural Feature Extraction**: Cyclomatic complexity, LOC, token count, nesting depth
+- **Solution Clustering**: Groups similar solutions for teaching insights
+- **Class Snapshots**: Aggregate class performance metrics
+- **Teaching Cards**: Auto-generated teaching recommendations
+
+### 2.8 Shared Types (`shared/`)
+
+Core models shared across crates, defined in `shared/src/models/`:
+
+| Module | Contents |
+|--------|----------|
+| `auth.rs` | `Claims` (JWT payload), `LoginRequest`, `LoginResponse`, `RefreshRequest` |
+| `user.rs` | `User`, `UserPublic` |
+| `role.rs` | `Role` enum (6-level hierarchy) with serialization/deserialization |
+| `permission.rs` | `Permission` enum (21 permissions) with categories |
+
+### 2.9 Migration Tool (`migration-tool/`)
+
+MySQL to PostgreSQL data migration CLI using `clap` for command-line parsing.
+
+| Module | Purpose |
+|--------|---------|
+| `main.rs` | CLI entry point |
+| `migrator.rs` | Migration orchestrator |
+| `mapper.rs` | MySQL to PostgreSQL data mapping |
+| `parser.rs` | Data parsing |
+| `password.rs` | Password format conversion (MD5 to bcrypt) |
+| `models.rs` | Migration data models |
+| `id_map.rs` | ID mapping table (MySQL auto-increment to PostgreSQL UUID) |
+| `test_cases.rs` | Test case migration |
+
+### 2.10 Frontend Service (`frontend/`)
+
+Single Page Application built on React 19 + Vite + TypeScript.
+
+**Technology Stack:**
+
+- **Framework**: React 19 + Vite 7
+- **Routing**: react-router-dom v7
+- **State Management**: Zustand (client auth), TanStack React Query (server state)
+- **HTTP Client**: Axios (with automatic token refresh interceptor)
+- **Forms**: react-hook-form + zod validation
+- **UI Components**: shadcn + class-variance-authority (CVA)
+- **Styling**: Tailwind CSS v4
+- **Code Editors**: Monaco Editor (code submission) + CodeMirror (Markdown)
+- **Charts**: Recharts
+- **Real-time**: Native WebSocket (not Socket.IO)
+
+**Route Guards:**
+
+- `ProtectedRoute` — Redirect unauthenticated users to `/login`
+- `PublicRoute` — Redirect authenticated users to `/dashboard`
+- `AdminRoute` — Redirect non-admins to `/unauthorized`
+
+---
+
+## 3. Middleware Pipeline
+
+Axum router stacks middleware in the following order (outer to inner):
+
+```
+Request
+  |
+  v
+[1] CORS (tower_http::CorsLayer)
+  |     Supports configured specific origins (prod) or wildcard * (dev)
+  v
+[2] Request ID (injects unique tracing ID)
+  v
+[3] Metrics (records request duration and status code)
+  v
+[4] Rate Limiting (tower_governor: 30 requests/minute/IP)
+  |     Applied only to user-facing endpoints
+  |     Excludes: health probes, metrics, worker heartbeat
+  v
+[5] Auth Middleware (JWT validation + Redis blacklist check)
+  |     Injects: Claims, user_id (UUID)
+  |     Supports sources: Authorization: Bearer header or access_token cookie
+  v
+[6] Tenant Middleware (extracts school_id from Claims)
+  |     Injects: TenantContext { tenant_id }
+  |     Never reads tenant info from client request headers
+  v
+[7] Feature Gate Middleware (optional, per-route)
+  |     Checks feature flags via Feature Gateway
+  |     Blocks disabled features with 403 Forbidden
+  v
+Route Handler
+```
+
+**Unrestricted Endpoints** (no rate limiting, no auth): `/health/live`, `/health/ready`, `/health`, `/status`, `/metrics`, `/internal/worker/heartbeat`
+
+**Rate-limited Public Endpoints**: `/auth/login`, `/auth/register`, `/auth/refresh`, `/auth/logout`, `/ws`
+
+**Rate-limited Protected Endpoints**: All `/users/*`, `/problems/*`, `/contests/*`, etc.
+
+---
+
+## 4. Data Flows
+
+### 4.1 Submission Lifecycle
+
+Complete path from user code submission to real-time result display:
+
+```
+1. User submits code
+   Frontend -> POST /submissions -> API Service
+
+2. API validates and enqueues
+   API -> XADD submissions {data: SubmissionMessage, school_id, submitted_at}
+   API -> WebSocket broadcast SubmissionUpdate (status: "queued")
+
+3. Worker dequeues and processes
+   Worker -> XREADGROUP GROUP judge_workers {consumer} COUNT 1 STREAMS submissions >
+   Worker -> Fetch test cases from PostgreSQL
+   Worker -> Compile source code (if needed)
+   Worker -> Execute in sandbox (cgroups + seccomp)
+   Worker -> Compare actual output vs expected output
+
+4. Worker sends results to API
+   Worker -> POST /submissions/{id}/results {JudgeResult}
+   Worker -> XACK submissions {message_id}
+
+5. API stores results and notifies
+   API -> UPDATE submissions SET status, score, ...
+   API -> WebSocket broadcast SubmissionUpdate (status: "accepted"/"wrong_answer"/...)
+```
+
+**Priority Mechanism**: Worker reads from two streams — `submissions:contest` (high priority) and `submissions` (normal). "Parking" algorithm ensures contest submissions are always processed before normal submissions, even when normal messages are already read.
+
+**Enqueue Metadata** (from `domain-submissions/src/queue.rs`):
+
+```rust
+// XADD fields include:
+fields = vec![
+    ("submission_id", submission_id.to_string()),
+    ("data", message_json),                          // Serialized SubmissionMessage
+    ("submitted_at", chrono::Utc::now().to_rfc3339()),  // Enqueue timestamp (wait time calc)
+    ("source_stream", stream_name.to_string()),      // Source stream (DLQ retry routing)
+    ("school_id", school_id.to_string()),            // Tenant isolation
+];
+// If contest_id exists, additionally include:
+fields.push(("contest_id", cid.to_string()));
+```
+
+**Failure Handling Strategy:**
+
+| Failure Type | Handling |
+|-------------|----------|
+| Processing errors (compilation failure, etc.) | Log error, ACK message (prevent infinite retry) |
+| API callback failures | 3 retries with exponential backoff (2s, 4s, 8s + random jitter 0-499ms) |
+| Retry exhaustion | Write to DLQ stream `submissions:dlq` with full metadata |
+| Worker crash | Recover on next startup via XPENDING/XCLAIM |
+
+### 4.2 Authentication Flow
+
+```
+1. Login
+   POST /auth/login {username, password}
+   API -> Verify password (bcrypt hash, supports MD5 transparent upgrade to bcrypt)
+   API -> Generate access_token (JWT, 15min) + refresh_token (JWT, 7d)
+   API -> Return {token, refresh_token, user}
+
+2. Request Authentication (middleware chain)
+   Request -> auth_middleware:
+     Extract JWT from Authorization: Bearer header or access_token cookie
+     Validate signature and expiration
+     Check Redis blacklist: EXISTS bl:{jti}
+     Inject Claims + user_id (UUID) into request extensions
+   Request -> tenant_middleware:
+     Extract school_id from Claims (never from client request headers)
+     Inject TenantContext { tenant_id } into request extensions
+
+3. Token Refresh
+   POST /auth/refresh {refresh_token} or from refresh_token cookie
+   API -> Validate refresh token
+   API -> Generate new access_token
+   API -> Return {token}
+
+4. Logout
+   POST /auth/logout
+   API -> Write JWT ID to Redis blacklist: SET bl:{jti} EX 900
+   Token rejected by auth_middleware until blacklist TTL expires
+```
+
+**JWT Claims Structure:**
+
+```json
+{
+  "sub": "uuid",
+  "email": "user@example.com",
+  "role": "teacher",
+  "school_id": 42,
+  "campus_id": 10,
+  "iat": 1700000000,
+  "exp": 1700000900,
+  "jti": "uuid"
+}
+```
+
+### 4.3 Contest Flow
+
+```
+1. Create Contest (teacher/admin)
+   POST /contests -> Create contest record -> Set time window and problems
+
+2. User Registration
+   POST /contests/{id}/register -> Check time window -> Register as participant
+
+3. Submit to Contest (via priority queue for preferred processing)
+   POST /submissions (with contest_id)
+   API -> XADD submissions:contest {data, contest_id, school_id, ...}
+   Worker -> Prioritize consumption from submissions:contest stream
+
+4. Live Rankings
+   API -> WebSocket push LeaderboardUpdate to subscribers
+   Frontend -> Real-time leaderboard table updates
+
+5. Contest End
+   API -> Generate leaderboard snapshot -> Save final rankings
+```
+
+---
+
+## 5. Multi-tenant Architecture
+
+### 5.1 Organization Hierarchy
+
+```
+Organization (school_id)
+  +-- Campus (campus_id)
+  |     +-- Class
+  |     +-- Class
+  +-- Campus
+        +-- Class
+```
+
+### 5.2 Tenant Isolation Mechanism
+
+**1) JWT-Embedded Identity**
+
+Every authenticated request carries `school_id` and optional `campus_id` in JWT payload. `tenant_middleware` extracts these from verified Claims, never from client request headers like `X-Tenant-ID`.
+
+**2) Request-level Context**
+
+After middleware processing, handlers can access `tenant_id: i64` from `Extension<TenantContext>`. `Root` role skips tenant checks and has system-global access.
+
+**3) Query-level Filtering**
+
+Every domain service query includes `WHERE organization_id = $1` (or equivalent clause), ensuring data never leaks across tenants. Handlers extract `TenantContext` and pass `tenant_id` to service methods.
+
+**4) Worker Tenant Isolation**
+
+Submission messages in Redis Streams carry `school_id` as top-level field. DLQ entries store `school_id` for tenant-scoped admin retry. Worker heartbeat payloads contain no tenant info (workers are shared across tenants).
+
+### 5.3 Isolation Guarantees Summary
+
+| Layer | Mechanism | Description |
+|-------|-----------|-------------|
+| Transport | JWT signing | Clients cannot forge `school_id` |
+| Middleware | tenant_middleware | Ignores all client request headers |
+| Query | WHERE organization_id = $1 | All domain queries enforce tenant filtering |
+| Message | school_id field | Redis Stream messages carry tenant identifier |
+| Broadcast | broadcast_to_tenant() | WebSocket messages scoped to tenant |
+
+---
+
+## 6. Redis Streams Architecture
+
+### 6.1 Stream Topology
+
+```
+submissions            -- Normal submission queue
+submissions:contest    -- High-priority contest submission queue
+submissions:dlq        -- Dead letter queue (failed deliveries)
+```
+
+### 6.2 Consumer Group Pattern
+
+All judge workers share the same consumer group (default `judge_workers`) on both streams. Redis Streams consumer groups provide:
+
+- **Load Balancing**: Each message delivered to only one consumer in the group
+- **Crash Recovery**: Pending messages (XPENDING) can be claimed by other consumers (XCLAIM)
+- **Explicit Acknowledgment**: Workers explicitly ACK messages after successful processing
+
+### 6.3 Priority Consumption Algorithm
+
+Worker uses dual-stream priority consumer ensuring strict "contest-first" ordering:
+
+```
+Step 1: If a normal message was "parked" from previous round, try to drain contest stream first.
+         If contest stream has messages, continue parking normal message, return contest message.
+         If contest stream is truly empty, return parked normal message.
+
+Step 2: Drain contest stream (non-blocking XREADGROUP loop until stream empty).
+
+Step 3: Read one message from normal stream with 200ms BLOCK timeout.
+
+Step 4 (Critical recheck): After reading normal message, perform one more non-blocking check.
+         If contest message arrived in the gap, park normal message, return contest message.
+```
+
+**Parking mechanism** eliminates race condition where contest messages arrive while normal messages are already read from stream but not yet processed. Parked messages are returned first in next consumption round (only when contest stream is empty).
+
+### 6.4 Crash Recovery
+
+On worker startup, scan both streams for pending messages idle longer than `RECOVERY_IDLE_MS` (default 300000ms / 5 minutes):
+
+1. **XPENDING** — Paginate pending entries, filter by idle time > threshold
+2. **XCLAIM** — Claim timed-out messages to current worker
+3. **Process** — Compile, execute, attempt delivery (same as normal path)
+4. **ACK or Retry** — ACK on success; write to DLQ on delivery failure
+
+### 6.5 Dead Letter Queue (DLQ)
+
+When judge results cannot be delivered to API (3 retries exhausted or circuit breaker open), results with full metadata are written to DLQ stream:
+
+```
+DLQ entry contains:
+- judge_result: Serialized JudgeResult
+- original_message: Serialized SubmissionMessage (can re-enqueue)
+- origin_stream: Source stream name (normal/contest)
+- submitted_at: Original enqueue timestamp
+- school_id: Tenant identifier
+- error_message: Failure reason
+```
+
+Admins can inspect DLQ via API and trigger retries, routing messages back to correct source stream.
+
+---
+
+## 7. Circuit Breakers
+
+Two in-memory circuit breakers protect workers from cascading failures:
+
+| Breaker | Threshold | Half-open Timeout | Purpose |
+|---------|-----------|-------------------|---------|
+| Redis Breaker | 5 consecutive failures | 30 seconds | Prevent hanging when Redis unavailable |
+| API Breaker | 5 consecutive failures | 30 seconds | Prevent hanging when API unavailable |
+
+**State Machine:**
+
+```
+Closed (normal) → 5 consecutive failures → Open (reject requests)
+Open (rejecting) → Wait 30s → HalfOpen (probe)
+HalfOpen (probe) → Success → Closed (recovered)
+HalfOpen (probe) → Failure → Open (reject again)
+```
+
+When API breaker is Open, judge results are written directly to DLQ instead of being dropped. Breaker state is in-memory (not persisted), resetting on worker restart—acceptable since restart itself is a recovery mechanism.
+
+---
+
+## 8. Security Architecture
+
+### 8.1 Role Hierarchy
+
+```
+Root > CampusAdmin > GradeAdmin > Teacher > TeachingAssistant > Student
+```
+
+`Role` enum (defined in `shared/src/models/role.rs`) implements `is_higher_or_equal()` method for hierarchy comparison. `Root` has system-global access and skips all tenant checks.
+
+### 8.2 Permission-based Access Control (RBAC)
+
+`Permission` enum defines 21 fine-grained permissions across 6 categories:
+
+| Category | Permissions |
+|----------|-------------|
+| User Management | `ManageUsers`, `ViewUsers` |
+| Problem Management | `ManageProblems`, `ViewAllProblems`, `SubmitSolution` |
+| Contest Management | `ManageContests`, `RegisterContests`, `ViewContestProblems` |
+| Class Management | `ManageClasses`, `ManageAssignments`, `GradeSubmissions`, `ViewClassStats` |
+| Organization Management | `ManageOrganization`, `ManageCampus` |
+| System Management | `ViewLeaderboard`, `ViewStatistics`, `ModerateContent`, `ManageTags`, `ManageSystem`, `ViewLogs`, `ManageApiKeys` |
+
+**Role-Permission Matrix** (from `api-infra/src/rbac.rs`):
+
+| Role | Permission Count | Key Permissions |
+|------|-----------------|-----------------|
+| Root | 21 | All permissions |
+| GradeAdmin | 12 | User/problem/contest/class/grade management + leaderboard/stats/tags |
+| CampusAdmin | 10 | User/problem/contest/class/campus management + leaderboard/stats |
+| Teacher | 11 | Problem/contest/class management + submit/grade + leaderboard/stats |
+| TeachingAssistant | 6 | View problems/submissions/grade/class stats + leaderboard |
+| Student | 3 | Submit code, register contests, view leaderboard |
+
+`RbacService` uses in-memory `HashSet<Permission>` matrix mapping roles to permission sets. Route handlers use Axum middleware extractors:
+
+- `require_permission(Permission)` — Single permission gate
+- `require_any_permission(&[Permission])` — Any-match gate
+- `require_all_permissions(&[Permission])` — All-match gate
+- `require_min_role(Role)` — Hierarchical role check
+
+### 8.3 Worker Authentication
+
+Judge workers authenticate to API via shared secret (`WORKER_SECRET`) using `X-Worker-Secret` request header. This is completely independent from JWT-based user authentication, used only for:
+
+- Result callbacks: `POST /submissions/{id}/results`
+- Heartbeat reporting: `POST /internal/worker/heartbeat`
+
+### 8.4 Password Security
+
+- New user passwords hashed with `bcrypt`
+- Legacy passwords from MySQL migration (MD5 hashed) support transparent upgrade: verify MD5 hash on login then auto-rehash to bcrypt
+- Production environment requires `JWT_SECRET` and `WORKER_SECRET` to be explicitly set
+
+### 8.5 Sandbox Security
+
+Judge sandbox uses three-layer isolation:
+
+| Layer | Technology | What It Limits |
+|-------|-----------|----------------|
+| Resource Limits | cgroups | CPU time (`cpu_time_limit_ms`), memory (`memory_limit_bytes`, default 256MB), process count (`pids_max`, default 64) |
+| Filesystem | chroot | Isolated to `/var/lib/onlinejudge/sandbox`, limits file access scope |
+| Syscall Filtering | seccomp | Filters dangerous syscalls, only allows minimal syscall set for judging |
+
+`SandboxConfig` defaults:
+
+```rust
+SandboxConfig {
+    sandbox_root: "/var/lib/onlinejudge/sandbox",
+    cpu_time_limit_ms: 2000,
+    memory_limit_bytes: 268_435_456,  // 256 MB
+    pids_max: 64,
+}
+```
+
+---
+
+## 9. WebSocket Architecture
+
+WebSocket server runs co-located with API service. Clients connect via `/ws` endpoint and can subscribe to topics.
+
+### 9.1 Message Types
+
+Using `#[serde(tag = "type")]` tagged union pattern:
+
+| Type | Purpose |
+|------|---------|
+| `SubmissionUpdate` | Real-time judge progress (user's submissions) |
+| `LeaderboardUpdate` | Leaderboard ranking changes |
+| `Notification` | In-app notifications (specific user) |
+| `ContestUpdate` | Contest status/time changes |
+| `ProblemStats` | Problem submission statistics |
+| `ChatMessage` | Contest discussion chat |
+| `DiscussionReply` | Problem discussion new replies |
+| `ArticleComment` | Blog article new comments |
+| `TrendingArticles` | Blog trending articles update |
+| `Ping` / `Pong` | Heartbeat keepalive |
+| `Error` | Subscription or protocol errors |
+
+### 9.2 Broadcast Scopes
+
+| Method | Scope | Use Case |
+|--------|-------|----------|
+| `send_to_user(user_id)` | All WebSocket connections for a user | Personal notifications, submission progress |
+| `send_to_topic(topic)` | All topic subscribers | `submission:{id}`, `contest:{id}` |
+| `broadcast()` | All connected clients | System-wide announcements |
+| `broadcast_to_tenant(school_id)` | All clients within tenant | Organization-level notifications |
+
+### 9.3 Topic Access Control
+
+| Topic Pattern | Access Control |
+|---------------|----------------|
+| `submission:{id}` | Submitter only |
+| `contest:{id}` | Same organization users |
+| `contest:{id}:chat` | Teachers + registered participants |
+| `user:{uuid}` | Auto-subscribed (personal notifications) |
+| `leaderboard:{scope}:{id}` | Public |
+
+---
+
+## 10. Worker Heartbeat System
+
+Judge workers report status every 10 seconds via `POST /internal/worker/heartbeat` (using `X-Worker-Secret` auth, not JWT).
+
+**Heartbeat Payload:**
+
+```json
+{
+  "worker_id": "worker-<uuid>",
+  "active_judgements": 2,
+  "total_processed": 1042,
+  "avg_wait_ms": 350,
+  "redis_breaker_state": "Closed",
+  "api_breaker_state": "Closed"
+}
+```
+
+API stores heartbeat data in Redis with 30s TTL. When TTL expires (3 consecutive missed heartbeats), worker is considered offline and removed from admin monitoring panel.
+
+**Metrics Tracked:**
+
+| Metric | Implementation | Description |
+|--------|---------------|-------------|
+| `active_judgements` | `AtomicUsize` + RAII `ActiveGuard` | Increment on creation, decrement on destruction |
+| `total_processed` | `AtomicUsize` | Total submissions completed |
+| `avg_wait_ms` | `AtomicUsize` + lock-free CAS EMA loop | Exponential moving average (70/30 weight) |
+| Breaker states | `CircuitBreaker::state()` | One each for Redis and API |
+
+---
+
+## 11. Database Architecture
+
+### 11.1 Migration System
+
+Migrations embedded via `sqlx::migrate!()` macro at compile time (located in `api/src/db/schema.rs`), automatically executed on server startup with `MIGRATOR.run(&pool).await`. Migration files in `api/migrations/` directory use 3-digit numeric prefix naming (`NNN_description.sql`).
+
+### 11.2 Core Data Tables
+
+| Table | Purpose |
+|-------|---------|
+| `organizations` | Top-level tenants (schools) |
+| `campuses` | Sub-organizations under schools (campuses) |
+| `grades` | Grade levels for hierarchical organization |
+| `users` | User accounts (with role, school_id, campus_id, grade_id) |
+| `user_roles` | User role assignments with campus/grade scope |
+| `problems` | Problem definitions (difficulty, tags, visibility) |
+| `problems_test_cases` | Problem input/output pairs with scoring weights |
+| `submissions` | User code submissions (status, score, runtime, memory) |
+| `test_case_results` | Per-test-case judge results |
+| `contests` | Contest definitions (with time windows) |
+| `contest_problems` | Contest-associated problems |
+| `contest_participants` | Contest registered users |
+| `contest_submissions` | Contest-scoped submissions (with upsolving flag) |
+| `contest_leaderboard_snapshots` | Contest leaderboard snapshots |
+| `classes` | Classes under campuses |
+| `class_enrollments` | Student enrollment records |
+| `assignments` | Class assignments (problem sets) |
+| `discussions` | Problem discussions (forum-style) |
+| `blog_articles`, `blog_comments` | Blog articles and comments |
+| `direct_messages` | User-to-user private messages |
+| `plagiarism_reports`, `plagiarism_scans` | Code similarity detection results |
+| `notifications` | In-app notification queue |
+| `judge_language_settings` | Per-problem language enable/disable config |
+| `feature_registry` | Feature flag definitions with defaults |
+| `feature_flags` | Feature flag overrides with scope (global/campus/grade/class) |
+| `analysis_jobs` | Analysis job queue |
+| `analysis_submission_features` | Structural features extracted from submissions |
+| `analysis_solution_clusters` | Clustered similar solutions |
+| `analysis_teaching_cards` | Auto-generated teaching recommendations |
+| `analysis_class_snapshots` | Class performance snapshots |
+
+### 11.3 Query Patterns
+
+- Always use parameterized queries (`$1`, `$2`, etc.) — never string concatenation
+- `query_as::<_, T>()` for mapping to typed structs (requires `FromRow` derive)
+- `query_scalar::<_, T>()` for single-value returns
+- `fetch_one` / `fetch_optional` / `fetch_all` based on expected cardinality
+- `sqlx::PgPool` connection pool (min 10, max 30 connections in API)
+
+---
+
+## 12. Error Handling
+
+### 12.1 API Error Handling
+
+Unified `AppError` enum (defined in `api-infra/src/error.rs`) maps to HTTP status codes:
+
+| Variant | HTTP Status | Use Case |
+|---------|-------------|----------|
+| `AppError::Auth(msg)` | 401 Unauthorized | JWT invalid or missing, token blacklisted |
+| `AppError::Forbidden(msg)` | 403 Forbidden | Insufficient permissions or tenant mismatch |
+| `AppError::NotFound(msg)` | 404 Not Found | Resource doesn't exist |
+| `AppError::Validation(msg)` | 400 Bad Request | Invalid request body or parameters |
+| `AppError::Database(msg)` | 500 Internal Server Error | Database query failed |
+| `AppError::Internal(msg)` | 500 Internal Server Error | Unexpected server error |
+
+Response body format:
+
+```json
+{
+  "error": "Human-readable error description",
+  "status": 401
+}
+```
+
+Conversion chain: service methods return `anyhow::Result<T>`, route handlers auto-convert via `?` operator through `From<anyhow::Error> for AppError`.
+
+### 12.2 Judge Worker Error Handling
+
+| Error Category | Behavior |
+|----------------|----------|
+| Compilation failures | Return `JudgeResult { status: "compilation_error" }`, ACK message |
+| Runtime errors | Return `JudgeResult { status: "runtime_error" }`, ACK message |
+| Timeouts | Kill process, return `JudgeResult { status: "time_limit_exceeded" }`, ACK |
+| Memory limits | Detected via cgroups, return corresponding status, ACK |
+| Wrong answers | Return `JudgeResult { status: "wrong_answer" }` with per-case details, ACK |
+| API callback failures | Retry 3 times (exponential backoff + jitter), then write to DLQ |
+| Redis failures | Circuit breaker opens, skip consumption until recovered |
+| Main loop errors | Exponential backoff: `min(1000ms * 2^error_count, 60s)` |
+
+---
+
+## 13. Configuration System
+
+### 13.1 Environment-Aware Configuration
+
+`AppConfig` (from `api-infra/src/config.rs`) distinguishes three modes based on `APP_ENV` env var:
+
+| Mode | Behavior |
+|------|----------|
+| `Production` | `JWT_SECRET` and `WORKER_SECRET` required, startup fails if missing; CORS must be explicitly configured |
+| `Development` | Missing secrets use unsafe defaults with warnings; CORS defaults to `*` |
+| `Test` | `test_config()` provides safe defaults, doesn't touch environment variables |
+
+### 13.2 API Service Configuration
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATABASE_URL` | Yes | - | PostgreSQL connection string |
+| `REDIS_URL` | No | `redis://127.0.0.1:6379` | Redis connection string |
+| `JWT_SECRET` | Production | Unsafe default | JWT signing secret |
+| `WORKER_SECRET` | Production | Unsafe default | Worker authentication secret |
+| `API_BIND_ADDRESS` | No | `0.0.0.0:3000` | Server bind address |
+| `CORS_ORIGINS` | No | `*` (dev) | Allowed CORS origins (comma-separated) |
+| `FEATURE_GATEWAY_URL` | No | `http://127.0.0.1:3001` | Feature gateway URL |
+
+### 13.3 Judge Worker Configuration
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `REDIS_URL` | No | `redis://127.0.0.1/` | Redis connection string |
+| `API_URL` | No | `http://127.0.0.1:3000` | API callback URL |
+| `WORKER_SECRET` | No | Unsafe default | Worker authentication secret |
+| `SUBMISSION_STREAM` | No | `submissions` | Normal submission stream name |
+| `CONTEST_STREAM` | No | `submissions:contest` | Contest submission stream name |
+| `CONSUMER_GROUP` | No | `judge_workers` | Consumer group name |
+| `CONSUMER_NAME` | No | `worker-<uuid>` | Consumer identifier (auto-generated) |
+| `MAX_CONCURRENT_JUDGES` | No | `4` | Max concurrent judging (must be >= 1) |
+| `RECOVERY_IDLE_MS` | No | `300000` (5 min) | Crash recovery idle threshold |
+
+### 13.4 Feature Gateway Configuration
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATABASE_URL` | Yes | - | PostgreSQL connection string |
+| `WORKER_SECRET` | Yes | - | Worker authentication secret (refuses to start without it) |
+| `GATEWAY_BIND_ADDRESS` | No | `0.0.0.0:3001` | Gateway bind address |
+| `FEATURE_GATEWAY_ENABLED` | No | `true` | Emergency-off switch (set to "false" to disable all features) |
+
+---
+
+## 14. Key Design Decisions
+
+### Why Redis Streams instead of Message Brokers (RabbitMQ/Kafka)?
+
+Redis Streams provides sufficient consumer group semantics for current scale, avoiding additional infrastructure dependencies while enabling crash recovery via XPENDING/XCLAIM. Dual-stream priority mechanism (contest vs normal) would be more complex in traditional message brokers.
+
+### Why Standalone Judge Worker instead of In-process Judging?
+
+Sandboxed execution requires Linux-specific capabilities (cgroups, seccomp, chroot) and syscall-level process control that's unstable when mixed with HTTP server. Decoupling workers allows independent scaling (more workers = more concurrent judging) and horizontal deployment across machines. Worker crashes don't affect API service.
+
+### Why JWT-based Tenant Identity instead of Request Headers?
+
+Storing `school_id` in signed JWT prevents client forgery of organization identity. `tenant_middleware` explicitly ignores any `X-Tenant-ID` request headers, reading only from JWT Claims injected by `auth_middleware`. This makes tenant isolation tamper-proof at transport layer.
+
+### Why One Crate Per Domain instead of Monolithic API Crate?
+
+Each domain crate has its own `routes.rs`, `models.rs`, and `service.rs`, making codebase more navigable and testable. Domain crates depend on `api-infra` and `shared` but not on each other, preventing circular dependencies. New domains can be added as independent workspace members.
+
+### Why In-memory RBAC Matrix instead of Database-driven Permissions?
+
+Role-permission mapping is static and changes infrequently. In-memory `HashSet` lookups are orders of magnitude faster than per-request database queries. Matrix defined in `api-infra/src/rbac.rs` can be migrated to database model in future without changing permission check API.
+
+### Why Single Shared `reqwest::Client` for Workers?
+
+Creating new HTTP clients per request loses TCP keep-alive and requires new TLS handshake. Single shared `reqwest::Client` maintains internal connection pool, reducing latency for result callbacks to API.
+
+### Why Standalone Feature Gateway Service?
+
+- **Decoupling**: Feature flag resolution doesn't impact API service performance
+- **Independent Scaling**: Gateway can scale based on flag check volume
+- **Direct Database Access**: No dependency on API service for database queries
+- **Emergency-off**: System-wide feature disable via single env var without touching API
+- **Scoped Hierarchy**: Complex precedence (class > grade > campus > global > default) centralized
+
+---
+
+## 15. Technology Stack Summary
+
+### Backend
+- **Language**: Rust 1.75+ (workspace with 17 crates)
+- **Web Framework**: Axum 0.7 (async HTTP)
+- **Database**: PostgreSQL 16 with sqlx (compile-time checked queries)
+- **Cache/Queue**: Redis 7 (Streams for submissions, connection pooling)
+- **Authentication**: JWT with bcrypt password hashing
+- **Sandbox**: cgroups + seccomp + chroot (Linux-specific)
+- **Metrics**: Prometheus (exposed at `/metrics`)
+- **Logging**: tracing with structured logging
+- **Real-time**: WebSocket (native Axum upgrade)
+
+### Frontend
+- **Language**: TypeScript 5.9
+- **Framework**: React 19 with Vite 7
+- **Routing**: react-router-dom v7
+- **State Management**: Zustand (client), TanStack React Query (server)
+- **HTTP Client**: Axios with token refresh interceptor
+- **Forms**: react-hook-form + zod validation
+- **UI**: shadcn components + Tailwind CSS v4
+- **Code Editors**: Monaco Editor (submission) + CodeMirror (markdown)
+- **Charts**: Recharts
+- **Real-time**: Native WebSocket (not Socket.IO)
+
+### Infrastructure
+- **Containerization**: Docker (multi-stage builds)
+- **Health Checks**: Kubernetes-style probes (`/health/live`, `/health/ready`)
+- **Rate Limiting**: tower-governor (30 req/min/IP)
+- **CORS**: Configurable origins (dev: `*`, prod: explicit list)
+- **Feature Flags**: Standalone gateway with scoped hierarchy
+
+---
+
+## Appendix: Architecture Diagrams
+
+### A.1 Service Communication Flow
+
+```
+┌─────────────┐         ┌─────────────┐         ┌──────────────┐
+│   Frontend  │────────>│  API Service│────────>│ PostgreSQL   │
+│  (React 19) │<────────│  (Axum)     │<────────│   Primary    │
+└─────────────┘  WS/HTTP └─────────────┘  SQL   └──────────────┘
+      │                      │  ▲                     │
+      │                      │  │ HTTP                │
+      │                      │  │ callback            │
+      │                      │  │                     │
+      │                      ▼  │                     ▼
+      │                ┌───────────┐         ┌──────────────┐
+      └───────────────>│   Redis   │<────────│  Judge       │
+              Pub/Sub  │  Streams  │         │  Worker      │
+                       └───────────┘         └──────────────┘
+                             │
+                             │ consume
+                             ▼
+                      ┌──────────────┐
+                      │   Feature    │
+                      │   Gateway    │
+                      └──────────────┘
+```
+
+### A.2 Multi-tenant Data Isolation
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     PostgreSQL Database                     │
+├─────────────────────────────────────────────────────────────┤
+│  Organization A (school_id=1)                               │
+│    ├── Campus A1 (campus_id=10)                            │
+│    │   ├── Class A1-1                                      │
+│    │   └── Class A1-2                                      │
+│    └── Campus A2 (campus_id=11)                            │
+│        └── Class A2-1                                      │
+│                                                             │
+│  Organization B (school_id=2)                              │
+│    └── Campus B1 (campus_id=20)                            │
+│        └── Class B1-1                                      │
+└─────────────────────────────────────────────────────────────┘
+
+Query: SELECT * FROM problems WHERE organization_id = $1
+         └── Injected from JWT Claims (never from client)
+```
+
+### A.3 Submission Processing Pipeline
+
+```
+User Code
+    │
+    ▼
+POST /submissions
+    │
+    ▼
+API Validation
+    │
+    ├─→ XADD to Redis Streams (submissions or submissions:contest)
+    │       │
+    │       ▼
+    │   Judge Worker (consume via XREADGROUP)
+    │       │
+    │       ├─→ Fetch test cases from PostgreSQL
+    │       ├─→ Compile source code (if needed)
+    │       ├─→ Execute in sandbox (cgroups + seccomp)
+    │       ├─→ Compare output
+    │       │
+    │       └─→ POST /submissions/{id}/results (callback)
+    │               │
+    │               ▼
+    └───────────→ API stores results
+                    │
+                    ├─→ UPDATE submissions
+                    └─→ WebSocket broadcast (real-time update)
+```
+
+---
+
+**Document Version**: 2.0  
+**Last Updated**: 2025-05-13  
+**Project**: AlgoMaster Online Judge  
+**Architecture Style**: Microservices with Multi-tenant SaaS

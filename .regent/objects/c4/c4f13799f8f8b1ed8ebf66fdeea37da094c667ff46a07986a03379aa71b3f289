@@ -1,0 +1,337 @@
+---
+phase: 15
+plan: 08
+type: execute
+wave: 2
+depends_on: ["15-05", "15-06", "15-07"]
+files_modified:
+  - frontend/src/pages/user/DashboardEnhanced.tsx
+  - frontend/src/pages/user/ProblemSet.tsx
+  - frontend/src/pages/user/ProblemDetail.tsx
+  - frontend/src/pages/user/ProblemIDEEnhanced.tsx
+  - frontend/src/pages/user/SubmissionHistory.tsx
+  - frontend/src/pages/user/SubmissionDetail.tsx
+  - frontend/src/pages/user/ContestList.tsx
+  - frontend/src/pages/user/ContestDetail.tsx
+  - frontend/src/pages/user/ContestScoreboard.tsx
+  - frontend/src/pages/user/Ranking.tsx
+  - frontend/src/pages/user/Profile.tsx
+  - frontend/src/pages/user/LearningRoadmap.tsx
+autonomous: true
+requirements:
+  - D-15-02
+  - D-15-03
+
+must_haves:
+  truths:
+    - "All 12 user pages show skeleton screens during loading instead of spinner"
+    - "All list pages use EmptyState component for empty data"
+    - "All pages with error states use InlineError component"
+  artifacts:
+    - path: "frontend/src/pages/user/DashboardEnhanced.tsx"
+      provides: "Skeleton + EmptyState + InlineError integration"
+      contains: "DashboardSkeleton"
+    - path: "frontend/src/pages/user/ProblemSet.tsx"
+      provides: "Skeleton + EmptyState + InlineError integration"
+      contains: "ProblemListSkeleton"
+    - path: "frontend/src/pages/user/SubmissionHistory.tsx"
+      provides: "Skeleton + EmptyState + InlineError integration"
+      contains: "TableSkeleton"
+  key_links:
+    - from: "frontend/src/pages/user/*.tsx"
+      to: "frontend/src/components/skeletons/*.tsx"
+      via: "import skeleton components"
+      pattern: "from.*@/components/skeletons"
+    - from: "frontend/src/pages/user/*.tsx"
+      to: "frontend/src/components/ui/EmptyState.tsx"
+      via: "import EmptyState"
+      pattern: "EmptyState"
+    - from: "frontend/src/pages/user/*.tsx"
+      to: "frontend/src/components/ui/InlineError.tsx"
+      via: "import InlineError"
+      pattern: "InlineError"
+---
+
+<objective>
+Convert all 12 user pages from Loading spinner to skeleton screens, EmptyState, and InlineError components.
+
+Purpose: Per D-15-02, every page with async data shows skeleton during loading, every list has empty state, every error path uses InlineError. This plan covers all pages under `pages/user/`.
+
+Output: 12 user page files updated with skeleton/empty/error polish.
+</objective>
+
+<execution_context>
+@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@$HOME/.claude/get-shit-done/templates/summary.md
+</execution_context>
+
+<context>
+@.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-CONTEXT.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-UI-SPEC.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-05-SUMMARY.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-07-SUMMARY.md
+</context>
+
+<interfaces>
+<!-- Components created by Plans 05, 06, 07 that this plan uses -->
+
+From frontend/src/components/ui/EmptyState.tsx (Plan 05):
+```typescript
+interface EmptyStateProps {
+  icon?: LucideIcon          // default: Inbox
+  title: string              // required
+  description?: string
+  action?: ReactNode
+  className?: string
+}
+export function EmptyState(props: EmptyStateProps): JSX.Element
+```
+
+From frontend/src/components/ui/InlineError.tsx (Plan 05):
+```typescript
+interface InlineErrorProps {
+  title?: string             // default: "加载失败"
+  message?: string           // default: "请稍后重试"
+  onRetry?: () => void
+  className?: string
+}
+export function InlineError(props: InlineErrorProps): JSX.Element
+```
+
+From frontend/src/components/skeletons/*.tsx (Plan 07):
+```typescript
+export function DashboardSkeleton(props?: { className?: string }): JSX.Element
+export function ProblemListSkeleton(props?: { className?: string }): JSX.Element
+export function ProblemDetailSkeleton(props?: { className?: string }): JSX.Element
+export function IDESkeleton(props?: { className?: string }): JSX.Element
+export function TableSkeleton(props?: { rows?: number; columns?: number; className?: string }): JSX.Element
+export function DetailSkeleton(props?: { className?: string }): JSX.Element
+export function ProfileSkeleton(props?: { className?: string }): JSX.Element
+export function CardGridSkeleton(props?: { cards?: number; className?: string }): JSX.Element
+```
+
+Common replacement pattern in all pages:
+```typescript
+// BEFORE (current):
+if (isLoading) {
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <Loading message="加载中..." />
+    </div>
+  )
+}
+
+// AFTER (target):
+if (isLoading) {
+  return <PageSkeleton />
+}
+```
+
+```typescript
+// BEFORE (current error state):
+if (error) {
+  return (
+    <div className="text-center">
+      <span className="material-symbols-outlined text-6xl text-red-500">error</span>
+      <h3>加载失败</h3>
+      <Button onClick={() => refetch()}>重试</Button>
+    </div>
+  )
+}
+
+// AFTER (target):
+if (error) {
+  return <InlineError message="无法加载数据，请稍后重试" onRetry={() => refetch()} />
+}
+```
+
+```typescript
+// BEFORE (current empty state - varies):
+<td colSpan={N} className="text-center text-slate-500">暂无竞赛</td>
+
+// AFTER (target):
+<EmptyState icon={Trophy} title="暂无竞赛" description="当前没有符合条件的竞赛" />
+```
+</interfaces>
+
+<tasks>
+
+<task type="auto">
+  <name>Task 1: Convert DashboardEnhanced, ProblemSet, ProblemDetail, ProblemIDEEnhanced to skeleton/empty/error</name>
+  <files>frontend/src/pages/user/DashboardEnhanced.tsx, frontend/src/pages/user/ProblemSet.tsx, frontend/src/pages/user/ProblemDetail.tsx, frontend/src/pages/user/ProblemIDEEnhanced.tsx</files>
+  <read_first>
+    - frontend/src/pages/user/DashboardEnhanced.tsx
+    - frontend/src/pages/user/ProblemSet.tsx
+    - frontend/src/pages/user/ProblemDetail.tsx
+    - frontend/src/pages/user/ProblemIDEEnhanced.tsx
+    - frontend/src/components/skeletons/DashboardSkeleton.tsx
+    - frontend/src/components/skeletons/ProblemListSkeleton.tsx
+    - frontend/src/components/skeletons/ProblemDetailSkeleton.tsx
+    - frontend/src/components/skeletons/IDESkeleton.tsx
+    - frontend/src/components/ui/EmptyState.tsx
+    - frontend/src/components/ui/InlineError.tsx
+  </read_first>
+  <action>
+    For each of the 4 page files, apply these transformations:
+
+    **1. DashboardEnhanced.tsx:**
+    - Add imports: `DashboardSkeleton` from skeletons, `EmptyState` from ui, `InlineError` from ui, `Activity` from lucide-react
+    - Replace loading guard: `if (isLoading) return <DashboardSkeleton />`
+    - Replace error state: `if (error) return <InlineError message="仪表盘加载失败，请稍后重试" onRetry={() => refetch()} />`
+    - Replace "暂无最近活动" empty state: `<EmptyState icon={Activity} title="暂无最近活动" description="开始做题后这里会显示你的活动记录" />`
+    - Replace Material Symbols `error` icon in error state (if present) with InlineError component
+    - Remove `import { Loading } from '@/components/ui/Loading'` if no longer used
+
+    **2. ProblemSet.tsx:**
+    - Add imports: `ProblemListSkeleton`, `EmptyState`, `InlineError`, `FolderOpen` from lucide-react
+    - Replace loading: `if (isLoading) return <ProblemListSkeleton />`
+    - Replace error: `if (error) return <InlineError title="题目加载失败" onRetry={() => refetch()} />`
+    - Replace "No Problems Found" with: `<EmptyState icon={FolderOpen} title="暂无题目" description="还没有发布任何题目" />`
+
+    **3. ProblemDetail.tsx:**
+    - Add imports: `ProblemDetailSkeleton`, `InlineError`
+    - Replace loading: `if (isLoading) return <ProblemDetailSkeleton />`
+    - Replace error: `if (error) return <InlineError title="题目加载失败" onRetry={() => refetch()} />`
+
+    **4. ProblemIDEEnhanced.tsx:**
+    - Add imports: `IDESkeleton`, `InlineError`
+    - Replace loading: `if (isLoading) return <IDESkeleton />`
+    - Replace error: `if (error) return <InlineError title="加载失败" onRetry={() => refetch()} />`
+  </action>
+  <acceptance_criteria>
+    - Each file imports its skeleton component from `@/components/skeletons/`
+    - Each file imports `InlineError` from `@/components/ui/InlineError`
+    - No file uses `<Loading message=.../>` for data loading state
+    - Each file uses skeleton component in `if (isLoading)` guard
+    - Each file uses InlineError in `if (error)` guard with retry
+    - DashboardEnhanced error state no longer uses material-symbols-outlined
+    - `npx vitest --run` still passes
+  </acceptance_criteria>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge/frontend && npx vitest --run 2>&1 | tail -5</automated>
+  </verify>
+  <done>4 user pages converted to skeleton/empty/error pattern.</done>
+</task>
+
+<task type="auto">
+  <name>Task 2: Convert SubmissionHistory, SubmissionDetail, ContestList, ContestDetail, ContestScoreboard</name>
+  <files>frontend/src/pages/user/SubmissionHistory.tsx, frontend/src/pages/user/SubmissionDetail.tsx, frontend/src/pages/user/ContestList.tsx, frontend/src/pages/user/ContestDetail.tsx, frontend/src/pages/user/ContestScoreboard.tsx</files>
+  <read_first>
+    - frontend/src/pages/user/SubmissionHistory.tsx
+    - frontend/src/pages/user/SubmissionDetail.tsx
+    - frontend/src/pages/user/ContestList.tsx
+    - frontend/src/pages/user/ContestDetail.tsx
+    - frontend/src/pages/user/ContestScoreboard.tsx
+    - frontend/src/components/skeletons/TableSkeleton.tsx
+    - frontend/src/components/skeletons/DetailSkeleton.tsx
+    - frontend/src/components/skeletons/CardGridSkeleton.tsx
+    - frontend/src/components/ui/EmptyState.tsx
+    - frontend/src/components/ui/InlineError.tsx
+  </read_first>
+  <action>
+    For each of the 5 page files:
+
+    **SubmissionHistory.tsx:**
+    - Import: `TableSkeleton`, `EmptyState`, `InlineError`, `FileText` from lucide-react
+    - Loading: `<TableSkeleton rows={6} columns={5} />`
+    - Error: `<InlineError title="提交记录加载失败" onRetry={() => refetch()} />`
+    - Empty: `<EmptyState icon={FileText} title="暂无提交记录" description="提交代码后这里会显示你的提交历史" />`
+
+    **SubmissionDetail.tsx:**
+    - Import: `DetailSkeleton`, `InlineError`
+    - Loading: `<DetailSkeleton />`
+    - Error: `<InlineError title="提交详情加载失败" onRetry={() => refetch()} />`
+
+    **ContestList.tsx:**
+    - Import: `CardGridSkeleton`, `EmptyState`, `InlineError`, `Trophy` from lucide-react
+    - Loading: `<CardGridSkeleton cards={6} />`
+    - Error: `<InlineError title="竞赛列表加载失败" onRetry={() => refetch()} />`
+    - Empty: `<EmptyState icon={Trophy} title="暂无竞赛" description="当前没有符合条件的竞赛" />`
+
+    **ContestDetail.tsx:**
+    - Import: `DetailSkeleton`, `InlineError`
+    - Loading: `<DetailSkeleton />`
+    - Error: `<InlineError title="竞赛详情加载失败" onRetry={() => refetch()} />`
+
+    **ContestScoreboard.tsx:**
+    - Import: `TableSkeleton`, `InlineError`
+    - Loading: `<TableSkeleton rows={10} columns={6} />`
+    - Error: `<InlineError title="排行榜加载失败" onRetry={() => refetch()} />`
+  </action>
+  <acceptance_criteria>
+    - Each file imports appropriate skeleton component
+    - Each file uses InlineError for error state
+    - Each list page uses EmptyState for empty data
+    - No `<Loading message=.../>` used in any of these files for data loading
+    - `npx vitest --run` still passes
+  </acceptance_criteria>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge/frontend && npx vitest --run 2>&1 | tail -5</automated>
+  </verify>
+  <done>5 more user pages converted to skeleton/empty/error pattern.</done>
+</task>
+
+<task type="auto">
+  <name>Task 3: Convert Ranking, Profile, LearningRoadmap</name>
+  <files>frontend/src/pages/user/Ranking.tsx, frontend/src/pages/user/Profile.tsx, frontend/src/pages/user/LearningRoadmap.tsx</files>
+  <read_first>
+    - frontend/src/pages/user/Ranking.tsx
+    - frontend/src/pages/user/Profile.tsx
+    - frontend/src/pages/user/LearningRoadmap.tsx
+    - frontend/src/components/skeletons/TableSkeleton.tsx
+    - frontend/src/components/skeletons/ProfileSkeleton.tsx
+    - frontend/src/components/skeletons/CardGridSkeleton.tsx
+    - frontend/src/components/ui/EmptyState.tsx
+    - frontend/src/components/ui/InlineError.tsx
+  </read_first>
+  <action>
+    **Ranking.tsx:**
+    - Import: `TableSkeleton`, `EmptyState`, `InlineError`, `BarChart3` from lucide-react
+    - Loading: `<TableSkeleton rows={20} columns={4} />`
+    - Error: `<InlineError title="排行榜加载失败" onRetry={() => refetch()} />`
+    - Empty: Replace "暂无排行数据" with `<EmptyState icon={BarChart3} title="暂无排行数据" description="还没有用户提交过代码" />`
+
+    **Profile.tsx:**
+    - Import: `ProfileSkeleton`, `EmptyState`, `InlineError`, `User` from lucide-react
+    - Loading: `<ProfileSkeleton />`
+    - Error: `<InlineError title="用户信息加载失败" onRetry={() => refetch()} />`
+    - Empty: Replace "暂无活动" with `<EmptyState icon={User} title="暂无活动" description="该用户还没有提交过代码" />`
+
+    **LearningRoadmap.tsx:**
+    - Import: `CardGridSkeleton`, `InlineError`, `Map` from lucide-react
+    - Loading: `<CardGridSkeleton cards={4} />`
+    - Error: `<InlineError title="学习路线图加载失败" onRetry={() => refetch()} />`
+  </action>
+  <acceptance_criteria>
+    - Each file imports appropriate skeleton component
+    - Each file uses InlineError for error state
+    - Ranking and Profile use EmptyState for empty data
+    - No `<Loading message=.../>` in any of these files
+    - `npx vitest --run` still passes
+  </acceptance_criteria>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge/frontend && npx vitest --run 2>&1 | tail -5</automated>
+  </verify>
+  <done>3 remaining user pages converted. All 12 user pages now use skeleton/empty/error pattern.</done>
+</task>
+
+</tasks>
+
+<verification>
+Full test suite passes. Grep confirms no `<Loading` imports remain in user page files for data loading.
+</verification>
+
+<success_criteria>
+- All 12 user pages use skeleton screens during loading
+- All list pages use EmptyState for empty data
+- All error states use InlineError
+- No `<Loading message=.../>` used for page-level data loading in any user page
+- All existing tests still pass
+</success_criteria>
+
+<output>
+After completion, create `.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-08-SUMMARY.md`
+</output>

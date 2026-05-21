@@ -1,0 +1,1 @@
+{"command":"ps -ef | rg \"docker compose up -d --build|docker buildx|buildkit|buildx\""}

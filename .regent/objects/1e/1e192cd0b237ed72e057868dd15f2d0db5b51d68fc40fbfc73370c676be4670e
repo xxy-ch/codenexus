@@ -1,0 +1,1 @@
+{"command":"find frontend/test-results -name error-context.md -maxdepth 3 -print -exec sed -n '1,220p' {} \\;"}

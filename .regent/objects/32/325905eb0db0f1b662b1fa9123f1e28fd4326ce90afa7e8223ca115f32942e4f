@@ -1,0 +1,497 @@
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
+import { contestsService } from '@/services/contests'
+import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/utils'
+import { Trophy, Search, UserCheck, BarChart3, CalendarClock, CircleCheck, CirclePlay, Zap, Flame } from 'lucide-react'
+import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { InlineError } from '@/components/ui/InlineError'
+
+interface Contest {
+  id: string
+  name: string
+  description: string
+  start_time: string
+  end_time: string
+  duration_minutes: number
+  status: 'upcoming' | 'ongoing' | 'completed'
+  participants_count: number
+  problems_count: number
+  difficulty: 'easy' | 'medium' | 'hard'
+  created_at: string
+}
+
+const STATUS_CONFIG = {
+  upcoming: {
+    label: '即将开始',
+    bgColor: 'bg-accent-blue/10',
+    textColor: 'text-accent-blue',
+    borderColor: 'border-accent-blue/30',
+    icon: CalendarClock,
+    glow: '',
+  },
+  ongoing: {
+    label: '进行中',
+    bgColor: 'bg-accent-green/10',
+    textColor: 'text-accent-green',
+    borderColor: 'border-accent-green/30',
+    icon: CirclePlay,
+    glow: 'shadow-lg shadow-accent-green/10',
+  },
+  completed: {
+    label: '已结束',
+    bgColor: 'bg-muted',
+    textColor: 'text-muted-foreground',
+    borderColor: 'border-border',
+    icon: CircleCheck,
+    glow: '',
+  },
+}
+
+const DIFFICULTY_CONFIG = {
+  easy: {
+    label: '简单',
+    bgColor: 'bg-accent-green/10',
+    textColor: 'text-accent-green',
+  },
+  medium: {
+    label: '中等',
+    bgColor: 'bg-accent-amber/10',
+    textColor: 'text-accent-amber',
+  },
+  hard: {
+    label: '困难',
+    bgColor: 'bg-accent-rose/10',
+    textColor: 'text-accent-rose',
+  },
+}
+
+export function ContestList() {
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [difficultyFilter, setDifficultyFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['contests', statusFilter, difficultyFilter, searchQuery],
+    queryFn: () =>
+      contestsService.getContests({
+        status: statusFilter as any,
+        difficulty: difficultyFilter as any,
+        search: searchQuery || undefined,
+      }),
+  })
+
+  // 按状态分组竞赛
+  const groupedContests = useMemo(() => {
+    if (!data) return { ongoing: [], upcoming: [], completed: [] }
+
+    return {
+      ongoing: data.contests.filter(c => c.status === 'ongoing'),
+      upcoming: data.contests.filter(c => c.status === 'upcoming'),
+      completed: data.contests.filter(c => c.status === 'completed'),
+    }
+  }, [data])
+
+  const formatDuration = (minutes: number) => {
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60)
+      const mins = minutes % 60
+      return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
+    }
+    return `${minutes}m`
+  }
+
+  const getCountdown = (startTime: string) => {
+    const now = new Date()
+    const start = new Date(startTime)
+    const diff = start.getTime() - now.getTime()
+
+    if (diff <= 0) return null
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+    if (days > 0) return `${days}天${hours}小时`
+    if (hours > 0) return `${hours}小时${minutes}分钟`
+    return `${minutes}分钟`
+  }
+
+  const getRemainingTime = (endTime: string) => {
+    const now = new Date()
+    const end = new Date(endTime)
+    const diff = end.getTime() - now.getTime()
+
+    if (diff <= 0) return '已结束'
+
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+
+    return `剩余 ${hours}h ${minutes}m`
+  }
+
+  if (isLoading) {
+    return <CardGridSkeleton cards={6} />
+  }
+
+  if (error) {
+    return (
+      <InlineError
+        title="竞赛列表加载失败"
+        message="无法加载竞赛列表，请稍后重试"
+        onRetry={() => refetch()}
+      />
+    )
+  }
+
+  if (!data || data.contests.length === 0) {
+    return (
+      <EmptyState icon={Trophy} title="暂无竞赛" description="当前没有符合条件的竞赛" />
+    )
+  }
+
+  const renderContestCard = (contest: Contest) => {
+    const statusConfig = STATUS_CONFIG[contest.status]
+    const difficultyConfig = DIFFICULTY_CONFIG[contest.difficulty]
+    const countdown = contest.status === 'upcoming' ? getCountdown(contest.start_time) : null
+    const remaining = contest.status === 'ongoing' ? getRemainingTime(contest.end_time) : null
+    const StatusIcon = statusConfig.icon
+    const isLive = contest.status === 'ongoing'
+
+    return (
+      <Link
+        key={contest.id}
+        to={`/contests/${contest.id}`}
+        className={cn(
+          'block bg-card border border-border rounded-xl overflow-hidden transition-all',
+          isLive
+            ? 'hover:shadow-lg hover:shadow-primary/10 hover:border-primary/40'
+            : 'hover:border-foreground/20 hover:shadow-md'
+        )}
+      >
+        {/* Live indicator bar for ongoing contests */}
+        {isLive && (
+          <div className="h-1 bg-gradient-to-r from-accent-green via-primary to-accent-green" />
+        )}
+
+        <div className="p-5">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2.5 mb-2">
+                <h3 className="text-xl font-bold text-foreground">
+                  {contest.name}
+                </h3>
+                <span className={cn(
+                  'rounded-full px-2.5 py-1 text-xs font-medium',
+                  difficultyConfig.bgColor,
+                  difficultyConfig.textColor
+                )}>
+                  {difficultyConfig.label}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-2 font-normal">
+                {contest.description}
+              </p>
+            </div>
+            <span className={cn(
+              'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border',
+              statusConfig.bgColor,
+              statusConfig.textColor,
+              statusConfig.borderColor
+            )}>
+              <StatusIcon className="w-3.5 h-3.5" />
+              {statusConfig.label}
+            </span>
+          </div>
+
+          {/* Stats row — oversized numbers, ClickHouse energy */}
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="rounded-lg border border-border bg-background px-3 py-2.5 text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">时长</p>
+              <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
+                {formatDuration(contest.duration_minutes)}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-background px-3 py-2.5 text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">题目</p>
+              <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
+                {contest.problems_count}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-background px-3 py-2.5 text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">参与</p>
+              <p className="mt-1 text-lg font-bold tabular-nums text-foreground">
+                {contest.participants_count}
+              </p>
+            </div>
+            <div className="rounded-lg border border-border bg-background px-3 py-2.5 text-center">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">日期</p>
+              <p className="mt-1 text-sm font-bold tabular-nums text-foreground">
+                {new Date(contest.start_time).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })}
+              </p>
+            </div>
+          </div>
+
+          {/* Countdown or Timer — bold, urgent */}
+          {(countdown || remaining) && (
+            <div className={cn(
+              'px-4 py-2.5 rounded-lg border text-sm font-bold tabular-nums',
+              contest.status === 'upcoming'
+                ? 'bg-accent-blue/5 border-accent-blue/20 text-accent-blue'
+                : 'bg-accent-green/5 border-accent-green/20 text-accent-green'
+            )}>
+              {isLive && <Zap className="w-4 h-4 inline mr-1.5" />}
+              {countdown && `距开始还有 ${countdown}`}
+              {remaining && remaining}
+            </div>
+          )}
+
+          {/* Action Button */}
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">
+              {new Date(contest.start_time).toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </div>
+            <Button
+              variant={isLive ? 'default' : 'outline'}
+              size="sm"
+            >
+              {contest.status === 'ongoing' && (
+                <>
+                  <Flame className="w-4 h-4 mr-2" />
+                  立即加入
+                </>
+              )}
+              {contest.status === 'upcoming' && (
+                <>
+                  <UserCheck className="w-4 h-4 mr-2" />
+                  立即注册
+                </>
+              )}
+              {contest.status === 'completed' && (
+                <>
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  查看结果
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </Link>
+    )
+  }
+
+  return (
+    <div className="fade-in-up space-y-8 p-6">
+      {/* Hero Header — ClickHouse high-energy */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent-green/5" />
+        <div className="relative px-6 py-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg bg-primary p-2">
+                  <Trophy className="w-5 h-5 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-black tracking-tight text-foreground">
+                    CodeNexus 竞赛
+                  </h1>
+                  <p className="text-sm font-normal text-muted-foreground">
+                    参加编程竞赛，与全站选手同台竞技
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Live stats in hero */}
+            <div className="flex items-center gap-3">
+              {data.contests.filter(c => c.status === 'ongoing').length > 0 && (
+                <div className="flex items-center gap-2 rounded-full bg-accent-green/10 border border-accent-green/20 px-4 py-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-green opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-accent-green"></span>
+                  </span>
+                  <span className="text-sm font-bold text-accent-green">
+                    {data.contests.filter(c => c.status === 'ongoing').length} 场进行中
+                  </span>
+                </div>
+              )}
+              <div className="rounded-full border border-border bg-background px-4 py-2">
+                <span className="text-sm font-semibold text-foreground">
+                  {data.contests.length} 场竞赛
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters — bold, high-energy filter bar */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Search */}
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="搜索竞赛..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-border rounded-lg text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              状态
+            </span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setStatusFilter('all')}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                  statusFilter === 'all'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                全部
+              </button>
+              <button
+                onClick={() => setStatusFilter('ongoing')}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                  statusFilter === 'ongoing'
+                    ? 'bg-accent-green text-slate-950'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                进行中
+              </button>
+              <button
+                onClick={() => setStatusFilter('upcoming')}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                  statusFilter === 'upcoming'
+                    ? 'bg-accent-blue text-white'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                即将开始
+              </button>
+              <button
+                onClick={() => setStatusFilter('completed')}
+                className={cn(
+                  'rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                  statusFilter === 'completed'
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                )}
+              >
+                已结束
+              </button>
+            </div>
+          </div>
+
+          {/* Difficulty Filter */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="difficulty-filter" className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              难度
+            </label>
+            <select
+              id="difficulty-filter"
+              value={difficultyFilter}
+              onChange={(e) => setDifficultyFilter(e.target.value)}
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="all">全部</option>
+              <option value="easy">简单</option>
+              <option value="medium">中等</option>
+              <option value="hard">困难</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Contest Sections */}
+      {statusFilter === 'all' ? (
+        <>
+          {/* Ongoing Contests — featured, high energy */}
+          {groupedContests.ongoing.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="rounded-lg bg-accent-green/10 p-1.5">
+                  <CirclePlay className="w-5 h-5 text-accent-green" />
+                </div>
+                <h2 className="text-lg font-bold text-foreground uppercase tracking-wide">
+                  进行中
+                </h2>
+                <span className="rounded-full bg-accent-green/10 px-2.5 py-1 text-xs font-bold text-accent-green">
+                  {groupedContests.ongoing.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {groupedContests.ongoing.map(renderContestCard)}
+              </div>
+            </div>
+          )}
+
+          {/* Upcoming Contests */}
+          {groupedContests.upcoming.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="rounded-lg bg-accent-blue/10 p-1.5">
+                  <CalendarClock className="w-5 h-5 text-accent-blue" />
+                </div>
+                <h2 className="text-lg font-bold text-foreground uppercase tracking-wide">
+                  即将开始
+                </h2>
+                <span className="rounded-full bg-accent-blue/10 px-2.5 py-1 text-xs font-bold text-accent-blue">
+                  {groupedContests.upcoming.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {groupedContests.upcoming.map(renderContestCard)}
+              </div>
+            </div>
+          )}
+
+          {/* Completed Contests */}
+          {groupedContests.completed.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="rounded-lg bg-muted p-1.5">
+                  <CircleCheck className="w-5 h-5 text-muted-foreground" />
+                </div>
+                <h2 className="text-lg font-bold text-foreground uppercase tracking-wide">
+                  已结束
+                </h2>
+                <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                  {groupedContests.completed.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {groupedContests.completed.map(renderContestCard)}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {data.contests.map(renderContestCard)}
+        </div>
+      )}
+    </div>
+  )
+}

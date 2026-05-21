@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction } from '@/components/ui/Card'
@@ -52,6 +52,28 @@ export default function ComponentPreview() {
     beta_features: true,
   })
   const [darkMode, setDarkMode] = useState(false)
+
+  // Synchronize darkMode state with document.documentElement
+  useEffect(() => {
+    const originalDark = document.documentElement.classList.contains('dark')
+    const originalColorScheme = document.documentElement.style.getPropertyValue('color-scheme')
+    
+    document.documentElement.classList.toggle('dark', darkMode)
+    document.documentElement.style.setProperty('color-scheme', darkMode ? 'dark' : 'light')
+    
+    return () => {
+      if (originalDark) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+      if (originalColorScheme) {
+        document.documentElement.style.setProperty('color-scheme', originalColorScheme)
+      } else {
+        document.documentElement.style.removeProperty('color-scheme')
+      }
+    }
+  }, [darkMode])
 
   const toggleFeature = (slug: string, _scope: string, enabled: boolean) => {
     setToggleStates(prev => ({ ...prev, [slug]: enabled }))

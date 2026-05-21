@@ -1,0 +1,91 @@
+---
+phase: 15
+plan: 11
+type: execute
+wave: 3
+depends_on: ["15-08", "15-09", "15-10"]
+files_modified:
+  - frontend/src/test/test-utils.tsx
+autonomous: true
+requirements:
+  - D-15-01-W3
+  - D-15-03
+
+must_haves:
+  truths:
+    - "Backend API routes are checked for DailyChallenge and Achievements endpoints"
+    - "If endpoints exist, corresponding frontend pages are evaluated"
+    - "If endpoints do not exist, Wave 3 is documented as no-op"
+  artifacts:
+    - path: ".planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-WAVE3-EVALUATION.md"
+      provides: "Wave 3 evaluation results"
+  key_links: []
+---
+
+<objective>
+Evaluate whether backend endpoints exist for DailyChallenge and Achievements features. If they exist, document the scope for frontend page creation. If not, mark Wave 3 as no-op.
+
+Purpose: Per D-15-01-W3, Wave 3 evaluates and optionally adds missing feature pages. The RESEARCH.md identified DailyChallenge and Achievements as potential new pages, but only if backend endpoints exist. This plan performs the evaluation.
+
+Output: Wave 3 evaluation document with findings.
+</objective>
+
+<execution_context>
+@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@$HOME/.claude/get-shit-done/templates/summary.md
+</execution_context>
+
+<context>
+@.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-CONTEXT.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-RESEARCH.md
+</context>
+
+<tasks>
+
+<task type="auto">
+  <name>Task 1: Evaluate backend endpoints for potential new pages</name>
+  <files>.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-WAVE3-EVALUATION.md</files>
+  <read_first>
+    - api/src/main.rs
+    - .planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-RESEARCH.md
+  </read_first>
+  <action>
+    1. Search `api/src/main.rs` for any routes containing "daily", "challenge", "achievement", "badge", "reward", "streak" (case-insensitive).
+    2. Search all files under `api/src/` for modules containing these same keywords.
+    3. Check `api/migrations/` for any tables related to daily_challenges, achievements, badges, or rewards.
+    4. Based on findings, create `.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-WAVE3-EVALUATION.md` with:
+       - **Endpoints found**: List any matching routes with their paths and HTTP methods
+       - **Database tables found**: List any matching migration files
+       - **Conclusion**: Either "No backend endpoints exist for DailyChallenge/Achievements -- Wave 3 is a no-op" or "Endpoints found -- additional planning needed for: [list]"
+    5. If no endpoints exist, the evaluation document marks Wave 3 as complete with no additional work.
+  </action>
+  <acceptance_criteria>
+    - File `15-WAVE3-EVALUATION.md` exists in the phase directory
+    - File documents search results for daily/challenge/achievement/badge/reward keywords
+    - File contains a clear conclusion section
+    - Grep commands were run against `api/src/` and `api/migrations/`
+  </acceptance_criteria>
+  <verify>
+    <automated>test -f /Users/xiexingyu/Documents/项目/Online_Judge/.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-WAVE3-EVALUATION.md && echo "EXISTS" || echo "MISSING"</automated>
+  </verify>
+  <done>Wave 3 evaluation complete. Backend endpoint search documented. Clear conclusion reached.</done>
+</task>
+
+</tasks>
+
+<verification>
+Evaluation document exists with search results and conclusion.
+</verification>
+
+<success_criteria>
+- Backend API routes searched for DailyChallenge/Achievements
+- Database migrations searched for relevant tables
+- Evaluation document created with findings and conclusion
+</success_criteria>
+
+<output>
+After completion, create `.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-11-SUMMARY.md`
+</output>

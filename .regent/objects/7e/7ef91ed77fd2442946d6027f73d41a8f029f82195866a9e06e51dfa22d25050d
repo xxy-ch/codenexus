@@ -1,0 +1,577 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1776146761763,
+  "projectRoot": "/Users/xiexingyu/Documents/项目/Online_Judge",
+  "techStack": {
+    "languages": [
+      {
+        "name": "Rust",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "Cargo.toml"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "axum",
+        "version": null,
+        "category": "backend"
+      }
+    ],
+    "packageManager": "cargo",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "cargo build",
+    "testCommand": "cargo test",
+    "lintCommand": "cargo clippy",
+    "devCommand": "cargo run",
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs",
+      "scripts"
+    ],
+    "gitBranches": {
+      "defaultBranch": "master",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "api": {
+      "path": "api",
+      "purpose": "API routes",
+      "fileCount": 5,
+      "lastAccessed": 1776146761749,
+      "keyFiles": [
+        "Cargo.toml",
+        "Dockerfile",
+        "docker-entrypoint.sh",
+        "init_db.sh"
+      ]
+    },
+    "api-infra": {
+      "path": "api-infra",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1776146761750,
+      "keyFiles": [
+        "Cargo.toml"
+      ]
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 1,
+      "lastAccessed": 1776146761752,
+      "keyFiles": [
+        "README.md"
+      ]
+    },
+    "domain-problems": {
+      "path": "domain-problems",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1776146761753,
+      "keyFiles": [
+        "Cargo.toml"
+      ]
+    },
+    "domain-users": {
+      "path": "domain-users",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1776146761753,
+      "keyFiles": [
+        "Cargo.toml"
+      ]
+    },
+    "frontend": {
+      "path": "frontend",
+      "purpose": null,
+      "fileCount": 20,
+      "lastAccessed": 1776146761754,
+      "keyFiles": [
+        "Dockerfile",
+        "README.md",
+        "components.json",
+        "eslint.config.js",
+        "index.html"
+      ]
+    },
+    "judge-worker": {
+      "path": "judge-worker",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1776146761755,
+      "keyFiles": [
+        "Cargo.toml",
+        "Dockerfile"
+      ]
+    },
+    "references": {
+      "path": "references",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1776146761756,
+      "keyFiles": [
+        "app_uoj233.sql"
+      ]
+    },
+    "scripts": {
+      "path": "scripts",
+      "purpose": "Build/utility scripts",
+      "fileCount": 2,
+      "lastAccessed": 1776146761756,
+      "keyFiles": [
+        "bootstrap_demo.sh",
+        "bootstrap_demo.sql"
+      ]
+    },
+    "shared": {
+      "path": "shared",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1776146761758,
+      "keyFiles": [
+        "Cargo.toml",
+        "PHASE-SUMMARY-TEMPLATE.md",
+        "README.md",
+        "ROADMAP.md",
+        "policy-matrix.md"
+      ]
+    },
+    "target": {
+      "path": "target",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1776146761758,
+      "keyFiles": [
+        "CACHEDIR.TAG"
+      ]
+    },
+    "api/migrations": {
+      "path": "api/migrations",
+      "purpose": "Database migrations",
+      "fileCount": 30,
+      "lastAccessed": 1776146761759,
+      "keyFiles": [
+        "000_create_update_updated_at_function.sql",
+        "001_create_organizations.sql",
+        "002_create_campuses.sql"
+      ]
+    },
+    "api/src": {
+      "path": "api/src",
+      "purpose": "Source code",
+      "fileCount": 4,
+      "lastAccessed": 1776146761760,
+      "keyFiles": [
+        "error.rs",
+        "lib.rs",
+        "main.rs"
+      ]
+    },
+    "api/tests": {
+      "path": "api/tests",
+      "purpose": "Test files",
+      "fileCount": 2,
+      "lastAccessed": 1776146761760,
+      "keyFiles": [
+        "basic_test.rs",
+        "docker_test.rs"
+      ]
+    },
+    "api-infra/src": {
+      "path": "api-infra/src",
+      "purpose": "Source code",
+      "fileCount": 5,
+      "lastAccessed": 1776146761760,
+      "keyFiles": [
+        "config.rs",
+        "error.rs",
+        "lib.rs"
+      ]
+    },
+    "docs/api": {
+      "path": "docs/api",
+      "purpose": "API routes",
+      "fileCount": 3,
+      "lastAccessed": 1776146761761,
+      "keyFiles": [
+        "CONTEST_API.md",
+        "LEADERBOARD_API.md",
+        "PROBLEMS_API.md"
+      ]
+    },
+    "domain-problems/src": {
+      "path": "domain-problems/src",
+      "purpose": "Source code",
+      "fileCount": 6,
+      "lastAccessed": 1776146761761,
+      "keyFiles": [
+        "access.rs",
+        "lib.rs",
+        "models.rs"
+      ]
+    },
+    "domain-users/src": {
+      "path": "domain-users/src",
+      "purpose": "Source code",
+      "fileCount": 4,
+      "lastAccessed": 1776146761762,
+      "keyFiles": [
+        "lib.rs",
+        "models.rs",
+        "routes.rs"
+      ]
+    },
+    "frontend/dist": {
+      "path": "frontend/dist",
+      "purpose": "Distribution/build output",
+      "fileCount": 3,
+      "lastAccessed": 1776146761762,
+      "keyFiles": [
+        "index.html",
+        "review.html",
+        "vite.svg"
+      ]
+    },
+    "judge-worker/src": {
+      "path": "judge-worker/src",
+      "purpose": "Source code",
+      "fileCount": 2,
+      "lastAccessed": 1776146761762,
+      "keyFiles": [
+        "lib.rs",
+        "main.rs"
+      ]
+    },
+    "judge-worker/tests": {
+      "path": "judge-worker/tests",
+      "purpose": "Test files",
+      "fileCount": 5,
+      "lastAccessed": 1776146761762,
+      "keyFiles": [
+        "integration_tests.rs",
+        "mod.rs",
+        "processor_fetch_test_cases.rs"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": ".planning/STATE.md",
+      "accessCount": 13,
+      "lastAccessed": 1776160034338,
+      "type": "file"
+    },
+    {
+      "path": "api/src/search/routes.rs",
+      "accessCount": 7,
+      "lastAccessed": 1776166244303,
+      "type": "file"
+    },
+    {
+      "path": "api/src/search/service.rs",
+      "accessCount": 7,
+      "lastAccessed": 1776166244357,
+      "type": "file"
+    },
+    {
+      "path": "api/src/main.rs",
+      "accessCount": 6,
+      "lastAccessed": 1776159348658,
+      "type": "file"
+    },
+    {
+      "path": "api/src/discussions/mod.rs",
+      "accessCount": 6,
+      "lastAccessed": 1776166251030,
+      "type": "file"
+    },
+    {
+      "path": "api/src/blog/routes.rs",
+      "accessCount": 6,
+      "lastAccessed": 1776166251484,
+      "type": "file"
+    },
+    {
+      "path": "api/src/blog/service.rs",
+      "accessCount": 6,
+      "lastAccessed": 1776166251762,
+      "type": "file"
+    },
+    {
+      "path": "api/src/blog/mod.rs",
+      "accessCount": 6,
+      "lastAccessed": 1776166251885,
+      "type": "file"
+    },
+    {
+      "path": "api/src/discussions/models.rs",
+      "accessCount": 6,
+      "lastAccessed": 1776166252008,
+      "type": "file"
+    },
+    {
+      "path": "api/src/discussions/service.rs",
+      "accessCount": 6,
+      "lastAccessed": 1776166252108,
+      "type": "file"
+    },
+    {
+      "path": "Cargo.toml",
+      "accessCount": 5,
+      "lastAccessed": 1776160241497,
+      "type": "file"
+    },
+    {
+      "path": "api/src/blog/models.rs",
+      "accessCount": 5,
+      "lastAccessed": 1776166136177,
+      "type": "file"
+    },
+    {
+      "path": "api/src/discussions/routes.rs",
+      "accessCount": 5,
+      "lastAccessed": 1776166136492,
+      "type": "file"
+    },
+    {
+      "path": "api/src/messages/routes.rs",
+      "accessCount": 5,
+      "lastAccessed": 1776166136760,
+      "type": "file"
+    },
+    {
+      "path": "api/src/search/models.rs",
+      "accessCount": 5,
+      "lastAccessed": 1776166244187,
+      "type": "file"
+    },
+    {
+      "path": "api/src/auth/routes.rs",
+      "accessCount": 4,
+      "lastAccessed": 1776156311276,
+      "type": "file"
+    },
+    {
+      "path": ".planning/phases/03-domain-extraction-extended-community-search/03-CONTEXT.md",
+      "accessCount": 4,
+      "lastAccessed": 1776159295600,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/state.rs",
+      "accessCount": 4,
+      "lastAccessed": 1776166170581,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/lib.rs",
+      "accessCount": 4,
+      "lastAccessed": 1776166199693,
+      "type": "file"
+    },
+    {
+      "path": "api/src/search/mod.rs",
+      "accessCount": 4,
+      "lastAccessed": 1776166244078,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/traits/community_repo.rs",
+      "accessCount": 3,
+      "lastAccessed": 1776158988988,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/traits/search_repo.rs",
+      "accessCount": 3,
+      "lastAccessed": 1776158989447,
+      "type": "file"
+    },
+    {
+      "path": ".planning/REQUIREMENTS.md",
+      "accessCount": 3,
+      "lastAccessed": 1776159295417,
+      "type": "file"
+    },
+    {
+      "path": "domain-users/Cargo.toml",
+      "accessCount": 3,
+      "lastAccessed": 1776159329807,
+      "type": "file"
+    },
+    {
+      "path": "domain-users/src/lib.rs",
+      "accessCount": 3,
+      "lastAccessed": 1776159330142,
+      "type": "file"
+    },
+    {
+      "path": "domain-problems/src/lib.rs",
+      "accessCount": 3,
+      "lastAccessed": 1776159330222,
+      "type": "file"
+    },
+    {
+      "path": "domain-problems/Cargo.toml",
+      "accessCount": 3,
+      "lastAccessed": 1776159330356,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/websocket/mod.rs",
+      "accessCount": 3,
+      "lastAccessed": 1776159348823,
+      "type": "file"
+    },
+    {
+      "path": "api/src/lib.rs",
+      "accessCount": 2,
+      "lastAccessed": 1776156308777,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/traits/mod.rs",
+      "accessCount": 2,
+      "lastAccessed": 1776158988781,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/middleware/authz.rs",
+      "accessCount": 2,
+      "lastAccessed": 1776159001713,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/websocket/message.rs",
+      "accessCount": 2,
+      "lastAccessed": 1776159348738,
+      "type": "file"
+    },
+    {
+      "path": "api/src/messages/mod.rs",
+      "accessCount": 2,
+      "lastAccessed": 1776159348861,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/Cargo.toml",
+      "accessCount": 2,
+      "lastAccessed": 1776159361142,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/websocket/server.rs",
+      "accessCount": 2,
+      "lastAccessed": 1776159361197,
+      "type": "file"
+    },
+    {
+      "path": "api/Cargo.toml",
+      "accessCount": 2,
+      "lastAccessed": 1776159361268,
+      "type": "file"
+    },
+    {
+      "path": "api/src/middleware/auth.rs",
+      "accessCount": 2,
+      "lastAccessed": 1776159375537,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/middleware/auth.rs",
+      "accessCount": 2,
+      "lastAccessed": 1776166157922,
+      "type": "file"
+    },
+    {
+      "path": ".planning/phases/02-basic-ci-domain-extraction-core-users-problems/03-SUMMARY.md",
+      "accessCount": 1,
+      "lastAccessed": 1776156951971,
+      "type": "file"
+    },
+    {
+      "path": ".planning/PROJECT.md",
+      "accessCount": 1,
+      "lastAccessed": 1776157146419,
+      "type": "file"
+    },
+    {
+      "path": ".planning/phases/02-basic-ci-domain-extraction-core-users-problems/02-CONTEXT.md",
+      "accessCount": 1,
+      "lastAccessed": 1776157172887,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/traits/notification_service.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776157755367,
+      "type": "file"
+    },
+    {
+      "path": ".planning/phases/03-domain-extraction-extended-community-search/03-DISCUSSION-LOG.md",
+      "accessCount": 1,
+      "lastAccessed": 1776158029078,
+      "type": "file"
+    },
+    {
+      "path": "domain-users/src/routes.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776158564741,
+      "type": "file"
+    },
+    {
+      "path": "domain-problems/src/routes.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776158564825,
+      "type": "file"
+    },
+    {
+      "path": "domain-problems/src/models.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776158564883,
+      "type": "file"
+    },
+    {
+      "path": "domain-problems/src/access.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776158564938,
+      "type": "file"
+    },
+    {
+      "path": "api-infra/src/middleware/mod.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776158601324,
+      "type": "file"
+    },
+    {
+      "path": ".planning/ROADMAP.md",
+      "accessCount": 1,
+      "lastAccessed": 1776159295358,
+      "type": "file"
+    },
+    {
+      "path": "api/src/websocket/handler.rs",
+      "accessCount": 1,
+      "lastAccessed": 1776159348925,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

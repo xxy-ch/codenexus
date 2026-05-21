@@ -1,0 +1,158 @@
+---
+phase: 15
+plan: 04
+type: tdd
+wave: 1
+depends_on: ["15-01"]
+files_modified:
+  - frontend/src/pages/user/Settings.tsx
+  - frontend/src/pages/user/__tests__/Settings.test.tsx
+autonomous: true
+requirements:
+  - D-15-01-W1
+  - D-15-03
+
+must_haves:
+  truths:
+    - "Settings preferences persist to localStorage and reload on mount"
+    - "Notification preferences persist to localStorage and reload on mount"
+    - "User sees saved preferences after page refresh"
+  artifacts:
+    - path: "frontend/src/pages/user/Settings.tsx"
+      provides: "localStorage-backed preference persistence"
+      contains: "localStorage"
+    - path: "frontend/src/pages/user/__tests__/Settings.test.tsx"
+      provides: "Tests for preference persistence round-trip"
+  key_links:
+    - from: "frontend/src/pages/user/Settings.tsx"
+      to: "localStorage"
+      via: "getItem/setItem in useEffect and mutation"
+      pattern: "localStorage\\.(get|set)Item"
+---
+
+<objective>
+Fix Settings.tsx preference persistence using localStorage round-trip, and add tests.
+
+Purpose: Per D-15-01-W1, TODO #2 at Settings.tsx:69,74 has no-op mutations for preferences and notifications. The page already says "偏好设置目前仅作用于本地" so localStorage persistence is honest and functional. Backend API deferred to future phase.
+
+Output: Settings.tsx reads preferences from localStorage on mount, writes on save. Tests verify round-trip.
+</objective>
+
+<execution_context>
+@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@$HOME/.claude/get-shit-done/templates/summary.md
+</execution_context>
+
+<context>
+@.planning/PROJECT.md
+@.planning/ROADMAP.md
+@.planning/STATE.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-CONTEXT.md
+@.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-01-SUMMARY.md
+@frontend/src/pages/user/Settings.tsx
+@frontend/src/store/authStore.ts
+@frontend/src/services/users.ts
+@frontend/src/test/test-utils.tsx
+</context>
+
+<tasks>
+
+<task type="auto" tdd="true">
+  <name>Task 1: Write tests for Settings localStorage persistence, then implement persistence</name>
+  <files>frontend/src/pages/user/__tests__/Settings.test.tsx, frontend/src/pages/user/Settings.tsx</files>
+  <read_first>
+    - frontend/src/pages/user/Settings.tsx
+    - frontend/src/store/authStore.ts
+    - frontend/src/services/users.ts
+    - frontend/src/test/test-utils.tsx
+    - frontend/src/test/setup.ts
+  </read_first>
+  <behavior>
+    - Test 1: Preferences state is loaded from localStorage on mount (pre-seed localStorage with `{ theme: "dark", fontSize: "large", autoSave: false, showLineNumbers: false, wordWrap: true }`)
+    - Test 2: Clicking "保存偏好（本地）" writes current preferences to localStorage under key "oj_preferences"
+    - Test 3: Notification state is loaded from localStorage on mount (pre-seed with `{ emailNotifications: false, contestReminders: false, newProblems: true, replyComments: false, weeklyReport: false }`)
+    - Test 4: Clicking "保存通知设置（本地）" writes notifications to localStorage under key "oj_notifications"
+    - Test 5: Account form displays profile data from useQuery
+  </behavior>
+  <action>
+    RED PHASE:
+    1. Create `frontend/src/pages/user/__tests__/Settings.test.tsx`.
+    2. Mock `@/store/authStore` to return a logged-in user.
+    3. Mock `@/services/users` to return profile data.
+    4. Write 5 tests for the behaviors above.
+    5. Run tests -- they should FAIL because localStorage is not wired.
+
+    GREEN PHASE:
+    6. In `frontend/src/pages/user/Settings.tsx`:
+       a. Add a helper function at the top of the component (or outside) to load from localStorage:
+          ```
+          function loadFromStorage<T>(key: string, fallback: T): T {
+            try {
+              const stored = localStorage.getItem(key)
+              return stored ? JSON.parse(stored) : fallback
+            } catch { return fallback }
+          }
+          ```
+       b. Change the `useState` for `preferences` to use localStorage initial value:
+          Replace `useState({ theme: 'light' as ..., ... })` with:
+          `useState(() => loadFromStorage('oj_preferences', { theme: 'light' as ..., language: 'zh-CN', fontSize: 'medium' as ..., autoSave: true, showLineNumbers: true, wordWrap: false }))`
+       c. Same for `notifications`:
+          `useState(() => loadFromStorage('oj_notifications', { emailNotifications: true, ... }))`
+       d. Update `updatePreferencesMutation.mutationFn` to actually write to localStorage:
+          ```
+          mutationFn: async (data: typeof preferences) => {
+            localStorage.setItem('oj_preferences', JSON.stringify(data))
+            return { success: true }
+          },
+          onSuccess: () => {
+            setMessage({ type: 'success', text: '偏好已保存到本地' })
+            setTimeout(() => setMessage(null), 3000)
+          },
+          ```
+       e. Same for `updateNotificationsMutation`:
+          ```
+          mutationFn: async (data: typeof notifications) => {
+            localStorage.setItem('oj_notifications', JSON.stringify(data))
+            return { success: true }
+          },
+          onSuccess: () => {
+            setMessage({ type: 'success', text: '通知设置已保存到本地' })
+            setTimeout(() => setMessage(null), 3000)
+          },
+          ```
+       f. Remove both `// TODO(P1)` comments (lines 69, 74).
+    7. Run tests -- they should now PASS.
+  </action>
+  <acceptance_criteria>
+    - File `frontend/src/pages/user/__tests__/Settings.test.tsx` exists with 5+ passing tests
+    - `Settings.tsx` uses `localStorage.getItem('oj_preferences')` on mount
+    - `Settings.tsx` uses `localStorage.getItem('oj_notifications')` on mount
+    - `Settings.tsx` uses `localStorage.setItem('oj_preferences', ...)` on save
+    - `Settings.tsx` uses `localStorage.setItem('oj_notifications', ...)` on save
+    - `Settings.tsx` has no `// TODO(P1)` comments
+    - `npx vitest --run src/pages/user/__tests__/Settings.test.tsx` passes with 0 skipped
+  </acceptance_criteria>
+  <verify>
+    <automated>cd /Users/xiexingyu/Documents/项目/Online_Judge/frontend && npx vitest --run src/pages/user/__tests__/Settings.test.tsx 2>&1 | tail -3</automated>
+  </verify>
+  <done>Settings preferences and notifications persist to localStorage with full round-trip. 5+ tests pass. No TODO comments remain.</done>
+</task>
+
+</tasks>
+
+<verification>
+`npx vitest --run` shows all tests passing including new Settings tests.
+</verification>
+
+<success_criteria>
+- Settings.tsx reads preferences from localStorage on mount
+- Settings.tsx writes preferences to localStorage on save
+- Settings.tsx reads notifications from localStorage on mount
+- Settings.tsx writes notifications to localStorage on save
+- Settings.test.tsx has 5+ passing tests
+- No TODO comments about persistence remain
+</success_criteria>
+
+<output>
+After completion, create `.planning/phases/15-frontend-ui-completion-remaining-pages-polish-and-integratio/15-04-SUMMARY.md`
+</output>

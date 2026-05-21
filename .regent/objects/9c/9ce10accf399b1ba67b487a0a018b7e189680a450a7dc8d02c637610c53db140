@@ -1,0 +1,1 @@
+"ERROR:  column \"slug\" does not exist\nLINE 1: select id,title,slug from problems order by id limit 5;\n                        ^\n"

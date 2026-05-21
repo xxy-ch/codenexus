@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "active": true,
+  "skill": "ultrawork",
+  "keyword": "$ultrawork",
+  "phase": "inspect-claude-deliveries",
+  "activated_at": "2026-04-11T11:30:36.243Z",
+  "updated_at": "2026-04-11T11:30:36.243Z",
+  "source": "keyword-detector",
+  "session_id": "019d7ae5-74c0-7da2-ada0-8fdfcb3ae378",
+  "turn_id": "019d7c4e-8445-7e91-a4c6-bfc36d1e8ceb",
+  "active_skills": [
+    {
+      "skill": "ultrawork",
+      "phase": "inspect-claude-deliveries",
+      "active": true,
+      "activated_at": "2026-04-11T11:30:36.243Z",
+      "updated_at": "2026-04-11T11:30:36.243Z",
+      "session_id": "019d7ae5-74c0-7da2-ada0-8fdfcb3ae378"
+    }
+  ],
+  "initialized_mode": "ultrawork",
+  "initialized_state_path": ".omx/state/sessions/019d79bd-d79a-7741-bb93-aa8dea54d955/ultrawork-state.json",
+  "iteration": 1,
+  "last_turn_at": "2026-04-11T11:30:36.301Z"
+}

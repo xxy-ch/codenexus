@@ -1,0 +1,1 @@
+{"command":"sed -n '150,240p' backend/judge-worker/src/main.rs; sed -n '650,890p' backend/judge-worker/src/main.rs; sed -n '1,120p' backend/judge-worker/src/main.rs"}

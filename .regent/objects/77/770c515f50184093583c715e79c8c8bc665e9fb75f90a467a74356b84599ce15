@@ -1,0 +1,1 @@
+{"command":"rg -n \"submitCode|开始解题|提交|Monaco|editor|data-testid|login|2001|admin123\" frontend/src frontend/e2e -S"}

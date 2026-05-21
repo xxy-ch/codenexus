@@ -1,0 +1,173 @@
+{
+  "updatedAt": "2026-05-13T11:13:17.175Z",
+  "missions": [
+    {
+      "id": "session:5ed3e8ae-f666-45e8-9e9d-9976e7f67591:none",
+      "source": "session",
+      "name": "none",
+      "objective": "Session mission",
+      "createdAt": "2026-05-13T10:40:56.586Z",
+      "updatedAt": "2026-05-13T11:13:17.175Z",
+      "status": "done",
+      "workerCount": 5,
+      "taskCounts": {
+        "total": 5,
+        "pending": 0,
+        "blocked": 0,
+        "inProgress": 0,
+        "completed": 5,
+        "failed": 0
+      },
+      "agents": [
+        {
+          "name": "general-purpose:ab053f7",
+          "role": "general-purpose",
+          "ownership": "ab053f71491ec9595",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-05-13T11:13:17.175Z"
+        },
+        {
+          "name": "general-purpose:ae76536",
+          "role": "general-purpose",
+          "ownership": "ae76536dcf9a736ad",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-05-13T10:57:10.822Z"
+        },
+        {
+          "name": "general-purpose:aeb2ce7",
+          "role": "general-purpose",
+          "ownership": "aeb2ce7882b901b75",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-05-13T10:53:43.049Z"
+        },
+        {
+          "name": "general-purpose:acd79aa",
+          "role": "general-purpose",
+          "ownership": "acd79aa4cd7cfe251",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-05-13T10:57:16.663Z"
+        },
+        {
+          "name": "general-purpose:abdbd7b",
+          "role": "general-purpose",
+          "ownership": "abdbd7b7df67279f0",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-05-13T11:06:47.215Z"
+        }
+      ],
+      "timeline": [
+        {
+          "id": "session-start:acd79aa4cd7cfe251:2026-05-13T10:48:38.020Z",
+          "at": "2026-05-13T10:48:38.020Z",
+          "kind": "update",
+          "agent": "general-purpose:acd79aa",
+          "detail": "started general-purpose:acd79aa",
+          "sourceKey": "session-start:acd79aa4cd7cfe251"
+        },
+        {
+          "id": "session-stop:acd79aa4cd7cfe251:2026-05-13T10:50:44.714Z",
+          "at": "2026-05-13T10:50:44.714Z",
+          "kind": "completion",
+          "agent": "general-purpose:acd79aa",
+          "detail": "completed",
+          "sourceKey": "session-stop:acd79aa4cd7cfe251"
+        },
+        {
+          "id": "session-start:abdbd7b7df67279f0:2026-05-13T10:51:23.833Z",
+          "at": "2026-05-13T10:51:23.833Z",
+          "kind": "update",
+          "agent": "general-purpose:abdbd7b",
+          "detail": "started general-purpose:abdbd7b",
+          "sourceKey": "session-start:abdbd7b7df67279f0"
+        },
+        {
+          "id": "session-stop:ab053f71491ec9595:2026-05-13T10:51:54.138Z",
+          "at": "2026-05-13T10:51:54.138Z",
+          "kind": "completion",
+          "agent": "general-purpose:ab053f7",
+          "detail": "completed",
+          "sourceKey": "session-stop:ab053f71491ec9595"
+        },
+        {
+          "id": "session-stop:abdbd7b7df67279f0:2026-05-13T10:53:29.232Z",
+          "at": "2026-05-13T10:53:29.232Z",
+          "kind": "completion",
+          "agent": "general-purpose:abdbd7b",
+          "detail": "completed",
+          "sourceKey": "session-stop:abdbd7b7df67279f0"
+        },
+        {
+          "id": "session-stop:aeb2ce7882b901b75:2026-05-13T10:53:43.049Z",
+          "at": "2026-05-13T10:53:43.049Z",
+          "kind": "completion",
+          "agent": "general-purpose:aeb2ce7",
+          "detail": "completed",
+          "sourceKey": "session-stop:aeb2ce7882b901b75"
+        },
+        {
+          "id": "session-stop:a4d35cf6b4d8fe1a4:2026-05-13T10:53:47.682Z",
+          "at": "2026-05-13T10:53:47.682Z",
+          "kind": "completion",
+          "agent": "general-purpose:ab053f7",
+          "detail": "completed",
+          "sourceKey": "session-stop:a4d35cf6b4d8fe1a4"
+        },
+        {
+          "id": "session-stop:ae76536dcf9a736ad:2026-05-13T10:57:10.822Z",
+          "at": "2026-05-13T10:57:10.822Z",
+          "kind": "completion",
+          "agent": "general-purpose:ae76536",
+          "detail": "completed",
+          "sourceKey": "session-stop:ae76536dcf9a736ad"
+        },
+        {
+          "id": "session-stop:acd79aa4cd7cfe251:2026-05-13T10:57:16.663Z",
+          "at": "2026-05-13T10:57:16.663Z",
+          "kind": "completion",
+          "agent": "general-purpose:acd79aa",
+          "detail": "completed",
+          "sourceKey": "session-stop:acd79aa4cd7cfe251"
+        },
+        {
+          "id": "session-stop:a68b7205f9f072b29:2026-05-13T11:02:01.178Z",
+          "at": "2026-05-13T11:02:01.178Z",
+          "kind": "completion",
+          "agent": "general-purpose:ab053f7",
+          "detail": "completed",
+          "sourceKey": "session-stop:a68b7205f9f072b29"
+        },
+        {
+          "id": "session-stop:abdbd7b7df67279f0:2026-05-13T11:06:47.215Z",
+          "at": "2026-05-13T11:06:47.215Z",
+          "kind": "completion",
+          "agent": "general-purpose:abdbd7b",
+          "detail": "completed",
+          "sourceKey": "session-stop:abdbd7b7df67279f0"
+        },
+        {
+          "id": "session-stop:ae21cb1c4a55c4468:2026-05-13T11:13:17.175Z",
+          "at": "2026-05-13T11:13:17.175Z",
+          "kind": "completion",
+          "agent": "general-purpose:ab053f7",
+          "detail": "completed",
+          "sourceKey": "session-stop:ae21cb1c4a55c4468"
+        }
+      ]
+    }
+  ]
+}

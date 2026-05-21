@@ -1,0 +1,121 @@
+{
+  "updatedAt": "2026-04-25T06:58:36.467Z",
+  "missions": [
+    {
+      "id": "session:fa4a7d69-04a4-460a-b688-6a8b0b9121a1:none",
+      "source": "session",
+      "name": "none",
+      "objective": "Session mission",
+      "createdAt": "2026-04-24T14:45:01.122Z",
+      "updatedAt": "2026-04-25T06:58:36.467Z",
+      "status": "running",
+      "workerCount": 7,
+      "taskCounts": {
+        "total": 7,
+        "pending": 0,
+        "blocked": 0,
+        "inProgress": 4,
+        "completed": 3,
+        "failed": 0
+      },
+      "agents": [
+        {
+          "name": "everything-claude-code:security-reviewer:a73ae51",
+          "role": "everything-claude-code:security-reviewer",
+          "ownership": "a73ae514a271e8543",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-04-24T14:47:42.266Z"
+        },
+        {
+          "name": "everything-claude-code:security-reviewer:a3af219",
+          "role": "everything-claude-code:security-reviewer",
+          "ownership": "a3af219b6ce4808c8",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-04-24T14:47:04.330Z"
+        },
+        {
+          "name": "everything-claude-code:security-reviewer:a1da79f",
+          "role": "everything-claude-code:security-reviewer",
+          "ownership": "a1da79ff5682fee34",
+          "status": "done",
+          "currentStep": null,
+          "latestUpdate": "completed",
+          "completedSummary": null,
+          "updatedAt": "2026-04-24T14:46:19.147Z"
+        },
+        {
+          "name": "general-purpose:ac03752",
+          "role": "general-purpose",
+          "ownership": "ac037521c51a07c78",
+          "status": "running",
+          "currentStep": null,
+          "latestUpdate": null,
+          "completedSummary": null,
+          "updatedAt": "2026-04-25T06:58:35.941Z"
+        },
+        {
+          "name": "general-purpose:a2702ec",
+          "role": "general-purpose",
+          "ownership": "a2702ec16fa5609af",
+          "status": "running",
+          "currentStep": null,
+          "latestUpdate": null,
+          "completedSummary": null,
+          "updatedAt": "2026-04-25T06:58:36.298Z"
+        },
+        {
+          "name": "general-purpose:aee7833",
+          "role": "general-purpose",
+          "ownership": "aee783377c2f93bda",
+          "status": "running",
+          "currentStep": null,
+          "latestUpdate": null,
+          "completedSummary": null,
+          "updatedAt": "2026-04-25T06:58:36.407Z"
+        },
+        {
+          "name": "general-purpose:a771b84",
+          "role": "general-purpose",
+          "ownership": "a771b8428559a2696",
+          "status": "running",
+          "currentStep": null,
+          "latestUpdate": null,
+          "completedSummary": null,
+          "updatedAt": "2026-04-25T06:58:36.467Z"
+        }
+      ],
+      "timeline": [
+        {
+          "id": "session-start:a2702ec16fa5609af:2026-04-25T06:58:36.298Z",
+          "at": "2026-04-25T06:58:36.298Z",
+          "kind": "update",
+          "agent": "general-purpose:a2702ec",
+          "detail": "started general-purpose:a2702ec",
+          "sourceKey": "session-start:a2702ec16fa5609af"
+        },
+        {
+          "id": "session-start:aee783377c2f93bda:2026-04-25T06:58:36.407Z",
+          "at": "2026-04-25T06:58:36.407Z",
+          "kind": "update",
+          "agent": "general-purpose:aee7833",
+          "detail": "started general-purpose:aee7833",
+          "sourceKey": "session-start:aee783377c2f93bda"
+        },
+        {
+          "id": "session-start:a771b8428559a2696:2026-04-25T06:58:36.467Z",
+          "at": "2026-04-25T06:58:36.467Z",
+          "kind": "update",
+          "agent": "general-purpose:a771b84",
+          "detail": "started general-purpose:a771b84",
+          "sourceKey": "session-start:a771b8428559a2696"
+        }
+      ]
+    }
+  ]
+}

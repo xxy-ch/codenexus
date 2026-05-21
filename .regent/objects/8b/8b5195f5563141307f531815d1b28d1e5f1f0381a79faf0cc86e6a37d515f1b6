@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"sed -n '150,155p' src/components/layout/Sidebar.tsx | cat -A\",\"description\":\"Show exact whitespace in Sidebar lines 150-155\"}",
+  "error": "Exit code 1\ncat: illegal option -- A\nusage: cat [-belnstuv] [file ...]",
+  "timestamp": "2026-04-25T11:40:24.961Z",
+  "retry_count": 1
+}

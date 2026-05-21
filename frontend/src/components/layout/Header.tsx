@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export function Header({ title, showSearch = true, actions }: HeaderProps) {
   return (
-    <header className="h-12 bg-white border-b border-border flex items-center justify-between px-6 z-10">
+    <header className="h-[52px] bg-background/60 backdrop-blur-xl border-b border-border/40 flex items-center justify-between px-4 z-10 shadow-sm shrink-0">
       <div className="flex items-center flex-1 gap-6">
         {title && (
           <h1 className="text-sm font-semibold text-foreground hidden md:block shrink-0">
@@ -35,7 +35,7 @@ export function Header({ title, showSearch = true, actions }: HeaderProps) {
         <div className="h-5 w-px bg-border mx-1" />
 
         {actions || (
-          <button className="bg-primary text-primary-foreground px-3 py-1.5 rounded-md text-sm font-medium hover:bg-primary/90 transition-colors duration-150 flex items-center gap-1.5">
+          <button className="bg-primary text-primary-foreground shadow-sm px-3.5 py-1.5 rounded-md text-[13px] font-medium hover:opacity-90 active:scale-[0.97] transition-all flex items-center gap-1.5">
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">新建提交</span>
           </button>

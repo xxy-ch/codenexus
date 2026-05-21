@@ -1,0 +1,58 @@
+# Database Configuration
+DATABASE_URL=postgresql://username:password@localhost:5432/online_judge
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+
+# JWT Authentication
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+
+# Demo Admin User (optional - will use defaults if not set)
+DEMO_ADMIN_EMAIL=admin@example.com
+DEMO_ADMIN_PASSWORD=admin123
+DEMO_ADMIN_SCHOOL_ID=1
+DEMO_ADMIN_ROLE=admin
+
+# --- LLM Worker Configuration ---
+# Primary LLM API endpoint (OpenAI-compatible)
+LLM_API_URL=https://api.openai.com
+# Fallback LLM API endpoint (optional, used when primary fails)
+LLM_FALLBACK_API_URL=
+# LLM API key
+LLM_API_KEY=sk-your-api-key
+# LLM model name
+LLM_MODEL=gpt-4o
+# Request timeout in seconds (default: 120)
+LLM_TIMEOUT_SECS=120
+# Max retries on failure (default: 3)
+LLM_MAX_RETRIES=3
+# Redis stream for LLM tasks (default: llm_tasks)
+REDIS_STREAM=llm_tasks
+# Consumer group name (default: llm-workers)
+CONSUMER_GROUP=llm-workers
+# Consumer name (default: llm-worker-1)
+CONSUMER_NAME=llm-worker-1
+
+# --- Embedding Configuration (domain-analysis) ---
+# Embedding API endpoint (optional, enables embeddings when set)
+EMBEDDING_API_URL=
+# Fallback embedding API endpoint (optional)
+EMBEDDING_FALLBACK_URL=
+# Embedding API key (optional)
+EMBEDDING_API_KEY=
+# Embedding model name (optional)
+EMBEDDING_MODEL=text-embedding-3-small
+
+# --- AI Batch Processing (domain-analysis) ---
+# Enable/disable batch AI processing (default: false)
+AI_BATCH_ENABLED=false
+# Hour to run batch processing in UTC (default: 2)
+AI_BATCH_HOUR=2
+# Batch size for processing (default: 50)
+AI_BATCH_SIZE=50
+
+# --- Feature Gateway Configuration ---
+# Enable/disable the feature gateway (default: true)
+FEATURE_GATEWAY_ENABLED=true
+# Gateway bind address (default: 0.0.0.0:3001)
+GATEWAY_BIND_ADDRESS=0.0.0.0:3001

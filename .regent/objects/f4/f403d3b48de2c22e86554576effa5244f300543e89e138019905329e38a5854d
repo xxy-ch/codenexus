@@ -1,0 +1,84 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - img [ref=e7]
+      - generic [ref=e11]: CodeNexus
+    - navigation [ref=e12]:
+      - generic [ref=e13]:
+        - link "仪表板" [ref=e14] [cursor=pointer]:
+          - /url: /dashboard
+          - img [ref=e15]
+          - generic [ref=e20]: 仪表板
+        - link "题库" [ref=e21] [cursor=pointer]:
+          - /url: /problems
+          - img [ref=e22]
+          - generic [ref=e24]: 题库
+        - link "提交记录" [ref=e25] [cursor=pointer]:
+          - /url: /submissions
+          - img [ref=e26]
+          - generic [ref=e30]: 提交记录
+        - link "竞赛 2" [ref=e31] [cursor=pointer]:
+          - /url: /contests
+          - img [ref=e32]
+          - generic [ref=e38]: 竞赛
+          - generic [ref=e39]: "2"
+        - link "排行榜" [ref=e40] [cursor=pointer]:
+          - /url: /ranking
+          - img [ref=e41]
+          - generic [ref=e43]: 排行榜
+        - link "学习路线" [ref=e44] [cursor=pointer]:
+          - /url: /roadmap
+          - img [ref=e45]
+          - generic [ref=e47]: 学习路线
+        - link "讨论区" [ref=e48] [cursor=pointer]:
+          - /url: /discussions
+          - img [ref=e49]
+          - generic [ref=e51]: 讨论区
+        - link "博客" [ref=e52] [cursor=pointer]:
+          - /url: /blog
+          - img [ref=e53]
+          - generic [ref=e55]: 博客
+        - link "消息" [ref=e56] [cursor=pointer]:
+          - /url: /messages
+          - img [ref=e57]
+          - generic [ref=e60]: 消息
+        - link "班级管理" [ref=e61] [cursor=pointer]:
+          - /url: /teacher/classes
+          - img [ref=e62]
+          - generic [ref=e67]: 班级管理
+        - link "创建竞赛" [ref=e68] [cursor=pointer]:
+          - /url: /teacher/contest-wizard
+          - img [ref=e69]
+          - generic [ref=e72]: 创建竞赛
+        - link "作业报告" [ref=e73] [cursor=pointer]:
+          - /url: /teacher/assignment-report
+          - img [ref=e74]
+          - generic [ref=e77]: 作业报告
+        - link "批量操作" [ref=e78] [cursor=pointer]:
+          - /url: /batch-operations
+          - img [ref=e79]
+          - generic [ref=e82]: 批量操作
+        - link "功能管理" [ref=e83] [cursor=pointer]:
+          - /url: /admin/features
+          - img [ref=e84]
+          - generic [ref=e95]: 功能管理
+    - generic [ref=e97]:
+      - link "10" [ref=e98] [cursor=pointer]:
+        - /url: /profile
+      - generic [ref=e99]:
+        - link "1001" [ref=e100] [cursor=pointer]:
+          - /url: /profile
+        - paragraph [ref=e101]: 超级管理员
+      - generic [ref=e102]:
+        - link "设置" [ref=e103] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e104]
+        - button "退出登录" [ref=e116]:
+          - img [ref=e117]
+  - main [ref=e120]:
+    - generic [ref=e122]:
+      - button "通知" [ref=e123]:
+        - img [ref=e124]
+      - button [ref=e127]:
+        - img [ref=e128]
+    - paragraph [ref=e134]: 页面加载中...

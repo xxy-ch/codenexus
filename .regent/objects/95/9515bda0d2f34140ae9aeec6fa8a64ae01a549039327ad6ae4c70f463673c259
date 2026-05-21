@@ -1,0 +1,1 @@
+{"command":"sed -n '1,70p' /Users/xiexingyu/.codex/memories/MEMORY.md"}

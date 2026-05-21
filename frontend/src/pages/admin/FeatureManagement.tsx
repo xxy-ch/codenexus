@@ -166,14 +166,14 @@ export function FeatureManagement() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="w-[200px] text-xs font-semibold uppercase tracking-widest text-muted-foreground">功能名称</TableHead>
-              <TableHead className="w-[100px] text-xs font-semibold uppercase tracking-widest text-muted-foreground">默认值</TableHead>
+            <TableRow className="border-border/40 hover:bg-transparent">
+              <TableHead className="w-[200px] text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">功能名称</TableHead>
+              <TableHead className="w-[100px] text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">默认值</TableHead>
               {scopeColumns.map((col) => (
-                <TableHead key={col.scope} className="w-[150px] text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <TableHead key={col.scope} className="w-[150px] text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {col.label}
                 </TableHead>
               ))}
@@ -184,12 +184,12 @@ export function FeatureManagement() {
               const featureFlags = flagsMap?.[feature.slug] ?? []
 
               return (
-                <TableRow key={feature.slug} className="border-border hover:bg-muted/50">
+                <TableRow key={feature.slug} className="border-border/40 hover:bg-muted/50">
                   <TableCell>
                     <div>
                       <div className="text-sm font-medium text-foreground">{feature.name}</div>
                       {feature.description && (
-                        <div className="text-xs text-muted-foreground mt-0.5">
+                        <div className="text-[13px] text-muted-foreground mt-0.5">
                           {feature.description}
                         </div>
                       )}
