@@ -170,10 +170,10 @@ export function FeatureManagement() {
         <Table>
           <TableHeader>
             <TableRow className="border-border/40 hover:bg-transparent">
-              <TableHead className="w-[200px] text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">功能名称</TableHead>
-              <TableHead className="w-[100px] text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">默认值</TableHead>
+              <TableHead className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">功能名称</TableHead>
+              <TableHead className="w-[100px] text-center text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">默认值</TableHead>
               {scopeColumns.map((col) => (
-                <TableHead key={col.scope} className="w-[150px] text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">
+                <TableHead key={col.scope} className="w-[140px] text-center text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {col.label}
                 </TableHead>
               ))}
@@ -185,7 +185,7 @@ export function FeatureManagement() {
 
               return (
                 <TableRow key={feature.slug} className="border-border/40 hover:bg-muted/50">
-                  <TableCell>
+                  <TableCell className="align-top pt-4">
                     <div>
                       <div className="text-sm font-medium text-foreground">{feature.name}</div>
                       {feature.description && (
@@ -195,7 +195,7 @@ export function FeatureManagement() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-top pt-4">
                     <Badge variant={feature.default_enabled ? 'default' : 'secondary'}>
                       {feature.default_enabled ? '启用' : '禁用'}
                     </Badge>
@@ -206,17 +206,19 @@ export function FeatureManagement() {
                       ? override.enabled
                       : feature.default_enabled
                     const isWritable = writableScopes.includes(col.scope)
-
                     return (
-                      <TableCell key={col.scope}>
-                        <FeatureToggle
-                          slug={feature.slug}
-                          scope={col.scope}
-                          enabled={effectiveEnabled}
-                          onToggle={handleToggle}
-                          disabled={!isWritable}
-                          source={override ? col.scope : 'default'}
-                        />
+                      <TableCell key={col.scope} className="align-top pt-4">
+                        <div className="flex justify-center">
+                          <FeatureToggle
+                            slug={feature.slug}
+                            scope={col.scope}
+                            enabled={effectiveEnabled}
+                            onToggle={handleToggle}
+                            disabled={!isWritable}
+                            source={override ? col.scope : 'default'}
+                            showLabel={false}
+                          />
+                        </div>
                       </TableCell>
                     )
                   })}

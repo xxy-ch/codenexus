@@ -34,6 +34,7 @@ export function LoginPage() {
       if (!result.success) {
         setError(result.error || '登录失败')
       }
+      // Login successful, the useEffect will navigate to dashboard
     } catch (err) {
       setError(err instanceof Error ? err.message : '发生意外错误')
     } finally {
@@ -67,7 +68,7 @@ export function LoginPage() {
             <Code2 className="w-7 h-7 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
-            欢迎使用 CodeNexus
+            欢迎使用 <span className="font-serif tracking-normal">CodeNexus</span>
           </h1>
           <p className="text-sm text-muted-foreground">
             登录以继续你的编程之旅

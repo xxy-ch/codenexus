@@ -7,10 +7,10 @@ interface InheritedIndicatorProps {
 }
 
 const SCOPE_LABEL_MAP: Record<InheritedIndicatorProps['source'], string> = {
-  default: 'Default',
-  global: 'Global',
-  campus: 'Campus',
-  grade: 'Grade',
+  default: '默认值',
+  global: '全局',
+  campus: '校区',
+  grade: '年级',
 }
 
 function InheritedIndicator({ source, className }: InheritedIndicatorProps) {
@@ -20,7 +20,7 @@ function InheritedIndicator({ source, className }: InheritedIndicatorProps) {
       className={cn('inline-flex items-center gap-1 text-xs text-muted-foreground', className)}
     >
       <ArrowDownLeft className="h-3 w-3" />
-      <span>Inherited from: {SCOPE_LABEL_MAP[source]}</span>
+      <span>继承自: {SCOPE_LABEL_MAP[source]}</span>
     </span>
   )
 }

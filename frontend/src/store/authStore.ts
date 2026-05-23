@@ -1,14 +1,8 @@
 import { create } from 'zustand'
 import type { User, AuthResponse } from '@/types/auth'
-import { API_CONFIG } from '@/services/config'
+import { request } from '@/services/api'
 
-const buildApiUrl = (path: string) => `${API_CONFIG.baseURL}${path}`
 const accessTokenKey = 'access_token'
-
-const authHeaders = () => {
-  const token = localStorage.getItem(accessTokenKey)
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
 
 interface AuthState {
   user: User | null
@@ -39,18 +33,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
   login: async (credentials) => {
     set({ isLoading: true, error: null })
     try {
-      const response = await fetch(buildApiUrl('/auth/login'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(credentials),
-      })
+      const data = await request<AuthResponse>('post', '/auth/login', credentials)
 
-      if (!response.ok) {
-        throw new Error('Login failed')
-      }
-
-      const data: AuthResponse = await response.json()
       localStorage.setItem(accessTokenKey, data.token)
       set({
         user: data.user,
@@ -70,18 +54,8 @@ export const useAuthStore = create<AuthState>()((set) => ({
   register: async (data) => {
     set({ isLoading: true, error: null })
     try {
-      const response = await fetch(buildApiUrl('/auth/register'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      })
+      const authData = await request<AuthResponse>('post', '/auth/register', data)
 
-      if (!response.ok) {
-        throw new Error('Registration failed')
-      }
-
-      const authData: AuthResponse = await response.json()
       localStorage.setItem(accessTokenKey, authData.token)
       set({
         user: authData.user,
@@ -100,11 +74,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
   logout: () => {
     // Call backend logout to blacklist the token
-    fetch(buildApiUrl('/auth/logout'), {
-      method: 'POST',
-      headers: authHeaders(),
-      credentials: 'include',
-    }).catch(() => {})
+    request('post', '/auth/logout').catch(() => {})
     localStorage.removeItem(accessTokenKey)
     set({
       user: null,
@@ -118,16 +88,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   checkAuth: async () => {
     set({ isLoading: true })
     try {
-      const response = await fetch(buildApiUrl('/users/me'), {
-        headers: authHeaders(),
-        credentials: 'include',
-      })
-
-      if (!response.ok) {
-        throw new Error('Auth check failed')
-      }
-
-      const user: User = await response.json()
+      const user = await request<User>('get', '/users/me')
       set({
         user,
         isAuthenticated: true,

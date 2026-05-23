@@ -1,41 +1,92 @@
 import { useQuery } from '@tanstack/react-query'
 import { usersService } from '@/services/users'
-import { CheckCircle2, Circle, Map, Sparkles } from 'lucide-react'
+import { Map, Sparkles } from 'lucide-react'
 import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
+import { ReactFlow, Background, Controls } from '@xyflow/react'
+import type { NodeTypes, Edge, Node } from '@xyflow/react'
+import { useNavigate } from 'react-router-dom'
+import '@xyflow/react/dist/style.css'
+import { RoadmapNode } from '@/components/roadmap/RoadmapNode'
 
-const roadmapStages = [
-  {
-    id: 'basic',
-    title: '基础算法',
-    description: '掌握编程竞赛入门必备的数据结构基础',
-    topics: ['数组', '字符串', '哈希表'],
-    color: 'text-status-accepted',
-    bg: 'bg-status-accepted/10',
-    ring: 'ring-status-accepted/30',
-    dot: 'bg-status-accepted',
-  },
-  {
-    id: 'medium',
-    title: '进阶技巧',
-    description: '学习常用优化策略与区间操作方法',
-    topics: ['二分', '滑动窗口', '前缀和'],
-    color: 'text-primary',
-    bg: 'bg-primary/10',
-    ring: 'ring-primary/30',
-    dot: 'bg-primary',
-  },
-  {
-    id: 'advanced',
-    title: '高级主题',
-    description: '挑战高难度算法与复杂数据结构',
-    topics: ['图论', '动态规划', '数据结构'],
-    color: 'text-status-re',
-    bg: 'bg-status-re/10',
-    ring: 'ring-status-re/30',
-    dot: 'bg-violet-500',
-  },
-]
+const nodeTypes: NodeTypes = {
+  roadmap: RoadmapNode,
+}
+
+const getNodesAndEdges = (completion: number): { nodes: Node[]; edges: Edge[] } => {
+  const isBasicDone = completion >= 25
+  const isMediumDsDone = completion >= 60
+  const isMediumAlgoDone = completion >= 75
+  const isAdvancedDone = completion >= 100
+
+  const nodes: Node[] = [
+    {
+      id: 'basic',
+      type: 'roadmap',
+      position: { x: 250, y: 50 },
+      data: {
+        title: '基础语法与算法',
+        description: '掌握编程竞赛入门必备的数据结构基础',
+        topics: ['数组与矩阵', '字符串处理', '哈希表'],
+        status: isBasicDone ? 'done' : 'current',
+        color: 'text-status-accepted',
+        bg: 'bg-status-accepted/10',
+        dot: 'text-status-accepted',
+      },
+    },
+    {
+      id: 'medium-ds',
+      type: 'roadmap',
+      position: { x: 50, y: 300 },
+      data: {
+        title: '中级数据结构',
+        description: '学习常用的数据存储与区间查询方法',
+        topics: ['栈与队列', '链表高级操作', '并查集基础'],
+        status: isMediumDsDone ? 'done' : (isBasicDone ? 'current' : 'locked'),
+        color: 'text-primary',
+        bg: 'bg-primary/10',
+        dot: 'text-primary',
+      },
+    },
+    {
+      id: 'medium-algo',
+      type: 'roadmap',
+      position: { x: 450, y: 300 },
+      data: {
+        title: '核心算法技巧',
+        description: '掌握经典算法的优化与常见变种',
+        topics: ['二分与三分', '滑动窗口', '贪心与排序'],
+        status: isMediumAlgoDone ? 'done' : (isBasicDone ? 'current' : 'locked'),
+        color: 'text-amber-500',
+        bg: 'bg-amber-500/10',
+        dot: 'text-amber-500',
+      },
+    },
+    {
+      id: 'advanced',
+      type: 'roadmap',
+      position: { x: 250, y: 550 },
+      data: {
+        title: '高级动态规划与图论',
+        description: '挑战高难度综合性算法竞赛题目',
+        topics: ['状态压缩DP', '最短路算法', '网络流计算'],
+        status: isAdvancedDone ? 'done' : (isMediumDsDone || isMediumAlgoDone ? 'current' : 'locked'),
+        color: 'text-purple-500',
+        bg: 'bg-purple-500/10',
+        dot: 'text-purple-500',
+      },
+    },
+  ]
+
+  const edges: Edge[] = [
+    { id: 'e1', source: 'basic', target: 'medium-ds', animated: isBasicDone && !isMediumDsDone, style: { stroke: isBasicDone ? '#f54e00' : '#e5e5e5', strokeWidth: 2 } },
+    { id: 'e2', source: 'basic', target: 'medium-algo', animated: isBasicDone && !isMediumAlgoDone, style: { stroke: isBasicDone ? '#f54e00' : '#e5e5e5', strokeWidth: 2 } },
+    { id: 'e3', source: 'medium-ds', target: 'advanced', animated: isMediumDsDone && !isAdvancedDone, style: { stroke: isMediumDsDone ? '#f54e00' : '#e5e5e5', strokeWidth: 2 } },
+    { id: 'e4', source: 'medium-algo', target: 'advanced', animated: isMediumAlgoDone && !isAdvancedDone, style: { stroke: isMediumAlgoDone ? '#f54e00' : '#e5e5e5', strokeWidth: 2 } },
+  ]
+
+  return { nodes, edges }
+}
 
 export function LearningRoadmap() {
   const { data: stats, isLoading, error, refetch } = useQuery({
@@ -62,130 +113,72 @@ export function LearningRoadmap() {
     Math.round((stats.unique_problems_solved / Math.max(1, stats.unique_problems_solved + 40)) * 100)
   )
 
+  const { nodes, edges } = getNodesAndEdges(completion)
+
+  const handleNodeClick = (_: React.MouseEvent, node: Node) => {
+    if (node.data?.topics) {
+      const tags = (node.data.topics as string[]).join(',')
+      navigate(`/problems?tags=${encodeURIComponent(tags)}`)
+    }
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 h-full flex flex-col">
       {/* Hero header — warm editorial feel */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
-            <Map className="h-5 w-5 text-primary" />
+      <div className="rounded-xl border border-border bg-card p-6 flex-shrink-0">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Map className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-card-foreground leading-relaxed">
+                拓扑学习路线图
+              </h1>
+              <p className="text-sm font-normal text-muted-foreground leading-normal">
+                以知识拓扑图的形式探索你的算法技能树，点亮各个模块
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-semibold text-card-foreground leading-relaxed">
-              算法学习路线图
-            </h1>
-            <p className="text-sm font-normal text-muted-foreground leading-normal">
-              根据你的做题进度动态建议下一阶段学习重点
+          
+          <div className="flex-1 md:max-w-xs">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <span className="text-sm font-medium text-card-foreground">总体进度</span>
+              </div>
+              <span className="text-sm font-semibold text-primary tabular-nums">{completion}%</span>
+            </div>
+            <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                style={{ width: `${completion}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground text-right">
+              已解决 {stats.unique_problems_solved} 题
             </p>
           </div>
         </div>
       </div>
 
-      {/* Overall progress card */}
-      <div className="rounded-xl border border-border bg-card p-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-card-foreground">总体进度</span>
-          </div>
-          <span className="text-sm font-semibold text-primary tabular-nums">{completion}%</span>
-        </div>
-        <div className="h-2.5 rounded-full bg-muted overflow-hidden">
-          <div
-            className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
-            style={{ width: `${completion}%` }}
-          />
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground leading-relaxed">
-          已解决 {stats.unique_problems_solved} 题，继续加油
-        </p>
-      </div>
-
-      {/* Step-by-step roadmap — visual progression with connecting line */}
-      <div className="relative">
-        {/* Vertical connecting line (desktop only) */}
-        <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-px bg-border -translate-x-1/2" aria-hidden="true" />
-
-        <div className="space-y-6 md:space-y-0 md:grid md:grid-cols-3 md:gap-6">
-          {roadmapStages.map((stage, index) => {
-            const stageDone = completion >= (index + 1) * 30
-            const isCurrent = !stageDone && (index === 0 || completion >= index * 30)
-
-            return (
-              <div key={stage.id} className="relative">
-                {/* Step number connector (desktop) */}
-                <div className="hidden md:flex absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                  <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ring-2 transition-colors ${
-                    stageDone
-                      ? 'bg-primary text-primary-foreground ring-primary'
-                      : isCurrent
-                        ? 'bg-card text-primary ring-primary'
-                        : 'bg-muted text-muted-foreground ring-border'
-                  }`}>
-                    {stageDone ? (
-                      <CheckCircle2 className="h-4 w-4" />
-                    ) : (
-                      index + 1
-                    )}
-                  </div>
-                </div>
-
-                <div className={`rounded-xl border bg-card p-5 transition-shadow hover:shadow-sm ${
-                  stageDone ? 'border-border' : isCurrent ? 'border-primary/40' : 'border-border'
-                }`}>
-                  {/* Step number (mobile) */}
-                  <div className="flex md:hidden items-center gap-2 mb-3">
-                    <div className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                      stageDone
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {stageDone ? <CheckCircle2 className="h-3.5 w-3.5" /> : index + 1}
-                    </div>
-                    <span className={`text-xs font-medium ${stageDone ? 'text-primary' : 'text-muted-foreground'}`}>
-                      阶段 {index + 1}
-                    </span>
-                  </div>
-
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-base font-semibold text-card-foreground leading-relaxed">
-                        {stage.title}
-                      </h3>
-                      <p className="mt-0.5 text-sm font-normal text-muted-foreground leading-relaxed">
-                        {stage.description}
-                      </p>
-                    </div>
-                    <span className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full leading-none transition-colors ${
-                      stageDone
-                        ? 'bg-primary/10 text-primary'
-                        : isCurrent
-                          ? 'bg-muted text-muted-foreground'
-                          : 'bg-muted text-muted-foreground/60'
-                    }`}>
-                      {stageDone ? '已完成' : isCurrent ? '进行中' : '未开始'}
-                    </span>
-                  </div>
-
-                  <ul className="mt-4 space-y-2">
-                    {stage.topics.map((topic) => (
-                      <li key={topic} className="flex items-center gap-2.5 text-sm text-muted-foreground leading-relaxed">
-                        {stageDone ? (
-                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                        ) : (
-                          <Circle className={`h-4 w-4 shrink-0 ${isCurrent ? stage.dot : 'text-muted-foreground/40'}`} />
-                        )}
-                        <span className={stageDone ? 'text-card-foreground font-medium' : ''}>{topic}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+      {/* Topology Graph Canvas */}
+      <div className="flex-1 min-h-[600px] rounded-xl border border-border bg-background/50 overflow-hidden relative">
+        <ReactFlow 
+          nodes={nodes} 
+          edges={edges} 
+          nodeTypes={nodeTypes}
+          onNodeClick={handleNodeClick}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          minZoom={0.5}
+          maxZoom={1.5}
+          className="bg-dot-pattern"
+        >
+          <Background gap={24} size={2} color="var(--border)" />
+          <Controls className="!bg-card !border-border !shadow-sm" />
+        </ReactFlow>
       </div>
     </div>
   )
 }
-

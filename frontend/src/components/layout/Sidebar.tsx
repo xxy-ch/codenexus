@@ -106,7 +106,7 @@ export function Sidebar() {
             <Code2 className="w-4 h-4 text-primary-foreground" />
           </div>
           {!isCollapsed && (
-            <span className="ml-2.5 text-sm font-semibold tracking-tight text-sidebar-foreground">
+            <span className="ml-2.5 text-sm font-semibold tracking-tight text-sidebar-foreground font-serif">
               CodeNexus
             </span>
           )}

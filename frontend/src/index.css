@@ -1,18 +1,26 @@
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* ─── Custom Font Faces ───────────────────────────────────────────────── */
+
+@font-face {
+  font-family: 'Galaxie Copernicus';
+  src: url('/fonts/Galaxie Copernicus Book.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* ─── shadcn/ui Theme Inline ──────────────────────────────────────────── */
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "SF Mono", Monaco, "Courier New", monospace;
+  --font-heading: "Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-serif: "Galaxie Copernicus", "Tiempos Text", "Lora", "Merriweather", "Noto Serif SC", "Songti SC", "STSong", serif;
+  --font-mono: "Maple Mono NF", "Maple Mono", "SF Mono", "JetBrains Mono", "Fira Code", Monaco, "Courier New", monospace;
 
   /* shadcn color mappings */
   --color-sidebar-ring: var(--sidebar-ring);
@@ -238,6 +246,11 @@
     font-feature-settings: "cv01", "ss03";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
   }
 
   html {
@@ -587,4 +600,8 @@
 .focus-ring:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
 }

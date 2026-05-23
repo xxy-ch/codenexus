@@ -9,6 +9,7 @@ interface FeatureToggleProps {
   disabled?: boolean
   source?: string
   className?: string
+  showLabel?: boolean
 }
 
 function FeatureToggle({
@@ -19,6 +20,7 @@ function FeatureToggle({
   disabled = false,
   source,
   className,
+  showLabel = true,
 }: FeatureToggleProps) {
   const showInherited = source !== undefined && source !== scope
   const label = slug.charAt(0).toUpperCase() + slug.slice(1).replace(/_/g, ' ')
@@ -27,13 +29,14 @@ function FeatureToggle({
     <div
       data-slot="feature-toggle"
       className={cn(
-        'flex flex-col gap-1',
+        'flex flex-col gap-1.5',
+        !showLabel && 'items-center text-center',
         disabled && 'opacity-50 pointer-events-none',
         className,
       )}
     >
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-sm font-medium capitalize">{label}</span>
+      <div className={cn("flex items-center gap-3", showLabel ? "justify-between" : "justify-center")}>
+        {showLabel && <span className="text-sm font-medium capitalize truncate">{label}</span>}
         <button
           type="button"
           role="switch"
@@ -41,7 +44,7 @@ function FeatureToggle({
           onClick={() => onToggle(slug, scope, !enabled)}
           disabled={disabled}
           className={cn(
-            'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+            'relative inline-flex items-center h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             enabled ? 'bg-primary' : 'bg-muted',
           )}
         >

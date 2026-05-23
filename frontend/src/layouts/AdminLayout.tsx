@@ -55,11 +55,11 @@ export function AdminLayout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
-              <Link to="/" className="flex items-center gap-2">
+              <Link to="/" className="flex shrink-0 items-center gap-2">
                 <Code2 className="h-6 w-6 text-primary" />
-                <span className="font-bold text-lg">CodeNexus</span>
+                <span className="font-bold text-lg font-serif tracking-wide">CodeNexus</span>
               </Link>
-              <nav className="hidden md:flex gap-1">
+              <nav className="hidden md:flex gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden">
                 {navigation.map((item) => {
                   const isActive = location.pathname === item.href
                   const IconComponent = ICON_MAP[item.icon] ?? LayoutDashboard
@@ -68,9 +68,9 @@ export function AdminLayout() {
                       key={item.href}
                       to={item.href}
                       className={cn(
-                        'flex items-center gap-2 px-4 py-2 rounded-lg text-[14px] font-medium transition-colors',
+                        'flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors whitespace-nowrap shrink-0',
                         isActive
-                          ? 'bg-primary text-primary-foreground shadow-md'
+                          ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'text-muted-foreground hover:bg-white/10 hover:text-foreground'
                       )}
                     >

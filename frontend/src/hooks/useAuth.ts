@@ -1,12 +1,8 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
-import type { LoginRequest, RegisterRequest } from '@/types/auth'
-
-const authHeaders = () => {
-  const token = localStorage.getItem('access_token')
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
+import { request } from '@/services/api'
+import type { User, LoginRequest, RegisterRequest } from '@/types/auth'
 
 export function useAuth() {
   const navigate = useNavigate()
@@ -58,21 +54,8 @@ export function useAuth() {
 
   const checkAuthentication = useCallback(async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api'}/users/me`, {
-        headers: authHeaders(),
-        credentials: 'include',
-      })
+      const user = await request<User>('get', '/users/me')
 
-      if (!response.ok) {
-        useAuthStore.setState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false,
-        })
-        return false
-      }
-
-      const user = await response.json()
       useAuthStore.setState({
         user,
         isAuthenticated: true,
