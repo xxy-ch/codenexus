@@ -143,6 +143,7 @@ async fn setup_fixture() -> TestFixture {
 // -----------------------------------------------------------------------
 
 #[tokio::test]
+#[ignore = "requires running PostgreSQL and Testcontainers"]
 async fn test_get_me_unauthenticated() {
     let fixture = setup_fixture().await;
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
@@ -167,6 +168,7 @@ async fn test_get_me_unauthenticated() {
 }
 
 #[tokio::test]
+#[ignore = "requires running PostgreSQL and Testcontainers"]
 async fn test_admin_list_users_returns_200() {
     let fixture = setup_fixture().await;
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);
@@ -212,6 +214,7 @@ async fn test_admin_list_users_returns_200() {
 }
 
 #[tokio::test]
+#[ignore = "requires running PostgreSQL and Testcontainers"]
 async fn test_student_cannot_list_all_users() {
     let fixture = setup_fixture().await;
     std::env::set_var("JWT_SECRET", TEST_JWT_SECRET);

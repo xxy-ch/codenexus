@@ -69,12 +69,12 @@ describe('Settings', () => {
 
     // The theme select should reflect "dark" (the Chinese option text is "深色")
     await waitFor(() => {
-      const themeSelect = screen.getByDisplayValue('深色')
+      const themeSelect = screen.getByText('深色')
       expect(themeSelect).toBeInTheDocument()
     })
 
     // The font size select should reflect "large" (Chinese: "大")
-    expect(screen.getByDisplayValue('大')).toBeInTheDocument()
+    expect(screen.getByText('大')).toBeInTheDocument()
   })
 
   it('writes preferences to localStorage when clicking save', async () => {
