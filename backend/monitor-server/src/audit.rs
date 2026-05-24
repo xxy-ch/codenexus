@@ -116,10 +116,7 @@ impl<'a> AuditWriter<'a> {
     ///
     /// Returns at most `limit` entries. Used by the
     /// `GET /api/control/audit-log` endpoint.
-    pub async fn query_recent(
-        pool: &PgPool,
-        limit: i64,
-    ) -> Result<Vec<AuditLogEntry>> {
+    pub async fn query_recent(pool: &PgPool, limit: i64) -> Result<Vec<AuditLogEntry>> {
         let entries = sqlx::query_as::<_, AuditLogEntry>(
             r#"
             SELECT id, target, action, operator, result, error_message, created_at
@@ -185,7 +182,10 @@ mod tests {
             created_at: Utc::now(),
         };
         let json = serde_json::to_string(&entry).unwrap();
-        assert!(!json.contains("error_message"), "Should skip null error_message");
+        assert!(
+            !json.contains("error_message"),
+            "Should skip null error_message"
+        );
         assert!(json.contains("\"result\":\"success\""));
     }
 

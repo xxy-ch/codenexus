@@ -48,9 +48,7 @@ struct HealthResponse {
 /// Checks Redis (PING) and PostgreSQL (`SELECT 1`), then returns
 /// aggregated status. Returns 200 for `ok`, 503 for `degraded` or
 /// `unavailable`.
-pub async fn health_check(
-    State(state): State<Arc<AppState>>,
-) -> impl IntoResponse {
+pub async fn health_check(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let redis_health = check_redis(&state.redis_pool).await;
     let db_health = check_db(&state.pg_pool).await;
 
@@ -81,10 +79,7 @@ pub async fn health_check(
 /// Check Redis connectivity via PING.
 async fn check_redis(pool: &deadpool_redis::Pool) -> DependencyHealth {
     match pool.get().await {
-        Ok(mut conn) => match cmd("PING")
-            .query_async::<String>(&mut conn)
-            .await
-        {
+        Ok(mut conn) => match cmd("PING").query_async::<String>(&mut conn).await {
             Ok(pong) if pong == "PONG" => DependencyHealth {
                 status: "ok".to_string(),
                 error: None,
@@ -107,10 +102,7 @@ async fn check_redis(pool: &deadpool_redis::Pool) -> DependencyHealth {
 
 /// Check PostgreSQL connectivity via `SELECT 1`.
 async fn check_db(pool: &sqlx::PgPool) -> DependencyHealth {
-    match sqlx::query("SELECT 1 AS health")
-        .fetch_one(pool)
-        .await
-    {
+    match sqlx::query("SELECT 1 AS health").fetch_one(pool).await {
         Ok(row) => {
             let val: i32 = row.get("health");
             if val == 1 {
@@ -165,7 +157,10 @@ mod tests {
             },
         };
         let json = serde_json::to_string(&resp).unwrap();
-        assert!(!json.contains("error"), "ok responses should omit error field");
+        assert!(
+            !json.contains("error"),
+            "ok responses should omit error field"
+        );
         assert!(json.contains("\"status\":\"ok\""));
     }
 

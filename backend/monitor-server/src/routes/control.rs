@@ -28,9 +28,7 @@ use tracing::{error, info, warn};
 use uuid::Uuid;
 
 use crate::audit::{AuditLogEntry, AuditResult, AuditWriter};
-use crate::control::{
-    is_valid_target, ControlAction, ControlSignal, DEFAULT_SIGNAL_TIMEOUT_SECS,
-};
+use crate::control::{is_valid_target, ControlAction, ControlSignal, DEFAULT_SIGNAL_TIMEOUT_SECS};
 use crate::state::AppState;
 
 // ---------------------------------------------------------------------------
@@ -136,11 +134,7 @@ pub async fn create_signal(
     let action: ControlAction = match action_str.parse() {
         Ok(a) => a,
         Err(e) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ErrorResponse { error: e }),
-            )
-                .into_response();
+            return (StatusCode::BAD_REQUEST, Json(ErrorResponse { error: e })).into_response();
         }
     };
 
@@ -172,7 +166,9 @@ pub async fn create_signal(
 
     // Write to Redis
     let write_result: Result<(), String> = async {
-        let json = signal.to_json().map_err(|e| format!("serialization error: {e}"))?;
+        let json = signal
+            .to_json()
+            .map_err(|e| format!("serialization error: {e}"))?;
         let mut conn = state
             .redis_pool
             .get()
@@ -276,11 +272,7 @@ pub async fn confirm_signal(
     let action: ControlAction = match action_str.parse() {
         Ok(a) => a,
         Err(e) => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ErrorResponse { error: e }),
-            )
-                .into_response();
+            return (StatusCode::BAD_REQUEST, Json(ErrorResponse { error: e })).into_response();
         }
     };
 
@@ -446,7 +438,13 @@ pub async fn confirm_signal(
 
     // Record audit
     let _ = AuditWriter::new(&state.pg_pool)
-        .record(&target, action, &existing_signal.operator, AuditResult::Success, None)
+        .record(
+            &target,
+            action,
+            &existing_signal.operator,
+            AuditResult::Success,
+            None,
+        )
         .await;
 
     (
@@ -455,7 +453,10 @@ pub async fn confirm_signal(
             target: target.clone(),
             action: action.to_string(),
             status: "confirmed".to_string(),
-            message: format!("Control signal for '{}' has been confirmed and is now active.", target),
+            message: format!(
+                "Control signal for '{}' has been confirmed and is now active.",
+                target
+            ),
         }),
     )
         .into_response()
@@ -500,7 +501,9 @@ pub async fn get_status(
             .await
             .unwrap_or(None);
         match json {
-            Some(j) => ControlSignal::from_json(&j).map(Some).map_err(|e| format!("parse error: {e}")),
+            Some(j) => ControlSignal::from_json(&j)
+                .map(Some)
+                .map_err(|e| format!("parse error: {e}")),
             None => Ok(None),
         }
     }
@@ -573,11 +576,7 @@ pub async fn get_audit_log(
     match result {
         Ok(entries) => {
             let count = entries.len();
-            (
-                StatusCode::OK,
-                Json(AuditLogResponse { entries, count }),
-            )
-                .into_response()
+            (StatusCode::OK, Json(AuditLogResponse { entries, count })).into_response()
         }
         Err(e) => {
             error!("[control] failed to query audit log: {e}");
@@ -602,28 +601,13 @@ pub fn control_routes() -> axum::Router<std::sync::Arc<crate::state::AppState>> 
 
     axum::Router::new()
         // Create pending signal
-        .route(
-            "/services/:target/pause",
-            post(create_signal),
-        )
-        .route(
-            "/services/:target/resume",
-            post(create_signal),
-        )
-        .route(
-            "/services/:target/restart",
-            post(create_signal),
-        )
+        .route("/services/:target/pause", post(create_signal))
+        .route("/services/:target/resume", post(create_signal))
+        .route("/services/:target/restart", post(create_signal))
         // Confirm pending signal
-        .route(
-            "/services/:target/:action/confirm",
-            post(confirm_signal),
-        )
+        .route("/services/:target/:action/confirm", post(confirm_signal))
         // Read signal status
-        .route(
-            "/services/:target/status",
-            get(get_status),
-        )
+        .route("/services/:target/status", get(get_status))
         // Audit log
         .route("/audit-log", get(get_audit_log))
 }
@@ -668,8 +652,7 @@ mod tests {
 
     #[test]
     fn audit_log_query_with_params() {
-        let query: AuditLogQuery =
-            serde_json::from_str(r#"{"limit":100,"target":"api"}"#).unwrap();
+        let query: AuditLogQuery = serde_json::from_str(r#"{"limit":100,"target":"api"}"#).unwrap();
         assert_eq!(query.limit, 100);
         assert_eq!(query.target.as_deref(), Some("api"));
     }

@@ -126,9 +126,7 @@ impl ControlSignal {
 
     /// Check if this signal has expired (expires_at is in the past).
     pub fn is_expired(&self, now: DateTime<Utc>) -> bool {
-        self.expires_at
-            .map(|exp| now >= exp)
-            .unwrap_or(false)
+        self.expires_at.map(|exp| now >= exp).unwrap_or(false)
     }
 
     /// Serialize to JSON for Redis storage.
@@ -205,17 +203,11 @@ pub async fn run_recovery_task(
             };
 
             // Read the signal
-            let json: Option<String> = match cmd("GET")
-                .arg(&redis_key)
-                .query_async(&mut conn)
-                .await
+            let json: Option<String> = match cmd("GET").arg(&redis_key).query_async(&mut conn).await
             {
                 Ok(val) => val,
                 Err(e) => {
-                    error!(
-                        target = target,
-                        "[control] recovery: Redis GET error: {e}"
-                    );
+                    error!(target = target, "[control] recovery: Redis GET error: {e}");
                     error_count += 1;
                     continue;
                 }
@@ -493,7 +485,10 @@ mod tests {
             confirmed: true,
             confirmation_token: None,
         };
-        assert!(signal.is_expired(now), "signal past expires_at should be expired");
+        assert!(
+            signal.is_expired(now),
+            "signal past expires_at should be expired"
+        );
     }
 
     #[test]
@@ -508,7 +503,10 @@ mod tests {
             confirmed: true,
             confirmation_token: None,
         };
-        assert!(!signal.is_expired(now), "signal with future expires_at should not be expired");
+        assert!(
+            !signal.is_expired(now),
+            "signal with future expires_at should not be expired"
+        );
     }
 
     #[test]
@@ -523,7 +521,10 @@ mod tests {
             confirmed: true,
             confirmation_token: None,
         };
-        assert!(!signal.is_expired(now), "signal without expires_at should never be auto-restored");
+        assert!(
+            !signal.is_expired(now),
+            "signal without expires_at should never be auto-restored"
+        );
     }
 
     #[test]

@@ -114,7 +114,10 @@ mod tests {
         assert_eq!(config.redis_url, DEFAULT_REDIS_URL);
         assert_eq!(config.bind_addr, DEFAULT_BIND_ADDR);
         assert_eq!(config.signal_timeout_secs, DEFAULT_SIGNAL_TIMEOUT_SECS);
-        assert_eq!(config.recovery_scan_interval_secs, DEFAULT_RECOVERY_SCAN_INTERVAL_SECS);
+        assert_eq!(
+            config.recovery_scan_interval_secs,
+            DEFAULT_RECOVERY_SCAN_INTERVAL_SECS
+        );
         assert_eq!(config.push_interval_secs, DEFAULT_PUSH_INTERVAL_SECS);
 
         clear_env();
@@ -156,7 +159,10 @@ mod tests {
         assert_eq!(config.bind_addr, DEFAULT_BIND_ADDR);
         // Non-parseable values fall back to defaults
         assert_eq!(config.signal_timeout_secs, DEFAULT_SIGNAL_TIMEOUT_SECS);
-        assert_eq!(config.recovery_scan_interval_secs, DEFAULT_RECOVERY_SCAN_INTERVAL_SECS);
+        assert_eq!(
+            config.recovery_scan_interval_secs,
+            DEFAULT_RECOVERY_SCAN_INTERVAL_SECS
+        );
         assert_eq!(config.push_interval_secs, DEFAULT_PUSH_INTERVAL_SECS);
 
         clear_env();

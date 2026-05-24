@@ -117,18 +117,17 @@ pub fn start_control_signal_polling(
                 }
             };
 
-            let json: Option<String> =
-                match deadpool_redis::redis::cmd("GET")
-                    .arg(CONTROL_SIGNAL_KEY)
-                    .query_async(&mut conn)
-                    .await
-                {
-                    Ok(val) => val,
-                    Err(e) => {
-                        warn!("[control-signal] Redis GET error: {e}");
-                        continue;
-                    }
-                };
+            let json: Option<String> = match deadpool_redis::redis::cmd("GET")
+                .arg(CONTROL_SIGNAL_KEY)
+                .query_async(&mut conn)
+                .await
+            {
+                Ok(val) => val,
+                Err(e) => {
+                    warn!("[control-signal] Redis GET error: {e}");
+                    continue;
+                }
+            };
 
             let signal: Option<ControlSignalView> = match json {
                 Some(ref j) => match serde_json::from_str::<ControlSignalView>(j) {
@@ -145,10 +144,7 @@ pub fn start_control_signal_polling(
                 let prev = is_paused.load(Ordering::Relaxed);
                 if prev != new_state {
                     is_paused.store(new_state, Ordering::Relaxed);
-                    info!(
-                        paused = new_state,
-                        "[control-signal] state changed"
-                    );
+                    info!(paused = new_state, "[control-signal] state changed");
                 }
             }
         }
@@ -171,12 +167,10 @@ mod tests {
     /// Helper: build a minimal router with the pause middleware applied.
     fn test_router(is_paused: Arc<AtomicBool>) -> Router {
         let inner = Router::new().route("/test", get(|| async { "ok" }));
-        inner.layer(axum::middleware::from_fn(
-            move |req, next| {
-                let flag = is_paused.clone();
-                async move { pause_middleware(flag, req, next).await }
-            },
-        ))
+        inner.layer(axum::middleware::from_fn(move |req, next| {
+            let flag = is_paused.clone();
+            async move { pause_middleware(flag, req, next).await }
+        }))
     }
 
     #[tokio::test]
@@ -289,9 +283,7 @@ mod tests {
 
     /// Simulates a router with business routes (affected by pause) and
     /// health/metrics/internal routes (exempt from pause).
-    fn test_router_with_exempt_routes(
-        is_paused: Arc<AtomicBool>,
-    ) -> (Router, Router) {
+    fn test_router_with_exempt_routes(is_paused: Arc<AtomicBool>) -> (Router, Router) {
         // Business routes — wrapped in pause middleware
         let business = Router::new()
             .route("/api/problems", get(|| async { "problems" }))
@@ -388,8 +380,7 @@ mod tests {
         is_paused.store(false, Ordering::Relaxed);
 
         // Rebuild router with the same flag to test the new state
-        let (business_after, _) =
-            test_router_with_exempt_routes(is_paused.clone());
+        let (business_after, _) = test_router_with_exempt_routes(is_paused.clone());
 
         let resp = business_after
             .oneshot(
@@ -495,6 +486,10 @@ mod tests {
 
         assert_eq!(resp.status(), StatusCode::OK);
         let body = to_bytes(resp.into_body(), 1024).await.unwrap();
-        assert_eq!(&body[..], b"ok", "response body should pass through unchanged");
+        assert_eq!(
+            &body[..],
+            b"ok",
+            "response body should pass through unchanged"
+        );
     }
 }

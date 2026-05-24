@@ -191,12 +191,10 @@ impl RedisCollector {
 
     /// Run both collectors and return the combined result.
     pub async fn collect(redis_pool: &deadpool_redis::Pool) -> RedisCollectorResult {
-        let workers = Self::scan_heartbeats(redis_pool)
-            .await
-            .unwrap_or_else(|e| {
-                warn!(error = %e, "Heartbeat scan failed");
-                Vec::new()
-            });
+        let workers = Self::scan_heartbeats(redis_pool).await.unwrap_or_else(|e| {
+            warn!(error = %e, "Heartbeat scan failed");
+            Vec::new()
+        });
 
         let streams = Self::get_stream_backlogs(redis_pool)
             .await
@@ -237,8 +235,7 @@ impl RedisCollector {
                         // Fall back to XLEN for the total stream length.
                         debug!(
                             stream,
-                            group,
-                            "Consumer group has nil lag, falling back to XLEN"
+                            group, "Consumer group has nil lag, falling back to XLEN"
                         );
                         let total_len: i64 = deadpool_redis::redis::cmd("XLEN")
                             .arg(stream)
@@ -266,8 +263,7 @@ impl RedisCollector {
             Err(ref e) if is_no_group_error(e) => {
                 debug!(
                     stream,
-                    group,
-                    "Stream/group does not exist, returning 0 backlog"
+                    group, "Stream/group does not exist, returning 0 backlog"
                 );
                 Ok(StreamBacklog {
                     stream: stream.to_string(),
@@ -313,10 +309,7 @@ impl RedisCollector {
             .cloned()
             .unwrap_or_default();
 
-        let api_breaker_state = fields
-            .get("api_breaker_state")
-            .cloned()
-            .unwrap_or_default();
+        let api_breaker_state = fields.get("api_breaker_state").cloned().unwrap_or_default();
 
         let last_seen = fields.get("last_seen").cloned().unwrap_or_default();
 

@@ -82,9 +82,7 @@ pub async fn assemble_snapshot(state: &AppState) -> MonitorSnapshot {
 /// For each target, reads the `control:signal:{target}` key and, if present,
 /// stores a summary string in the returned map. Failed reads are logged and
 /// skipped — a single bad key does not block the rest.
-async fn read_all_control_signals(
-    redis_pool: &deadpool_redis::Pool,
-) -> HashMap<String, String> {
+async fn read_all_control_signals(redis_pool: &deadpool_redis::Pool) -> HashMap<String, String> {
     use deadpool_redis::redis::cmd;
 
     let mut signals = HashMap::new();
@@ -101,11 +99,7 @@ async fn read_all_control_signals(
             }
         };
 
-        let json: Option<String> = match cmd("GET")
-            .arg(&key)
-            .query_async(&mut conn)
-            .await
-        {
+        let json: Option<String> = match cmd("GET").arg(&key).query_async(&mut conn).await {
             Ok(val) => val,
             Err(e) => {
                 warn!(target, error = %e, "[snapshot] failed to read control signal");
@@ -156,13 +150,7 @@ mod tests {
     #[test]
     fn control_signal_summary_format() {
         // Verify the summary string format is parseable and contains key info
-        let summary = format!(
-            "{}:{} (by {}, confirmed={})",
-            "pause",
-            "api",
-            "admin",
-            true,
-        );
+        let summary = format!("{}:{} (by {}, confirmed={})", "pause", "api", "admin", true,);
         assert!(summary.contains("pause"));
         assert!(summary.contains("api"));
         assert!(summary.contains("admin"));
@@ -171,6 +159,9 @@ mod tests {
 
     #[test]
     fn allowed_targets_is_not_empty() {
-        assert!(!ALLOWED_TARGETS.is_empty(), "ALLOWED_TARGETS should have entries");
+        assert!(
+            !ALLOWED_TARGETS.is_empty(),
+            "ALLOWED_TARGETS should have entries"
+        );
     }
 }

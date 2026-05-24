@@ -214,9 +214,7 @@ fn create_router(
         .route("/ws", get(websocket::handler::websocket_upgrade_handler))
         .layer(axum::middleware::from_fn(move |req, next| {
             let flag = api_paused_public.clone();
-            async move {
-                middleware::control_signal::pause_middleware(flag, req, next).await
-            }
+            async move { middleware::control_signal::pause_middleware(flag, req, next).await }
         }))
         .layer(GovernorLayer {
             config: governor_config.clone(),
@@ -318,9 +316,7 @@ fn create_router(
         // Control-signal pause middleware: returns 503 when paused.
         .layer(axum::middleware::from_fn(move |req, next| {
             let flag = api_paused_protected.clone();
-            async move {
-                middleware::control_signal::pause_middleware(flag, req, next).await
-            }
+            async move { middleware::control_signal::pause_middleware(flag, req, next).await }
         }))
         .layer(GovernorLayer {
             config: governor_config,
