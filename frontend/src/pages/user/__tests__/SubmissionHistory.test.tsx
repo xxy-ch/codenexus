@@ -254,7 +254,9 @@ describe('SubmissionHistory', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/1 \/ 2/)).toBeInTheDocument()
+        expect(screen.getByText((_content, element) => {
+          return element?.tagName === 'SPAN' && element?.textContent?.trim() === '第 1 页，共 2 页'
+        })).toBeInTheDocument()
       })
 
       // 点击下一页

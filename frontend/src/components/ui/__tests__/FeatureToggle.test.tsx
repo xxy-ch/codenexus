@@ -46,17 +46,17 @@ describe('FeatureToggle', () => {
 
   it('shows InheritedIndicator when source differs from current scope', () => {
     render(<FeatureToggle {...defaultProps} scope="class" source="global" />)
-    expect(screen.getByText(/Global/)).toBeInTheDocument()
+    expect(screen.getByText(/全局/)).toBeInTheDocument()
   })
 
   it('does not show InheritedIndicator when source matches scope', () => {
     render(<FeatureToggle {...defaultProps} scope="global" source="global" />)
-    expect(screen.queryByText(/Global/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/全局/)).not.toBeInTheDocument()
   })
 
   it('does not show InheritedIndicator when source is not provided', () => {
     render(<FeatureToggle {...defaultProps} />)
-    expect(screen.queryByText(/Global/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Campus/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/全局/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/校区/)).not.toBeInTheDocument()
   })
 })

@@ -103,11 +103,21 @@ describe('SubmissionDetail', () => {
 
     await waitFor(() => {
       expect(screen.getByText('判题结果')).toBeInTheDocument()
-      expect(screen.getAllByText('45ms').length).toBeGreaterThan(0)
-      expect(screen.getAllByText('1MB').length).toBeGreaterThan(0)
-      // "2/2" is split across two <span> elements, so use a function matcher
       expect(screen.getByText((_content, element) => {
-        return element?.tagName === 'P' && element?.textContent === '2/2'
+        const tag = element?.tagName?.toUpperCase()
+        const text = element?.textContent?.replace(/\s+/g, '')
+        return (tag === 'P' || tag === 'DIV' || tag === 'SPAN') && text === '45ms'
+      })).toBeInTheDocument()
+      expect(screen.getByText((_content, element) => {
+        const tag = element?.tagName?.toUpperCase()
+        const text = element?.textContent?.replace(/\s+/g, '')
+        return (tag === 'P' || tag === 'DIV' || tag === 'SPAN') && text === '1MB'
+      })).toBeInTheDocument()
+      // "2/2" is split across multiple elements, so use a function matcher
+      expect(screen.getByText((_content, element) => {
+        const tag = element?.tagName?.toUpperCase()
+        const text = element?.textContent?.replace(/\s+/g, '')
+        return (tag === 'P' || tag === 'DIV' || tag === 'SPAN') && text === '2/2'
       })).toBeInTheDocument()
       expect(screen.getByText(/testuser/)).toBeInTheDocument()
     })
@@ -136,7 +146,7 @@ describe('SubmissionDetail', () => {
 
     await waitFor(() => {
       expect(screen.getAllByText(/Wrong Answer|答案错误/i).length).toBeGreaterThan(0)
-      expect(screen.getByText('错误信息')).toBeInTheDocument()
+      expect(screen.getByText('错误诊断控制台')).toBeInTheDocument()
       expect(screen.getAllByText(/Wrong output/i).length).toBeGreaterThan(0)
       expect(screen.getByText('期望输出')).toBeInTheDocument()
       expect(screen.getByText('实际输出')).toBeInTheDocument()

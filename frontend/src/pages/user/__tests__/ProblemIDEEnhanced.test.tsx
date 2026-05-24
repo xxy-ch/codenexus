@@ -11,6 +11,8 @@ const { mocks } = vi.hoisted(() => ({
     getProblem: vi.fn(),
     getTestCases: vi.fn(),
     getSupportedLanguages: vi.fn(),
+    getUserSubmissions: vi.fn(),
+    getSubmissionDetail: vi.fn(),
   },
 }))
 
@@ -28,6 +30,8 @@ vi.mock('@/services/problems', () => ({
     getTestCases: mocks.getTestCases,
     getSupportedLanguages: mocks.getSupportedLanguages,
     submitCode: mocks.submitCode,
+    getUserSubmissions: mocks.getUserSubmissions,
+    getSubmissionDetail: mocks.getSubmissionDetail,
   },
 }))
 
@@ -75,6 +79,8 @@ describe('ProblemIDEEnhanced', () => {
       { id: 'python', name: 'Python 3', extension: 'py', enabled: true, is_default: true },
       { id: 'cpp', name: 'C++', extension: 'cpp', enabled: true, is_default: false },
     ])
+    mocks.getUserSubmissions.mockResolvedValue({ submissions: [] })
+    mocks.getSubmissionDetail.mockResolvedValue({ id: '42', status: 'pending' })
   })
 
   it('defaults to python, keeps editor empty, and keeps the workspace focused on problem plus editor', async () => {
@@ -86,16 +92,16 @@ describe('ProblemIDEEnhanced', () => {
       </MemoryRouter>,
     )
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: /Two Sum/ })).toBeInTheDocument())
 
-    expect(screen.getByLabelText(/language/i)).toHaveValue('python')
+    expect(screen.getByRole('combobox')).toHaveValue('python')
     expect(screen.getByLabelText('code editor')).toHaveValue('')
     expect(screen.queryByText(/Standard Input \/ Output|标准输入\/输出/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/这里不预填任何模板/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/Code Workspace/i)).not.toBeInTheDocument()
   })
 
-  it('submits and navigates to submission detail', async () => {
+  it('submits and handles judging console state', async () => {
     mocks.submitCode.mockResolvedValue({ id: '42' })
 
     render(
@@ -106,10 +112,10 @@ describe('ProblemIDEEnhanced', () => {
       </MemoryRouter>,
     )
 
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Two Sum' })).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: /Two Sum/ })).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText('code editor'), { target: { value: 'print(1)' } })
-    fireEvent.click(screen.getByRole('button', { name: /judge/i }))
+    fireEvent.click(screen.getByRole('button', { name: /提交代码|judge/i }))
 
     await waitFor(() => {
       expect(mocks.submitCode).toHaveBeenCalledWith({
@@ -117,7 +123,7 @@ describe('ProblemIDEEnhanced', () => {
         code: 'print(1)',
         language: 'python',
       })
-      expect(mocks.navigate).toHaveBeenCalledWith('/submissions/42')
+      expect(screen.getByText(/正在运行评测/i)).toBeInTheDocument()
     })
   })
 })

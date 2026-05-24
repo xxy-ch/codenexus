@@ -112,7 +112,7 @@ describe('ClassFeatureSettings', () => {
 
     await waitFor(() => {
       // source='default' for all, scope='class' -- source !== scope so indicator shown
-      const indicators = screen.getAllByText(/Inherited from:/)
+      const indicators = screen.getAllByText(/继承自:/)
       expect(indicators.length).toBeGreaterThan(0)
     })
   })

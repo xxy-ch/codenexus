@@ -7,7 +7,7 @@ describe('Card', () => {
     render(<Card>Card content</Card>)
     const card = screen.getByText('Card content')
     expect(card).toHaveAttribute('data-slot', 'card')
-    expect(card).toHaveClass('rounded-xl')
+    expect(card).toHaveClass('rounded-[10px]')
     expect(card).toHaveClass('bg-card')
     expect(card).toHaveClass('shadow-card')
   })
@@ -15,8 +15,8 @@ describe('Card', () => {
   it('renders glass variant', () => {
     render(<Card variant="glass">Glass card</Card>)
     const card = screen.getByText('Glass card')
-    expect(card).toHaveClass('backdrop-blur-xl')
-    expect(card).toHaveClass('bg-background/60')
+    expect(card).toHaveClass('backdrop-blur-2xl')
+    expect(card).toHaveClass('bg-background/65')
   })
 
   it('renders elevated variant', () => {
@@ -28,8 +28,8 @@ describe('Card', () => {
   it('renders outlined variant', () => {
     render(<Card variant="outlined">Outlined</Card>)
     const card = screen.getByText('Outlined')
-    expect(card).toHaveClass('ring-1')
-    expect(card).toHaveClass('ring-border')
+    expect(card).toHaveClass('border')
+    expect(card).toHaveClass('border-border')
   })
 
   it('renders small size', () => {

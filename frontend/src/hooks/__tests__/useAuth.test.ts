@@ -1,15 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/store/authStore'
 import type { AuthResponse } from '@/types/auth'
+import { request } from '@/services/api'
 
-// Mock fetch globally
-const mockFetch = vi.fn()
-global.fetch = mockFetch
-
-// Mock the config module to avoid import.meta.env issues
-vi.mock('@/services/config', () => ({
-  API_CONFIG: { baseURL: '/api' },
+// Mock the request module
+vi.mock('@/services/api', () => ({
+  request: vi.fn(),
 }))
+
+// Stub localStorage for this test suite
+const localStorageStore = new Map<string, string>()
+const localStorageMock = {
+  getItem: (key: string) => localStorageStore.get(key) ?? null,
+  setItem: (key: string, value: string) => { localStorageStore.set(key, value) },
+  removeItem: (key: string) => { localStorageStore.delete(key) },
+  clear: () => { localStorageStore.clear() },
+  get length() { return localStorageStore.size },
+}
+vi.stubGlobal('localStorage', localStorageMock)
 
 const mockUser: AuthResponse['user'] = {
   id: '1',
@@ -39,7 +47,7 @@ describe('useAuthStore', () => {
       isLoading: false,
       error: null,
     })
-    mockFetch.mockReset()
+    vi.mocked(request).mockReset()
   })
 
   it('initial state is unauthenticated', () => {
@@ -52,10 +60,7 @@ describe('useAuthStore', () => {
   })
 
   it('login sets user and isAuthenticated on success', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockAuthResponse,
-    })
+    vi.mocked(request).mockResolvedValueOnce(mockAuthResponse)
 
     await useAuthStore.getState().login({
       username: 'testuser',
@@ -68,22 +73,19 @@ describe('useAuthStore', () => {
     expect(state.isLoading).toBe(false)
     expect(state.error).toBeNull()
 
-    // Verify fetch was called with correct arguments
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-    const [url, options] = mockFetch.mock.calls[0]
-    expect(url).toContain('/auth/login')
-    expect(options.method).toBe('POST')
-    expect(JSON.parse(options.body)).toEqual({
+    // Verify request was called with correct arguments
+    expect(request).toHaveBeenCalledTimes(1)
+    const [method, url, data] = vi.mocked(request).mock.calls[0]
+    expect(method).toBe('post')
+    expect(url).toBe('/auth/login')
+    expect(data).toEqual({
       username: 'testuser',
       password: 'password123',
     })
   })
 
   it('login sets error on failure', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 401,
-    })
+    vi.mocked(request).mockRejectedValueOnce(new Error('Login failed'))
 
     await expect(
       useAuthStore.getState().login({
@@ -100,7 +102,7 @@ describe('useAuthStore', () => {
   })
 
   it('login handles network error', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Network error'))
+    vi.mocked(request).mockRejectedValueOnce(new Error('Network error'))
 
     await expect(
       useAuthStore.getState().login({
@@ -122,8 +124,8 @@ describe('useAuthStore', () => {
       isAuthenticated: true,
     })
 
-    // Mock the logout fetch call (fire-and-forget)
-    mockFetch.mockResolvedValueOnce({ ok: true })
+    // Mock the logout request call
+    vi.mocked(request).mockResolvedValueOnce({})
 
     useAuthStore.getState().logout()
 
@@ -134,10 +136,7 @@ describe('useAuthStore', () => {
   })
 
   it('checkAuth succeeds when user is authenticated', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => mockUser,
-    })
+    vi.mocked(request).mockResolvedValueOnce(mockUser)
 
     await useAuthStore.getState().checkAuth()
 
@@ -146,10 +145,10 @@ describe('useAuthStore', () => {
     expect(state.isAuthenticated).toBe(true)
     expect(state.isLoading).toBe(false)
 
-    expect(mockFetch).toHaveBeenCalledTimes(1)
-    const [url, options] = mockFetch.mock.calls[0]
-    expect(url).toContain('/users/me')
-    expect(options.credentials).toBe('include')
+    expect(request).toHaveBeenCalledTimes(1)
+    const [method, url] = vi.mocked(request).mock.calls[0]
+    expect(method).toBe('get')
+    expect(url).toBe('/users/me')
   })
 
   it('checkAuth clears state when not authenticated', async () => {
@@ -159,10 +158,7 @@ describe('useAuthStore', () => {
       isAuthenticated: true,
     })
 
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 401,
-    })
+    vi.mocked(request).mockRejectedValueOnce(new Error('Unauthorized'))
 
     await useAuthStore.getState().checkAuth()
 
@@ -186,7 +182,7 @@ describe('useAuthStore', () => {
       resolvePromise = resolve
     })
 
-    mockFetch.mockReturnValueOnce(pendingPromise)
+    vi.mocked(request).mockReturnValueOnce(pendingPromise)
 
     const loginPromise = useAuthStore.getState().login({
       username: 'testuser',
@@ -197,10 +193,7 @@ describe('useAuthStore', () => {
     expect(useAuthStore.getState().isLoading).toBe(true)
 
     // Resolve the request
-    resolvePromise!({
-      ok: true,
-      json: async () => mockAuthResponse,
-    })
+    resolvePromise!(mockAuthResponse)
 
     await loginPromise
 

@@ -12,21 +12,21 @@ describe('InheritedIndicator', () => {
 
   it('shows correct label for default source', () => {
     render(<InheritedIndicator source="default" />)
-    expect(screen.getByText(/Default/)).toBeInTheDocument()
+    expect(screen.getByText(/默认值/)).toBeInTheDocument()
   })
 
   it('shows correct label for global source', () => {
     render(<InheritedIndicator source="global" />)
-    expect(screen.getByText(/Global/)).toBeInTheDocument()
+    expect(screen.getByText(/全局/)).toBeInTheDocument()
   })
 
   it('shows correct label for campus source', () => {
     render(<InheritedIndicator source="campus" />)
-    expect(screen.getByText(/Campus/)).toBeInTheDocument()
+    expect(screen.getByText(/校区/)).toBeInTheDocument()
   })
 
   it('shows correct label for grade source', () => {
     render(<InheritedIndicator source="grade" />)
-    expect(screen.getByText(/Grade/)).toBeInTheDocument()
+    expect(screen.getByText(/年级/)).toBeInTheDocument()
   })
 })
