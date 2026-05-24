@@ -12,8 +12,10 @@ release/
 .vscode/
 .idea/
 .sisyphus/
-.github/
+.github/*
 !.github/workflows/
+!.github/ISSUE_TEMPLATE/
+!.github/PULL_REQUEST_TEMPLATE.md
 *.swp
 *.swo
 # Environment
