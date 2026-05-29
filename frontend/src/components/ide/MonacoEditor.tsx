@@ -149,9 +149,8 @@ export function MonacoEditor({
 
     // 添加键盘快捷键
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      // 保存快捷键 (Ctrl/Cmd + S)
-      // 这里可以触发保存或提交
-      console.log('Save triggered')
+      // Prevent browser's default save dialog — no-op placeholder.
+      // TODO: wire up an onSave callback prop when needed.
     })
 
     // 格式化文档
