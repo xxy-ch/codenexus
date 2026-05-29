@@ -607,7 +607,7 @@ pub async fn export_problem(
             format!("attachment; filename=\"problem-{}.zip\"", slug),
         )
         .body(Body::from(zip_bytes))
-        .unwrap())
+        .expect("response builder with valid header should not fail"))
 }
 
 // ---------------------------------------------------------------------------
@@ -1120,5 +1120,5 @@ pub async fn export_users(
             "attachment; filename=\"users-export.csv\"",
         )
         .body(Body::from(csv_bytes))
-        .unwrap())
+        .expect("response builder with valid header should not fail"))
 }
