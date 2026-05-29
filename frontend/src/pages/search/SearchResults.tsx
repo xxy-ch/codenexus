@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import DOMPurify from 'dompurify'
 import { SearchX, ArrowLeft, Eye, MessageCircle, ThumbsUp, Pin, CheckCircle, Clock } from 'lucide-react'
 import { searchApi } from '@/services/searchApi'
 import type { SearchResponse, SearchResultItem, SearchType, SearchSort } from '@/types/search'
@@ -8,6 +9,14 @@ import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineError } from '@/components/ui/InlineError'
 import { cn } from '@/lib/utils'
+
+/** Sanitize HTML returned by the search highlighter to prevent XSS. */
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['em', 'strong', 'b', 'i', 'mark', 'span'],
+    ALLOWED_ATTR: ['class'],
+  })
+}
 
 export function SearchResults() {
   const navigate = useNavigate()
@@ -46,8 +55,7 @@ export function SearchResults() {
           limit: 20,
         })
         setResults(response)
-      } catch (err) {
-        console.error('Search failed:', err)
+      } catch (err: unknown) {
         setError('搜索加载失败，请重试。')
       } finally {
         setLoading(false)
@@ -98,12 +106,12 @@ export function SearchResults() {
 
           <h3
             className="text-lg font-bold text-foreground mb-2"
-            dangerouslySetInnerHTML={{ __html: item.highlighted_title || item.title }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.highlighted_title || item.title) }}
           />
 
           <div
             className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: item.highlighted_content || item.excerpt }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.highlighted_content || item.excerpt) }}
           />
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -149,13 +157,13 @@ export function SearchResults() {
 
           <h3
             className="text-lg font-bold text-foreground mb-2"
-            dangerouslySetInnerHTML={{ __html: item.highlighted_title || item.title }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.highlighted_title || item.title) }}
           />
 
           {item.highlighted_content && (
             <div
               className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: item.highlighted_content }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.highlighted_content) }}
             />
           )}
 
