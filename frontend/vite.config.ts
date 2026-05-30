@@ -28,56 +28,5 @@ export default defineConfig({
   },
   build: {
     target: 'chrome109',
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return
-
-          if (
-            id.includes('@tanstack/react-query') ||
-            id.includes('/axios/') ||
-            id.includes('/zustand/')
-          ) {
-            return 'data-core'
-          }
-
-          if (id.includes('/lucide-react/')) {
-            return 'icon-kit'
-          }
-
-          if (id.includes('/recharts/')) {
-            return 'charts-kit'
-          }
-
-          if (
-            id.includes('@monaco-editor/') ||
-            id.includes('/monaco-editor/') ||
-            id.includes('@codemirror/')
-          ) {
-            return 'editor-core'
-          }
-
-          if (
-            id.includes('/react-markdown/') ||
-            id.includes('/remark-gfm/') ||
-            id.includes('/dompurify/')
-          ) {
-            return 'markdown-core'
-          }
-
-          if (id.includes('/react-syntax-highlighter/')) {
-            return 'syntax-highlight'
-          }
-
-          if (
-            id.includes('/react-hook-form/') ||
-            id.includes('/zod/') ||
-            id.includes('@hookform/resolvers')
-          ) {
-            return 'form-core'
-          }
-        },
-      },
-    },
   },
 })

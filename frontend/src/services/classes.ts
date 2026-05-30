@@ -151,7 +151,10 @@ export const classesService = {
     deadline: string
     points?: number
   }) {
-    const response = await api.post<AssignmentItem>(`/classes/${classId}/assignments`, payload)
+    const response = await api.post<AssignmentItem>(`/classes/${classId}/assignments`, {
+      ...payload,
+      deadline: new Date(payload.deadline).toISOString(),
+    })
     return response.data
   },
 

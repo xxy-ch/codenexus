@@ -450,6 +450,11 @@ export function ClassManagement() {
                     type="datetime-local"
                     value={assignmentDeadline}
                     onChange={(e) => setAssignmentDeadline(e.target.value)}
+                    onInput={(e) =>
+                      setAssignmentDeadline(
+                        (e.currentTarget as HTMLInputElement).value,
+                      )
+                    }
                     className="mt-1 w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:shadow-focus transition-shadow"
                   />
                 </label>
