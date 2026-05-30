@@ -5,6 +5,12 @@ import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
 import { InlineError } from "@/components/ui/InlineError";
 import { ClassCognitionPanel } from "@/components/analysis/ClassCognitionPanel";
 
+function getMutationErrorMessage(error: unknown) {
+  if (!error) return null;
+  if (error instanceof Error && error.message) return error.message;
+  return "请求失败，请检查账号权限、班级归属或学生用户名后重试。";
+}
+
 export function ClassManagement() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
@@ -61,7 +67,7 @@ export function ClassManagement() {
   const highlightedClass =
     filteredClasses.find((item) => item.id === selectedClassId) ?? null;
 
-  const { data: students = [] } = useQuery({
+  const { data: students = [], error: studentsError } = useQuery({
     queryKey: ["classStudents", highlightedClass?.id],
     queryFn: () => classesService.getClassStudents(highlightedClass!.id),
     enabled: !!highlightedClass?.id,
@@ -137,6 +143,10 @@ export function ClassManagement() {
       invalidate();
     },
   });
+
+  const memberMutationError =
+    getMutationErrorMessage(addStudentMutation.error) ||
+    getMutationErrorMessage(importStudentsMutation.error);
 
   const createAssignmentMutation = useMutation({
     mutationFn: () =>
@@ -321,6 +331,11 @@ export function ClassManagement() {
                 >
                   按用户名添加学生
                 </button>
+                {addStudentMutation.isError && (
+                  <p className="mt-2 text-xs text-destructive">
+                    {getMutationErrorMessage(addStudentMutation.error)}
+                  </p>
+                )}
               </div>
               <div>
                 <textarea
@@ -341,7 +356,17 @@ export function ClassManagement() {
                 >
                   批量导入学生
                 </button>
+                {importStudentsMutation.isError && (
+                  <p className="mt-2 text-xs text-destructive">
+                    {getMutationErrorMessage(importStudentsMutation.error)}
+                  </p>
+                )}
               </div>
+              {memberMutationError && (
+                <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                  {memberMutationError}
+                </p>
+              )}
             </div>
           </div>
         </aside>
@@ -500,6 +525,16 @@ export function ClassManagement() {
                     </tr>
                   </thead>
                   <tbody>
+                    {studentsError && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-6 py-8 text-center text-sm text-destructive"
+                        >
+                          学生列表加载失败，请确认当前账号有该班级管理权限。
+                        </td>
+                      </tr>
+                    )}
                     {students.map((student) => (
                       <tr key={student.student_id}>
                         <td className="px-6 py-4 text-sm font-medium text-foreground">
@@ -517,7 +552,7 @@ export function ClassManagement() {
                         </td>
                       </tr>
                     ))}
-                    {students.length === 0 && (
+                    {!studentsError && students.length === 0 && (
                       <tr>
                         <td
                           colSpan={4}

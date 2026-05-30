@@ -481,13 +481,30 @@ async fn list_classes(
     Extension(tenant_ctx): Extension<TenantContext>,
     Query(mut query): Query<ListClassesQuery>,
 ) -> Result<Json<ClassesListResponse>, StatusCode> {
+    let caller_role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
+
     // Tenant: force organization_id from claims
     query.organization_id = Some(claims.school_id);
-    // GradeAdmin grade scoping: must have grade_id; reject if missing
-    if claims.role == "gradeadmin" {
-        let gid = tenant_ctx.grade_id.ok_or(StatusCode::FORBIDDEN)?;
-        query.grade_id = Some(gid);
+
+    match caller_role {
+        Role::Root => {}
+        Role::CampusAdmin => {
+            query.campus_id = Some(claims.campus_id.ok_or(StatusCode::FORBIDDEN)?);
+        }
+        Role::GradeAdmin => {
+            query.campus_id = Some(claims.campus_id.ok_or(StatusCode::FORBIDDEN)?);
+            let gid = tenant_ctx.grade_id.ok_or(StatusCode::FORBIDDEN)?;
+            query.grade_id = Some(gid);
+        }
+        Role::Teacher => {
+            query.teacher_id = Some(claims.sub);
+        }
+        Role::TeachingAssistant | Role::Student => {}
     }
+
     let service = ClassService::new(state.db_pool);
     let response = service
         .list_classes(&query)
