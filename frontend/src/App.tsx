@@ -133,6 +133,8 @@ function App() {
               </PublicRoute>
             }
           />
+          <Route path="/admin/classes" element={<Navigate to="/teacher/classes" replace />} />
+          <Route path="/admin/plagiarism" element={<Navigate to="/admin/similarity-scan" replace />} />
 
           {/* Protected Routes */}
           <Route

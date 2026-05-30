@@ -26,9 +26,9 @@ export function MainLayout() {
     <div className="bg-background text-foreground antialiased h-screen flex overflow-hidden relative">
       <AmbientBackground />
       <Sidebar />
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
+      <main className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
         <Header />
-        <div className="flex-1 overflow-y-auto p-8 relative z-0">
+        <div className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 lg:p-8 relative z-0">
           <PageTransition key={location.pathname}>
             <Outlet />
           </PageTransition>

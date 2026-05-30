@@ -4,11 +4,14 @@ import {
   ArrowRight,
   BookCopy,
   ChevronRight,
+  Database,
   FileSearch,
   LayoutGrid,
+  School,
   ShieldAlert,
   SlidersHorizontal,
   Sparkles,
+  Users,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
 import { useFeatureEnabled } from '@/hooks/useFeatureGate'
@@ -34,6 +37,22 @@ export function AdminDashboard() {
 
   const modules = [
     {
+      title: '用户管理',
+      description: '管理平台用户账号、角色、状态和批量建号流程。',
+      href: '/admin/users',
+      icon: Users,
+      accent: 'text-status-accepted',
+      bg: 'bg-status-accepted/10',
+    },
+    {
+      title: '年级管理',
+      description: '维护年级、班级归属和教师/学生的教学组织边界。',
+      href: '/admin/grades',
+      icon: School,
+      accent: 'text-difficulty-easy',
+      bg: 'bg-difficulty-easy/10',
+    },
+    {
       title: '题目管理',
       description: '查看题库状态、通过率和当前交付范围内的发布视图。',
       href: '/admin/problems',
@@ -48,6 +67,14 @@ export function AdminDashboard() {
       icon: SlidersHorizontal,
       accent: 'text-difficulty-medium',
       bg: 'bg-difficulty-medium/10',
+    },
+    {
+      title: '判题队列',
+      description: '查看判题 Worker 心跳、队列状态和待处理任务。',
+      href: '/admin/judge-queue',
+      icon: Database,
+      accent: 'text-difficulty-hard',
+      bg: 'bg-difficulty-hard/10',
     },
     {
       title: '题面配置',
@@ -107,10 +134,10 @@ export function AdminDashboard() {
             <div className="rounded-lg border border-border bg-primary p-4">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground/70">
                 <Sparkles className="h-3.5 w-3.5" />
-                交付模式
+                管理入口
               </div>
-              <div className="mt-3 text-lg font-bold text-primary-foreground">受控交付面</div>
-              <div className="mt-1 text-xs text-primary-foreground/70">无后端支撑的入口已从本次交付面移除</div>
+              <div className="mt-3 text-lg font-bold text-primary-foreground">{modules.length} 个模块</div>
+              <div className="mt-1 text-xs text-primary-foreground/70">主导航与概览卡片保持同一组真实后端入口</div>
             </div>
           </div>
         </div>
@@ -132,9 +159,9 @@ export function AdminDashboard() {
           <p className="mt-2 text-xs leading-5 text-tertiary">相似度扫描和报告页都已经接入真实接口。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-widest text-secondary">未开放</div>
-          <div className="mt-4 text-3xl font-bold text-foreground">2</div>
-          <p className="mt-2 text-xs leading-5 text-tertiary">用户管理和举报管理已从主入口移除。</p>
+          <div className="text-xs font-semibold uppercase tracking-widest text-secondary">管理入口</div>
+          <div className="mt-4 text-3xl font-bold text-foreground">{modules.length}</div>
+          <p className="mt-2 text-xs leading-5 text-tertiary">主导航与概览卡片保持同一组真实后端入口。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-accent/40 backdrop-blur-xl p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-widest text-foreground">运行策略</div>

@@ -25,6 +25,24 @@ interface AssignmentRow {
   studentCount: number
 }
 
+function getAssignmentStats(row: AssignmentRow) {
+  const submissionCount = row.submissions.length
+  const submittedStudentCount = new Set(row.submissions.map((submission) => submission.user_id)).size
+  const avgScore = submissionCount > 0
+    ? Math.round(row.submissions.reduce((sum, submission) => sum + submission.score, 0) / submissionCount)
+    : 0
+  const completionRate = row.studentCount > 0
+    ? Math.round((submittedStudentCount / row.studentCount) * 100)
+    : 0
+
+  return {
+    submissionCount,
+    submittedStudentCount,
+    avgScore,
+    completionRate: Math.min(100, completionRate),
+  }
+}
+
 export function AssignmentReport() {
   const [selectedClassId, setSelectedClassId] = useState<number | null>(null)
 
@@ -232,13 +250,7 @@ export function AssignmentReport() {
               </thead>
               <tbody className="divide-y divide-border bg-card">
                 {assignmentRows.map((row) => {
-                  const submittedCount = row.submissions.length
-                  const avgScore = submittedCount > 0
-                    ? Math.round(row.submissions.reduce((sum, s) => sum + s.score, 0) / submittedCount)
-                    : 0
-                  const completionRate = row.studentCount > 0
-                    ? Math.round((submittedCount / row.studentCount) * 100)
-                    : 0
+                  const stats = getAssignmentStats(row)
                   const isOverdue = new Date(row.assignment.deadline) < new Date()
 
                   return (
@@ -258,13 +270,16 @@ export function AssignmentReport() {
                           <div className="h-2 w-16 rounded-full bg-muted">
                             <div
                               className="h-2 rounded-full bg-lime-400 transition-all"
-                              style={{ width: `${Math.min(100, completionRate)}%` }}
+                              style={{ width: `${stats.completionRate}%` }}
                             />
                           </div>
-                          <span className="text-xs text-muted-foreground">{submittedCount} ({completionRate}%)</span>
+                          <span className="text-xs text-muted-foreground">
+                            {stats.submittedStudentCount}/{row.studentCount} ({stats.completionRate}%)
+                            <span className="ml-1 text-tertiary">· {stats.submissionCount} 次</span>
+                          </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-foreground">{avgScore}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-foreground">{stats.avgScore}</td>
                       <td className="px-6 py-4 text-right">
                         <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
                           isOverdue
