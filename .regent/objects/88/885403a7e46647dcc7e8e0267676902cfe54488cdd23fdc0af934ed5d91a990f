@@ -1,1 +1,0 @@
-{"command":"pwd && rg -n \"^#|gitnexus|feature-gateway|smoke.spec|Phase 11|LLM|AI\" AGENTS.md . -g '!node_modules' -g '!target' -g '!dist' -g '!build'"}

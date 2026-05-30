@@ -1,1 +1,0 @@
-{"command":"docker run --rm -u root -v \"$PWD/backend:/src\" -v \"$HOME/.cargo/registry:/usr/local/cargo/registry:ro\" -w /src online_judge-judge-worker:latest sh -lc 'cargo build --release -p judge-worker'"}

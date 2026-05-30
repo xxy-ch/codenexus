@@ -1,1 +1,0 @@
-"error: failed to parse lock file at: /src/Cargo.lock\n\nCaused by:\n  lock file version `4` was found, but this version of Cargo does not understand this lock file, perhaps Cargo needs to be updated?\n"

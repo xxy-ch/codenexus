@@ -1,1 +1,0 @@
-{"command":"docker builder prune -a -f","description":"Remove all unused build cache (27.85GB)","timeout":120000}

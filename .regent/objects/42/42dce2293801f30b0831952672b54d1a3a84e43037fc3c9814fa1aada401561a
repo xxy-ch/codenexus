@@ -1,1 +1,0 @@
-{"command":"base64 -i /tmp/oj-cross.log | tail -20"}

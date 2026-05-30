@@ -1,1 +1,0 @@
-{"command":"rg -n \"TODO|FIXME|XXX|HACK|panic!\\(|unwrap\\(\" backend/judge-worker/src/main.rs frontend/src/services/problems.ts frontend/src/services/__tests__/smokeCoreFlows.test.ts shared -g '!**/node_modules/**'"}

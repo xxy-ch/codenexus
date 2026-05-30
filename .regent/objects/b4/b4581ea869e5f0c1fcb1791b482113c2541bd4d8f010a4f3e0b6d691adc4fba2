@@ -1,1 +1,0 @@
-{"command":"find . -type f -not -path './.git/*' -mtime -3 | sed 's#^./##' | sort | tail -n 120"}

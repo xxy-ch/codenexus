@@ -1,1 +1,0 @@
-{"command":"rg -n \"plagiarism|report_id|aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb|contest_participants|contest_id\" scripts/bootstrap_demo.sql frontend/e2e/smoke.spec.ts backend -g '!**/node_modules/**'"}

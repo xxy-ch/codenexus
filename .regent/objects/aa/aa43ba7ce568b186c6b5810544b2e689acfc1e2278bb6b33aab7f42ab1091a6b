@@ -1,1 +1,0 @@
-{"command":"rg -n \"TODO|FIXME|XXX|HACK|429|health/ready|X-Worker-Secret|smoke.spec|computer use|playwright\" frontend backend shared docker-compose* . -g '!node_modules' -g '!target' | head -n 250"}

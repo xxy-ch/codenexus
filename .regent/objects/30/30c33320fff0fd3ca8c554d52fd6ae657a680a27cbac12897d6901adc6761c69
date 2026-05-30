@@ -1,1 +1,0 @@
-{"command":"pwd && git status --short --branch && git log --oneline --decorate -8 && git branch --show-current && rg --files shared frontend backend | head -n 40"}

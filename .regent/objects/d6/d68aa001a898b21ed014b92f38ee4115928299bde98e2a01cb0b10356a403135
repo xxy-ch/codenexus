@@ -1,1 +1,0 @@
-{"command":"rg -n \"gitnexus_impact|gitnexus\" . -S --glob '!node_modules' --glob '!target'"}

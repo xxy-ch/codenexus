@@ -1,1 +1,0 @@
-{"command":"git log --since='2026-05-10' --name-only --format='commit %h %ad %s' --date=short | sed '/^$/d' | head -n 220"}

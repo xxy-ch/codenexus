@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"# Login uses username, not email\\ncurl -s -X POST http://localhost:3000/auth/login \\\\\\n  -H \\\"Content-Type: application/json\\\" \\\\\\n  -d '{\\\"username\\\":\\\"1002\\\",\\\"password\\\":\\\"password123\\\"...",
-  "error": "Exit code 1",
-  "timestamp": "2026-05-09T15:32:43.157Z",
-  "retry_count": 1
-}

@@ -1,1 +1,0 @@
-{"command":"python3 - <<'PY'\nfrom pathlib import Path\np=Path('/tmp/oj-cross.log')\nprint(p.read_text(errors='replace')[-8000:])\nPY"}

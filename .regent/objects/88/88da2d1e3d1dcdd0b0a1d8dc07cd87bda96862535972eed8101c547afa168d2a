@@ -1,1 +1,0 @@
-{"command":"git status --short && git branch --show-current && git log --oneline --decorate -n 12 && printf '\\n---BRANCHES---\\n' && git for-each-ref --sort=-committerdate --format='%(refname:short) %(committerdate:iso8601) %(subject)' refs/heads refs/remotes | head -n 20"}

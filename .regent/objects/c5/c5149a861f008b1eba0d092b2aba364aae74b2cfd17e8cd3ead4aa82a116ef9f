@@ -1,1 +1,0 @@
-{"command":"docker images --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.CreatedSince}}' | rg 'rust|alpine|node|nginx|online_judge'"}

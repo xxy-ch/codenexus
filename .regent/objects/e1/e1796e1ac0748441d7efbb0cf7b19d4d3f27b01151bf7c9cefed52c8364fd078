@@ -1,1 +1,0 @@
-{"command":"kill 70156 70197 || true; docker compose up -d; docker compose ps"}

@@ -1,1 +1,0 @@
-{"command":"ls -1 && ls -1 frontend && sed -n '1,220p' frontend/package.json"}

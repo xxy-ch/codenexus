@@ -1,1 +1,0 @@
-{"command":"git diff --name-only origin/master..master | rg 'frontend/e2e/smoke.spec.ts|docker-compose.yml|backend/feature-gateway|backend/judge-worker|frontend/src/components/auth/AdminRoute.tsx|frontend/src/store/authStore.ts|backend/domain-analysis|backend/llm-worker|scripts/bootstrap_demo.sql|backend/api/migrations'"}

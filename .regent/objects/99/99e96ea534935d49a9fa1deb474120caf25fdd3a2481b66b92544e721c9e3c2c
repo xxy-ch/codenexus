@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"git add backend/api/src/auth/routes.rs backend/api/src/websocket/handler.rs backend/judge-worker/src/sandbox/seccomp.rs ../frontend/src/pages/community/DirectMessages.tsx\",\"description\":\"S...",
-  "error": "Exit code 128\n致命错误：路径规格 'backend/api/src/auth/routes.rs' 未匹配任何文件",
-  "timestamp": "2026-04-24T15:17:07.105Z",
-  "retry_count": 1
-}

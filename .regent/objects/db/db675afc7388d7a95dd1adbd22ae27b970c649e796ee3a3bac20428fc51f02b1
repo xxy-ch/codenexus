@@ -1,1 +1,0 @@
-{"command":"docker image ls -a --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.CreatedSince}} {{.Size}}' | rg 'rust|alpine|node|nginx|<none>' | head -80"}

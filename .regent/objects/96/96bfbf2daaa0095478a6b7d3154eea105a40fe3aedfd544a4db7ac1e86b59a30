@@ -1,1 +1,0 @@
-"HTTP/1.1 200 OK\r\ncontent-type: text/plain; charset=utf-8\r\nx-request-id: d168ac1a-fa48-4541-aeec-47ccea623974\r\nvary: origin, access-control-request-method, access-control-request-headers\r\ncontent-length: 2\r\ndate: Fri, 15 May 2026 14:50:24 GMT\r\n\r\nOK{\"db\":\"connected\",\"redis\":\"connected\",\"status\":\"ok\"}\n{\"status\":\"ok\"}\n"

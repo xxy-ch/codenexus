@@ -1,1 +1,0 @@
-{"command":"find . -path '*gitnexus*' -maxdepth 5 -type f | head -50"}

@@ -1,1 +1,0 @@
-{"command":"nl -ba /Users/xiexingyu/.codex/memories/MEMORY.md | sed -n '1,65p'"}

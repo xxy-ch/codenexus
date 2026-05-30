@@ -1,1 +1,0 @@
-{"command":"docker top oj-worker-build -eo pid,ppid,stat,etime,command | head -30; docker exec oj-worker-build sh -lc 'ps -ef | head -30; ls -l /tmp/src/target/release 2>/dev/null | head || true'"}

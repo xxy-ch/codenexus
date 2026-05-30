@@ -1,8 +1,0 @@
--- SECURITY (CVE-007): Add organization_id to plagiarism reports for tenant isolation.
--- Existing reports get NULL (visible only to root); new reports are scoped on creation.
-
-ALTER TABLE plagiarism_scan_reports
-    ADD COLUMN IF NOT EXISTS organization_id BIGINT;
-
-CREATE INDEX IF NOT EXISTS idx_plagiarism_scan_reports_org
-    ON plagiarism_scan_reports(organization_id);

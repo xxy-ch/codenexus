@@ -1,1 +1,0 @@
-{"command":"docker system df","description":"Show Docker disk usage summary"}

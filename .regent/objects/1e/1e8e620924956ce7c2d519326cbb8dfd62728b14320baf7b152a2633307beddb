@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"git add .planning/phases/01-architecture-foundation-secret-management/ && git commit -m \\\"$(cat <<'EOF'\\nchore(01): rename plan files to match gsd-tools naming convention\\n\\nPLAN-01.md → 0...",
-  "error": "Exit code 128\nwarning: could not open directory '.planning/phases/01-architecture-foundation-secret-management/.planning/phases/01-architecture-foundation-secret-management/': No such file or directory\nfatal: pathspec '.planning/phases/01-architecture-foundation-secret-management/' did not match any files",
-  "timestamp": "2026-04-13T12:40:47.873Z",
-  "retry_count": 1
-}

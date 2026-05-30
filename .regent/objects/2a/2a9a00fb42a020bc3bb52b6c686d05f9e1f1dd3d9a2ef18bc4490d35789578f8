@@ -1,1 +1,0 @@
-{"command":"rg -n \"submissions/.*/results|results\" backend/api/src -S"}

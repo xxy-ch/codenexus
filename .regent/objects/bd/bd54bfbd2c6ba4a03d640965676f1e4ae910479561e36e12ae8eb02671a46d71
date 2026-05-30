@@ -1,1 +1,0 @@
-{"command":"sed -n '1,220p' backend/judge-worker/Dockerfile; docker image inspect online_judge-judge-worker:latest --format '{{.Architecture}} {{.Os}} {{.Config.WorkingDir}} {{json .Config.Entrypoint}} {{json .Config.Cmd}}'"}

@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"sed -i '' \\\\\\n  -e 's/^- \\\\[ \\\\] \\\\*\\\\*Unit 1\\\\./- [x] **Unit 1./' \\\\\\n  -e 's/^- \\\\[ \\\\] \\\\*\\\\*Unit 2\\\\./- [x] **Unit 2./' \\\\\\n  -e 's/^- \\\\[ \\\\] \\\\*\\\\*Unit 3\\\\./- [x] **Unit 3./' \\\\\\n  -...",
-  "error": "Exit code 1\nsed: docs/plans/2026-04-29-001-refactor-ui-design-system-plan.md: No such file or directory",
-  "timestamp": "2026-04-29T13:54:09.724Z",
-  "retry_count": 1
-}

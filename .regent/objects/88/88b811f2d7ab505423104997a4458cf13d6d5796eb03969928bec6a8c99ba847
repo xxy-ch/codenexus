@@ -1,1 +1,0 @@
-{"command":"npx gitnexus impact send_result_with_retry --direction upstream --max-depth 3"}

@@ -1,1 +1,0 @@
-" AGENTS.md                                           | 18 +++++++++---------\n .../src/services/__tests__/smokeCoreFlows.test.ts   | 21 +++++++++++++++++++++\n frontend/src/services/problems.ts                   | 18 ++++++++++++++----\n 3 files changed, 44 insertions(+), 13 deletions(-)\n"

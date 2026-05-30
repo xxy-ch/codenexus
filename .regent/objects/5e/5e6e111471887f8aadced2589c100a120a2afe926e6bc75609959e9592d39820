@@ -1,1 +1,0 @@
-{"command":"rg -n \"submitCode\\(\" frontend/src -g '!**/node_modules/**'"}

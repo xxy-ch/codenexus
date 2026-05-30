@@ -1,1 +1,0 @@
-{"command":"git log --stat -3 -- backend/judge-worker/src/main.rs frontend/src/services/problems.ts frontend/src/services/__tests__/smokeCoreFlows.test.ts"}

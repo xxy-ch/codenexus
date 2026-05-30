@@ -1,8 +1,0 @@
-{
-  "active": true,
-  "current_phase": "discovery",
-  "iteration": 2,
-  "task_description": "Scan shared phase docs for work completed by Claude but not yet completed by Codex",
-  "last_turn_at": "2026-04-10T23:48:20.984Z",
-  "completed_at": "2026-04-11T00:00:00Z"
-}

@@ -1,1 +1,0 @@
-{"command":"git status --short && git branch --show-current && git log --oneline --decorate -n 12"}

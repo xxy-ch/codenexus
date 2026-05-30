@@ -1,1 +1,0 @@
-{"command":"git log --since='2026-05-13' --name-only --pretty=format:'COMMIT %h %ad %s' --date=short | sed -n '1,200p'"}

@@ -1,1 +1,0 @@
-{"command":"lsof -nP -iTCP:5173 -sTCP:LISTEN || true; lsof -nP -iTCP:3000 -sTCP:LISTEN || true; lsof -nP -iTCP:3001 -sTCP:LISTEN || true"}

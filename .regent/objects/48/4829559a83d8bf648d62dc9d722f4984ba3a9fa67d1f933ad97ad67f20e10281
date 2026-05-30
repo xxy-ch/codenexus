@@ -1,1 +1,0 @@
-{"command":"PLAYWRIGHT_BASE_URL=http://127.0.0.1:5174 npx playwright test frontend/e2e/smoke.spec.ts --project=chromium --reporter=list"}

@@ -1,1 +1,0 @@
-{"command":"npx gitnexus detect-changes --help || npx gitnexus detect_changes --help || true"}

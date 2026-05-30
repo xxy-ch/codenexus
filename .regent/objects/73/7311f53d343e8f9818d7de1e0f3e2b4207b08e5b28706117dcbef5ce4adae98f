@@ -1,1 +1,0 @@
-{"command":"docker exec online-judge-redis redis-cli XLEN submissions; docker exec online-judge-redis redis-cli XINFO GROUPS submissions; docker exec online-judge-redis redis-cli XPENDING submissions judge_workers; docker exec online-judge-redis redis-cli XRANGE submissions - + COUNT 5; docker exec online-judge-redis redis-cli XREVRANGE submissions + - COUNT 5"}

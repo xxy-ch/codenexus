@@ -1,1 +1,0 @@
-{"command":"docker compose logs --since=3m judge-worker --tail=200"}

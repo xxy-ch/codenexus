@@ -1,1 +1,0 @@
-"base64: invalid argument /tmp/oj-cross.log\nUsage:\tbase64 [-Ddh] [-b num] [-i in_file] [-o out_file]\n  -b, --break       break encoded output up into lines of length num\n  -D, -d, --decode  decode input\n  -h, --help        display this message\n  -i, --input       input file (default: \"-\" for stdin)\n  -o, --output      output file (default: \"-\" for stdout)\n"

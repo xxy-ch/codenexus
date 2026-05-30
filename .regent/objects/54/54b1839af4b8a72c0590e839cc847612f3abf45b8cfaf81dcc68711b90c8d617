@@ -1,1 +1,0 @@
-{"command":"RUSTUP_DIST_SERVER=https://static.rust-lang.org rustup target add aarch64-unknown-linux-musl"}

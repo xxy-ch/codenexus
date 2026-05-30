@@ -1,1 +1,0 @@
-"ERROR:  column \"expected_output\" does not exist\nLINE 1: select problem_id,input,expected_output,is_hidden from test_...\n                                ^\n"

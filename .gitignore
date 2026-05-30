@@ -13,6 +13,7 @@ release/
 .idea/
 .sisyphus/
 .github/*
+.regent/
 !.github/workflows/
 !.github/ISSUE_TEMPLATE/
 !.github/PULL_REQUEST_TEMPLATE.md
@@ -63,6 +64,9 @@ frontend-skill/
 .gemini/
 .omc/
 .omx/
+.agent/
+.agents/
+.codex/
 
 # ── GSD baseline (auto-generated) ──
 .gsd

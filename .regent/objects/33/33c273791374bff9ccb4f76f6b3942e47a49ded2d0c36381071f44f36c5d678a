@@ -1,1 +1,0 @@
-{"command":"docker ps -a --format \"table {{.ID}}\\t{{.Image}}\\t{{.Status}}\\t{{.CreatedAt}}\"","description":"List all containers including stopped ones"}

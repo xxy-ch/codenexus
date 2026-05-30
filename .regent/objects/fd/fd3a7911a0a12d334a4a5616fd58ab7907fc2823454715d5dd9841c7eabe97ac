@@ -1,1 +1,0 @@
-{"command":"docker exec online-judge-postgres psql -U postgres -d online_judge -c \"select problem_id,input,expected_output,is_hidden from test_cases where problem_id=1 order by id;\""}

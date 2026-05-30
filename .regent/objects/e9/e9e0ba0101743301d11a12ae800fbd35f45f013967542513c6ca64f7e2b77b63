@@ -1,1 +1,0 @@
-{"command":"rg -n \"send.*result|result.*API|Retry|recover|pending|XREADGROUP|BLOCK|heartbeat|timeout|submissions/.*/results|worker_secret|WORKER_SECRET\" backend/judge-worker backend/api -S"}

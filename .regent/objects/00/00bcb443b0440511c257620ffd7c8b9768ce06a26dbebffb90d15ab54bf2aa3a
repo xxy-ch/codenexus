@@ -1,1 +1,0 @@
-{"command":"ls -l target/aarch64-unknown-linux-musl/release/judge-worker 2>&1 || true; file target/aarch64-unknown-linux-musl/release/judge-worker 2>&1 || true"}

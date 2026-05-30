@@ -1,1 +1,0 @@
-{"command":"docker compose exec -T postgres psql postgresql://postgres:postgres@postgres:5432/online_judge -c \"select id,user_id,problem_id,language,status,verdict,updated_at from submissions order by id desc limit 8;\""}
