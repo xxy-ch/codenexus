@@ -7,6 +7,13 @@ export const messagesService = {
     return response.data
   },
 
+  async createConversation(peer: string): Promise<Conversation> {
+    const response = await api.post<Conversation>('/messages/conversations', {
+      peer,
+    })
+    return response.data
+  },
+
   async getMessages(conversationId: string): Promise<DirectMessage[]> {
     const response = await api.get<DirectMessage[]>(
       `/messages/conversations/${conversationId}`

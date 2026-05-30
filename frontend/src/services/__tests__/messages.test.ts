@@ -57,4 +57,24 @@ describe('messagesService', () => {
     })
     expect(msg.id).toBe('m1')
   })
+
+  it('creates or reuses a conversation by peer identifier', async () => {
+    mockApi.post.mockResolvedValueOnce({
+      data: {
+        id: 'c2',
+        peer_user_id: 'u2',
+        peer_username: '2002',
+        last_message: '',
+        last_message_at: '2026-03-06T00:00:00Z',
+        unread_count: 0,
+      },
+    })
+
+    const conversation = await messagesService.createConversation('2002')
+
+    expect(mockApi.post).toHaveBeenCalledWith('/messages/conversations', {
+      peer: '2002',
+    })
+    expect(conversation.id).toBe('c2')
+  })
 })

@@ -3,6 +3,7 @@ import type { Conversation, DirectMessage } from '@/types/messages'
 interface MessageThreadProps {
   conversation: Conversation | null
   messages: DirectMessage[]
+  currentUserId?: string
   draft: string
   sending: boolean
   onDraftChange: (value: string) => void
@@ -12,6 +13,7 @@ interface MessageThreadProps {
 export function MessageThread({
   conversation,
   messages,
+  currentUserId,
   draft,
   sending,
   onDraftChange,
@@ -26,7 +28,7 @@ export function MessageThread({
           </div>
           <div className="p-4 h-[420px] overflow-y-auto space-y-3">
             {messages.map((message) => {
-              const isMine = message.sender_username === 'you'
+              const isMine = currentUserId ? message.sender_id === currentUserId : false
               return (
                 <div
                   key={message.id}

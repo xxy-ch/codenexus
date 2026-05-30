@@ -5,12 +5,15 @@ import { ConversationSkeleton } from '@/components/skeletons/ConversationSkeleto
 import { InlineError } from '@/components/ui/InlineError'
 import { ConversationList } from '@/components/messages/ConversationList'
 import { MessageThread } from '@/components/messages/MessageThread'
+import { useAuth } from '@/hooks/useAuth'
 import { MessageCircle, RefreshCw, Send, Users } from 'lucide-react'
 
 export function DirectMessages() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
+  const [peer, setPeer] = useState('')
 
   const { data: conversations, isLoading, error, refetch } = useQuery({
     queryKey: ['conversations'],
@@ -31,6 +34,23 @@ export function DirectMessages() {
     queryKey: ['messages', activeConversationId],
     queryFn: () => messagesService.getMessages(activeConversationId!),
     enabled: !!activeConversationId,
+  })
+
+  const createConversationMutation = useMutation({
+    mutationFn: (value: string) => messagesService.createConversation(value),
+    onSuccess: (conversation) => {
+      queryClient.setQueryData<Awaited<ReturnType<typeof messagesService.getConversations>>>(
+        ['conversations'],
+        (current) => {
+          const existing = current || []
+          if (existing.some((item) => item.id === conversation.id)) return existing
+          return [conversation, ...existing]
+        },
+      )
+      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      setActiveConversationId(conversation.id)
+      setPeer('')
+    },
   })
 
   const sendMutation = useMutation({
@@ -121,6 +141,42 @@ export function DirectMessages() {
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+            <form
+              className="space-y-3"
+              onSubmit={(event) => {
+                event.preventDefault()
+                const value = peer.trim()
+                if (!value) return
+                createConversationMutation.mutate(value)
+              }}
+            >
+              <div>
+                <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">新建私信</p>
+                <h2 className="mt-2 text-sm font-bold text-foreground">按用户编号发起会话</h2>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={peer}
+                  onChange={(event) => setPeer(event.target.value)}
+                  placeholder="输入用户名 / user_code / 邮箱"
+                  className="min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:shadow-focus"
+                />
+                <button
+                  type="submit"
+                  disabled={!peer.trim() || createConversationMutation.isPending}
+                  className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Send className="h-4 w-4" />
+                  创建
+                </button>
+              </div>
+              {createConversationMutation.isError && (
+                <p className="text-xs text-destructive">未找到同组织用户，或不能给自己创建私信。</p>
+              )}
+            </form>
+          </div>
+
+          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="rounded-xl bg-primary/10 p-2 text-primary">
                 <Users className="h-4 w-4" />
@@ -155,6 +211,7 @@ export function DirectMessages() {
             <MessageThread
               conversation={activeConversation}
               messages={messages || []}
+              currentUserId={user?.id}
               draft={draft}
               sending={sendMutation.isPending}
               onDraftChange={setDraft}

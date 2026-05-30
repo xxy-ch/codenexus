@@ -37,9 +37,14 @@ pub struct SendMessageRequest {
     pub content: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct CreateConversationRequest {
+    pub peer: String,
+}
+
 pub fn messages_router() -> Router<AppState> {
     Router::new()
-        .route("/conversations", get(list_conversations))
+        .route("/conversations", get(list_conversations).post(create_conversation))
         .route(
             "/conversations/:conversation_id",
             get(get_messages).post(send_message),
@@ -99,6 +104,84 @@ async fn list_conversations(
         .collect::<Vec<_>>();
 
     Ok(Json(conversations))
+}
+
+async fn create_conversation(
+    State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
+    Json(req): Json<CreateConversationRequest>,
+) -> Result<Json<ConversationDto>, StatusCode> {
+    let peer = req.peer.trim();
+    if peer.is_empty() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    let row = sqlx::query(
+        r#"
+        WITH peer AS (
+            SELECT id, username
+            FROM users
+            WHERE organization_id = $2
+              AND id <> $1
+              AND (
+                username = $3
+                OR COALESCE(user_code, '') = $3
+                OR COALESCE(email, '') = $3
+              )
+            LIMIT 1
+        ),
+        inserted AS (
+            INSERT INTO direct_conversations (user1_id, user2_id)
+            SELECT LEAST($1, peer.id), GREATEST($1, peer.id)
+            FROM peer
+            ON CONFLICT DO NOTHING
+            RETURNING id
+        )
+        SELECT
+            c.id,
+            peer.id AS peer_user_id,
+            peer.username AS peer_username,
+            COALESCE(last_msg.content, '') AS last_message,
+            COALESCE(last_msg.created_at::text, c.created_at::text) AS last_message_at,
+            0::bigint AS unread_count
+        FROM peer
+        JOIN direct_conversations c
+          ON c.id = COALESCE(
+            (SELECT id FROM inserted),
+            (
+              SELECT existing.id
+              FROM direct_conversations existing
+              WHERE existing.user1_id = LEAST($1, peer.id)
+                AND existing.user2_id = GREATEST($1, peer.id)
+              LIMIT 1
+            )
+          )
+        LEFT JOIN LATERAL (
+            SELECT m.content, m.created_at
+            FROM direct_messages m
+            WHERE m.conversation_id = c.id
+            ORDER BY m.created_at DESC
+            LIMIT 1
+        ) last_msg ON true
+        "#,
+    )
+    .bind(claims.sub)
+    .bind(claims.school_id)
+    .bind(peer)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let row = row.ok_or(StatusCode::NOT_FOUND)?;
+
+    Ok(Json(ConversationDto {
+        id: row.get::<Uuid, _>("id").to_string(),
+        peer_user_id: row.get::<Uuid, _>("peer_user_id").to_string(),
+        peer_username: row.get::<String, _>("peer_username"),
+        last_message: row.get::<String, _>("last_message"),
+        last_message_at: row.get::<String, _>("last_message_at"),
+        unread_count: row.get::<i64, _>("unread_count"),
+    }))
 }
 
 async fn get_messages(
@@ -217,7 +300,7 @@ async fn ensure_conversation_member(
 ) -> Result<(), StatusCode> {
     let exists = sqlx::query_scalar::<_, i64>(
         r#"
-        SELECT 1
+        SELECT 1::bigint
         FROM direct_conversations c
         JOIN users u1 ON u1.id = c.user1_id
         JOIN users u2 ON u2.id = c.user2_id

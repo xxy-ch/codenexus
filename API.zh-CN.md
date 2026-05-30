@@ -1702,6 +1702,33 @@ Judge Worker 判题完成后回调此端点提交结果。
 
 ---
 
+#### POST /api/messages/conversations
+
+按用户名、`user_code` 或邮箱创建/复用与同组织用户的一对一会话。不能给自己创建会话。
+
+**请求体**：
+
+```json
+{
+  "peer": "2002"
+}
+```
+
+**响应**：
+
+```json
+{
+  "id": "uuid-string",
+  "peer_user_id": "uuid-string",
+  "peer_username": "student002",
+  "last_message": "",
+  "last_message_at": "2024-06-01T10:00:00Z",
+  "unread_count": 0
+}
+```
+
+---
+
 #### GET /api/messages/conversations/:conversation_id
 
 获取会话消息列表。同时将未读消息标记为已读。
@@ -1735,7 +1762,7 @@ Judge Worker 判题完成后回调此端点提交结果。
 }
 ```
 
-仅允许向已存在的会话发消息（会话由系统在首次交互时创建）。
+仅允许向已存在的会话发消息；需要首次交互时先调用 `POST /api/messages/conversations` 创建或复用会话。
 
 ---
 
