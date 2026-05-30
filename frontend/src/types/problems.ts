@@ -11,10 +11,12 @@ export interface Problem {
   updated_at: string
 }
 
-/** Student-safe test case view — no input/output data exposed */
+/** Student-safe test case view — only non-hidden sample input/output is exposed */
 export interface PublicTestCase {
   id: string
   problem_id: string
+  input: string
+  expected_output: string
   is_hidden: false
   order: number
 }

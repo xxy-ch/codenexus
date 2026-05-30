@@ -91,13 +91,16 @@ async fn get_submission(
     Path(id): Path<i64>,
 ) -> Result<impl IntoResponse, AppError> {
     let service = SubmissionService::new(state.db_pool);
-    let submission = service.get_submission(id, claims.sub).await.map_err(|err| {
-        if err.to_string().contains("Submission not found") {
-            AppError::NotFound("Submission not found".to_string())
-        } else {
-            AppError::Internal(err.to_string())
-        }
-    })?;
+    let submission = service
+        .get_submission(id, claims.sub)
+        .await
+        .map_err(|err| {
+            if err.to_string().contains("Submission not found") {
+                AppError::NotFound("Submission not found".to_string())
+            } else {
+                AppError::Internal(err.to_string())
+            }
+        })?;
     Ok(Json(submission))
 }
 
@@ -163,6 +166,9 @@ async fn update_judge_result(
         .map(|tc| crate::service::TestCaseResultInput {
             test_case_id: tc.test_case_id,
             status: tc.status.clone(),
+            expected_output: tc.expected_output.clone(),
+            actual_output: tc.actual_output.clone(),
+            error_message: tc.error_message.clone(),
             runtime_ms: tc.runtime_ms,
             memory_kb: tc.memory_kb,
         })

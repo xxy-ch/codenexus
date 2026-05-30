@@ -13,11 +13,12 @@ import { SimilarSubmissions } from '@/components/analysis/SimilarSubmissions'
 
 interface TestCase {
   id: number
-  input: string
-  expected_output: string
+  input?: string
+  expected_output?: string
   actual_output?: string
   status: 'passed' | 'failed' | 'pending' | 'running'
   error?: string
+  is_hidden?: boolean
   time_ms?: number
 }
 
@@ -313,7 +314,7 @@ export function SubmissionDetail() {
                             <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">输入数据</p>
                           </div>
                           <pre className="text-[13px] bg-zinc-950 border border-zinc-800 p-3.5 rounded-xl font-mono overflow-x-auto text-zinc-100 shadow-inner max-h-48 leading-relaxed">
-                            {testCase.input}
+                            {testCase.input ?? (testCase.is_hidden ? '隐藏用例不展示输入数据' : '无输入数据')}
                           </pre>
                         </div>
                         <div className="space-y-1.5">
@@ -321,12 +322,12 @@ export function SubmissionDetail() {
                             <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">期望输出</p>
                           </div>
                           <pre className="text-[13px] bg-zinc-950 border border-zinc-800 p-3.5 rounded-xl font-mono overflow-x-auto text-zinc-100 shadow-inner max-h-48 leading-relaxed">
-                            {testCase.expected_output}
+                            {testCase.expected_output ?? (testCase.is_hidden ? '隐藏用例不展示期望输出' : '无期望输出数据')}
                           </pre>
                         </div>
                       </div>
 
-                      {testCase.actual_output && (
+                      {testCase.actual_output !== undefined && (
                         <div className="space-y-1.5">
                           <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">实际输出</p>
                           <pre className={cn(

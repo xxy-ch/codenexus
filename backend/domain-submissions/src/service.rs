@@ -69,6 +69,9 @@ impl std::error::Error for JudgeUpdateError {}
 pub struct TestCaseResultInput {
     pub test_case_id: i64,
     pub status: String,
+    pub expected_output: Option<String>,
+    pub actual_output: Option<String>,
+    pub error_message: Option<String>,
     pub runtime_ms: Option<i32>,
     pub memory_kb: Option<i32>,
 }
@@ -325,9 +328,14 @@ impl SubmissionService {
                     WHEN 'ie' THEN 'failed'
                     ELSE 'pending'
                 END as status,
-                tc.output as expected_output,
-                NULL::TEXT as actual_output,
-                NULL::TEXT as error_message,
+                CASE WHEN NOT tc.is_secret THEN tc.input ELSE NULL END as input,
+                CASE
+                    WHEN NOT tc.is_secret THEN COALESCE(tcr.expected_output, tc.output)
+                    ELSE NULL
+                END as expected_output,
+                CASE WHEN NOT tc.is_secret THEN tcr.actual_output ELSE NULL END as actual_output,
+                tcr.error_message,
+                tc.is_secret as is_hidden,
                 tcr.time_ms as runtime_ms,
                 tcr.memory_kb
             FROM test_case_results tcr
@@ -345,9 +353,11 @@ impl SubmissionService {
             .map(|tc| TestCaseResult {
                 id: tc.get("id"),
                 status: tc.get("status"),
+                input: tc.get("input"),
                 expected_output: tc.get("expected_output"),
                 actual_output: tc.get("actual_output"),
                 error_message: tc.get("error_message"),
+                is_hidden: tc.get("is_hidden"),
                 runtime_ms: tc.get("runtime_ms"),
                 memory_kb: tc.get("memory_kb"),
             })
@@ -757,9 +767,9 @@ impl SubmissionService {
         submission_id: i64,
         test_case_id: i64,
         status: &str,
-        _expected_output: Option<String>,
-        _actual_output: Option<String>,
-        _error_message: Option<String>,
+        expected_output: Option<String>,
+        actual_output: Option<String>,
+        error_message: Option<String>,
         runtime_ms: Option<i32>,
         memory_kb: Option<i32>,
     ) -> Result<i64> {
@@ -768,12 +778,15 @@ impl SubmissionService {
         let result_id = sqlx::query_scalar::<_, i64>(
             r#"
             INSERT INTO test_case_results (
-                submission_id, test_case_id, verdict, time_ms, memory_kb
+                submission_id, test_case_id, verdict, expected_output, actual_output, error_message, time_ms, memory_kb
             )
-            VALUES ($1, $2, $3, $4, $5)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             ON CONFLICT (submission_id, test_case_id)
             DO UPDATE SET
                 verdict = EXCLUDED.verdict,
+                expected_output = EXCLUDED.expected_output,
+                actual_output = EXCLUDED.actual_output,
+                error_message = EXCLUDED.error_message,
                 time_ms = EXCLUDED.time_ms,
                 memory_kb = EXCLUDED.memory_kb
             RETURNING id
@@ -782,6 +795,9 @@ impl SubmissionService {
         .bind(submission_id)
         .bind(test_case_id)
         .bind(verdict)
+        .bind(expected_output)
+        .bind(actual_output)
+        .bind(error_message)
         .bind(runtime_ms)
         .bind(memory_kb)
         .fetch_one(&self.pool)
@@ -865,12 +881,15 @@ impl SubmissionService {
             sqlx::query(
                 r#"
                 INSERT INTO test_case_results (
-                    submission_id, test_case_id, verdict, time_ms, memory_kb
+                    submission_id, test_case_id, verdict, expected_output, actual_output, error_message, time_ms, memory_kb
                 )
-                VALUES ($1, $2, $3, $4, $5)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 ON CONFLICT (submission_id, test_case_id)
                 DO UPDATE SET
                     verdict = EXCLUDED.verdict,
+                    expected_output = EXCLUDED.expected_output,
+                    actual_output = EXCLUDED.actual_output,
+                    error_message = EXCLUDED.error_message,
                     time_ms = EXCLUDED.time_ms,
                     memory_kb = EXCLUDED.memory_kb
                 "#,
@@ -878,6 +897,9 @@ impl SubmissionService {
             .bind(submission_id)
             .bind(tc.test_case_id)
             .bind(verdict)
+            .bind(&tc.expected_output)
+            .bind(&tc.actual_output)
+            .bind(&tc.error_message)
             .bind(tc.runtime_ms)
             .bind(tc.memory_kb)
             .execute(&mut *tx)

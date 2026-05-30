@@ -68,17 +68,19 @@ pub struct BatchImportTestCasesRequest {
     pub test_cases: Vec<CreateTestCaseRequest>,
 }
 
-/// Student-safe test case view — hides input/output/score for hidden cases
+/// Student-safe test case view — exposes only non-hidden sample input/output.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PublicTestCase {
     pub id: i64,
     pub problem_id: i64,
+    pub input: String,
+    pub expected_output: String,
     pub is_hidden: bool,
     pub order: i32,
 }
 
 /// List test cases for a problem.
-/// Management roles see full data; students see only non-hidden case metadata.
+/// Management roles see full data; students see only non-hidden sample cases.
 pub async fn list_test_cases(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
@@ -120,13 +122,15 @@ pub async fn list_test_cases(
         // Management users see full test case data
         Ok(Json(json!(test_cases)))
     } else {
-        // Students only see non-hidden metadata
+        // Students only see non-hidden sample input/output.
         let public: Vec<PublicTestCase> = test_cases
             .into_iter()
             .filter(|tc| !tc.is_hidden)
             .map(|tc| PublicTestCase {
                 id: tc.id,
                 problem_id: tc.problem_id,
+                input: tc.input,
+                expected_output: tc.expected_output,
                 is_hidden: false,
                 order: tc.order,
             })

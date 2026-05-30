@@ -1,5 +1,5 @@
 import api from './api'
-import type { Problem, ManagementTestCase, ProblemSubmission } from '@/types/problems'
+import type { Problem, ManagementTestCase, ProblemSubmission, PublicTestCase } from '@/types/problems'
 
 export interface ProblemFilters {
   difficulty?: 'easy' | 'medium' | 'hard' | 'all'
@@ -90,19 +90,32 @@ export const problemsService = {
   },
 
   /**
-   * 获取题目的测试用例 (management only — requires teacher+ role)
+   * 获取题目的测试用例。学生只会收到非隐藏样例；管理角色会收到完整用例。
    */
-  async getTestCases(problemId: string): Promise<ManagementTestCase[]> {
+  async getTestCases(problemId: string): Promise<Array<PublicTestCase | ManagementTestCase>> {
     const response = await api.get<any[]>(`/problems/${problemId}/test-cases`)
-    return (Array.isArray(response.data) ? response.data : []).map((testCase, index) => ({
-      id: String(testCase?.id ?? index + 1),
-      problem_id: String(testCase?.problem_id ?? problemId),
-      input: String(testCase?.input ?? ''),
-      expected_output: String(testCase?.expected_output ?? ''),
-      is_hidden: Boolean(testCase?.is_hidden),
-      order: Number(testCase?.order ?? index),
-      score: Number(testCase?.score ?? 0),
-    }))
+    return (Array.isArray(response.data) ? response.data : []).map((testCase, index) => {
+      const base = {
+        id: String(testCase?.id ?? index + 1),
+        problem_id: String(testCase?.problem_id ?? problemId),
+        input: String(testCase?.input ?? ''),
+        expected_output: String(testCase?.expected_output ?? ''),
+        order: Number(testCase?.order ?? index),
+      }
+
+      if (testCase?.score != null) {
+        return {
+          ...base,
+          is_hidden: Boolean(testCase?.is_hidden),
+          score: Number(testCase.score),
+        }
+      }
+
+      return {
+        ...base,
+        is_hidden: false,
+      }
+    })
   },
 
   /**
@@ -240,11 +253,12 @@ function normalizeSubmission(submission: any): ProblemSubmission & {
   const testCases = Array.isArray(submission?.test_cases)
     ? submission.test_cases.map((tc: any, index: number) => ({
         id: Number(tc.id ?? index + 1),
-        input: String(tc.input ?? ''),
-        expected_output: String(tc.expected_output ?? ''),
-        actual_output: tc.actual_output ? String(tc.actual_output) : undefined,
+        input: tc.input != null ? String(tc.input) : undefined,
+        expected_output: tc.expected_output != null ? String(tc.expected_output) : undefined,
+        actual_output: tc.actual_output != null ? String(tc.actual_output) : undefined,
         status: (tc.status ?? 'pending') as 'passed' | 'failed' | 'pending' | 'running',
         error: tc.error ?? tc.error_message ?? undefined,
+        is_hidden: Boolean(tc.is_hidden),
         time_ms:
           tc.time_ms != null
             ? Number(tc.time_ms)

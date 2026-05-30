@@ -49,9 +49,11 @@ pub struct SubmissionResponse {
 pub struct TestCaseResult {
     pub id: i64,
     pub status: String,
+    pub input: Option<String>,
     pub expected_output: Option<String>,
     pub actual_output: Option<String>,
     pub error_message: Option<String>,
+    pub is_hidden: bool,
     pub runtime_ms: Option<i32>,
     pub memory_kb: Option<i32>,
 }
