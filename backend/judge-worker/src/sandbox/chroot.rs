@@ -75,11 +75,6 @@ pub fn drop_privileges_to_nobody() -> Result<()> {
                     current_gid
                 ));
             }
-            tracing::debug!(
-                "Child process already unprivileged (uid={}, gid={}); skipping setuid/setgid",
-                current_uid,
-                current_gid
-            );
             return Ok(());
         }
 
@@ -99,8 +94,6 @@ pub fn drop_privileges_to_nobody() -> Result<()> {
                 gid
             ));
         }
-
-        tracing::debug!("Dropped privileges to nobody (uid={}, gid={})", uid, gid);
     }
 
     Ok(())

@@ -18,7 +18,10 @@ pub struct CgroupController {
 
 impl CgroupController {
     pub fn new(cgroup_name: &str, config: &SandboxConfig) -> Result<Self> {
-        let cgroup_path = Path::new("/sys/fs/cgroup/onlinejudge").join(cgroup_name);
+        let cgroup_root = std::env::var("OJ_CGROUP_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| Path::new("/sys/fs/cgroup/onlinejudge").to_path_buf());
+        let cgroup_path = cgroup_root.join(cgroup_name);
 
         fs::create_dir_all(&cgroup_path)
             .with_context(|| format!("Failed to create cgroup directory: {:?}", cgroup_path))?;
@@ -38,17 +41,19 @@ impl CgroupController {
     pub fn create(&self) -> Result<()> {
         info!("Creating cgroup at {:?}", self.cgroup_path);
 
-        let cpu_quota = self.config.cpu_time_limit_ms * 1000 / 20000;
+        let cgroup_root = self
+            .cgroup_path
+            .parent()
+            .context("Cgroup path must have a parent directory")?;
+        enable_parent_controllers(cgroup_root)?;
 
-        fs::write(self.cgroup_path.join("cgroup.type"), "0")
-            .with_context(|| "Failed to set cgroup type")?;
+        let cpu_period_us = 100_000_u64;
+        let cpu_quota_us = self.config.cpu_time_limit_ms.max(1) * 1000;
         fs::write(
-            self.cgroup_path.join("cgroup.controllers"),
-            "cpu,memory,pids",
+            self.cgroup_path.join("cpu.max"),
+            format!("{} {}", cpu_quota_us, cpu_period_us),
         )
-        .with_context(|| "Failed to set cgroup controllers")?;
-        fs::write(self.cgroup_path.join("cpu.max"), format!("{}", cpu_quota))
-            .with_context(|| "Failed to set CPU quota")?;
+        .with_context(|| "Failed to set CPU quota")?;
         fs::write(
             self.cgroup_path.join("memory.max"),
             format!("{}", self.config.memory_limit_bytes),
@@ -135,5 +140,85 @@ impl CgroupController {
             debug!("Destroyed cgroup at {:?}", self.cgroup_path);
         }
         Ok(())
+    }
+}
+
+fn enable_parent_controllers(cgroup_root: &Path) -> Result<()> {
+    let controllers_path = cgroup_root.join("cgroup.controllers");
+    let subtree_control_path = cgroup_root.join("cgroup.subtree_control");
+
+    if !controllers_path.exists() || !subtree_control_path.exists() {
+        return Ok(());
+    }
+
+    let available = fs::read_to_string(&controllers_path)
+        .with_context(|| format!("Failed to read {:?}", controllers_path))?;
+    let requested = ["cpu", "memory", "pids"]
+        .iter()
+        .filter(|controller| {
+            available
+                .split_whitespace()
+                .any(|value| value == **controller)
+        })
+        .map(|controller| format!("+{}", controller))
+        .collect::<Vec<_>>();
+
+    if requested.is_empty() {
+        return Ok(());
+    }
+
+    fs::write(&subtree_control_path, requested.join(" "))
+        .with_context(|| format!("Failed to enable cgroup controllers at {:?}", cgroup_root))?;
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn create_writes_cgroup_v2_limits() {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("oj-cgroup-test-{}", unique));
+        fs::create_dir_all(&root).unwrap();
+        unsafe {
+            std::env::set_var("OJ_CGROUP_ROOT", &root);
+        }
+
+        let controller = CgroupController::new(
+            "case-1",
+            &SandboxConfig {
+                cpu_time_limit_ms: 250,
+                memory_limit_bytes: 64 * 1024 * 1024,
+                pids_max: 8,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        controller.create().unwrap();
+
+        assert_eq!(
+            fs::read_to_string(root.join("case-1/cpu.max")).unwrap(),
+            "250000 100000"
+        );
+        assert_eq!(
+            fs::read_to_string(root.join("case-1/memory.max")).unwrap(),
+            (64 * 1024 * 1024).to_string()
+        );
+        assert_eq!(
+            fs::read_to_string(root.join("case-1/pids.max")).unwrap(),
+            "8"
+        );
+
+        unsafe {
+            std::env::remove_var("OJ_CGROUP_ROOT");
+        }
+        let _ = fs::remove_dir_all(root);
     }
 }

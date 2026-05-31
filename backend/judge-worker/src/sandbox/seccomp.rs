@@ -193,14 +193,10 @@ pub fn apply_seccomp(_pid: u32) -> Result<()> {
                 )
             };
             if syscall == libseccomp_sys::__NR_SCMP_ERROR {
-                tracing::debug!(
-                    "seccomp: syscall {} is unavailable on this architecture",
-                    syscall_name
-                );
                 continue;
             }
 
-            let ret = unsafe {
+            let _ = unsafe {
                 libseccomp_sys::seccomp_rule_add_exact(
                     ctx,
                     libseccomp_sys::SCMP_ACT_ALLOW,
@@ -208,15 +204,6 @@ pub fn apply_seccomp(_pid: u32) -> Result<()> {
                     0,
                 )
             };
-            // Ignore ENOTSUP — syscall may not exist on this architecture.
-            if ret != 0 && ret != -(libc::ENOTSUP as i32) {
-                tracing::warn!(
-                    "seccomp: failed to allow syscall {} ({}): ret={}",
-                    syscall_name,
-                    syscall,
-                    ret
-                );
-            }
         }
 
         let ret = unsafe { libseccomp_sys::seccomp_load(ctx) };
