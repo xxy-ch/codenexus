@@ -23,9 +23,9 @@ pub fn default_visibility() -> String {
 pub struct ProblemConfig {
     pub title: String,
     pub difficulty: String,
-    #[serde(default = "default_time_limit")]
+    #[serde(default = "default_time_limit", alias = "time_limit_ms")]
     pub time_limit: i32,
-    #[serde(default = "default_memory_limit")]
+    #[serde(default = "default_memory_limit", alias = "memory_limit_mb")]
     pub memory_limit: i32,
     #[serde(default)]
     pub is_public: bool,
@@ -35,6 +35,7 @@ pub struct ProblemConfig {
     pub tags: Vec<String>,
     pub source_url: Option<String>,
     pub author_note: Option<String>,
+    #[serde(default)]
     pub test_cases: Vec<ProblemTestCaseConfig>,
 }
 

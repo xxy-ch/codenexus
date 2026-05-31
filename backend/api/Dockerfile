@@ -58,9 +58,6 @@ RUN mkdir -p api/src feature-gateway/src judge-worker/src llm-worker/src migrati
     printf 'fn main() {}\n' > migration-tool/src/main.rs && \
     printf 'fn main() {}\n' > monitor-server/src/main.rs
 
-# Build dependencies only (cached layer)
-RUN cargo build --release -p api 2>/dev/null || true
-
 # Layer 2: Copy actual source code
 COPY api ./api
 COPY api-infra ./api-infra

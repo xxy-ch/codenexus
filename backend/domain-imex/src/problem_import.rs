@@ -139,11 +139,17 @@ pub fn parse_problem_zip(
             }
         };
 
+        let test_case_configs = if config.test_cases.is_empty() {
+            discover_test_case_configs(&file_contents, &slug)
+        } else {
+            config.test_cases.clone()
+        };
+
         // Read test case files
         let mut test_case_files = Vec::new();
         let mut missing_files = false;
 
-        for tc_config in &config.test_cases {
+        for tc_config in &test_case_configs {
             let input_path = if tc_config.input_file.starts_with("testcases/") {
                 format!("problems/{}/{}", slug, tc_config.input_file)
             } else {
@@ -212,6 +218,43 @@ pub fn parse_problem_zip(
     }
 
     Ok(items)
+}
+
+fn discover_test_case_configs(
+    file_contents: &HashMap<String, Vec<u8>>,
+    slug: &str,
+) -> Vec<crate::models::ProblemTestCaseConfig> {
+    let prefix = format!("problems/{}/testcases/", slug);
+    let mut stems = file_contents
+        .keys()
+        .filter_map(|path| {
+            path.strip_prefix(&prefix)
+                .and_then(|name| name.strip_suffix(".in"))
+                .filter(|stem| file_contents.contains_key(&format!("{}{}.out", prefix, stem)))
+                .map(str::to_string)
+        })
+        .collect::<Vec<_>>();
+
+    stems.sort_by(|a, b| compare_testcase_stems(a, b));
+
+    stems
+        .into_iter()
+        .enumerate()
+        .map(|(index, stem)| crate::models::ProblemTestCaseConfig {
+            input_file: format!("{}.in", stem),
+            output_file: format!("{}.out", stem),
+            is_hidden: Some(false),
+            score: None,
+            order: Some(index as i32),
+        })
+        .collect()
+}
+
+fn compare_testcase_stems(a: &str, b: &str) -> std::cmp::Ordering {
+    match (a.parse::<i32>(), b.parse::<i32>()) {
+        (Ok(left), Ok(right)) => left.cmp(&right).then_with(|| a.cmp(b)),
+        _ => a.cmp(b),
+    }
 }
 
 /// Convert a parsed ProblemImportItem into a CreateProblemRequest for the problems domain.
@@ -352,6 +395,42 @@ mod tests {
         assert_eq!(item.test_case_files.len(), 2);
         assert_eq!(item.status, ImportItemStatus::Valid);
         assert!(item.warning.is_none());
+    }
+
+    #[test]
+    fn discovers_testcases_when_config_omits_test_cases() {
+        let config = r#"{
+            "title": "Sum",
+            "difficulty": "easy",
+            "time_limit_ms": 1000,
+            "memory_limit_mb": 128
+        }"#;
+        let zip_bytes = build_zip(&[
+            ("problems/sum/config.json", config.as_bytes()),
+            ("problems/sum/problem.md", b"Add two integers."),
+            ("problems/sum/testcases/02.in", b"3 4\n"),
+            ("problems/sum/testcases/02.out", b"7\n"),
+            ("problems/sum/testcases/01.in", b"1 2\n"),
+            ("problems/sum/testcases/01.out", b"3\n"),
+        ]);
+
+        let skip = HashSet::new();
+        let items = parse_problem_zip(&zip_bytes, &skip).unwrap();
+
+        assert_eq!(items.len(), 1);
+        let item = &items[0];
+        assert_eq!(item.status, ImportItemStatus::Valid);
+        assert_eq!(item.config.time_limit, 1000);
+        assert_eq!(item.config.memory_limit, 128);
+        assert_eq!(item.test_case_files.len(), 2);
+        assert_eq!(
+            String::from_utf8_lossy(&item.test_case_files[0].input),
+            "1 2\n"
+        );
+        assert_eq!(
+            String::from_utf8_lossy(&item.test_case_files[1].output),
+            "7\n"
+        );
     }
 
     #[test]
