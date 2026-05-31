@@ -6,31 +6,40 @@
 
 ## 1. Architectural Overview
 
-CodeNexus is a high-performance, multi-tenant, and multi-role online judge system designed for educational institutions. The platform supports safe execution and evaluation of programming submissions in six languages (C, C++, Java, Python, Go, JavaScript) within a strict cgroups/seccomp-isolated environment. 
+CodeNexus is a high-performance, multi-tenant, and multi-role online judge system designed for educational institutions. The platform supports safe execution and evaluation of programming submissions in runtime-configurable languages within a strict cgroups/seccomp-isolated environment.
 
-The system employs a distributed three-service architecture, utilizing REST APIs, Redis Streams, and WebSockets as its primary communication channels:
+The system employs a distributed service architecture, utilizing REST APIs, Redis Streams, and WebSockets as its primary communication channels:
 
 ```
-+----------------+       REST + WebSocket        +------------------+       Redis Streams + HTTP        +------------------+
-|                | <---------------------------> |                  | <-----------------------------> |                  |
-|    Frontend    |     :5173 (dev) / :80 (prod)  |    API Server    |     POST /submissions/{id}/res  |   Judge Worker   |
-|    React 19    |                              |    Axum + Rust   |                              |  Independent Rust|
-|   TypeScript   |                              |    :3000         |                              |  (Linux Sandbox) |
-+----------------+                              +--------+---------+                              +--------+---------+
-                                                         |                                            |
-                                                         |  sqlx (PgPool)                              |  sqlx (PgPool)
-                                                         v                                            v
-                                               +------------------+                        +------------------+
-                                               |   PostgreSQL 16  |                        |   PostgreSQL 16  |
-                                               +------------------+                        +------------------+
-                                                         |
-                                                         |  deadpool-redis
-                                                         v
-                                               +------------------+
-                                               |     Redis 7      |
-                                               | (Cache, Queue,   |
-                                               |  JWT Blacklist)  |
-                                               +------------------+
++----------------+      REST + WebSocket       +------------------+      Redis Streams + HTTP      +------------------+
+|                | <-------------------------> |                  | <---------------------------> |                  |
+|    Frontend    |   :5173 (dev) / :80 (prod) |    API Server    | POST /submissions/{id}/res   |   Judge Worker   |
+|    React 19    |                             |    Axum + Rust   |                              |  Linux Sandbox   |
+|   TypeScript   |                             |    :3000         |                              | cgroups/seccomp  |
++----------------+                             +--------+---------+                              +--------+---------+
+                                                        |                                                 |
+                                                        | sqlx / deadpool-redis                           | sqlx
+                                                        v                                                 v
+                                              +------------------+                              +------------------+
+                                              | PostgreSQL 16    |                              | PostgreSQL 16    |
+                                              +------------------+                              +------------------+
+                                                        |
+                                                        v
+                                              +------------------+
+                                              | Redis 7          |
+                                              | Queue + cache    |
+                                              +------------------+
+
++------------------+       REST        +------------------+
+| API Server       | <---------------> | Feature Gateway  |
+| facade routes    | worker secret     | :3001 flags      |
++------------------+                   +------------------+
+                                                |
+                                                v
+                                      +------------------+
+                                      | LLM Worker       |
+                                      | AI task runtime  |
+                                      +------------------+
 ```
 
 ### Core Architecture Features
@@ -38,6 +47,7 @@ The system employs a distributed three-service architecture, utilizing REST APIs
 - **Multi-Tenant Isolation:** Enforced strictly at the database query level. All domain-scoped database queries filter records using the user's `organization_id`, preventing cross-tenant data leaks.
 - **Asynchronous Submission Queue:** Code submissions are offloaded asynchronously to Redis Streams. This decouples the user-facing HTTP server from the high-resource compilation and execution pipelines.
 - **In-Process WebSockets:** Co-located in the Axum binary, providing real-time submission progress and system events to clients with sub-millisecond dispatch times.
+- **Runtime Feature Control:** A standalone Feature Gateway resolves global, campus, grade, and class-level flags for optional features including AI analysis and teaching assistance.
 - **Workspace-Shared Models:** Uses a dedicated `shared` crate in a Cargo workspace to ensure type safety, identical schema mapping, and shared validation rules across the API, judge workers, and database migrators.
 
 ---
@@ -219,5 +229,5 @@ The **Feature Gateway** allows the system to toggle application features dynamic
 [Class Scope] (Teacher-level classroom overrides)
 ```
 
-The feature gateway utilizes an in-process **DashMap** cache to achieve sub-millisecond query evaluation. The cache is automatically invalidated by database update notifications (e.g., PgListener or transactional hooks), ensuring both high performance and high reactivity.
+The feature gateway utilizes an in-process **DashMap** cache to achieve sub-millisecond query evaluation. Cache entries are invalidated by the service on `set_flag` and `delete_flag`; deployments with multiple gateway replicas should add an external invalidation mechanism before expecting cross-process cache coherence.
 <!-- GSD:docs -->

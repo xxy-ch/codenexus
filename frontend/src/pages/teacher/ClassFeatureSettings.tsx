@@ -85,7 +85,9 @@ export function ClassFeatureSettings() {
           const { data } = await api.get(
             `/features/${entry.slug}/flags?scope=class&scope_id=${effectiveClassId}`,
           )
-          result[entry.slug] = data as FeatureFlagEntry[]
+          result[entry.slug] = (data as FeatureFlagEntry[]).filter(
+            (flag) => flag.scope === 'class' && flag.scope_id === effectiveClassId,
+          )
         }),
       )
       return result

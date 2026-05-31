@@ -334,14 +334,45 @@ impl FeatureGatewayService {
         Ok(entries)
     }
 
-    /// List all flag overrides for a given feature slug.
-    pub async fn list_flags(&self, slug: &str) -> anyhow::Result<Vec<FeatureFlagEntry>> {
-        let flags = sqlx::query_as::<_, FeatureFlagEntry>(
-            "SELECT * FROM feature_flags WHERE feature_slug = $1 ORDER BY scope",
-        )
-        .bind(slug)
-        .fetch_all(&self.db_pool)
-        .await?;
+    /// List flag overrides for a given feature slug.
+    pub async fn list_flags(
+        &self,
+        slug: &str,
+        scope: Option<&str>,
+        scope_id: Option<i64>,
+    ) -> anyhow::Result<Vec<FeatureFlagEntry>> {
+        let flags =
+            match (scope, scope_id) {
+                (Some(scope), Some(scope_id)) => {
+                    sqlx::query_as::<_, FeatureFlagEntry>(
+                        "SELECT * FROM feature_flags \
+                     WHERE feature_slug = $1 AND scope = $2 AND scope_id = $3 \
+                     ORDER BY scope, scope_id",
+                    )
+                    .bind(slug)
+                    .bind(scope)
+                    .bind(scope_id)
+                    .fetch_all(&self.db_pool)
+                    .await?
+                }
+                (Some(scope), None) => {
+                    sqlx::query_as::<_, FeatureFlagEntry>(
+                        "SELECT * FROM feature_flags \
+                     WHERE feature_slug = $1 AND scope = $2 AND scope_id IS NULL \
+                     ORDER BY scope",
+                    )
+                    .bind(slug)
+                    .bind(scope)
+                    .fetch_all(&self.db_pool)
+                    .await?
+                }
+                (None, _) => sqlx::query_as::<_, FeatureFlagEntry>(
+                    "SELECT * FROM feature_flags WHERE feature_slug = $1 ORDER BY scope, scope_id",
+                )
+                .bind(slug)
+                .fetch_all(&self.db_pool)
+                .await?,
+            };
         Ok(flags)
     }
 

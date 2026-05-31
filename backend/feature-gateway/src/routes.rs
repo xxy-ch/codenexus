@@ -50,6 +50,13 @@ pub struct DeleteFlagParams {
     pub scope_id: Option<i64>,
 }
 
+/// Query parameters for listing feature flag overrides.
+#[derive(Debug, Deserialize)]
+pub struct ListFlagParams {
+    pub scope: Option<String>,
+    pub scope_id: Option<i64>,
+}
+
 /// JSON error response body for gateway routes.
 #[derive(Debug, serde::Serialize)]
 pub struct GatewayError {
@@ -118,11 +125,12 @@ async fn list_registry(State(state): State<AppState>) -> Result<impl IntoRespons
 /// Returns all flag overrides for a given feature slug.
 async fn list_flags(
     Path(slug): Path<String>,
+    Query(params): Query<ListFlagParams>,
     State(state): State<AppState>,
 ) -> Result<impl IntoResponse, GatewayError> {
     let flags = state
         .gateway
-        .list_flags(&slug)
+        .list_flags(&slug, params.scope.as_deref(), params.scope_id)
         .await
         .map_err(|e| GatewayError::internal(e.to_string()))?;
 

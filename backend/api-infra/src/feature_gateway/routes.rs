@@ -29,6 +29,13 @@ pub struct DeleteFlagParams {
     pub scope_id: Option<i64>,
 }
 
+/// Query parameters for listing feature flag overrides.
+#[derive(Debug, Deserialize)]
+pub struct ListFlagParams {
+    pub scope: Option<String>,
+    pub scope_id: Option<i64>,
+}
+
 /// GET /features/resolved
 ///
 /// Proxies to Gateway: resolves all features for the current user's scope.
@@ -114,7 +121,9 @@ async fn list_registry(
 /// Proxies to Gateway: returns all flag overrides for a given feature slug.
 async fn list_flags(
     Extension(claims): Extension<Claims>,
+    Extension(tenant_ctx): Extension<TenantContext>,
     Path(slug): Path<String>,
+    Query(params): Query<ListFlagParams>,
     State(state): State<AppState>,
 ) -> Result<impl IntoResponse, AppError> {
     let role =
@@ -125,7 +134,34 @@ async fn list_flags(
         ));
     }
 
-    let path = format!("/features/{}/flags", slug);
+    if matches!(role, Role::Teacher) {
+        let scope = params
+            .scope
+            .as_deref()
+            .ok_or_else(|| AppError::Forbidden("Teacher flag reads require class scope".into()))?;
+        if scope != "class" {
+            return Err(AppError::Forbidden(
+                "Teacher flag reads are limited to class scope".into(),
+            ));
+        }
+        verify_scope_ownership(&state, &claims, tenant_ctx, role, scope, params.scope_id).await?;
+    } else if let Some(scope) = params.scope.as_deref() {
+        verify_scope_ownership(&state, &claims, tenant_ctx, role, scope, params.scope_id).await?;
+    }
+
+    let mut path = format!("/features/{}/flags", slug);
+    let mut query_params = Vec::new();
+    if let Some(scope) = params.scope {
+        query_params.push(format!("scope={}", scope));
+    }
+    if let Some(scope_id) = params.scope_id {
+        query_params.push(format!("scope_id={}", scope_id));
+    }
+    if !query_params.is_empty() {
+        path.push('?');
+        path.push_str(&query_params.join("&"));
+    }
+
     let resp = state
         .gateway_client
         .get(&path)

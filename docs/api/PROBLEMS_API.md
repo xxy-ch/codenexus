@@ -231,6 +231,8 @@ Response:
 
 Returns all test cases for a problem (including hidden ones).
 
+Management roles receive full test case data. Student-facing problem views receive only non-hidden sample cases, exposing `input` and `expected_output` for IDE examples while hidden cases remain unavailable.
+
 Response:
 ```json
 [
@@ -240,7 +242,6 @@ Response:
     "input": "2 7 11 15\n9",
     "expected_output": "0 1\n",
     "is_hidden": false,
-    "is_sample": true,
     "score": 10,
     "order": 0,
     "explanation": "Example from problem statement",
@@ -259,7 +260,6 @@ Request Body:
   "input": "2 7 11 15\n9",
   "expected_output": "0 1\n",
   "is_hidden": false,
-  "is_sample": true,
   "score": 10,
   "order": 0,
   "explanation": "Sample test case"
@@ -278,7 +278,6 @@ Request Body (all fields optional):
   "input": "3 2 4\n6",
   "expected_output": "1 2\n",
   "is_hidden": false,
-  "is_sample": true,
   "score": 10,
   "order": 1,
   "explanation": "Another sample"
@@ -390,14 +389,12 @@ curl -X POST http://localhost:3000/problems/$PROBLEM_ID/test-cases \
       {
         "input": "2 7 11 15\n9",
         "expected_output": "0 1\n",
-        "is_sample": true,
         "is_hidden": false,
         "score": 10
       },
       {
         "input": "3 2 4\n6",
         "expected_output": "1 2\n",
-        "is_sample": true,
         "is_hidden": false,
         "score": 10
       }
@@ -442,19 +439,16 @@ curl "http://localhost:3000/problems?is_public=true&sort_by=title&sort_order=asc
 - updated_at: TIMESTAMPTZ NOT NULL
 ```
 
-### problems_test_cases
+### test_cases
 ```sql
 - id: BIGSERIAL PRIMARY KEY
-- problem_id: UUID NOT NULL REFERENCES problems(id)
+- problem_id: BIGINT NOT NULL REFERENCES problems(id)
 - input: TEXT NOT NULL
-- expected_output: TEXT NOT NULL
-- is_hidden: BOOLEAN NOT NULL
-- is_sample: BOOLEAN NOT NULL
-- score: INTEGER NOT NULL
+- output: TEXT NOT NULL
+- is_secret: BOOLEAN NOT NULL
+- points: INTEGER NOT NULL
 - order_index: INTEGER NOT NULL
-- explanation: TEXT
 - created_at: TIMESTAMPTZ NOT NULL
-- updated_at: TIMESTAMPTZ NOT NULL
 ```
 
 ### problem_statistics
@@ -510,9 +504,9 @@ curl "http://localhost:3000/problems?is_public=true&sort_by=title&sort_order=asc
 ## Best Practices
 
 1. **Test Case Organization**
-   - Use `is_sample=true` for example test cases shown to students
-   - Use `is_hidden=true` for contest problems
-   - Order test cases logically (sample → edge cases → hidden)
+   - Use `is_hidden=false` for example cases shown to students in the IDE
+   - Use `is_hidden=true` for private judging cases
+   - Order test cases logically (visible examples first, then edge cases and hidden cases)
 
 2. **Difficulty Guidelines**
    - Easy: 1-2 simple concepts, straightforward solution

@@ -1,94 +1,143 @@
 import { useQuery } from '@tanstack/react-query'
 import { usersService } from '@/services/users'
-import { Map, Sparkles } from 'lucide-react'
+import { CheckCircle2, Circle, Lock, Map, Sparkles } from 'lucide-react'
 import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
-import { ReactFlow, Background, Controls } from '@xyflow/react'
-import type { NodeTypes, Edge, Node } from '@xyflow/react'
 import { useNavigate } from 'react-router-dom'
-import '@xyflow/react/dist/style.css'
-import { RoadmapNode } from '@/components/roadmap/RoadmapNode'
+import { cn } from '@/lib/utils'
 
-const nodeTypes: NodeTypes = {
-  roadmap: RoadmapNode,
+type RoadmapStatus = 'done' | 'current' | 'locked'
+
+interface RoadmapGraphNode {
+  id: string
+  title: string
+  description: string
+  topics: string[]
+  status: RoadmapStatus
+  color: string
+  bg: string
+  dot: string
+  left: string
+  top: string
 }
 
-const getNodesAndEdges = (completion: number): { nodes: Node[]; edges: Edge[] } => {
+interface RoadmapEdge {
+  id: string
+  from: [number, number]
+  to: [number, number]
+  active: boolean
+}
+
+const getNodesAndEdges = (completion: number): { nodes: RoadmapGraphNode[]; edges: RoadmapEdge[] } => {
   const isBasicDone = completion >= 25
   const isMediumDsDone = completion >= 60
   const isMediumAlgoDone = completion >= 75
   const isAdvancedDone = completion >= 100
 
-  const nodes: Node[] = [
+  const nodes: RoadmapGraphNode[] = [
     {
       id: 'basic',
-      type: 'roadmap',
-      position: { x: 250, y: 50 },
-      data: {
-        title: '基础语法与算法',
-        description: '掌握编程竞赛入门必备的数据结构基础',
-        topics: ['数组与矩阵', '字符串处理', '哈希表'],
-        status: isBasicDone ? 'done' : 'current',
-        color: 'text-status-accepted',
-        bg: 'bg-status-accepted/10',
-        dot: 'text-status-accepted',
-      },
+      title: '基础语法与算法',
+      description: '掌握编程竞赛入门必备的数据结构基础',
+      topics: ['数组与矩阵', '字符串处理', '哈希表'],
+      status: isBasicDone ? 'done' : 'current',
+      color: 'text-status-accepted',
+      bg: 'bg-status-accepted/10',
+      dot: 'text-status-accepted',
+      left: '50%',
+      top: '8%',
     },
     {
       id: 'medium-ds',
-      type: 'roadmap',
-      position: { x: 50, y: 300 },
-      data: {
-        title: '中级数据结构',
-        description: '学习常用的数据存储与区间查询方法',
-        topics: ['栈与队列', '链表高级操作', '并查集基础'],
-        status: isMediumDsDone ? 'done' : (isBasicDone ? 'current' : 'locked'),
-        color: 'text-primary',
-        bg: 'bg-primary/10',
-        dot: 'text-primary',
-      },
+      title: '中级数据结构',
+      description: '学习常用的数据存储与区间查询方法',
+      topics: ['栈与队列', '链表高级操作', '并查集基础'],
+      status: isMediumDsDone ? 'done' : (isBasicDone ? 'current' : 'locked'),
+      color: 'text-primary',
+      bg: 'bg-primary/10',
+      dot: 'text-primary',
+      left: '28%',
+      top: '44%',
     },
     {
       id: 'medium-algo',
-      type: 'roadmap',
-      position: { x: 450, y: 300 },
-      data: {
-        title: '核心算法技巧',
-        description: '掌握经典算法的优化与常见变种',
-        topics: ['二分与三分', '滑动窗口', '贪心与排序'],
-        status: isMediumAlgoDone ? 'done' : (isBasicDone ? 'current' : 'locked'),
-        color: 'text-amber-500',
-        bg: 'bg-amber-500/10',
-        dot: 'text-amber-500',
-      },
+      title: '核心算法技巧',
+      description: '掌握经典算法的优化与常见变种',
+      topics: ['二分与三分', '滑动窗口', '贪心与排序'],
+      status: isMediumAlgoDone ? 'done' : (isBasicDone ? 'current' : 'locked'),
+      color: 'text-amber-500',
+      bg: 'bg-amber-500/10',
+      dot: 'text-amber-500',
+      left: '72%',
+      top: '44%',
     },
     {
       id: 'advanced',
-      type: 'roadmap',
-      position: { x: 250, y: 550 },
-      data: {
-        title: '高级动态规划与图论',
-        description: '挑战高难度综合性算法竞赛题目',
-        topics: ['状态压缩DP', '最短路算法', '网络流计算'],
-        status: isAdvancedDone ? 'done' : (isMediumDsDone || isMediumAlgoDone ? 'current' : 'locked'),
-        color: 'text-purple-500',
-        bg: 'bg-purple-500/10',
-        dot: 'text-purple-500',
-      },
+      title: '高级动态规划与图论',
+      description: '挑战高难度综合性算法竞赛题目',
+      topics: ['状态压缩DP', '最短路算法', '网络流计算'],
+      status: isAdvancedDone ? 'done' : (isMediumDsDone || isMediumAlgoDone ? 'current' : 'locked'),
+      color: 'text-purple-500',
+      bg: 'bg-purple-500/10',
+      dot: 'text-purple-500',
+      left: '50%',
+      top: '80%',
     },
   ]
 
-  const edges: Edge[] = [
-    { id: 'e1', source: 'basic', target: 'medium-ds', animated: isBasicDone && !isMediumDsDone, style: { stroke: isBasicDone ? '#f54e00' : '#e5e5e5', strokeWidth: 2 } },
-    { id: 'e2', source: 'basic', target: 'medium-algo', animated: isBasicDone && !isMediumAlgoDone, style: { stroke: isBasicDone ? '#f54e00' : '#e5e5e5', strokeWidth: 2 } },
-    { id: 'e3', source: 'medium-ds', target: 'advanced', animated: isMediumDsDone && !isAdvancedDone, style: { stroke: isMediumDsDone ? '#f54e00' : '#e5e5e5', strokeWidth: 2 } },
-    { id: 'e4', source: 'medium-algo', target: 'advanced', animated: isMediumAlgoDone && !isAdvancedDone, style: { stroke: isMediumAlgoDone ? '#f54e00' : '#e5e5e5', strokeWidth: 2 } },
+  const edges: RoadmapEdge[] = [
+    { id: 'e1', from: [50, 28], to: [28, 44], active: isBasicDone },
+    { id: 'e2', from: [50, 28], to: [72, 44], active: isBasicDone },
+    { id: 'e3', from: [28, 60], to: [50, 80], active: isMediumDsDone },
+    { id: 'e4', from: [72, 60], to: [50, 80], active: isMediumAlgoDone },
   ]
 
   return { nodes, edges }
 }
 
+function RoadmapCard({ node, onClick }: { node: RoadmapGraphNode; onClick: () => void }) {
+  const isDone = node.status === 'done'
+  const isCurrent = node.status === 'current'
+  const isLocked = node.status === 'locked'
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'absolute w-[min(300px,calc(100vw-7rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl border bg-card/95 p-4 text-left shadow-sm transition hover:-translate-y-[calc(50%+4px)] hover:shadow-md',
+        isDone ? 'border-primary/50 ring-1 ring-primary/20' :
+        isCurrent ? 'border-primary shadow-focus' :
+        'border-border opacity-75 grayscale-[0.4]'
+      )}
+      style={{ left: node.left, top: node.top }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className={cn('text-sm font-semibold leading-relaxed', isLocked ? 'text-muted-foreground' : 'text-card-foreground')}>
+            {node.title}
+          </h3>
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+            {node.description}
+          </p>
+        </div>
+        <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', isDone ? 'bg-primary text-primary-foreground' : isCurrent ? node.bg : 'bg-muted text-muted-foreground')}>
+          {isDone ? <CheckCircle2 className="h-4 w-4" /> : isLocked ? <Lock className="h-4 w-4" /> : <Circle className={cn('h-4 w-4', node.dot)} />}
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {node.topics.map((topic) => (
+          <span key={topic} className={cn('rounded-md border px-2 py-1 text-xs', isDone || isCurrent ? 'border-border bg-background text-foreground' : 'border-border/60 bg-muted/40 text-muted-foreground')}>
+            {topic}
+          </span>
+        ))}
+      </div>
+    </button>
+  )
+}
+
 export function LearningRoadmap() {
+  const navigate = useNavigate()
   const { data: stats, isLoading, error, refetch } = useQuery({
     queryKey: ['roadmap-stats'],
     queryFn: () => usersService.getUserStats(),
@@ -115,16 +164,14 @@ export function LearningRoadmap() {
 
   const { nodes, edges } = getNodesAndEdges(completion)
 
-  const handleNodeClick = (_: React.MouseEvent, node: Node) => {
-    if (node.data?.topics) {
-      const tags = (node.data.topics as string[]).join(',')
-      navigate(`/problems?tags=${encodeURIComponent(tags)}`)
-    }
+  const handleNodeClick = (node: RoadmapGraphNode) => {
+    const tags = node.topics.join(',')
+    navigate(`/problems?tags=${encodeURIComponent(tags)}`)
   }
 
   return (
     <div className="space-y-6 h-full flex flex-col">
-      {/* Hero header — warm editorial feel */}
+      {/* Page header */}
       <div className="rounded-xl border border-border bg-card p-6 flex-shrink-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -163,21 +210,25 @@ export function LearningRoadmap() {
       </div>
 
       {/* Topology Graph Canvas */}
-      <div className="flex-1 min-h-[600px] rounded-xl border border-border bg-background/50 overflow-hidden relative">
-        <ReactFlow 
-          nodes={nodes} 
-          edges={edges} 
-          nodeTypes={nodeTypes}
-          onNodeClick={handleNodeClick}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-          minZoom={0.5}
-          maxZoom={1.5}
-          className="bg-dot-pattern"
-        >
-          <Background gap={24} size={2} color="var(--border)" />
-          <Controls className="!bg-card !border-border !shadow-sm" />
-        </ReactFlow>
+      <div className="relative min-h-[640px] overflow-hidden rounded-xl border border-border bg-background/50 bg-[radial-gradient(circle_at_1px_1px,var(--border)_1px,transparent_0)] [background-size:24px_24px]">
+        <svg aria-hidden="true" className="absolute inset-0 h-full w-full">
+          {edges.map((edge) => (
+            <line
+              key={edge.id}
+              x1={`${edge.from[0]}%`}
+              y1={`${edge.from[1]}%`}
+              x2={`${edge.to[0]}%`}
+              y2={`${edge.to[1]}%`}
+              className={edge.active ? 'stroke-primary' : 'stroke-border'}
+              strokeWidth={edge.active ? 3 : 2}
+              strokeLinecap="round"
+              strokeDasharray={edge.active ? '0' : '8 8'}
+            />
+          ))}
+        </svg>
+        {nodes.map((node) => (
+          <RoadmapCard key={node.id} node={node} onClick={() => handleNodeClick(node)} />
+        ))}
       </div>
     </div>
   )

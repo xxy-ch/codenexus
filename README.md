@@ -4,30 +4,35 @@
 
 # CodeNexus
 
-CodeNexus is a modern, multi-tenant, and multi-role online judge and competitive programming platform tailored for educational institutions. It provides a secure, sandboxed environment for compiling and executing student submissions in six programming languages (C, C++, Java, Python, Go, and JavaScript), offering a comprehensive experience for students, teachers, and administrators.
+CodeNexus is a modern, multi-tenant, and multi-role online judge and competitive programming platform tailored for educational institutions. It provides a secure, sandboxed environment for compiling and executing student submissions in runtime-configurable programming languages, offering a comprehensive experience for students, teachers, and administrators.
 
 ## Architecture Overview
 
 ```
-┌──────────────────┐     ┌─────────────────────────────────────────┐     ┌─────────────────┐
-│                  │     │              Backend (Rust)              │     │                 │
-│    Frontend      │     │  ┌─────────────────────────────────┐    │     │  Judge Worker   │
-│  React + Vite    │────>│  │           API (Axum)            │    │     │  Redis Streams  │
-│  TypeScript      │     │  │  9 domain crates + api-infra    │    │<────│  cgroups/seccomp│
-│  Port 5173 / 80  │     │  │  PostgreSQL + Redis + WebSocket │    │     │  Compile & Run  │
-│                  │     │  └─────────────────────────────────┘    │     │  Sandbox        │
-└──────────────────┘     │                 Port 3000               │     └─────────────────┘
-                            └─────────────────────────────────────────┘
-                                        ▲                    ▲
-                                        │                    │
-                                  PostgreSQL 16          Redis 7
+┌──────────────────┐       ┌──────────────────┐       ┌────────────────────┐
+│    Frontend      │ REST  │   API Server     │ Redis │    Judge Worker    │
+│ React + Vite     │◄─────►│ Axum + domains   │◄─────►│ cgroups + seccomp  │
+│ Port 5173 / 80   │ WS    │ Port 3000        │ HTTP  │ Compile & run      │
+└──────────────────┘       └────────┬─────────┘       └────────────────────┘
+                                    │
+                       ┌────────────┼────────────┐
+                       │            │            │
+                 ┌─────▼─────┐ ┌────▼─────┐ ┌────▼────────────┐
+                 │PostgreSQL │ │ Redis 7  │ │ Feature Gateway │
+                 │16         │ │ Queue    │ │ Port 3001       │
+                 └───────────┘ └──────────┘ └────┬────────────┘
+                                                  │
+                                           ┌──────▼──────┐
+                                           │ LLM Worker  │
+                                           │ AI analysis │
+                                           └─────────────┘
 ```
 
 **Core Data Flow:** Users submit code via the frontend, the API server publishes judge tasks to Redis Streams, the Judge Worker consumes these tasks and compiles/runs them inside a secure Linux sandbox, and then posts the results back to the API server, which pushes real-time updates to the frontend via WebSocket.
 
 ## Core Features
 
-- **6 Programming Languages** — Full compile-and-run support for C, C++, Java, Python, Go, and JavaScript.
+- **Runtime-Configurable Languages** — The judge supports language runtimes through per-language settings; deployments can enable only the compilers/interpreters installed in the worker image.
 - **Secure Sandboxing** — Three layers of isolation using Linux `cgroups` (CPU/memory limits), `chroot` (filesystem isolation), and `seccomp` (system call filtering) to ensure security and prevent hostile executions.
 - **Multi-Tenant & Multi-Role** — Built for multi-campus operations. Features a 6-level role hierarchy (`Root`, `CampusAdmin`, `GradeAdmin`, `Teacher`, `TeachingAssistant`, `Student`) with strict RBAC boundary checks.
 - **Real-Time Updates** — Real-time push notifications, submission status, leaderboard updates, and contest chatrooms using WebSocket.
@@ -36,6 +41,8 @@ CodeNexus is a modern, multi-tenant, and multi-role online judge and competitive
 - **Discussions & Blogs** — Problem-specific discussion areas, community technical blogs, and nested comment systems.
 - **Code Plagiarism Detection** — Integrated plagiarism scanner analyzing code similarity, configurable from the admin control panel.
 - **Direct Messaging** — Real-time private DMs between users with unread badge indicators.
+- **Feature Gateway & AI Worker** — Runtime feature flags control optional capabilities such as LLM-assisted analysis, teaching cards, recommendations, and plagiarism graph features.
+- **Learning Roadmap** — Student-facing knowledge topology that links visible skill nodes back into problem discovery.
 - **Full-Text Search** — Global search indexing across problems, discussions, blogs, and users.
 - **Import/Export** — Batch problem ZIP and user CSV import/export for seamless library migration and user provisioning.
 
@@ -49,6 +56,8 @@ CodeNexus is a modern, multi-tenant, and multi-role online judge and competitive
 | Form Validation | React Hook Form + Zod | — |
 | Code Editors | Monaco Editor (Code submission) + CodeMirror (Markdown) | — |
 | API Server | Rust + Axum + SQLx | Rust 2021 Edition, Axum 0.7, SQLx 0.8 |
+| Feature Gateway | Rust + Axum + SQLx | Scoped feature flags, standalone service |
+| LLM Worker | Rust worker | AI task processing behind feature flags |
 | Judge Worker | Rust + Redis Streams + cgroups/seccomp | Rust 2021 Edition |
 | Database | PostgreSQL | 16 |
 | Cache & Message Broker | Redis | 7 |
