@@ -424,6 +424,14 @@
   color: #4f4a42 !important;
 }
 
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.text-tertiary {
+  color: var(--text-tertiary) !important;
+}
+
 /* ─── Custom Scrollbar ─────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar {
