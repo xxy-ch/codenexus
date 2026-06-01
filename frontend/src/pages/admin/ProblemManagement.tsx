@@ -143,7 +143,7 @@ export function ProblemManagement() {
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">题目管理</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+            <p className="admin-readable-muted mt-2 max-w-3xl text-sm leading-6">
               管理题库的创建、编辑、删除与基础可见性维护。当前已接入真实后端写操作。
             </p>
           </div>
@@ -169,7 +169,7 @@ export function ProblemManagement() {
             </div>
             <div>
               <h2 className="text-sm font-semibold text-foreground">已接入真实后端写操作</h2>
-              <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
+              <p className="admin-readable-muted mt-1 max-w-3xl text-sm leading-6">
                 创建、编辑、删除与可见性切换已接通真实接口。题面和测试数据维护在题面配置与判题设置页面完成。
               </p>
             </div>
@@ -184,38 +184,38 @@ export function ProblemManagement() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">总题目</span>
-            <LibraryBig className="h-4 w-4 text-muted-foreground" />
+            <span className="admin-readable-label text-[13px] font-semibold uppercase tracking-widest">总题目</span>
+            <LibraryBig className="admin-readable-label h-4 w-4" />
           </div>
           <div className="mt-4 text-2xl font-bold text-foreground">{total}</div>
-          <p className="mt-2 text-[13px] text-muted-foreground">当前分页条件下的总题目量。</p>
+          <p className="admin-readable-muted mt-2 text-[13px]">当前分页条件下的总题目量。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">已发布</span>
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            <span className="admin-readable-label text-[13px] font-semibold uppercase tracking-widest">已发布</span>
+            <ShieldCheck className="admin-readable-label h-4 w-4" />
           </div>
           <div className="mt-4 flex items-center gap-2">
             <span className="inline-block h-2.5 w-2.5 rounded-full bg-status-accepted" />
             <span className="text-2xl font-bold text-status-accepted">{stats.publishedCount}</span>
           </div>
-          <p className="mt-2 text-[13px] text-muted-foreground">当前列表中的公开题目数量。</p>
+          <p className="admin-readable-muted mt-2 text-[13px]">当前列表中的公开题目数量。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">草稿/隐藏</span>
-            <EyeOff className="h-4 w-4 text-muted-foreground" />
+            <span className="admin-readable-label text-[13px] font-semibold uppercase tracking-widest">草稿/隐藏</span>
+            <EyeOff className="admin-readable-label h-4 w-4" />
           </div>
           <div className="mt-4 text-2xl font-bold text-difficulty-medium">{stats.draftCount}</div>
-          <p className="mt-2 text-[13px] text-muted-foreground">非公开条目数。</p>
+          <p className="admin-readable-muted mt-2 text-[13px]">非公开条目数。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">低通过率</span>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
+            <span className="admin-readable-label text-[13px] font-semibold uppercase tracking-widest">低通过率</span>
+            <BookOpen className="admin-readable-label h-4 w-4" />
           </div>
           <div className="mt-4 text-2xl font-bold text-destructive">{stats.lowCoverageCount}</div>
-          <p className="mt-2 text-[13px] text-muted-foreground">通过率低于 30% 或暂无提交的题目。</p>
+          <p className="admin-readable-muted mt-2 text-[13px]">通过率低于 30% 或暂无提交的题目。</p>
         </div>
       </div>
 

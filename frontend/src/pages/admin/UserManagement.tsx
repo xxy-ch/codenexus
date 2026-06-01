@@ -162,7 +162,7 @@ export function UserManagement() {
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">用户管理</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-secondary">
+            <p className="admin-readable-muted mt-2 max-w-3xl text-sm leading-6">
               管理平台用户账号、角色分配、状态开关和批量建号流程。内部主键使用 UUID，外部业务编号使用 12 位 user_code。
             </p>
           </div>
@@ -181,35 +181,35 @@ export function UserManagement() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-secondary">活跃用户</span>
-            <Users className="h-4 w-4 text-secondary" />
+            <span className="admin-readable-label text-[13px] font-semibold uppercase tracking-widest">活跃用户</span>
+            <Users className="admin-readable-label h-4 w-4" />
           </div>
           <div className="mt-4 text-2xl font-bold text-foreground">{overview.activeCount}</div>
-          <p className="mt-2 text-[13px] text-tertiary">当前筛选结果中的活跃账号。</p>
+          <p className="admin-readable-muted mt-2 text-[13px]">当前筛选结果中的活跃账号。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-secondary">管理员</span>
-            <ShieldPlus className="h-4 w-4 text-secondary" />
+            <span className="admin-readable-label text-[13px] font-semibold uppercase tracking-widest">管理员</span>
+            <ShieldPlus className="admin-readable-label h-4 w-4" />
           </div>
           <div className="mt-4 text-2xl font-bold text-destructive">{overview.adminCount}</div>
-          <p className="mt-2 text-[13px] text-tertiary">具备后台权限的账号数。</p>
+          <p className="admin-readable-muted mt-2 text-[13px]">具备后台权限的账号数。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-secondary">教师</span>
-            <UserCog className="h-4 w-4 text-secondary" />
+            <span className="admin-readable-label text-[13px] font-semibold uppercase tracking-widest">教师</span>
+            <UserCog className="admin-readable-label h-4 w-4" />
           </div>
           <div className="mt-4 text-2xl font-bold text-primary">{overview.teacherCount}</div>
-          <p className="mt-2 text-[13px] text-tertiary">教师角色账号数量。</p>
+          <p className="admin-readable-muted mt-2 text-[13px]">教师角色账号数量。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-card">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-secondary">业务号</span>
-            <BadgeCheck className="h-4 w-4 text-secondary" />
+            <span className="admin-readable-label text-[13px] font-semibold uppercase tracking-widest">业务号</span>
+            <BadgeCheck className="admin-readable-label h-4 w-4" />
           </div>
           <div className="mt-4 text-2xl font-bold text-status-accepted">{overview.codedCount}</div>
-          <p className="mt-2 text-[13px] text-tertiary">已分配 12 位业务号的账号数。</p>
+          <p className="admin-readable-muted mt-2 text-[13px]">已分配 12 位业务号的账号数。</p>
         </div>
       </div>
 
@@ -306,7 +306,7 @@ export function UserManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-foreground">批量创建账户</h2>
-                <p className="mt-1 text-[13px] text-tertiary">格式：user_code,display_name,email,role</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">格式：user_code,display_name,email,role</p>
               </div>
               <div className="rounded-full bg-muted px-3 py-1 text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">
                 UUID auto
@@ -386,13 +386,13 @@ export function UserManagement() {
           <table className="min-w-full divide-y divide-border/40">
             <thead className="bg-background-alt">
               <tr>
-                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">身份</th>
-                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">角色</th>
-                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">年级</th>
-                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">状态</th>
-                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">活动</th>
-                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">创建时间</th>
-                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-secondary">操作</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">身份</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">角色</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">年级</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">状态</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">活动</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">创建时间</th>
+                <th className="px-5 py-3 text-left text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">操作</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40 bg-transparent">

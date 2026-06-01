@@ -120,7 +120,7 @@ export function AdminDashboard() {
         <div className="mt-4 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">CodeNexus 系统概览</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-secondary">
+            <p className="admin-readable-muted mt-2 max-w-3xl text-sm leading-6">
               管理端当前只暴露已接入真实后端的能力。页面结构按 reference 收拢，但所有入口仍受真实接口边界约束。
             </p>
           </div>
@@ -146,32 +146,32 @@ export function AdminDashboard() {
       {/* Status Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-widest text-secondary">题目管理</div>
+          <div className="admin-readable-label text-xs font-semibold uppercase tracking-widest">题目管理</div>
           <div className="mt-4 text-3xl font-bold text-foreground">CRUD</div>
-          <p className="mt-2 text-xs leading-5 text-tertiary">题目管理当前已接通创建、编辑、删除与测试数据维护。</p>
+          <p className="admin-readable-muted mt-2 text-xs leading-5">题目管理当前已接通创建、编辑、删除与测试数据维护。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-widest text-secondary">抄袭检测</div>
+          <div className="admin-readable-label text-xs font-semibold uppercase tracking-widest">抄袭检测</div>
           <div className="mt-4 flex items-center gap-2">
             <span className={`inline-block h-2.5 w-2.5 rounded-full ${plagiarismEnabled ? 'bg-lime-400' : 'bg-muted-foreground/40'}`} />
             <span className="text-3xl font-bold text-foreground">{plagiarismEnabled ? '已启用' : '已禁用'}</span>
           </div>
-          <p className="mt-2 text-xs leading-5 text-tertiary">相似度扫描和报告页都已经接入真实接口。</p>
+          <p className="admin-readable-muted mt-2 text-xs leading-5">相似度扫描和报告页都已经接入真实接口。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-widest text-secondary">管理入口</div>
+          <div className="admin-readable-label text-xs font-semibold uppercase tracking-widest">管理入口</div>
           <div className="mt-4 text-3xl font-bold text-foreground">{modules.length}</div>
-          <p className="mt-2 text-xs leading-5 text-tertiary">主导航与概览卡片保持同一组真实后端入口。</p>
+          <p className="admin-readable-muted mt-2 text-xs leading-5">主导航与概览卡片保持同一组真实后端入口。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-accent/40 backdrop-blur-xl p-5 shadow-sm">
           <div className="text-xs font-semibold uppercase tracking-widest text-foreground">运行策略</div>
           <div className="mt-4 text-3xl font-bold text-foreground">Real API</div>
-          <p className="mt-2 text-xs leading-5 text-tertiary">不再为管理端页面提供用户可见的 mock fallback。</p>
+          <p className="admin-readable-muted mt-2 text-xs leading-5">不再为管理端页面提供用户可见的 mock fallback。</p>
         </div>
       </div>
 
       {/* Notice */}
-      <div className="rounded-xl border border-difficulty-medium/30 bg-difficulty-medium/5 px-5 py-4 text-sm leading-6 text-secondary">
+      <div className="admin-readable-muted rounded-xl border border-difficulty-medium/30 bg-difficulty-medium/5 px-5 py-4 text-sm leading-6">
         当前后台不是全功能运营平台，而是这次交付范围内的受控后台。不存在真实后端的模块不会继续以假入口形式暴露。
       </div>
 
@@ -190,7 +190,7 @@ export function AdminDashboard() {
               </div>
               <div className="mt-5">
                 <h2 className="text-base font-semibold text-foreground">{module.title}</h2>
-                <p className="mt-2 text-sm leading-6 text-secondary">{module.description}</p>
+                <p className="admin-readable-muted mt-2 text-sm leading-6">{module.description}</p>
               </div>
               <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition group-hover:text-primary">
                 进入模块

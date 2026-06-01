@@ -416,6 +416,14 @@
   box-shadow: var(--shadow-prominent);
 }
 
+.admin-readable-label {
+  color: #3b3730 !important;
+}
+
+.admin-readable-muted {
+  color: #4f4a42 !important;
+}
+
 /* ─── Custom Scrollbar ─────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar {
