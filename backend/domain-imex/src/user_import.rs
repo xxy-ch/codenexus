@@ -20,6 +20,9 @@ const FORBIDDEN_ROLE: &str = "root";
 /// Required column headers in the CSV file.
 const REQUIRED_HEADERS: &[&str] = &["username", "role", "campus_id", "display_name"];
 
+const MAX_USERNAME_LEN: usize = 20;
+const MAX_DISPLAY_NAME_LEN: usize = 100;
+
 /// Whether the caller is allowed to assign high-privilege roles (campusAdmin, gradeAdmin).
 pub struct RolePolicy {
     pub allow_root_roles: bool,
@@ -118,6 +121,38 @@ pub fn parse_user_csv(
                 email: if email.is_empty() { None } else { Some(email) },
                 status: ImportItemStatus::Error,
                 warning: Some("Username is required".to_string()),
+            });
+            continue;
+        }
+        if username.len() > MAX_USERNAME_LEN {
+            rows.push(UserImportRow {
+                username,
+                role,
+                campus_id: 0,
+                grade_id: None,
+                display_name,
+                email: if email.is_empty() { None } else { Some(email) },
+                status: ImportItemStatus::Error,
+                warning: Some(format!(
+                    "Username must be at most {} characters",
+                    MAX_USERNAME_LEN
+                )),
+            });
+            continue;
+        }
+        if display_name.len() > MAX_DISPLAY_NAME_LEN {
+            rows.push(UserImportRow {
+                username,
+                role,
+                campus_id: 0,
+                grade_id: None,
+                display_name,
+                email: if email.is_empty() { None } else { Some(email) },
+                status: ImportItemStatus::Error,
+                warning: Some(format!(
+                    "Display name must be at most {} characters",
+                    MAX_DISPLAY_NAME_LEN
+                )),
             });
             continue;
         }
@@ -374,6 +409,45 @@ mod tests {
             .as_ref()
             .unwrap()
             .contains("Username is required"));
+    }
+
+    #[test]
+    fn marks_error_for_username_longer_than_database_limit() {
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &["username_with_21_chars,student,1,Some Name,"],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Error);
+        assert!(rows[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("Username must be at most 20 characters"));
+    }
+
+    #[test]
+    fn marks_error_for_display_name_longer_than_database_limit() {
+        let long_display_name = "A".repeat(101);
+        let csv_bytes = make_csv(
+            "username,role,campus_id,display_name,email",
+            &[&format!("alice,student,1,{},", long_display_name)],
+        );
+
+        let skip = HashSet::new();
+        let rows = parse_user_csv(&csv_bytes, &skip, &RolePolicy::default()).unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].status, ImportItemStatus::Error);
+        assert!(rows[0]
+            .warning
+            .as_ref()
+            .unwrap()
+            .contains("Display name must be at most 100 characters"));
     }
 
     #[test]
