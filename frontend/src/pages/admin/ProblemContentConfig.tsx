@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { BookText, ChevronRight, Eye, Loader2, Save, Search, Timer, Waypoints } from 'lucide-react'
+import { BookText, ChevronRight, Eye, EyeOff, Loader2, Save, Search, Timer, Waypoints } from 'lucide-react'
 import { judgeConfigService, type UpdateProblemContentPayload } from '@/services/judgeConfig'
 import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
+
+type ProblemContentForm = UpdateProblemContentPayload & {
+  show_correct_answer: boolean
+}
 
 export function ProblemContentConfig() {
   const [problemId, setProblemId] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [message, setMessage] = useState('')
-  const [form, setForm] = useState<UpdateProblemContentPayload>({
+  const [form, setForm] = useState<ProblemContentForm>({
     title: '',
     description: '',
     difficulty: 'easy',
@@ -18,6 +22,7 @@ export function ProblemContentConfig() {
     visibility: 'private',
     tags: [],
     is_public: false,
+    show_correct_answer: true,
   })
   const [tagsText, setTagsText] = useState('')
 
@@ -37,6 +42,7 @@ export function ProblemContentConfig() {
         visibility: data.visibility,
         tags: data.tags || [],
         is_public: data.is_public,
+        show_correct_answer: data.show_correct_answer !== false,
       })
       setTagsText((data.tags || []).join(', '))
     } catch (err: any) {
@@ -51,7 +57,12 @@ export function ProblemContentConfig() {
   }, [problemId])
 
   const updateMutation = useMutation({
-    mutationFn: (payload: UpdateProblemContentPayload) => judgeConfigService.updateProblem(problemId, payload),
+    mutationFn: async (payload: ProblemContentForm) => {
+      const { show_correct_answer, ...contentPayload } = payload
+      const updatedProblem = await judgeConfigService.updateProblem(problemId, contentPayload)
+      await judgeConfigService.updateCorrectAnswerVisibility(problemId, show_correct_answer !== false)
+      return updatedProblem
+    },
     onSuccess: () => {
       setMessage('保存成功')
       setError('')
@@ -63,10 +74,11 @@ export function ProblemContentConfig() {
   })
 
   const handleSave = () => {
-    updateMutation.mutate({
+    const payload = {
       ...form,
       tags: tagsText.split(',').map((tag) => tag.trim()).filter(Boolean),
-    })
+    }
+    updateMutation.mutate(payload)
   }
 
   return (
@@ -240,6 +252,33 @@ export function ProblemContentConfig() {
                     onChange={(e) => setForm((prev) => ({ ...prev, is_public: e.target.checked }))}
                   />
                   公开题目
+                </label>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
+              <div className="flex items-center gap-2 text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {form.show_correct_answer !== false ? (
+                  <Eye className="h-4 w-4 text-status-accepted" />
+                ) : (
+                  <EyeOff className="h-4 w-4 text-difficulty-medium" />
+                )}
+                结果展示
+              </div>
+              <div className="mt-4 space-y-3">
+                <label className="flex items-start gap-3 rounded-lg border border-border/40 bg-transparent px-4 py-3 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={form.show_correct_answer !== false}
+                    onChange={(e) => setForm((prev) => ({ ...prev, show_correct_answer: e.target.checked }))}
+                    className="mt-1"
+                  />
+                  <span>
+                    <span className="font-medium">提交详情展示正确答案</span>
+                    <span className="mt-1 block text-[13px] leading-relaxed text-muted-foreground">
+                      关闭后，学生在该题提交详情中仍可查看输入和实际输出，但不会看到期望输出。教师及以上角色仍可查看。
+                    </span>
+                  </span>
                 </label>
               </div>
             </div>

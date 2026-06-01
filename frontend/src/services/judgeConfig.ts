@@ -21,6 +21,7 @@ export interface JudgeProblemDetail {
   visibility: string
   tags?: string[]
   is_public: boolean
+  show_correct_answer: boolean
 }
 
 export interface UpdateProblemContentPayload {
@@ -83,6 +84,17 @@ export const judgeConfigService = {
 
   async updateProblem(problemId: string, payload: UpdateProblemContentPayload): Promise<JudgeProblemDetail> {
     const response = await api.put<JudgeProblemDetail>(`/problems/${problemId}`, payload)
+    return response.data
+  },
+
+  async updateCorrectAnswerVisibility(
+    problemId: string,
+    showCorrectAnswer: boolean,
+  ): Promise<{ problem_id: number; show_correct_answer: boolean }> {
+    const response = await api.put<{ problem_id: number; show_correct_answer: boolean }>(
+      `/problems/${problemId}/correct-answer-visibility`,
+      { show_correct_answer: showCorrectAnswer },
+    )
     return response.data
   },
 

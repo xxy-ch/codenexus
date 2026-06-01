@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { problemsService } from '@/services/problems'
 import { Button } from '@/components/ui/Button'
@@ -7,11 +7,9 @@ import { cn } from '@/lib/utils'
 import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
 import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
-import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock, Cpu, Code2, Copy, Check, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock, Cpu, Code2, Copy, Check } from 'lucide-react'
 import { AiCodeFeedback } from '@/components/analysis/AiCodeFeedback'
 import { SimilarSubmissions } from '@/components/analysis/SimilarSubmissions'
-import { useAuthStore } from '@/store/authStore'
-import { isTeacherOrAbove } from '@/types/auth'
 
 interface TestCase {
   id: number
@@ -46,8 +44,6 @@ interface SubmissionDetail {
 export function SubmissionDetail() {
   const { submissionId } = useParams<{ submissionId: string }>()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const user = useAuthStore((state) => state.user)
   const [expandedTestCases, setExpandedTestCases] = useState<Set<number>>(new Set([0]))
   const [copied, setCopied] = useState(false)
 
@@ -60,14 +56,6 @@ export function SubmissionDetail() {
       return status === 'queued' || status === 'pending' || status === 'compiling' || status === 'running'
         ? 2000
         : false
-    },
-  })
-
-  const visibilityMutation = useMutation({
-    mutationFn: (showCorrectAnswer: boolean) =>
-      problemsService.updateCorrectAnswerVisibility(submission!.problem_id, showCorrectAnswer),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['submission', submissionId] })
     },
   })
 
@@ -113,9 +101,6 @@ export function SubmissionDetail() {
   const passedTestCases = submission.test_cases?.filter(tc => tc.status === 'passed').length || 0
   const totalTestCases = submission.test_cases?.length || 0
   const statusLabel = statusConfig.label
-  const canManageCorrectAnswer =
-    Boolean(submission.can_manage_correct_answer) ||
-    Boolean(user?.role && isTeacherOrAbove(user.role))
   const showCorrectAnswer = submission.show_correct_answer !== false
 
   const statusPillClass = cn(
@@ -420,48 +405,6 @@ export function SubmissionDetail() {
         </div>
 
         <div className="space-y-4">
-          {canManageCorrectAnswer && (
-            <div className="border border-border/40 rounded-xl bg-background/60 backdrop-blur-xl/60 p-5 shadow-sm glass">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-sm font-semibold tracking-tight text-foreground">
-                    正确答案可见性
-                  </h3>
-                  <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-                    当前题目全局{showCorrectAnswer ? '展示' : '隐藏'}提交详情中的期望输出。
-                  </p>
-                </div>
-                <span className={cn(
-                  'shrink-0 rounded-full border px-2.5 py-1 text-[13px] font-semibold',
-                  showCorrectAnswer
-                    ? 'border-status-accepted/20 bg-status-accepted/10 text-status-accepted'
-                    : 'border-border/50 bg-muted/50 text-muted-foreground'
-                )}>
-                  {showCorrectAnswer ? '可见' : '隐藏'}
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={visibilityMutation.isPending}
-                onClick={() => visibilityMutation.mutate(!showCorrectAnswer)}
-                className="mt-4 w-full rounded-full border-border/40 bg-background/60 backdrop-blur-xl/50 hover:bg-muted transition-all button-press text-[13px] font-semibold px-4 py-2"
-              >
-                {showCorrectAnswer ? (
-                  <>
-                    <EyeOff className="w-3.5 h-3.5 mr-1.5" />
-                    隐藏正确答案
-                  </>
-                ) : (
-                  <>
-                    <Eye className="w-3.5 h-3.5 mr-1.5" />
-                    展示正确答案
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-
           {/* Metadata Sidebar Card */}
           <div className="border border-border/40 rounded-xl bg-background/60 backdrop-blur-xl/60 p-5 shadow-sm glass">
             <h3 className="text-sm font-semibold tracking-tight text-foreground mb-4 flex items-center gap-2">

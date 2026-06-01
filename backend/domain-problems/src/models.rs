@@ -17,6 +17,7 @@ pub struct Problem {
     #[serde(default)]
     pub is_public: bool,
     pub visibility: String,
+    pub show_correct_answer: bool,
     pub tags: Option<Vec<String>>,
     pub source_url: Option<String>,
     pub author_note: Option<String>,
@@ -89,6 +90,7 @@ pub struct ProblemDetail {
     pub organization_id: i64,
     pub is_public: bool,
     pub visibility: String,
+    pub show_correct_answer: bool,
     pub tags: Option<Vec<String>>,
     pub source_url: Option<String>,
     pub author_note: Option<String>,
