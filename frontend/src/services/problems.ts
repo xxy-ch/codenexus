@@ -237,6 +237,17 @@ export const problemsService = {
       throw error
     }
   },
+
+  async updateCorrectAnswerVisibility(
+    problemId: string,
+    showCorrectAnswer: boolean,
+  ): Promise<{ problem_id: number; show_correct_answer: boolean }> {
+    const response = await api.put<{ problem_id: number; show_correct_answer: boolean }>(
+      `/problems/${problemId}/correct-answer-visibility`,
+      { show_correct_answer: showCorrectAnswer },
+    )
+    return response.data
+  },
 }
 
 function normalizeSubmission(submission: any): ProblemSubmission & {
@@ -285,6 +296,8 @@ function normalizeSubmission(submission: any): ProblemSubmission & {
       submission?.memory_kb != null ? Number(submission.memory_kb) : undefined,
     error_message:
       submission?.error_message != null ? String(submission.error_message) : undefined,
+    show_correct_answer: Boolean(submission?.show_correct_answer ?? true),
+    can_manage_correct_answer: Boolean(submission?.can_manage_correct_answer),
     test_cases: testCases,
     created_at: String(submission?.created_at ?? ''),
     updated_at: String(submission?.updated_at ?? submission?.created_at ?? ''),

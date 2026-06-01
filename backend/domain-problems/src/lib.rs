@@ -19,6 +19,10 @@ pub fn problems_router() -> Router<AppState> {
         .route("/:id", get(routes::get_problem))
         .route("/:id", put(routes::update_problem))
         .route("/:id", delete(routes::delete_problem))
+        .route(
+            "/:id/correct-answer-visibility",
+            put(routes::update_correct_answer_visibility),
+        )
         .route("/:id/statistics", get(routes::get_problem_statistics))
         .route("/:id/test-cases", get(test_cases::list_test_cases))
         .route("/:id/test-cases", post(test_cases::create_test_case))

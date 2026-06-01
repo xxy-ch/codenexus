@@ -13,8 +13,9 @@ use super::access::requests_management_problem_view;
 use super::problem_access::{ensure_problem_mutation_access, load_problem_access};
 
 use super::models::{
-    CreateProblemRequest, ListProblemsQuery, Problem, ProblemDetail, ProblemStatistics,
-    ProblemsListResponse, SupportedLanguage, UpdateProblemRequest, UpdateSupportedLanguagesRequest,
+    CorrectAnswerVisibility, CreateProblemRequest, ListProblemsQuery, Problem, ProblemDetail,
+    ProblemStatistics, ProblemsListResponse, SupportedLanguage,
+    UpdateCorrectAnswerVisibilityRequest, UpdateProblemRequest, UpdateSupportedLanguagesRequest,
 };
 
 fn require_teacher_plus(role: &str) -> Result<Role, StatusCode> {
@@ -142,6 +143,40 @@ pub async fn update_supported_languages(
         row.get("c_enabled"),
         row.get("cpp_enabled"),
     )))
+}
+
+pub async fn update_correct_answer_visibility(
+    State(state): State<AppState>,
+    AuthExtractor(claims): AuthExtractor,
+    Path(id): Path<i64>,
+    Json(req): Json<UpdateCorrectAnswerVisibilityRequest>,
+) -> Result<Json<CorrectAnswerVisibility>, StatusCode> {
+    let role = require_teacher_plus(&claims.role)?;
+    let problem = load_problem_access(&state, id).await?;
+    ensure_problem_mutation_access(role, &claims, &problem)?;
+
+    let row = sqlx::query_as::<_, (i64, bool)>(
+        r#"
+        UPDATE problems
+        SET show_correct_answer = $1,
+            updated_at = NOW()
+        WHERE id = $2
+        RETURNING id, show_correct_answer
+        "#,
+    )
+    .bind(req.show_correct_answer)
+    .bind(id)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match row {
+        Some((problem_id, show_correct_answer)) => Ok(Json(CorrectAnswerVisibility {
+            problem_id,
+            show_correct_answer,
+        })),
+        None => Err(StatusCode::NOT_FOUND),
+    }
 }
 
 fn normalize_visibility(visibility: &str, is_public: bool) -> Option<String> {

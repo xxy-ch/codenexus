@@ -40,6 +40,8 @@ pub struct SubmissionResponse {
     pub score: Option<i32>,
     pub runtime_ms: Option<i32>,
     pub memory_kb: Option<i32>,
+    pub show_correct_answer: bool,
+    pub can_manage_correct_answer: bool,
     pub test_cases: Vec<TestCaseResult>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

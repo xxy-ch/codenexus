@@ -1,0 +1,3 @@
+ALTER TABLE problems
+    ADD COLUMN IF NOT EXISTS show_correct_answer BOOLEAN NOT NULL DEFAULT TRUE;
+

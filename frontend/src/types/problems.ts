@@ -57,6 +57,8 @@ export interface ProblemSubmission {
   time_ms?: number
   memory_kb?: number
   error_message?: string
+  show_correct_answer?: boolean
+  can_manage_correct_answer?: boolean
   test_cases?: TestCaseResult[]
   created_at: string
   updated_at: string

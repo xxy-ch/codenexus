@@ -1,6 +1,7 @@
 use crate::models::*;
 use crate::queue::{self, SubmissionMessage};
 use anyhow::Result;
+use shared::models::role::Role;
 use sqlx::{PgPool, Row};
 use std::fmt;
 use uuid::Uuid;
@@ -271,7 +272,13 @@ impl SubmissionService {
         &self,
         submission_id: i64,
         user_id: Uuid,
+        organization_id: i64,
+        role: &str,
     ) -> Result<SubmissionResponse> {
+        let role = role.parse::<Role>().unwrap_or(Role::Student);
+        let is_root = role == Role::Root;
+        let can_manage_correct_answer = role.is_higher_or_equal(Role::Teacher);
+
         let submission = sqlx::query(
             r#"
             SELECT
@@ -298,19 +305,29 @@ impl SubmissionService {
                 s.score,
                 s.time_ms as runtime_ms,
                 s.memory_kb,
+                p.show_correct_answer,
                 s.created_at,
                 s.updated_at
             FROM submissions s
             JOIN problems p ON p.id = s.problem_id
             JOIN users u ON u.id = s.user_id
-            WHERE s.id = $1 AND s.user_id = $2
+            WHERE s.id = $1
+              AND (
+                s.user_id = $2
+                OR ($3::BOOLEAN AND ($4::BOOLEAN OR s.organization_id = $5))
+              )
             "#,
         )
         .bind(submission_id)
         .bind(user_id)
+        .bind(can_manage_correct_answer)
+        .bind(is_root)
+        .bind(organization_id)
         .fetch_optional(&self.pool)
         .await?
         .ok_or_else(|| anyhow::anyhow!("Submission not found"))?;
+
+        let show_correct_answer: bool = submission.get("show_correct_answer");
 
         // Get test case results
         let test_cases = sqlx::query(
@@ -330,7 +347,8 @@ impl SubmissionService {
                 END as status,
                 CASE WHEN NOT tc.is_secret THEN tc.input ELSE NULL END as input,
                 CASE
-                    WHEN NOT tc.is_secret THEN COALESCE(tcr.expected_output, tc.output)
+                    WHEN NOT tc.is_secret AND ($2::BOOLEAN OR $3::BOOLEAN)
+                    THEN COALESCE(tcr.expected_output, tc.output)
                     ELSE NULL
                 END as expected_output,
                 CASE WHEN NOT tc.is_secret THEN tcr.actual_output ELSE NULL END as actual_output,
@@ -345,6 +363,8 @@ impl SubmissionService {
             "#,
         )
         .bind(submission_id)
+        .bind(show_correct_answer)
+        .bind(can_manage_correct_answer)
         .fetch_all(&self.pool)
         .await?;
 
@@ -375,6 +395,8 @@ impl SubmissionService {
             score: submission.get("score"),
             runtime_ms: submission.get("runtime_ms"),
             memory_kb: submission.get("memory_kb"),
+            show_correct_answer,
+            can_manage_correct_answer,
             test_cases: test_case_results,
             created_at: submission.get("created_at"),
             updated_at: submission.get("updated_at"),

@@ -137,3 +137,14 @@ pub struct UpdateSupportedLanguagesRequest {
     pub c_enabled: bool,
     pub cpp_enabled: bool,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorrectAnswerVisibility {
+    pub problem_id: i64,
+    pub show_correct_answer: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct UpdateCorrectAnswerVisibilityRequest {
+    pub show_correct_answer: bool,
+}

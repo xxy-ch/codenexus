@@ -92,7 +92,7 @@ async fn get_submission(
 ) -> Result<impl IntoResponse, AppError> {
     let service = SubmissionService::new(state.db_pool);
     let submission = service
-        .get_submission(id, claims.sub)
+        .get_submission(id, claims.sub, claims.school_id, &claims.role)
         .await
         .map_err(|err| {
             if err.to_string().contains("Submission not found") {
