@@ -538,7 +538,7 @@ pub async fn export_problem(
         r#"
         SELECT
             id, title, description, difficulty, time_limit_ms, memory_limit_kb,
-            organization_id, visibility
+            organization_id, visibility, tags
         FROM problems
         WHERE id = $1 AND organization_id = $2
         "#,
@@ -559,7 +559,7 @@ pub async fn export_problem(
         memory_limit: row.get::<i32, _>("memory_limit_kb") / 1024, // KB → MB
         is_public: visibility_str == "public",
         visibility: visibility_str,
-        tags: vec![],      // not stored in DB
+        tags: row.get::<Vec<String>, _>("tags"),
         source_url: None,  // not stored in DB
         author_note: None, // not stored in DB
     };

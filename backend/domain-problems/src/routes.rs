@@ -211,12 +211,13 @@ pub async fn create_problem(
             description,
             difficulty,
             visibility,
+            tags,
             time_limit_ms,
             memory_limit_kb,
             created_at,
             updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         RETURNING
             id,
             title,
@@ -229,7 +230,7 @@ pub async fn create_problem(
             (visibility = 'public') AS is_public,
             visibility,
             show_correct_answer,
-            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
+            tags,
             NULL::TEXT AS source_url,
             NULL::TEXT AS author_note,
             created_at,
@@ -242,6 +243,7 @@ pub async fn create_problem(
     .bind(&req.description)
     .bind(&req.difficulty)
     .bind(visibility)
+    .bind(&req.tags)
     .bind(req.time_limit)
     .bind(req.memory_limit)
     .fetch_one(&state.db_pool)
@@ -263,6 +265,7 @@ pub async fn list_problems(
     let difficulty = query.difficulty.clone();
     let visibility = query.visibility.clone();
     let is_public = query.is_public.unwrap_or(true);
+    let tag_filter = parse_tags_query(query.tags.as_deref());
 
     let role = claims
         .role
@@ -284,6 +287,7 @@ pub async fn list_problems(
           AND ($5::BOOLEAN = false OR p.visibility = 'public')
           AND ($6::BOOLEAN OR p.visibility = 'public' OR p.organization_id = $7)
           AND ($8::BIGINT IS NULL OR p.campus_id = $8)
+          AND ($9::TEXT[] IS NULL OR p.tags && $9::TEXT[])
         "#,
     )
     .bind(&search)
@@ -294,6 +298,7 @@ pub async fn list_problems(
     .bind(admin)
     .bind(claims.school_id)
     .bind(campus_scope)
+    .bind(tag_filter.as_deref())
     .fetch_one(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -312,7 +317,7 @@ pub async fn list_problems(
             (p.visibility = 'public') AS is_public,
             p.visibility,
             p.show_correct_answer,
-            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
+            p.tags,
             NULL::TEXT AS source_url,
             NULL::TEXT AS author_note,
             p.created_at,
@@ -324,8 +329,9 @@ pub async fn list_problems(
           AND ($5::BOOLEAN = false OR p.visibility = 'public')
           AND ($6::BOOLEAN OR p.visibility = 'public' OR p.organization_id = $7)
           AND ($8::BIGINT IS NULL OR p.campus_id = $8)
+          AND ($9::TEXT[] IS NULL OR p.tags && $9::TEXT[])
         ORDER BY p.created_at DESC
-        LIMIT $9 OFFSET $10
+        LIMIT $10 OFFSET $11
         "#,
     )
     .bind(&search)
@@ -336,6 +342,7 @@ pub async fn list_problems(
     .bind(admin)
     .bind(claims.school_id)
     .bind(campus_scope)
+    .bind(tag_filter.as_deref())
     .bind(limit)
     .bind(offset)
     .fetch_all(&state.db_pool)
@@ -379,7 +386,7 @@ pub async fn get_problem(
             (visibility = 'public') AS is_public,
             visibility,
             show_correct_answer,
-            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
+            tags,
             NULL::TEXT AS source_url,
             NULL::TEXT AS author_note,
             created_at,
@@ -465,8 +472,9 @@ pub async fn update_problem(
             time_limit_ms = COALESCE($4, time_limit_ms),
             memory_limit_kb = COALESCE($5, memory_limit_kb),
             visibility = COALESCE($6, visibility),
+            tags = COALESCE($7, tags),
             updated_at = NOW()
-        WHERE id = $7
+        WHERE id = $8
         RETURNING
             id,
             title,
@@ -479,7 +487,7 @@ pub async fn update_problem(
             (visibility = 'public') AS is_public,
             visibility,
             show_correct_answer,
-            COALESCE(NULL::TEXT[], ARRAY[]::TEXT[]) AS tags,
+            tags,
             NULL::TEXT AS source_url,
             NULL::TEXT AS author_note,
             created_at,
@@ -492,6 +500,7 @@ pub async fn update_problem(
     .bind(req.time_limit)
     .bind(req.memory_limit)
     .bind(visibility)
+    .bind(req.tags)
     .bind(id)
     .fetch_optional(&state.db_pool)
     .await
@@ -581,6 +590,21 @@ pub async fn get_problem_statistics(
     Ok(Json(stats))
 }
 
+fn parse_tags_query(tags: Option<&str>) -> Option<Vec<String>> {
+    let parsed = tags?
+        .split(',')
+        .map(str::trim)
+        .filter(|tag| !tag.is_empty())
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+
+    if parsed.is_empty() {
+        None
+    } else {
+        Some(parsed)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -640,5 +664,19 @@ mod tests {
             management_list_campus_scope(Role::CampusAdmin, &campus_admin, false).unwrap(),
             None
         );
+    }
+
+    #[test]
+    fn parse_tags_query_splits_comma_separated_values() {
+        assert_eq!(
+            parse_tags_query(Some("数组与矩阵, 字符串处理,,哈希表")),
+            Some(vec![
+                "数组与矩阵".to_string(),
+                "字符串处理".to_string(),
+                "哈希表".to_string()
+            ])
+        );
+        assert_eq!(parse_tags_query(Some(" , ")), None);
+        assert_eq!(parse_tags_query(None), None);
     }
 }

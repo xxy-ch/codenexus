@@ -117,7 +117,7 @@ pub struct ListProblemsQuery {
     pub difficulty: Option<String>,
     pub visibility: Option<String>,
     pub search: Option<String>,
-    pub tags: Option<Vec<String>>,
+    pub tags: Option<String>,
     pub is_public: Option<bool>,
     pub page: Option<i64>,
     pub limit: Option<i64>,

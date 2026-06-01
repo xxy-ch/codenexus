@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useProblems } from '@/hooks/useProblems'
 import { ProblemTable } from '@/components/problems/ProblemTable'
 import { ProblemFilters } from '@/components/problems/ProblemFilters'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '@/components/ui/Button'
 import { FolderOpen, History, Trophy } from 'lucide-react'
 import { ProblemListSkeleton } from '@/components/skeletons/ProblemListSkeleton'
@@ -11,12 +11,8 @@ import { InlineError } from '@/components/ui/InlineError'
 import type { ProblemFilters as ProblemFiltersParams } from '@/services/problems'
 
 export function ProblemSet() {
-  const [filters, setFilters] = useState<ProblemFiltersParams>({
-    difficulty: 'all',
-    sort: 'recent',
-    page: 1,
-    limit: 20,
-  })
+  const [searchParams] = useSearchParams()
+  const [filters, setFilters] = useState<ProblemFiltersParams>(() => filtersFromSearchParams(searchParams))
 
   const { data, isLoading, error } = useProblems(filters)
   const problems = data?.problems || []
@@ -132,7 +128,7 @@ export function ProblemSet() {
               </p>
             </div>
             <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
-              筛选: {filters.sort || 'recent'}
+              筛选: {describeFilters(filters)}
             </span>
           </div>
         </div>
@@ -175,4 +171,31 @@ export function ProblemSet() {
       </div>
     </div>
   )
+}
+
+function filtersFromSearchParams(searchParams: URLSearchParams): ProblemFiltersParams {
+  const difficulty = searchParams.get('difficulty')
+  const sort = searchParams.get('sort')
+  const page = Number(searchParams.get('page') ?? 1)
+  const tags = (searchParams.get('tags') ?? '')
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+
+  return {
+    difficulty: difficulty === 'easy' || difficulty === 'medium' || difficulty === 'hard' ? difficulty : 'all',
+    sort: sort === 'popular' || sort === 'easy_first' || sort === 'hard_first' ? sort : 'recent',
+    search: searchParams.get('search') ?? '',
+    tags,
+    page: Number.isFinite(page) && page > 0 ? page : 1,
+    limit: 20,
+  }
+}
+
+function describeFilters(filters: ProblemFiltersParams): string {
+  const parts = [filters.sort || 'recent']
+  if (filters.search) parts.push(`搜索 ${filters.search}`)
+  if (filters.difficulty && filters.difficulty !== 'all') parts.push(filters.difficulty)
+  if (filters.tags?.length) parts.push(`标签 ${filters.tags.join(', ')}`)
+  return parts.join(' / ')
 }
