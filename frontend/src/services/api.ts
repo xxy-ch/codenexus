@@ -4,6 +4,18 @@ import { API_CONFIG } from './config'
 
 type RetryableRequestConfig = InternalAxiosRequestConfig & { _retry?: boolean }
 
+const authRetryExcludedPaths = [
+  API_CONFIG.endpoints.login,
+  API_CONFIG.endpoints.refresh,
+  '/auth/logout',
+]
+
+function shouldAttemptTokenRefresh(request: RetryableRequestConfig): boolean {
+  const url = request.url ?? ''
+  const isAuthEndpoint = authRetryExcludedPaths.some((path) => url.includes(path))
+  return !request._retry && !isAuthEndpoint && Boolean(localStorage.getItem('access_token'))
+}
+
 const api = axios.create({
   baseURL: API_CONFIG.baseURL,
   headers: {
@@ -30,7 +42,7 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined
 
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    if (error.response?.status === 401 && originalRequest && shouldAttemptTokenRefresh(originalRequest)) {
       originalRequest._retry = true
 
       try {

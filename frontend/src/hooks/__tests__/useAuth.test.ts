@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/store/authStore'
 import type { AuthResponse } from '@/types/auth'
-import { request } from '@/services/api'
+import api, { request } from '@/services/api'
 
 // Mock the request module
 vi.mock('@/services/api', () => ({
+  default: {
+    post: vi.fn(),
+  },
   request: vi.fn(),
 }))
 
@@ -48,6 +51,8 @@ describe('useAuthStore', () => {
       error: null,
     })
     vi.mocked(request).mockReset()
+    vi.mocked(api.post).mockReset()
+    localStorage.clear()
   })
 
   it('initial state is unauthenticated', () => {
@@ -124,8 +129,8 @@ describe('useAuthStore', () => {
       isAuthenticated: true,
     })
 
-    // Mock the logout request call
-    vi.mocked(request).mockResolvedValueOnce({})
+    localStorage.setItem('access_token', 'logout-token')
+    vi.mocked(api.post).mockResolvedValueOnce({ data: {} })
 
     useAuthStore.getState().logout()
 
@@ -133,6 +138,10 @@ describe('useAuthStore', () => {
     expect(state.user).toBeNull()
     expect(state.isAuthenticated).toBe(false)
     expect(state.error).toBeNull()
+    expect(api.post).toHaveBeenCalledWith('/auth/logout', undefined, {
+      headers: { Authorization: 'Bearer logout-token' },
+    })
+    expect(localStorage.getItem('access_token')).toBeNull()
   })
 
   it('checkAuth succeeds when user is authenticated', async () => {

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { User, AuthResponse } from '@/types/auth'
-import { request } from '@/services/api'
+import api, { request } from '@/services/api'
 
 const accessTokenKey = 'access_token'
 
@@ -73,8 +73,12 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   logout: () => {
-    // Call backend logout to blacklist the token
-    request('post', '/auth/logout').catch(() => {})
+    const token = localStorage.getItem(accessTokenKey)
+    if (token) {
+      api.post('/auth/logout', undefined, {
+        headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {})
+    }
     localStorage.removeItem(accessTokenKey)
     set({
       user: null,
