@@ -698,19 +698,47 @@ impl ClassService {
 
     // ========== Student Enrollment ==========
 
-    /// Add student to class
-    pub async fn add_student(&self, class_id: i64, username: &str) -> Result<ClassEnrollment> {
+    /// Add student to class by username, 12-digit user_code, or email.
+    pub async fn add_student(
+        &self,
+        class_id: i64,
+        student_identifier: &str,
+    ) -> Result<ClassEnrollment> {
         // Get class
         let class = self.get_class(class_id).await?;
+        let student_identifier = student_identifier.trim();
+        if student_identifier.is_empty() {
+            return Err(anyhow::anyhow!("Student identifier is required"));
+        }
 
-        // Find student by username within the same organization (SEC-03 tenant check)
-        let student: (Uuid,) =
-            sqlx::query_as("SELECT id FROM users WHERE username = $1 AND organization_id = $2")
-                .bind(username)
-                .bind(class.organization_id)
-                .fetch_optional(&self.pool)
-                .await?
-                .ok_or_else(|| anyhow::anyhow!("Student not found in this organization"))?;
+        // Find an active student within the same organization (SEC-03 tenant check).
+        // The teacher UI and import flow accept either login username, external
+        // 12-digit user_code, or email.
+        let student: (Uuid,) = sqlx::query_as(
+            r#"
+            SELECT u.id
+            FROM users u
+            WHERE u.organization_id = $2
+              AND u.status = 'active'
+              AND (
+                u.username = $1
+                OR COALESCE(u.user_code, '') = $1
+                OR u.email = $1
+              )
+              AND EXISTS (
+                SELECT 1
+                FROM user_roles ur
+                WHERE ur.user_id = u.id
+                  AND ur.organization_id = u.organization_id
+                  AND ur.role = 'student'
+              )
+            "#,
+        )
+        .bind(student_identifier)
+        .bind(class.organization_id)
+        .fetch_optional(&self.pool)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("Active student not found in this organization"))?;
 
         // Check if already enrolled
         let existing =

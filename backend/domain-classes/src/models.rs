@@ -120,7 +120,13 @@ pub struct ClassEnrollment {
 
 #[derive(Debug, Deserialize)]
 pub struct AddStudentRequest {
-    #[serde(alias = "student_email")]
+    #[serde(
+        alias = "student_email",
+        alias = "student_username",
+        alias = "student_identifier",
+        alias = "user_code",
+        alias = "identifier"
+    )]
     pub username: String,
 }
 

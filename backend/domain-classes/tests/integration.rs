@@ -34,9 +34,10 @@ async fn seed_org_with_teacher_and_student(pool: &PgPool) -> (i64, i64, Uuid, Uu
     .unwrap();
 
     let teacher_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO users (email, password_hash, organization_id) VALUES ('teacher@classes.com', 'hash', $1) RETURNING id",
+        "INSERT INTO users (username, email, password_hash, organization_id, campus_id) VALUES ('teacher_classes', 'teacher@classes.com', 'hash', $1, $2) RETURNING id",
     )
     .bind(org_id)
+    .bind(campus_id)
     .fetch_one(pool)
     .await
     .unwrap();
@@ -52,9 +53,10 @@ async fn seed_org_with_teacher_and_student(pool: &PgPool) -> (i64, i64, Uuid, Uu
     .unwrap();
 
     let student_id: Uuid = sqlx::query_scalar(
-        "INSERT INTO users (email, password_hash, organization_id) VALUES ('student@classes.com', 'hash', $1) RETURNING id",
+        "INSERT INTO users (username, user_code, email, password_hash, organization_id, campus_id) VALUES ('student_classes', '240101070099', 'student@classes.com', 'hash', $1, $2) RETURNING id",
     )
     .bind(org_id)
+    .bind(campus_id)
     .fetch_one(pool)
     .await
     .unwrap();
@@ -153,6 +155,45 @@ async fn test_enroll_student_in_class() {
     .await
     .unwrap();
     assert_eq!(count, 1);
+}
+
+#[tokio::test]
+#[ignore = "requires Docker/testcontainers"]
+async fn test_add_student_accepts_username_user_code_and_email() {
+    let fixture = setup_fixture().await;
+    let (org_id, _campus_id, teacher_id, student_id) =
+        seed_org_with_teacher_and_student(&fixture.db_pool).await;
+
+    let service = domain_classes::service::ClassService::new(fixture.db_pool.clone());
+
+    let req = domain_classes::models::CreateClassRequest {
+        organization_id: org_id,
+        campus_id: None,
+        name: "Identifier Enrollment".to_string(),
+        semester: None,
+        grade_id: None,
+    };
+
+    let by_username = service.create_class(&req, teacher_id).await.unwrap();
+    let username_enrollment = service
+        .add_student(by_username.id, "student_classes")
+        .await
+        .unwrap();
+    assert_eq!(username_enrollment.student_id, student_id);
+
+    let by_user_code = service.create_class(&req, teacher_id).await.unwrap();
+    let user_code_enrollment = service
+        .add_student(by_user_code.id, "240101070099")
+        .await
+        .unwrap();
+    assert_eq!(user_code_enrollment.student_id, student_id);
+
+    let by_email = service.create_class(&req, teacher_id).await.unwrap();
+    let email_enrollment = service
+        .add_student(by_email.id, "student@classes.com")
+        .await
+        .unwrap();
+    assert_eq!(email_enrollment.student_id, student_id);
 }
 
 #[tokio::test]

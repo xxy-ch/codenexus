@@ -122,7 +122,7 @@ export function ClassManagement() {
 
   const addStudentMutation = useMutation({
     mutationFn: () =>
-      classesService.addStudent(highlightedClass!.id, studentUsername),
+      classesService.addStudent(highlightedClass!.id, studentUsername.trim()),
     onSuccess: () => {
       setStudentUsername("");
       invalidate();
@@ -316,7 +316,7 @@ export function ClassManagement() {
                 <input
                   value={studentUsername}
                   onChange={(e) => setStudentUsername(e.target.value)}
-                  placeholder="学生用户名（12位ID）"
+                  placeholder="学生用户名 / 12位ID / 邮箱"
                   className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:shadow-focus transition-shadow"
                 />
                 <button
@@ -324,12 +324,12 @@ export function ClassManagement() {
                   onClick={() => addStudentMutation.mutate()}
                   disabled={
                     !highlightedClass ||
-                    !studentUsername ||
+                    !studentUsername.trim() ||
                     addStudentMutation.isPending
                   }
                   className="mt-3 w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground shadow-whisper transition-button-press button-press disabled:opacity-50"
                 >
-                  按用户名添加学生
+                  添加学生
                 </button>
                 {addStudentMutation.isError && (
                   <p className="mt-2 text-xs text-destructive">
