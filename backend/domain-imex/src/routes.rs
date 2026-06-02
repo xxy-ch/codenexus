@@ -568,10 +568,15 @@ pub async fn export_problem(
     // Fetch test cases
     let tc_rows = sqlx::query(
         r#"
-        SELECT input, output AS expected_output, is_secret AS is_hidden, points AS score, order_index AS "order"
+        SELECT
+            input,
+            output AS expected_output,
+            is_secret AS is_hidden,
+            points AS score,
+            ROW_NUMBER() OVER (ORDER BY order_index ASC, id ASC)::INTEGER AS "order"
         FROM test_cases
         WHERE problem_id = $1
-        ORDER BY order_index ASC
+        ORDER BY order_index ASC, id ASC
         "#,
     )
     .bind(problem_id)

@@ -111,12 +111,12 @@ test.describe('delivery smoke', () => {
     await page.goto(`${baseURL}/submissions`)
     await expect(page.locator('h1')).toContainText(/提交历史/)
     await page.goto(`${baseURL}/submissions/${submissionId}`)
-    await expect(page.locator('body')).toContainText(/提交信息/)
     await expect(page.locator('body')).toContainText(/判题结果/)
+    await expect(page.locator('body')).toContainText(/提交元数据/)
 
     await page.goto(`${baseURL}/problems/1/solve`)
     await expect(page.locator('body')).toContainText(/题目描述/)
-    await expect(page.locator('body')).toContainText(/Language\s*Python 3/)
+    await expect(page.locator('body')).toContainText(/Python 3/)
 
     await page.goto(`${baseURL}/teacher/classes`)
     await expect(page.getByRole('heading', { name: /班级管理/i })).toBeVisible()

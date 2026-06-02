@@ -677,6 +677,7 @@ impl ClassService {
             FROM assignments a
             JOIN class_enrollments ce ON ce.class_id = a.class_id AND ce.status = 'active'
             JOIN submissions s ON s.problem_id = a.problem_id AND s.user_id = ce.student_id
+                AND s.created_at >= COALESCE(a.published_at, a.created_at)
             WHERE a.class_id = $1
             "#,
         )
@@ -685,14 +686,48 @@ impl ClassService {
         .await
         .unwrap_or(0);
 
+        let (average_score, completion_rate): (f64, f64) = sqlx::query_as(
+            r#"
+            WITH per_assignment AS (
+                SELECT
+                    ce.student_id,
+                    a.id AS assignment_id,
+                    MAX(CASE WHEN s.verdict = 'ac' THEN a.points ELSE 0 END)::DOUBLE PRECISION AS best_score,
+                    MAX(s.created_at) AS last_submission
+                FROM class_enrollments ce
+                JOIN assignments a ON a.class_id = ce.class_id
+                LEFT JOIN submissions s
+                    ON s.problem_id = a.problem_id
+                    AND s.user_id = ce.student_id
+                    AND s.created_at >= COALESCE(a.published_at, a.created_at)
+                WHERE ce.class_id = $1 AND ce.status = 'active'
+                GROUP BY ce.student_id, a.id
+            )
+            SELECT
+                COALESCE(AVG(best_score), 0.0)::DOUBLE PRECISION AS average_score,
+                CASE
+                    WHEN COUNT(*) = 0 THEN 0.0
+                    ELSE (
+                        COUNT(*) FILTER (WHERE last_submission IS NOT NULL)::DOUBLE PRECISION
+                        / COUNT(*)::DOUBLE PRECISION
+                    ) * 100.0
+                END AS completion_rate
+            FROM per_assignment
+            "#,
+        )
+        .bind(class_id)
+        .fetch_one(&self.pool)
+        .await
+        .unwrap_or((0.0, 0.0));
+
         Ok(ClassStats {
             class_id,
             total_students: total_students as i32,
             active_students: total_students as i32,
             total_assignments: total_assignments as i32,
             total_submissions,
-            average_score: 0.0,
-            completion_rate: if total_students > 0 { 100.0 } else { 0.0 },
+            average_score,
+            completion_rate,
         })
     }
 
@@ -817,16 +852,50 @@ impl ClassService {
     pub async fn get_class_students(&self, class_id: i64) -> Result<Vec<StudentProgress>> {
         let students = sqlx::query_as::<_, StudentProgress>(
             r#"
+            WITH assignment_count AS (
+                SELECT COUNT(*)::INTEGER AS total_assignments
+                FROM assignments
+                WHERE class_id = $1
+            ),
+            per_assignment AS (
+                SELECT
+                    ce.student_id,
+                    a.id AS assignment_id,
+                    MAX(CASE WHEN s.verdict = 'ac' THEN a.points ELSE 0 END)::INTEGER AS best_score,
+                    MAX(s.created_at) AS last_submission
+                FROM class_enrollments ce
+                JOIN assignments a ON a.class_id = ce.class_id
+                LEFT JOIN submissions s
+                    ON s.problem_id = a.problem_id
+                    AND s.user_id = ce.student_id
+                    AND s.created_at >= COALESCE(a.published_at, a.created_at)
+                WHERE ce.class_id = $1 AND ce.status = 'active'
+                GROUP BY ce.student_id, a.id
+            ),
+            progress AS (
+                SELECT
+                    student_id,
+                    COUNT(*) FILTER (WHERE last_submission IS NOT NULL)::INTEGER AS completed_assignments,
+                    COALESCE(
+                        AVG(best_score) FILTER (WHERE last_submission IS NOT NULL),
+                        0.0
+                    )::DOUBLE PRECISION AS average_score,
+                    MAX(last_submission) AS last_submission
+                FROM per_assignment
+                GROUP BY student_id
+            )
             SELECT
                 ce.student_id,
                 u.username,
                 COALESCE(u.email, '') AS email,
-                0 AS total_assignments,
-                0 AS completed_assignments,
-                0.0::DOUBLE PRECISION AS average_score,
-                NULL::TIMESTAMPTZ AS last_submission
+                ac.total_assignments,
+                COALESCE(p.completed_assignments, 0) AS completed_assignments,
+                COALESCE(p.average_score, 0.0)::DOUBLE PRECISION AS average_score,
+                p.last_submission
             FROM class_enrollments ce
             JOIN users u ON u.id = ce.student_id
+            CROSS JOIN assignment_count ac
+            LEFT JOIN progress p ON p.student_id = ce.student_id
             WHERE ce.class_id = $1
             ORDER BY ce.enrolled_at DESC
             "#,
@@ -987,6 +1056,7 @@ impl ClassService {
             FROM assignments a
             JOIN class_enrollments ce ON ce.class_id = a.class_id AND ce.status = 'active'
             JOIN submissions s ON s.problem_id = a.problem_id AND s.user_id = ce.student_id
+                AND s.created_at >= COALESCE(a.published_at, a.created_at)
             WHERE a.id = $1
             ORDER BY s.created_at DESC
             "#
