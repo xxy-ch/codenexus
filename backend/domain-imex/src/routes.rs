@@ -420,9 +420,9 @@ pub async fn execute_problem_import(
                     r#"
                     INSERT INTO problems (
                         title, description, difficulty, time_limit_ms, memory_limit_kb,
-                        organization_id, author_id, visibility
+                        organization_id, author_id, visibility, tags
                     )
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                     RETURNING id
                     "#,
                 )
@@ -434,6 +434,7 @@ pub async fn execute_problem_import(
                 .bind(claims.school_id)
                 .bind(claims.sub) // author_id (NOT NULL)
                 .bind(&visibility)
+                .bind(&item.config.tags)
                 .fetch_one(&mut *tx)
                 .await;
 
