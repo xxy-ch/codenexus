@@ -40,7 +40,7 @@ CodeNexus is a modern, multi-tenant, and multi-role online judge and competitive
 - **Classroom & Homework** — Teachers can create classes, manage student enrollment, assign homework, and review comprehensive submission reports.
 - **Discussions & Blogs** — Problem-specific discussion areas, community technical blogs, and nested comment systems.
 - **Code Plagiarism Detection** — Integrated plagiarism scanner analyzing code similarity, configurable from the admin control panel.
-- **Direct Messaging** — Real-time private DMs between users with unread badge indicators.
+- **Direct Messaging** — One-to-one conversations with message history, sending, and unread badge indicators.
 - **Feature Gateway & AI Worker** — Runtime feature flags control optional capabilities such as LLM-assisted analysis, teaching cards, recommendations, and plagiarism graph features.
 - **Learning Roadmap** — Student-facing knowledge topology that links visible skill nodes back into problem discovery.
 - **Full-Text Search** — Global search indexing across problems, discussions, blogs, and users.
