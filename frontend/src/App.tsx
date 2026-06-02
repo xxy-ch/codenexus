@@ -174,6 +174,7 @@ function App() {
             <Route path="teacher/classes" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ClassManagement)}</ProtectedRoute>} />
             <Route path="teacher/assignment-report" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(AssignmentReport)}</ProtectedRoute>} />
             <Route path="teacher/contest-wizard" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ContestWizard)}</ProtectedRoute>} />
+            <Route path="teacher/problem-content" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ProblemContentConfig)}</ProtectedRoute>} />
             <Route path="batch-operations" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(BatchOperations)}</ProtectedRoute>} />
             <Route path="teacher/features" element={<ProtectedRoute allowedRoles={TEACHER_ROLES}>{renderLazy(ClassFeatureSettings)}</ProtectedRoute>} />
             {/* Add more protected routes here */}

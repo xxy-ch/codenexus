@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { BookText, ChevronRight, Eye, EyeOff, Loader2, Save, Search, Timer, Waypoints } from 'lucide-react'
 import { judgeConfigService, type UpdateProblemContentPayload } from '@/services/judgeConfig'
@@ -8,8 +8,30 @@ type ProblemContentForm = UpdateProblemContentPayload & {
   show_correct_answer: boolean
 }
 
+function normalizeTags(tags: string) {
+  return tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+}
+
+function toContentPayload(payload: ProblemContentForm): UpdateProblemContentPayload {
+  return {
+    title: payload.title,
+    description: payload.description,
+    difficulty: payload.difficulty,
+    time_limit: payload.time_limit,
+    memory_limit: payload.memory_limit,
+    visibility: payload.visibility,
+    tags: payload.tags,
+    is_public: payload.is_public,
+    source_url: payload.source_url,
+    author_note: payload.author_note,
+  }
+}
+
 export function ProblemContentConfig() {
   const [problemId, setProblemId] = useState('')
+  const [loadedProblemId, setLoadedProblemId] = useState('')
+  const [loadedContent, setLoadedContent] = useState<UpdateProblemContentPayload | null>(null)
+  const [loadedShowCorrectAnswer, setLoadedShowCorrectAnswer] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [message, setMessage] = useState('')
@@ -33,7 +55,7 @@ export function ProblemContentConfig() {
     setMessage('')
     try {
       const data = await judgeConfigService.getProblem(problemId)
-      setForm({
+      const nextForm = {
         title: data.title,
         description: data.description,
         difficulty: data.difficulty,
@@ -43,8 +65,12 @@ export function ProblemContentConfig() {
         tags: data.tags || [],
         is_public: data.is_public,
         show_correct_answer: data.show_correct_answer !== false,
-      })
+      }
+      setForm(nextForm)
       setTagsText((data.tags || []).join(', '))
+      setLoadedProblemId(problemId)
+      setLoadedContent(toContentPayload(nextForm))
+      setLoadedShowCorrectAnswer(nextForm.show_correct_answer !== false)
     } catch (err: any) {
       setError(err?.response?.data?.message || '题目加载失败')
     } finally {
@@ -52,18 +78,35 @@ export function ProblemContentConfig() {
     }
   }
 
-  useEffect(() => {
+  const handleProblemIdChange = (value: string) => {
+    setProblemId(value.trim())
+    setLoadedProblemId('')
+    setLoadedContent(null)
+    setLoadedShowCorrectAnswer(null)
     setMessage('')
-  }, [problemId])
+  }
 
   const updateMutation = useMutation({
     mutationFn: async (payload: ProblemContentForm) => {
-      const { show_correct_answer, ...contentPayload } = payload
-      const updatedProblem = await judgeConfigService.updateProblem(problemId, contentPayload)
-      await judgeConfigService.updateCorrectAnswerVisibility(problemId, show_correct_answer !== false)
-      return updatedProblem
+      const contentPayload = toContentPayload(payload)
+      const contentChanged = JSON.stringify(contentPayload) !== JSON.stringify(loadedContent)
+      const answerVisibility = payload.show_correct_answer !== false
+      const answerVisibilityChanged =
+        loadedShowCorrectAnswer === null || answerVisibility !== loadedShowCorrectAnswer
+
+      if (contentChanged) {
+        await judgeConfigService.updateProblem(problemId, contentPayload)
+      }
+      if (answerVisibilityChanged) {
+        await judgeConfigService.updateCorrectAnswerVisibility(problemId, answerVisibility)
+      }
+
+      return payload
     },
-    onSuccess: () => {
+    onSuccess: (savedPayload) => {
+      setLoadedProblemId(problemId)
+      setLoadedContent(toContentPayload(savedPayload))
+      setLoadedShowCorrectAnswer(savedPayload.show_correct_answer !== false)
       setMessage('保存成功')
       setError('')
     },
@@ -76,34 +119,36 @@ export function ProblemContentConfig() {
   const handleSave = () => {
     const payload = {
       ...form,
-      tags: tagsText.split(',').map((tag) => tag.trim()).filter(Boolean),
+      tags: normalizeTags(tagsText),
     }
     updateMutation.mutate(payload)
   }
+
+  const canSave = !!loadedProblemId && loadedProblemId === problemId
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Admin</span>
+          <span>题目</span>
           <ChevronRight className="h-3.5 w-3.5" />
-          <span>Problems</span>
+          <span>设置</span>
           <ChevronRight className="h-3.5 w-3.5" />
-          <span className="font-medium text-foreground">题面配置</span>
+          <span className="font-medium text-foreground">题目设置</span>
         </div>
         <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-foreground">题面配置</h1>
+            <h1 className="text-xl font-bold tracking-tight text-foreground">题目设置</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              编辑题面内容、约束、可见性与说明。当前保持真实后端支持的字段范围。
+              编辑题面内容、约束、可见性与提交详情的正确答案展示策略。
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={handleSave}
-              disabled={!problemId || updateMutation.isPending}
+              disabled={!canSave || updateMutation.isPending}
               className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
               {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
@@ -120,7 +165,7 @@ export function ProblemContentConfig() {
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={problemId}
-              onChange={(e) => setProblemId(e.target.value.trim())}
+              onChange={(e) => handleProblemIdChange(e.target.value)}
               placeholder="输入题目 ID"
               className="w-full rounded-lg border border-border/40 bg-transparent py-2.5 pl-11 pr-4 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
             />

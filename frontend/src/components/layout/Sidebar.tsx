@@ -23,6 +23,7 @@ import {
   LogOut,
   UserCog,
   ChevronLeft,
+  Settings,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -69,6 +70,7 @@ export function Sidebar() {
     ...(dmEnabled ? [{ label: '消息', path: '/messages', icon: Mail }] : []),
     { label: '班级管理', path: '/teacher/classes', icon: Users, minRole: 'teacher' },
     { label: '创建竞赛', path: '/teacher/contest-wizard', icon: Wand2, minRole: 'teacher' },
+    { label: '题目设置', path: '/teacher/problem-content', icon: Settings, minRole: 'teacher' },
     { label: '作业报告', path: '/teacher/assignment-report', icon: FileBarChart, minRole: 'teacher' },
     { label: '批量操作', path: '/batch-operations', icon: Upload, minRole: 'teacher' },
     { label: '功能管理', path: '/admin/features', icon: Cog, minRole: 'admin' },
