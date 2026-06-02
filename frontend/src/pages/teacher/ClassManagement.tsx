@@ -261,10 +261,10 @@ export function ClassManagement() {
       )}
 
       {/* Main Content */}
-      <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="space-y-6">
+      <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+        <aside className="min-w-0 space-y-6">
           {/* Create class */}
-          <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
+          <div className="min-w-0 rounded-xl border border-border bg-card p-6 shadow-whisper">
             <h2 className="text-sm font-semibold tracking-tight text-foreground">
               创建班级
             </h2>
@@ -293,7 +293,7 @@ export function ClassManagement() {
           </div>
 
           {/* Student management */}
-          <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
+          <div className="min-w-0 rounded-xl border border-border bg-card p-6 shadow-whisper">
             <h2 className="text-sm font-semibold tracking-tight text-foreground">
               班级成员管理
             </h2>
@@ -371,9 +371,9 @@ export function ClassManagement() {
           </div>
         </aside>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* Class list */}
-          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+          <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-card">
             <div className="border-b border-border-subtle px-6 py-5">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
@@ -456,8 +456,8 @@ export function ClassManagement() {
           </div>
 
           {/* Assignments & Students */}
-          <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="rounded-xl border border-border bg-card p-6 shadow-whisper">
+          <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)]">
+            <div className="min-w-0 rounded-xl border border-border bg-card p-6 shadow-whisper">
               <h2 className="text-sm font-semibold tracking-tight text-foreground">
                 创建作业
               </h2>
@@ -505,7 +505,7 @@ export function ClassManagement() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
+            <div className="min-w-0 overflow-hidden rounded-xl border border-border bg-card shadow-card">
               <div className="border-b border-border-subtle px-6 py-5">
                 <h2 className="text-sm font-semibold tracking-tight text-foreground">
                   班级学生
