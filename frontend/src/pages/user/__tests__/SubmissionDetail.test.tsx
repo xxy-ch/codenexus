@@ -123,6 +123,33 @@ describe('SubmissionDetail', () => {
     })
   })
 
+  it('通过用例的实际输出允许尾随换行', async () => {
+    vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue({
+      ...baseSubmission,
+      test_cases: [
+        {
+          id: 1,
+          input: '[2,7,11,15]\n9',
+          expected_output: '[0,1]',
+          actual_output: '[0,1]\n',
+          status: 'passed',
+          time_ms: 15,
+        },
+      ],
+    })
+
+    renderComponent()
+
+    const outputs = await screen.findAllByText(/\[0,1\]/)
+    const actualOutput = outputs.find((element) =>
+      element.classList.contains('text-status-accepted')
+    )
+
+    expect(actualOutput).toBeDefined()
+    expect(actualOutput).toHaveClass('text-status-accepted')
+    expect(actualOutput).not.toHaveClass('text-destructive')
+  })
+
   it('渲染错误答案提交的测试细节', async () => {
     vi.mocked(problemsService.getSubmissionDetail).mockResolvedValue({
       ...baseSubmission,

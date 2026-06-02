@@ -41,6 +41,22 @@ interface SubmissionDetail {
   updated_at: string
 }
 
+function normalizeJudgeOutput(output?: string) {
+  return (output ?? '').replace(/\r\n/g, '\n').trimEnd()
+}
+
+function isActualOutputAccepted(testCase: TestCase) {
+  if (testCase.status === 'passed') {
+    return true
+  }
+
+  if (testCase.actual_output === undefined || testCase.expected_output === undefined) {
+    return false
+  }
+
+  return normalizeJudgeOutput(testCase.actual_output) === normalizeJudgeOutput(testCase.expected_output)
+}
+
 export function SubmissionDetail() {
   const { submissionId } = useParams<{ submissionId: string }>()
   const navigate = useNavigate()
@@ -256,6 +272,7 @@ export function SubmissionDetail() {
             {submission.test_cases.map((testCase, index) => {
               const isExpanded = expandedTestCases.has(index)
               const isPassed = testCase.status === 'passed'
+              const actualOutputAccepted = isActualOutputAccepted(testCase)
 
               return (
                 <div
@@ -341,7 +358,7 @@ export function SubmissionDetail() {
                           <p className="text-[13px] font-bold uppercase tracking-wider text-muted-foreground">实际输出</p>
                           <pre className={cn(
                             'text-[13px] p-3.5 rounded-xl font-mono overflow-x-auto border shadow-inner max-h-48 leading-relaxed',
-                            testCase.actual_output === testCase.expected_output
+                            actualOutputAccepted
                               ? 'bg-status-accepted/5 border-status-accepted/20 text-status-accepted'
                               : 'bg-destructive/5 border-destructive/20 text-destructive'
                           )}>
