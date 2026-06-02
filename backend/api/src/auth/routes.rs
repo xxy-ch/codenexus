@@ -64,8 +64,10 @@ pub async fn login(
             refresh_token: response.refresh_token,
             user: UserPublic {
                 id: response.user.id,
+                user_code: response.user.user_code,
                 username: response.user.username,
                 email: response.user.email.unwrap_or_default(),
+                display_name: response.user.display_name,
                 role: response.user.role,
                 school_id: response.user.organization_id,
                 campus_id: response.user.campus_id,
