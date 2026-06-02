@@ -173,6 +173,20 @@ async fn ack_message(pool: &Pool, message_id: &str) -> Result<()> {
     Ok(())
 }
 
+/// Requeue a retryable job as a fresh stream message after its DB row is reset
+/// to pending. The current failed delivery is ACKed only after this succeeds.
+async fn requeue_job(pool: &Pool, job_id: i64) -> Result<String> {
+    let mut conn = pool.get().await?;
+    let message_id: String = deadpool_redis::redis::cmd("XADD")
+        .arg(ANALYSIS_STREAM)
+        .arg("*")
+        .arg("job_id")
+        .arg(job_id.to_string())
+        .query_async(&mut *conn)
+        .await?;
+    Ok(message_id)
+}
+
 /// Main processing loop: read messages, process jobs, ACK on success.
 async fn run_loop(pg_pool: sqlx::PgPool, redis_pool: Pool, config: &WorkerConfig) -> Result<()> {
     let total_processed = Arc::new(AtomicUsize::new(0));
@@ -226,8 +240,50 @@ async fn run_loop(pg_pool: sqlx::PgPool, redis_pool: Pool, config: &WorkerConfig
                         Err(e) => {
                             total_failed.fetch_add(1, Ordering::Relaxed);
                             error!(job_id, error = %e, "Job processing failed");
-                            // Do NOT ACK — the message stays in PEL for retry or
-                            // manual XCLAIM by another worker.
+                            let error_text = e.to_string();
+                            if error_text.contains("retry scheduled") {
+                                match requeue_job(&redis_pool, job_id).await {
+                                    Ok(new_message_id) => {
+                                        info!(
+                                            job_id,
+                                            old_message_id = %message_id,
+                                            new_message_id = %new_message_id,
+                                            "Requeued transient LLM job"
+                                        );
+                                        if let Err(ack_error) =
+                                            ack_message(&redis_pool, &message_id).await
+                                        {
+                                            error!(
+                                                job_id,
+                                                message_id = %message_id,
+                                                error = %ack_error,
+                                                "ACK failed after retry requeue"
+                                            );
+                                        }
+                                    }
+                                    Err(requeue_error) => {
+                                        error!(
+                                            job_id,
+                                            message_id = %message_id,
+                                            error = %requeue_error,
+                                            "Retry requeue failed — message stays in PEL"
+                                        );
+                                    }
+                                }
+                            } else if error_text.contains("max retries exceeded") {
+                                if let Err(ack_error) = ack_message(&redis_pool, &message_id).await
+                                {
+                                    error!(
+                                        job_id,
+                                        message_id = %message_id,
+                                        error = %ack_error,
+                                        "ACK failed after max retries"
+                                    );
+                                }
+                            } else {
+                                // Do NOT ACK unexpected DB/logic errors; leave them
+                                // in PEL for manual XCLAIM or future recovery tooling.
+                            }
                         }
                     }
                 }

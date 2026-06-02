@@ -251,6 +251,9 @@ async fn handle_llm_error(pool: &PgPool, job_id: i64, e: &LlmError) -> Result<()
                     None,
                 )
                 .await?;
+                return Err(anyhow::anyhow!(
+                    "LLM transient error, max retries exceeded: {err}"
+                ));
             }
             Err(anyhow::anyhow!(
                 "LLM transient error, retry scheduled: {err}"
