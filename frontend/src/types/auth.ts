@@ -3,7 +3,7 @@ export interface User {
   user_code: string
   username: string
   email: string
-  role: 'user' | 'teacher' | 'admin'
+  role: 'user' | 'teacher' | 'admin' | 'root'
   avatar?: string
   rating?: number
   organization_id?: string

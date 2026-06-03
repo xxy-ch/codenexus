@@ -63,6 +63,13 @@ const adminUser: User = {
   role: 'admin',
 }
 
+const rootUser: User = {
+  ...studentUser,
+  id: 'root-1',
+  username: 'root',
+  role: 'root',
+}
+
 function resetAuthState() {
   useAuthStore.setState({
     user: null,
@@ -111,12 +118,12 @@ function renderGuardHarness({
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
+        <Route path={guardedPath} element={element} />
         <Route path="/login" element={<div>Login Page</div>} />
         <Route path="/register" element={<div>Register Page</div>} />
         <Route path="/dashboard" element={<div>Dashboard Page</div>} />
         <Route path="/settings" element={<div>Settings Page</div>} />
         <Route path="/unauthorized" element={<div>Unauthorized Page</div>} />
-        <Route path={guardedPath} element={element} />
       </Routes>
       <LocationProbe />
     </MemoryRouter>,
@@ -283,6 +290,15 @@ describe('legacy route inventory contract', () => {
     renderAppAt(route)
 
     expect(await screen.findByTestId('location')).not.toHaveTextContent('/404')
+  })
+
+  it('allows root users through admin routes', async () => {
+    setAuthenticatedUser(rootUser)
+
+    renderAppAt('/admin')
+
+    expect(await screen.findByTestId('location')).not.toHaveTextContent('/unauthorized')
+    expect(screen.getByTestId('location')).not.toHaveTextContent('/404')
   })
 
   it('hides /messages when the direct-messages flag is disabled', async () => {

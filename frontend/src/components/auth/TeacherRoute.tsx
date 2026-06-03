@@ -5,5 +5,5 @@ interface TeacherRouteProps {
 }
 
 export function TeacherRoute({ children }: TeacherRouteProps) {
-  return <ProtectedRoute allowedRoles={['teacher', 'admin']}>{children}</ProtectedRoute>
+  return <ProtectedRoute allowedRoles={['teacher', 'admin', 'root']}>{children}</ProtectedRoute>
 }

@@ -26,6 +26,8 @@ export default defineConfig({
     },
   },
   build: {
+    target: 'chrome119',
+    cssTarget: 'chrome119',
     rollupOptions: {
       output: {
         manualChunks(id) {

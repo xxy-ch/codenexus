@@ -28,6 +28,7 @@ export default function Dashboard() {
 
   const stats = userStats || { solved: 0, total_submissions: 0, acceptance_rate: 0, rating: 0 }
   const loading = statsLoading || subsLoading || contestsLoading
+  const acceptanceRate = Number(stats.acceptance_rate ?? 0)
 
   if (loading) return <Loading />
 
@@ -59,7 +60,7 @@ export default function Dashboard() {
         </div>
         <div className="card p-6">
           <p className="text-sm text-on-surface-variant mb-1">通过率</p>
-          <p className="font-display font-bold text-3xl text-primary">{stats.acceptance_rate ?? 0}%</p>
+          <p className="font-display font-bold text-3xl text-primary">{acceptanceRate.toFixed(1)}%</p>
         </div>
         <div className="card p-6">
           <p className="text-sm text-on-surface-variant mb-1">当前 Rating</p>
