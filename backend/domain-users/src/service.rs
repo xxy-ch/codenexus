@@ -28,9 +28,9 @@ impl UserService {
         let org_exists = sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS(SELECT 1 FROM organizations WHERE id = $1)",
         )
-            .bind(req.organization_id)
-            .fetch_one(&self.pool)
-            .await?;
+        .bind(req.organization_id)
+        .fetch_one(&self.pool)
+        .await?;
         if !org_exists {
             return Err(anyhow::anyhow!("Organization not found"));
         }

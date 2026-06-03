@@ -202,7 +202,11 @@ impl JudgeMonitorService {
             }
 
             // Remember the last ID so the next iteration continues past it.
-            let last_id = entries.last().expect("entries is non-empty after is_empty check").0.clone();
+            let last_id = entries
+                .last()
+                .expect("entries is non-empty after is_empty check")
+                .0
+                .clone();
 
             for entry in entries {
                 if Self::entry_matches_tenant(&entry.1, school_id) {

@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Online_Judge** (8396 symbols, 17270 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Online_Judge** (7366 symbols, 15229 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -104,22 +104,15 @@ To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.
 <claude-mem-context>
 # Memory Context
 
-# [Online_Judge] recent context, 2026-05-15 10:44pm GMT+8
+# [Online_Judge] recent context, 2026-06-03 5:56pm GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (9,859t read) | 1,008,746t work | 99% savings
+Stats: 50 obs (9,939t read) | 879,042t work | 99% savings
 
-### Apr 8, 2026
-270 6:30p 🟣 Add role-based authorization helpers for test case endpoints
-271 6:31p 🟣 Implement role-based test case visibility for student/management views
-272 " 🟣 Implement role-based test case visibility for student/management views
 ### Apr 9, 2026
-203 8:01a 🔵 Repository exploration initiated
-204 8:10a 🔵 Available tools identified
-216 8:28a 🔵 Repository structure and production convergence program understood
 239 8:41a 🔵 User initiated exploration of Shared code to understand repository context for role model work
 ### Apr 10, 2026
 248 8:12a 🔵 User requested to examine Shared repository and run gitnexus
@@ -180,28 +173,37 @@ S202 Parallel code reviews and build verification for Online Judge backend (Apr 
 ### May 7, 2026
 618 6:41a 🔵 Examined test skill definition
 619 " 🔵 Test suite execution results
-**621** 6:44a 🔵 **Test suite passes with no failures**
-The user continued running the test suite in the Online_Judge Rust project via cargo test. The output reveals that numerous unit and integration tests pass with zero failures. Ignored tests are solely due to missing external services (PostgreSQL, Redis, Docker). This indicates the codebase is stable and recent changes have not introduced regressions.
-~218t 🔍 24,706
-
+621 6:44a 🔵 Test suite passes with no failures
 ### May 13, 2026
-**681** 7:03p 🔵 **Security bounty hunter command initiated**
-The user has initiated a security bounty hunter operation using the everything-claude-code tool suite. This suggests an active security assessment or vulnerability scanning process is beginning, though no specific tool executions or findings have been observed yet in the provided session data.
-~152t 🔍 5,845
-
+681 7:03p 🔵 Security bounty hunter command initiated
 ### May 14, 2026
-**682** 7:45p 🔵 **Read seccomp sandbox implementation**
-Read the seccomp.rs file to understand the sandboxing mechanism used by the judge worker. The seccomp filter is configured with a deny-by-default policy, allowing only a specific set of syscalls necessary for program execution while blocking potentially dangerous operations like network access, process creation with namespace isolation, privilege escalation, resource limit bypass, filesystem mounts, module loading, ptrace, and reboot. The implementation also includes PR_SET_NO_NEW_PRIVS to prevent gaining new privileges, and the process runs as nobody user. This provides a strong isolation layer for executing untrusted code in the online judge system.
-~340t 🔍 19,693
+682 7:45p 🔵 Read seccomp sandbox implementation
+683 " 🔵 Read submission processor service
+691 8:32p 🔵 Security Bounty Hunter Command Initiated
+### May 29, 2026
+720 12:08a 🔵 OJ System Analysis Initiated
+### May 30, 2026
+**721** 9:27a ⚖️ **Updated implementation plan for OJ full workflow verification**
+The user updated the project plan to systematically verify the entire Online Judge usage flow. The plan begins with inventorying the current runtime environment and access points, proceeds to execute real-browser simulations of core teacher, root, and student operations, then addresses any backend or contract mismatches with frontend adjustments. After fixes, Docker images are rebuilt and cleaned, followed by browser-based regression testing. Finally, only the changes made during this iteration are retained and committed to maintain a clear audit trail.
+~309t ⚖️ 2,551
 
-**683** " 🔵 **Read submission processor service**
-Read the processor service to understand how submissions are judged. The service orchestrates the entire judging pipeline: creating isolated work directories, saving source code, compiling compiled languages with resource limits and sandboxing, fetching test cases from the database, and executing each test case within a cgroup with enforced CPU and memory limits. Before execution, it drops privileges to the nobody user and applies a deny-by-default seccomp filter to restrict syscalls. Output is compared against expected output to determine verdicts (accepted, wrong answer, runtime error, time limit exceeded, etc.). The design emphasizes security and isolation through multiple layers: per-submission directories, privilege dropping, seccomp, and cgroups.
-~392t 🔍 26,256
+**722** 9:53a 🔵 **Found demo user records in bootstrap SQL**
+While searching for specific strings in the bootstrap demo SQL and migration files, the rg command revealed that scripts/bootstrap_demo.sql contains predefined demo user records. These records include UUIDs, usernames, email placeholders, identical password hashes, role assignments, and active status, indicating the data is used for initial system setup or testing.
+~235t 🔍 3,266
 
-**691** 8:32p 🔵 **Security Bounty Hunter Command Initiated**
-The user has initiated a security bounty hunting session using the everything-claude-code toolset's security-bounty-hunter command. This suggests the user intends to perform security testing, vulnerability assessment, or bug bounty-style activities within their codebase or target systems. The command likely launches a specialized workflow or set of tools designed for security analysis.
-~198t 🔍 4,458
+**723** " 🔵 **Verified demo users exist in database**
+After executing a SQL query against the PostgreSQL database in the Docker container, the system confirmed that the demo user records inserted via bootstrap_demo.sql are present in the users table. This verifies that the database initialization succeeded and the test accounts are available for system validation.
+~196t 🔍 5,001
+
+**724** " 🔵 **Reviewed browser automation skill documentation**
+The user examined the browser skill documentation to understand proper procedures for in-app browser automation, including setup, runtime behavior, API usage, and best practices for reliable browser interactions in the Codex environment. This informs subsequent testing and validation steps for the Online Judge system.
+~227t 🔍 10,328
+
+### Jun 3, 2026
+**741** 5:43p ✅ **Project plan updated to reflect current progress**
+The user updated the project plan to track progress toward the goal of making the repository production-ready. The plan now shows that verification of the main worktree and its fixes is complete, the UI worktree's modular routing implementation is being checked, and a final summary audit will be performed once the UI worktree verification finishes.
+~170t 🛠️ 2,385
 
 
-Access 1009k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 879k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>
