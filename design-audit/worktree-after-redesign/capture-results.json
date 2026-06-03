@@ -1,0 +1,758 @@
+[
+  {
+    "id": "01-login",
+    "route": "/login",
+    "auth": null,
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/01-login.png",
+    "elapsedMs": 2167,
+    "metrics": {
+      "path": "/login",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "欢迎回来"
+      ],
+      "text": "OJ欢迎回来登录你的账号继续用户名密码登录还没有账号? 注册"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "02-register",
+    "route": "/register",
+    "auth": null,
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/02-register.png",
+    "elapsedMs": 2144,
+    "metrics": {
+      "path": "/register",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "创建账号"
+      ],
+      "text": "OJ创建账号填写以下信息完成注册用户名邮箱密码确认密码注册已有账号? 登录"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "03-student-dashboard",
+    "route": "/dashboard",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/03-student-dashboard.png",
+    "elapsedMs": 2171,
+    "metrics": {
+      "path": "/dashboard",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "欢迎回来, 2001"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息欢迎回来, 2001继续你的编程之旅开始做题参加比赛已解决问题0总提交数22通过率9.1%当前 Rating0最近提交题目状态语言用时提交时间8Acceptedpython3-2026/6/2 22:35:211Acceptedpython3-2026/6/2 19:09:081Acceptedpython3-2026/5/31 09:17:321Wrong Answerpython3-2026/5/31 09:14:301RTEpython3-2026/5/31 09:13:47进行中的比赛2026/5/28 18:42:00 - 2026/5/28 19:42:00进行中2026/5/10 00:00:00 - 2026/5/10 02:00:00进行中"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "04-student-problems",
+    "route": "/problems",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/04-student-problems.png",
+    "elapsedMs": 2151,
+    "metrics": {
+      "path": "/problems",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "题库"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息题库共 0 题全部难度EasyMediumHard#题目难度标签通过率时限内存"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "05-student-problem-detail",
+    "route": "/problems/1",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/05-student-problem-detail.png",
+    "elapsedMs": 2146,
+    "metrics": {
+      "path": "/problems/1",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "Two Sum"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息Two SumEasy时限: 1000ms内存: 262144MB分值: Given an array of integers nums and an integer target, return indices of the two numbers that add up to target.题目描述提交代码Python 3CC++提交"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "06-student-solve",
+    "route": "/problems/1/solve",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/06-student-solve.png",
+    "elapsedMs": 1256,
+    "metrics": {
+      "path": "/problems/1/solve",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "Two Sum"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息Two SumEasy时限: 1000ms内存: 262144MB分值: Given an array of integers nums and an integer target, return indices of the two numbers that add up to target.题目描述提交代码Python 3CC++提交"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "07-student-submissions",
+    "route": "/submissions",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/07-student-submissions.png",
+    "elapsedMs": 2140,
+    "metrics": {
+      "path": "/submissions",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "提交记录"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息提交记录全部状态AcceptedWrong AnswerTLECERTE全部语言C++PythonJavaC#题目状态语言用时内存提交时间408Acceptedpython318ms262144KB2026/6/2 22:35:21391Acceptedpython318ms262144KB2026/6/2 19:09:08381Acceptedpython388ms262144KB2026/5/31 09:17:32371Wrong Answerpython371ms262144KB2026/5/31 09:14:30361RTEpython350ms262144KB2026/5/31 09:13:47351RTEpython30ms262144KB2026/5/31 09:05:42341RTEpython30ms262144KB2026/5/30 20:42:29331RTEpython30ms26"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "08-student-submission-detail",
+    "route": "/submissions/40",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/08-student-submission-detail.png",
+    "elapsedMs": 2143,
+    "metrics": {
+      "path": "/submissions/40",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "提交记录"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息提交记录全部状态AcceptedWrong AnswerTLECERTE全部语言C++PythonJavaC#题目状态语言用时内存提交时间408Acceptedpython318ms262144KB2026/6/2 22:35:21391Acceptedpython318ms262144KB2026/6/2 19:09:08381Acceptedpython388ms262144KB2026/5/31 09:17:32371Wrong Answerpython371ms262144KB2026/5/31 09:14:30361RTEpython350ms262144KB2026/5/31 09:13:47351RTEpython30ms262144KB2026/5/31 09:05:42341RTEpython30ms262144KB2026/5/30 20:42:29331RTEpython30ms26"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "09-student-contests",
+    "route": "/contests",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/09-student-contests.png",
+    "elapsedMs": 2148,
+    "metrics": {
+      "path": "/contests",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "竞赛"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息竞赛全部未开始进行中已结束开始: 2026/5/28 18:42:00结束: 2026/5/28 19:42:00参赛人数: 0未开始查看详情开始: 2026/5/10 00:00:00结束: 2026/5/10 02:00:00参赛人数: 0未开始查看详情"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "10-student-contest-detail",
+    "route": "/contests/1",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/10-student-contest-detail.png",
+    "elapsedMs": 2134,
+    "metrics": {
+      "path": "/contests/1",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息First weekly programming contest开始: 2026/5/10 00:00:00结束: 2026/5/10 02:00:00参赛: 0 人题目列表排行榜我的提交题号题目分值通过率ATwo Sum100-"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "11-student-contest-scoreboard",
+    "route": "/contests/1/scoreboard",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/11-student-contest-scoreboard.png",
+    "elapsedMs": 2153,
+    "metrics": {
+      "path": "/contests/1/scoreboard",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息First weekly programming contest开始: 2026/5/10 00:00:00结束: 2026/5/10 02:00:00参赛: 0 人题目列表排行榜我的提交题号题目分值通过率ATwo Sum100-"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "12-student-ranking",
+    "route": "/ranking",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/12-student-ranking.png",
+    "elapsedMs": 2133,
+    "metrics": {
+      "path": "/ranking",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "排行榜"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息排行榜#122001 题已解决#222002 题已解决#3110001 题已解决排名用户Rating已解决提交数通过率#12200122100%#2220021100%#311000110%#411001180%#51100200%#6224010107001410%#73300100%#888012187200%#988012193500%#10887434000%#118888800%#1288978211000%#1388981654700%#14998007094566600%#159999900%#16Ccdx0206460500%#17Ccodex2026060218334700%#18Ccodeximp178019060000%#19Uuat178041414200%#20Uuat178041571200%第 1 / 2 页上一页12下一页"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "13-student-roadmap",
+    "route": "/roadmap",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/13-student-roadmap.png",
+    "elapsedMs": 2136,
+    "metrics": {
+      "path": "/roadmap",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "学习路线"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息CodeNexus / 模块入口学习路线当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "14-student-discussions",
+    "route": "/discussions",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/14-student-discussions.png",
+    "elapsedMs": 2137,
+    "metrics": {
+      "path": "/discussions",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "讨论区"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息讨论区发起讨论（即将开放）最新热门精华UTwo Sum 解题思路匿名用户2026/5/13 20:14:381 回复3 浏览详情即将开放"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "15-student-discussion-new",
+    "route": "/discussions/new",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/15-student-discussion-new.png",
+    "elapsedMs": 2134,
+    "metrics": {
+      "path": "/discussions/new",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "发起讨论"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息CodeNexus / 模块入口发起讨论当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "16-student-blog",
+    "route": "/blog",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/16-student-blog.png",
+    "elapsedMs": 2133,
+    "metrics": {
+      "path": "/blog",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "博客"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息CodeNexus / 模块入口博客当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "17-student-blog-new",
+    "route": "/blog/new",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/17-student-blog-new.png",
+    "elapsedMs": 2152,
+    "metrics": {
+      "path": "/blog/new",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "新建博客"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息CodeNexus / 模块入口新建博客当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "18-student-messages",
+    "route": "/messages",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/18-student-messages.png",
+    "elapsedMs": 2135,
+    "metrics": {
+      "path": "/messages",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "私信"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息CodeNexus / 模块入口私信当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "19-student-search",
+    "route": "/search?q=two",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/19-student-search.png",
+    "elapsedMs": 2137,
+    "metrics": {
+      "path": "/search",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "搜索"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息CodeNexus / 模块入口搜索当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "20-student-profile",
+    "route": "/profile",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/20-student-profile.png",
+    "elapsedMs": 2134,
+    "metrics": {
+      "path": "/profile",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "个人资料"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息CodeNexus / 模块入口个人资料当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "21-student-settings",
+    "route": "/settings",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/21-student-settings.png",
+    "elapsedMs": 2130,
+    "metrics": {
+      "path": "/settings",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "账号设置"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息242001学生search 题目和讨论...⌘K新建提交2001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息CodeNexus / 模块入口账号设置当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "22-teacher-classes",
+    "route": "/teacher/classes",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/22-teacher-classes.png",
+    "elapsedMs": 2136,
+    "metrics": {
+      "path": "/teacher/classes",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "班级管理"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息角色工具班级管理创建竞赛题目设置作业报告批量操作243001教师search 题目和讨论...⌘K新建提交3001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息班级管理创建竞赛题目设置作业报告批量操作CodeNexus / 模块入口班级管理当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "23-teacher-assignment-report",
+    "route": "/teacher/assignment-report",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/23-teacher-assignment-report.png",
+    "elapsedMs": 2136,
+    "metrics": {
+      "path": "/teacher/assignment-report",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "作业报告"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息角色工具班级管理创建竞赛题目设置作业报告批量操作243001教师search 题目和讨论...⌘K新建提交3001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息班级管理创建竞赛题目设置作业报告批量操作CodeNexus / 模块入口作业报告当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "24-teacher-contest-wizard",
+    "route": "/teacher/contest-wizard",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/24-teacher-contest-wizard.png",
+    "elapsedMs": 2145,
+    "metrics": {
+      "path": "/teacher/contest-wizard",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "创建竞赛"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息角色工具班级管理创建竞赛题目设置作业报告批量操作243001教师search 题目和讨论...⌘K新建提交3001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息班级管理创建竞赛题目设置作业报告批量操作CodeNexus / 模块入口创建竞赛当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "25-teacher-problem-content",
+    "route": "/teacher/problem-content",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/25-teacher-problem-content.png",
+    "elapsedMs": 2145,
+    "metrics": {
+      "path": "/teacher/problem-content",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "题目设置"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息角色工具班级管理创建竞赛题目设置作业报告批量操作243001教师search 题目和讨论...⌘K新建提交3001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息班级管理创建竞赛题目设置作业报告批量操作CodeNexus / 模块入口题目设置当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "26-teacher-batch-operations",
+    "route": "/batch-operations",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/26-teacher-batch-operations.png",
+    "elapsedMs": 2139,
+    "metrics": {
+      "path": "/batch-operations",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "批量操作"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息角色工具班级管理创建竞赛题目设置作业报告批量操作243001教师search 题目和讨论...⌘K新建提交3001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息班级管理创建竞赛题目设置作业报告批量操作CodeNexus / 模块入口批量操作当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "27-teacher-features",
+    "route": "/teacher/features",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/27-teacher-features.png",
+    "elapsedMs": 2136,
+    "metrics": {
+      "path": "/teacher/features",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "教师功能"
+      ],
+      "text": "CodeNexus仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息角色工具班级管理创建竞赛题目设置作业报告批量操作243001教师search 题目和讨论...⌘K新建提交3001仪表板题库提交记录竞赛排行榜学习路线讨论区博客消息班级管理创建竞赛题目设置作业报告批量操作CodeNexus / 模块入口教师功能当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "28-root-admin-dashboard",
+    "route": "/admin",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/28-root-admin-dashboard.png",
+    "elapsedMs": 2136,
+    "metrics": {
+      "path": "/admin",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "管理面板"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面管理面板概览题目管理竞赛管理用户总数-题目总数8提交总数-竞赛总数2"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "29-root-admin-users",
+    "route": "/admin/users",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/29-root-admin-users.png",
+    "elapsedMs": 2139,
+    "metrics": {
+      "path": "/admin/users",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "用户管理"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面CodeNexus / 模块入口用户管理当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "30-root-admin-problems",
+    "route": "/admin/problems",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/30-root-admin-problems.png",
+    "elapsedMs": 2144,
+    "metrics": {
+      "path": "/admin/problems",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "管理面板"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面管理面板概览题目管理竞赛管理用户总数-题目总数8提交总数-竞赛总数2"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "31-root-admin-judge-settings",
+    "route": "/admin/judge-settings",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/31-root-admin-judge-settings.png",
+    "elapsedMs": 2122,
+    "metrics": {
+      "path": "/admin/judge-settings",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "评测设置"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面CodeNexus / 模块入口评测设置当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "32-root-admin-judge-queue",
+    "route": "/admin/judge-queue",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/32-root-admin-judge-queue.png",
+    "elapsedMs": 2135,
+    "metrics": {
+      "path": "/admin/judge-queue",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "判题队列"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面CodeNexus / 模块入口判题队列当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "33-root-admin-grades",
+    "route": "/admin/grades",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/33-root-admin-grades.png",
+    "elapsedMs": 2131,
+    "metrics": {
+      "path": "/admin/grades",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "年级管理"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面CodeNexus / 模块入口年级管理当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "34-root-admin-features",
+    "route": "/admin/features",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/34-root-admin-features.png",
+    "elapsedMs": 2138,
+    "metrics": {
+      "path": "/admin/features",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "功能配置"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面CodeNexus / 模块入口功能配置当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "35-root-admin-problem-content",
+    "route": "/admin/problem-content",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/35-root-admin-problem-content.png",
+    "elapsedMs": 2151,
+    "metrics": {
+      "path": "/admin/problem-content",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "题目内容管理"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面CodeNexus / 模块入口题目内容管理当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "36-root-admin-similarity-scan",
+    "route": "/admin/similarity-scan",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/36-root-admin-similarity-scan.png",
+    "elapsedMs": 2140,
+    "metrics": {
+      "path": "/admin/similarity-scan",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "相似度扫描"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面CodeNexus / 模块入口相似度扫描当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "37-root-admin-plagiarism-reports",
+    "route": "/admin/plagiarism-reports",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/37-root-admin-plagiarism-reports.png",
+    "elapsedMs": 2140,
+    "metrics": {
+      "path": "/admin/plagiarism-reports",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "查重报告"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面CodeNexus / 模块入口查重报告当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "38-root-admin-plagiarism-detail",
+    "route": "/admin/plagiarism-reports/aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/38-root-admin-plagiarism-detail.png",
+    "elapsedMs": 2133,
+    "metrics": {
+      "path": "/admin/plagiarism-reports/aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "查重报告详情"
+      ],
+      "text": "CodeNexus仪表板用户管理年级管理题目管理判题设置判题队列题面配置相似度配置抄袭报告返回用户界面CodeNexus / 模块入口查重报告详情当前入口已接入模块化路由和权限外壳，保留主分支面板布局密度，后续可按功能包热插拔完整业务实现。模块化可导入入口状态Ready权限外壳Active视觉基准Main"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "39-unauthorized",
+    "route": "/admin",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/39-unauthorized.png",
+    "elapsedMs": 2129,
+    "metrics": {
+      "path": "/unauthorized",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "访问被拒绝"
+      ],
+      "text": "访问被拒绝当前账号没有访问该管理页面的权限，请返回工作台或切换为管理员账号。返回工作台重新登录"
+    },
+    "errors": [],
+    "consoleErrors": []
+  },
+  {
+    "id": "40-not-found",
+    "route": "/not-a-real-route",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/worktree-after-redesign/40-not-found.png",
+    "elapsedMs": 2127,
+    "metrics": {
+      "path": "/404",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "h1": [
+        "404"
+      ],
+      "text": "404页面未找到返回首页"
+    },
+    "errors": [],
+    "consoleErrors": []
+  }
+]

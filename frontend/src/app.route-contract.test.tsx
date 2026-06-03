@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -216,7 +216,9 @@ describe('legacy route inventory contract', () => {
 
     renderAppAt('/')
 
-    expect(await screen.findByTestId('location')).toHaveTextContent('/dashboard')
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent('/dashboard')
+    })
   })
 
   it.each([

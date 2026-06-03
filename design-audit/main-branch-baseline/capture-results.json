@@ -1,0 +1,876 @@
+[
+  {
+    "id": "01-login",
+    "route": "/login",
+    "auth": null,
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/01-login.png",
+    "elapsedMs": 946,
+    "metrics": {
+      "path": "/login",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "欢迎使用 CodeNexus"
+      ],
+      "text": "欢迎使用 CodeNexus 登录以继续你的编程之旅 登录 用户名 密码 登录 还没有账号？ 创建新账号"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "02-register",
+    "route": "/register",
+    "auth": null,
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/02-register.png",
+    "elapsedMs": 885,
+    "metrics": {
+      "path": "/register",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "加入 CodeNexus"
+      ],
+      "text": "加入 CodeNexus 创建账号，开始刷题之旅 注册 显示名称 用户名 * 邮箱 * 密码 * 至少6个字符 确认密码 * 我已阅读并同意 服务条款 和 隐私政策 注册 已有账号？ 返回登录"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "03-student-dashboard",
+    "route": "/dashboard",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/03-student-dashboard.png",
+    "elapsedMs": 1004,
+    "metrics": {
+      "path": "/dashboard",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "欢迎回来，继续把这周的通过数往上推。"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 仪表盘概览 欢迎回来，继续把这周的通过数往上推。 过去 7 天共提交 15 次，成功通过 9 次。当前连续活跃 1 天，保持今天的节奏就能继续拉高排名。 全球排名 #1 总积分 2 周四 周五 周六 周日 周一 周二 周三 当前连续 1 天 最高纪录 1 天，今天再完成 1 道题就能继续保持。 周四 7 周五 - 周六 2 周日 4 周一 - 周二 2 周三 - 开始刷题 查看竞赛 年度提交热力图 过去 365 天的代码提交与通过强度分布 年度总提交 22 次 本周已解决 9 题 周日 周二 周四 周六 6月 7月 8月 9月 10月 11月 12月 1月 2月 3月 4月 5月 点击网格内小方块可查看具体日期的提交概览 少 多 本周重点 本周推进面板 活跃天数、推荐题和最近提交放在同一层级，减少来回跳页。 实时数据 本周通过 9 来自最近 7 天的通过记录。 推荐队列 5 当前实时推荐题目数量。 最近活动 22 最新活动流条目数。 进度快照 刷题进度快照 简单 0 中等 0 困难 0 已解决 2 道题目 总提交 22 次提交 准确率 54.54545454545454% 通过率 连续天数 1 天 (最高 1 天) 本周学习活动 提交通过 "
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "04-student-problems",
+    "route": "/problems",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/04-student-problems.png",
+    "elapsedMs": 899,
+    "metrics": {
+      "path": "/problems",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "题目"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 题库 题目 浏览题库。按难度和主题筛选，然后开始解题。 提交记录 竞赛 总计 8 简单 8 中等 0 困难 0 全部难度 简单 中等 困难 最新 热门 从简单到困难 从困难到简单 按标签筛选 结果 8 / 8 道题目 筛选: recent # 标题 难度 标签 分值 1 Codex Import Regression 1780415712 简单 uat 0 2 Codex Import Problem 1780414143 简单 uat 0 3 Codex ZIP Import 20260602223134 简单 codex-zip-import smoke 0 4 Codex ZIP Import Tags 20260602175815 简单 导入冒烟 zip 0 5 Codex ZIP Import Smoke 20260602174606 简单 0 6 Codex Import Smoke 20260602064605 简单 数组与矩阵 字符串处理 +1 0 7 验收题目987673 简单 0 8 Two Sum 简单 0 第 1 页，共 1 页 上一页 下一页"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "05-student-problem-detail",
+    "route": "/problems/1",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/05-student-problem-detail.png",
+    "elapsedMs": 918,
+    "metrics": {
+      "path": "/problems/1",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "Two Sum"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 Two Sum 简单 1000ms 262144MB 0 分 开始解题 题目描述 Given an array of integers nums and an integer target, return indices of the two numbers that add up to target. 示例 示例 1: 输入: nums = [2,7,11,15], target = 9 输出: [0,1] 解释: 因为 nums[0] + nums[1] == 9，所以返回 [0, 1]。 示例 2: 输入: nums = [3,2,4], target = 6 输出: [1,2] 约束条件 2 ≤ nums.length ≤ 10⁴ -10⁹ ≤ nums[i] ≤ 10⁹ -10⁹ ≤ target ≤ 10⁹ 只会存在一个有效答案。 提示 考虑使用哈希表存储你已见过的值。对于每个数字，检查补数（target - number）是否存在于哈希表中。 返回题目列表"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "06-student-solve",
+    "route": "/problems/1/solve",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/06-student-solve.png",
+    "elapsedMs": 981,
+    "metrics": {
+      "path": "/problems/1/solve",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "Two Sum简单"
+      ],
+      "text": "Two Sum 简单 Python 3 提交代码 题目描述 提交记录 10 时间限制: 1000 ms 内存限制: 256 MB Given an array of integers nums and an integer target, return indices of the two numbers that add up to target. 样例展示 样例 1 输入 [2,7,11,15] 9 输出 [0,1] 样例 2 输入 [3,2,4] 6 输出 [1,2] 1 执行控制台"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "07-student-submissions",
+    "route": "/submissions",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/07-student-submissions.png",
+    "elapsedMs": 927,
+    "metrics": {
+      "path": "/submissions",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "提交历史"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 提交历史 22 条记录 查看最近的提交状态、运行表现和语言分布。已通过 11 条。 通过 11 平均耗时 24ms 平均内存 256MB 状态 全部 通过 答案错误 语言 全部语言 C++ Java Python JavaScript TypeScript Rust Go C# Ruby PHP Swift Kotlin 状态 题目 语言 运行时间 内存 提交时间 Accepted Problem #8 python3 18ms 256MB 2026/06/02 22:35 Accepted Problem #1 python3 18ms 256MB 2026/06/02 19:09 Accepted Problem #1 python3 88ms 256MB 2026/05/31 09:17 Wrong Answer Problem #1 python3 71ms 256MB 2026/05/31 09:14 Runtime Error Problem #1 python3 50ms 256MB 2026/05/31 09:13 Runtime Error Problem #1 python3 - 256MB 2026/05/31 09:"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "08-student-submission-detail",
+    "route": "/submissions/40",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/08-student-submission-detail.png",
+    "elapsedMs": 920,
+    "metrics": {
+      "path": "/submissions/40",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 题目列表 / Codex ZIP Import 20260602223134 / #40 ACCEPTED 再次挑战 判题结果 Accepted 运行时间 18ms 内存占用 256MB 测试用例 2 / 2 测试用例执行矩阵 MATRIX VIEW 75 测试用例 #75 18 ms PASSED 输入数据 1 2 期望输出 3 实际输出 3 76 测试用例 #76 7 ms PASSED 提交代码 python3 复制 1 2 3 a, b = map(int, input().split()) print(a + b) 提交元数据 提交时间 2026/6/2 22:35:21 更新时间 2026/6/2 22:35:21 提交作者 2001 题目 ID 8 提交 ID #40"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "09-student-contests",
+    "route": "/contests",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/09-student-contests.png",
+    "elapsedMs": 952,
+    "metrics": {
+      "path": "/contests",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "CodeNexus 竞赛"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 CodeNexus 竞赛 参加编程竞赛，与全站选手同台竞技 2 场竞赛 状态 全部 进行中 即将开始 已结束 难度 全部 简单 中等 困难 已结束 2 test 中等 test 已结束 时长 1h 题目 0 参与 0 日期 05/28 05/28 18:42 查看结果 Weekly Contest 1 简单 First weekly programming contest 已结束 时长 2h 题目 1 参与 2 日期 05/10 05/10 00:00 查看结果"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "10-student-contest-detail",
+    "route": "/contests/1",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/10-student-contest-detail.png",
+    "elapsedMs": 908,
+    "metrics": {
+      "path": "/contests/1",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "Weekly Contest 1"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 Weekly Contest 1 简单 已结束 竞赛 ID: 1 开始时间 05/10 00:00 竞赛时长 2小时 题目数量 1 题 参与人数 2 人 查看榜单 分享 竞赛介绍 First weekly programming contest 竞赛规则 acm 竞赛题目 1 Two Sum 简单 100 分 通过率 0% 0 / 0 通过 / 提交 竞赛统计 2 参与人数 1 题目总数 100 总分值"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "11-student-contest-scoreboard",
+    "route": "/contests/1/scoreboard",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/11-student-contest-scoreboard.png",
+    "elapsedMs": 911,
+    "metrics": {
+      "path": "/contests/1/scoreboard",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "CodeNexus 实时榜单"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 竞赛 实时榜单 CodeNexus 实时榜单 实时竞赛排名，每 15 秒自动刷新。数据源自排名接口，不使用前端 fallback。 LIVE 15S 刷新 自动刷新 已启用 刷新间隔 15 秒 数据来源 实时排名接口 实时竞赛榜单 排名数据源自真实接口，每 15 秒轮询更新。 返回竞赛 排名 用户 解题数 总分 罚时 A #1 2001 1 100 0 +1 #2 2002 1 100 5535 +1"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "12-student-ranking",
+    "route": "/ranking",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/12-student-ranking.png",
+    "elapsedMs": 909,
+    "metrics": {
+      "path": "/ranking",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "排行榜"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 GLOBAL USER RANKINGS 排行榜 展示真实榜单、组织排行和当前用户位置。保留真实 leaderboard 数据，采用微动画与高对比度磨砂设计。 VISIBLE USERS 20 YOUR RANK 1 SOLVED 2 全局榜 组织榜 全部时间 本周 本月 今年 #1 2001 积分 12 已解决 2 #2 2002 积分 1 已解决 1 #3 10001 积分 0 已解决 0 排名 用户 积分 已解决 准确率 提交数 #1 20 2001 · 你 12 2 10000% 22 #2 20 2002 1 1 10000% 1 #3 10 10001 0 0 0% 1 #4 10 1001 0 0 0% 18 #5 10 1002 0 0 0% 0 #6 24 240101070014 0 0 0% 1 #7 30 3001 0 0 0% 0 #8 80 80121872 0 0 0% 0 #9 80 80121935 0 0 0% 0 #10 87 874340 0 0 0% 0 #11 88 8888 0 0 0% 0 #12 89 89782110 0 0 0% 0 #13 89 89816547 0 0 0% 0 #1"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "13-student-roadmap",
+    "route": "/roadmap",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/13-student-roadmap.png",
+    "elapsedMs": 925,
+    "metrics": {
+      "path": "/roadmap",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "拓扑学习路线图"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 拓扑学习路线图 以知识拓扑图的形式探索你的算法技能树，点亮各个模块 总体进度 5% 已解决 2 题 基础语法与算法 掌握编程竞赛入门必备的数据结构基础 数组与矩阵 字符串处理 哈希表 中级数据结构 学习常用的数据存储与区间查询方法 栈与队列 链表高级操作 并查集基础 核心算法技巧 掌握经典算法的优化与常见变种 二分与三分 滑动窗口 贪心与排序 高级动态规划与图论 挑战高难度综合性算法竞赛题目 状态压缩DP 最短路算法 网络流计算"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "14-student-discussions",
+    "route": "/discussions",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/14-student-discussions.png",
+    "elapsedMs": 893,
+    "metrics": {
+      "path": "/discussions",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "讨论区"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 CodeNexus 讨论 讨论区 提问、分享解题思路、交流算法心得。支持实时 WebSocket 更新和标签过滤。 发起讨论 状态筛选 全部讨论 已解决 未解决 热门标签 #dynamic-programming #graphs #arrays #contest #help 全部讨论 最新 热门 未回答 置顶 题目 1 2026/5/13 Two Sum 解题思路 Two Sum 这题可以先用哈希表记录已经出现过的数字，再在一次遍历里找补数。 U unknown 3 1 0 上一页 第 1 页 下一页"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "15-student-discussion-new",
+    "route": "/discussions/new",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/15-student-discussion-new.png",
+    "elapsedMs": 899,
+    "metrics": {
+      "path": "/discussions/new",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "发起讨论"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 返回讨论区 发起讨论 清晰地描述你的问题或讨论主题，使用 Markdown 格式化代码和内容。 标题 * 0/500 字符 内容 * editEdit view_columnSplit visibilityPreview 1 lines 0 words 0 chars No content yet. Start typing to see the preview... Markdown tips: **bold**, *italic*, `code`, ```language``` for code blocks 标签（可选） 添加 发起讨论的技巧 具体、清晰地描述你的问题 包含相关的代码片段和示例 说明你已经尝试过的方法 使用合适的标签帮助他人找到你的讨论 代码块使用三引号加语言名格式化 取消 发布讨论"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "16-student-blog",
+    "route": "/blog",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/16-student-blog.png",
+    "elapsedMs": 907,
+    "metrics": {
+      "path": "/blog",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "博客"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 CodeNexus 博客 博客 聚合教程、题解和公告内容。页面已接入真实文章数据、精选流和分类标签，不再是静态占位信息流。 撰写文章 内容流 全部文章 热门 精选 分类 engineering 热门标签 #delivery #release #blog 全部文章 当前流展示真实博客内容和已落地过滤条件。 精选文章 精选 engineering 2026/5/9 从静态模板到动态在线判题平台 用于本地交付验收的博客示范内容。 U unknown 4 阅读 2 点赞 2 评论 精选 engineering 2026/5/9 从静态模板到动态在线判题平台 用于本地交付验收的博客示范内容。 #delivery #release #blog U unknown 4 2 2 第 1 页 上一页 下一页"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "17-student-blog-new",
+    "route": "/blog/new",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/17-student-blog-new.png",
+    "elapsedMs": 899,
+    "metrics": {
+      "path": "/blog/new",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "撰写文章"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 返回博客 撰写文章 使用动态编辑器、预览面板和真实博客接口撰写文章。支持题解、教程和公告类正文编辑。 标题 0/500 标签 0 状态 草稿 文章内容 标题 正文 editEdit view_columnSplit visibilityPreview 1 lines 0 words 0 chars No content yet. Start typing to see the preview... Markdown tips: **bold**, *italic*, `code`, ```language``` for code blocks 元信息 分类 标签 添加 立即发布 文章保存为草稿 写作提示 开头先给结论，再展开解法或观点。 代码块尽量加语言名，方便高亮和阅读。 当前交付不包含图片库和协同编辑。 取消 保存草稿 发布"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "18-student-messages",
+    "route": "/messages",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/18-student-messages.png",
+    "elapsedMs": 698,
+    "metrics": {
+      "path": "/messages",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "私信中心"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 CodeNexus 私信 私信中心 统一查看会话列表、未读消息和最近交流状态。 会话 4 未读 0 当前会话 未选择 会话目录 会话列表 刷新 会话列表 10001 computer use dm smoke 1780190530 2002 computer use 私信demo账号复验 1780121990309 3001 1001 收到，开始验收。 新建私信 按用户编号发起会话 创建 交付边界 当前支持真实会话列表、历史消息和发送能力。高级搜索、置顶和群组能力未暴露。 当前会话 选择一个会话 0 条消息 请选择左侧会话"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "19-student-search",
+    "route": "/search?q=two",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/19-student-search.png",
+    "elapsedMs": 916,
+    "metrics": {
+      "path": "/search?q=two",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 search ⌘K 全部 题目 讨论 相关性 最新 热门 4 个结果(3 个题目, 1 个讨论) 题目 easy Two Sum Given an array of integers nums and an integer target, return indices of the two numbers that add up to target. 9999 2026年5月9日 #1 置顶 讨论: Two Sum Two Sum 这题可以先用哈希表记录已经出现过的数字，再在一次遍历里找补数。 2001 2026年5月13日 题目 #1 0 0 题目 easy Codex ZIP Import 20260602223134 Read two integers and output their sum. 1001 2026年6月2日 #8 题目 easy Codex Import Smoke 20260602064605 # Codex Import Smoke 20260602064605 Read two integers and output their sum. 3001 2026年6月2日 #5"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "20-student-profile",
+    "route": "/profile",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/20-student-profile.png",
+    "elapsedMs": 931,
+    "metrics": {
+      "path": "/profile",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "学生甲"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 2 个人中心 学生甲 @2001 student 组织 #1 2026/5/13 编辑资料 已解决题目 2 提交次数 22 通过率 5455% 全站排名 1 最近活动 近期动态 提交 Problem #8 2026/6/2 22:35:21 提交 Problem #1 2026/6/2 19:09:08 提交 Problem #1 2026/5/31 09:17:32 提交 Problem #1 2026/5/31 09:14:30 提交 Problem #1 2026/5/31 09:13:47 提交 Problem #1 2026/5/31 09:05:42 提交 Problem #1 2026/5/30 20:42:29 提交 Problem #1 2026/5/30 20:41:51 提交 Problem #1 2026/5/29 00:25:12 提交 Problem #1 2026/5/29 00:21:29 身份信息 用户名 2001 邮箱 student1@example.com 校区 校区 #1"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "21-student-settings",
+    "route": "/settings",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/21-student-settings.png",
+    "elapsedMs": 894,
+    "metrics": {
+      "path": "/settings",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "设置中心"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 20 2001 学生 search ⌘K 新建提交 设置中心 设置中心 将账户、偏好、通知和安全设置统一收在账号中心里。当前交付只保留已经落地的数据字段与受控本地偏好。 主题 浅色 语言 简体中文 通知 4 账户 偏好 通知 安全 账户信息 仅保存已落地的个人资料字段。 用户名 显示名称 邮箱地址 保存更改"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "22-teacher-classes",
+    "route": "/teacher/classes",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/22-teacher-classes.png",
+    "elapsedMs": 1028,
+    "metrics": {
+      "path": "/teacher/classes",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "班级管理"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 班级管理 创建竞赛 题目设置 作业报告 批量操作 30 3001 教师 search ⌘K 新建提交 教师工作台 / 班级管理 班级管理 建班、邀请码入班、按用户名加人、批量导入、创建作业、发布作业，以及按作业查看提交记录。 写操作已接通 班级数 9 当前选中 Codex自助入班-6892 2026 Spring 邀请码 CLS795F45 作业 / 学生 0 1 名学生 创建班级 创建班级 班级成员管理 当前班级：Codex自助入班-6892 邀请码 CLS795F45 学生可通过真实邀请码入班接口加入该班级。 添加学生 批量导入学生 班级列表 显式选择班级后，成员与作业写操作都会绑定到该班级。 班级 学期 邀请码 学生数 选择 Codex自助入班-6892 2026 Spring CLS795F45 1 已选中 Codex自助入班-6892 Codex口径班-6892 2026 Spring CLS892CE6 1 选择 Codex口径班-6892 Codex验收班-23655 2026 Spring CLS60130C 2 选择 Codex验收班-23655 CUAClass315781 2026 Spring CLS60D323 3 选择 CUAClass315781 CUAClas"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "23-teacher-assignment-report",
+    "route": "/teacher/assignment-report",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/23-teacher-assignment-report.png",
+    "elapsedMs": 1005,
+    "metrics": {
+      "path": "/teacher/assignment-report",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "作业完成报告"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 班级管理 创建竞赛 题目设置 作业报告 批量操作 30 3001 教师 search ⌘K 新建提交 教师工作台 班级 作业报告 作业完成报告 查看所有班级的作业完成率、提交数和平均分。 刷新 导出快照 班级数 9 教学班级总数。 学生数 15 所有班级的学生总数。 作业数 4 已发布的作业总数。 平均分 29 所有提交的平均分。 作业完成情况 按作业统计提交数和平均分。 所有班级 Codex自助入班-6892 Codex口径班-6892 Codex验收班-23655 CUAClass315781 CUAClass235604 CUAClass220964 TeacherClass998972 验收班级293020 示范班级 实时数据 作业 班级 学生数 已提交 平均分 截止时间 题目 #8 100 分 CUAClass315781 3 名学生 0/3 (0%)· 0 次 0 2026年6月30日 题目 #1 100 分 Codex验收班-23655 2 名学生 0/2 (0%)· 0 次 0 2026年6月9日 题目 #1 100 分 Codex口径班-6892 1 名学生 0/1 (0%)· 0 次 0 2026年6月9日 题目 #1 100 分 验收班级293020 2 名学生 1/2"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "24-teacher-contest-wizard",
+    "route": "/teacher/contest-wizard",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/24-teacher-contest-wizard.png",
+    "elapsedMs": 953,
+    "metrics": {
+      "path": "/teacher/contest-wizard",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "创建新竞赛"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 班级管理 创建竞赛 题目设置 作业报告 批量操作 30 3001 教师 search ⌘K 新建提交 教师工作台 竞赛 创建新竞赛 创建新竞赛 四段式向导创建流程。当前页只提交真实后端已支持的基础信息，其余配置在创建成功后继续完成。 时长 --h 规则 ACM / ICPC 1 基本信息 竞赛名称、时间与组织信息 2 题目配置 创建后在竞赛详情中继续配置题目 3 参赛者 后续通过班级和报名页组织参赛范围 4 高级设置 榜单冻结与可见性 基本信息 定义竞赛的核心身份、时间窗口和归属范围。 竞赛标题 组织 ID 校区 ID 描述 时间安排 后端要求 UTC 时间，页面会自动从本地输入转换后提交。 开始时间 结束时间 规则集 直接映射到后端 rules 字段，当前只保留已支持的三种模式。 ACM / ICPC 按解题数和罚时排名，适合公开赛和训练赛。 IOI 支持部分分，适合作业和多测试点评分场景。 Classic OI 更适合教学和阶段性考核，强调标准评测流程。 可见性与冻结 可见性作为前端策略展示，真实创建接口当前只提交榜单冻结分钟数。 公开竞赛 公开赛可直接在竞赛列表中被看见，适合训练营和校内赛。 公开 私有 冻结榜单 提交给后端的真实控制项。填写 0 表示不封榜。 当前交付边界 只提交后端"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "25-teacher-problem-content",
+    "route": "/teacher/problem-content",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/25-teacher-problem-content.png",
+    "elapsedMs": 948,
+    "metrics": {
+      "path": "/teacher/problem-content",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "题目设置"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 班级管理 创建竞赛 题目设置 作业报告 批量操作 30 3001 教师 search ⌘K 新建提交 题目 设置 题目设置 题目设置 编辑题面内容、约束、可见性与提交详情的正确答案展示策略。 保存修改 加载题目 基本信息 题目标题 题目描述 元数据 难度 简单 中等 困难 标签 资源限制 时间限制 (ms) 内存限制 (MB) 可见性 私有 公开 公开题目 结果展示 提交详情展示正确答案 关闭后，学生在该题提交详情中仍可查看输入和实际输出，但不会看到期望输出。教师及以上角色仍可查看。"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "26-teacher-batch-operations",
+    "route": "/batch-operations",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/26-teacher-batch-operations.png",
+    "elapsedMs": 937,
+    "metrics": {
+      "path": "/batch-operations",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "批量操作"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 班级管理 创建竞赛 题目设置 作业报告 批量操作 30 3001 教师 search ⌘K 新建提交 Admin 批量操作 批量操作 批量导入导出题目和用户。上传文件后先预览再确认提交。 Problem Import Problem Export Drag and drop a ZIP file here, or click to browse Select File Expected Format (expand)"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "27-teacher-features",
+    "route": "/teacher/features",
+    "auth": "3001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/27-teacher-features.png",
+    "elapsedMs": 988,
+    "metrics": {
+      "path": "/teacher/features",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "班级功能开关"
+      ],
+      "text": "CodeNexus 仪表板 题库 提交记录 竞赛 2 排行榜 学习路线 讨论区 博客 消息 班级管理 创建竞赛 题目设置 作业报告 批量操作 30 3001 教师 search ⌘K 新建提交 班级功能开关 查看和管理各班级的功能开关状态 选择班级: Codex自助入班-6892 Codex口径班-6892 Codex验收班-23655 CUAClass315781 CUAClass235604 CUAClass220964 TeacherClass998972 验收班级293020 示范班级 AI Analysis Global master switch for AI analysis bounded context 已启用 Ai Analysis Enabled 继承自: 全局 Blog Community blog and articles 已启用 Blog 继承自: 默认值 Class Cognition Snapshot Class-level cognition profile and analytics 已禁用 Class Cognition Snapshot 继承自: 默认值 Direct Messages Direct messaging between users 已启用 Direct Messages 继承自: 默认值 Discussions Problem"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "28-root-admin-dashboard",
+    "route": "/admin",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/28-root-admin-dashboard.png",
+    "elapsedMs": 930,
+    "metrics": {
+      "path": "/admin",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "CodeNexus 系统概览"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 Admin 系统概览 CodeNexus 系统概览 管理端当前只暴露已接入真实后端的能力。页面结构按 reference 收拢，但所有入口仍受真实接口边界约束。 活跃模块 8 已接入真实后端的管理模块 管理入口 8 个模块 主导航与概览卡片保持同一组真实后端入口 题目管理 CRUD 题目管理当前已接通创建、编辑、删除与测试数据维护。 抄袭检测 已启用 相似度扫描和报告页都已经接入真实接口。 管理入口 8 主导航与概览卡片保持同一组真实后端入口。 运行策略 Real API 不再为管理端页面提供用户可见的 mock fallback。 当前后台不是全功能运营平台，而是这次交付范围内的受控后台。不存在真实后端的模块不会继续以假入口形式暴露。 用户管理 管理平台用户账号、角色、状态和批量建号流程。 进入模块 年级管理 维护年级、班级归属和教师/学生的教学组织边界。 进入模块 题目管理 查看题库状态、通过率和当前交付范围内的发布视图。 进入模块 判题设置 维护测试数据、时间空间限制与评测参数。 进入模块 判题队列 查看判题 Worker 心跳、队列状态和待处理任务。 进入模块 题面配置 集中编辑题面内容、约束、可见性与说明。 进入模块 相似度配置 调整扫描阈值并发起新"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "29-root-admin-users",
+    "route": "/admin/users",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/29-root-admin-users.png",
+    "elapsedMs": 960,
+    "metrics": {
+      "path": "/admin/users",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "用户管理"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 Admin 用户管理 用户管理 管理平台用户账号、角色分配、状态开关和批量建号流程。内部主键使用 UUID，外部业务编号使用 12 位 user_code。 共 21 名用户 UUID + user_code 活跃用户 20 当前筛选结果中的活跃账号。 管理员 2 具备后台权限的账号数。 教师 1 教师角色账号数量。 业务号 5 已分配 12 位业务号的账号数。 业务号与内部主键已分离 批量创建仅录入 user_code、展示名、邮箱和角色。系统会自动生成内部 UUID 主键，避免把外部业务号直接作为数据库主键。 12-DIGIT USER_CODE 所有角色 管理员 教师 学生 所有状态 活跃 停用 封禁 最新 名称 提交数 评分 批量创建账户 格式：user_code,display_name,email,role UUID AUTO 默认密码 指定年级 不指定年级 Class of 2026 (2026) 学生和教师角色需要指定年级；管理员角色无需指定。 待创建 0 跳过 0 批量创建 身份 角色 年级 状态 活动 创建时间 操作 U UAT Student @uat1780415712 无 user_code / uat1780415712@examp"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "30-root-admin-problems",
+    "route": "/admin/problems",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/30-root-admin-problems.png",
+    "elapsedMs": 931,
+    "metrics": {
+      "path": "/admin/problems",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "题目管理"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 Admin 题目管理 题目管理 管理题库的创建、编辑、删除与基础可见性维护。当前已接入真实后端写操作。 刷新 CRUD Live 已接入真实后端写操作 创建、编辑、删除与可见性切换已接通真实接口。题面和测试数据维护在题面配置与判题设置页面完成。 CREATE / EDIT / DELETE 总题目 10 当前分页条件下的总题目量。 已发布 8 当前列表中的公开题目数量。 草稿/隐藏 2 非公开条目数。 低通过率 10 通过率低于 30% 或暂无提交的题目。 新建题目 维护题目核心信息。 简单 中等 困难 private public campus class 创建题目 所有难度 简单 中等 困难 所有状态 已发布 草稿 已归档 平均通过率 0% 最新 标题 提交数 通过率 ID / 标题 难度 状态 标签 统计 操作 #10 Codex Import Regression 1780415712 作者: 44444444-4444-4444-4444-444444444444 简单 已发布 uat 0 次提交 0 通过 / 0% 编辑 删除 #9 Codex Import Problem 1780414143 作者: 44444444-4444-4444-444"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "31-root-admin-judge-settings",
+    "route": "/admin/judge-settings",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/31-root-admin-judge-settings.png",
+    "elapsedMs": 920,
+    "metrics": {
+      "path": "/admin/judge-settings",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "测试数据与判题设置"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 Admin Problems 判题设置 测试数据与判题设置 管理测试用例、时间空间限制与评测参数。当前交付范围限定为测试用例维护。 刷新 保存用例 测试用例 0 当前题目的测试用例总数。 可见 0 普通测试点。 隐藏 0 隐藏测试点用于真实判题覆盖。 总分值 0 当前测试点分值总和。 题目选择 先输入题目 ID，再管理对应测试数据。 加载 语言权限 Python 为默认语言，C/C++ 可在此开启或关闭。 Python 3 默认语言 C 可选语言 C++ 可选语言 添加测试用例 分值 隐藏用例 用例列表 当前只交付真实 test case 管理。 # 输入 输出 分值 隐藏 操作 先输入题目 ID 再查看测试数据"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "32-root-admin-judge-queue",
+    "route": "/admin/judge-queue",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/32-root-admin-judge-queue.png",
+    "elapsedMs": 921,
+    "metrics": {
+      "path": "/admin/judge-queue",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "判题队列监控"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 判题队列监控 实时监控判题队列状态、Worker 节点和死信队列。 队列状态 Worker 节点 死信队列 普通队列深度 0 竞赛队列深度 0 平均等待时间 2ms 活跃 JUDGE 1"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "33-root-admin-grades",
+    "route": "/admin/grades",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/33-root-admin-grades.png",
+    "elapsedMs": 928,
+    "metrics": {
+      "path": "/admin/grades",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "年级管理"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 Admin 年级管理 年级管理 管理校区下的年级：创建、停用、学年升级和毕业操作。每个校区可有不同的年级体系。 共 1 个年级 1 个活跃 学年操作 对当前所有活跃年级执行学年升级或毕业。 全部升级 全部毕业 创建年级 新建 活跃年级 名称 层级 学年 状态 操作 C Class of 2026 1 2026 活跃 停用"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "34-root-admin-features",
+    "route": "/admin/features",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/34-root-admin-features.png",
+    "elapsedMs": 920,
+    "metrics": {
+      "path": "/admin/features",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "功能开关管理"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 功能开关管理 管理系统功能的启用/禁用和作用域覆盖 功能名称 默认值 全局 校区 年级 AI Analysis Global master switch for AI analysis bounded context 禁用 继承自: 默认值 继承自: 默认值 Blog Community blog and articles 启用 继承自: 默认值 继承自: 默认值 继承自: 默认值 Class Cognition Snapshot Class-level cognition profile and analytics 禁用 继承自: 默认值 继承自: 默认值 继承自: 默认值 Direct Messages Direct messaging between users 启用 继承自: 默认值 继承自: 默认值 继承自: 默认值 Discussions Problem discussion forum 启用 继承自: 默认值 继承自: 默认值 继承自: 默认值 Leaderboard Ranking and scoreboard 启用 继承自: 默认值 继承自: 默认值 继承自: 默认值 AI Code Assistant LLM-powered code as"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "35-root-admin-problem-content",
+    "route": "/admin/problem-content",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/35-root-admin-problem-content.png",
+    "elapsedMs": 896,
+    "metrics": {
+      "path": "/admin/problem-content",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "题目设置"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 题目 设置 题目设置 题目设置 编辑题面内容、约束、可见性与提交详情的正确答案展示策略。 保存修改 加载题目 基本信息 题目标题 题目描述 元数据 难度 简单 中等 困难 标签 资源限制 时间限制 (ms) 内存限制 (MB) 可见性 私有 公开 公开题目 结果展示 提交详情展示正确答案 关闭后，学生在该题提交详情中仍可查看输入和实际输出，但不会看到期望输出。教师及以上角色仍可查看。"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "36-root-admin-similarity-scan",
+    "route": "/admin/similarity-scan",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/36-root-admin-similarity-scan.png",
+    "elapsedMs": 772,
+    "metrics": {
+      "path": "/admin/similarity-scan",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "相似度扫描配置"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 Admin 工具 代码相似度 相似度扫描配置 配置阈值、语言范围、忽略策略，并触发新的扫描任务。 保存配置 开始扫描 当前系统使用真实相似度接口，未再保留 mock fallback。只有竞赛/作业级别的扫描入口。 检测设置 启用 启用扫描 语言 全部 C++ C Java Python 相似度阈值 最小 Token 长度 窗口大小 每次最大报告数 忽略注释 忽略空白 发起扫描 竞赛 ID 作业 ID 当前阈值 85% 超过该相似度的提交对会进入报告列表等待人工复核。"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "37-root-admin-plagiarism-reports",
+    "route": "/admin/plagiarism-reports",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/37-root-admin-plagiarism-reports.png",
+    "elapsedMs": 654,
+    "metrics": {
+      "path": "/admin/plagiarism-reports",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "抄袭检测报告"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 抄袭检测报告 查看扫描任务结果、风险等级和可疑提交对 报告 ID 对象 提交总数 可疑对数 风险 状态 创建时间 操作 aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb assignment:assignment-demo-1 2 1 中风险 已完成 2026/5/13 20:15:02 查看详情 上一页 1 / 1 下一页"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "38-root-admin-plagiarism-detail",
+    "route": "/admin/plagiarism-reports/aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb",
+    "auth": "1001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/38-root-admin-plagiarism-detail.png",
+    "elapsedMs": 765,
+    "metrics": {
+      "path": "/admin/plagiarism-reports/aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "抄袭检测报告"
+      ],
+      "text": "CodeNexus 仪表板 用户管理 年级管理 题目管理 判题设置 判题队列 题面配置 相似度配置 抄袭报告 返回用户界面 返回报告列表 抄袭检测报告 aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb 中风险 / 多对比对页 状态 completed 可疑对 1 提交数 2 总体风险 中风险 竞赛/作业 assignment-demo-1 完成时间 2026/5/13 20:15:02 可疑提交对 按相似度和匹配行数展示当前报告中的主要证据。 1 学生甲 vs 学生乙 1 / 2 左侧 1 右侧 2 相似度 91.0% 匹配行数 24 2 学生甲 vs 学生乙 1 / 2 左侧 1 右侧 2 相似度 91.0% 匹配行数 24 3 学生甲 vs 学生乙 1 / 2 左侧 1 右侧 2 相似度 91.0% 匹配行数 24 4 学生甲 vs 学生乙 1 / 2 左侧 1 右侧 2 相似度 91.0% 匹配行数 24 5 学生甲 vs 学生乙 1 / 2 左侧 1 右侧 2 相似度 91.0% 匹配行数 24 报告时间线 创建时间 2026/5/13 20:15:02 完成时间 2026/5/13 20:15:02 交付边界 当前详情页已经根据真实报告数据切出多种展示变体，但还没有实现源码逐段 diff 和人工判定工作流。"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "39-unauthorized",
+    "route": "/admin",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/39-unauthorized.png",
+    "elapsedMs": 895,
+    "metrics": {
+      "path": "/unauthorized",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [],
+      "text": "访问被拒绝 您没有权限访问此页面。如果您认为这是一个错误，请联系您的管理员。 返回上一页 仪表盘"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  },
+  {
+    "id": "40-not-found",
+    "route": "/not-a-real-route",
+    "auth": "2001",
+    "file": "/Users/xiexingyu/.config/superpowers/worktrees/Online_Judge/codex-full-router-restoration/design-audit/main-branch-baseline/40-not-found.png",
+    "elapsedMs": 882,
+    "metrics": {
+      "path": "/not-a-real-route",
+      "horizontalOverflow": false,
+      "clientWidth": 1280,
+      "scrollWidth": 1280,
+      "title": "AlgoMaster Online Judge",
+      "h1": [
+        "404"
+      ],
+      "text": "404 页面未找到 抱歉，您访问的页面不存在或已被移除。请检查URL是否正确。 返回首页 浏览题目 您可能在寻找 仪表板 题目列表 竞赛 讨论区 博客"
+    },
+    "errors": [
+      "Loading the stylesheet 'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Outfit:wght@100..900&display=swap' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked.",
+      "Loading the stylesheet 'https://fonts.googleapis.com/icon?family=Material+Icons' violates the following Content Security Policy directive: \"style-src 'self' 'unsafe-inline'\". Note that 'style-src-elem' was not explicitly set, so 'style-src' is used as a fallback. The action has been blocked."
+    ]
+  }
+]

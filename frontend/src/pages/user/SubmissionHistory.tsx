@@ -19,6 +19,11 @@ export default function SubmissionHistory() {
   const submissions = data?.submissions ?? []
   const total = data?.total ?? 0
   const totalPages = Math.ceil(total / limit)
+  const formatSubmissionId = (id: unknown) => String(id ?? '').slice(0, 8) || '-'
+  const formatRuntime = (sub: any) => {
+    const runtime = sub.runtime_ms ?? sub.time_ms
+    return typeof runtime === 'number' ? `${runtime}ms` : '-'
+  }
 
   return (
     <div className="space-y-6">
@@ -70,11 +75,11 @@ export default function SubmissionHistory() {
               <tbody>
                 {submissions.map((sub: any) => (
                   <tr key={sub.id}>
-                    <td className="text-on-surface-variant text-sm">{sub.id.slice(0, 8)}</td>
+                    <td className="text-on-surface-variant text-sm">{formatSubmissionId(sub.id)}</td>
                     <td className="text-on-surface">{sub.problem_title || sub.problem_id}</td>
                     <td><StatusBadge status={sub.status} /></td>
                     <td className="text-on-surface-variant text-sm">{sub.language}</td>
-                    <td className="text-on-surface-variant text-sm">{sub.time_ms ? `${sub.time_ms}ms` : '-'}</td>
+                    <td className="text-on-surface-variant text-sm">{formatRuntime(sub)}</td>
                     <td className="text-on-surface-variant text-sm">{sub.memory_kb ? `${sub.memory_kb}KB` : '-'}</td>
                     <td className="text-on-surface-variant text-sm">{new Date(sub.created_at).toLocaleString('zh-CN')}</td>
                   </tr>

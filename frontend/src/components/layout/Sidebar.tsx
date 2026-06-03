@@ -2,6 +2,7 @@ import {
   BarChart3,
   ClipboardList,
   Code2,
+  HelpCircle,
   History,
   LayoutDashboard,
   MessageSquare,
@@ -40,13 +41,13 @@ export function Sidebar() {
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`)
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 bg-surface-container border-r border-outline-variant lg:block">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-60 bg-surface-container border-r border-outline-variant lg:block">
       <div className="flex h-16 items-center border-b border-outline-variant px-4">
         <Link to="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary-container flex items-center justify-center">
-            <span className="text-white font-bold text-sm">OJ</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-on-primary shadow-sm">
+            <Code2 className="h-4 w-4" aria-hidden="true" />
           </div>
-          <span className="font-display font-bold text-lg text-on-surface">Online Judge</span>
+          <span className="font-display text-base font-bold text-on-surface">CodeNexus</span>
         </Link>
       </div>
 
@@ -60,12 +61,31 @@ export function Sidebar() {
 
       {privilegedItems.length > 0 && (
         <div className="mt-6 px-3">
-          <p className="px-3 text-xs font-medium text-on-surface-variant uppercase tracking-wider">Role Tools</p>
+          <p className="px-3 text-[11px] font-semibold text-on-surface-variant">角色工具</p>
           <ul className="mt-2 space-y-1">
             {privilegedItems.map((item) => <SidebarItem key={item.path} item={item} active={isActive(item.path)} />)}
           </ul>
         </div>
       )}
+      <div className="absolute bottom-0 left-0 right-0 border-t border-outline-variant bg-surface-container px-3 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-container text-xs font-bold text-on-primary-container">
+            {user?.user_code?.slice(0, 2) ?? user?.username?.slice(0, 2) ?? 'OJ'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-on-surface">{user?.username}</p>
+            <p className="text-xs text-on-surface-variant">
+              {user?.role === 'teacher' ? '教师' : user?.role === 'root' || user?.role === 'admin' ? '管理员' : '学生'}
+            </p>
+          </div>
+          <Link to="/settings" className="rounded-md p-1.5 text-on-surface-variant hover:bg-surface-container-high" aria-label="设置">
+            <Settings className="h-4 w-4" aria-hidden="true" />
+          </Link>
+          <button className="rounded-md p-1.5 text-on-surface-variant hover:bg-surface-container-high" aria-label="帮助">
+            <HelpCircle className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
     </aside>
   )
 }
@@ -103,7 +123,7 @@ export function MobileNavigation() {
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`)
 
   return (
-    <nav className="sticky top-16 z-20 border-b border-outline-variant bg-surface-container/95 px-3 py-2 backdrop-blur-sm lg:hidden">
+    <nav className="sticky top-14 z-20 border-b border-outline-variant bg-surface-container/95 px-3 py-2 backdrop-blur-sm lg:hidden">
       <div className="flex gap-2 overflow-x-auto">
         {navItems.map((item) => (
           <MobileNavigationItem key={item.id} item={item} active={isActive(item.path)} />

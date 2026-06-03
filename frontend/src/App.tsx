@@ -19,6 +19,7 @@ function renderRoute(route: RouteEntry) {
 export default function App() {
   const publicRoutes = getPublicRoutes()
   const workspaceRoutes = getWorkspaceRoutes()
+  const workspaceContentRoutes = workspaceRoutes.filter((route) => !route.index)
   const teacherRoutes = getTeacherRoutes()
   const adminRoutes = getAdminRoutes()
 
@@ -31,11 +32,19 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute>
+              <Navigate to="/dashboard" replace />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          element={
+            <ProtectedRoute>
               <AppShell />
             </ProtectedRoute>
           }
         >
-          {workspaceRoutes.map(renderRoute)}
+          {workspaceContentRoutes.map(renderRoute)}
         </Route>
 
         <Route

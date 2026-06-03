@@ -9,8 +9,11 @@ export const adminModule: AppRouteModule = {
   adminRoutes: [
     { id: 'admin-index', index: true, element: <AdminPanel /> },
     { id: 'admin-users', path: 'users', element: <PlaceholderPage title="用户管理" /> },
+    { id: 'admin-grades', path: 'grades', element: <PlaceholderPage title="年级管理" /> },
     { id: 'admin-problems', path: 'problems', element: <AdminPanel /> },
     { id: 'admin-judge-settings', path: 'judge-settings', element: <PlaceholderPage title="评测设置" /> },
+    { id: 'admin-judge-queue', path: 'judge-queue', element: <PlaceholderPage title="判题队列" /> },
+    { id: 'admin-features', path: 'features', element: <PlaceholderPage title="功能配置" /> },
     { id: 'admin-problem-content', path: 'problem-content', element: <PlaceholderPage title="题目内容管理" /> },
     {
       id: 'admin-similarity-scan',
@@ -32,7 +35,7 @@ export const adminModule: AppRouteModule = {
     },
   ],
   navigation: [
-    { id: 'nav-admin', label: 'Admin Panel', path: '/admin', icon: 'settings', roles: ['admin', 'root'] },
-    { id: 'nav-admin-users', label: 'Users', path: '/admin/users', icon: 'manage_accounts', roles: ['admin', 'root'] },
+    { id: 'nav-admin', label: '仪表板', path: '/admin', icon: 'settings', roles: ['admin', 'root'] },
+    { id: 'nav-admin-users', label: '用户管理', path: '/admin/users', icon: 'manage_accounts', roles: ['admin', 'root'] },
   ],
 }
