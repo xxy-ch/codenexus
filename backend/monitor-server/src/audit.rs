@@ -59,7 +59,7 @@ impl AuditResult {
 /// Writes append-only audit entries to the `audit_log` table.
 ///
 /// Usage:
-/// ```ignore
+/// ```text
 /// let writer = AuditWriter::new(&pg_pool);
 /// writer.record("api", ControlAction::Pause, "admin", AuditResult::Success, None).await?;
 /// ```

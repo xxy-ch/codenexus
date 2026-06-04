@@ -10,7 +10,7 @@ use std::str::FromStr;
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```text
 /// let app = Router::new()
 ///     .route("/admin", get(handler))
 ///     .route_layer(axum::middleware::from_fn(
@@ -57,7 +57,7 @@ pub fn require_permission(
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```text
 /// let app = Router::new()
 ///     .route("/manage", get(handler))
 ///     .route_layer(axum::middleware::from_fn(
@@ -104,7 +104,7 @@ pub fn require_any_permission(
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```text
 /// let app = Router::new()
 ///     .route("/admin", get(handler))
 ///     .route_layer(axum::middleware::from_fn(
@@ -152,7 +152,7 @@ pub fn require_all_permissions(
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```text
 /// let app = Router::new()
 ///     .route("/admin", get(handler))
 ///     .route_layer(axum::middleware::from_fn(

@@ -21,38 +21,59 @@ use std::sync::Arc;
 use tokio::sync::broadcast;
 use tower::ServiceExt;
 
+static LIVE_TEST_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 // ===========================================================================
 // Helpers
 // ===========================================================================
 
 /// Build an AppState with real Redis/PG pools (requires both services running).
-/// Returns None if either service is unavailable.
-async fn build_live_state() -> Option<Arc<AppState>> {
+async fn build_live_state() -> anyhow::Result<Arc<AppState>> {
     let redis_url = std::env::var("REDIS_URL")
         .ok()
         .filter(|v| !v.trim().is_empty())
         .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
 
-    let redis_pool = deadpool_redis::Config {
-        url: Some(redis_url),
-        ..Default::default()
-    }
-    .create_pool(Some(deadpool_redis::Runtime::Tokio1))
-    .ok()?;
+    let redis_pool = deadpool_redis::Config::from_url(redis_url.clone())
+        .create_pool(Some(deadpool_redis::Runtime::Tokio1))
+        .map_err(|error| anyhow::anyhow!("failed to create Redis pool for {redis_url}: {error}"))?;
 
     // Verify Redis is reachable
-    let mut conn = redis_pool.get().await.ok()?;
+    let mut conn = redis_pool
+        .get()
+        .await
+        .map_err(|error| anyhow::anyhow!("failed to get Redis connection: {error}"))?;
     deadpool_redis::redis::cmd("PING")
         .query_async::<String>(&mut conn)
         .await
-        .ok()?;
+        .map_err(|error| anyhow::anyhow!("failed to PING Redis: {error}"))?;
+    drop(conn);
 
-    let database_url = std::env::var("DATABASE_URL").ok()?;
-    let pg_pool = sqlx::PgPool::connect(&database_url).await.ok()?;
+    let database_url = std::env::var("DATABASE_URL")
+        .map_err(|_| anyhow::anyhow!("DATABASE_URL must be set for monitor integration tests"))?;
+    let pg_pool = sqlx::PgPool::connect(&database_url)
+        .await
+        .map_err(|error| anyhow::anyhow!("failed to connect PostgreSQL: {error}"))?;
+    for statement in include_str!("../migrations/001_audit_log.sql").split(';') {
+        let statement = statement.trim();
+        if !statement.is_empty() {
+            sqlx::query(statement)
+                .execute(&pg_pool)
+                .await
+                .map_err(|error| anyhow::anyhow!("failed to apply monitor migration: {error}"))?;
+        }
+    }
 
     let (snapshot_tx, _) = broadcast::channel(16);
 
-    Some(AppState::new(pg_pool, redis_pool, snapshot_tx))
+    Ok(AppState::new(pg_pool, redis_pool, snapshot_tx))
+}
+
+async fn build_serial_live_state(
+) -> anyhow::Result<(tokio::sync::MutexGuard<'static, ()>, Arc<AppState>)> {
+    let guard = LIVE_TEST_LOCK.lock().await;
+    let state = build_live_state().await?;
+    Ok((guard, state))
 }
 
 /// Build the full Axum router from the monitor-server routes module.
@@ -336,7 +357,7 @@ fn audit_log_response_shape() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn create_pause_signal_writes_to_redis() {
-    let state = build_live_state()
+    let (_guard, state) = build_serial_live_state()
         .await
         .expect("Redis and PostgreSQL must be available");
     let app = build_router(state.clone());
@@ -386,7 +407,7 @@ async fn create_pause_signal_writes_to_redis() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn reject_invalid_target() {
-    let state = build_live_state()
+    let (_guard, state) = build_serial_live_state()
         .await
         .expect("Redis and PostgreSQL must be available");
     let app = build_router(state);
@@ -412,7 +433,7 @@ async fn reject_invalid_target() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn reject_invalid_action() {
-    let state = build_live_state()
+    let (_guard, state) = build_serial_live_state()
         .await
         .expect("Redis and PostgreSQL must be available");
     let app = build_router(state);
@@ -435,7 +456,7 @@ async fn reject_invalid_action() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn reject_empty_operator() {
-    let state = build_live_state()
+    let (_guard, state) = build_serial_live_state()
         .await
         .expect("Redis and PostgreSQL must be available");
     let app = build_router(state);
@@ -461,7 +482,7 @@ async fn reject_empty_operator() {
 #[tokio::test]
 #[ignore = "requires running Redis instance"]
 async fn unconfirmed_signal_returned_by_status() {
-    let state = build_live_state()
+    let (_guard, state) = build_serial_live_state()
         .await
         .expect("Redis and PostgreSQL must be available");
     let app = build_router(state.clone());
@@ -517,7 +538,7 @@ async fn unconfirmed_signal_returned_by_status() {
 #[tokio::test]
 #[ignore = "requires running Redis and PostgreSQL"]
 async fn two_step_confirmation_flow() {
-    let state = build_live_state()
+    let (_guard, state) = build_serial_live_state()
         .await
         .expect("Redis and PostgreSQL must be available");
     let app = build_router(state.clone());
@@ -617,7 +638,7 @@ async fn two_step_confirmation_flow() {
 #[tokio::test]
 #[ignore = "requires running Redis and PostgreSQL"]
 async fn audit_log_records_control_action() {
-    let state = build_live_state()
+    let (_guard, state) = build_serial_live_state()
         .await
         .expect("Redis and PostgreSQL must be available");
     let app = build_router(state.clone());
@@ -664,7 +685,7 @@ async fn audit_log_records_control_action() {
 #[tokio::test]
 #[ignore = "requires running Redis and PostgreSQL"]
 async fn get_services_returns_snapshot() {
-    let state = build_live_state()
+    let (_guard, state) = build_serial_live_state()
         .await
         .expect("Redis and PostgreSQL must be available");
     let app = build_router(state);
@@ -691,7 +712,7 @@ async fn get_services_returns_snapshot() {
 #[tokio::test]
 #[ignore = "requires running Redis"]
 async fn status_returns_null_when_no_signal() {
-    let state = build_live_state()
+    let (_guard, state) = build_serial_live_state()
         .await
         .expect("Redis and PostgreSQL must be available");
 

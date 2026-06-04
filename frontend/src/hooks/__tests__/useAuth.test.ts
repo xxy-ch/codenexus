@@ -77,6 +77,7 @@ describe('useAuthStore', () => {
     expect(state.isAuthenticated).toBe(true)
     expect(state.isLoading).toBe(false)
     expect(state.error).toBeNull()
+    expect(localStorage.getItem('access_token')).toBeNull()
 
     // Verify request was called with correct arguments
     expect(request).toHaveBeenCalledTimes(1)
@@ -129,7 +130,6 @@ describe('useAuthStore', () => {
       isAuthenticated: true,
     })
 
-    localStorage.setItem('access_token', 'logout-token')
     vi.mocked(api.post).mockResolvedValueOnce({ data: {} })
 
     useAuthStore.getState().logout()
@@ -138,10 +138,7 @@ describe('useAuthStore', () => {
     expect(state.user).toBeNull()
     expect(state.isAuthenticated).toBe(false)
     expect(state.error).toBeNull()
-    expect(api.post).toHaveBeenCalledWith('/auth/logout', undefined, {
-      headers: { Authorization: 'Bearer logout-token' },
-    })
-    expect(localStorage.getItem('access_token')).toBeNull()
+    expect(api.post).toHaveBeenCalledWith('/auth/logout')
   })
 
   it('checkAuth succeeds when user is authenticated', async () => {

@@ -601,9 +601,7 @@ pub fn control_routes() -> axum::Router<std::sync::Arc<crate::state::AppState>> 
 
     axum::Router::new()
         // Create pending signal
-        .route("/services/:target/pause", post(create_signal))
-        .route("/services/:target/resume", post(create_signal))
-        .route("/services/:target/restart", post(create_signal))
+        .route("/services/:target/:action", post(create_signal))
         // Confirm pending signal
         .route("/services/:target/:action/confirm", post(confirm_signal))
         // Read signal status

@@ -31,7 +31,7 @@ use crate::middleware::tenant::TenantContext;
 ///
 /// # Example
 ///
-/// ```ignore
+/// ```text
 /// // Applied at route registration time via route_layer:
 /// let gated_router = Router::new()
 ///     .route("/plagiarism", get(handler))

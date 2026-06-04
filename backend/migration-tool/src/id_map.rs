@@ -17,6 +17,14 @@ impl IdMap {
     /// Create a new IdMap, initializing the migration_mappings table and loading
     /// any existing mappings into memory for idempotent re-runs (D-10-7).
     pub async fn new(pool: PgPool) -> Result<Self> {
+        let mut tx = pool.begin().await?;
+
+        sqlx::query(
+            "SELECT pg_advisory_xact_lock(hashtext('migration_tool_migration_mappings_schema'))",
+        )
+        .execute(&mut *tx)
+        .await?;
+
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS migration_mappings (
@@ -28,8 +36,10 @@ impl IdMap {
             )
             "#,
         )
-        .execute(&pool)
+        .execute(&mut *tx)
         .await?;
+
+        tx.commit().await?;
 
         let mut mappings = HashMap::new();
         let rows: Vec<(String, String, String)> =
@@ -125,6 +135,12 @@ impl IdMap {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn migration_test_database_url() -> String {
+        std::env::var("MIGRATION_TEST_DATABASE_URL")
+            .or_else(|_| std::env::var("DATABASE_URL"))
+            .unwrap_or_else(|_| "postgres://localhost/migration_test".to_string())
+    }
 
     #[tokio::test]
     async fn get_returns_none_for_missing_mapping() {
@@ -247,34 +263,32 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn id_map_creates_table_and_roundtrips() {
-        let pool = PgPool::connect("postgres://localhost/migration_test")
+        let pool = PgPool::connect(&migration_test_database_url())
             .await
             .expect("Need PostgreSQL");
         let mut map = IdMap::new(pool.clone()).await.unwrap();
+        let entity_type = format!("user_{}", uuid::Uuid::new_v4().simple());
 
-        assert!(map.is_empty());
+        assert!(map.get(&entity_type, "alice").is_none());
 
         let id = map
-            .get_or_insert("user", "alice", "uuid-alice-123".to_string())
+            .get_or_insert(&entity_type, "alice", "uuid-alice-123".to_string())
             .await
             .unwrap();
         assert_eq!(id, "uuid-alice-123");
-        assert_eq!(map.len(), 1);
 
         // Idempotent: same insert returns same value
         let id2 = map
-            .get_or_insert("user", "alice", "uuid-different".to_string())
+            .get_or_insert(&entity_type, "alice", "uuid-different".to_string())
             .await
             .unwrap();
         assert_eq!(id2, "uuid-alice-123");
-        assert_eq!(map.len(), 1);
 
         // Re-instantiating loads existing mappings
         let map2 = IdMap::new(pool.clone()).await.unwrap();
         assert_eq!(
-            map2.get("user", "alice"),
+            map2.get(&entity_type, "alice"),
             Some("uuid-alice-123".to_string())
         );
-        assert_eq!(map2.len(), 1);
     }
 }

@@ -4,6 +4,18 @@ use sqlx::PgPool;
 use crate::id_map::IdMap;
 use crate::models::ParsedDump;
 
+fn parse_uoj_datetime(value: &str) -> Result<chrono::DateTime<chrono::Utc>> {
+    chrono::NaiveDateTime::parse_from_str(value, "%Y-%m-%d %H:%M:%S")
+        .map(|datetime| datetime.and_utc())
+        .map_err(|error| anyhow::anyhow!("Invalid UOJ datetime '{value}': {error}"))
+}
+
+fn parse_mapped_uuid(entity_type: &str, old_id: &str, new_id: &str) -> Result<uuid::Uuid> {
+    uuid::Uuid::parse_str(new_id).map_err(|error| {
+        anyhow::anyhow!("Invalid UUID mapping for {entity_type}:{old_id} -> {new_id}: {error}")
+    })
+}
+
 /// Orchestrates the migration from UOJ data to AlgoMaster PostgreSQL.
 ///
 /// Processes entities in strict dependency order:
@@ -146,6 +158,19 @@ impl Migrator {
             let email = &row[2];
             let password = &row[3];
             let register_time = &row[9];
+            let created_at = match parse_uoj_datetime(register_time) {
+                Ok(created_at) => created_at,
+                Err(error) => {
+                    tracing::warn!(
+                        "Skipping user '{}': invalid register_time '{}': {}",
+                        username,
+                        register_time,
+                        error
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
 
             // Skip banned users (D-10-10)
             if usergroup == "B" {
@@ -214,7 +239,7 @@ impl Migrator {
             email_set.insert(final_email.clone());
 
             // Generate new UUID
-            let new_id = uuid::Uuid::new_v4().to_string();
+            let new_id = uuid::Uuid::new_v4();
 
             // Format password with {MD5} prefix (D-10-2)
             let password_hash = crate::password::format_md5_prefix(password);
@@ -230,21 +255,21 @@ impl Migrator {
                 ON CONFLICT (username) DO NOTHING
                 "#,
             )
-            .bind(&new_id)
+            .bind(new_id)
             .bind(username)
             .bind(&final_email)
             .bind(&password_hash)
             .bind(self.org_id)
             .bind(self.campus_id)
             .bind(username)
-            .bind(register_time)
+            .bind(created_at)
             .execute(&self.pool)
             .await?;
 
             // Always SELECT back the real UUID -- on crash/re-run the INSERT
             // does nothing, so we must recover the existing user's actual ID.
             // Also verify organization_id to prevent cross-tenant binding (Bug 1).
-            let real_row: (String, i64) =
+            let real_row: (uuid::Uuid, i64) =
                 sqlx::query_as("SELECT id, organization_id FROM users WHERE username = $1")
                     .bind(username)
                     .fetch_one(&self.pool)
@@ -277,7 +302,7 @@ impl Migrator {
                 ON CONFLICT DO NOTHING
                 "#,
             )
-            .bind(&real_id)
+            .bind(real_id)
             .bind(self.org_id)
             .bind(self.campus_id)
             .bind(role)
@@ -286,7 +311,7 @@ impl Migrator {
 
             // Store mapping with the REAL id from the database
             self.id_map
-                .get_or_insert("user", username, real_id.clone())
+                .get_or_insert("user", username, real_id.to_string())
                 .await?;
 
             migrated += 1;
@@ -315,7 +340,7 @@ impl Migrator {
             return Ok(id);
         }
 
-        let new_id = uuid::Uuid::new_v4().to_string();
+        let new_id = uuid::Uuid::new_v4();
 
         // Insert system user with root role (ON CONFLICT DO NOTHING handles re-runs)
         sqlx::query(
@@ -325,7 +350,7 @@ impl Migrator {
             ON CONFLICT (username) DO NOTHING
             "#,
         )
-        .bind(&new_id)
+        .bind(new_id)
         .bind(&scoped_username)
         .bind(&scoped_email)
         .bind(self.org_id)
@@ -336,7 +361,7 @@ impl Migrator {
         // Always SELECT back the real ID -- on re-run the INSERT does nothing,
         // so we must recover the existing user's UUID.
         // Scope by organization_id to prevent cross-tenant lookup.
-        let real_id: String =
+        let real_id: uuid::Uuid =
             sqlx::query_scalar("SELECT id FROM users WHERE username = $1 AND organization_id = $2")
                 .bind(&scoped_username)
                 .bind(self.org_id)
@@ -352,17 +377,17 @@ impl Migrator {
             ON CONFLICT DO NOTHING
             "#,
         )
-        .bind(&real_id)
+        .bind(real_id)
         .bind(self.org_id)
         .bind(self.campus_id)
         .execute(&self.pool)
         .await?;
 
         self.id_map
-            .get_or_insert("user", &scoped_username, real_id.clone())
+            .get_or_insert("user", &scoped_username, real_id.to_string())
             .await?;
 
-        Ok(real_id)
+        Ok(real_id.to_string())
     }
 
     /// Migrate UOJ problems and their test cases to AlgoMaster.
@@ -379,6 +404,7 @@ impl Migrator {
         let author_id = self.id_map.get("user", &scoped_username).ok_or_else(|| {
             anyhow::anyhow!("System migration user not found. Run migrate_users first.")
         })?;
+        let author_id = parse_mapped_uuid("user", &scoped_username, &author_id)?;
         tracing::info!("Using system migration user as author: {}", author_id);
 
         // Parse problem rows
@@ -473,7 +499,7 @@ impl Migrator {
             .bind(new_id)
             .bind(self.org_id)
             .bind(self.campus_id)
-            .bind(&author_id)
+            .bind(author_id)
             .bind(title)
             .bind(&description)
             .bind(None::<&str>) // difficulty = NULL (UOJ has no difficulty)
@@ -646,6 +672,18 @@ impl Migrator {
             let result_raw = &row[9];
             let used_time = &row[13];
             let used_memory = &row[14];
+            let created_at = match parse_uoj_datetime(submit_time) {
+                Ok(created_at) => created_at,
+                Err(error) => {
+                    tracing::warn!(
+                        "Skipping submission {}: invalid submit_time '{}': {}",
+                        old_id,
+                        submit_time,
+                        error
+                    );
+                    continue;
+                }
+            };
 
             // Skip if already migrated
             if self.id_map.contains("submission", old_id) {
@@ -669,7 +707,7 @@ impl Migrator {
 
             // Look up user_id from id_map
             let user_id = match self.id_map.get("user", submitter) {
-                Some(id) => id,
+                Some(id) => parse_mapped_uuid("user", submitter, &id)?,
                 None => {
                     tracing::debug!(
                         "Skipping submission {}: user '{}' not found in id_map",
@@ -759,7 +797,7 @@ impl Migrator {
             )
             .bind(new_id)
             .bind(self.org_id)
-            .bind(&user_id)
+            .bind(user_id)
             .bind(new_problem_id.parse::<i64>().unwrap_or(0))
             .bind(mapped_lang)
             .bind(content)
@@ -767,7 +805,7 @@ impl Migrator {
             .bind(verdict)
             .bind(time_ms)
             .bind(memory_kb)
-            .bind(submit_time)
+            .bind(created_at)
             .execute(&mut *tx)
             .await
             {
@@ -894,11 +932,9 @@ impl Migrator {
 
             // Parse end_time = start_time + last_min minutes
             let last_min_val: i64 = last_min.parse().unwrap_or(180);
-            let end_time =
+            let start_at =
                 match chrono::NaiveDateTime::parse_from_str(start_time, "%Y-%m-%d %H:%M:%S") {
-                    Ok(dt) => (dt + chrono::Duration::minutes(last_min_val))
-                        .format("%Y-%m-%d %H:%M:%S")
-                        .to_string(),
+                    Ok(dt) => dt.and_utc(),
                     Err(_) => {
                         tracing::warn!(
                             "Cannot parse start_time '{}' for contest {}, skipping",
@@ -909,6 +945,7 @@ impl Migrator {
                         continue;
                     }
                 };
+            let end_at = start_at + chrono::Duration::minutes(last_min_val);
 
             // Use old ID as new ID
             let new_id: i64 = match old_id.parse() {
@@ -935,8 +972,8 @@ impl Migrator {
             .bind(self.campus_id)
             .bind(name)
             .bind("acm") // default rules
-            .bind(start_time)
-            .bind(&end_time)
+            .bind(start_at)
+            .bind(end_at)
             .execute(&mut *tx)
             .await
             {
@@ -1091,7 +1128,7 @@ impl Migrator {
 
             // Look up user UUID
             let user_id = match self.id_map.get("user", username) {
-                Some(id) => id,
+                Some(id) => parse_mapped_uuid("user", username, &id)?,
                 None => {
                     tracing::debug!(
                         "Skipping contest_participant: user '{}' not mapped",
@@ -1123,7 +1160,7 @@ impl Migrator {
                 "#,
             )
             .bind(new_contest_id.parse::<i64>().unwrap_or(0))
-            .bind(&user_id)
+            .bind(user_id)
             .execute(&self.pool)
             .await?;
 
@@ -1281,7 +1318,20 @@ impl Migrator {
             let old_id = &row[0];
             let title = &row[1];
             // row[2] is HTML content, we use content_md instead
-            let _post_time = &row[3];
+            let post_time = &row[3];
+            let created_at = match parse_uoj_datetime(post_time) {
+                Ok(created_at) => created_at,
+                Err(error) => {
+                    tracing::warn!(
+                        "Skipping blog {}: invalid post_time '{}': {}",
+                        old_id,
+                        post_time,
+                        error
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
             let poster = &row[4];
             let content_md = &row[5];
             let zan = &row[6];
@@ -1296,7 +1346,7 @@ impl Migrator {
 
             // Look up author_id from id_map
             let author_id = match self.id_map.get("user", poster) {
-                Some(id) => id,
+                Some(id) => parse_mapped_uuid("user", poster, &id)?,
                 None => {
                     tracing::warn!(
                         "Skipping blog {}: poster '{}' not found in id_map",
@@ -1324,11 +1374,7 @@ impl Migrator {
 
             // Determine published state: only publish if NOT hidden AND NOT draft
             let is_published = is_hidden == "0" && is_draft == "0";
-            let published_at: Option<String> = if is_published {
-                Some(_post_time.clone())
-            } else {
-                None
-            };
+            let published_at = if is_published { Some(created_at) } else { None };
 
             // Parse like_count from zan
             let like_count: i64 = zan.parse().unwrap_or(0);
@@ -1348,7 +1394,7 @@ impl Migrator {
             .bind(title)
             .bind(&slug)
             .bind(content_md)
-            .bind(&author_id)
+            .bind(author_id)
             .bind(&tags)
             .bind("general")
             .bind(is_published)
@@ -1356,8 +1402,8 @@ impl Migrator {
             .bind(0i64)  // view_count
             .bind(like_count)
             .bind(0i64)  // comment_count (updated after comments)
-            .bind(_post_time) // created_at
-            .bind(published_at.as_deref())
+            .bind(created_at) // created_at
+            .bind(published_at)
             .bind(self.org_id) // organization_id (NOT NULL per migration 032)
             .execute(&mut *tx)
             .await
@@ -1492,7 +1538,7 @@ impl Migrator {
 
             // Look up author_id from id_map
             let author_id = match self.id_map.get("user", poster) {
-                Some(id) => id,
+                Some(id) => parse_mapped_uuid("user", poster, &id)?,
                 None => {
                     tracing::warn!(
                         "Skipping blog comment {}: poster '{}' not found in id_map",
@@ -1528,8 +1574,20 @@ impl Migrator {
             .bind(article_id)
             .bind(None::<i64>) // parent_id = NULL (flat comments)
             .bind(content)
-            .bind(&author_id)
-            .bind(post_time)
+            .bind(author_id)
+            .bind(match parse_uoj_datetime(post_time) {
+                Ok(created_at) => created_at,
+                Err(error) => {
+                    tracing::warn!(
+                        "Skipping blog comment {}: invalid post_time '{}': {}",
+                        old_id,
+                        post_time,
+                        error
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            })
             .bind(self.org_id) // organization_id (NOT NULL per migration 032)
             .execute(&mut *tx)
             .await
@@ -1658,7 +1716,7 @@ impl Migrator {
 
             // Look up user_id from id_map
             let user_id = match self.id_map.get("user", username) {
-                Some(id) => id,
+                Some(id) => parse_mapped_uuid("user", username, &id)?,
                 None => {
                     tracing::debug!("Skipping like: user '{}' not found in id_map", username);
                     skipped_no_user += 1;
@@ -1684,7 +1742,7 @@ impl Migrator {
                 ON CONFLICT (user_id, target_type, target_id) DO NOTHING
                 "#,
             )
-            .bind(&user_id)
+            .bind(user_id)
             .bind(target_type)
             .bind(target_id_i64)
             .execute(&self.pool)
@@ -1725,7 +1783,7 @@ impl Migrator {
 
         // Conversation cache: (min_user, max_user) -> conversation_id
         // Stores the REAL id from the database (not a locally generated one).
-        let mut conv_cache: std::collections::HashMap<(String, String), uuid::Uuid> =
+        let mut conv_cache: std::collections::HashMap<(uuid::Uuid, uuid::Uuid), uuid::Uuid> =
             std::collections::HashMap::new();
 
         let mut msg_count = 0u64;
@@ -1742,10 +1800,23 @@ impl Migrator {
             let receiver = &row[2];
             let message = &row[3];
             let send_time = &row[4];
+            let created_at = match parse_uoj_datetime(send_time) {
+                Ok(created_at) => created_at,
+                Err(error) => {
+                    tracing::warn!(
+                        "Skipping message {}: invalid send_time '{}': {}",
+                        old_id,
+                        send_time,
+                        error
+                    );
+                    skipped += 1;
+                    continue;
+                }
+            };
 
             // Look up sender_id and receiver_id from id_map
             let sender_id = match self.id_map.get("user", sender) {
-                Some(id) => id,
+                Some(id) => parse_mapped_uuid("user", sender, &id)?,
                 None => {
                     tracing::debug!("Skipping message: sender '{}' not found in id_map", sender);
                     skipped += 1;
@@ -1754,7 +1825,7 @@ impl Migrator {
             };
 
             let receiver_id = match self.id_map.get("user", receiver) {
-                Some(id) => id,
+                Some(id) => parse_mapped_uuid("user", receiver, &id)?,
                 None => {
                     tracing::debug!(
                         "Skipping message: receiver '{}' not found in id_map",
@@ -1778,9 +1849,9 @@ impl Migrator {
 
             // Create conversation key: (min, max) to normalize pair ordering
             let (min_user, max_user) = if sender_id < receiver_id {
-                (sender_id.clone(), receiver_id.clone())
+                (sender_id, receiver_id)
             } else {
-                (receiver_id.clone(), sender_id.clone())
+                (receiver_id, sender_id)
             };
 
             // Get or create conversation (idempotent).
@@ -1788,9 +1859,7 @@ impl Migrator {
             //   LEAST(user1_id, user2_id), GREATEST(user1_id, user2_id)
             // So we cannot use ON CONFLICT (user1_id, user2_id) -- it won't match.
             // Instead, SELECT first; only INSERT if not found.
-            let conversation_id = if let Some(conv_id) =
-                conv_cache.get(&(min_user.clone(), max_user.clone()))
-            {
+            let conversation_id = if let Some(conv_id) = conv_cache.get(&(min_user, max_user)) {
                 *conv_id
             } else {
                 // Try to find existing conversation using LEAST/GREATEST to match
@@ -1799,8 +1868,8 @@ impl Migrator {
                 let existing: Option<uuid::Uuid> = sqlx::query_scalar(
                     "SELECT id FROM direct_conversations WHERE LEAST(user1_id, user2_id) = $1 AND GREATEST(user1_id, user2_id) = $2",
                 )
-                .bind(&min_user)
-                .bind(&max_user)
+                .bind(min_user)
+                .bind(max_user)
                 .fetch_optional(&self.pool)
                 .await?;
 
@@ -1816,8 +1885,8 @@ impl Migrator {
                         "#,
                     )
                     .bind(conv_id)
-                    .bind(&min_user)
-                    .bind(&max_user)
+                    .bind(min_user)
+                    .bind(max_user)
                     .execute(&self.pool)
                     .await?;
                     conv_id
@@ -1839,9 +1908,9 @@ impl Migrator {
             )
             .bind(msg_id)
             .bind(conversation_id)
-            .bind(&sender_id)
+            .bind(sender_id)
             .bind(message)
-            .bind(send_time)
+            .bind(created_at)
             .execute(&mut *tx)
             .await?;
 
@@ -1962,7 +2031,7 @@ impl Migrator {
 
             // Validate user exists in id_map
             let user_id = match self.id_map.get("user", submitter) {
-                Some(id) => id,
+                Some(id) => parse_mapped_uuid("user", submitter, &id)?,
                 None => {
                     tracing::debug!("Skipping best_ac: user '{}' not found in id_map", submitter);
                     skipped += 1;
@@ -2066,6 +2135,42 @@ impl Migrator {
 mod tests {
     use super::*;
     use crate::models::ParsedDump;
+
+    fn migration_test_database_url() -> String {
+        std::env::var("MIGRATION_TEST_DATABASE_URL")
+            .or_else(|_| std::env::var("DATABASE_URL"))
+            .unwrap_or_else(|_| "postgres://localhost/migration_test".to_string())
+    }
+
+    async fn ensure_migration_mappings_table(pool: &PgPool) {
+        let mut tx = pool
+            .begin()
+            .await
+            .expect("Failed to begin migration_mappings schema transaction");
+
+        sqlx::query(
+            "SELECT pg_advisory_xact_lock(hashtext('migration_tool_migration_mappings_schema'))",
+        )
+        .execute(&mut *tx)
+        .await
+        .expect("Failed to acquire migration_mappings schema lock");
+
+        sqlx::query(
+            "CREATE TABLE IF NOT EXISTS migration_mappings (
+                entity_type TEXT NOT NULL,
+                old_id TEXT NOT NULL,
+                new_id TEXT NOT NULL,
+                PRIMARY KEY (entity_type, old_id)
+            )",
+        )
+        .execute(&mut *tx)
+        .await
+        .expect("Failed to create migration_mappings table");
+
+        tx.commit()
+            .await
+            .expect("Failed to commit migration_mappings schema transaction");
+    }
 
     fn make_dump_with_blogs_tags(rows: Vec<Vec<&str>>) -> ParsedDump {
         let mut dump = ParsedDump::default();
@@ -2765,28 +2870,19 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn message_migration_is_idempotent() {
-        let pool = PgPool::connect("postgres://localhost/migration_test")
+        let pool = PgPool::connect(&migration_test_database_url())
             .await
             .expect("Need PostgreSQL");
-
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS migration_mappings (
-                entity_type TEXT NOT NULL,
-                old_id TEXT NOT NULL,
-                new_id TEXT NOT NULL,
-                PRIMARY KEY (entity_type, old_id)
-            )",
-        )
-        .execute(&pool)
-        .await
-        .expect("Failed to create migration_mappings table");
+        let old_id = format!("conv-{}", uuid::Uuid::new_v4().simple());
+        ensure_migration_mappings_table(&pool).await;
 
         // First insert: creates the mapping
         sqlx::query(
             "INSERT INTO migration_mappings (entity_type, old_id, new_id)
-             VALUES ('conversation', 'conv-123', 'uuid-abc')
+             VALUES ('conversation', $1, 'uuid-abc')
              ON CONFLICT (entity_type, old_id) DO NOTHING",
         )
+        .bind(&old_id)
         .execute(&pool)
         .await
         .expect("First insert should succeed");
@@ -2794,9 +2890,10 @@ mod tests {
         // Second insert (idempotent re-run) -- must not fail, must not change
         sqlx::query(
             "INSERT INTO migration_mappings (entity_type, old_id, new_id)
-             VALUES ('conversation', 'conv-123', 'uuid-abc')
+             VALUES ('conversation', $1, 'uuid-abc')
              ON CONFLICT (entity_type, old_id) DO NOTHING",
         )
+        .bind(&old_id)
         .execute(&pool)
         .await
         .expect("Second insert should succeed (idempotent)");
@@ -2804,8 +2901,9 @@ mod tests {
         // Verify the mapping is still the original value
         let (new_id,): (String,) = sqlx::query_as(
             "SELECT new_id FROM migration_mappings
-             WHERE entity_type = 'conversation' AND old_id = 'conv-123'",
+             WHERE entity_type = 'conversation' AND old_id = $1",
         )
+        .bind(&old_id)
         .fetch_one(&pool)
         .await
         .expect("Mapping should exist");
@@ -2817,11 +2915,126 @@ mod tests {
         // Cleanup
         sqlx::query(
             "DELETE FROM migration_mappings
-             WHERE entity_type = 'conversation' AND old_id = 'conv-123'",
+             WHERE entity_type = 'conversation' AND old_id = $1",
         )
+        .bind(&old_id)
         .execute(&pool)
         .await
         .expect("Cleanup should succeed");
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn message_with_invalid_timestamp_does_not_create_empty_conversation() {
+        let pool = PgPool::connect(&migration_test_database_url())
+            .await
+            .expect("Need PostgreSQL");
+        ensure_migration_mappings_table(&pool).await;
+
+        let suffix = uuid::Uuid::new_v4().simple().to_string();
+        let org_slug = format!("migration-msg-{suffix}");
+        let sender_old = format!("sender-{}", &suffix[..8]);
+        let receiver_old = format!("receiver-{}", &suffix[..8]);
+        let sender_id = uuid::Uuid::new_v4();
+        let receiver_id = uuid::Uuid::new_v4();
+        let message_old_id = format!("msg-{}", &suffix[..16]);
+
+        let org_id: i64 = sqlx::query_scalar(
+            "INSERT INTO organizations (name, slug) VALUES ($1, $2) RETURNING id",
+        )
+        .bind(format!("Migration Message Test {suffix}"))
+        .bind(&org_slug)
+        .fetch_one(&pool)
+        .await
+        .expect("Failed to create test organization");
+
+        for (user_id, old_name) in [(sender_id, &sender_old), (receiver_id, &receiver_old)] {
+            sqlx::query(
+                "INSERT INTO users (id, email, password_hash, organization_id, username, display_name)
+                 VALUES ($1, $2, 'hash', $3, $4, $4)",
+            )
+            .bind(user_id)
+            .bind(format!("{old_name}-{suffix}@example.test"))
+            .bind(org_id)
+            .bind(old_name)
+            .execute(&pool)
+            .await
+            .expect("Failed to create test user");
+
+            sqlx::query(
+                "INSERT INTO migration_mappings (entity_type, old_id, new_id)
+                 VALUES ('user', $1, $2)",
+            )
+            .bind(old_name)
+            .bind(user_id.to_string())
+            .execute(&pool)
+            .await
+            .expect("Failed to create user mapping");
+        }
+
+        let mut dump = ParsedDump::default();
+        dump.tables.insert(
+            "user_msg".to_string(),
+            vec![vec![
+                message_old_id.clone(),
+                sender_old.clone(),
+                receiver_old.clone(),
+                "invalid timestamp must be skipped".to_string(),
+                "not-a-date".to_string(),
+                "NULL".to_string(),
+            ]],
+        );
+
+        let mut migrator = Migrator::new(pool.clone(), dump, org_id, None, None)
+            .await
+            .expect("Failed to create migrator");
+        migrator
+            .migrate_messages()
+            .await
+            .expect("Message migration should skip invalid timestamp");
+
+        let conversation_count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM direct_conversations
+             WHERE LEAST(user1_id, user2_id) = LEAST($1::uuid, $2::uuid)
+               AND GREATEST(user1_id, user2_id) = GREATEST($1::uuid, $2::uuid)",
+        )
+        .bind(sender_id)
+        .bind(receiver_id)
+        .fetch_one(&pool)
+        .await
+        .expect("Failed to count conversations");
+        assert_eq!(
+            conversation_count, 0,
+            "invalid messages must not leave empty conversations"
+        );
+
+        let message_mapping_count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM migration_mappings
+             WHERE entity_type = 'message' AND old_id IN ($1, $2)",
+        )
+        .bind("message:0")
+        .bind(&message_old_id)
+        .fetch_one(&pool)
+        .await
+        .expect("Failed to count message mappings");
+        assert_eq!(
+            message_mapping_count, 0,
+            "invalid messages must not be marked as migrated"
+        );
+
+        sqlx::query(
+            "DELETE FROM migration_mappings WHERE entity_type = 'user' AND old_id IN ($1, $2)",
+        )
+        .bind(&sender_old)
+        .bind(&receiver_old)
+        .execute(&pool)
+        .await
+        .expect("Failed to clean user mappings");
+        sqlx::query("DELETE FROM organizations WHERE id = $1")
+            .bind(org_id)
+            .execute(&pool)
+            .await
+            .expect("Failed to clean test organization");
     }
 
     // Bug 4: System user conflict -- INSERT ... ON CONFLICT DO NOTHING returns
@@ -2831,28 +3044,19 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn system_user_conflict_returns_existing_id() {
-        let pool = PgPool::connect("postgres://localhost/migration_test")
+        let pool = PgPool::connect(&migration_test_database_url())
             .await
             .expect("Need PostgreSQL");
-
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS migration_mappings (
-                entity_type TEXT NOT NULL,
-                old_id TEXT NOT NULL,
-                new_id TEXT NOT NULL,
-                PRIMARY KEY (entity_type, old_id)
-            )",
-        )
-        .execute(&pool)
-        .await
-        .expect("Failed to create migration_mappings table");
+        let old_id = format!("org-{}", uuid::Uuid::new_v4().simple());
+        ensure_migration_mappings_table(&pool).await;
 
         // First insert: creates the system user mapping for org-1
         let result = sqlx::query(
             "INSERT INTO migration_mappings (entity_type, old_id, new_id)
-             VALUES ('system_user', 'org-1', 'uuid-sys-1')
+             VALUES ('system_user', $1, 'uuid-sys-1')
              ON CONFLICT (entity_type, old_id) DO NOTHING",
         )
+        .bind(&old_id)
         .execute(&pool)
         .await
         .expect("First insert should succeed");
@@ -2866,9 +3070,10 @@ mod tests {
         // and uses SELECT to recover the existing UUID
         let result = sqlx::query(
             "INSERT INTO migration_mappings (entity_type, old_id, new_id)
-             VALUES ('system_user', 'org-1', 'uuid-sys-2')
+             VALUES ('system_user', $1, 'uuid-sys-2')
              ON CONFLICT (entity_type, old_id) DO NOTHING",
         )
+        .bind(&old_id)
         .execute(&pool)
         .await
         .expect("Conflict insert should not fail");
@@ -2881,8 +3086,9 @@ mod tests {
         // Verify original mapping is preserved (not overwritten)
         let (new_id,): (String,) = sqlx::query_as(
             "SELECT new_id FROM migration_mappings
-             WHERE entity_type = 'system_user' AND old_id = 'org-1'",
+             WHERE entity_type = 'system_user' AND old_id = $1",
         )
+        .bind(&old_id)
         .fetch_one(&pool)
         .await
         .expect("Mapping should exist");
@@ -2894,8 +3100,9 @@ mod tests {
         // Cleanup
         sqlx::query(
             "DELETE FROM migration_mappings
-             WHERE entity_type = 'system_user' AND old_id = 'org-1'",
+             WHERE entity_type = 'system_user' AND old_id = $1",
         )
+        .bind(&old_id)
         .execute(&pool)
         .await
         .expect("Cleanup should succeed");
@@ -2910,29 +3117,20 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn crash_recovery_submission_atomicity() {
-        let pool = PgPool::connect("postgres://localhost/migration_test")
+        let pool = PgPool::connect(&migration_test_database_url())
             .await
             .expect("Need PostgreSQL");
-
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS migration_mappings (
-                entity_type TEXT NOT NULL,
-                old_id TEXT NOT NULL,
-                new_id TEXT NOT NULL,
-                PRIMARY KEY (entity_type, old_id)
-            )",
-        )
-        .execute(&pool)
-        .await
-        .expect("Failed to create migration_mappings table");
+        let old_id = format!("sub-{}", uuid::Uuid::new_v4().simple());
+        ensure_migration_mappings_table(&pool).await;
 
         // Begin a transaction, insert a mapping, then rollback (simulating crash)
         let mut tx = pool.begin().await.expect("Should begin transaction");
 
         sqlx::query(
             "INSERT INTO migration_mappings (entity_type, old_id, new_id)
-             VALUES ('submission', 'sub-rollback-test', 'uuid-rollback')",
+             VALUES ('submission', $1, 'uuid-rollback')",
         )
+        .bind(&old_id)
         .execute(&mut *tx)
         .await
         .expect("Insert in tx should succeed");
@@ -2942,8 +3140,9 @@ mod tests {
         // Verify the mapping does NOT exist after rollback
         let result: Option<(String,)> = sqlx::query_as(
             "SELECT new_id FROM migration_mappings
-             WHERE entity_type = 'submission' AND old_id = 'sub-rollback-test'",
+             WHERE entity_type = 'submission' AND old_id = $1",
         )
+        .bind(&old_id)
         .fetch_optional(&pool)
         .await
         .expect("Query should succeed");
@@ -2962,37 +3161,30 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn crash_recovery_problem_atomicity() {
-        let pool = PgPool::connect("postgres://localhost/migration_test")
+        let pool = PgPool::connect(&migration_test_database_url())
             .await
             .expect("Need PostgreSQL");
-
-        sqlx::query(
-            "CREATE TABLE IF NOT EXISTS migration_mappings (
-                entity_type TEXT NOT NULL,
-                old_id TEXT NOT NULL,
-                new_id TEXT NOT NULL,
-                PRIMARY KEY (entity_type, old_id)
-            )",
-        )
-        .execute(&pool)
-        .await
-        .expect("Failed to create migration_mappings table");
+        let problem_old_id = format!("prob-{}", uuid::Uuid::new_v4().simple());
+        let test_case_old_id = format!("tc-{}", uuid::Uuid::new_v4().simple());
+        ensure_migration_mappings_table(&pool).await;
 
         // Begin a transaction, insert problem + test_case mappings, then rollback
         let mut tx = pool.begin().await.expect("Should begin transaction");
 
         sqlx::query(
             "INSERT INTO migration_mappings (entity_type, old_id, new_id)
-             VALUES ('problem', 'prob-rollback-test', 'uuid-prob-rollback')",
+             VALUES ('problem', $1, 'uuid-prob-rollback')",
         )
+        .bind(&problem_old_id)
         .execute(&mut *tx)
         .await
         .expect("Problem insert in tx should succeed");
 
         sqlx::query(
             "INSERT INTO migration_mappings (entity_type, old_id, new_id)
-             VALUES ('test_case', 'tc-rollback-test', 'uuid-tc-rollback')",
+             VALUES ('test_case', $1, 'uuid-tc-rollback')",
         )
+        .bind(&test_case_old_id)
         .execute(&mut *tx)
         .await
         .expect("Test case insert in tx should succeed");
@@ -3002,16 +3194,18 @@ mod tests {
         // Verify NEITHER mapping exists after rollback
         let prob: Option<(String,)> = sqlx::query_as(
             "SELECT new_id FROM migration_mappings
-             WHERE entity_type = 'problem' AND old_id = 'prob-rollback-test'",
+             WHERE entity_type = 'problem' AND old_id = $1",
         )
+        .bind(&problem_old_id)
         .fetch_optional(&pool)
         .await
         .expect("Query should succeed");
 
         let tc: Option<(String,)> = sqlx::query_as(
             "SELECT new_id FROM migration_mappings
-             WHERE entity_type = 'test_case' AND old_id = 'tc-rollback-test'",
+             WHERE entity_type = 'test_case' AND old_id = $1",
         )
+        .bind(&test_case_old_id)
         .fetch_optional(&pool)
         .await
         .expect("Query should succeed");

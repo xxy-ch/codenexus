@@ -13,7 +13,7 @@ const authRetryExcludedPaths = [
 function shouldAttemptTokenRefresh(request: RetryableRequestConfig): boolean {
   const url = request.url ?? ''
   const isAuthEndpoint = authRetryExcludedPaths.some((path) => url.includes(path))
-  return !request._retry && !isAuthEndpoint && Boolean(localStorage.getItem('access_token'))
+  return !request._retry && !isAuthEndpoint
 }
 
 const api = axios.create({
@@ -25,16 +25,9 @@ const api = axios.create({
   withCredentials: true,
 })
 
-// Token refresh mutex — concurrent 401s share one refresh promise
-let refreshPromise: Promise<string> | null = null
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
+// Token refresh mutex — concurrent 401s share one refresh promise.
+// Auth tokens are transported via HttpOnly cookies, not JS-readable storage.
+let refreshPromise: Promise<void> | null = null
 
 // Response interceptor to handle 401 with automatic token refresh
 api.interceptors.response.use(
@@ -50,16 +43,13 @@ api.interceptors.response.use(
         if (!refreshPromise) {
           refreshPromise = axios
             .post(`${API_CONFIG.baseURL}${API_CONFIG.endpoints.refresh}`, {}, { withCredentials: true })
-            .then((response) => response.data.token as string)
+            .then(() => undefined)
             .finally(() => { refreshPromise = null })
         }
 
-        const newToken = await refreshPromise
-        localStorage.setItem('access_token', newToken)
-        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        await refreshPromise
         return api(originalRequest)
       } catch {
-        localStorage.removeItem('access_token')
         // Refresh failed — redirect to login
         window.location.href = '/login'
         return Promise.reject(error)

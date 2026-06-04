@@ -91,17 +91,77 @@ async fn run_schema_migrations(pool: &PgPool) {
         .expect("Failed to run API schema migrations");
 }
 
+fn migration_test_database_url() -> String {
+    std::env::var("MIGRATION_TEST_DATABASE_URL")
+        .or_else(|_| std::env::var("DATABASE_URL"))
+        .unwrap_or_else(|_| "postgres://localhost/migration_test".to_string())
+}
+
+fn database_url_with_name(base_url: &str, database_name: &str) -> String {
+    let scheme_end = base_url.find("://").map(|idx| idx + 3).unwrap_or(0);
+    let path_start = base_url[scheme_end..]
+        .find('/')
+        .map(|idx| scheme_end + idx)
+        .unwrap_or(base_url.len());
+    let (authority, query) = match base_url[path_start..].find('?') {
+        Some(query_idx) => (&base_url[..path_start], &base_url[path_start + query_idx..]),
+        None => (&base_url[..path_start], ""),
+    };
+
+    format!("{authority}/{database_name}{query}")
+}
+
+async fn create_isolated_database(label: &str) -> (PgPool, String, String) {
+    let base_url = migration_test_database_url();
+    let database_name = format!("migration_e2e_{label}_{}", Uuid::new_v4().simple());
+    let admin_pool = PgPool::connect(&base_url)
+        .await
+        .expect("Need PostgreSQL. Set DATABASE_URL or start a local instance.");
+    sqlx::query(&format!(r#"CREATE DATABASE "{database_name}""#))
+        .execute(&admin_pool)
+        .await
+        .expect("Failed to create isolated migration test database");
+    admin_pool.close().await;
+
+    let database_url = database_url_with_name(&base_url, &database_name);
+    let pool = PgPool::connect(&database_url)
+        .await
+        .expect("Failed to connect isolated migration test database");
+
+    (pool, base_url, database_name)
+}
+
+async fn drop_isolated_database(pool: PgPool, base_url: String, database_name: String) {
+    pool.close().await;
+    let admin_pool = PgPool::connect(&base_url)
+        .await
+        .expect("Need PostgreSQL to drop isolated migration test database");
+    sqlx::query(&format!(
+        r#"DROP DATABASE IF EXISTS "{database_name}" WITH (FORCE)"#
+    ))
+    .execute(&admin_pool)
+    .await
+    .expect("Failed to drop isolated migration test database");
+    admin_pool.close().await;
+}
+
 /// Create a default organization and campus. Returns (org_id, campus_id).
 async fn create_default_org(pool: &PgPool) -> (i64, i64) {
     let org_id: i64 = sqlx::query_scalar(
-        "INSERT INTO organizations (name, slug) VALUES ('Test Migration Org', 'test-migration-org') RETURNING id",
+        "INSERT INTO organizations (name, slug)
+         VALUES ('Test Migration Org', 'test-migration-org')
+         ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
+         RETURNING id",
     )
     .fetch_one(pool)
     .await
     .unwrap();
 
     let campus_id: i64 = sqlx::query_scalar(
-        "INSERT INTO campuses (organization_id, name, slug) VALUES ($1, 'Main Campus', 'main-campus') RETURNING id",
+        "INSERT INTO campuses (organization_id, name, slug)
+         VALUES ($1, 'Main Campus', 'main-campus')
+         ON CONFLICT (organization_id, slug) DO UPDATE SET name = EXCLUDED.name
+         RETURNING id",
     )
     .bind(org_id)
     .fetch_one(pool)
@@ -171,12 +231,7 @@ async fn run_full_migration(pool: &PgPool) -> Result<(i64, Option<i64>)> {
 #[tokio::test]
 #[ignore = "requires Docker -- run with `cargo test -p migration-tool --test e2e_migration -- --ignored`"]
 async fn test_full_e2e_migration() {
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://localhost/migration_test".to_string());
-
-    let pool = PgPool::connect(&database_url)
-        .await
-        .expect("Need PostgreSQL. Set DATABASE_URL or start a local instance.");
+    let (pool, base_url, database_name) = create_isolated_database("full").await;
 
     // Setup: run schema migrations
     run_schema_migrations(&pool).await;
@@ -284,7 +339,7 @@ async fn test_full_e2e_migration() {
     assert_eq!(problem.0, "Hello World");
     assert_eq!(problem.1, "public"); // is_hidden=0 => public
     assert_eq!(problem.2, 1000); // time_limit from extra_config
-    assert_eq!(problem.3, 256000); // memory_limit 256MB -> 256000KB
+    assert_eq!(problem.3, 262144); // memory_limit 256MiB -> KiB
 
     // ----- Verify submissions -----
     let submission_count: i64 =
@@ -435,6 +490,7 @@ async fn test_full_e2e_migration() {
 
     // Cleanup
     cleanup_migration_data(&pool).await;
+    drop_isolated_database(pool, base_url, database_name).await;
 }
 
 // ---------------------------------------------------------------------------
@@ -444,12 +500,7 @@ async fn test_full_e2e_migration() {
 #[tokio::test]
 #[ignore = "requires Docker -- run with `cargo test -p migration-tool --test e2e_migration -- --ignored`"]
 async fn test_double_run_idempotent() {
-    let database_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://localhost/migration_test".to_string());
-
-    let pool = PgPool::connect(&database_url)
-        .await
-        .expect("Need PostgreSQL. Set DATABASE_URL or start a local instance.");
+    let (pool, base_url, database_name) = create_isolated_database("double").await;
 
     // Setup: run schema migrations
     run_schema_migrations(&pool).await;
@@ -653,4 +704,5 @@ async fn test_double_run_idempotent() {
 
     // Cleanup
     cleanup_migration_data(&pool).await;
+    drop_isolated_database(pool, base_url, database_name).await;
 }

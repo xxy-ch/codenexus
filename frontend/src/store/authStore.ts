@@ -2,8 +2,6 @@ import { create } from 'zustand'
 import type { User, AuthResponse } from '@/types/auth'
 import api, { request } from '@/services/api'
 
-const accessTokenKey = 'access_token'
-
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
@@ -35,7 +33,6 @@ export const useAuthStore = create<AuthState>()((set) => ({
     try {
       const data = await request<AuthResponse>('post', '/auth/login', credentials)
 
-      localStorage.setItem(accessTokenKey, data.token)
       set({
         user: data.user,
         isAuthenticated: true,
@@ -56,7 +53,6 @@ export const useAuthStore = create<AuthState>()((set) => ({
     try {
       const authData = await request<AuthResponse>('post', '/auth/register', data)
 
-      localStorage.setItem(accessTokenKey, authData.token)
       set({
         user: authData.user,
         isAuthenticated: true,
@@ -73,13 +69,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
   },
 
   logout: () => {
-    const token = localStorage.getItem(accessTokenKey)
-    if (token) {
-      api.post('/auth/logout', undefined, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).catch(() => {})
-    }
-    localStorage.removeItem(accessTokenKey)
+    api.post('/auth/logout').catch(() => {})
     set({
       user: null,
       isAuthenticated: false,

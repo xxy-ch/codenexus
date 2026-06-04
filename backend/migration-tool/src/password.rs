@@ -2,10 +2,10 @@
 ///
 /// UOJ stores passwords as unsalted MD5 hashes. AlgoMaster uses bcrypt.
 /// Per D-10-2, migrated passwords are stored with a `{MD5}` prefix marker.
-/// The auth middleware will detect this prefix and transparently upgrade to
-/// bcrypt on the user's first successful login.
+/// Login rejects these legacy hashes and marks the account as needing an
+/// administrator-driven password reset before the user can authenticate.
 ///
-/// Format an MD5 hash with the {MD5} prefix marker for transparent migration.
+/// Format an MD5 hash with the {MD5} prefix marker for legacy reset handling.
 ///
 /// The prefix follows the Django-style password marker pattern (D-10-2).
 /// Format: `"{MD5}{hex_md5_hash}"`

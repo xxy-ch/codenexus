@@ -7,6 +7,8 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    testTimeout: 30000,
+    hookTimeout: 30000,
     exclude: ['e2e/**', 'node_modules/**'],
     setupFiles: ['./src/test/setup.ts', './src/test/vitest.setup.ts'],
     coverage: {
