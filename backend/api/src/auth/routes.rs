@@ -9,8 +9,13 @@ use shared::models::{
     Claims, LoginRequest, LoginResponse, RefreshRequest, RefreshResponse, UserPublic,
 };
 
-fn public_registration_scope_from_env() -> Result<Option<(i64, Option<i64>, Option<i64>)>, AppError>
-{
+struct PublicRegistrationScope {
+    organization_id: i64,
+    campus_id: Option<i64>,
+    grade_id: Option<i64>,
+}
+
+fn public_registration_scope_from_env() -> Result<Option<PublicRegistrationScope>, AppError> {
     let organization_id = match std::env::var("PUBLIC_REGISTRATION_ORGANIZATION_ID") {
         Ok(value) if !value.trim().is_empty() => value.trim().parse::<i64>().map_err(|_| {
             AppError::Validation("Invalid PUBLIC_REGISTRATION_ORGANIZATION_ID".into())
@@ -37,7 +42,11 @@ fn public_registration_scope_from_env() -> Result<Option<(i64, Option<i64>, Opti
         _ => None,
     };
 
-    Ok(Some((organization_id, campus_id, grade_id)))
+    Ok(Some(PublicRegistrationScope {
+        organization_id,
+        campus_id,
+        grade_id,
+    }))
 }
 
 fn normalize_public_register_request(
@@ -45,10 +54,10 @@ fn normalize_public_register_request(
     app_env: api_infra::config::AppEnv,
 ) -> Result<RegisterRequest, AppError> {
     match public_registration_scope_from_env()? {
-        Some((organization_id, campus_id, grade_id)) => {
-            request.organization_id = organization_id;
-            request.campus_id = campus_id;
-            request.grade_id = grade_id;
+        Some(scope) => {
+            request.organization_id = scope.organization_id;
+            request.campus_id = scope.campus_id;
+            request.grade_id = scope.grade_id;
             Ok(request)
         }
         None if app_env.is_production() => Err(AppError::Validation(

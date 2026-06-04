@@ -23,7 +23,7 @@ domain-leaderboard = { path = "../domain-leaderboard" }
 domain-submissions = { path = "../domain-submissions" }
 domain-imex = { path = "../domain-imex" }
 domain-analysis = { path = "../domain-analysis" }
-sqlx = { version = "0.8", features = ["runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "migrate"] }
+sqlx = { version = "0.8", default-features = false, features = ["derive", "macros", "runtime-tokio", "tls-rustls", "postgres", "chrono", "uuid", "migrate"] }
 dotenvy = "0.15"
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
 deadpool-redis = { version = "0.22", features = ["serde"] }
