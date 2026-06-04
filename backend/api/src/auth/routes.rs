@@ -9,6 +9,60 @@ use shared::models::{
     Claims, LoginRequest, LoginResponse, RefreshRequest, RefreshResponse, UserPublic,
 };
 
+fn public_registration_scope_from_env() -> Result<Option<(i64, Option<i64>, Option<i64>)>, AppError>
+{
+    let organization_id = match std::env::var("PUBLIC_REGISTRATION_ORGANIZATION_ID") {
+        Ok(value) if !value.trim().is_empty() => value.trim().parse::<i64>().map_err(|_| {
+            AppError::Validation("Invalid PUBLIC_REGISTRATION_ORGANIZATION_ID".into())
+        })?,
+        _ => return Ok(None),
+    };
+
+    let campus_id = match std::env::var("PUBLIC_REGISTRATION_CAMPUS_ID") {
+        Ok(value) if !value.trim().is_empty() => {
+            Some(value.trim().parse::<i64>().map_err(|_| {
+                AppError::Validation("Invalid PUBLIC_REGISTRATION_CAMPUS_ID".into())
+            })?)
+        }
+        _ => None,
+    };
+
+    let grade_id = match std::env::var("PUBLIC_REGISTRATION_GRADE_ID") {
+        Ok(value) if !value.trim().is_empty() => Some(
+            value
+                .trim()
+                .parse::<i64>()
+                .map_err(|_| AppError::Validation("Invalid PUBLIC_REGISTRATION_GRADE_ID".into()))?,
+        ),
+        _ => None,
+    };
+
+    Ok(Some((organization_id, campus_id, grade_id)))
+}
+
+fn normalize_public_register_request(
+    mut request: RegisterRequest,
+    app_env: api_infra::config::AppEnv,
+) -> Result<RegisterRequest, AppError> {
+    match public_registration_scope_from_env()? {
+        Some((organization_id, campus_id, grade_id)) => {
+            request.organization_id = organization_id;
+            request.campus_id = campus_id;
+            request.grade_id = grade_id;
+            Ok(request)
+        }
+        None if app_env.is_production() => Err(AppError::Validation(
+            "Public registration is not configured".into(),
+        )),
+        None => {
+            tracing::warn!(
+                "PUBLIC_REGISTRATION_ORGANIZATION_ID is not set; trusting registration tenant fields in non-production only"
+            );
+            Ok(request)
+        }
+    }
+}
+
 fn make_cookie_header(name: &str, value: &str, max_age: u32, path: &str, secure: bool) -> String {
     let mut cookie = format!(
         "{}={}; HttpOnly; SameSite=Strict; Path={}; Max-Age={}",
@@ -194,6 +248,7 @@ pub async fn register(
     ),
     AppError,
 > {
+    let request = normalize_public_register_request(request, state.app_env)?;
     let service = UserService::new(state.db_pool.clone(), state.jwt_service.clone());
     let profile = service.register(request).await.map_err(|err| {
         tracing::warn!(error = %err, "registration rejected");
@@ -432,6 +487,64 @@ mod tests {
         Router,
     };
     use tower::ServiceExt;
+
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn sample_register_request() -> RegisterRequest {
+        RegisterRequest {
+            user_code: Some("100100000123".to_string()),
+            username: "100100000123".to_string(),
+            password: "password123".to_string(),
+            email: Some("student@example.com".to_string()),
+            display_name: Some("Student".to_string()),
+            organization_id: 999,
+            campus_id: Some(998),
+            grade_id: Some(997),
+        }
+    }
+
+    #[test]
+    fn public_registration_scope_overrides_client_tenant_fields() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        std::env::set_var("PUBLIC_REGISTRATION_ORGANIZATION_ID", "10");
+        std::env::set_var("PUBLIC_REGISTRATION_CAMPUS_ID", "20");
+        std::env::set_var("PUBLIC_REGISTRATION_GRADE_ID", "30");
+
+        let request = normalize_public_register_request(
+            sample_register_request(),
+            api_infra::config::AppEnv::Production,
+        )
+        .expect("configured public registration should be accepted");
+
+        assert_eq!(request.organization_id, 10);
+        assert_eq!(request.campus_id, Some(20));
+        assert_eq!(request.grade_id, Some(30));
+
+        std::env::remove_var("PUBLIC_REGISTRATION_ORGANIZATION_ID");
+        std::env::remove_var("PUBLIC_REGISTRATION_CAMPUS_ID");
+        std::env::remove_var("PUBLIC_REGISTRATION_GRADE_ID");
+    }
+
+    #[test]
+    fn public_registration_fails_closed_in_production_without_scope() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        std::env::remove_var("PUBLIC_REGISTRATION_ORGANIZATION_ID");
+        std::env::remove_var("PUBLIC_REGISTRATION_CAMPUS_ID");
+        std::env::remove_var("PUBLIC_REGISTRATION_GRADE_ID");
+
+        let err = normalize_public_register_request(
+            sample_register_request(),
+            api_infra::config::AppEnv::Production,
+        )
+        .expect_err("production public registration must require server-side scope");
+
+        match err {
+            AppError::Validation(message) => {
+                assert!(message.contains("Public registration is not configured"));
+            }
+            _ => panic!("expected validation error"),
+        }
+    }
 
     async fn create_test_app() -> Router {
         use crate::auth::JwtService;

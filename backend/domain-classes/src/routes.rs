@@ -120,6 +120,38 @@ async fn verify_class_write_access(
     Ok(class)
 }
 
+/// Verify class read access for basic class/assignment data.
+/// Teachers/admins can read scoped classes; students/TAs must be actively enrolled.
+async fn verify_class_member_access(
+    service: &ClassService,
+    class_id: i64,
+    claims: &shared::models::Claims,
+) -> Result<Class, StatusCode> {
+    let class = verify_class_access(service, class_id, claims, false).await?;
+    if is_admin(&claims.role) || class.teacher_id == claims.sub {
+        return Ok(class);
+    }
+
+    let role = claims
+        .role
+        .parse::<Role>()
+        .map_err(|_| StatusCode::FORBIDDEN)?;
+    match role {
+        Role::Student | Role::TeachingAssistant => {
+            let enrolled = service
+                .is_student_enrolled(class_id, claims.sub)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            if enrolled {
+                Ok(class)
+            } else {
+                Err(StatusCode::FORBIDDEN)
+            }
+        }
+        _ => Err(StatusCode::FORBIDDEN),
+    }
+}
+
 pub fn classes_router() -> Router<AppState> {
     Router::new()
         // Grade routes (CampusAdmin+)
@@ -460,18 +492,11 @@ async fn create_class(
 async fn get_class(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
-    Extension(tenant_ctx): Extension<TenantContext>,
+    Extension(_tenant_ctx): Extension<TenantContext>,
     Path(class_id): Path<i64>,
 ) -> Result<Json<Class>, StatusCode> {
     let service = ClassService::new(state.db_pool);
-    let class = verify_class_tenant(&service, class_id, claims.school_id).await?;
-    // GradeAdmin grade scoping: must have grade_id; verify class belongs to their grade
-    if claims.role == "gradeadmin" {
-        let gid = tenant_ctx.grade_id.ok_or(StatusCode::FORBIDDEN)?;
-        if class.grade_id != Some(gid) {
-            return Err(StatusCode::NOT_FOUND);
-        }
-    }
+    let class = verify_class_member_access(&service, class_id, &claims).await?;
     Ok(Json(class))
 }
 
@@ -489,6 +514,8 @@ async fn list_classes(
     // Tenant: force organization_id from claims
     query.organization_id = Some(claims.school_id);
 
+    let service = ClassService::new(state.db_pool);
+
     match caller_role {
         Role::Root => {}
         Role::CampusAdmin => {
@@ -502,10 +529,15 @@ async fn list_classes(
         Role::Teacher => {
             query.teacher_id = Some(claims.sub);
         }
-        Role::TeachingAssistant | Role::Student => {}
+        Role::TeachingAssistant | Role::Student => {
+            return service
+                .list_classes_for_student(claims.school_id, claims.sub, query.page, query.limit)
+                .await
+                .map(Json)
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR);
+        }
     }
 
-    let service = ClassService::new(state.db_pool);
     let response = service
         .list_classes(&query)
         .await
@@ -554,8 +586,7 @@ async fn get_class_stats(
     Path(class_id): Path<i64>,
 ) -> Result<Json<ClassStats>, StatusCode> {
     let service = ClassService::new(state.db_pool);
-    let class = verify_class_tenant(&service, class_id, claims.school_id).await?;
-    verify_grade_scope(&class, &claims)?;
+    verify_class_access(&service, class_id, &claims, true).await?;
     let stats = service
         .get_class_stats(class_id)
         .await
@@ -710,8 +741,7 @@ async fn list_assignments(
     Path(class_id): Path<i64>,
 ) -> Result<Json<Vec<Assignment>>, StatusCode> {
     let service = ClassService::new(state.db_pool);
-    let class = verify_class_tenant(&service, class_id, claims.school_id).await?;
-    verify_grade_scope(&class, &claims)?;
+    verify_class_member_access(&service, class_id, &claims).await?;
     let assignments = service
         .list_assignments(class_id)
         .await

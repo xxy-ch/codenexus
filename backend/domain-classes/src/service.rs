@@ -600,6 +600,95 @@ impl ClassService {
         })
     }
 
+    /// List only classes where the student has an active enrollment.
+    pub async fn list_classes_for_student(
+        &self,
+        organization_id: i64,
+        student_id: Uuid,
+        page: Option<i64>,
+        limit: Option<i64>,
+    ) -> Result<ClassesListResponse> {
+        let page = page.unwrap_or(1).max(1);
+        let limit = limit.unwrap_or(20).clamp(1, 100);
+        let offset = (page - 1) * limit;
+
+        let classes = sqlx::query_as::<_, Class>(
+            r#"
+            SELECT
+                c.id,
+                c.organization_id,
+                c.campus_id,
+                c.grade_id,
+                c.name,
+                NULL::TEXT AS description,
+                c.teacher_id,
+                c.code,
+                TRUE AS is_active,
+                NULL::INTEGER AS max_students,
+                c.semester,
+                c.created_at,
+                c.updated_at
+            FROM classes c
+            JOIN class_enrollments ce
+              ON ce.class_id = c.id
+             AND ce.student_id = $2
+             AND ce.status = 'active'
+            WHERE c.organization_id = $1
+            ORDER BY c.created_at DESC
+            LIMIT $3 OFFSET $4
+            "#,
+        )
+        .bind(organization_id)
+        .bind(student_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let total = sqlx::query_scalar::<_, i64>(
+            r#"
+            SELECT COUNT(*)
+            FROM classes c
+            JOIN class_enrollments ce
+              ON ce.class_id = c.id
+             AND ce.student_id = $2
+             AND ce.status = 'active'
+            WHERE c.organization_id = $1
+            "#,
+        )
+        .bind(organization_id)
+        .bind(student_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(ClassesListResponse {
+            classes,
+            total,
+            page,
+            limit,
+        })
+    }
+
+    pub async fn is_student_enrolled(&self, class_id: i64, student_id: Uuid) -> Result<bool> {
+        let enrolled = sqlx::query_scalar::<_, bool>(
+            r#"
+            SELECT EXISTS(
+                SELECT 1
+                FROM class_enrollments
+                WHERE class_id = $1
+                  AND student_id = $2
+                  AND status = 'active'
+            )
+            "#,
+        )
+        .bind(class_id)
+        .bind(student_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(enrolled)
+    }
+
     /// Update class
     pub async fn update_class(&self, class_id: i64, request: &UpdateClassRequest) -> Result<Class> {
         let now = Utc::now();
@@ -896,7 +985,7 @@ impl ClassService {
             JOIN users u ON u.id = ce.student_id
             CROSS JOIN assignment_count ac
             LEFT JOIN progress p ON p.student_id = ce.student_id
-            WHERE ce.class_id = $1
+            WHERE ce.class_id = $1 AND ce.status = 'active'
             ORDER BY ce.enrolled_at DESC
             "#,
         )

@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { screen, waitFor } from '@testing-library/react'
 import { renderWithProviders, createTestQueryClient } from '@/test/test-utils'
 import { useQuery } from '@tanstack/react-query'
-import { useParams } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 
 describe('createTestQueryClient', () => {
   it('returns a QueryClient with retry disabled', () => {
@@ -48,27 +48,17 @@ describe('renderWithProviders', () => {
     })
   })
 
-  it('provides Router context (useParams works with route)', async () => {
-    vi.mock('react-router-dom', async () => {
-      const actual = await vi.importActual('react-router-dom')
-      return {
-        ...actual,
-        useParams: () => ({ id: '42' }),
-      }
-    })
-
+  it('provides Router context with the requested route', async () => {
     function RouteComponent() {
-      const { id } = useParams()
-      return <span data-testid="route-param">{id}</span>
+      const location = useLocation()
+      return <span data-testid="route-path">{location.pathname}</span>
     }
 
     renderWithProviders(<RouteComponent />, { route: '/test/42' })
 
     await waitFor(() => {
-      expect(screen.getByTestId('route-param')).toHaveTextContent('42')
+      expect(screen.getByTestId('route-path')).toHaveTextContent('/test/42')
     })
-
-    vi.restoreAllMocks()
   })
 
   it('uses default route "/" when no route option provided', () => {
