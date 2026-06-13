@@ -85,6 +85,7 @@ async fn list_conversations(
               AND m.read_at IS NULL
         ) unread ON true
         WHERE (c.user1_id = $1 OR c.user2_id = $1)
+          AND c.organization_id = caller.organization_id
           AND u.organization_id = caller.organization_id
         ORDER BY COALESCE(last_msg.created_at, c.created_at) DESC
         "#,
@@ -134,8 +135,8 @@ async fn create_conversation(
             LIMIT 1
         ),
         inserted AS (
-            INSERT INTO direct_conversations (user1_id, user2_id)
-            SELECT LEAST($1, peer.id), GREATEST($1, peer.id)
+            INSERT INTO direct_conversations (user1_id, user2_id, organization_id)
+            SELECT LEAST($1, peer.id), GREATEST($1, peer.id), $2
             FROM peer
             ON CONFLICT DO NOTHING
             RETURNING id, created_at
@@ -201,11 +202,13 @@ async fn get_messages(
         SET read_at = NOW()
         WHERE conversation_id = $1
           AND sender_id <> $2
+          AND organization_id = $3
           AND read_at IS NULL
         "#,
     )
     .bind(conversation_id)
     .bind(claims.sub)
+    .bind(claims.school_id)
     .execute(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -222,10 +225,12 @@ async fn get_messages(
         FROM direct_messages m
         JOIN users u ON u.id = m.sender_id
         WHERE m.conversation_id = $1
+          AND m.organization_id = $2
         ORDER BY m.created_at ASC
         "#,
     )
     .bind(conversation_id)
+    .bind(claims.school_id)
     .fetch_all(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -259,14 +264,15 @@ async fn send_message(
 
     let row = sqlx::query(
         r#"
-        INSERT INTO direct_messages (conversation_id, sender_id, content)
-        VALUES ($1, $2, $3)
+        INSERT INTO direct_messages (conversation_id, sender_id, content, organization_id)
+        VALUES ($1, $2, $3, $4)
         RETURNING id, conversation_id, sender_id, content, created_at::text AS created_at
         "#,
     )
     .bind(conversation_id)
     .bind(claims.sub)
     .bind(req.content.trim())
+    .bind(claims.school_id)
     .fetch_one(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -302,6 +308,11 @@ async fn ensure_conversation_member(
     user_id: Uuid,
     school_id: i64,
 ) -> Result<(), StatusCode> {
+    // Defense-in-depth: verify membership AND that the conversation's own
+    // organization_id column matches the caller's tenant. The redundant
+    // users JOIN is kept so a stale/missing organization_id on a legacy row
+    // cannot bypass the check, but the canonical guard is now the
+    // conversation row's own organization_id.
     let exists = sqlx::query_scalar::<_, i64>(
         r#"
         SELECT 1::bigint
@@ -310,6 +321,7 @@ async fn ensure_conversation_member(
         JOIN users u2 ON u2.id = c.user2_id
         WHERE c.id = $1
           AND (c.user1_id = $2 OR c.user2_id = $2)
+          AND c.organization_id = $3
           AND u1.organization_id = $3
           AND u2.organization_id = $3
         "#,
