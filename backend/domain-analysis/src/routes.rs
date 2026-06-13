@@ -253,6 +253,12 @@ pub async fn trigger_feedback(
     }
 
     // 4. Create a new analysis job in the DB.
+    //
+    // create_job is guarded by a partial unique index
+    // (uq_analysis_jobs_active_per_submission) and uses ON CONFLICT DO NOTHING,
+    // so a concurrent trigger that wins the race returns None here instead of
+    // creating a duplicate. This closes the double-charge race that the earlier
+    // application-layer check-then-insert could not fully prevent.
     let new_job = crate::models::NewAnalysisJob {
         submission_id,
         problem_id: meta.problem_id,
@@ -263,10 +269,29 @@ pub async fn trigger_feedback(
         contest_id: None,
     };
 
-    let job_id = service.create_job(&new_job).await.map_err(|error| {
+    let job_id = match service.create_job(&new_job).await.map_err(|error| {
         tracing::error!(error = %error, submission_id, "trigger_feedback: failed to create analysis job");
         StatusCode::INTERNAL_SERVER_ERROR
-    })?;
+    })? {
+        Some(id) => id,
+        None => {
+            // A concurrent request created the active job between our check
+            // and insert. Re-read it so we return the canonical id/status.
+            let active = service
+                .find_latest_job_by_submission(submission_id, organization_id)
+                .await
+                .map_err(|error| {
+                    tracing::error!(error = %error, submission_id, "trigger_feedback: DB error re-reading active job");
+                    StatusCode::INTERNAL_SERVER_ERROR
+                })?
+                .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?;
+            return Ok(Json(json!({
+                "job_id": active.id,
+                "status": active.status,
+                "message": "AI analysis already in progress"
+            })));
+        }
+    };
 
     // 5. Enqueue the task to Redis for the llm-worker.
     let redis_pool = match state.redis_pool.as_ref() {

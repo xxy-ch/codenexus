@@ -24,13 +24,22 @@ impl AnalysisService {
         &self.pool
     }
 
-    pub async fn create_job(&self, job: &NewAnalysisJob) -> Result<i64> {
-        let record = sqlx::query_scalar::<_, i64>(
+    /// Insert a new pending analysis job.
+    ///
+    /// Uses `ON CONFLICT DO NOTHING` backed by the partial unique index
+    /// `uq_analysis_jobs_active_per_submission` so that concurrent triggers for
+    /// the same submission cannot create two active jobs (which would
+    /// double-charge the LLM). Returns `Some(id)` for a freshly created job, or
+    /// `None` when an active (pending/processing) job already exists.
+    pub async fn create_job(&self, job: &NewAnalysisJob) -> Result<Option<i64>> {
+        let record = sqlx::query_scalar::<_, Option<i64>>(
             r#"
             INSERT INTO analysis_jobs (
                 submission_id, problem_id, user_id, organization_id,
                 campus_id, grade_id, contest_id, status
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
+            ON CONFLICT (submission_id) WHERE status IN ('pending', 'processing')
+            DO NOTHING
             RETURNING id
             "#,
         )
