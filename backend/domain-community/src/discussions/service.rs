@@ -426,15 +426,22 @@ impl DiscussionService {
 
             false
         } else {
-            // Add like
-            sqlx::query("INSERT INTO likes (user_id, target_type, target_id) VALUES ($1, $2, $3)")
-                .bind(user_id)
-                .bind(target_type)
-                .bind(target_id)
-                .execute(&mut *tx)
-                .await?;
+            // Add like. ON CONFLICT DO NOTHING handles the race where two
+            // concurrent requests both pass the "not yet liked" check: the
+            // loser's INSERT is a no-op rather than a unique-violation error.
+            let inserted = sqlx::query(
+                "INSERT INTO likes (user_id, target_type, target_id) \
+                 VALUES ($1, $2, $3) \
+                 ON CONFLICT (user_id, target_type, target_id) DO NOTHING",
+            )
+            .bind(user_id)
+            .bind(target_type)
+            .bind(target_id)
+            .execute(&mut *tx)
+            .await?;
 
-            // Recount likes atomically
+            // Recount likes atomically (always recount — even if the INSERT
+            // was a no-op due to a race, the count is authoritative).
             sqlx::query(&format!(
                 "UPDATE {} SET like_count = (SELECT COUNT(*) FROM likes WHERE target_type = $2 AND target_id = $1) WHERE id = $1",
                 table
@@ -444,6 +451,9 @@ impl DiscussionService {
             .execute(&mut *tx)
             .await?;
 
+            // If rows_affected == 0, a concurrent request already inserted the
+            // like — the like exists either way, so return true.
+            let _ = inserted.rows_affected();
             true
         };
 
