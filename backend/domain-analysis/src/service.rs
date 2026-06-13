@@ -293,10 +293,14 @@ impl AnalysisService {
     }
 
     /// Find the latest analysis job for a given submission.
-    /// Returns None if no job exists yet.
+    ///
+    /// Tenant-scoped: the `organization_id` predicate guarantees a caller from
+    /// org A can never read a job row belonging to org B, even by guessing the
+    /// sequential `submission_id`. Returns None if no job exists yet.
     pub async fn find_latest_job_by_submission(
         &self,
         submission_id: i64,
+        organization_id: i64,
     ) -> Result<Option<AnalysisJob>> {
         let row = sqlx::query_as::<_, AnalysisJob>(
             r#"SELECT id, submission_id, problem_id, user_id, organization_id,
@@ -304,14 +308,34 @@ impl AnalysisService {
                       llm_model, prompt_tokens, completion_tokens, latency_ms,
                       retry_count, max_retries, created_at, updated_at
                FROM analysis_jobs
-               WHERE submission_id = $1
+               WHERE submission_id = $1 AND organization_id = $2
                ORDER BY created_at DESC
                LIMIT 1"#,
         )
         .bind(submission_id)
+        .bind(organization_id)
         .fetch_optional(&self.pool)
         .await?;
         Ok(row)
+    }
+
+    /// Resolve the owner (user_id) of a submission within a tenant.
+    /// Returns None when the submission does not exist in this org, so callers
+    /// can uniformly distinguish "not found" from "not allowed" — both surface
+    /// as 404 to avoid leaking the existence of other tenants' submissions.
+    pub async fn get_submission_owner(
+        &self,
+        submission_id: i64,
+        organization_id: i64,
+    ) -> Result<Option<uuid::Uuid>> {
+        let owner: Option<(uuid::Uuid,)> = sqlx::query_as(
+            "SELECT user_id FROM submissions WHERE id = $1 AND organization_id = $2",
+        )
+        .bind(submission_id)
+        .bind(organization_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(owner.map(|(u,)| u))
     }
 
     /// Get the AI feedback result for a submission — job status + teaching card.
@@ -322,7 +346,9 @@ impl AnalysisService {
         submission_id: i64,
         organization_id: i64,
     ) -> Result<Option<AiFeedbackResult>> {
-        let job = self.find_latest_job_by_submission(submission_id).await?;
+        let job = self
+            .find_latest_job_by_submission(submission_id, organization_id)
+            .await?;
 
         match job {
             None => Ok(None),
@@ -377,7 +403,7 @@ impl AnalysisService {
         //    The features row does not store problem_id directly; we look it up
         //    from the most recent analysis job for this submission.
         let problem_id = self
-            .find_latest_job_by_submission(submission_id)
+            .find_latest_job_by_submission(submission_id, org_id)
             .await?
             .map(|j| j.problem_id);
 

@@ -8,10 +8,57 @@ use axum::{
 };
 use serde::Deserialize;
 use serde_json::json;
+use shared::models::role::Role;
 use shared::models::Claims;
 
 use crate::queue::{self, AnalysisJobMessage};
 use crate::service::AnalysisService;
+
+/// Authorization gate for per-submission analysis endpoints.
+///
+/// A caller may read or trigger analysis on a submission when either:
+///   - they own the submission (`claims.sub == submission owner`), or
+///   - they hold a teacher-or-above role (teachers legitimately review student work).
+///
+/// Returns `Ok(())` on success, or an `Err(StatusCode)`: 404 when the
+/// submission does not exist in the caller's org, 403 when an authenticated
+/// non-owner student tries to access another student's submission.
+async fn authorize_submission_access(
+    service: &AnalysisService,
+    claims: &Claims,
+    submission_id: i64,
+) -> Result<(), StatusCode> {
+    let organization_id = claims.school_id;
+    let owner = service
+        .get_submission_owner(submission_id, organization_id)
+        .await
+        .map_err(|error| {
+            tracing::error!(
+                error = %error,
+                submission_id,
+                organization_id,
+                "authorize_submission_access: DB error"
+            );
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+
+    match owner {
+        None => Err(StatusCode::NOT_FOUND),
+        Some(owner) if owner == claims.sub => Ok(()),
+        Some(_) => {
+            // Not the owner — allow only for teacher-or-above roles.
+            let role = claims
+                .role
+                .parse::<Role>()
+                .map_err(|_| StatusCode::FORBIDDEN)?;
+            if role.is_higher_or_equal(Role::Teacher) {
+                Ok(())
+            } else {
+                Err(StatusCode::FORBIDDEN)
+            }
+        }
+    }
+}
 
 /// Query parameters for the similar-submissions endpoints.
 #[derive(Debug, Deserialize)]
@@ -74,6 +121,9 @@ pub async fn get_submission_features(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let service = AnalysisService::new(state.db_pool.clone());
     let organization_id = claims.school_id;
+
+    // Authorization: owner or teacher+ (prevents horizontal privilege escalation).
+    authorize_submission_access(&service, &claims, submission_id).await?;
 
     match service
         .get_submission_features(submission_id, organization_id)
@@ -164,7 +214,12 @@ pub async fn trigger_feedback(
     let service = AnalysisService::new(state.db_pool.clone());
     let organization_id = claims.school_id;
 
-    // 1. Verify the submission exists and belongs to this organization.
+    // 1. Authorization: only the submission owner or a teacher+ may trigger
+    //    paid LLM analysis. This blocks cost abuse (any user triggering jobs on
+    //    others' submissions) and horizontal privilege escalation.
+    authorize_submission_access(&service, &claims, submission_id).await?;
+
+    // 2. Verify the submission exists and belongs to this organization.
     let meta = service
         .get_submission_meta(submission_id, organization_id)
         .await
@@ -178,9 +233,9 @@ pub async fn trigger_feedback(
         None => return Err(StatusCode::NOT_FOUND),
     };
 
-    // 2. Check for an existing active job — avoid duplicates.
+    // 3. Check for an existing active job — avoid duplicates.
     let existing = service
-        .find_latest_job_by_submission(submission_id)
+        .find_latest_job_by_submission(submission_id, organization_id)
         .await
         .map_err(|error| {
             tracing::error!(error = %error, submission_id, "trigger_feedback: DB error checking existing job");
@@ -197,7 +252,7 @@ pub async fn trigger_feedback(
         }
     }
 
-    // 3. Create a new analysis job in the DB.
+    // 4. Create a new analysis job in the DB.
     let new_job = crate::models::NewAnalysisJob {
         submission_id,
         problem_id: meta.problem_id,
@@ -213,7 +268,7 @@ pub async fn trigger_feedback(
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    // 4. Enqueue the task to Redis for the llm-worker.
+    // 5. Enqueue the task to Redis for the llm-worker.
     let redis_pool = match state.redis_pool.as_ref() {
         Some(pool) => pool,
         None => {
@@ -272,6 +327,9 @@ pub async fn get_ai_feedback(
     let service = AnalysisService::new(state.db_pool.clone());
     let organization_id = claims.school_id;
 
+    // Authorization: owner or teacher+ (prevents reading others' analysis).
+    authorize_submission_access(&service, &claims, submission_id).await?;
+
     match service
         .get_ai_feedback(submission_id, organization_id)
         .await
@@ -327,6 +385,9 @@ pub async fn get_similar_submissions(
     let service = AnalysisService::new(state.db_pool.clone());
     let organization_id = claims.school_id;
 
+    // Authorization: owner or teacher+ (prevents enumerating peers' metrics).
+    authorize_submission_access(&service, &claims, submission_id).await?;
+
     let start = std::time::Instant::now();
 
     let mut results = service
@@ -379,6 +440,9 @@ pub async fn get_cross_problem_similar(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let service = AnalysisService::new(state.db_pool.clone());
     let organization_id = claims.school_id;
+
+    // Authorization: owner or teacher+ (prevents enumerating peers' metrics).
+    authorize_submission_access(&service, &claims, submission_id).await?;
 
     let start = std::time::Instant::now();
 
