@@ -78,6 +78,10 @@ pub struct TokenClaims {
 pub struct UserProfileUpdate {
     pub email: Option<String>,
     pub password: Option<String>,
+    /// Required when setting a new password: the caller must prove knowledge
+    /// of the current password. Prevents silent password takeover via a stolen
+    /// session cookie or XSS payload.
+    pub current_password: Option<String>,
     pub display_name: Option<String>,
     // SECURITY: campus_id and grade_id are NOT self-service editable.
     // Tenant fields must only be changed by admin operations that enforce org ownership.
