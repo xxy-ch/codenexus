@@ -895,18 +895,28 @@ impl ClassService {
     }
 
     /// Student self-enroll using code
-    pub async fn enroll_with_code(&self, code: &str, student_id: Uuid) -> Result<ClassEnrollment> {
+    ///
+    /// Takes `organization_id` so the class lookup inside the transaction is
+    /// tenant-scoped, eliminating the TOCTOU gap between the route's
+    /// `get_class_by_code` check and this method's own lookup.
+    pub async fn enroll_with_code(
+        &self,
+        code: &str,
+        student_id: Uuid,
+        organization_id: i64,
+    ) -> Result<ClassEnrollment> {
         // SECURITY: Use a transaction to prevent TOCTOU between class lookup and enrollment.
         // The tenant check and enrollment are now atomic.
         let mut tx = self.pool.begin().await?;
 
         let class = sqlx::query_as::<_, super::models::Class>(
-            "SELECT * FROM classes WHERE enrollment_code = $1 AND is_active = true",
+            "SELECT * FROM classes WHERE code = $1 AND organization_id = $2",
         )
         .bind(code)
+        .bind(organization_id)
         .fetch_optional(&mut *tx)
         .await?
-        .ok_or_else(|| anyhow::anyhow!("Invalid or inactive enrollment code"))?;
+        .ok_or_else(|| anyhow::anyhow!("Invalid enrollment code"))?;
 
         // Check if already enrolled
         let existing =

@@ -11,7 +11,7 @@ use shared::models::role::Role;
 
 use super::access::requests_management_problem_view;
 use super::problem_access::{
-    ensure_management_problem_read_access, ensure_problem_mutation_access, load_problem_access,
+    ensure_problem_mutation_access, load_problem_access,
 };
 
 /// Escape SQL LIKE special characters to prevent wildcard injection.
@@ -164,7 +164,10 @@ pub async fn update_correct_answer_visibility(
 ) -> Result<Json<CorrectAnswerVisibility>, StatusCode> {
     let role = require_teacher_plus(&claims.role)?;
     let problem = load_problem_access(&state, id).await?;
-    ensure_management_problem_read_access(role, &claims, &problem)?;
+    // This is a WRITE operation (mutation) — use mutation access, not read.
+    // Read access lets any teacher in the org pass; mutation requires the
+    // teacher to be the problem author (or an admin with campus scope).
+    ensure_problem_mutation_access(role, &claims, &problem)?;
 
     let row = sqlx::query_as::<_, (i64, bool)>(
         r#"
