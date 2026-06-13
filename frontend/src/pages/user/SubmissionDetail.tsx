@@ -4,7 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { problemsService } from '@/services/problems'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
-import { getSubmissionStatusConfig } from '@/lib/submissionStatus'
+import { getSubmissionStatusConfig, isSubmissionTerminal } from '@/lib/submissionStatus'
 import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
 import { ArrowLeft, RotateCcw, CheckCircle, XCircle, Clock, Cpu, Code2, Copy, Check } from 'lucide-react'
@@ -69,9 +69,9 @@ export function SubmissionDetail() {
     enabled: !!submissionId,
     refetchInterval: (query) => {
       const status = query.state.data?.status
-      return status === 'queued' || status === 'pending' || status === 'compiling' || status === 'running'
-        ? 2000
-        : false
+      // Poll while the submission has NOT reached a terminal verdict.
+      // Uses the shared allow-list so new verdict statuses stop polling.
+      return isSubmissionTerminal(status) ? false : 2000
     },
   })
 
