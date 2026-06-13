@@ -1,12 +1,32 @@
 use super::models::*;
 use anyhow::Result;
 use api_infra::traits::token_service::TokenService;
-use md5::Digest;
 use rand::Rng;
 use sqlx::PgPool;
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use tracing::{info, warn};
 use uuid::Uuid;
+
+/// A lazily-generated bcrypt hash used to equalize login response timing when
+/// the supplied username does not exist. Without it, an attacker can enumerate
+/// valid usernames by timing: existing users trigger a slow bcrypt compare
+/// while missing usernames return instantly. Generated once and reused so
+/// every miss incurs the same bcrypt cost as a real verification.
+static DUMMY_BCRYPT_HASH: OnceLock<String> = OnceLock::new();
+
+/// Fallback bcrypt hash (valid cost-12 format) used only if dynamic generation
+/// fails — which should never happen in practice.
+const FALLBACK_DUMMY_BCRYPT: &str =
+    "$2b$12$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
+
+fn dummy_bcrypt_hash() -> &'static str {
+    DUMMY_BCRYPT_HASH
+        .get_or_init(|| {
+            bcrypt::hash("timing-equalization-dummy", bcrypt::DEFAULT_COST)
+                .unwrap_or_else(|_| FALLBACK_DUMMY_BCRYPT.to_string())
+        })
+        .as_str()
+}
 
 pub struct UserService {
     pool: PgPool,
@@ -195,7 +215,16 @@ impl UserService {
             .fetch_optional(&self.pool)
             .await?;
 
-        let user = user.ok_or_else(|| anyhow::anyhow!("Invalid credentials"))?;
+        // SECURITY (P8): Run a dummy bcrypt verification when the username is
+        // unknown so the response timing matches the known-user path, closing
+        // a timing side-channel that allowed username enumeration.
+        let user = match user {
+            Some(u) => u,
+            None => {
+                let _ = bcrypt::verify(&req.password, dummy_bcrypt_hash());
+                return Err(anyhow::anyhow!("Invalid credentials"));
+            }
+        };
 
         // SECURITY: Reject MD5-hashed passwords — unsalted MD5 is vulnerable to
         // rainbow table attacks. The transparent migration path has been removed.
@@ -852,7 +881,6 @@ impl UserService {
 
             created.push(BatchCreatedUser {
                 profile: self.get_user_profile(profile.id).await?,
-                password,
             });
         }
 
@@ -878,9 +906,10 @@ impl UserService {
 }
 
 /// Check if a password matches an {MD5}-prefixed hash (without the prefix).
-/// Preserved as legacy documentation of the {MD5} format.
-#[allow(dead_code)]
+/// Only available in test code for legacy MD5 migration testing.
+#[cfg(test)]
 fn verify_md5_password(password: &str, md5_hash: &str) -> bool {
+    use md5::Digest;
     let digest = md5::Md5::digest(password.as_bytes());
     let computed: String = digest.iter().map(|b| format!("{:02x}", b)).collect();
     computed == md5_hash

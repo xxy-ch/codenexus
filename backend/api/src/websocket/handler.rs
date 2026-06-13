@@ -9,7 +9,9 @@ use axum::{
 };
 use futures_util::{SinkExt, StreamExt};
 use serde::Deserialize;
+use shared::models::role::Role;
 use shared::models::Claims;
+use std::str::FromStr;
 use tokio::sync::{mpsc, oneshot};
 use uuid::Uuid;
 
@@ -60,6 +62,7 @@ async fn authorize_topic_subscription(
     topic: &str,
     user_id: Uuid,
     school_id: i64,
+    role: &str,
 ) -> bool {
     if let Some(submission_id) = topic
         .strip_prefix("submission:")
@@ -96,7 +99,30 @@ async fn authorize_topic_subscription(
         .and_then(|rest| rest.strip_suffix(":chat"))
         .and_then(|id| id.parse::<i64>().ok())
     {
-        return sqlx::query_scalar::<_, i64>("SELECT organization_id FROM contests WHERE id = $1")
+        // Chat is restricted to teachers+ and registered participants, not
+        // merely same-organization users (per the documented topic contract).
+        return user_can_access_contest_chat(db_pool, contest_id, user_id, school_id, role).await;
+    }
+
+    false
+}
+
+/// Authorize access to a contest chat topic.
+///
+/// Per the documented contract, contest chat is restricted to teachers and
+/// above plus registered participants. This enforces two layers:
+///   1. Tenant isolation — the contest must belong to the user's organization.
+///   2. Role/participation — the user is a teacher+ OR a registered participant.
+async fn user_can_access_contest_chat(
+    db_pool: &sqlx::PgPool,
+    contest_id: i64,
+    user_id: Uuid,
+    school_id: i64,
+    role: &str,
+) -> bool {
+    // 1. Tenant isolation: contest must belong to the user's organization.
+    let org_ok =
+        sqlx::query_scalar::<_, i64>("SELECT organization_id FROM contests WHERE id = $1")
             .bind(contest_id)
             .fetch_optional(db_pool)
             .await
@@ -104,9 +130,30 @@ async fn authorize_topic_subscription(
             .flatten()
             .map(|org_id| org_id == school_id)
             .unwrap_or(false);
+
+    if !org_ok {
+        return false;
     }
 
-    false
+    // 2a. Teachers and above manage the contest and may access its chat.
+    if Role::from_str(role)
+        .map(|r| r.is_higher_or_equal(Role::Teacher))
+        .unwrap_or(false)
+    {
+        return true;
+    }
+
+    // 2b. Registered participants may access chat.
+    sqlx::query_scalar::<_, i64>(
+        "SELECT 1 FROM contest_participants WHERE contest_id = $1 AND user_id = $2",
+    )
+    .bind(contest_id)
+    .bind(user_id)
+    .fetch_optional(db_pool)
+    .await
+    .ok()
+    .flatten()
+    .is_some()
 }
 
 /// Handle WebSocket connection (internal, after auth verified)
@@ -227,8 +274,14 @@ async fn websocket_handler_inner(
                         // Handle topic subscription requests.
                         // All subscriptions are validated against the authenticated user_id.
                         WebSocketMessage::Subscribe { topic } => {
-                            if authorize_topic_subscription(&db_pool, &topic, user_id, school_id)
-                                .await
+                            if authorize_topic_subscription(
+                                &db_pool,
+                                &topic,
+                                user_id,
+                                school_id,
+                                &claims.role,
+                            )
+                            .await
                             {
                                 server.subscribe(client_id, topic).await;
                             } else {
@@ -296,19 +349,17 @@ async fn websocket_handler_inner(
                         }
 
                         WebSocketMessage::ChatMessage { contest_id, .. } => {
-                            // H-03: Verify contest belongs to user's organization
-                            let org_ok = sqlx::query_scalar::<_, i64>(
-                                "SELECT organization_id FROM contests WHERE id = $1",
+                            // Chat is restricted to teachers+ and registered
+                            // participants (not merely same-org users).
+                            if user_can_access_contest_chat(
+                                &db_pool,
+                                contest_id,
+                                user_id,
+                                school_id,
+                                &claims.role,
                             )
-                            .bind(contest_id)
-                            .fetch_optional(&db_pool)
                             .await
-                            .ok()
-                            .flatten()
-                            .map(|org_id| org_id == school_id)
-                            .unwrap_or(false);
-
-                            if org_ok {
+                            {
                                 let topic =
                                     crate::websocket::server::topics::contest_chat(contest_id);
                                 server.subscribe(client_id, topic).await;
@@ -386,6 +437,41 @@ pub async fn websocket_upgrade_handler(
             claims.sub
         );
         return Err(axum::http::StatusCode::UNAUTHORIZED);
+    }
+
+    // SECURITY: Check JWT blacklist (revoked tokens) — same as auth_middleware.
+    // Fail-closed when Redis is configured but unavailable.
+    if let Some(redis_pool) = &state.redis_pool {
+        let conn_result = redis_pool.get().await;
+        match conn_result {
+            Ok(mut conn) => {
+                let blacklisted: bool = deadpool_redis::redis::cmd("EXISTS")
+                    .arg(format!("bl:{}", claims.jti))
+                    .query_async(&mut conn)
+                    .await
+                    .unwrap_or(false);
+                if blacklisted {
+                    tracing::warn!(
+                        "WebSocket connection rejected: JWT token has been revoked for user {}",
+                        claims.sub
+                    );
+                    return Err(axum::http::StatusCode::UNAUTHORIZED);
+                }
+            }
+            Err(e) => {
+                tracing::warn!("Redis unavailable during WebSocket blacklist check — rejecting (fail-closed): {}", e);
+                return Err(axum::http::StatusCode::UNAUTHORIZED);
+            }
+        }
+    } else if !matches!(state.app_env, api_infra::config::AppEnv::Test) {
+        // Database fallback for token revocation
+        if crate::auth::routes::is_jti_revoked_in_db(&state, claims.jti).await {
+            tracing::warn!(
+                "WebSocket connection rejected: JWT token revoked in DB for user {}",
+                claims.sub
+            );
+            return Err(axum::http::StatusCode::UNAUTHORIZED);
+        }
     }
 
     let client_ip = extract_client_ip(&headers);

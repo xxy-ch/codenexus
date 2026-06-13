@@ -57,8 +57,9 @@ impl std::error::Error for AppStartupError {}
 
 /// Application configuration, validated at startup.
 ///
-/// In production: `from_env()` fails if JWT_SECRET or WORKER_SECRET are not set.
-/// In development: warns and uses insecure defaults.
+/// `from_env()` fails in ALL environments (including development) if
+/// JWT_SECRET or WORKER_SECRET are unset or empty — the server refuses to
+/// start with weak secrets rather than falling back to insecure defaults.
 /// In test: `test_config()` provides safe defaults without touching env vars.
 #[derive(Debug, Clone)]
 pub struct AppConfig {
@@ -82,23 +83,15 @@ impl AppConfig {
 
         let jwt_secret = match env::var("JWT_SECRET") {
             Ok(v) if !v.is_empty() => v,
-            _ if app_env.is_production() => {
-                return Err(AppStartupError::MissingSecret("JWT_SECRET"));
-            }
             _ => {
-                tracing::warn!("JWT_SECRET not set -- using insecure development default. NEVER use in production.");
-                "dev-only-insecure-jwt-secret-do-not-use-in-production".to_string()
+                return Err(AppStartupError::MissingSecret("JWT_SECRET"));
             }
         };
 
         let worker_secret = match env::var("WORKER_SECRET") {
             Ok(v) if !v.is_empty() => v,
-            _ if app_env.is_production() => {
-                return Err(AppStartupError::MissingSecret("WORKER_SECRET"));
-            }
             _ => {
-                tracing::warn!("WORKER_SECRET not set -- using insecure development default. NEVER use in production.");
-                "dev-only-insecure-worker-secret-do-not-use-in-production".to_string()
+                return Err(AppStartupError::MissingSecret("WORKER_SECRET"));
             }
         };
 
@@ -270,18 +263,17 @@ mod tests {
     }
 
     #[test]
-    fn test_development_allows_missing_secrets() {
+    fn test_missing_jwt_secret_fails_in_all_environments() {
         let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::remove_var("APP_ENV");
         std::env::remove_var("JWT_SECRET");
-        std::env::remove_var("WORKER_SECRET");
+        std::env::set_var("WORKER_SECRET", "real-secret");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
 
         let result = AppConfig::from_env();
-        assert!(result.is_ok(), "Development should allow missing secrets");
-        let config = result.unwrap();
-        assert!(!config.jwt_secret.is_empty());
-        assert!(config.jwt_secret.contains("dev-only-insecure"));
+        assert!(result.is_err(), "Missing JWT_SECRET should fail in all environments");
+        let msg = format!("{}", result.unwrap_err());
+        assert!(msg.contains("JWT_SECRET"), "Expected JWT_SECRET error, got: {}", msg);
     }
 
     #[test]
@@ -309,8 +301,10 @@ mod tests {
 
     #[test]
     fn test_development_cors_allows_all() {
-        let _guard = EnvGuard::new(&["APP_ENV", "DATABASE_URL"]);
+        let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::remove_var("APP_ENV");
+        std::env::set_var("JWT_SECRET", "dev-secret");
+        std::env::set_var("WORKER_SECRET", "dev-secret");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
 
         let config = AppConfig::from_env().unwrap();

@@ -37,8 +37,10 @@ impl ChrootEnvironment {
             .with_context(|| format!("Failed to chroot to {:?}", self.root_path))?;
         chdir("/").with_context(|| "Failed to chdir to /")?;
 
-        setuid(SANDBOX_USER).with_context(|| "Failed to set UID")?;
+        // Drop group BEFORE user: once setuid discards root we lose CAP_SETGID,
+        // so a subsequent setgid would fail. Order must be setgid -> setuid.
         setgid(SANDBOX_GROUP).with_context(|| "Failed to set GID")?;
+        setuid(SANDBOX_USER).with_context(|| "Failed to set UID")?;
 
         Ok(())
     }

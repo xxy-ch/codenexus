@@ -127,7 +127,36 @@ async fn process_submission_inner(
 }
 
 async fn create_work_dir(submission_id: i64) -> Result<PathBuf> {
-    let work_dir = PathBuf::from("/tmp/judge").join(format!("submission_{}", submission_id));
+    let judge_root = PathBuf::from("/tmp/judge");
+
+    // Ensure the judge root exists before tightening its permissions.
+    fs::create_dir_all(&judge_root).await?;
+
+    // SECURITY (P17): Lock the judge root to owner-only so sandboxed user code
+    // (nobody) cannot enumerate sibling submission directories. Without this,
+    // /tmp/judge defaults to 0o755 and any sandboxed process can list every
+    // submission_* entry and open other submissions' source files (which are
+    // 0o644 so the nobody runner itself can read them). 0o700 = owner rwx only.
+    #[cfg(target_os = "linux")]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&judge_root, std::fs::Permissions::from_mode(0o700)).await?;
+    }
+
+    // SECURITY (P17): Append an unpredictable nonce to the directory name.
+    // All submissions share the nobody uid, so file permissions alone cannot
+    // isolate them — DAC cannot distinguish one nobody process from another.
+    // Combined with the 0o700 judge root above, an unpredictable name means a
+    // sandboxed process can neither list nor guess the path of another
+    // submission, blocking trivial cross-submission source disclosure.
+    // Note: residual risk remains via /proc (a same-uid process may read a
+    // running peer's cwd); full isolation additionally requires per-uid or
+    // mount-namespace sandboxing, tracked separately.
+    let work_dir = judge_root.join(format!(
+        "submission_{}-{}",
+        submission_id,
+        uuid::Uuid::new_v4().simple()
+    ));
 
     if work_dir.exists() {
         fs::remove_dir_all(&work_dir).await?;
@@ -349,13 +378,19 @@ async fn execute_program(
     let stdout = std::fs::File::create(&stdout_path)?;
     let stderr = std::fs::File::create(&stderr_path)?;
 
+    // SECURITY: Enforce hard time limit cap to prevent resource exhaustion.
+    // Even if a problem is misconfigured with an extreme time_limit, the worker
+    // will not wait longer than 30 seconds per submission.
+    const MAX_TIME_LIMIT_MS: u64 = 30_000;
+    let effective_time_limit = submission.time_limit_ms.min(MAX_TIME_LIMIT_MS).max(1);
+
     // Create cgroup for resource limiting (Linux only, gracefully skip on other platforms).
     // SECURITY (C-10): Cgroup creation failure is now a hard error — refuse to run
     // user code without resource limits rather than silently proceeding.
     let cgroup = crate::sandbox::cgroups::CgroupController::new(
         &format!("judge-{}-{}", std::process::id(), submission.submission_id),
         &crate::sandbox::SandboxConfig {
-            cpu_time_limit_ms: submission.time_limit_ms.max(1),
+            cpu_time_limit_ms: effective_time_limit,
             memory_limit_bytes: submission.memory_limit_mb * 1024 * 1024,
             pids_max: 64,
             ..Default::default()
@@ -398,7 +433,7 @@ async fn execute_program(
     }
 
     let wait_result = timeout(
-        Duration::from_millis(submission.time_limit_ms.max(1)),
+        Duration::from_millis(effective_time_limit),
         child.wait(),
     )
     .await;

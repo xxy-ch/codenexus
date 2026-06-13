@@ -55,7 +55,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: online_judge
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -69,11 +69,18 @@ services:
     image: redis:7-alpine
     container_name: online-judge-redis
     restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    environment:
+      # P16: Provide auth to redis-cli via env var so the healthcheck no longer
+      # passes the password on the command line (visible in `ps` / process list).
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
+      # P16: redis-cli reads REDISCLI_AUTH from the environment automatically,
+      # so the password never appears in the command line or process list.
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
@@ -91,7 +98,7 @@ services:
     environment:
       APP_ENV: production
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       WORKER_SECRET: ${WORKER_SECRET:?WORKER_SECRET is required}
       PUBLIC_REGISTRATION_ORGANIZATION_ID: ${PUBLIC_REGISTRATION_ORGANIZATION_ID:?PUBLIC_REGISTRATION_ORGANIZATION_ID is required}
@@ -168,7 +175,7 @@ services:
     environment:
       APP_ENV: production
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       API_URL: http://api:3000
       WORKER_SECRET: ${WORKER_SECRET:?WORKER_SECRET is required}
     depends_on:
@@ -179,13 +186,12 @@ services:
       api:
         condition: service_healthy
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     cgroup: host
-    privileged: true
     cap_add:
-      - SYS_PTRACE
       - SYS_ADMIN
+    cap_drop:
+      - ALL
     security_opt:
       - no-new-privileges:true
     healthcheck:
@@ -208,7 +214,7 @@ services:
     environment:
       APP_ENV: production
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379
       LLM_API_URL: ${LLM_API_URL:-http://host.docker.internal:11434}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-deepseek-coder}
