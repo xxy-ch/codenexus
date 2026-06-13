@@ -1,14 +1,16 @@
 //! JWT authentication extractor.
 //!
-//! Extracts and validates JWT tokens from the Authorization header or
-//! access_token cookie. This extractor is independent of the concrete
-//! `JwtService` type in the `api` crate.
+//! Extracts pre-validated JWT claims from request extensions.
+//! The `auth_middleware` must run before this extractor to populate
+//! the extensions with validated claims.
 
 use axum::{async_trait, extract::FromRequestParts, http::StatusCode};
-use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use shared::models::Claims;
 
-/// Extractor that validates JWT from Authorization header or access_token cookie.
+/// Extractor that reads pre-validated JWT claims from request extensions.
+///
+/// Requires `auth_middleware` to have run first, which validates the token
+/// using `state.jwt_secret` and inserts the claims into extensions.
 pub struct AuthExtractor(pub Claims);
 
 #[async_trait]
@@ -22,39 +24,11 @@ where
         parts: &mut axum::http::request::Parts,
         _state: &S,
     ) -> Result<Self, Self::Rejection> {
-        let token = parts
-            .headers
-            .get("authorization")
-            .and_then(|h| h.to_str().ok())
-            .and_then(|h| h.strip_prefix("Bearer "))
-            .map(|t| t.to_string())
-            .or_else(|| {
-                parts
-                    .headers
-                    .get("cookie")
-                    .and_then(|c| c.to_str().ok())
-                    .and_then(|c| {
-                        c.split(';').find_map(|cookie| {
-                            let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
-                            if parts.len() == 2 && parts[0] == "access_token" {
-                                Some(parts[1].to_string())
-                            } else {
-                                None
-                            }
-                        })
-                    })
-            })
+        let claims = parts
+            .extensions
+            .get::<Claims>()
+            .cloned()
             .ok_or(StatusCode::UNAUTHORIZED)?;
-
-        let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| StatusCode::UNAUTHORIZED)?;
-
-        let token_data = decode::<Claims>(
-            &token,
-            &DecodingKey::from_secret(jwt_secret.as_ref()),
-            &Validation::new(Algorithm::HS256),
-        )
-        .map_err(|_| StatusCode::UNAUTHORIZED)?;
-
-        Ok(AuthExtractor(token_data.claims))
+        Ok(AuthExtractor(claims))
     }
 }

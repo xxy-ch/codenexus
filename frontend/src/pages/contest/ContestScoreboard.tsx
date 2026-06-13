@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
-import { Activity, ChevronRight, RefreshCw, TimerReset, Trophy, Zap } from 'lucide-react'
+import { Activity, ChevronRight, RefreshCw, TimerReset, Trophy } from 'lucide-react'
 import { scoreboardService } from '@/services/scoreboard'
 import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
@@ -49,7 +49,7 @@ export function ContestScoreboard() {
                   CodeNexus 实时榜单
                 </h1>
                 <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground font-normal">
-                  实时竞赛排名，每 15 秒自动刷新。数据源自排名接口，不使用前端 fallback。
+                  实时竞赛排名，每 15 秒自动刷新，帮助选手和教师同步掌握赛况。
                 </p>
               </div>
             </div>
@@ -101,7 +101,7 @@ export function ContestScoreboard() {
             </div>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">数据来源</p>
-              <p className="mt-0.5 text-sm font-bold text-foreground">实时排名接口</p>
+              <p className="mt-0.5 text-sm font-bold text-foreground">竞赛提交</p>
             </div>
           </div>
         </div>
@@ -115,7 +115,7 @@ export function ContestScoreboard() {
           </div>
           <div>
             <p className="text-sm font-bold text-foreground">实时竞赛榜单</p>
-            <p className="text-[11px] text-muted-foreground">排名数据源自真实接口，每 15 秒轮询更新。</p>
+            <p className="text-[11px] text-muted-foreground">每 15 秒轮询更新。</p>
           </div>
         </div>
         <Link

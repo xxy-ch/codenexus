@@ -239,13 +239,6 @@ export function EditArticle() {
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm">
-            <p className="text-sm font-bold text-foreground">交付边界</p>
-            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              当前编辑页支持标题、分类、标签和正文更新。不包含修订历史、多人协同和富媒体资源管理。
-            </p>
-          </div>
-
           <div className="flex gap-3">
             <button
               type="button"

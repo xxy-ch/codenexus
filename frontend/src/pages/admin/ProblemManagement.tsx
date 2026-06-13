@@ -144,7 +144,7 @@ export function ProblemManagement() {
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">题目管理</h1>
             <p className="admin-readable-muted mt-2 max-w-3xl text-sm leading-6">
-              管理题库的创建、编辑、删除与基础可见性维护。当前已接入真实后端写操作。
+              管理题库的创建、编辑、删除与基础可见性维护。
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -155,27 +155,6 @@ export function ProblemManagement() {
             >
               刷新
             </button>
-            <div className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">CRUD Live</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Status Banner */}
-      <div className="rounded-xl border border-status-accepted/20 bg-status-accepted/5 px-5 py-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex gap-3">
-            <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-status-accepted/10 text-status-accepted">
-              <Plus className="h-4 w-4" />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">已接入真实后端写操作</h2>
-              <p className="admin-readable-muted mt-1 max-w-3xl text-sm leading-6">
-                创建、编辑、删除与可见性切换已接通真实接口。题面和测试数据维护在题面配置与判题设置页面完成。
-              </p>
-            </div>
-          </div>
-          <div className="rounded-lg border border-status-accepted/20 bg-status-accepted/10 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-status-accepted">
-            create / edit / delete
           </div>
         </div>
       </div>

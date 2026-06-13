@@ -6,7 +6,7 @@ use uuid::Uuid;
 use api_infra::traits::token_service::TokenService;
 
 const ACCESS_TOKEN_EXPIRATION_HOURS: i64 = 4;
-const REFRESH_TOKEN_EXPIRATION_DAYS: i64 = 30;
+const REFRESH_TOKEN_EXPIRATION_DAYS: i64 = 14;
 
 #[derive(Clone)]
 pub struct JwtService {

@@ -896,14 +896,24 @@ impl ClassService {
 
     /// Student self-enroll using code
     pub async fn enroll_with_code(&self, code: &str, student_id: Uuid) -> Result<ClassEnrollment> {
-        let class = self.get_class_by_code(code).await?;
+        // SECURITY: Use a transaction to prevent TOCTOU between class lookup and enrollment.
+        // The tenant check and enrollment are now atomic.
+        let mut tx = self.pool.begin().await?;
+
+        let class = sqlx::query_as::<_, super::models::Class>(
+            "SELECT * FROM classes WHERE enrollment_code = $1 AND is_active = true",
+        )
+        .bind(code)
+        .fetch_optional(&mut *tx)
+        .await?
+        .ok_or_else(|| anyhow::anyhow!("Invalid or inactive enrollment code"))?;
 
         // Check if already enrolled
         let existing =
             sqlx::query("SELECT id FROM class_enrollments WHERE class_id = $1 AND student_id = $2")
                 .bind(class.id)
                 .bind(student_id)
-                .fetch_optional(&self.pool)
+                .fetch_optional(&mut *tx)
                 .await?;
 
         if existing.is_some() {
@@ -920,9 +930,10 @@ impl ClassService {
         .bind(class.id)
         .bind(student_id)
         .bind(Utc::now())
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *tx)
         .await?;
 
+        tx.commit().await?;
         Ok(enrollment)
     }
 

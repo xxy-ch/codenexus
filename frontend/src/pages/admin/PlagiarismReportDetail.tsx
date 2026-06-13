@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AlertTriangle, ArrowLeft, FileSearch, Flag, Layers3, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, FileSearch, Flag, Layers3, ShieldAlert } from 'lucide-react'
 import { plagiarismService } from '@/services/plagiarism'
 import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
 import { InlineError } from '@/components/ui/InlineError'
@@ -208,17 +208,6 @@ export function PlagiarismReportDetail() {
             </div>
           </div>
 
-          <div className={cn('rounded-xl border p-5 shadow-sm', riskTone)}>
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 h-4 w-4" />
-              <div>
-                <p className="text-sm font-semibold">交付边界</p>
-                <p className="mt-2 text-[13px] leading-6">
-                  当前详情页已经根据真实报告数据切出多种展示变体，但还没有实现源码逐段 diff 和人工判定工作流。
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

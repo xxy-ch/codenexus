@@ -6,7 +6,7 @@ import { InlineError } from '@/components/ui/InlineError'
 import { ConversationList } from '@/components/messages/ConversationList'
 import { MessageThread } from '@/components/messages/MessageThread'
 import { useAuth } from '@/hooks/useAuth'
-import { MessageCircle, RefreshCw, Send, Users } from 'lucide-react'
+import { MessageCircle, RefreshCw, Send } from 'lucide-react'
 
 export function DirectMessages() {
   const queryClient = useQueryClient()
@@ -176,19 +176,6 @@ export function DirectMessages() {
             </form>
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-primary/10 p-2 text-primary">
-                <Users className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">交付边界</p>
-                <p className="text-xs text-muted-foreground">
-                  当前支持真实会话列表、历史消息和发送能力。高级搜索、置顶和群组能力未暴露。
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">

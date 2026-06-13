@@ -3,6 +3,16 @@ use anyhow::Result;
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
+/// Escape SQL LIKE special characters to prevent wildcard injection.
+/// Wraps the input with `%` wildcards for LIKE queries.
+fn escape_like_pattern(input: &str) -> String {
+    let escaped = input
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    format!("%{}%", escaped)
+}
+
 #[derive(Clone)]
 pub struct SearchService {
     pool: PgPool,
@@ -147,7 +157,7 @@ impl SearchService {
                 LIMIT 5
                 "#,
             )
-            .bind(format!("%{}%", keyword))
+            .bind(escape_like_pattern(&keyword))
             .fetch_all(&self.pool)
             .await
             .unwrap_or_default()
@@ -161,7 +171,7 @@ impl SearchService {
                 LIMIT 5
                 "#,
             )
-            .bind(format!("%{}%", keyword))
+            .bind(escape_like_pattern(&keyword))
             .bind(org_id)
             .fetch_all(&self.pool)
             .await
@@ -182,7 +192,7 @@ impl SearchService {
                 LIMIT 5
                 "#,
             )
-            .bind(format!("%{}%", keyword))
+            .bind(escape_like_pattern(&keyword))
             .fetch_all(&self.pool)
             .await
             .unwrap_or_default()
@@ -196,7 +206,7 @@ impl SearchService {
                 LIMIT 5
                 "#,
             )
-            .bind(format!("%{}%", keyword))
+            .bind(escape_like_pattern(&keyword))
             .bind(org_id)
             .fetch_all(&self.pool)
             .await
@@ -284,7 +294,7 @@ impl SearchService {
 
         let mut q = sqlx::query(&query_str)
             .bind(query_text)
-            .bind(format!("%{}%", query_text));
+            .bind(escape_like_pattern(&query_text));
 
         if let Some(org_id) = extra_bind {
             q = q.bind(org_id);
@@ -378,7 +388,7 @@ impl SearchService {
 
         let mut q = sqlx::query(&query_str)
             .bind(query_text)
-            .bind(format!("%{}%", query_text));
+            .bind(escape_like_pattern(&query_text));
 
         if let Some(org_id) = tenant_bind {
             q = q.bind(org_id);

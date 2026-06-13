@@ -4,7 +4,7 @@ import { rankingService } from '@/services/ranking'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
-import { ArrowRight, BarChart3, Building2, Crown, Medal, Search, Sparkles, Trophy } from 'lucide-react'
+import { BarChart3, Building2, Crown, Medal, Search, Sparkles, Trophy } from 'lucide-react'
 import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { InlineError } from '@/components/ui/InlineError'
@@ -107,7 +107,7 @@ export function Ranking() {
               <div>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">排行榜</h1>
                 <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                  展示真实榜单、组织排行和当前用户位置。保留真实 leaderboard 数据，采用微动画与高对比度磨砂设计。
+                  展示全局榜单、组织排行和当前用户位置，聚焦解题表现与稳定性。
                 </p>
               </div>
             </div>
@@ -386,17 +386,6 @@ export function Ranking() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-border bg-muted/30 p-5 glass">
-            <div className="flex items-start gap-3">
-              <ArrowRight className="mt-0.5 h-4 w-4 text-primary animate-pulse" />
-              <div>
-                <p className="text-sm font-semibold text-foreground">交付边界</p>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  当前排行榜使用真实 leaderboard 数据。学校过滤和更细颗粒度榜单仍未开放，所以页面只保留已落地范围。
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -10,7 +10,6 @@ import {
   School,
   ShieldAlert,
   SlidersHorizontal,
-  Sparkles,
   Users,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/authStore'
@@ -54,7 +53,7 @@ export function AdminDashboard() {
     },
     {
       title: '题目管理',
-      description: '查看题库状态、通过率和当前交付范围内的发布视图。',
+      description: '查看题库状态、通过率和发布视图。',
       href: '/admin/problems',
       icon: BookCopy,
       accent: 'text-primary',
@@ -96,7 +95,7 @@ export function AdminDashboard() {
           },
           {
             title: '抄袭报告',
-            description: '查看真实扫描报告、可疑对照和风险详情。',
+            description: '查看扫描报告、可疑对照和风险详情。',
             href: '/admin/plagiarism-reports',
             icon: FileSearch,
             accent: 'text-destructive',
@@ -121,7 +120,7 @@ export function AdminDashboard() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">CodeNexus 系统概览</h1>
             <p className="admin-readable-muted mt-2 max-w-3xl text-sm leading-6">
-              管理端当前只暴露已接入真实后端的能力。页面结构按 reference 收拢，但所有入口仍受真实接口边界约束。
+              集中管理用户、题库、判题队列、年级组织和风控工具。
             </p>
           </div>
 
@@ -129,50 +128,17 @@ export function AdminDashboard() {
             <div className="rounded-lg border border-border/40 bg-background/40 p-4">
               <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">活跃模块</div>
               <div className="mt-3 text-3xl font-bold text-foreground">{modules.length}</div>
-              <div className="mt-1 text-xs text-muted-foreground">已接入真实后端的管理模块</div>
+              <div className="mt-1 text-xs text-muted-foreground">可用管理模块</div>
             </div>
             <div className="rounded-lg border border-border bg-primary p-4">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary-foreground/70">
-                <Sparkles className="h-3.5 w-3.5" />
                 管理入口
               </div>
               <div className="mt-3 text-lg font-bold text-primary-foreground">{modules.length} 个模块</div>
-              <div className="mt-1 text-xs text-primary-foreground/70">主导航与概览卡片保持同一组真实后端入口</div>
+              <div className="mt-1 text-xs text-primary-foreground/70">与主导航保持一致</div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Status Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <div className="admin-readable-label text-xs font-semibold uppercase tracking-widest">题目管理</div>
-          <div className="mt-4 text-3xl font-bold text-foreground">CRUD</div>
-          <p className="admin-readable-muted mt-2 text-xs leading-5">题目管理当前已接通创建、编辑、删除与测试数据维护。</p>
-        </div>
-        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <div className="admin-readable-label text-xs font-semibold uppercase tracking-widest">抄袭检测</div>
-          <div className="mt-4 flex items-center gap-2">
-            <span className={`inline-block h-2.5 w-2.5 rounded-full ${plagiarismEnabled ? 'bg-lime-400' : 'bg-muted-foreground/40'}`} />
-            <span className="text-3xl font-bold text-foreground">{plagiarismEnabled ? '已启用' : '已禁用'}</span>
-          </div>
-          <p className="admin-readable-muted mt-2 text-xs leading-5">相似度扫描和报告页都已经接入真实接口。</p>
-        </div>
-        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <div className="admin-readable-label text-xs font-semibold uppercase tracking-widest">管理入口</div>
-          <div className="mt-4 text-3xl font-bold text-foreground">{modules.length}</div>
-          <p className="admin-readable-muted mt-2 text-xs leading-5">主导航与概览卡片保持同一组真实后端入口。</p>
-        </div>
-        <div className="rounded-xl border border-border/40 bg-accent/40 backdrop-blur-xl p-5 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-widest text-foreground">运行策略</div>
-          <div className="mt-4 text-3xl font-bold text-foreground">Real API</div>
-          <p className="admin-readable-muted mt-2 text-xs leading-5">不再为管理端页面提供用户可见的 mock fallback。</p>
-        </div>
-      </div>
-
-      {/* Notice */}
-      <div className="admin-readable-muted rounded-xl border border-difficulty-medium/30 bg-difficulty-medium/5 px-5 py-4 text-sm leading-6">
-        当前后台不是全功能运营平台，而是这次交付范围内的受控后台。不存在真实后端的模块不会继续以假入口形式暴露。
       </div>
 
       {/* Module Grid */}

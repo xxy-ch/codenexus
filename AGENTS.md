@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Online_Judge** (7366 symbols, 15229 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Online_Judge** (7402 symbols, 15336 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -104,16 +104,14 @@ To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.
 <claude-mem-context>
 # Memory Context
 
-# [Online_Judge] recent context, 2026-06-03 5:56pm GMT+8
+# [Online_Judge] recent context, 2026-06-09 10:45am GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (9,939t read) | 879,042t work | 99% savings
+Stats: 50 obs (10,030t read) | 862,514t work | 99% savings
 
-### Apr 9, 2026
-239 8:41a 🔵 User initiated exploration of Shared code to understand repository context for role model work
 ### Apr 10, 2026
 248 8:12a 🔵 User requested to examine Shared repository and run gitnexus
 ### Apr 11, 2026
@@ -183,10 +181,7 @@ S202 Parallel code reviews and build verification for Online Judge backend (Apr 
 ### May 29, 2026
 720 12:08a 🔵 OJ System Analysis Initiated
 ### May 30, 2026
-**721** 9:27a ⚖️ **Updated implementation plan for OJ full workflow verification**
-The user updated the project plan to systematically verify the entire Online Judge usage flow. The plan begins with inventorying the current runtime environment and access points, proceeds to execute real-browser simulations of core teacher, root, and student operations, then addresses any backend or contract mismatches with frontend adjustments. After fixes, Docker images are rebuilt and cleaned, followed by browser-based regression testing. Finally, only the changes made during this iteration are retained and committed to maintain a clear audit trail.
-~309t ⚖️ 2,551
-
+721 9:27a ⚖️ Updated implementation plan for OJ full workflow verification
 **722** 9:53a 🔵 **Found demo user records in bootstrap SQL**
 While searching for specific strings in the bootstrap demo SQL and migration files, the rg command revealed that scripts/bootstrap_demo.sql contains predefined demo user records. These records include UUIDs, usernames, email placeholders, identical password hashes, role assignments, and active status, indicating the data is used for initial system setup or testing.
 ~235t 🔍 3,266
@@ -204,6 +199,11 @@ The user examined the browser skill documentation to understand proper procedure
 The user updated the project plan to track progress toward the goal of making the repository production-ready. The plan now shows that verification of the main worktree and its fixes is complete, the UI worktree's modular routing implementation is being checked, and a final summary audit will be performed once the UI worktree verification finishes.
 ~170t 🛠️ 2,385
 
+### Jun 5, 2026
+**746** 8:05p ⚖️ **Updated remediation plan for production readiness**
+The user updated the project plan to outline concrete actions needed to achieve production‑ready status: first verify current uncommitted changes and impacted symbols, then address missing production and registration configurations, mitigate frontend token exposure, resolve MD5 migration comment inconsistencies, and finally run focused tests and build checks to confirm all functionality works for student, root, and teacher scenarios.
+~229t ⚖️ 2,709
 
-Access 879k tokens of past work via get_observations([IDs]) or mem-search skill.
+
+Access 863k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

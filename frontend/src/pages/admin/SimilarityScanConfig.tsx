@@ -88,11 +88,6 @@ export function SimilarityScanConfig() {
         </div>
       </div>
 
-      {/* Info */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 px-5 py-4 text-sm leading-6 text-primary">
-        当前系统使用真实相似度接口，未再保留 mock fallback。只有竞赛/作业级别的扫描入口。
-      </div>
-
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.1fr)_360px]">
         <div className="space-y-6">
           <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-sm">

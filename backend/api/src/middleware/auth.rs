@@ -17,37 +17,11 @@ where
         parts: &mut axum::http::request::Parts,
         _state: &S,
     ) -> Result<Self, Self::Rejection> {
-        let token = parts
-            .headers
-            .get("authorization")
-            .and_then(|h| h.to_str().ok())
-            .and_then(|h| h.strip_prefix("Bearer "))
-            .map(|t| t.to_string())
-            .or_else(|| {
-                parts
-                    .headers
-                    .get("cookie")
-                    .and_then(|c| c.to_str().ok())
-                    .and_then(|c| {
-                        c.split(';').find_map(|cookie| {
-                            let parts: Vec<&str> = cookie.trim().splitn(2, '=').collect();
-                            if parts.len() == 2 && parts[0] == "access_token" {
-                                Some(parts[1].to_string())
-                            } else {
-                                None
-                            }
-                        })
-                    })
-            })
+        let claims = parts
+            .extensions
+            .get::<Claims>()
+            .cloned()
             .ok_or(StatusCode::UNAUTHORIZED)?;
-
-        let jwt_secret = std::env::var("JWT_SECRET").map_err(|_| StatusCode::UNAUTHORIZED)?;
-        let jwt_service = JwtService::new(&jwt_secret);
-
-        let claims = jwt_service
-            .validate_token(&token)
-            .map_err(|_| StatusCode::UNAUTHORIZED)?;
-
         Ok(AuthExtractor(claims))
     }
 }

@@ -115,7 +115,7 @@ export function BlogList() {
               <div>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">博客</h1>
                 <p className="mt-3 max-w-2xl text-sm text-muted-foreground leading-relaxed">
-                  聚合教程、题解和公告内容。页面已接入真实文章数据、精选流和分类标签，不再是静态占位信息流。
+                  聚合教程、题解和公告内容，沉淀训练过程中的经验与观点。
                 </p>
               </div>
             </div>
@@ -226,7 +226,7 @@ export function BlogList() {
                 {tag && <span className="ml-2 text-primary">#{tag}</span>}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                当前流展示真实博客内容和已落地过滤条件。
+                使用分类、标签和排序快速定位文章。
               </p>
             </div>
             {(category || tag || sort) && (

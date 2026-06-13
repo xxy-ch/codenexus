@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { CalendarDays, ChevronRight, Eye, FileText, Globe2, Lock, ShieldCheck, Timer, Trophy } from 'lucide-react'
+import { CalendarDays, ChevronRight, Eye, FileText, Timer, Trophy } from 'lucide-react'
 import api from '@/services/api'
 
 interface CreateContestPayload {
@@ -61,7 +61,6 @@ export function ContestWizard() {
     end_time: '',
     freeze_minutes: 0,
   })
-  const [isPrivate, setIsPrivate] = useState(false)
   const [message, setMessage] = useState<string>('')
 
   const createMutation = useMutation({
@@ -111,7 +110,7 @@ export function ContestWizard() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">创建新竞赛</h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                四段式向导创建流程。当前页只提交真实后端已支持的基础信息，其余配置在创建成功后继续完成。
+                配置竞赛名称、规则、时间窗口和榜单冻结策略。
               </p>
             </div>
           </div>
@@ -271,7 +270,7 @@ export function ContestWizard() {
             <section className="space-y-6 border-t border-border pt-8">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">规则集</h2>
-                <p className="mt-1 text-sm text-muted-foreground">直接映射到后端 rules 字段，当前只保留已支持的三种模式。</p>
+                <p className="mt-1 text-sm text-muted-foreground">选择适合本次竞赛的排名与计分方式。</p>
               </div>
 
               <div className="grid gap-4 md:grid-cols-3">
@@ -308,54 +307,19 @@ export function ContestWizard() {
             {/* Visibility & Freeze */}
             <section className="space-y-6 border-t border-border pt-8">
               <div>
-                <h2 className="text-lg font-semibold text-foreground">可见性与冻结</h2>
-                <p className="mt-1 text-sm text-muted-foreground">可见性作为前端策略展示，真实创建接口当前只提交榜单冻结分钟数。</p>
+                <h2 className="text-lg font-semibold text-foreground">榜单冻结</h2>
+                <p className="mt-1 text-sm text-muted-foreground">设置赛末封榜时间，降低最后阶段排名波动带来的干扰。</p>
               </div>
 
               <div className="rounded-xl border border-border bg-muted/50 p-5">
-                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                      {isPrivate ? <Lock className="h-4 w-4" /> : <Globe2 className="h-4 w-4" />}
-                      {isPrivate ? '私有竞赛' : '公开竞赛'}
-                    </div>
-                    <p className="text-xs leading-6 text-muted-foreground">
-                      {isPrivate
-                        ? '当前只是页面层级标记。若要真正做私有赛，需要后端补权限和报名控制。'
-                        : '公开赛可直接在竞赛列表中被看见，适合训练营和校内赛。'}
-                    </p>
-                  </div>
-
-                  <div className="inline-flex rounded-lg bg-card p-1 ring-1 ring-border">
-                    <button
-                      type="button"
-                      onClick={() => setIsPrivate(false)}
-                      className={`rounded-lg px-4 py-2 text-sm font-medium ${
-                        !isPrivate ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
-                      }`}
-                    >
-                      公开
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsPrivate(true)}
-                      className={`rounded-lg px-4 py-2 text-sm font-medium ${
-                        isPrivate ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
-                      }`}
-                    >
-                      私有
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-5 grid gap-5 md:grid-cols-2">
+                <div className="grid gap-5 md:grid-cols-2">
                   <div className="rounded-lg border border-border bg-card p-4">
                     <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
                       <Eye className="h-4 w-4" />
                       冻结榜单
                     </div>
                     <p className="mt-2 text-xs leading-6 text-muted-foreground">
-                      提交给后端的真实控制项。填写 0 表示不封榜。
+                      填写 0 表示不封榜。
                     </p>
                     <input
                       type="number"
@@ -367,14 +331,11 @@ export function ContestWizard() {
                   </div>
 
                   <div className="rounded-lg border border-lime-500/30 bg-lime-500/5 p-4 text-xs text-lime-300">
-                    <div className="flex items-center gap-2 font-semibold">
-                      <ShieldCheck className="h-4 w-4" />
-                      当前交付边界
-                    </div>
+                    <div className="font-semibold">赛后配置提示</div>
                     <ul className="mt-3 space-y-2 leading-6 text-lime-300/80">
-                      <li>只提交后端已支持的创建字段。</li>
-                      <li>题目、参赛者和更细的权限配置在后续页完成。</li>
-                      <li>不再暴露无后端支撑的假开关。</li>
+                      <li>创建成功后前往竞赛详情继续配置题目。</li>
+                      <li>参赛者范围可通过班级和报名页组织。</li>
+                      <li>冻结分钟数会影响榜单最后阶段的展示。</li>
                     </ul>
                   </div>
                 </div>

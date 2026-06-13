@@ -83,7 +83,7 @@ export function JudgeSettings() {
           <div>
             <h1 className="text-xl font-bold tracking-tight text-foreground">测试数据与判题设置</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
-              管理测试用例、时间空间限制与评测参数。当前交付范围限定为测试用例维护。
+              管理测试用例、时间空间限制与评测参数。
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -136,7 +136,7 @@ export function JudgeSettings() {
             <EyeOff className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="mt-4 text-2xl font-bold text-difficulty-medium">{stats.hidden}</div>
-          <p className="mt-2 text-[13px] text-muted-foreground">隐藏测试点用于真实判题覆盖。</p>
+          <p className="mt-2 text-[13px] text-muted-foreground">隐藏测试点用于评测覆盖。</p>
         </div>
         <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -245,7 +245,7 @@ export function JudgeSettings() {
             <>
               <div className="border-b border-border/40 px-5 py-4">
                 <h2 className="text-sm font-semibold text-foreground">用例列表</h2>
-                <p className="mt-1 text-[13px] text-muted-foreground">当前只交付真实 test case 管理。</p>
+                <p className="mt-1 text-[13px] text-muted-foreground">按顺序查看、补充和删除题目的测试用例。</p>
               </div>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-border/40">

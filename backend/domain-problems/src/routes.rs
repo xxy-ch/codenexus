@@ -14,6 +14,15 @@ use super::problem_access::{
     ensure_management_problem_read_access, ensure_problem_mutation_access, load_problem_access,
 };
 
+/// Escape SQL LIKE special characters to prevent wildcard injection.
+fn escape_like_pattern(input: &str) -> String {
+    let escaped = input
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    format!("%{}%", escaped)
+}
+
 use super::models::{
     CorrectAnswerVisibility, CreateProblemRequest, ListProblemsQuery, Problem, ProblemDetail,
     ProblemStatistics, ProblemsListResponse, SupportedLanguage,
@@ -293,7 +302,7 @@ pub async fn list_problems(
         "#,
     )
     .bind(&search)
-    .bind(format!("%{}%", search))
+    .bind(escape_like_pattern(&search))
     .bind(difficulty.clone())
     .bind(visibility.clone())
     .bind(is_public)
@@ -337,7 +346,7 @@ pub async fn list_problems(
         "#,
     )
     .bind(&search)
-    .bind(format!("%{}%", search))
+    .bind(escape_like_pattern(&search))
     .bind(difficulty)
     .bind(visibility)
     .bind(is_public)

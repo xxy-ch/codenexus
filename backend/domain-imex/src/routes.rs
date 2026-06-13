@@ -31,7 +31,7 @@ use crate::user_export::{build_user_csv, UserExportRow};
 use crate::user_import::{parse_user_csv, RolePolicy};
 
 /// Maximum number of concurrent preview tokens in the cache.
-const MAX_PREVIEW_CACHE_SIZE: usize = 1000;
+const MAX_PREVIEW_CACHE_SIZE: usize = 50;
 
 /// Atomic counter for preview cache admission control.
 /// Tracks the number of active (not yet consumed or expired) preview tokens.

@@ -139,7 +139,7 @@ export function Settings() {
               <div>
                 <h1 className="text-xl font-semibold text-card-foreground leading-relaxed">设置中心</h1>
                 <p className="mt-1 max-w-xl text-sm font-normal text-muted-foreground leading-relaxed">
-                  将账户、偏好、通知和安全设置统一收在账号中心里。当前交付只保留已经落地的数据字段与受控本地偏好。
+                  将账户、偏好、通知和安全设置统一收在账号中心里。
                 </p>
               </div>
             </div>
@@ -212,7 +212,7 @@ export function Settings() {
             <div className="space-y-6">
               <div>
                 <h2 className="text-base font-semibold text-card-foreground">账户信息</h2>
-                <p className="mt-0.5 text-sm text-muted-foreground">仅保存已落地的个人资料字段。</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">维护个人资料和展示信息。</p>
               </div>
 
               <div className="border-t border-border" />
@@ -386,13 +386,13 @@ export function Settings() {
                 <div className="rounded-lg border border-border p-4">
                   <p className="text-sm font-medium text-card-foreground">密码与会话</p>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                    当前交付未开放独立密码重置与会话管理界面，安全能力仍以登录/刷新 token 为主。
+                    密码与会话能力由登录状态统一管理。
                   </p>
                 </div>
                 <div className="rounded-lg border border-border p-4">
                   <p className="text-sm font-medium text-card-foreground">危险操作</p>
                   <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                    删除账户、双因素认证和设备审计尚未交付，不在当前生产范围内暴露。
+                    删除账户和设备审计等高风险操作不会在此页直接执行。
                   </p>
                 </div>
               </div>

@@ -309,7 +309,7 @@ export function ClassManagement() {
                   {highlightedClass?.enrollment_code || "--"}
                 </div>
                 <p className="mt-2 text-xs text-tertiary">
-                  学生可通过真实邀请码入班接口加入该班级。
+                  学生可使用邀请码加入该班级。
                 </p>
               </div>
               <div>
@@ -511,7 +511,7 @@ export function ClassManagement() {
                   班级学生
                 </h2>
                 <p className="mt-1 text-xs text-tertiary">
-                  当前选中班级的真实学生清单与完成情况。
+                  当前选中班级的学生清单与完成情况。
                 </p>
               </div>
               <div className="overflow-x-auto border-b border-border-subtle">
@@ -571,7 +571,7 @@ export function ClassManagement() {
                   作业与提交记录
                 </h2>
                 <p className="mt-1 text-xs text-tertiary">
-                  发布作业后可直接查看当前班级该题目的真实提交记录。
+                  发布作业后可直接查看当前班级该题目的提交记录。
                 </p>
               </div>
               <div className="overflow-x-auto border-b border-border-subtle">

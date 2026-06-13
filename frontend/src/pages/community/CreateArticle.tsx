@@ -80,7 +80,7 @@ export function CreateArticle() {
               <div>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">撰写文章</h1>
                 <p className="mt-3 max-w-2xl text-sm text-muted-foreground leading-relaxed">
-                  使用动态编辑器、预览面板和真实博客接口撰写文章。支持题解、教程和公告类正文编辑。
+                  使用 Markdown 编辑器和预览面板撰写题解、教程和公告。
                 </p>
               </div>
             </div>
@@ -217,7 +217,7 @@ export function CreateArticle() {
             <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground leading-relaxed">
               <li>开头先给结论，再展开解法或观点。</li>
               <li>代码块尽量加语言名，方便高亮和阅读。</li>
-              <li>当前交付不包含图片库和协同编辑。</li>
+              <li>用清晰的小标题拆分复杂推导。</li>
             </ul>
           </div>
 
