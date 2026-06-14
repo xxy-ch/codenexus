@@ -93,26 +93,39 @@ pub struct LlmUsage {
 // ---------------------------------------------------------------------------
 
 /// Fetch a submission's source code and language by its ID.
+///
+/// Tenant-scoped: binds `organization_id` so that even if a job row's
+/// `submission_id` were tampered with upstream, the worker cannot read
+/// source code belonging to another organization.
 pub async fn get_submission_code(
     pool: &PgPool,
     submission_id: i64,
+    organization_id: i64,
 ) -> Result<Option<SubmissionCodeRow>> {
     let row = sqlx::query_as::<_, SubmissionCodeRow>(
-        "SELECT code, language FROM submissions WHERE id = $1",
+        "SELECT code, language FROM submissions WHERE id = $1 AND organization_id = $2",
     )
     .bind(submission_id)
+    .bind(organization_id)
     .fetch_optional(pool)
     .await?;
     Ok(row)
 }
 
 /// Fetch problem metadata by its ID.
-pub async fn get_problem_info(pool: &PgPool, problem_id: i64) -> Result<Option<ProblemInfo>> {
+///
+/// Tenant-scoped: binds `organization_id` for defense-in-depth.
+pub async fn get_problem_info(
+    pool: &PgPool,
+    problem_id: i64,
+    organization_id: i64,
+) -> Result<Option<ProblemInfo>> {
     let row = sqlx::query_as::<_, ProblemInfo>(
         "SELECT id, title, description, difficulty, time_limit_ms, memory_limit_kb \
-         FROM problems WHERE id = $1",
+         FROM problems WHERE id = $1 AND organization_id = $2",
     )
     .bind(problem_id)
+    .bind(organization_id)
     .fetch_optional(pool)
     .await?;
     Ok(row)

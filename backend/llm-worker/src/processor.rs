@@ -73,20 +73,27 @@ async fn process_code_review_job(
     job_id: i64,
     job: &db::AnalysisJobRow,
 ) -> Result<()> {
-    // Fetch submission code
-    let submission = db::get_submission_code(pool, job.submission_id)
+    // Fetch submission code (tenant-scoped by organization_id)
+    let submission = db::get_submission_code(pool, job.submission_id, job.organization_id)
         .await?
         .ok_or_else(|| {
             anyhow::anyhow!(
-                "submission {} not found for job {job_id}",
-                job.submission_id
+                "submission {} not found for job {job_id} in org {}",
+                job.submission_id,
+                job.organization_id
             )
         })?;
 
-    // Fetch problem info
-    let problem = db::get_problem_info(pool, job.problem_id)
+    // Fetch problem info (tenant-scoped)
+    let problem = db::get_problem_info(pool, job.problem_id, job.organization_id)
         .await?
-        .ok_or_else(|| anyhow::anyhow!("problem {} not found for job {job_id}", job.problem_id))?;
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "problem {} not found for job {job_id} in org {}",
+                job.problem_id,
+                job.organization_id
+            )
+        })?;
 
     // Build the prompt messages and convert to wire format
     let prompt_messages = prompts::code_review_prompt(
@@ -151,10 +158,16 @@ async fn process_teaching_card_job(
     job_id: i64,
     job: &db::AnalysisJobRow,
 ) -> Result<()> {
-    // Fetch problem info
-    let problem = db::get_problem_info(pool, job.problem_id)
+    // Fetch problem info (tenant-scoped)
+    let problem = db::get_problem_info(pool, job.problem_id, job.organization_id)
         .await?
-        .ok_or_else(|| anyhow::anyhow!("problem {} not found for job {job_id}", job.problem_id))?;
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "problem {} not found for job {job_id} in org {}",
+                job.problem_id,
+                job.organization_id
+            )
+        })?;
 
     // Fetch cluster representative submissions
     let cluster_ids: Vec<i64> = job.source_cluster_ids.clone().unwrap_or_default();
@@ -268,8 +281,14 @@ async fn handle_llm_error(pool: &PgPool, job_id: i64, e: &LlmError) -> Result<()
                 endpoint = %endpoint,
                 "LLM response was not valid JSON — recording raw response"
             );
+            // Truncate the raw response for the error_message field.
+            // IMPORTANT: slice by CHARACTERS, not bytes — LLM responses often
+            // contain CJK text, and slicing a UTF-8 string at a byte offset
+            // that falls inside a multi-byte sequence panics. Using chars()
+            // ensures we never split a codepoint.
             let raw_preview = if raw.len() > 4000 {
-                format!("{}...[truncated, total {} bytes]", &raw[..4000], raw.len())
+                let truncated: String = raw.chars().take(4000).collect();
+                format!("{}...[truncated, total {} bytes]", truncated, raw.len())
             } else {
                 raw.clone()
             };
