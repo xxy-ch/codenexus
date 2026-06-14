@@ -1,4 +1,4 @@
-import { SearchBar } from '@/components/search/SearchBar'
+import { SearchBar } from '@/features/search/components/SearchBar'
 import { Bell, Plus } from 'lucide-react'
 
 interface HeaderProps {

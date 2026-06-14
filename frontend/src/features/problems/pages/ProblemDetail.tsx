@@ -5,9 +5,9 @@ import { cn } from "@/shared/lib/utils";
 import { ProblemDetailSkeleton } from "@/features/problems/components/ProblemDetailSkeleton";
 import { InlineError } from "@/shared/components/InlineError";
 import { Clock, Cpu, Star, Play, Lightbulb, ArrowLeft } from "lucide-react";
-import { TeachingCardBlock } from "@/components/analysis/TeachingCardBlock";
-import { ClusterOverview } from "@/components/analysis/ClusterOverview";
-import { ProblemRecommendations } from "@/components/analysis/ProblemRecommendations";
+import { TeachingCardBlock } from "@/features/analysis/components/TeachingCardBlock";
+import { ClusterOverview } from "@/features/analysis/components/ClusterOverview";
+import { ProblemRecommendations } from "@/features/analysis/components/ProblemRecommendations";
 
 const difficultyConfig = {
   easy: {
