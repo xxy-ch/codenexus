@@ -19,8 +19,10 @@ impl NotificationService {
         user_id: Uuid,
         query: ListNotificationsQuery,
     ) -> Result<NotificationsListResponse> {
-        let limit = query.limit.unwrap_or(20).min(100);
-        let offset = query.offset.unwrap_or(0);
+        // Clamp limit/offset to prevent negative values (which would cause
+        // SQL errors) and unbounded result sets.
+        let limit = query.limit.unwrap_or(20).clamp(1, 100);
+        let offset = query.offset.unwrap_or(0).max(0);
 
         // Build dynamic query
         let mut base_query = "SELECT * FROM notifications WHERE user_id = $1".to_string();
@@ -45,8 +47,9 @@ impl NotificationService {
         count_query.push_str(&conditions_str);
 
         base_query.push_str(&format!(
-            " ORDER BY created_at DESC LIMIT {} OFFSET {}",
-            limit, offset
+            " ORDER BY created_at DESC LIMIT ${} OFFSET ${}",
+            param_count + 1,
+            param_count + 2
         ));
 
         // Execute count query
@@ -82,6 +85,9 @@ impl NotificationService {
         if let Some(notif_type) = &query.notification_type {
             query_builder = query_builder.bind(notif_type);
         }
+
+        // Bind LIMIT and OFFSET as parameters (not string-interpolated).
+        query_builder = query_builder.bind(limit).bind(offset);
 
         let notifications = query_builder.fetch_all(&self.db).await?;
 

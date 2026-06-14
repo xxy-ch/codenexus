@@ -232,32 +232,27 @@ impl SubmissionService {
     }
 
     async fn is_language_enabled(&self, language: &str) -> Result<bool> {
+        // Pure read — no INSERT/ON CONFLICT in a read path. The settings row
+        // is seeded by migration 023. If missing (fresh DB without migration),
+        // default to C/C++ disabled (fail-safe) rather than writing to the DB
+        // on every submission (which held a write lock on the hot path and
+        // silently set c_enabled=false on first access).
         let row = sqlx::query(
-            r#"
-            INSERT INTO judge_language_settings (id, c_enabled, cpp_enabled)
-            VALUES (TRUE, FALSE, FALSE)
-            ON CONFLICT (id) DO NOTHING
-            RETURNING c_enabled, cpp_enabled
-            "#,
+            "SELECT c_enabled, cpp_enabled FROM judge_language_settings WHERE id = TRUE",
         )
         .fetch_optional(&self.pool)
         .await?;
 
-        let (c_enabled, cpp_enabled) = if let Some(row) = row {
-            (
+        let (c_enabled, cpp_enabled) = match row {
+            Some(row) => (
                 row.get::<bool, _>("c_enabled"),
                 row.get::<bool, _>("cpp_enabled"),
-            )
-        } else {
-            let row = sqlx::query(
-                "SELECT c_enabled, cpp_enabled FROM judge_language_settings WHERE id = TRUE",
-            )
-            .fetch_one(&self.pool)
-            .await?;
-            (
-                row.get::<bool, _>("c_enabled"),
-                row.get::<bool, _>("cpp_enabled"),
-            )
+            ),
+            None => {
+                // Row not seeded — default to python3 only (fail-safe).
+                tracing::warn!("judge_language_settings row not found — defaulting C/C++ to disabled");
+                (false, false)
+            }
         };
 
         Ok(match language {

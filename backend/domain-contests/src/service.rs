@@ -687,6 +687,18 @@ impl ContestService {
             ));
         }
 
+        // SECURITY: Reject submissions created BEFORE the contest started.
+        // Without this, a student who pre-wrote a solution before the contest
+        // could link it later (once now >= start_time) and have it scored as
+        // an in-contest submission with an artificially low time penalty
+        // (penalty = first_solved_at - start_time, so a back-dated submission
+        // yields near-zero penalty).
+        if submission_info.1 < contest.start_time {
+            return Err(anyhow::anyhow!(
+                "Submission was created before the contest started and cannot be linked"
+            ));
+        }
+
         // Per Codex review: use submission's created_at (not link-time "now")
         // to avoid mis-tagging contest-time submissions linked post-contest as upsolving.
         let is_upsolving = submission_info.1 > contest.end_time;
