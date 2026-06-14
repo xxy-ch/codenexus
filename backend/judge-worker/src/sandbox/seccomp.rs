@@ -37,29 +37,36 @@ fn set_no_new_privs() -> Result<()> {
 
 /// Apply seccomp filter with deny-by-default policy (C-03).
 ///
-/// Only explicitly allowed syscalls pass through. All others return EPERM.
+/// Only explicitly allowed syscalls pass through. All others are KILLED.
 /// Combined with PR_SET_NO_NEW_PRIVS and setuid(nobody), this prevents:
 /// - Network access (no socket/connect/bind/sendto/recvfrom)
 /// - Process creation with namespace isolation (clone CLONE_NEW*)
 /// - Privilege escalation (no setuid/setgid)
-/// - Resource limit bypass (no setrlimit)
+/// - Resource limit bypass (no setrlimit/prlimit64)
 /// - Filesystem mount operations
 /// - Module loading, ptrace, reboot
+///
+/// SCMP_ACT_KILL_PROCESS (not ERRNO) terminates the process immediately on a
+/// forbidden syscall. This is stronger than returning EPERM, which lets an
+/// attacker probe the filter to discover which syscalls are blocked and
+/// attempt fallback paths. A kill is a hard stop with no feedback.
 pub fn apply_seccomp(_pid: u32) -> Result<()> {
     set_no_new_privs()?;
 
     #[cfg(target_os = "linux")]
     {
         let ctx = unsafe {
-            libseccomp_sys::seccomp_init(libseccomp_sys::SCMP_ACT_ERRNO(libc::EPERM as u16))
+            libseccomp_sys::seccomp_init(libseccomp_sys::SCMP_ACT_KILL_PROCESS)
         };
         if ctx.is_null() {
             return Err(anyhow::anyhow!("Failed to initialize seccomp context"));
         }
 
         // Allowed syscalls — minimum set for user program execution.
-        // Thread creation (clone) is allowed but namespace flags will fail
-        // because the process runs as nobody with no-new-privs.
+        // Thread creation (clone/clone3) is allowed for runtime threading
+        // support. Namespace flags (CLONE_NEW*) are expected to fail because
+        // the process runs as nobody with no-new-privs — but see the note in
+        // the audit: this relies on the privilege drop actually working.
         let allowed: &[&str] = &[
             // File I/O
             "read",
@@ -171,12 +178,9 @@ pub fn apply_seccomp(_pid: u32) -> Result<()> {
             "sched_getaffinity",
             "sched_setaffinity",
             "mremap",
-            "getrlimit",
-            "prlimit64",
             "getrusage",
             "times",
             "getsid",
-            "setsid",
             "getpgid",
             "setpgid",
             "wait4",
