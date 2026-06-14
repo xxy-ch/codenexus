@@ -1,4 +1,4 @@
-import type { Role } from './auth'
+import type { Role } from '@/shared/types/auth'
 
 export interface AdminStats {
   total_users: number

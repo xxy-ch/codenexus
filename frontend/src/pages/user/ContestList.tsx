@@ -2,12 +2,12 @@ import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { contestsService } from '@/services/contests'
-import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
+import { Button } from '@/shared/components/Button'
+import { cn } from '@/shared/lib/utils'
 import { Trophy, Search, Clock, Code2, Users, Calendar, Play, UserCheck, BarChart3, CalendarClock, CircleCheck, CirclePlay, Zap, Flame } from 'lucide-react'
-import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
 
 interface Contest {
   id: string

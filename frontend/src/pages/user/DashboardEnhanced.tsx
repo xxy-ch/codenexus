@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { usersService } from '@/services/users'
-import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
+import { Button } from '@/shared/components/Button'
+import { cn } from '@/shared/lib/utils'
 import type { UserActivity } from '@/types/users'
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Activity, Code2, Trophy, Flame, CheckCircle, XCircle, Upload, Cpu, Star, Award } from 'lucide-react'
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
 
 export function DashboardEnhanced() {
   const queryClient = useQueryClient()

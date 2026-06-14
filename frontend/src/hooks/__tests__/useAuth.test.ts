@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useAuthStore } from '@/store/authStore'
-import type { AuthResponse } from '@/types/auth'
-import api, { request } from '@/services/api'
+import { useAuthStore } from '@/shared/store/authStore'
+import type { AuthResponse } from '@/shared/types/auth'
+import api, { request } from '@/shared/services/api'
 
 // Mock the request module
-vi.mock('@/services/api', () => ({
+vi.mock('@/shared/services/api', () => ({
   default: {
     post: vi.fn(),
   },

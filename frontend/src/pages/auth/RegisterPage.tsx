@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Loading } from '@/components/ui/Loading'
-import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
-import { Checkbox } from '@/components/ui/Checkbox'
+import { Button } from '@/shared/components/Button'
+import { Input } from '@/shared/components/Input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/Card'
+import { Loading } from '@/shared/components/Loading'
+import { FormSkeleton } from '@/shared/components/FormSkeleton'
+import { Checkbox } from '@/shared/components/Checkbox'
 import { Code2, AlertCircle, UserPlus } from 'lucide-react'
-import type { RegisterRequest } from '@/types/auth'
+import type { RegisterRequest } from '@/shared/types/auth'
 
 export function RegisterPage() {
   const navigate = useNavigate()

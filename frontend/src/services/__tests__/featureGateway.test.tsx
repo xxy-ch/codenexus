@@ -11,7 +11,7 @@ const { mockApi } = vi.hoisted(() => ({
   },
 }))
 
-vi.mock('@/services/api', () => ({
+vi.mock('@/shared/services/api', () => ({
   default: mockApi,
 }))
 

@@ -1,4 +1,4 @@
-import api from './api'
+import api from '@/shared/services/api'
 import type { Conversation, DirectMessage } from '@/types/messages'
 
 export const messagesService = {

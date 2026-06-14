@@ -18,7 +18,7 @@ const {
   mockSend: vi.fn(),
 }))
 
-vi.mock('@/services/websocket', () => ({
+vi.mock('@/shared/services/websocket', () => ({
   websocketService: {
     connect: mockConnect,
     disconnect: mockDisconnect,
@@ -30,7 +30,7 @@ vi.mock('@/services/websocket', () => ({
 }))
 
 // Mock the config module for ConnectionStatus
-vi.mock('@/services/config', () => ({
+vi.mock('@/shared/services/config', () => ({
   ConnectionStatus: {
     CONNECTING: 'connecting',
     CONNECTED: 'connected',
@@ -41,7 +41,7 @@ vi.mock('@/services/config', () => ({
 }))
 
 // Import the hook AFTER mocks are set up
-import { useWebSocket } from '@/hooks/useWebSocket'
+import { useWebSocket } from '@/shared/hooks/useWebSocket'
 
 describe('useWebSocket', () => {
   beforeEach(() => {

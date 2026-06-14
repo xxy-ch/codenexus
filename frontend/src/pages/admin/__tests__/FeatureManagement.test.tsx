@@ -17,7 +17,7 @@ const { mockUseAuth } = vi.hoisted(() => ({
   mockUseAuth: vi.fn(),
 }))
 
-vi.mock('@/services/api', () => ({
+vi.mock('@/shared/services/api', () => ({
   default: mockApi,
 }))
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { BookText, ChevronRight, Eye, EyeOff, Loader2, Save, Search, Timer, Waypoints } from 'lucide-react'
 import { judgeConfigService, type UpdateProblemContentPayload } from '@/services/judgeConfig'
-import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
+import { FormSkeleton } from '@/shared/components/FormSkeleton'
 
 type ProblemContentForm = UpdateProblemContentPayload & {
   show_correct_answer: boolean

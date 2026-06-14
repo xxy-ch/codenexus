@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarDays, IdCard, Mail, PencilLine, ShieldCheck, Sparkles, User } from 'lucide-react'
-import { useAuthStore } from '@/store/authStore'
+import { useAuthStore } from '@/shared/store/authStore'
 import { usersService } from '@/services/users'
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/shared/components/Button'
 import { ProfileSkeleton } from '@/components/skeletons/ProfileSkeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
 
 export function Profile() {
   const { user: currentUser } = useAuthStore()

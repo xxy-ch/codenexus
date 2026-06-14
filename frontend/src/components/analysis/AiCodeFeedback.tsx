@@ -3,10 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DOMPurify from "dompurify";
 import { AlertCircle, Brain, Loader2, Sparkles } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
-import { InlineError } from "@/components/ui/InlineError";
-import { useFeatureEnabled } from "@/hooks/useFeatureGate";
-import { cn } from "@/lib/utils";
+import { Button } from "@/shared/components/Button";
+import { InlineError } from "@/shared/components/InlineError";
+import { useFeatureEnabled } from "@/shared/hooks/useFeatureGate";
+import { cn } from "@/shared/lib/utils";
 import {
   analysisService,
   type AiFeedbackResponse,

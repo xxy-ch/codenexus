@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { classesService } from "@/services/classes";
-import { TableSkeleton } from "@/components/skeletons/TableSkeleton";
-import { InlineError } from "@/components/ui/InlineError";
+import { TableSkeleton } from "@/shared/components/TableSkeleton";
+import { InlineError } from "@/shared/components/InlineError";
 import { ClassCognitionPanel } from "@/components/analysis/ClassCognitionPanel";
 
 function getMutationErrorMessage(error: unknown) {

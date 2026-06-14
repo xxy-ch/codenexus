@@ -1,19 +1,19 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Puzzle } from 'lucide-react'
-import api from '@/services/api'
+import api from '@/shared/services/api'
 import {
   useFeatureRegistry,
   useSetFeatureFlag,
   useDeleteFeatureFlag,
   type FeatureRegistryEntry,
-} from '@/services/featureGateway'
+} from '@/shared/services/featureGateway'
 import { useAuth } from '@/hooks/useAuth'
-import { FeatureToggle } from '@/components/ui/FeatureToggle'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
-import { Badge } from '@/components/ui/badge'
-import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
+import { FeatureToggle } from '@/shared/components/FeatureToggle'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
+import { Badge } from '@/shared/components/badge'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
   Table,
   TableHeader,
@@ -21,7 +21,7 @@ import {
   TableRow,
   TableHead,
   TableCell,
-} from '@/components/ui/table'
+} from '@/shared/components/table'
 
 type Scope = 'global' | 'campus' | 'grade'
 

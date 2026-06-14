@@ -1,5 +1,5 @@
-import { Skeleton } from '@/components/ui/Skeleton'
-import { cn } from '@/lib/utils'
+import { Skeleton } from '@/shared/components/Skeleton'
+import { cn } from '@/shared/lib/utils'
 
 interface ConversationSkeletonProps {
   className?: string

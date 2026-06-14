@@ -3,10 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { MessageSquare, Plus, Eye, MessageCircle, ThumbsUp, Pin, CheckCircle, Lock, BookOpen, Clock } from 'lucide-react'
 import { discussionsApi } from '@/services/discussionsApi'
 import type { Discussion, DiscussionFilters } from '@/types/community'
-import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
-import { cn } from '@/lib/utils'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
+import { cn } from '@/shared/lib/utils'
 
 export function DiscussionList() {
   const navigate = useNavigate()

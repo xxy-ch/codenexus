@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronRight, Database, EyeOff, FileArchive, Loader2, RefreshCw, Save, Settings2, Trash2 } from 'lucide-react'
 import { judgeConfigService } from '@/services/judgeConfig'
-import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
+import { FormSkeleton } from '@/shared/components/FormSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
 
 export function JudgeSettings() {
   const queryClient = useQueryClient()

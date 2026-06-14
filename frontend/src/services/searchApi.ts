@@ -1,5 +1,5 @@
 // Search API service
-import api from './api'
+import api from '@/shared/services/api'
 import type {
   SearchQuery,
   SearchResponse,

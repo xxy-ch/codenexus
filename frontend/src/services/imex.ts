@@ -1,4 +1,4 @@
-import api from './api'
+import api from '@/shared/services/api'
 import type { ImportPreview, ImportResult, UserImportPreview } from '@/types/imex'
 
 export const imexService = {

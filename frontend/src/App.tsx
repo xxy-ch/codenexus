@@ -1,15 +1,15 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ToastProvider } from './components/ui/Toast'
-import { MainLayout } from './layouts/MainLayout'
-import { AdminLayout } from './layouts/AdminLayout'
+import { ToastProvider } from '@/shared/components/Toast'
+import { MainLayout } from '@/shared/layouts/MainLayout'
+import { AdminLayout } from '@/shared/layouts/AdminLayout'
 import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
-import { Loading } from './components/ui/Loading'
-import { TEACHER_ROLES } from './types/auth'
-import { ErrorBoundary } from './components/error/ErrorBoundary'
-import { useFeatureEnabled } from '@/hooks/useFeatureGate'
+import { Loading } from '@/shared/components/Loading'
+import { TEACHER_ROLES } from '@/shared/types/auth'
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
+import { useFeatureEnabled } from '@/shared/hooks/useFeatureGate'
 
 const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
   lazy(async () => {

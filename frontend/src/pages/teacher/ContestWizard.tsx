@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { CalendarDays, ChevronRight, Eye, FileText, Timer, Trophy } from 'lucide-react'
-import api from '@/services/api'
+import api from '@/shared/services/api'
 
 interface CreateContestPayload {
   organization_id: number

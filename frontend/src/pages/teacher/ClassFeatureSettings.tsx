@@ -1,20 +1,20 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Puzzle } from 'lucide-react'
-import api from '@/services/api'
+import api from '@/shared/services/api'
 import {
   useFeatureRegistry,
   useSetFeatureFlag,
   type FeatureRegistryEntry,
   type FeatureState,
-} from '@/services/featureGateway'
-import { FeatureToggle } from '@/components/ui/FeatureToggle'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card'
-import { Skeleton } from '@/components/ui/Skeleton'
-import { cn } from '@/lib/utils'
+} from '@/shared/services/featureGateway'
+import { FeatureToggle } from '@/shared/components/FeatureToggle'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
+import { Badge } from '@/shared/components/badge'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/shared/components/Card'
+import { Skeleton } from '@/shared/components/Skeleton'
+import { cn } from '@/shared/lib/utils'
 
 interface ClassInfo {
   id: number

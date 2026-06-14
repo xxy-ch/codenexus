@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Eye, MessageCircle, ThumbsUp, Edit3, CornerDownRight, X, Pin, CheckCircle, Lock, BookOpen, Send, RefreshCw } from 'lucide-react'
 import { discussionsApi } from '@/services/discussionsApi'
 import type { DiscussionDetail, DiscussionReply } from '@/types/community'
-import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
-import { useDiscussionUpdates } from '@/hooks/useCommunityUpdates'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
+import { useDiscussionUpdates } from '@/shared/hooks/useCommunityUpdates'
 import { useAuth } from '@/hooks/useAuth'
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/lib/utils'
 
 export function DiscussionDetail() {
   const { id } = useParams<{ id: string }>()

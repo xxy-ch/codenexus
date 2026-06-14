@@ -4,10 +4,10 @@ import { ArrowRight, Bookmark, Flame, FolderKanban, PenSquare, Search, Sparkles,
 import { BookOpen } from 'lucide-react'
 import { blogApi } from '@/services/articlesApi'
 import type { Article, ArticleFilters, PopularTag } from '@/types/community'
-import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
-import { cn } from '@/lib/utils'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
+import { cn } from '@/shared/lib/utils'
 
 export function BlogList() {
   const navigate = useNavigate()

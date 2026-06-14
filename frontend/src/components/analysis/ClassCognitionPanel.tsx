@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { GraduationCap } from "lucide-react";
 
-import { EmptyState } from "@/components/ui/EmptyState";
-import { InlineError } from "@/components/ui/InlineError";
-import { useFeatureEnabled } from "@/hooks/useFeatureGate";
+import { EmptyState } from "@/shared/components/EmptyState";
+import { InlineError } from "@/shared/components/InlineError";
+import { useFeatureEnabled } from "@/shared/hooks/useFeatureGate";
 import { analysisService } from "@/services/analysisService";
 
 interface ClassCognitionPanelProps {

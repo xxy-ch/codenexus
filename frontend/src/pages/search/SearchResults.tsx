@@ -5,10 +5,10 @@ import { SearchX, ArrowLeft, Eye, MessageCircle, ThumbsUp, Pin, CheckCircle, Clo
 import { searchApi } from '@/services/searchApi'
 import type { SearchResponse, SearchResultItem, SearchType, SearchSort } from '@/types/search'
 import { SearchBar } from '@/components/search/SearchBar'
-import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
-import { cn } from '@/lib/utils'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
+import { cn } from '@/shared/lib/utils'
 
 /** Sanitize HTML returned by the search highlighter to prevent XSS. */
 function sanitizeHtml(html: string): string {

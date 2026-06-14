@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { ChevronRight, Loader2, Play, Save, Shield, SlidersHorizontal } from 'lucide-react'
 import { plagiarismService, type SimilarityScanConfig } from '@/services/plagiarism'
-import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
+import { FormSkeleton } from '@/shared/components/FormSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
 
 export function SimilarityScanConfig() {
   const [form, setForm] = useState<SimilarityScanConfig | null>(null)

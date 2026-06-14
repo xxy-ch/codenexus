@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { rankingService } from '@/services/ranking'
-import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
+import { Button } from '@/shared/components/Button'
+import { cn } from '@/shared/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { BarChart3, Building2, Crown, Medal, Search, Sparkles, Trophy } from 'lucide-react'
-import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
 
 interface RankingUser {
   id: string

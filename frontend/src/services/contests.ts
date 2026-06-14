@@ -1,6 +1,6 @@
-import api from './api'
+import api from '@/shared/services/api'
 import type { Contest, ContestDetail, ContestRegistration, ContestEntry } from '@/types/contests'
-import { isTeacherOrAbove, type Role } from '@/types/auth'
+import { isTeacherOrAbove, type Role } from '@/shared/types/auth'
 
 export interface ContestFilters {
   status?: 'upcoming' | 'ongoing' | 'completed' | 'all'

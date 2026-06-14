@@ -3,22 +3,22 @@ import { Download, FileUp, Loader2, CheckCircle2, AlertTriangle, XCircle, Chevro
 import toast from 'react-hot-toast'
 import { imexService } from '@/services/imex'
 import { problemsService } from '@/services/problems'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { Input } from '@/components/ui/Input'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { cn } from '@/shared/lib/utils'
+import { Button } from '@/shared/components/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/Card'
+import { Input } from '@/shared/components/Input'
+import { Badge } from '@/shared/components/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/tabs'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table'
+} from '@/shared/components/table'
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from '@/components/ui/dialog'
-import { Skeleton } from '@/components/ui/Skeleton'
-import { Separator } from '@/components/ui/separator'
+} from '@/shared/components/dialog'
+import { Skeleton } from '@/shared/components/Skeleton'
+import { Separator } from '@/shared/components/separator'
 import { useAuth } from '@/hooks/useAuth'
-import { isAdmin } from '@/types/auth'
+import { isAdmin } from '@/shared/types/auth'
 import type { ImportPreview, ImportResult, PreviewItem, UserImportPreview } from '@/types/imex'
 
 // ---------------------------------------------------------------------------

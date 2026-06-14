@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronRight, GraduationCap, Plus, RotateCcw } from 'lucide-react'
 import { gradesService } from '@/services/grades'
-import { Button } from '@/components/ui/Button'
-import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
+import { Button } from '@/shared/components/Button'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
 import type { CreateGradeRequest } from '@/types/grade'
 
 export function GradeManagement() {

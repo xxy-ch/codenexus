@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { Loading } from '@/components/ui/Loading'
-import { isAdmin } from '@/types/auth'
+import { Loading } from '@/shared/components/Loading'
+import { isAdmin } from '@/shared/types/auth'
 
 interface AdminRouteProps {
   children: React.ReactNode

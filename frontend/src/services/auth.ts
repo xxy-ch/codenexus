@@ -1,5 +1,5 @@
-import api from './api'
-import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth'
+import api from '@/shared/services/api'
+import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/shared/types/auth'
 
 export const authService = {
   /**

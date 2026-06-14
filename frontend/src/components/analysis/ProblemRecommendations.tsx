@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Lightbulb } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Badge } from "@/components/ui/badge";
-import { InlineError } from "@/components/ui/InlineError";
-import { useFeatureEnabled } from "@/hooks/useFeatureGate";
+import { Badge } from "@/shared/components/badge";
+import { InlineError } from "@/shared/components/InlineError";
+import { useFeatureEnabled } from "@/shared/hooks/useFeatureGate";
 import { analysisService } from "@/services/analysisService";
 
 interface ProblemRecommendationsProps {

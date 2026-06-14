@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { usersService } from '@/services/users'
 import { CheckCircle2, Circle, Lock, Map, Sparkles } from 'lucide-react'
-import { CardGridSkeleton } from '@/components/skeletons/CardGridSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
 import { useNavigate } from 'react-router-dom'
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/lib/utils'
 
 type RoadmapStatus = 'done' | 'current' | 'locked'
 

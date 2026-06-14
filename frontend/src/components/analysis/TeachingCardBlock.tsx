@@ -2,10 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import DOMPurify from "dompurify";
 import { Sparkles } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { InlineError } from "@/components/ui/InlineError";
-import { useFeatureEnabled } from "@/hooks/useFeatureGate";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/shared/components/badge";
+import { InlineError } from "@/shared/components/InlineError";
+import { useFeatureEnabled } from "@/shared/hooks/useFeatureGate";
+import { cn } from "@/shared/lib/utils";
 import {
   analysisService,
   type AnalysisTeachingCard,

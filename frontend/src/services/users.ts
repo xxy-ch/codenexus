@@ -1,4 +1,4 @@
-import api from './api'
+import api from '@/shared/services/api'
 import type { UserStats, UserActivity, RecommendedProblem } from '@/types/users'
 
 export interface UserProfile {

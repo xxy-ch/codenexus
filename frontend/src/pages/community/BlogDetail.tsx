@@ -3,11 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Eye, MessageCircle, ThumbsUp, Edit3, CornerDownRight, X } from 'lucide-react'
 import { blogApi } from '@/services/articlesApi'
 import type { ArticleDetail, ArticleComment } from '@/types/community'
-import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
-import { useArticleUpdates } from '@/hooks/useCommunityUpdates'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
+import { useArticleUpdates } from '@/shared/hooks/useCommunityUpdates'
 import { useAuth } from '@/hooks/useAuth'
-import { cn } from '@/lib/utils'
+import { cn } from '@/shared/lib/utils'
 
 export function BlogDetail() {
   const { slug } = useParams<{ slug: string }>()

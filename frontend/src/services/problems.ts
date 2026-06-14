@@ -1,4 +1,4 @@
-import api from './api'
+import api from '@/shared/services/api'
 import type { Problem, ManagementTestCase, ProblemSubmission, PublicTestCase } from '@/types/problems'
 
 export interface ProblemFilters {

@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { Shield } from 'lucide-react'
 import { plagiarismService } from '@/services/plagiarism'
-import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { InlineError } from '@/components/ui/InlineError'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { InlineError } from '@/shared/components/InlineError'
 
 const RISK_COLOR: Record<string, string> = {
   low: 'bg-status-accepted/10 text-status-accepted',

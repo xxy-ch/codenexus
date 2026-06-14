@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/store/authStore'
-import { request } from '@/services/api'
-import type { User, LoginRequest, RegisterRequest } from '@/types/auth'
+import { useAuthStore } from '@/shared/store/authStore'
+import { request } from '@/shared/services/api'
+import type { User, LoginRequest, RegisterRequest } from '@/shared/types/auth'
 
 export function useAuth() {
   const navigate = useNavigate()

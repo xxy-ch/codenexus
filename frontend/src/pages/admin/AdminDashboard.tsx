@@ -12,9 +12,9 @@ import {
   SlidersHorizontal,
   Users,
 } from 'lucide-react'
-import { useAuthStore } from '@/store/authStore'
-import { useFeatureEnabled } from '@/hooks/useFeatureGate'
-import { isAdmin } from '@/types/auth'
+import { useAuthStore } from '@/shared/store/authStore'
+import { useFeatureEnabled } from '@/shared/hooks/useFeatureGate'
+import { isAdmin } from '@/shared/types/auth'
 
 export function AdminDashboard() {
   const { user } = useAuthStore()

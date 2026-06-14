@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/Button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
+import { Button } from '@/shared/components/Button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/Card'
 import { Lock, ArrowLeft, LayoutDashboard } from 'lucide-react'
 
 export function UnauthorizedPage() {

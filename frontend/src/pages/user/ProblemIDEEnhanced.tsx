@@ -5,8 +5,8 @@ import toast from 'react-hot-toast'
 import { MonacoEditor } from '@/components/ide/MonacoEditor'
 import { problemsService } from '@/services/problems'
 import { IDESkeleton } from '@/components/skeletons/IDESkeleton'
-import { InlineError } from '@/components/ui/InlineError'
-import { AmbientBackground } from '@/components/layout/AmbientBackground'
+import { InlineError } from '@/shared/components/InlineError'
+import { AmbientBackground } from '@/shared/layouts/AmbientBackground'
 import type { Problem, TestCase, ProblemSubmission } from '@/types/problems'
 import {
   Play,
@@ -25,8 +25,8 @@ import {
   Clock,
   Loader2,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { isSubmissionTerminal } from '@/lib/submissionStatus'
+import { cn } from '@/shared/lib/utils'
+import { isSubmissionTerminal } from '@/shared/lib/submissionStatus'
 
 interface SupportedLanguageOption {
   id: string

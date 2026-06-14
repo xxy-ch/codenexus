@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { AlertTriangle, Home, Info, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/shared/components/Button'
 
 export function ServerError() {
   return (

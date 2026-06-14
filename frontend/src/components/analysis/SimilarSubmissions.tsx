@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { GitCompare } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { useFeatureEnabled } from "@/hooks/useFeatureGate";
+import { Badge } from "@/shared/components/badge";
+import { useFeatureEnabled } from "@/shared/hooks/useFeatureGate";
 import { analysisService } from "@/services/analysisService";
 
 interface SimilarSubmissionsProps {

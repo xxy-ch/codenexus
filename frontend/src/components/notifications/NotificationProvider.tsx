@@ -5,7 +5,7 @@
 
 import { useEffect } from 'react'
 import { Toaster } from 'react-hot-toast'
-import { useNotifications } from '@/hooks/useWebSocket'
+import { useNotifications } from '@/shared/hooks/useWebSocket'
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { notifications, clear } = useNotifications()

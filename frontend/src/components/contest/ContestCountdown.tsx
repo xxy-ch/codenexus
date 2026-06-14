@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils'
-import useCountdown from '@/hooks/useCountdown'
+import { cn } from '@/shared/lib/utils'
+import useCountdown from '@/shared/hooks/useCountdown'
 
 interface ContestCountdownProps {
   endTime: string

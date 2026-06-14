@@ -3,9 +3,9 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, FileSearch, Flag, Layers3, ShieldAlert } from 'lucide-react'
 import { plagiarismService } from '@/services/plagiarism'
-import { DetailSkeleton } from '@/components/skeletons/DetailSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
-import { cn } from '@/lib/utils'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
+import { cn } from '@/shared/lib/utils'
 
 export function PlagiarismReportDetail() {
   const { reportId } = useParams<{ reportId: string }>()

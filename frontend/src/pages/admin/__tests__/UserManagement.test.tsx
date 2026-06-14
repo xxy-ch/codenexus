@@ -30,7 +30,7 @@ let storeState = {
   checkAuth: vi.fn(),
 }
 
-vi.mock('@/store/authStore', () => ({
+vi.mock('@/shared/store/authStore', () => ({
   useAuthStore: () => storeState,
 }))
 

@@ -11,7 +11,7 @@ vi.mock("@/services/analysisService", () => ({
 
 // Mock the feature gate hook
 const mockUseFeatureEnabled = vi.fn();
-vi.mock("@/hooks/useFeatureGate", () => ({
+vi.mock("@/shared/hooks/useFeatureGate", () => ({
   useFeatureEnabled: (...args: unknown[]) => mockUseFeatureEnabled(...args),
 }));
 

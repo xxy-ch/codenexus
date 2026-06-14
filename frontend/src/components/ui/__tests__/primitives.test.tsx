@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
-import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
-import { Loading } from '@/components/ui/Loading'
+import { Button } from '@/shared/components/Button'
+import { Input } from '@/shared/components/Input'
+import { Loading } from '@/shared/components/Loading'
 
 describe('ui primitives', () => {
   it('renders default button with project styling classes', () => {

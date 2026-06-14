@@ -17,7 +17,7 @@ const localStorageMock = {
 vi.stubGlobal('localStorage', localStorageMock)
 
 // Mock the auth store to return a logged-in user
-vi.mock('@/store/authStore', () => ({
+vi.mock('@/shared/store/authStore', () => ({
   useAuthStore: () => ({
     user: {
       id: 'user-1',

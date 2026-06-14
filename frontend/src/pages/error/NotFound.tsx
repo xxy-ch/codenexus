@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Home, SearchX, Terminal } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/shared/components/Button'
 
 export function NotFound() {
   return (

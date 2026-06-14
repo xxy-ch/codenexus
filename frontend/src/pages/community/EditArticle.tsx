@@ -4,8 +4,8 @@ import { ArrowLeft, RefreshCw, Save, Send, Tags, X } from 'lucide-react'
 import { blogApi } from '@/services/articlesApi'
 import type { UpdateArticleRequest } from '@/types/community'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
-import { FormSkeleton } from '@/components/skeletons/FormSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
+import { FormSkeleton } from '@/shared/components/FormSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
 import { useAuth } from '@/hooks/useAuth'
 
 export function EditArticle() {

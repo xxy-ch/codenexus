@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Clock, Cpu, Type, WrapText, Play, Lightbulb, AlertTriangle, CheckCircle, Info, FileText, Code2, Scale, Keyboard, History } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
-import { cn } from '@/lib/utils'
+import { Button } from '@/shared/components/Button'
+import { cn } from '@/shared/lib/utils'
 
 interface IDELayoutProps {
   problemTitle: string

@@ -1,4 +1,4 @@
-import api from './api'
+import api from '@/shared/services/api'
 import type { RankingResponse, RankingFilters } from '@/types/ranking'
 
 type LeaderboardPayload = {

@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import { Activity, ChevronRight, RefreshCw, TimerReset, Trophy } from 'lucide-react'
 import { scoreboardService } from '@/services/scoreboard'
-import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
 import { ScoreboardTable } from '@/components/contest/ScoreboardTable'
 
 export function ContestScoreboard() {

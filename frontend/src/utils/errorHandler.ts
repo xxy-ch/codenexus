@@ -1,4 +1,4 @@
-import { useToast } from '@/components/ui/Toast'
+import { useToast } from '@/shared/components/Toast'
 
 export class ApiError extends Error {
   constructor(

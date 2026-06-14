@@ -1,4 +1,4 @@
-import api from './api'
+import api from '@/shared/services/api'
 import type { Grade, CreateGradeRequest, UpdateGradeRequest } from '@/types/grade'
 
 const GRADES_BASE = '/classes/grades'

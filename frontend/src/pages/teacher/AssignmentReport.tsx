@@ -3,8 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowUpRight, BarChart3, BookOpen, ChevronRight, Download, FileSpreadsheet, GraduationCap, Search, Users } from 'lucide-react'
 import { classesService } from '@/services/classes'
 import type { AssignmentItem, AssignmentSubmissionItem } from '@/services/classes'
-import { TableSkeleton } from '@/components/skeletons/TableSkeleton'
-import { InlineError } from '@/components/ui/InlineError'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { InlineError } from '@/shared/components/InlineError'
 
 function formatDate(value?: string) {
   if (!value) return 'N/A'
