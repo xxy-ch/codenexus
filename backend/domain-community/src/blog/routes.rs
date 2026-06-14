@@ -295,10 +295,15 @@ async fn update_article_handler(
     .flatten();
     verify_campus_scope(author_campus_id, &claims)?;
 
+    let is_admin = matches!(
+        claims.role.parse::<Role>(),
+        Ok(Role::Root | Role::CampusAdmin | Role::GradeAdmin)
+    );
+
     let service = BlogService::new(state.db_pool.clone());
 
     match service
-        .update_article(id, user_id, claims.school_id, req)
+        .update_article(id, user_id, claims.school_id, req, is_admin)
         .await
     {
         Ok(article) => Ok(Json(article)),

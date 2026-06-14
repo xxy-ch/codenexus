@@ -127,8 +127,14 @@ pub fn build_problem_zip(
 
 /// Convert a slug from a problem title: lowercase, replace spaces with hyphens,
 /// strip non-alphanumeric characters (except hyphens).
+///
+/// If the title contains no ASCII alphanumeric characters (e.g. a purely
+/// non-ASCII title like "测试" or a symbol-only title like "+++"), the slug
+/// would be empty, producing broken zip paths like `problems//config.json`
+/// that the importer cannot round-trip. In that case we fall back to
+/// `"problem"` so the export/import cycle always succeeds.
 pub fn slugify(title: &str) -> String {
-    title
+    let slug = title
         .to_lowercase()
         .chars()
         .map(|c| {
@@ -144,7 +150,12 @@ pub fn slugify(title: &str) -> String {
         .split('-')
         .filter(|s| !s.is_empty())
         .collect::<Vec<_>>()
-        .join("-")
+        .join("-");
+    if slug.is_empty() {
+        "problem".to_string()
+    } else {
+        slug
+    }
 }
 
 #[cfg(test)]
@@ -305,6 +316,50 @@ mod tests {
         assert_eq!(slugify("Two Sum"), "two-sum");
         assert_eq!(slugify("Add Two Numbers"), "add-two-numbers");
         assert_eq!(slugify("A+B Problem"), "a-b-problem");
+    }
+
+    #[test]
+    fn slugify_falls_back_when_no_ascii_alphanumeric() {
+        // Pure non-ASCII title — slug would be empty, which breaks zip paths.
+        assert_eq!(slugify("测试"), "problem");
+        // Symbol-only title — same situation.
+        assert_eq!(slugify("+++"), "problem");
+        // Empty title.
+        assert_eq!(slugify(""), "problem");
+        // Mixed: non-ASCII + ASCII keeps the ASCII part.
+        assert_eq!(slugify("测试 Two Sum"), "two-sum");
+    }
+
+    #[test]
+    fn build_problem_zip_non_ascii_title_round_trips() {
+        // Regression: a non-ASCII-only title must still produce a valid,
+        // importable zip (slug falls back to "problem").
+        let problem = ExportProblem {
+            title: "测试题目".to_string(),
+            description: "非ASCII标题".to_string(),
+            difficulty: "easy".to_string(),
+            time_limit: 1000,
+            memory_limit: 128,
+            is_public: false,
+            visibility: "private".to_string(),
+            tags: vec![],
+            source_url: None,
+            author_note: None,
+        };
+        let zip_bytes = build_problem_zip(&problem, &[]).unwrap();
+
+        let cursor = std::io::Cursor::new(zip_bytes.as_slice());
+        let mut archive = zip::ZipArchive::new(cursor).unwrap();
+
+        // The slug must be "problem", not empty.
+        assert!(archive.by_name("problems/problem/config.json").is_ok());
+        assert!(archive.by_name("problems/problem/problem.md").is_ok());
+
+        // And the importer must be able to parse it back.
+        let skip = HashSet::new();
+        let items = parse_problem_zip(&zip_bytes, &skip).unwrap();
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].slug, "problem");
     }
 
     #[test]

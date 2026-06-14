@@ -316,6 +316,13 @@ impl UserService {
             .fetch_one(&self.pool)
             .await?;
 
+        // Reject refresh for disabled/deactivated accounts. Without this check,
+        // a user disabled by an admin can keep refreshing tokens (up to the
+        // 14-day refresh lifetime), retaining full access despite deactivation.
+        if user.status != "active" {
+            return Err(anyhow::anyhow!("Account is not active"));
+        }
+
         // Get user role and authorization grade_id from user_roles (D-07/D-08)
         let role_row = sqlx::query_as::<_, (String, Option<i64>)>(
             "SELECT role, grade_id FROM user_roles WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1",
@@ -453,7 +460,29 @@ impl UserService {
         // Tenant fields are managed exclusively through admin endpoints.
 
         // Add password update if provided
-        if updates.password.is_some() {
+        if let Some(password) = &updates.password {
+            // Enforce minimum length (matches the registration rule).
+            if password.len() < 8 {
+                return Err(anyhow::anyhow!(
+                    "Password must be at least 8 characters"
+                ));
+            }
+            // Require proof of the current password to prevent a stolen session
+            // from silently taking over the account.
+            let current = updates
+                .current_password
+                .as_deref()
+                .ok_or_else(|| anyhow::anyhow!("Current password is required to change password"))?;
+            let stored_hash: String =
+                sqlx::query_scalar("SELECT password_hash FROM users WHERE id = $1")
+                    .bind(user_id)
+                    .fetch_one(&self.pool)
+                    .await?;
+            let verified = bcrypt::verify(current, &stored_hash)
+                .map_err(|_| anyhow::anyhow!("Failed to verify password"))?;
+            if !verified {
+                return Err(anyhow::anyhow!("Current password is incorrect"));
+            }
             param_count += 1;
             update_parts.push(format!("password_hash = ${}", param_count));
         }

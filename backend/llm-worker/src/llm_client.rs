@@ -115,6 +115,9 @@ struct ChatRequest {
     model: String,
     messages: Vec<ChatMessage>,
     temperature: f32,
+    /// Cap the response token count to prevent unbounded output that could
+    /// exhaust memory or bloat the DB. Most providers honor this.
+    max_tokens: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -235,6 +238,10 @@ impl LlmClient {
             model: self.model.clone(),
             messages,
             temperature,
+            // Cap response at 4096 tokens (~3K words / ~16KB). Prevents
+            // unbounded output from exhausting memory or bloating the DB,
+            // while still allowing detailed code reviews and teaching cards.
+            max_tokens: 4096,
         };
 
         let mut builder = self.http.post(url).json(&request);

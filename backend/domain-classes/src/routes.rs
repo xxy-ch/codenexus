@@ -246,14 +246,18 @@ async fn list_grades(
             // Root: can query any campus (no restriction)
         }
         Role::CampusAdmin | Role::GradeAdmin | Role::Teacher => {
-            // SECURITY: Force campus_id to caller's own campus — never trust query param
-            query.campus_id = claims.campus_id;
-            if let Some(cid) = query.campus_id {
-                service
-                    .verify_campus_org(cid, claims.school_id)
-                    .await
-                    .map_err(|_| StatusCode::FORBIDDEN)?;
-            }
+            // SECURITY: Force campus_id to caller's own campus — never trust query param.
+            // Fail-closed: a non-root admin WITHOUT a campus_id claim must not see
+            // all grades across the entire system. Return 403 rather than silently
+            // dropping the campus filter.
+            let cid = claims
+                .campus_id
+                .ok_or(StatusCode::FORBIDDEN)?;
+            query.campus_id = Some(cid);
+            service
+                .verify_campus_org(cid, claims.school_id)
+                .await
+                .map_err(|_| StatusCode::FORBIDDEN)?;
         }
         _ => {
             // Students and TAs: use claims campus
@@ -638,19 +642,22 @@ async fn enroll_with_code(
         .or(request.enrollment_code)
         .ok_or(StatusCode::BAD_REQUEST)?;
 
-    // Tenant: verify class belongs to user's org BEFORE enrolling (prevent TOCTOU)
-    let class = service
-        .get_class_by_code(&code)
-        .await
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
-    if class.organization_id != claims.school_id {
-        return Err(StatusCode::FORBIDDEN);
-    }
-
+    // Tenant check + enrollment are performed atomically inside enroll_with_code
+    // (the service's transactional lookup binds organization_id). This eliminates
+    // the TOCTOU gap that existed when the route checked the org separately.
     let enrollment = service
-        .enroll_with_code(&code, claims.sub)
+        .enroll_with_code(&code, claims.sub, claims.school_id)
         .await
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
+        .map_err(|err| {
+            // Distinguish cross-tenant (forbidden) from not-found: verify the code
+            // exists in a different org so we can return a consistent "not found"
+            // to avoid leaking code existence across tenants.
+            if err.to_string().contains("Invalid enrollment code") {
+                StatusCode::NOT_FOUND
+            } else {
+                StatusCode::BAD_REQUEST
+            }
+        })?;
 
     Ok(Json(enrollment))
 }

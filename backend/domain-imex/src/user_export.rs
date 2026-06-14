@@ -34,6 +34,10 @@ pub fn build_user_csv(users: &[UserExportRow]) -> Result<Vec<u8>> {
     ])?;
 
     for user in users {
+        // Sanitize free-text fields against CSV/spreadsheet formula injection.
+        // Data comes straight from the DB and may have been written through a
+        // different path that did not sanitize, so export-time defense is
+        // required. Username (numeric-only) and role (enum) are not susceptible.
         wtr.write_record(&[
             user.username.as_str(),
             user.role.as_str(),
@@ -45,8 +49,8 @@ pub fn build_user_csv(users: &[UserExportRow]) -> Result<Vec<u8>> {
                 .map(|id| id.to_string())
                 .as_deref()
                 .unwrap_or(""),
-            user.display_name.as_deref().unwrap_or(""),
-            user.email.as_deref().unwrap_or(""),
+            &crate::security::sanitize_csv_cell(user.display_name.as_deref().unwrap_or("")),
+            &crate::security::sanitize_csv_cell(user.email.as_deref().unwrap_or("")),
         ])?;
     }
 
@@ -166,5 +170,37 @@ mod tests {
         // Empty user list still produces header row
         assert!(csv_str.contains("username"));
         assert!(csv_str.contains("role"));
+    }
+
+    #[test]
+    fn build_user_csv_sanitizes_formula_injection() {
+        // A display_name that starts with = would be interpreted as a formula
+        // by spreadsheet apps when the exported CSV is opened. Export must
+        // strip the leading dangerous prefix.
+        let users = vec![UserExportRow {
+            username: "1001".to_string(),
+            role: "student".to_string(),
+            campus_id: None,
+            grade_id: None,
+            display_name: Some("=HYPERLINK(\"https://evil.com\")".to_string()),
+            email: Some("+cmd|'/c calc'!A1".to_string()),
+        }];
+
+        let csv_bytes = build_user_csv(&users).unwrap();
+        let csv_str = String::from_utf8(csv_bytes).unwrap();
+
+        // The leading = and + must be stripped so the cell is not a formula.
+        assert!(
+            !csv_str.contains("=HYPERLINK"),
+            "formula prefix must be stripped on export, got: {}",
+            csv_str
+        );
+        assert!(
+            !csv_str.contains("+cmd|"),
+            "formula prefix must be stripped on export, got: {}",
+            csv_str
+        );
+        // The non-dangerous part of the display name should still be present.
+        assert!(csv_str.contains("HYPERLINK"));
     }
 }

@@ -68,10 +68,16 @@ async fn authorize_topic_subscription(
         .strip_prefix("submission:")
         .and_then(|id| id.parse::<i64>().ok())
     {
+        // Tenant-scoped ownership check: the submission must both belong to
+        // this user AND live in the caller's organization. Without the org
+        // predicate, a user from org A could probe submission ids from org B
+        // and distinguish "exists, not yours" from "doesn't exist" — a
+        // cross-tenant enumeration oracle.
         return sqlx::query_scalar::<_, uuid::Uuid>(
-            "SELECT user_id FROM submissions WHERE id = $1",
+            "SELECT user_id FROM submissions WHERE id = $1 AND organization_id = $2",
         )
         .bind(submission_id)
+        .bind(school_id)
         .fetch_optional(db_pool)
         .await
         .ok()
@@ -300,11 +306,13 @@ async fn websocket_handler_inner(
                         // Backward compatibility: older clients used business update messages as
                         // subscription requests. Keep support while new clients use Subscribe.
                         WebSocketMessage::SubmissionUpdate { submission_id, .. } => {
-                            // H-03: Verify submission belongs to this user
+                            // H-03: Verify submission belongs to this user AND
+                            // the caller's organization (cross-tenant guard).
                             let owner_ok = sqlx::query_scalar::<_, uuid::Uuid>(
-                                "SELECT user_id FROM submissions WHERE id = $1",
+                                "SELECT user_id FROM submissions WHERE id = $1 AND organization_id = $2",
                             )
                             .bind(submission_id)
+                            .bind(school_id)
                             .fetch_optional(&db_pool)
                             .await
                             .ok()

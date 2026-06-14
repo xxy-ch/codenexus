@@ -6,7 +6,7 @@ use anyhow::Result;
 use chrono::{NaiveDate, Utc};
 use deadpool_redis::Pool as RedisPool;
 use sqlx::PgPool;
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 use uuid::Uuid;
 
 use crate::embedding::EmbeddingClient;
@@ -622,10 +622,16 @@ async fn generate_teaching_cards(
         let source_cluster_ids: Vec<i64> = representatives.iter().map(|r| r.cluster_id).collect();
 
         // Create an analysis job row for the llm-worker to claim.
-        let job_id: i64 = sqlx::query_scalar(
+        // ON CONFLICT DO NOTHING guards against the partial unique index
+        // uq_analysis_jobs_active_per_submission: if a concurrent trigger or a
+        // previous unfinished job is still active for this submission, skip it
+        // rather than aborting the batch with a unique-violation error.
+        let job_id: Option<i64> = sqlx::query_scalar(
             "INSERT INTO analysis_jobs \
              (submission_id, problem_id, user_id, organization_id, status, analysis_type, source_cluster_ids) \
              VALUES ($1, $2, $3, $4, 'pending', 'teaching_card', $5) \
+             ON CONFLICT (submission_id) WHERE status IN ('pending', 'processing') \
+             DO NOTHING \
              RETURNING id",
         )
         .bind(rep.submission_id)
@@ -633,8 +639,21 @@ async fn generate_teaching_cards(
         .bind(batch_user_id)
         .bind(organization_id)
         .bind(&source_cluster_ids)
-        .fetch_one(pool)
+        .fetch_optional(pool)
         .await?;
+
+        let job_id = match job_id {
+            Some(id) => id,
+            None => {
+                debug!(
+                    problem_id,
+                    submission_id = rep.submission_id,
+                    "Skipped teaching-card job: an active analysis job already exists for this submission"
+                );
+                generated += 1;
+                continue;
+            }
+        };
 
         // Emit the LLM task to the Redis stream.
         let task_msg = AnalysisJobMessage {

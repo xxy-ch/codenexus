@@ -139,3 +139,27 @@ export function getSubmissionStatusConfig(status?: string): SubmissionStatusConf
     label: status.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase()),
   }
 }
+
+/**
+ * The set of statuses that mean the judge has reached a final verdict and
+ * polling should stop. Using an allow-list (rather than a deny-list of
+ * "in-progress" states) guarantees that any NEW verdict status the backend
+ * emits is automatically treated as terminal, so a poller can never get
+ * stuck forever on an unrecognized state.
+ *
+ * `pending`, `queued`, `running`, and `compiling` are the only non-terminal
+ * lifecycle states; everything else (including `judged`, which the backend
+ * normalizes to a concrete verdict via COALESCE(verdict_map, status) but may
+ * surface transiently) is treated as finished.
+ */
+const NON_TERMINAL_STATUSES: ReadonlySet<string> = new Set([
+  'pending',
+  'queued',
+  'running',
+  'compiling',
+])
+
+export function isSubmissionTerminal(status?: string): boolean {
+  if (!status) return false
+  return !NON_TERMINAL_STATUSES.has(status)
+}

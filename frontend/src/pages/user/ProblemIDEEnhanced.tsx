@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { MonacoEditor } from '@/components/ide/MonacoEditor'
@@ -25,6 +26,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { isSubmissionTerminal } from '@/lib/submissionStatus'
 
 interface SupportedLanguageOption {
   id: string
@@ -74,6 +76,7 @@ function verdictColor(status: ProblemSubmission['status']) {
 }
 
 export function ProblemIDEEnhanced() {
+  const queryClient = useQueryClient()
   const { problemId, contestId } = useParams<{ problemId: string; contestId?: string }>()
   const [problem, setProblem] = useState<Problem | null>(null)
   const [examples, setExamples] = useState<TestCase[]>([])
@@ -156,18 +159,17 @@ export function ProblemIDEEnhanced() {
 
         setSubmissionResult(detail)
 
-        // Check if finished
-        const isFinished = ![
-          'pending',
-          'queued',
-          'running'
-        ].includes(detail.status)
-
-        if (isFinished) {
+        // Check if finished using the shared terminal-state helper.
+        // An allow-list guarantees new verdict statuses are terminal.
+        if (isSubmissionTerminal(detail.status)) {
           setIsPolling(false)
           setIsSubmitting(false)
           toast.success(`评测结束: ${verdictLabel(detail.status).split(' ')[0]}`)
           loadRecentSubmissions() // Refresh submission list
+          // Invalidate react-query caches so other pages (SubmissionHistory,
+          // SubmissionDetail) show the fresh result instead of stale data.
+          queryClient.invalidateQueries({ queryKey: ['submissions'] })
+          queryClient.invalidateQueries({ queryKey: ['problem-submissions'] })
         }
       } catch (error) {
         console.error('Failed to poll submission status:', error)

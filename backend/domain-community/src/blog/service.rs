@@ -223,13 +223,21 @@ impl BlogService {
     }
 
     /// Update article
+    ///
+    /// `is_admin` controls whether `is_featured` may be set — featuring is an
+    /// editorial decision reserved for admins, not self-service by authors.
     pub async fn update_article(
         &self,
         id: i64,
         author_id: Uuid,
         organization_id: i64,
-        req: UpdateArticleRequest,
+        mut req: UpdateArticleRequest,
+        is_admin: bool,
     ) -> Result<Article> {
+        // Strip is_featured for non-admin authors — only admins can feature articles.
+        if !is_admin {
+            req.is_featured = None;
+        }
         let mut query = String::from("UPDATE articles SET ");
         let mut updates = Vec::new();
         let mut param_count = 0;
@@ -259,14 +267,18 @@ impl BlogService {
             param_count += 1;
         }
         if let Some(is_published) = req.is_published {
-            updates.push(format!("is_published = {}", is_published));
+            updates.push(format!("is_published = ${}", param_count + 1));
+            param_count += 1;
             // Set/unset published_at
             if is_published {
                 updates.push("published_at = COALESCE(published_at, NOW())".to_string());
             }
         }
-        if let Some(is_featured) = req.is_featured {
-            updates.push(format!("is_featured = {}", is_featured));
+        // is_featured is admin-only; update_article strips it for non-admin
+        // authors. Parameterize (defense-in-depth) rather than interpolate.
+        if req.is_featured.is_some() {
+            updates.push(format!("is_featured = ${}", param_count + 1));
+            param_count += 1;
         }
 
         if updates.is_empty() {
@@ -300,6 +312,12 @@ impl BlogService {
         }
         if let Some(category) = req.category {
             query_builder = query_builder.bind(category);
+        }
+        if let Some(is_published) = req.is_published {
+            query_builder = query_builder.bind(is_published);
+        }
+        if let Some(is_featured) = req.is_featured {
+            query_builder = query_builder.bind(is_featured);
         }
 
         query_builder = query_builder.bind(id).bind(author_id).bind(organization_id);
@@ -453,15 +471,21 @@ impl BlogService {
 
             false
         } else {
-            // Add like
-            sqlx::query("INSERT INTO likes (user_id, target_type, target_id) VALUES ($1, $2, $3)")
-                .bind(user_id)
-                .bind(target_type)
-                .bind(target_id)
-                .execute(&mut *tx)
-                .await?;
+            // Add like. ON CONFLICT DO NOTHING handles the race where two
+            // concurrent requests both pass the "not yet liked" check.
+            sqlx::query(
+                "INSERT INTO likes (user_id, target_type, target_id) \
+                 VALUES ($1, $2, $3) \
+                 ON CONFLICT (user_id, target_type, target_id) DO NOTHING",
+            )
+            .bind(user_id)
+            .bind(target_type)
+            .bind(target_id)
+            .execute(&mut *tx)
+            .await?;
 
-            // Recount likes atomically
+            // Recount likes atomically (always recount — the count is authoritative
+            // regardless of whether this INSERT won the race).
             sqlx::query(&format!(
                 "UPDATE {} SET like_count = (SELECT COUNT(*) FROM likes WHERE target_type = $2 AND target_id = $1) WHERE id = $1",
                 table

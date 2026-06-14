@@ -217,33 +217,37 @@ async fn compile_code(source_file: &Path, language: &str, work_dir: &Path) -> Re
         _ => work_dir.join("solution_bin"),
     };
 
-    // C-04: Create cgroup for compilation with resource limits
-    let compile_cgroup = crate::sandbox::cgroups::CgroupController::new(
-        &format!(
-            "compile-{}-{}",
-            std::process::id(),
-            source_file
-                .parent()
-                .and_then(|p| p.file_name())
-                .and_then(|n| n.to_str())
-                .unwrap_or("unknown")
-        ),
-        &crate::sandbox::SandboxConfig {
-            cpu_time_limit_ms: 30_000,             // 30 second compile timeout
-            memory_limit_bytes: 512 * 1024 * 1024, // 512MB
-            pids_max: 16,
-            ..Default::default()
-        },
-    )
-    .ok();
-
-    if let Some(ref cg) = compile_cgroup {
+    // C-04: Create cgroup for compilation with resource limits.
+    // SECURITY: Hard error on failure — compiling untrusted code without
+    // resource limits allows a malicious source to exhaust host resources.
+    #[cfg(target_os = "linux")]
+    let compile_cgroup = {
+        let cg = crate::sandbox::cgroups::CgroupController::new(
+            &format!(
+                "compile-{}-{}",
+                std::process::id(),
+                source_file
+                    .parent()
+                    .and_then(|p| p.file_name())
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("unknown")
+            ),
+            &crate::sandbox::SandboxConfig {
+                cpu_time_limit_ms: 30_000,             // 30 second compile timeout
+                memory_limit_bytes: 512 * 1024 * 1024, // 512MB
+                pids_max: 16,
+                ..Default::default()
+            },
+        )
+        .context("Compile cgroup initialization failed — refusing to compile without resource limits")?;
         cg.create().with_context(|| {
             "Compile cgroup creation failed — refusing to compile without resource limits"
         })?;
-    } else {
-        tracing::warn!("Cgroup not available for compilation — running without resource limits");
-    }
+        Some(cg)
+    };
+
+    #[cfg(not(target_os = "linux"))]
+    let compile_cgroup: Option<crate::sandbox::cgroups::CgroupController> = None;
 
     let mut command = match language {
         "c" => {
@@ -384,26 +388,33 @@ async fn execute_program(
     const MAX_TIME_LIMIT_MS: u64 = 30_000;
     let effective_time_limit = submission.time_limit_ms.min(MAX_TIME_LIMIT_MS).max(1);
 
-    // Create cgroup for resource limiting (Linux only, gracefully skip on other platforms).
-    // SECURITY (C-10): Cgroup creation failure is now a hard error — refuse to run
-    // user code without resource limits rather than silently proceeding.
-    let cgroup = crate::sandbox::cgroups::CgroupController::new(
-        &format!("judge-{}-{}", std::process::id(), submission.submission_id),
-        &crate::sandbox::SandboxConfig {
-            cpu_time_limit_ms: effective_time_limit,
-            memory_limit_bytes: submission.memory_limit_mb * 1024 * 1024,
-            pids_max: 64,
-            ..Default::default()
-        },
-    )
-    .ok();
-
-    if let Some(ref cg) = cgroup {
+    // Create cgroup for resource limiting (Linux only).
+    // SECURITY: Cgroup creation failure is a HARD error — we refuse to run
+    // untrusted user code without CPU/memory/PID limits. Previously a .ok()
+    // downgrade let the submission proceed unsandboxed with only a warning,
+    // which silently removed all resource controls.
+    #[cfg(target_os = "linux")]
+    let cgroup = {
+        let cg = crate::sandbox::cgroups::CgroupController::new(
+            &format!("judge-{}-{}", std::process::id(), submission.submission_id),
+            &crate::sandbox::SandboxConfig {
+                cpu_time_limit_ms: effective_time_limit,
+                memory_limit_bytes: submission.memory_limit_mb * 1024 * 1024,
+                pids_max: 64,
+                ..Default::default()
+            },
+        )
+        .context("Cgroup controller initialization failed — refusing to run without resource limits")?;
         cg.create()
             .with_context(|| "Cgroup creation failed — refusing to run without resource limits")?;
-    } else {
-        tracing::warn!("Cgroup not available — running without resource limits");
-    }
+        Some(cg)
+    };
+
+    #[cfg(not(target_os = "linux"))]
+    let cgroup: Option<crate::sandbox::cgroups::CgroupController> = {
+        tracing::warn!("Cgroups not available on this platform — running without resource limits (development only)");
+        None
+    };
 
     let mut command = build_runtime_command(submission, source_file, executable_path, work_dir)?;
     unsafe {

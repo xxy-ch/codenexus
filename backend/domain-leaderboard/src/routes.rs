@@ -113,17 +113,25 @@ pub async fn get_campus_leaderboard(
     if claims.campus_id != Some(campus_id) && !is_root(&claims.role) {
         return Err(StatusCode::FORBIDDEN);
     }
-    // Additional: verify campus belongs to user's org (prevent cross-tenant with shared campus IDs)
+    // Additional: verify campus belongs to user's org (prevent cross-tenant with shared campus IDs).
+    // Query the authoritative `campuses` table (NOT `classes`), because a campus with zero
+    // classes would produce no row via the classes JOIN, silently bypassing the org check.
     let campus_org = sqlx::query_scalar::<_, i64>(
-        "SELECT organization_id FROM classes WHERE campus_id = $1 LIMIT 1",
+        "SELECT organization_id FROM campuses WHERE id = $1",
     )
     .bind(campus_id)
     .fetch_optional(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    if let Some(org_id) = campus_org {
-        if org_id != claims.school_id && !is_root(&claims.role) {
-            return Err(StatusCode::FORBIDDEN);
+    match campus_org {
+        Some(org_id) => {
+            if org_id != claims.school_id && !is_root(&claims.role) {
+                return Err(StatusCode::FORBIDDEN);
+            }
+        }
+        None => {
+            // Campus does not exist — fail-closed rather than skipping the check.
+            return Err(StatusCode::NOT_FOUND);
         }
     }
 

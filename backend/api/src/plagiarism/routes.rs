@@ -192,14 +192,15 @@ async fn run_scan(
     sqlx::query(
         r#"
         INSERT INTO plagiarism_scan_reports
-            (id, contest_id, assignment_id, status, overall_risk, total_submissions, suspicious_pairs)
+            (id, contest_id, assignment_id, status, overall_risk, total_submissions, suspicious_pairs, organization_id)
         VALUES
-            ($1, $2, $3, 'processing', 'low', 0, 0)
+            ($1, $2, $3, 'processing', 'low', 0, 0, $4)
         "#,
     )
     .bind(report_id)
     .bind(req.contest_id.clone())
     .bind(req.assignment_id.clone())
+    .bind(claims.school_id)
     .execute(&state.db_pool)
     .await
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -565,27 +566,66 @@ async fn list_reports(
     let limit = query.limit.unwrap_or(20).clamp(1, 100);
     let offset = (page - 1) * limit;
 
-    let total = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM plagiarism_scan_reports")
+    // Tenant scoping: root sees all reports; non-root admins see only their
+    // organization's reports. Legacy reports with NULL organization_id
+    // (created before the column existed) are visible only to root, since we
+    // cannot attribute them to a specific tenant.
+    let is_root = claims.role == "root";
+
+    let (total, rows) = if is_root {
+        let total = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM plagiarism_scan_reports")
+            .fetch_one(&state.db_pool)
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        let rows = sqlx::query(
+            r#"
+            SELECT id, contest_id, assignment_id, status, overall_risk,
+                   created_at::text AS created_at,
+                   finished_at::text AS finished_at,
+                   total_submissions, suspicious_pairs
+            FROM plagiarism_scan_reports
+            ORDER BY created_at DESC
+            LIMIT $1 OFFSET $2
+            "#,
+        )
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        (total, rows)
+    } else {
+        let total = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM plagiarism_scan_reports WHERE organization_id = $1",
+        )
+        .bind(claims.school_id)
         .fetch_one(&state.db_pool)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let rows = sqlx::query(
-        r#"
-        SELECT id, contest_id, assignment_id, status, overall_risk,
-               created_at::text AS created_at,
-               finished_at::text AS finished_at,
-               total_submissions, suspicious_pairs
-        FROM plagiarism_scan_reports
-        ORDER BY created_at DESC
-        LIMIT $1 OFFSET $2
-        "#,
-    )
-    .bind(limit)
-    .bind(offset)
-    .fetch_all(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let rows = sqlx::query(
+            r#"
+            SELECT id, contest_id, assignment_id, status, overall_risk,
+                   created_at::text AS created_at,
+                   finished_at::text AS finished_at,
+                   total_submissions, suspicious_pairs
+            FROM plagiarism_scan_reports
+            WHERE organization_id = $1
+            ORDER BY created_at DESC
+            LIMIT $2 OFFSET $3
+            "#,
+        )
+        .bind(claims.school_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(&state.db_pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+        (total, rows)
+    };
 
     let mut reports = Vec::with_capacity(rows.len());
     for row in rows {
@@ -621,20 +661,42 @@ async fn get_report_detail(
 ) -> Result<Json<PlagiarismReport>, StatusCode> {
     ensure_admin(&claims)?;
 
-    let row = sqlx::query(
-        r#"
-        SELECT id, contest_id, assignment_id, status, overall_risk,
-               created_at::text AS created_at,
-               finished_at::text AS finished_at,
-               total_submissions, suspicious_pairs
-        FROM plagiarism_scan_reports
-        WHERE id = $1
-        "#,
-    )
-    .bind(report_id)
-    .fetch_optional(&state.db_pool)
-    .await
-    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    // Tenant scoping: non-root admins can only read their organization's reports.
+    // Legacy reports (NULL organization_id) are root-only.
+    let is_root = claims.role == "root";
+
+    let row = if is_root {
+        sqlx::query(
+            r#"
+            SELECT id, contest_id, assignment_id, status, overall_risk,
+                   created_at::text AS created_at,
+                   finished_at::text AS finished_at,
+                   total_submissions, suspicious_pairs
+            FROM plagiarism_scan_reports
+            WHERE id = $1
+            "#,
+        )
+        .bind(report_id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    } else {
+        sqlx::query(
+            r#"
+            SELECT id, contest_id, assignment_id, status, overall_risk,
+                   created_at::text AS created_at,
+                   finished_at::text AS finished_at,
+                   total_submissions, suspicious_pairs
+            FROM plagiarism_scan_reports
+            WHERE id = $1 AND organization_id = $2
+            "#,
+        )
+        .bind(report_id)
+        .bind(claims.school_id)
+        .fetch_optional(&state.db_pool)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    };
 
     let row = row.ok_or(StatusCode::NOT_FOUND)?;
     let top_pairs = fetch_top_pairs(&state, report_id, 100).await?;
