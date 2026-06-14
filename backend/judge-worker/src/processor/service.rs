@@ -38,6 +38,23 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
         );
     }
 
+    // Clean up chroot rootfs directories (sibling dirs named rootfs-*).
+    #[cfg(target_os = "linux")]
+    {
+        if let Some(parent) = work_dir.parent() {
+            if let Ok(entries) = fs::read_dir(parent).await {
+                use futures::stream::StreamExt;
+                let mut entries = Box::pin(entries);
+                while let Some(Ok(entry)) = entries.next().await {
+                    let name = entry.file_name();
+                    if name.to_string_lossy().starts_with("rootfs-") {
+                        let _ = fs::remove_dir_all(entry.path()).await;
+                    }
+                }
+            }
+        }
+    }
+
     result
 }
 
@@ -427,22 +444,58 @@ async fn execute_program(
         None
     };
 
+    // Prepare chroot rootfs in the parent process (requires root for setup).
+    // The child enters the chroot in pre_exec before exec'ing user code.
+    #[cfg(target_os = "linux")]
+    let chroot_rootfs = {
+        match crate::sandbox::chroot::prepare_chroot_rootfs(&work_dir) {
+            Ok(rootfs) => Some(rootfs),
+            Err(e) => {
+                tracing::error!(
+                    "Failed to prepare chroot rootfs: {} — refusing to run without filesystem isolation",
+                    e
+                );
+                return Err(e.context("Chroot rootfs preparation failed"));
+            }
+        }
+    };
+    #[cfg(not(target_os = "linux"))]
+    let _chroot_rootfs: Option<std::path::PathBuf> = None;
+
     let mut command = build_runtime_command(submission, source_file, executable_path, work_dir)?;
+    // Adjust the command to run from the chroot's /work path.
+    #[cfg(target_os = "linux")]
+    if let Some(ref rootfs) = chroot_rootfs {
+        // The executable and source paths must be relative to the chroot root.
+        command.current_dir(rootfs.join("work"));
+        // Thread the rootfs path to pre_exec via env var (closures can't
+        // capture it because Command is consumed by spawn).
+        command.env("JUDGE_CHROOT_ROOTFS", rootfs);
+    }
+
     unsafe {
         command.pre_exec(|| {
-            // Apply hard RLIMITs BEFORE dropping privileges. These caps
-            // (NOFILE=256, FSIZE=64MB, NPROC=64) are independent of cgroups
-            // and prevent FD/disk/process exhaustion. Because prlimit64 is
-            // not in the seccomp allow-list, user code cannot raise them.
+            // Enter the chroot BEFORE dropping privileges (chroot requires root).
+            #[cfg(target_os = "linux")]
+            {
+                // rootfs path is passed via an environment variable because
+                // pre_exec closures capture by move but Command is already
+                // consumed — we use an env var to thread the path through.
+                if let Ok(rootfs) = std::env::var("JUDGE_CHROOT_ROOTFS") {
+                    crate::sandbox::chroot::enter_chroot(std::path::Path::new(&rootfs))
+                        .map_err(|err| std::io::Error::other(err.to_string()))?;
+                }
+            }
+
+            // Apply hard RLIMITs BEFORE dropping privileges.
             crate::sandbox::chroot::apply_rlimits()
                 .map_err(|err| std::io::Error::other(err.to_string()))?;
 
-            // C-01: Drop privileges to nobody BEFORE applying seccomp.
-            // This ensures user code cannot escalate back to root.
+            // Drop privileges to nobody.
             crate::sandbox::chroot::drop_privileges_to_nobody()
                 .map_err(|err| std::io::Error::other(err.to_string()))?;
 
-            // C-03: Apply deny-by-default seccomp filter
+            // Apply deny-by-default seccomp filter.
             crate::sandbox::seccomp::apply_seccomp(0)
                 .map_err(|err| std::io::Error::other(err.to_string()))
         });
