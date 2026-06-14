@@ -334,16 +334,25 @@ impl SubmissionService {
             r#"
             SELECT
                 tcr.id,
-                CASE tcr.verdict
-                    WHEN 'ac' THEN 'passed'
-                    WHEN 'wa' THEN 'failed'
-                    WHEN 'rte' THEN 'failed'
-                    WHEN 'tle' THEN 'failed'
-                    WHEN 'mle' THEN 'failed'
-                    WHEN 'ole' THEN 'failed'
-                    WHEN 'ce' THEN 'failed'
-                    WHEN 'ie' THEN 'failed'
-                    ELSE 'pending'
+                CASE
+                    -- SECURITY: hide the verdict of secret test cases unless the
+                    -- caller has show_correct_answer permission or management
+                    -- access. Previously, the per-row pass/fail status leaked
+                    -- for secret tests, letting students reverse-engineer
+                    -- hidden test coverage by probing. input/expected_output/
+                    -- actual_output were already gated; status was not.
+                    WHEN tc.is_secret AND NOT ($2::BOOLEAN OR $3::BOOLEAN) THEN 'hidden'
+                    ELSE CASE tcr.verdict
+                        WHEN 'ac' THEN 'passed'
+                        WHEN 'wa' THEN 'failed'
+                        WHEN 'rte' THEN 'failed'
+                        WHEN 'tle' THEN 'failed'
+                        WHEN 'mle' THEN 'failed'
+                        WHEN 'ole' THEN 'failed'
+                        WHEN 'ce' THEN 'failed'
+                        WHEN 'ie' THEN 'failed'
+                        ELSE 'pending'
+                    END
                 END as status,
                 CASE WHEN NOT tc.is_secret THEN tc.input ELSE NULL END as input,
                 CASE
@@ -406,6 +415,7 @@ impl SubmissionService {
     pub async fn list_submissions(
         &self,
         user_id: Uuid,
+        organization_id: i64,
         problem_id: Option<i64>,
         status: Option<String>,
         language: Option<String>,
@@ -446,12 +456,14 @@ impl SubmissionService {
                 created_at,
                 updated_at
             FROM submissions
-            WHERE user_id = $1
+            WHERE user_id = $1 AND organization_id = $2
             "#,
         );
-        let mut count_query = String::from("SELECT COUNT(*) FROM submissions WHERE user_id = $1");
+        let mut count_query = String::from(
+            "SELECT COUNT(*) FROM submissions WHERE user_id = $1 AND organization_id = $2",
+        );
 
-        let mut param_count = 1;
+        let mut param_count = 2;
         let mut conditions = vec![];
 
         if let Some(_problem_id) = problem_id {
@@ -490,6 +502,7 @@ impl SubmissionService {
         // Execute count query (must bind the same filter parameters as the main query)
         let mut count_builder = sqlx::query_scalar::<_, i64>(&count_query);
         count_builder = count_builder.bind(user_id);
+        count_builder = count_builder.bind(organization_id);
         if let Some(problem_id) = problem_id {
             count_builder = count_builder.bind(problem_id);
         }
@@ -507,6 +520,7 @@ impl SubmissionService {
         // Execute main query with parameters
         let mut query_builder = sqlx::query_as::<_, Submission>(&query);
         query_builder = query_builder.bind(user_id);
+        query_builder = query_builder.bind(organization_id);
 
         if let Some(problem_id) = problem_id {
             query_builder = query_builder.bind(problem_id);

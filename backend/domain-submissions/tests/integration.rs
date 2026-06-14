@@ -162,7 +162,7 @@ async fn test_list_submissions_by_user() {
 
     // User1 should see 2 submissions
     let (subs, total) = service
-        .list_submissions(user1_id, None, None, None, 10, 0)
+        .list_submissions(user1_id, org_id, None, None, None, 10, 0)
         .await
         .unwrap();
     assert_eq!(total, 2);
@@ -170,7 +170,7 @@ async fn test_list_submissions_by_user() {
 
     // User2 should see 1 submission
     let (subs, total) = service
-        .list_submissions(user2_id, None, None, None, 10, 0)
+        .list_submissions(user2_id, org_id, None, None, None, 10, 0)
         .await
         .unwrap();
     assert_eq!(total, 1);

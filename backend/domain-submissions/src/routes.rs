@@ -32,11 +32,24 @@ struct ListSubmissionsQuery {
     offset: Option<i64>,
 }
 
+/// Maximum source code size: 64 KiB. Prevents DoS via oversized submissions
+/// that would inflate the Redis stream message and OOM the judge worker.
+/// Most OJ systems cap at 16-64 KiB; this is generous for any real solution.
+const MAX_CODE_SIZE: usize = 64 * 1024;
+
 async fn create_submission(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
     Json(req): Json<CreateSubmissionRequest>,
 ) -> Result<impl IntoResponse, AppError> {
+    // Validate code size before any DB or Redis work.
+    if req.code.len() > MAX_CODE_SIZE {
+        return Err(AppError::Validation(format!(
+            "Source code exceeds maximum size of {} bytes (received {} bytes)",
+            MAX_CODE_SIZE,
+            req.code.len()
+        )));
+    }
     let service = if let Some(redis_pool) = &state.redis_pool {
         SubmissionService::with_redis(state.db_pool, redis_pool.clone())
     } else {
@@ -60,6 +73,7 @@ async fn list_submissions(
     let (submissions, total) = service
         .list_submissions(
             claims.sub,
+            claims.school_id,
             query.problem_id,
             query.status,
             query.language,
