@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Moon, Sun, Monitor } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import { getStoredTheme, setTheme, watchSystemTheme } from '@/lib/theme-persistence';
+import { getStoredTheme, setTheme, watchSystemTheme } from '@/shared/lib/theme-persistence';
 
 type Theme = 'light' | 'dark' | 'system';
 
