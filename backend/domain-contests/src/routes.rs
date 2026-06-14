@@ -208,7 +208,9 @@ pub async fn add_problem_to_contest(
     Ok(Json(contest_problem))
 }
 
-/// Get contest problems — tenant-scoped
+/// Get contest problems — tenant-scoped.
+/// Problems are HIDDEN before the contest starts for non-management roles
+/// to prevent pre-solving/spoilers.
 pub async fn get_contest_problems(
     State(state): State<AppState>,
     AuthExtractor(claims): AuthExtractor,
@@ -217,6 +219,21 @@ pub async fn get_contest_problems(
     let service = ContestService::new(state.db_pool);
     let contest_detail = verify_contest_tenant(&service, contest_id, claims.school_id).await?;
     verify_contest_campus_scope(&contest_detail, &claims)?;
+
+    // SECURITY: Hide contest problems before start_time for non-management roles.
+    // Teacher+ and admins can preview; students see an empty list (404 would
+    // reveal the contest exists, but verify_contest_tenant already returned 404
+    // for unknown/cross-tenant contests, so an empty list is the correct signal).
+    let is_management = matches!(
+        claims.role.parse::<shared::models::role::Role>(),
+        Ok(shared::models::role::Role::Root)
+            | Ok(shared::models::role::Role::CampusAdmin)
+            | Ok(shared::models::role::Role::GradeAdmin)
+            | Ok(shared::models::role::Role::Teacher)
+    );
+    if !is_management && chrono::Utc::now() < contest_detail.start_time {
+        return Ok(Json(vec![]));
+    }
 
     let problems = service
         .get_contest_problems(contest_id)

@@ -427,8 +427,16 @@ impl ContestService {
             .fetch_all(&self.pool)
             .await?;
 
-            // Calculate score and penalty for ACM rules
-            let solved_count = problem_submissions.iter().filter(|p| p.score > 0).count() as i32;
+            // Calculate score and penalty for ACM rules.
+            // solved_count must count problems the user actually got AC on
+            // (first_solved_at IS NOT NULL), NOT problems with score > 0 —
+            // because `score` is the problem's configured points (always > 0
+            // for any contest problem), counting by score would mark every
+            // attempted problem as "solved", making the ranking meaningless.
+            let solved_count = problem_submissions
+                .iter()
+                .filter(|p| p.first_solved_at.is_some())
+                .count() as i32;
 
             let total_score: i32 = problem_submissions.iter().map(|p| p.score).sum();
 
@@ -444,7 +452,11 @@ impl ContestService {
             });
         }
 
-        // Sort by ACM rules: solved count DESC, penalty ASC, last AC time DESC
+        // Sort by ACM rules: solved count DESC, penalty ASC, last AC time DESC.
+        // For the last-AC tiebreak, a solver (Some) must rank above a non-solver
+        // (None). Rust's Option Ord has None < Some, so we reverse: compare
+        // a vs b (ascending) so Some > None places the solver first after the
+        // overall descending intent is accounted for.
         rankings.sort_by(|a, b| {
             b.solved_count
                 .cmp(&a.solved_count)
@@ -452,7 +464,15 @@ impl ContestService {
                 .then_with(|| {
                     let a_last_ac = a.submissions.iter().filter_map(|p| p.first_solved_at).max();
                     let b_last_ac = b.submissions.iter().filter_map(|p| p.first_solved_at).max();
-                    b_last_ac.cmp(&a_last_ac)
+                    // Some(t) should rank above None. In descending order,
+                    // we want the solver first. a_last_ac.cmp(&b_last_ac)
+                    // gives ascending (None first), so reverse it.
+                    match (a_last_ac, b_last_ac) {
+                        (Some(a_t), Some(b_t)) => b_t.cmp(&a_t),
+                        (Some(_), None) => std::cmp::Ordering::Less,
+                        (None, Some(_)) => std::cmp::Ordering::Greater,
+                        (None, None) => std::cmp::Ordering::Equal,
+                    }
                 })
         });
 
@@ -530,18 +550,37 @@ impl ContestService {
             return Err(anyhow::anyhow!("Already registered for this contest"));
         }
 
-        // Register user
+        // Register user. ON CONFLICT DO NOTHING handles the race where two
+        // concurrent requests both pass the existence check above — the loser's
+        // INSERT becomes a no-op, and we return the existing row via the
+        // subsequent SELECT instead of surfacing a raw unique-violation error.
         let participant = sqlx::query_as::<_, ContestParticipant>(
             r#"
             INSERT INTO contest_participants (contest_id, user_id)
             VALUES ($1, $2)
+            ON CONFLICT (contest_id, user_id) DO NOTHING
             RETURNING *
             "#,
         )
         .bind(contest_id)
         .bind(user_id)
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await?;
+
+        // If INSERT returned nothing (ON CONFLICT), the user was already
+        // registered by a concurrent request — fetch the existing row.
+        let participant = match participant {
+            Some(p) => p,
+            None => {
+                sqlx::query_as::<_, ContestParticipant>(
+                    "SELECT * FROM contest_participants WHERE contest_id = $1 AND user_id = $2",
+                )
+                .bind(contest_id)
+                .bind(user_id)
+                .fetch_one(&self.pool)
+                .await?
+            }
+        };
 
         Ok(participant)
     }
