@@ -39,6 +39,7 @@ impl JwtService {
             iat: now.timestamp(),
             exp: exp.timestamp(),
             jti: Uuid::new_v4(),
+            token_type: "access".to_string(),
         };
 
         encode(&Header::default(), &claims, &self.encoding_key)
@@ -61,6 +62,7 @@ impl JwtService {
             iat: now.timestamp(),
             exp: exp.timestamp(),
             jti: Uuid::new_v4(),
+            token_type: "refresh".to_string(),
         };
 
         encode(&Header::default(), &claims, &self.encoding_key)

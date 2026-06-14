@@ -163,6 +163,20 @@ pub async fn refresh(
         Err(_) => return Err(StatusCode::UNAUTHORIZED),
     };
 
+    // Token-type binding: only refresh tokens may be used at /auth/refresh.
+    // An access token (4h TTL) must not be redeemable for a new refresh token
+    // (14d TTL), which would extend an attacker's window if the access token
+    // is stolen. Legacy tokens without the field default to "access" and are
+    // rejected here — users must re-login once to get typed tokens.
+    if old_claims.token_type != "refresh" {
+        tracing::warn!(
+            user_id = %old_claims.sub,
+            token_type = %old_claims.token_type,
+            "Non-refresh token presented at /auth/refresh — rejected"
+        );
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
     // Check if refresh token has been revoked (blacklisted).
     // Two scenarios lead here:
     //   1. Explicit logout — user intentionally ended the session.
@@ -834,6 +848,7 @@ mod tests {
             iat: chrono::Utc::now().timestamp(),
             exp: chrono::Utc::now().timestamp() + 3600,
             jti: uuid::Uuid::new_v4(),
+            token_type: "access".to_string(),
         };
         let state = crate::AppState {
             db_pool: sqlx::PgPool::connect_lazy("postgres://localhost/nonexistent").unwrap(),

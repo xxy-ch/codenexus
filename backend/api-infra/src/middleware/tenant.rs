@@ -111,6 +111,7 @@ mod tests {
             iat: chrono::Utc::now().timestamp(),
             exp: chrono::Utc::now().timestamp() + 3600,
             jti: Uuid::new_v4(),
+            token_type: "access".to_string(),
         };
 
         let response = app
@@ -168,6 +169,7 @@ mod tests {
             iat: chrono::Utc::now().timestamp(),
             exp: chrono::Utc::now().timestamp() + 3600,
             jti: Uuid::new_v4(),
+            token_type: "access".to_string(),
         };
 
         let app = Router::new()
@@ -215,6 +217,7 @@ mod tests {
             iat: chrono::Utc::now().timestamp(),
             exp: chrono::Utc::now().timestamp() + 3600,
             jti: Uuid::new_v4(),
+            token_type: "access".to_string(),
         };
 
         // Header says 123 but claims say 999 — must use claims
@@ -257,6 +260,7 @@ mod tests {
             iat: chrono::Utc::now().timestamp(),
             exp: chrono::Utc::now().timestamp() + 3600,
             jti: Uuid::new_v4(),
+            token_type: "access".to_string(),
         };
 
         let response = app

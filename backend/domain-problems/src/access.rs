@@ -122,6 +122,7 @@ mod tests {
             iat: 0,
             exp: 1,
             jti: Uuid::from_u128(2),
+            token_type: "access".to_string(),
         }
     }
 

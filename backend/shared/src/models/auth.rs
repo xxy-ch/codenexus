@@ -24,6 +24,16 @@ pub struct Claims {
     pub exp: i64,
     /// JWT ID (unique identifier for this token)
     pub jti: Uuid,
+    /// Token type: "access" or "refresh". Prevents token-type confusion
+    /// (e.g., using an access token at /auth/refresh to obtain a new refresh
+    /// token, extending the attacker's window). Defaults to "access" for
+    /// backward compatibility with tokens issued before this field existed.
+    #[serde(default = "default_token_type")]
+    pub token_type: String,
+}
+
+fn default_token_type() -> String {
+    "access".to_string()
 }
 
 /// Login request
