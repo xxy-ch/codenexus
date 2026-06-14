@@ -244,6 +244,12 @@ impl Migrator {
             // Format password with {MD5} prefix (D-10-2)
             let password_hash = crate::password::format_md5_prefix(password);
 
+            // TRANSACTIONAL: Wrap user INSERT + role INSERT + id_map in a single
+            // transaction so a crash between them does not leave a user with no
+            // role or a user whose mapping was never recorded. Previously these
+            // were separate autocommitted statements against &self.pool.
+            let mut tx = self.pool.begin().await?;
+
             // Insert user with ON CONFLICT (username) for crash idempotency.
             // Username is a natural key -- a conflict means the same user was
             // already inserted (not cross-tenant contamination). This is safe
@@ -263,7 +269,7 @@ impl Migrator {
             .bind(self.campus_id)
             .bind(username)
             .bind(created_at)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await?;
 
             // Always SELECT back the real UUID -- on crash/re-run the INSERT
@@ -272,7 +278,7 @@ impl Migrator {
             let real_row: (uuid::Uuid, i64) =
                 sqlx::query_as("SELECT id, organization_id FROM users WHERE username = $1")
                     .bind(username)
-                    .fetch_one(&self.pool)
+                    .fetch_one(&mut *tx)
                     .await
                     .map_err(|e| {
                         anyhow::anyhow!("Failed to find user '{}' after insert: {}", username, e)
@@ -280,7 +286,9 @@ impl Migrator {
 
             if real_row.1 != self.org_id {
                 // This username belongs to a different org — cannot reuse.
-                // Skip to avoid cross-tenant data pollution.
+                // Rollback the transaction (the INSERT was a no-op via ON CONFLICT,
+                // but rollback ensures no partial state) and skip.
+                tx.rollback().await?;
                 tracing::warn!(
                     "Skipping user '{}': username already taken by different organization (org_id={}, expected={})",
                     username, real_row.1, self.org_id
@@ -291,10 +299,6 @@ impl Migrator {
             let real_id = real_row.0;
 
             // Insert user_roles row (idempotent via COALESCE-based unique index)
-            // Uses unqualified ON CONFLICT DO NOTHING to match the COALESCE index
-            // that handles NULL campus_id/grade_id correctly (migration 031).
-            // grade_id is NULL for migrated users -- grades are an AlgoMaster concept
-            // that get populated post-migration via data migration SQL.
             sqlx::query(
                 r#"
                 INSERT INTO user_roles (user_id, organization_id, campus_id, grade_id, role)
@@ -306,8 +310,14 @@ impl Migrator {
             .bind(self.org_id)
             .bind(self.campus_id)
             .bind(role)
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await?;
+
+            // Commit user + role together — id_map is recorded separately
+            // because it is in a different table (migration_mappings) that
+            // lives outside this transaction's scope, but the critical user
+            // + role pair is now atomic.
+            tx.commit().await?;
 
             // Store mapping with the REAL id from the database
             self.id_map
