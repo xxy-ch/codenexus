@@ -1,15 +1,15 @@
 import { lazy, Suspense, type ComponentType } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ToastProvider } from './components/ui/Toast'
-import { MainLayout } from './layouts/MainLayout'
-import { AdminLayout } from './layouts/AdminLayout'
-import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute'
-import { AdminRoute } from './components/auth/AdminRoute'
-import { Loading } from './components/ui/Loading'
-import { TEACHER_ROLES } from './types/auth'
-import { ErrorBoundary } from './components/error/ErrorBoundary'
-import { useFeatureEnabled } from '@/hooks/useFeatureGate'
+import { ToastProvider } from '@/shared/components/Toast'
+import { MainLayout } from '@/shared/layouts/MainLayout'
+import { AdminLayout } from '@/shared/layouts/AdminLayout'
+import { ProtectedRoute, PublicRoute } from '@/features/auth'
+import { AdminRoute } from '@/features/auth'
+import { Loading } from '@/shared/components/Loading'
+import { TEACHER_ROLES } from '@/shared/types/auth'
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
+import { useFeatureEnabled } from '@/shared/hooks/useFeatureGate'
 
 const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
   lazy(async () => {
@@ -17,52 +17,52 @@ const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
     return { default: module[exportName] as ComponentType }
   })
 
-const LoginPage = lazyNamed(() => import('./pages/auth/LoginPage'), 'LoginPage')
-const RegisterPage = lazyNamed(() => import('./pages/auth/RegisterPage'), 'RegisterPage')
-const UnauthorizedPage = lazyNamed(() => import('./pages/auth/UnauthorizedPage'), 'UnauthorizedPage')
-const NotFound = lazyNamed(() => import('./pages/error/NotFound'), 'NotFound')
-const ServerError = lazyNamed(() => import('./pages/error/ServerError'), 'ServerError')
-const DashboardEnhanced = lazyNamed(() => import('./pages/user/DashboardEnhanced'), 'DashboardEnhanced')
-const ProblemSet = lazyNamed(() => import('./pages/user/ProblemSet'), 'ProblemSet')
-const ProblemDetail = lazyNamed(() => import('./pages/user/ProblemDetail'), 'ProblemDetail')
-const ProblemIDEEnhanced = lazyNamed(() => import('./pages/user/ProblemIDEEnhanced'), 'ProblemIDEEnhanced')
-const SubmissionHistory = lazyNamed(() => import('./pages/user/SubmissionHistory'), 'SubmissionHistory')
-const SubmissionDetail = lazyNamed(() => import('./pages/user/SubmissionDetail'), 'SubmissionDetail')
-const ContestList = lazyNamed(() => import('./pages/user/ContestList'), 'ContestList')
-const ContestDetail = lazyNamed(() => import('./pages/user/ContestDetail'), 'ContestDetail')
-const ContestScoreboard = lazyNamed(() => import('./pages/contest/ContestScoreboard'), 'ContestScoreboard')
-const Ranking = lazyNamed(() => import('./pages/user/Ranking'), 'Ranking')
-const LearningRoadmap = lazyNamed(() => import('./pages/user/LearningRoadmap'), 'LearningRoadmap')
-const DiscussionList = lazyNamed(() => import('./pages/community/DiscussionList'), 'DiscussionList')
-const DiscussionDetail = lazyNamed(() => import('./pages/community/DiscussionDetail'), 'DiscussionDetail')
-const CreateDiscussion = lazyNamed(() => import('./pages/community/CreateDiscussion'), 'CreateDiscussion')
-const BlogList = lazyNamed(() => import('./pages/community/BlogList'), 'BlogList')
-const BlogDetail = lazyNamed(() => import('./pages/community/BlogDetail'), 'BlogDetail')
-const CreateArticle = lazyNamed(() => import('./pages/community/CreateArticle'), 'CreateArticle')
-const EditArticle = lazyNamed(() => import('./pages/community/EditArticle'), 'EditArticle')
-const ComponentPreview = lazy(() => import('./pages/preview/ComponentPreview'))
-const DesignShowcase = lazy(() => import('./pages/preview/DesignShowcase'))
-const DemoShowcase = lazy(() => import('./pages/preview/DemoShowcase'))
-const DirectMessages = lazyNamed(() => import('./pages/community/DirectMessages'), 'DirectMessages')
-const SearchResults = lazyNamed(() => import('./pages/search/SearchResults'), 'SearchResults')
-const Profile = lazyNamed(() => import('./pages/user/Profile'), 'Profile')
-const Settings = lazyNamed(() => import('./pages/user/Settings'), 'Settings')
-const ClassManagement = lazyNamed(() => import('./pages/teacher/ClassManagement'), 'ClassManagement')
-const AssignmentReport = lazyNamed(() => import('./pages/teacher/AssignmentReport'), 'AssignmentReport')
-const ContestWizard = lazyNamed(() => import('./pages/teacher/ContestWizard'), 'ContestWizard')
-const AdminDashboard = lazyNamed(() => import('./pages/admin/AdminDashboard'), 'AdminDashboard')
-const UserManagement = lazyNamed(() => import('./pages/admin/UserManagement'), 'UserManagement')
-const ProblemManagement = lazyNamed(() => import('./pages/admin/ProblemManagement'), 'ProblemManagement')
-const JudgeSettings = lazyNamed(() => import('./pages/admin/JudgeSettings'), 'JudgeSettings')
-const ProblemContentConfig = lazyNamed(() => import('./pages/admin/ProblemContentConfig'), 'ProblemContentConfig')
-const SimilarityScanConfig = lazyNamed(() => import('./pages/admin/SimilarityScanConfig'), 'SimilarityScanConfig')
-const PlagiarismReportList = lazyNamed(() => import('./pages/admin/PlagiarismReportList'), 'PlagiarismReportList')
-const PlagiarismReportDetail = lazyNamed(() => import('./pages/admin/PlagiarismReportDetail'), 'PlagiarismReportDetail')
-const BatchOperations = lazyNamed(() => import('./pages/admin/BatchOperations'), 'BatchOperations')
-const JudgeQueue = lazyNamed(() => import('./pages/admin/JudgeQueue'), 'JudgeQueue')
-const GradeManagement = lazyNamed(() => import('./pages/admin/GradeManagement'), 'GradeManagement')
-const FeatureManagement = lazyNamed(() => import('./pages/admin/FeatureManagement'), 'FeatureManagement')
-const ClassFeatureSettings = lazyNamed(() => import('./pages/teacher/ClassFeatureSettings'), 'ClassFeatureSettings')
+const LoginPage = lazyNamed(() => import('@/features/auth/pages/LoginPage'), 'LoginPage')
+const RegisterPage = lazyNamed(() => import('@/features/auth/pages/RegisterPage'), 'RegisterPage')
+const UnauthorizedPage = lazyNamed(() => import('@/features/auth/pages/UnauthorizedPage'), 'UnauthorizedPage')
+const NotFound = lazyNamed(() => import('@/shared/components/NotFound'), 'NotFound')
+const ServerError = lazyNamed(() => import('@/shared/components/ServerError'), 'ServerError')
+const DashboardEnhanced = lazyNamed(() => import('@/features/dashboard/pages/DashboardEnhanced'), 'DashboardEnhanced')
+const ProblemSet = lazyNamed(() => import('@/features/problems/pages/ProblemSet'), 'ProblemSet')
+const ProblemDetail = lazyNamed(() => import('@/features/problems/pages/ProblemDetail'), 'ProblemDetail')
+const ProblemIDEEnhanced = lazyNamed(() => import('@/features/problems/pages/ProblemIDEEnhanced'), 'ProblemIDEEnhanced')
+const SubmissionHistory = lazyNamed(() => import('@/features/submissions/pages/SubmissionHistory'), 'SubmissionHistory')
+const SubmissionDetail = lazyNamed(() => import('@/features/submissions/pages/SubmissionDetail'), 'SubmissionDetail')
+const ContestList = lazyNamed(() => import('@/features/contests/pages/ContestList'), 'ContestList')
+const ContestDetail = lazyNamed(() => import('@/features/contests/pages/ContestDetail'), 'ContestDetail')
+const ContestScoreboard = lazyNamed(() => import('@/features/contests/pages/ContestScoreboard'), 'ContestScoreboard')
+const Ranking = lazyNamed(() => import('@/features/ranking/pages/Ranking'), 'Ranking')
+const LearningRoadmap = lazyNamed(() => import('@/features/roadmap/pages/LearningRoadmap'), 'LearningRoadmap')
+const DiscussionList = lazyNamed(() => import('@/features/community/pages/DiscussionList'), 'DiscussionList')
+const DiscussionDetail = lazyNamed(() => import('@/features/community/pages/DiscussionDetail'), 'DiscussionDetail')
+const CreateDiscussion = lazyNamed(() => import('@/features/community/pages/CreateDiscussion'), 'CreateDiscussion')
+const BlogList = lazyNamed(() => import('@/features/community/pages/BlogList'), 'BlogList')
+const BlogDetail = lazyNamed(() => import('@/features/community/pages/BlogDetail'), 'BlogDetail')
+const CreateArticle = lazyNamed(() => import('@/features/community/pages/CreateArticle'), 'CreateArticle')
+const EditArticle = lazyNamed(() => import('@/features/community/pages/EditArticle'), 'EditArticle')
+const ComponentPreview = lazy(() => import('@/features/preview/pages/ComponentPreview'))
+const DesignShowcase = lazy(() => import('@/features/preview/pages/DesignShowcase'))
+const DemoShowcase = lazy(() => import('@/features/preview/pages/DemoShowcase'))
+const DirectMessages = lazyNamed(() => import('@/features/community/pages/DirectMessages'), 'DirectMessages')
+const SearchResults = lazyNamed(() => import('@/features/search/pages/SearchResults'), 'SearchResults')
+const Profile = lazyNamed(() => import('@/features/settings/pages/Profile'), 'Profile')
+const Settings = lazyNamed(() => import('@/features/settings/pages/Settings'), 'Settings')
+const ClassManagement = lazyNamed(() => import('@/features/classes/pages/ClassManagement'), 'ClassManagement')
+const AssignmentReport = lazyNamed(() => import('@/features/classes/pages/AssignmentReport'), 'AssignmentReport')
+const ContestWizard = lazyNamed(() => import('@/features/contests/pages/ContestWizard'), 'ContestWizard')
+const AdminDashboard = lazyNamed(() => import('@/features/admin/pages/AdminDashboard'), 'AdminDashboard')
+const UserManagement = lazyNamed(() => import('@/features/admin/pages/UserManagement'), 'UserManagement')
+const ProblemManagement = lazyNamed(() => import('@/features/admin/pages/ProblemManagement'), 'ProblemManagement')
+const JudgeSettings = lazyNamed(() => import('@/features/admin/pages/JudgeSettings'), 'JudgeSettings')
+const ProblemContentConfig = lazyNamed(() => import('@/features/admin/pages/ProblemContentConfig'), 'ProblemContentConfig')
+const SimilarityScanConfig = lazyNamed(() => import('@/features/admin/pages/SimilarityScanConfig'), 'SimilarityScanConfig')
+const PlagiarismReportList = lazyNamed(() => import('@/features/admin/pages/PlagiarismReportList'), 'PlagiarismReportList')
+const PlagiarismReportDetail = lazyNamed(() => import('@/features/admin/pages/PlagiarismReportDetail'), 'PlagiarismReportDetail')
+const BatchOperations = lazyNamed(() => import('@/features/admin/pages/BatchOperations'), 'BatchOperations')
+const JudgeQueue = lazyNamed(() => import('@/features/admin/pages/JudgeQueue'), 'JudgeQueue')
+const GradeManagement = lazyNamed(() => import('@/features/admin/pages/GradeManagement'), 'GradeManagement')
+const FeatureManagement = lazyNamed(() => import('@/features/admin/pages/FeatureManagement'), 'FeatureManagement')
+const ClassFeatureSettings = lazyNamed(() => import('@/features/classes/pages/ClassFeatureSettings'), 'ClassFeatureSettings')
 
 const queryClient = new QueryClient({
   defaultOptions: {

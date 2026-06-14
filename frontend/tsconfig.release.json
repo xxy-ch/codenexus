@@ -4,15 +4,17 @@
     "noEmit": true
   },
   "include": [
-    "src/services/**/*.ts",
-    "src/types/**/*.ts",
-    "src/components/messages/**/*.tsx",
-    "src/pages/community/DirectMessages.tsx",
-    "src/pages/admin/SimilarityScanConfig.tsx",
-    "src/pages/admin/PlagiarismReportList.tsx",
-    "src/pages/admin/PlagiarismReportDetail.tsx",
-    "src/pages/admin/JudgeSettings.tsx",
-    "src/pages/admin/ProblemContentConfig.tsx"
+    "src/features/community/services/**/*.ts",
+    "src/features/community/types/**/*.ts",
+    "src/features/admin/services/**/*.ts",
+    "src/features/admin/types/**/*.ts",
+    "src/features/community/components/messages/**/*.tsx",
+    "src/features/community/pages/DirectMessages.tsx",
+    "src/features/admin/pages/SimilarityScanConfig.tsx",
+    "src/features/admin/pages/PlagiarismReportList.tsx",
+    "src/features/admin/pages/PlagiarismReportDetail.tsx",
+    "src/features/admin/pages/JudgeSettings.tsx",
+    "src/features/admin/pages/ProblemContentConfig.tsx"
   ],
   "exclude": [
     "src/**/*.test.ts",

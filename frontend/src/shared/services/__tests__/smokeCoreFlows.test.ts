@@ -1,0 +1,171 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const { mockApi } = vi.hoisted(() => ({
+  mockApi: {
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+  },
+}))
+
+vi.mock('@/shared/services/api', () => ({
+  default: mockApi,
+}))
+
+import { authService } from '@/features/auth/services/auth'
+import { problemsService } from '@/features/problems/services/problems'
+import { discussionsApi } from '@/features/community/services/discussionsApi'
+import { blogApi } from '@/features/community/services/articlesApi'
+import { messagesService } from '@/features/community/services/messages'
+import { plagiarismService } from '@/features/admin/services/plagiarism'
+
+describe('core smoke flows', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('auth flow: login endpoint reachable', async () => {
+    mockApi.post.mockResolvedValueOnce({
+      data: {
+        token: 't1',
+        refresh_token: 'r1',
+        user: { id: 'u1', username: 'alice', email: 'a@example.com', role: 'user' },
+      },
+    })
+
+    const data = await authService.login({ username: 'alice', password: 'pwd' })
+
+    expect(mockApi.post).toHaveBeenCalledWith('/auth/login', {
+      username: 'alice',
+      password: 'pwd',
+    })
+    expect(data.token).toBe('t1')
+  })
+
+  it('problem flow: list fetches with query filters', async () => {
+    mockApi.get.mockResolvedValueOnce({
+      data: { problems: [], total: 0, page: 1, limit: 20, pages: 0 },
+    })
+
+    const data = await problemsService.getProblems({ difficulty: 'easy', page: 1, limit: 20 })
+
+    expect(mockApi.get).toHaveBeenCalledWith('/problems?difficulty=easy&page=1&limit=20')
+    expect(data.total).toBe(0)
+  })
+
+  it('problem flow: submission payload sends numeric ids', async () => {
+    mockApi.post.mockResolvedValueOnce({
+      data: { id: 42, problem_id: 1, status: 'queued' },
+    })
+
+    const data = await problemsService.submitCode({
+      problemId: '1',
+      contestId: '2',
+      language: 'python3',
+      code: 'print(42)',
+    })
+
+    expect(mockApi.post).toHaveBeenCalledWith('/submissions', {
+      problem_id: 1,
+      contest_id: 2,
+      language: 'python3',
+      code: 'print(42)',
+    })
+    expect(data.id).toBe(42)
+  })
+
+  it('community flow: discussion detail reachable', async () => {
+    mockApi.get.mockResolvedValueOnce({
+      data: {
+        discussion: {
+          id: 1,
+          title: 't',
+          content: 'c',
+          author_id: 'u1',
+          author_username: 'alice',
+          tags: [],
+          is_pinned: false,
+          is_solved: false,
+          is_locked: false,
+          view_count: 0,
+          reply_count: 0,
+          like_count: 0,
+          created_at: '2026-03-06T00:00:00Z',
+          updated_at: '2026-03-06T00:00:00Z',
+        },
+        replies: [],
+        author: { id: 'u1', username: 'alice' },
+      },
+    })
+
+    const data = await discussionsApi.getDiscussion(1)
+
+    expect(mockApi.get).toHaveBeenCalledWith('/discussions/1')
+    expect(data.discussion.id).toBe(1)
+  })
+
+  it('blog flow: post list reachable', async () => {
+    mockApi.get.mockResolvedValueOnce({
+      data: {
+        articles: [
+          {
+            id: 1,
+            title: 'hello',
+            slug: 'hello',
+            content: 'content',
+            author_id: 'u1',
+            author_username: 'alice',
+            category: 'tutorial',
+            tags: [],
+            is_published: true,
+            is_featured: false,
+            view_count: 0,
+            like_count: 0,
+            comment_count: 0,
+            created_at: '2026-03-06T00:00:00Z',
+            updated_at: '2026-03-06T00:00:00Z',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 10,
+      },
+    })
+
+    const data = await blogApi.getArticles({ page: 1, limit: 10 })
+
+    expect(mockApi.get).toHaveBeenCalledWith('/blog?page=1&limit=10')
+    expect(data.articles[0].id).toBe(1)
+  })
+
+  it('message flow: conversation messages reachable', async () => {
+    mockApi.get.mockResolvedValueOnce({
+      data: [
+        {
+          id: 'm1',
+          conversation_id: 'c1',
+          sender_id: 'u1',
+          sender_username: 'alice',
+          content: 'hi',
+          created_at: '2026-03-06T00:00:00Z',
+        },
+      ],
+    })
+
+    const data = await messagesService.getMessages('c1')
+
+    expect(mockApi.get).toHaveBeenCalledWith('/messages/conversations/c1')
+    expect(data[0].id).toBe('m1')
+  })
+
+  it('plagiarism flow: scan trigger reachable', async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { report_id: 'r1' } })
+
+    const data = await plagiarismService.runScan({ contest_id: 'contest-1' })
+
+    expect(mockApi.post).toHaveBeenCalledWith('/admin/plagiarism/scan', {
+      contest_id: 'contest-1',
+    })
+    expect(data.report_id).toBe('r1')
+  })
+})
