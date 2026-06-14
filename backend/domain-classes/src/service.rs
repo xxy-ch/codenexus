@@ -399,9 +399,14 @@ impl ClassService {
         teacher_id: Uuid,
     ) -> Result<Class> {
         let now = Utc::now();
+        // Class enrollment code: 12 hex chars (48 bits) from a UUID v4.
+        // 6 chars (16M possibilities) was brute-forceable across the global
+        // code namespace; 12 chars (281T possibilities) makes enumeration
+        // infeasible. Combined with the org-scoped lookup in enroll_with_code,
+        // a cross-tenant code guess now requires ~281T / N_org attempts.
         let code = format!(
             "CLS{}",
-            &Uuid::new_v4().simple().to_string()[..6].to_uppercase()
+            &Uuid::new_v4().simple().to_string()[..12].to_uppercase()
         );
 
         let class = sqlx::query_as::<_, Class>(
