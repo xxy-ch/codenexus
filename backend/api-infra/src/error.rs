@@ -29,8 +29,25 @@ impl IntoResponse for AppError {
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             AppError::Validation(msg) => (StatusCode::BAD_REQUEST, msg),
-            AppError::Database(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
-            AppError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
+            // SECURITY: Database and Internal errors can contain raw sqlx
+            // error strings (SQL fragments, column names, constraint names,
+            // driver internals) that leak the internal schema and aid SQL
+            // injection probing. Log the full error server-side, return a
+            // generic message to the client.
+            AppError::Database(msg) => {
+                tracing::error!(error = %msg, "Database error returned to client as generic 500");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "An internal error occurred. Please try again.".to_string(),
+                )
+            }
+            AppError::Internal(msg) => {
+                tracing::error!(error = %msg, "Internal error returned to client as generic 500");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "An internal error occurred. Please try again.".to_string(),
+                )
+            }
         };
 
         let body = Json(json!({
@@ -44,6 +61,8 @@ impl IntoResponse for AppError {
 
 impl From<anyhow::Error> for AppError {
     fn from(err: anyhow::Error) -> Self {
+        // Log the full error chain server-side so it is not lost.
+        tracing::error!(error = %err, "Unhandled error converted to AppError::Internal");
         AppError::Internal(err.to_string())
     }
 }
