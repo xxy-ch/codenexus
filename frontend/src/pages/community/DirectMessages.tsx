@@ -5,7 +5,7 @@ import { ConversationSkeleton } from '@/components/skeletons/ConversationSkeleto
 import { InlineError } from '@/shared/components/InlineError'
 import { ConversationList } from '@/components/messages/ConversationList'
 import { MessageThread } from '@/components/messages/MessageThread'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { MessageCircle, RefreshCw, Send } from 'lucide-react'
 
 export function DirectMessages() {

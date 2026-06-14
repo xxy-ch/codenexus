@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { Button } from '@/shared/components/Button'
 import { Input } from '@/shared/components/Input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/Card'

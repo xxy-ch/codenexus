@@ -17,7 +17,7 @@ import {
 } from '@/shared/components/dialog'
 import { Skeleton } from '@/shared/components/Skeleton'
 import { Separator } from '@/shared/components/separator'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { isAdmin } from '@/shared/types/auth'
 import type { ImportPreview, ImportResult, PreviewItem, UserImportPreview } from '@/types/imex'
 

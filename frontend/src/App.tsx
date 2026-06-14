@@ -4,8 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ToastProvider } from '@/shared/components/Toast'
 import { MainLayout } from '@/shared/layouts/MainLayout'
 import { AdminLayout } from '@/shared/layouts/AdminLayout'
-import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute'
-import { AdminRoute } from './components/auth/AdminRoute'
+import { ProtectedRoute, PublicRoute } from '@/features/auth'
+import { AdminRoute } from '@/features/auth'
 import { Loading } from '@/shared/components/Loading'
 import { TEACHER_ROLES } from '@/shared/types/auth'
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
@@ -17,9 +17,9 @@ const lazyNamed = <T,>(loader: () => Promise<T>, exportName: keyof T) =>
     return { default: module[exportName] as ComponentType }
   })
 
-const LoginPage = lazyNamed(() => import('./pages/auth/LoginPage'), 'LoginPage')
-const RegisterPage = lazyNamed(() => import('./pages/auth/RegisterPage'), 'RegisterPage')
-const UnauthorizedPage = lazyNamed(() => import('./pages/auth/UnauthorizedPage'), 'UnauthorizedPage')
+const LoginPage = lazyNamed(() => import('@/features/auth/pages/LoginPage'), 'LoginPage')
+const RegisterPage = lazyNamed(() => import('@/features/auth/pages/RegisterPage'), 'RegisterPage')
+const UnauthorizedPage = lazyNamed(() => import('@/features/auth/pages/UnauthorizedPage'), 'UnauthorizedPage')
 const NotFound = lazyNamed(() => import('./pages/error/NotFound'), 'NotFound')
 const ServerError = lazyNamed(() => import('./pages/error/ServerError'), 'ServerError')
 const DashboardEnhanced = lazyNamed(() => import('./pages/user/DashboardEnhanced'), 'DashboardEnhanced')

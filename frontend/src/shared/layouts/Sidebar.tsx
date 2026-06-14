@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { cn } from '@/shared/lib/utils'
 import { useFeatureEnabled } from '@/shared/hooks/useFeatureGate'
 import { isAdmin, isTeacherOrAbove, roleLabel, type Role } from '@/shared/types/auth'

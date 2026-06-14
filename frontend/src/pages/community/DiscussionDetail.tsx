@@ -6,7 +6,7 @@ import type { DiscussionDetail, DiscussionReply } from '@/types/community'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { InlineError } from '@/shared/components/InlineError'
 import { useDiscussionUpdates } from '@/shared/hooks/useCommunityUpdates'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { cn } from '@/shared/lib/utils'
 
 export function DiscussionDetail() {

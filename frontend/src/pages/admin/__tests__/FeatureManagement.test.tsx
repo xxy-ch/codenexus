@@ -21,7 +21,7 @@ vi.mock('@/shared/services/api', () => ({
   default: mockApi,
 }))
 
-vi.mock('@/hooks/useAuth', () => ({
+vi.mock('@/features/auth/hooks/useAuth', () => ({
   useAuth: mockUseAuth,
 }))
 

@@ -8,7 +8,7 @@ import {
   useDeleteFeatureFlag,
   type FeatureRegistryEntry,
 } from '@/shared/services/featureGateway'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { FeatureToggle } from '@/shared/components/FeatureToggle'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { InlineError } from '@/shared/components/InlineError'

@@ -6,7 +6,7 @@ import type { UpdateArticleRequest } from '@/types/community'
 import { EditorWithPreview } from '@/components/editor/EditorWithPreview'
 import { FormSkeleton } from '@/shared/components/FormSkeleton'
 import { InlineError } from '@/shared/components/InlineError'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 
 export function EditArticle() {
   const { slug } = useParams<{ slug: string }>()

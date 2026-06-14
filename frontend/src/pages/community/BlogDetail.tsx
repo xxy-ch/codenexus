@@ -6,7 +6,7 @@ import type { ArticleDetail, ArticleComment } from '@/types/community'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { InlineError } from '@/shared/components/InlineError'
 import { useArticleUpdates } from '@/shared/hooks/useCommunityUpdates'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/features/auth/hooks/useAuth'
 import { cn } from '@/shared/lib/utils'
 
 export function BlogDetail() {
