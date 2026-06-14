@@ -77,6 +77,10 @@ pub async fn health_check(State(state): State<Arc<AppState>>) -> impl IntoRespon
 }
 
 /// Check Redis connectivity via PING.
+///
+/// SECURITY: the raw error is logged server-side but NOT included in the
+/// unauthenticated response body — Redis errors can contain host/port/role
+/// details. The response carries only a generic "error" status string.
 async fn check_redis(pool: &deadpool_redis::Pool) -> DependencyHealth {
     match pool.get().await {
         Ok(mut conn) => match cmd("PING").query_async::<String>(&mut conn).await {
@@ -84,23 +88,36 @@ async fn check_redis(pool: &deadpool_redis::Pool) -> DependencyHealth {
                 status: "ok".to_string(),
                 error: None,
             },
-            Ok(unexpected) => DependencyHealth {
-                status: "error".to_string(),
-                error: Some(format!("Unexpected PING response: {unexpected}")),
-            },
-            Err(e) => DependencyHealth {
-                status: "error".to_string(),
-                error: Some(format!("Redis command failed: {e}")),
-            },
+            Ok(unexpected) => {
+                tracing::warn!("Redis PING unexpected response: {unexpected}");
+                DependencyHealth {
+                    status: "error".to_string(),
+                    error: None,
+                }
+            }
+            Err(e) => {
+                tracing::error!("Redis command failed: {e}");
+                DependencyHealth {
+                    status: "error".to_string(),
+                    error: None,
+                }
+            }
         },
-        Err(e) => DependencyHealth {
-            status: "error".to_string(),
-            error: Some(format!("Redis pool exhausted: {e}")),
+        Err(e) => {
+            tracing::error!("Redis pool exhausted: {e}");
+            DependencyHealth {
+                status: "error".to_string(),
+                error: None,
+            }
         },
     }
 }
 
 /// Check PostgreSQL connectivity via `SELECT 1`.
+///
+/// SECURITY: the raw sqlx error is logged server-side but NOT included in the
+/// unauthenticated response body — DB errors can contain connection strings,
+/// host, role, and constraint names.
 async fn check_db(pool: &sqlx::PgPool) -> DependencyHealth {
     match sqlx::query("SELECT 1 AS health").fetch_one(pool).await {
         Ok(row) => {
@@ -111,15 +128,19 @@ async fn check_db(pool: &sqlx::PgPool) -> DependencyHealth {
                     error: None,
                 }
             } else {
+                tracing::warn!("DB health check returned unexpected value: {val}");
                 DependencyHealth {
                     status: "error".to_string(),
-                    error: Some(format!("Unexpected SELECT 1 result: {val}")),
+                    error: None,
                 }
             }
         }
-        Err(e) => DependencyHealth {
-            status: "error".to_string(),
-            error: Some(format!("DB query failed: {e}")),
+        Err(e) => {
+            tracing::error!("DB query failed: {e}");
+            DependencyHealth {
+                status: "error".to_string(),
+                error: None,
+            }
         },
     }
 }
