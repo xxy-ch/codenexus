@@ -1,8 +1,6 @@
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { usersService } from '@/features/users/services/users'
-import { Button } from '@/shared/components/Button'
 import { cn } from '@/shared/lib/utils'
 import type { UserActivity } from '@/features/users/types/users'
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -10,29 +8,23 @@ import { Activity, Code2, Trophy, Flame, CheckCircle, XCircle, Upload, Cpu, Star
 import { DashboardSkeleton } from '@/features/dashboard/DashboardSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { InlineError } from '@/shared/components/InlineError'
+import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData'
+import { ActivityHeatmap } from '@/features/dashboard/components/ActivityHeatmap'
 
 export function DashboardEnhanced() {
   const queryClient = useQueryClient()
-
-  // 获取用户统计
-  const { data: userStats, isLoading: statsLoading, error: statsError } = useQuery({
-    queryKey: ['userStats'],
-    queryFn: () => usersService.getUserStats(),
-  })
-
-  // 获取用户活动 (扩大限制到 150，以便获得丰富的高保真热力图提交分布)
-  const { data: recentActivity } = useQuery({
-    queryKey: ['userActivity'],
-    queryFn: () => usersService.getUserActivity(150),
-  })
-
-  // 获取推荐题目
-  const { data: recommendedProblems } = useQuery({
-    queryKey: ['recommendedProblems'],
-    queryFn: () => usersService.getRecommendedProblems(5),
-  })
-
-  const [selectedDay, setSelectedDay] = useState<{ date: string; count: number; accepted: number } | null>(null)
+  const {
+    userStats,
+    recentActivity,
+    recommendedProblems,
+    statsLoading,
+    statsError,
+    weeklyActivity,
+    solvedThisWeek,
+    totalWeeklySubmissions,
+    weeks,
+    monthLabels,
+  } = useDashboardData()
 
   if (statsLoading) {
     return <DashboardSkeleton />
@@ -53,39 +45,6 @@ export function DashboardEnhanced() {
     medium: 'var(--difficulty-medium)',
     hard: 'var(--difficulty-hard)',
   }
-
-  const weekNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
-  const submissionActivities = (recentActivity ?? []).filter(
-    (activity) => activity.type === 'submission'
-  )
-
-  const weeklyActivity = Array.from({ length: 7 }).map((_, index) => {
-    const date = new Date()
-    date.setDate(date.getDate() - (6 - index))
-    const dateKey = date.toISOString().slice(0, 10)
-
-    const dailyActivities = submissionActivities.filter((activity) =>
-      activity.created_at.startsWith(dateKey)
-    )
-    const acceptedCount = dailyActivities.filter(
-      (activity) => activity.status === 'accepted'
-    ).length
-
-    return {
-      day: weekNames[date.getDay()],
-      提交: dailyActivities.length,
-      通过: acceptedCount,
-    }
-  })
-  const solvedThisWeek = weeklyActivity.reduce((sum, item) => sum + item['通过'], 0)
-  const totalWeeklySubmissions = weeklyActivity.reduce((sum, item) => sum + item['提交'], 0)
-
-  // 难度分布数据
-  const difficultyDistribution = [
-    { name: '简单', value: userStats.easy_solved, color: DIFFICULTY_COLORS.easy },
-    { name: '中等', value: userStats.medium_solved, color: DIFFICULTY_COLORS.medium },
-    { name: '困难', value: userStats.hard_solved, color: DIFFICULTY_COLORS.hard },
-  ]
 
   const getActivityIcon = (activity: UserActivity) => {
     switch (activity.type) {
@@ -113,64 +72,12 @@ export function DashboardEnhanced() {
     }
   }
 
-  // ─── 提交热力图生成算法 ───
-  const today = new Date()
-  const cells: Date[] = []
-  
-  // 从 52 周前的周日开始计算 (53列 * 7行 = 371个单元格)
-  const startGridDate = new Date(today)
-  startGridDate.setDate(today.getDate() - 364)
-  const dayOfWeek = startGridDate.getDay()
-  startGridDate.setDate(startGridDate.getDate() - dayOfWeek)
-  
-  const tempDate = new Date(startGridDate)
-  for (let i = 0; i < 371; i++) {
-    cells.push(new Date(tempDate))
-    tempDate.setDate(tempDate.getDate() + 1)
-  }
-
-  // 格式化本地日期 (YYYY-MM-DD)
-  const getLocalDateKey = (d: Date) => {
-    const year = d.getFullYear()
-    const month = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  // 预先汇总每日提交 (大幅提升渲染性能)
-  const submissionMap = new Map<string, { count: number; accepted: number }>()
-  
-  submissionActivities.forEach((activity) => {
-    const actDate = new Date(activity.created_at)
-    const key = getLocalDateKey(actDate)
-    const existing = submissionMap.get(key) || { count: 0, accepted: 0 }
-    
-    existing.count += 1
-    if (activity.status === 'accepted') {
-      existing.accepted += 1
-    }
-    
-    submissionMap.set(key, existing)
-  })
-
-  // 按周分组 (每 7 天一组)
-  const weeks: Date[][] = []
-  for (let i = 0; i < 53; i++) {
-    weeks.push(cells.slice(i * 7, (i + 1) * 7))
-  }
-
-  // 计算月份文字标识
-  const monthLabels: { index: number; label: string }[] = []
-  let lastMonth = -1
-  weeks.forEach((week, index) => {
-    const firstDayOfWeek = week[0]
-    const currentMonth = firstDayOfWeek.getMonth()
-    if (currentMonth !== lastMonth) {
-      const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
-      monthLabels.push({ index, label: monthNames[currentMonth] })
-      lastMonth = currentMonth
-    }
-  })
+  // 难度分布数据
+  const difficultyDistribution = [
+    { name: '简单', value: userStats.easy_solved, color: DIFFICULTY_COLORS.easy },
+    { name: '中等', value: userStats.medium_solved, color: DIFFICULTY_COLORS.medium },
+    { name: '困难', value: userStats.hard_solved, color: DIFFICULTY_COLORS.hard },
+  ]
 
   return (
     <div className="space-y-8">
@@ -270,121 +177,12 @@ export function DashboardEnhanced() {
       </div>
 
       {/* ─── 年度提交热力图面板 ─── */}
-      <section className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-prominent glass-interactive hover-lift transition-all duration-300">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Activity className="w-5 h-5 text-primary animate-pulse" />
-              年度提交热力图
-            </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              过去 365 天的代码提交与通过强度分布
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-6">
-            <div className="text-right">
-              <span className="text-[13px] text-muted-foreground uppercase tracking-widest block">年度总提交</span>
-              <span className="text-base font-bold text-foreground">{userStats.total_submissions} 次</span>
-            </div>
-            <div className="h-8 w-px bg-border" />
-            <div className="text-right">
-              <span className="text-[13px] text-muted-foreground uppercase tracking-widest block">本周已解决</span>
-              <span className="text-base font-bold text-primary">{solvedThisWeek} 题</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 热力图网格 container */}
-        <div className="relative overflow-x-auto pb-4 scrollbar-thin select-none">
-          <div className="min-w-[760px] flex items-start">
-            {/* 星期标签列 */}
-            <div className="flex flex-col justify-between text-[13px] text-muted-foreground mr-3 h-[96px] select-none py-[2px] font-medium">
-              <span>周日</span>
-              <span>周二</span>
-              <span>周四</span>
-              <span>周六</span>
-            </div>
-
-            {/* 月份与热力网格 */}
-            <div className="flex-1 flex flex-col">
-              {/* 月份行 */}
-              <div className="flex gap-[3px] text-[13px] text-muted-foreground mb-1.5 select-none h-4 relative">
-                {weeks.map((week, index) => {
-                  const labelObj = monthLabels.find(l => l.index === index);
-                  return (
-                    <div key={index} className="w-3 relative flex-shrink-0">
-                      {labelObj && (
-                        <span className="absolute left-0 bottom-0 whitespace-nowrap text-[13px] font-semibold text-muted-foreground">
-                          {labelObj.label}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* 星期网格列 */}
-              <div className="flex gap-[3px]">
-                {weeks.map((week, wIdx) => (
-                  <div key={wIdx} className="flex flex-col gap-[3px] flex-shrink-0">
-                    {week.map((day, dIdx) => {
-                      const dateKey = getLocalDateKey(day);
-                      const stats = submissionMap.get(dateKey) || { count: 0, accepted: 0 };
-                      const count = stats.count;
-                      
-                      // 计算方块颜色与阴影样式
-                      let bgClass = "bg-white/[0.02] border border-white/[0.04]";
-                      if (count > 0 && count <= 2) bgClass = "bg-primary/20 border border-primary/15 hover:bg-primary/30";
-                      else if (count > 2 && count <= 4) bgClass = "bg-primary/45 border border-primary/25 hover:bg-primary/55";
-                      else if (count > 4 && count <= 6) bgClass = "bg-primary/70 border border-primary/40 hover:bg-primary/80";
-                      else if (count > 6) bgClass = "bg-primary border border-primary/50 shadow-sm shadow-primary/20 hover:opacity-90";
-
-                      return (
-                        <div
-                          key={dIdx}
-                          onClick={() => setSelectedDay({ date: dateKey, count, accepted: stats.accepted })}
-                          className={cn(
-                            "w-3 h-3 rounded-[2px] transition-all duration-150 hover:scale-130 hover:z-10 cursor-pointer",
-                            bgClass
-                          )}
-                          title={`${dateKey}: ${count} 次提交 (${stats.accepted} 次通过)`}
-                        />
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 热力图底部 Legend and Selection details */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-border-subtle pt-4 mt-2 gap-4">
-          <div className="text-[13px] text-muted-foreground font-medium">
-            {selectedDay ? (
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/15 text-foreground animate-fade-in-up">
-                📅 <strong className="text-primary">{selectedDay.date}</strong>
-                <span>• 共 <strong>{selectedDay.count}</strong> 次提交</span>
-                {selectedDay.count > 0 && (
-                  <span className="text-status-accepted font-semibold">({selectedDay.accepted} 次通过)</span>
-                )}
-              </span>
-            ) : (
-              <span>点击网格内小方块可查看具体日期的提交概览</span>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-medium self-end">
-            <span>少</span>
-            <div className="w-2.5 h-2.5 rounded-[2px] bg-white/[0.02] border border-white/[0.04]" />
-            <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/20 border border-primary/15" />
-            <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/45 border border-primary/25" />
-            <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/70 border border-primary/40" />
-            <div className="w-2.5 h-2.5 rounded-[2px] bg-primary border border-primary/50 shadow-sm shadow-primary/20" />
-            <span>多</span>
-          </div>
-        </div>
-      </section>
+      <ActivityHeatmap
+        weeks={weeks}
+        monthLabels={monthLabels}
+        totalSubmissions={userStats.total_submissions}
+        solvedThisWeek={solvedThisWeek}
+      />
 
       {/* PostHog-style large metric cards */}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
