@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { SubmissionDetail } from '../SubmissionDetail'
 
-vi.mock('@/services/problems', () => ({
+vi.mock('@/features/problems/services/problems', () => ({
   problemsService: {
     getSubmissionDetail: vi.fn(),
   },
@@ -19,7 +19,7 @@ vi.mock('@/components/analysis/SimilarSubmissions', () => ({
   SimilarSubmissions: () => <div data-testid="similar-submissions" />,
 }))
 
-import { problemsService } from '@/services/problems'
+import { problemsService } from '@/features/problems/services/problems'
 
 describe('SubmissionDetail', () => {
   let queryClient: QueryClient

@@ -1,8 +1,8 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useProblem } from "@/hooks/useProblems";
+import { useProblem } from "@/features/problems/hooks/useProblems";
 import { Button } from "@/shared/components/Button";
 import { cn } from "@/shared/lib/utils";
-import { ProblemDetailSkeleton } from "@/components/skeletons/ProblemDetailSkeleton";
+import { ProblemDetailSkeleton } from "@/features/problems/components/ProblemDetailSkeleton";
 import { InlineError } from "@/shared/components/InlineError";
 import { Clock, Cpu, Star, Play, Lightbulb, ArrowLeft } from "lucide-react";
 import { TeachingCardBlock } from "@/components/analysis/TeachingCardBlock";

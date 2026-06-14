@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { MonacoEditor } from '@/components/ide/MonacoEditor'
-import { problemsService } from '@/services/problems'
-import { IDESkeleton } from '@/components/skeletons/IDESkeleton'
+import { MonacoEditor } from '@/features/problems/components/MonacoEditor'
+import { problemsService } from '@/features/problems/services/problems'
+import { IDESkeleton } from '@/features/problems/components/IDESkeleton'
 import { InlineError } from '@/shared/components/InlineError'
 import { AmbientBackground } from '@/shared/layouts/AmbientBackground'
-import type { Problem, TestCase, ProblemSubmission } from '@/types/problems'
+import type { Problem, TestCase, ProblemSubmission } from '@/features/problems/types/problems'
 import {
   Play,
   Terminal as TerminalIcon,

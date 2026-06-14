@@ -6,13 +6,13 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { SubmissionHistory } from '../SubmissionHistory'
 
 // Mock the API service
-vi.mock('@/services/problems', () => ({
+vi.mock('@/features/problems/services/problems', () => ({
   problemsService: {
     getUserSubmissions: vi.fn(),
   },
 }))
 
-import { problemsService } from '@/services/problems'
+import { problemsService } from '@/features/problems/services/problems'
 
 function LocationProbe() {
   const location = useLocation()

@@ -24,7 +24,7 @@ vi.mock('react-router-dom', async () => {
   }
 })
 
-vi.mock('@/services/problems', () => ({
+vi.mock('@/features/problems/services/problems', () => ({
   problemsService: {
     getProblem: mocks.getProblem,
     getTestCases: mocks.getTestCases,
@@ -42,7 +42,7 @@ vi.mock('react-hot-toast', () => ({
   },
 }))
 
-vi.mock('@/components/ide/MonacoEditor', () => ({
+vi.mock('@/features/problems/components/MonacoEditor', () => ({
   MonacoEditor: ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
     <textarea aria-label="code editor" value={value} onChange={(e) => onChange(e.target.value)} />
   ),

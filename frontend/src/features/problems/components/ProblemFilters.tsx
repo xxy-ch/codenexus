@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Search, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { Button } from '@/shared/components/Button'
 import { cn } from '@/shared/lib/utils'
-import type { ProblemFilters } from '@/services/problems'
+import type { ProblemFilters } from '@/features/problems/services/problems'
 
 const difficultyOptions = [
   { value: 'all', label: '全部难度' },

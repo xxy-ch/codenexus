@@ -1,5 +1,5 @@
 import api from '@/shared/services/api'
-import type { Problem, ManagementTestCase, ProblemSubmission, PublicTestCase } from '@/types/problems'
+import type { Problem, ManagementTestCase, ProblemSubmission, PublicTestCase } from '@/features/problems/types/problems'
 
 export interface ProblemFilters {
   difficulty?: 'easy' | 'medium' | 'hard' | 'all'

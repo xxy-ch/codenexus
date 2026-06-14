@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import { problemsService } from '@/services/problems'
+import { problemsService } from '@/features/problems/services/problems'
 import { Button } from '@/shared/components/Button'
 import { cn } from '@/shared/lib/utils'
 import { getSubmissionStatusConfig } from '@/shared/lib/submissionStatus'

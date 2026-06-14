@@ -13,7 +13,7 @@ vi.mock('@/shared/services/api', () => ({
 }))
 
 import { authService } from '@/features/auth/services/auth'
-import { problemsService } from '@/services/problems'
+import { problemsService } from '@/features/problems/services/problems'
 import { discussionsApi } from '@/services/discussionsApi'
 import { blogApi } from '@/services/articlesApi'
 import { messagesService } from '@/services/messages'

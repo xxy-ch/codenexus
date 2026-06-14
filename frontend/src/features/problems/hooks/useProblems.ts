@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { problemsService, type ProblemFilters } from '@/services/problems'
+import { problemsService, type ProblemFilters } from '@/features/problems/services/problems'
 
 export function useProblems(filters: ProblemFilters = {}) {
   return useQuery({

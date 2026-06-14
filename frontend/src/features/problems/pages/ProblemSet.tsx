@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { useProblems } from '@/hooks/useProblems'
-import { ProblemTable } from '@/components/problems/ProblemTable'
-import { ProblemFilters } from '@/components/problems/ProblemFilters'
+import { useProblems } from '@/features/problems/hooks/useProblems'
+import { ProblemTable } from '@/features/problems/components/ProblemTable'
+import { ProblemFilters } from '@/features/problems/components/ProblemFilters'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Button } from '@/shared/components/Button'
 import { FolderOpen, History, Trophy } from 'lucide-react'
-import { ProblemListSkeleton } from '@/components/skeletons/ProblemListSkeleton'
+import { ProblemListSkeleton } from '@/features/problems/components/ProblemListSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { InlineError } from '@/shared/components/InlineError'
-import type { ProblemFilters as ProblemFiltersParams } from '@/services/problems'
+import type { ProblemFilters as ProblemFiltersParams } from '@/features/problems/services/problems'
 
 export function ProblemSet() {
   const [searchParams] = useSearchParams()

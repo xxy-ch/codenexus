@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { CheckCircle, Circle } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
-import type { Problem } from '@/types/problems'
+import type { Problem } from '@/features/problems/types/problems'
 
 interface ProblemTableProps {
   problems: Problem[]
