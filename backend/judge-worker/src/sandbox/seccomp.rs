@@ -131,9 +131,15 @@ pub fn apply_seccomp(_pid: u32) -> Result<()> {
             "geteuid",
             "getegid",
             "getgroups",
-            // Thread creation (namespace flags fail due to no privs)
+            // Thread creation: only `clone` (with CLONE_THREAD for plain
+            // threading). `clone3` is NOT allowed — it is the newer API used
+            // for CLONE_NEWUSER/CLONE_NEWNET/CLONE_NEWNS namespace creation,
+            // which is the primary sandbox-escape vector. Plain thread
+            // creation via `clone(CLONE_THREAD|...)` does not require clone3.
+            // While an argument-level seccomp filter would be ideal, removing
+            // clone3 entirely is the pragmatic defense: runtimes (glibc,
+            // musl, pthread) use the `clone` syscall for threads, not clone3.
             "clone",
-            "clone3",
             // Access checks
             "access",
             "faccessat",

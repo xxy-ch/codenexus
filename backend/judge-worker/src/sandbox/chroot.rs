@@ -100,3 +100,68 @@ pub fn drop_privileges_to_nobody() -> Result<()> {
 
     Ok(())
 }
+
+/// Apply hard resource limits in the child process (pre_exec).
+///
+/// These RLIMITs are independent of cgroups and provide defense-in-depth:
+/// - RLIMIT_NOFILE: caps the number of open file descriptors, preventing
+///   FD exhaustion and DoS.
+/// - RLIMIT_FSIZE: caps the maximum file size a process can create,
+///   preventing /tmp and workdir disk exhaustion.
+///
+/// The limits are set BEFORE drop_privileges_to_nobody, so the child
+/// inherits them. Because `prlimit64` is removed from the seccomp
+/// allow-list, user code cannot raise these limits after exec.
+#[cfg(target_os = "linux")]
+pub fn apply_rlimits() -> Result<()> {
+    use libc::{setrlimit, rlimit};
+
+    // Max 256 open file descriptors (generous for any real program).
+    let nofile = rlimit {
+        rlim_cur: 256,
+        rlim_max: 256,
+    };
+    let ret = unsafe { setrlimit(libc::RLIMIT_NOFILE, &nofile) };
+    if ret != 0 {
+        return Err(anyhow::anyhow!(
+            "setrlimit(RLIMIT_NOFILE) failed: errno {}",
+            unsafe { *libc::__errno_location() }
+        ));
+    }
+
+    // Max 64 MiB per file write — prevents disk exhaustion via large writes.
+    let fsize = rlimit {
+        rlim_cur: 64 * 1024 * 1024,
+        rlim_max: 64 * 1024 * 1024,
+    };
+    let ret = unsafe { setrlimit(libc::RLIMIT_FSIZE, &fsize) };
+    if ret != 0 {
+        return Err(anyhow::anyhow!(
+            "setrlimit(RLIMIT_FSIZE) failed: errno {}",
+            unsafe { *libc::__errno_location() }
+        ));
+    }
+
+    // Max 64 processes/threads — defense-in-depth alongside cgroup pids.max.
+    let nproc = rlimit {
+        rlim_cur: 64,
+        rlim_max: 64,
+    };
+    let ret = unsafe { setrlimit(libc::RLIMIT_NPROC, &nproc) };
+    if ret != 0 {
+        // RLIMIT_NPROC applies to the real UID; as nobody it may already be
+        // near the limit from other submissions. Log but do not abort — the
+        // cgroup pids.max is the authoritative control.
+        tracing::warn!(
+            "setrlimit(RLIMIT_NPROC) failed (errno {}), relying on cgroup pids.max",
+            unsafe { *libc::__errno_location() }
+        );
+    }
+
+    Ok(())
+}
+
+#[cfg(not(target_os = "linux"))]
+pub fn apply_rlimits() -> Result<()> {
+    Ok(())
+}

@@ -290,6 +290,9 @@ async fn compile_code(source_file: &Path, language: &str, work_dir: &Path) -> Re
     // Apply seccomp and privilege drop to compilation subprocess too (C-04)
     unsafe {
         command.pre_exec(|| {
+            // Apply RLIMITs for compilation too (compiler can also exhaust resources).
+            crate::sandbox::chroot::apply_rlimits()
+                .map_err(|err| std::io::Error::other(err.to_string()))?;
             crate::sandbox::chroot::drop_privileges_to_nobody()
                 .map_err(|err| std::io::Error::other(err.to_string()))?;
             crate::sandbox::seccomp::apply_seccomp(0)
@@ -301,7 +304,15 @@ async fn compile_code(source_file: &Path, language: &str, work_dir: &Path) -> Re
 
     // Move compiler into cgroup for resource limiting
     if let (Some(ref cg), Some(pid)) = (&compile_cgroup, child.id()) {
-        let _ = cg.add_process(pid as i32);
+        if let Err(e) = cg.add_process(pid as i32) {
+            tracing::error!("Failed to add compiler to cgroup: {} — killing process", e);
+            unsafe { libc::kill(pid as i32, libc::SIGKILL); }
+            let _ = child.wait().await;
+            return Err(anyhow::anyhow!(
+                "Failed to assign compiler to cgroup — refusing to compile without resource limits: {}",
+                e
+            ));
+        }
     }
 
     let output = timeout(Duration::from_secs(30), child.wait())
@@ -419,6 +430,13 @@ async fn execute_program(
     let mut command = build_runtime_command(submission, source_file, executable_path, work_dir)?;
     unsafe {
         command.pre_exec(|| {
+            // Apply hard RLIMITs BEFORE dropping privileges. These caps
+            // (NOFILE=256, FSIZE=64MB, NPROC=64) are independent of cgroups
+            // and prevent FD/disk/process exhaustion. Because prlimit64 is
+            // not in the seccomp allow-list, user code cannot raise them.
+            crate::sandbox::chroot::apply_rlimits()
+                .map_err(|err| std::io::Error::other(err.to_string()))?;
+
             // C-01: Drop privileges to nobody BEFORE applying seccomp.
             // This ensures user code cannot escalate back to root.
             crate::sandbox::chroot::drop_privileges_to_nobody()
@@ -440,7 +458,24 @@ async fn execute_program(
         .context("Failed to start submission process")?;
 
     if let (Some(ref cg), Some(pid)) = (&cgroup, child.id()) {
-        let _ = cg.add_process(pid as i32);
+        // SECURITY: add_process failure must NOT be silently ignored.
+        // Previously `let _ =` swallowed the error, allowing the submission
+        // to run with no CPU/memory/PID limits. If this fails we kill the
+        // child immediately and return an error.
+        if let Err(e) = cg.add_process(pid as i32) {
+            tracing::error!(
+                "Failed to add submission {} to cgroup: {} — killing process",
+                submission.submission_id,
+                e
+            );
+            // Best-effort kill the orphaned child to avoid running unsandboxed.
+            unsafe { libc::kill(pid as i32, libc::SIGKILL); }
+            let _ = child.wait().await;
+            return Err(anyhow::anyhow!(
+                "Failed to assign submission to cgroup — refusing to run without resource limits: {}",
+                e
+            ));
+        }
     }
 
     let wait_result = timeout(
