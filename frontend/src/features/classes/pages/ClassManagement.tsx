@@ -4,6 +4,7 @@ import { classesService } from "@/features/classes/services/classes";
 import { TableSkeleton } from "@/shared/components/TableSkeleton";
 import { InlineError } from "@/shared/components/InlineError";
 import { ClassCognitionPanel } from "@/features/analysis/components/ClassCognitionPanel";
+import { StudentManagementPanel } from "@/features/classes/components/StudentManagementPanel";
 
 function getMutationErrorMessage(error: unknown) {
   if (!error) return null;
@@ -292,83 +293,18 @@ export function ClassManagement() {
             </div>
           </div>
 
-          {/* Student management */}
-          <div className="min-w-0 rounded-xl border border-border bg-card p-6 shadow-whisper">
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">
-              班级成员管理
-            </h2>
-            <p className="mt-1 text-xs text-tertiary">
-              当前班级：{highlightedClass?.name || "先选择班级"}
-            </p>
-            <div className="mt-4 space-y-4">
-              <div className="rounded-lg border border-border p-4">
-                <div className="text-xs font-semibold text-foreground">
-                  邀请码
-                </div>
-                <div className="mt-2 rounded-md bg-muted/50 px-4 py-3 font-mono text-sm text-foreground">
-                  {highlightedClass?.enrollment_code || "--"}
-                </div>
-                <p className="mt-2 text-xs text-tertiary">
-                  学生可使用邀请码加入该班级。
-                </p>
-              </div>
-              <div>
-                <input
-                  value={studentUsername}
-                  onChange={(e) => setStudentUsername(e.target.value)}
-                  placeholder="学生用户名 / 12位ID / 邮箱"
-                  className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:shadow-focus transition-shadow"
-                />
-                <button
-                  type="button"
-                  onClick={() => addStudentMutation.mutate()}
-                  disabled={
-                    !highlightedClass ||
-                    !studentUsername.trim() ||
-                    addStudentMutation.isPending
-                  }
-                  className="mt-3 w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground shadow-whisper transition-button-press button-press disabled:opacity-50"
-                >
-                  添加学生
-                </button>
-                {addStudentMutation.isError && (
-                  <p className="mt-2 text-xs text-destructive">
-                    {getMutationErrorMessage(addStudentMutation.error)}
-                  </p>
-                )}
-              </div>
-              <div>
-                <textarea
-                  value={studentImport}
-                  onChange={(e) => setStudentImport(e.target.value)}
-                  placeholder="批量导入用户名，每行一个"
-                  className="min-h-[120px] w-full rounded-md border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:shadow-focus transition-shadow"
-                />
-                <button
-                  type="button"
-                  onClick={() => importStudentsMutation.mutate()}
-                  disabled={
-                    !highlightedClass ||
-                    !studentImport.trim() ||
-                    importStudentsMutation.isPending
-                  }
-                  className="mt-3 w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm font-semibold text-foreground shadow-whisper transition-button-press button-press disabled:opacity-50"
-                >
-                  批量导入学生
-                </button>
-                {importStudentsMutation.isError && (
-                  <p className="mt-2 text-xs text-destructive">
-                    {getMutationErrorMessage(importStudentsMutation.error)}
-                  </p>
-                )}
-              </div>
-              {memberMutationError && (
-                <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
-                  {memberMutationError}
-                </p>
-              )}
+          {/* Student management — extracted to StudentManagementPanel */}
+          {highlightedClass ? (
+            <StudentManagementPanel
+              classId={highlightedClass.id}
+              className={highlightedClass.name}
+              enrollmentCode={highlightedClass.enrollment_code}
+            />
+          ) : (
+            <div className="rounded-xl border border-border bg-card p-6 text-sm text-tertiary">
+              先选择班级
             </div>
-          </div>
+          )}
         </aside>
 
         <div className="min-w-0 space-y-6">
