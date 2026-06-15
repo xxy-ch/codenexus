@@ -6,7 +6,9 @@ import { Button } from '@/shared/components/Button'
 import { cn } from '@/shared/lib/utils'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { InlineError } from '@/shared/components/InlineError'
-import { ArrowLeft, Clock, Timer, Code2, BarChart3, Play, UserCheck, CircleCheck, Share2, Calendar, Flame, Trophy } from 'lucide-react'
+import { ArrowLeft, BarChart3, Play, UserCheck, CircleCheck, Share2, Calendar, Flame } from 'lucide-react'
+import { ContestStats } from '@/features/contests/components/ContestStats'
+import { ContestProblemList } from '@/features/contests/components/ContestProblemList'
 
 interface ContestProblem {
   id: string
@@ -175,20 +177,6 @@ export function ContestDetail() {
   const difficultyConfig = DIFFICULTY_CONFIG[contest.difficulty]
   const isLive = contest.status === 'ongoing'
 
-  const formatDuration = (minutes: number) => {
-    if (minutes >= 60) {
-      const hours = Math.floor(minutes / 60)
-      const mins = minutes % 60
-      return mins > 0 ? `${hours}小时 ${mins}分钟` : `${hours}小时`
-    }
-    return `${minutes}分钟`
-  }
-
-  const getPassRate = (accepted: number, submissions: number) => {
-    if (submissions === 0) return '0%'
-    return `${Math.round((accepted / submissions) * 100)}%`
-  }
-
   return (
     <div className="space-y-5">
       {/* Hero Header — ClickHouse high-energy */}
@@ -265,45 +253,13 @@ export function ContestDetail() {
         </div>
       )}
 
-      {/* Contest Stats — oversized numbers, ClickHouse energy */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 text-center hover-lift transition-card-hover">
-          <div className="mx-auto mb-2 w-fit rounded-xl bg-primary/10 border border-primary/20 p-2">
-            <Clock className="w-5 h-5 text-primary" />
-          </div>
-          <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground font-medium">开始时间</p>
-          <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
-            {new Date(contest.start_time).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 text-center hover-lift transition-card-hover">
-          <div className="mx-auto mb-2 w-fit rounded-xl bg-difficulty-medium/10 border border-difficulty-medium/20 p-2">
-            <Timer className="w-5 h-5 text-difficulty-medium" />
-          </div>
-          <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground font-medium">竞赛时长</p>
-          <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
-            {formatDuration(contest.duration_minutes)}
-          </p>
-        </div>
-        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 text-center hover-lift transition-card-hover">
-          <div className="mx-auto mb-2 w-fit rounded-xl bg-status-accepted/10 border border-status-accepted/20 p-2">
-            <Code2 className="w-5 h-5 text-status-accepted" />
-          </div>
-          <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground font-medium">题目数量</p>
-          <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
-            {contest.problems_count} 题
-          </p>
-        </div>
-        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 text-center hover-lift transition-card-hover">
-          <div className="mx-auto mb-2 w-fit rounded-xl bg-difficulty-hard/10 border border-difficulty-hard/20 p-2">
-            <Trophy className="w-5 h-5 text-difficulty-hard" />
-          </div>
-          <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground font-medium">参与人数</p>
-          <p className="mt-1.5 text-sm font-bold tabular-nums text-foreground">
-            {contest.participants_count} 人
-          </p>
-        </div>
-      </div>
+      {/* Contest Stats — extracted to ContestStats component */}
+      <ContestStats
+        startTime={contest.start_time}
+        durationMinutes={contest.duration_minutes}
+        problemsCount={contest.problems_count}
+        participantsCount={contest.participants_count}
+      />
 
       {/* Action Buttons — prominent CTAs */}
       <div className="flex items-center justify-between">
@@ -405,68 +361,8 @@ export function ContestDetail() {
         )}
       </div>
 
-      {/* Problems List — prominent cards */}
-      <div className="bg-background/60 backdrop-blur-xl border border-border/40 rounded-xl overflow-hidden shadow-sm">
-        <div className="px-5 py-4 border-b border-border/40 bg-muted/30">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">
-            竞赛题目
-          </h2>
-        </div>
-        <div className="divide-y divide-border/60">
-          {contest.problems.map((problem, index) => {
-            const problemDifficultyConfig = DIFFICULTY_CONFIG[problem.difficulty]
-            const passRate = getPassRate(problem.accepted_count, problem.submission_count)
-
-            return (
-              <Link
-                key={problem.id}
-                to={`/contests/${contestId}/problems/${problem.id}/solve`}
-                className="flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors group"
-              >
-                <div className="flex items-center gap-4">
-                  <span className={cn(
-                    'flex items-center justify-center w-9 h-9 rounded-xl text-sm font-extrabold tabular-nums border',
-                    problemDifficultyConfig.bgColor,
-                    problemDifficultyConfig.textColor,
-                    problemDifficultyConfig.borderColor
-                  )}>
-                    {index + 1}
-                  </span>
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
-                      {problem.title}
-                    </h3>
-                    <div className="flex items-center gap-3">
-                      <span className={cn(
-                        'rounded-full px-2.5 py-0.5 text-[13px] font-semibold border',
-                        problemDifficultyConfig.bgColor,
-                        problemDifficultyConfig.textColor,
-                        problemDifficultyConfig.borderColor
-                      )}>
-                        {problemDifficultyConfig.label}
-                      </span>
-                      <span className="text-[13px] font-semibold tabular-nums text-muted-foreground">
-                        {problem.points} 分
-                      </span>
-                      <span className="text-[13px] font-semibold tabular-nums text-muted-foreground">
-                        通过率 {passRate}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right shrink-0 transition-transform group-hover:translate-x-[-4px]">
-                  <p className="text-sm font-extrabold tabular-nums text-foreground">
-                    {problem.accepted_count} <span className="text-muted-foreground font-normal">/ {problem.submission_count}</span>
-                  </p>
-                  <p className="text-[13px] text-muted-foreground uppercase tracking-wider font-semibold">
-                    通过 / 提交
-                  </p>
-                </div>
-              </Link>
-            )
-          })}
-        </div>
-      </div>
+      {/* Problems List — extracted to ContestProblemList component */}
+      <ContestProblemList problems={contest.problems} contestId={contestId!} />
 
       {/* Contest Statistics — oversized numbers */}
       <div className="bg-background/60 backdrop-blur-xl border border-border/40 rounded-xl p-5 shadow-sm">
