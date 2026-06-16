@@ -208,7 +208,7 @@ export function ContestList() {
                 </span>
               </div>
               <div className="grid grid-cols-1 gap-4 animate-slide-up">
-                {groupedContests.ongoing.map((c) => <ContestCard key={c.id} contest={c} />)}
+                {groupedContests.ongoing.map((c) => <div key={c.id} className="stagger-item"><ContestCard contest={c} /></div>)}
               </div>
             </div>
           )}
@@ -228,7 +228,7 @@ export function ContestList() {
                 </span>
               </div>
               <div className="grid grid-cols-1 gap-4 animate-slide-up">
-                {groupedContests.upcoming.map((c) => <ContestCard key={c.id} contest={c} />)}
+                {groupedContests.upcoming.map((c) => <div key={c.id} className="stagger-item"><ContestCard contest={c} /></div>)}
               </div>
             </div>
           )}
@@ -248,14 +248,14 @@ export function ContestList() {
                 </span>
               </div>
               <div className="grid grid-cols-1 gap-4 animate-slide-up">
-                {groupedContests.completed.map((c) => <ContestCard key={c.id} contest={c} />)}
+                {groupedContests.completed.map((c) => <div key={c.id} className="stagger-item"><ContestCard contest={c} /></div>)}
               </div>
             </div>
           )}
         </>
       ) : (
         <div className="grid grid-cols-1 gap-4 animate-slide-up">
-          {data.contests.map((c) => <ContestCard key={c.id} contest={c} />)}
+          {data.contests.map((c) => <div key={c.id} className="stagger-item"><ContestCard contest={c} /></div>)}
         </div>
       )}
     </div>

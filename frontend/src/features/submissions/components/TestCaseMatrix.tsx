@@ -41,7 +41,7 @@ export function TestCaseMatrix({ testCases, showCorrectAnswer }: TestCaseMatrixP
   }
 
   return (
-    <div className="border border-border/40 rounded-xl bg-background/60 backdrop-blur-xl/60 overflow-hidden shadow-sm glass">
+    <div className="surface-card overflow-hidden backdrop-blur-xl/60">
       <div className="px-5 py-4 border-b border-border/40 bg-muted/20 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Cpu className="w-4 h-4 text-primary animate-pulse" />

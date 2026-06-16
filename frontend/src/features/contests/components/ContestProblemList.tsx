@@ -28,7 +28,7 @@ export function ContestProblemList({ problems, contestId }: ContestProblemListPr
   }
 
   return (
-    <div className="bg-background/60 backdrop-blur-xl border border-border/40 rounded-xl overflow-hidden shadow-sm">
+    <div className="surface-card overflow-hidden backdrop-blur-xl">
       <div className="px-5 py-4 border-b border-border/40 bg-muted/30">
         <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">竞赛题目</h2>
       </div>

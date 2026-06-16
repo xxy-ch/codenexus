@@ -53,7 +53,7 @@ export function ContestStats({ startTime, durationMinutes, problemsCount, partic
       {stats.map((stat) => {
         const Icon = stat.icon
         return (
-          <div key={stat.label} className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-4 text-center hover-lift transition-card-hover">
+          <div key={stat.label} className="surface-card-hover p-4 text-center backdrop-blur-xl">
             <div className={`mx-auto mb-2 w-fit rounded-xl ${stat.bgClass} border p-2`}>
               <Icon className={`w-5 h-5 ${stat.iconColor}`} />
             </div>

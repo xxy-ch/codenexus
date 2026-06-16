@@ -94,7 +94,7 @@ export function ContestCard({ contest }: { contest: ContestCardData }) {
     <Link
       key={contest.id}
       to={`/contests/${contest.id}`}
-      className="relative block bg-background/60 backdrop-blur-xl border border-border/40 rounded-xl overflow-hidden glass-interactive hover-lift transition-card-hover"
+      className="relative block surface-card-hover overflow-hidden backdrop-blur-xl"
     >
       {isLive && (
         <div className="h-[2px] bg-gradient-to-r from-status-accepted via-primary to-status-accepted animate-pulse" />
