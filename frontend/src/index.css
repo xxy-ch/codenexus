@@ -621,3 +621,114 @@
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
 }
+
+/* ─── Unified Card Design System ─────────────────────────────────────────── */
+/* Consistent radius, shadow, and hover across all card-like containers.
+   Use: className="surface-card" or compose: className="surface-card-hover" */
+
+.surface-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-whisper);
+  transition: border-color 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface-card-hover {
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-whisper);
+  transition: border-color 250ms cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 250ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.surface-card-hover:hover {
+  border-color: color-mix(in srgb, var(--primary) 20%, var(--border));
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-2px);
+}
+
+.surface-card-hover:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-whisper);
+}
+
+/* ─── Refined Button Interactions ────────────────────────────────────────── */
+
+.button-press {
+  transition: transform 100ms ease, box-shadow 150ms ease, opacity 150ms ease;
+}
+
+.button-press:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.button-press:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ─── Smooth Link Transitions ────────────────────────────────────────────── */
+
+.link-smooth {
+  transition: color 150ms ease, transform 150ms ease;
+}
+
+.link-smooth:hover {
+  transform: translateX(2px);
+}
+
+/* ─── Status Glow Effects ────────────────────────────────────────────────── */
+
+.glow-accepted {
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
+}
+
+.glow-pending {
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.12);
+}
+
+.glow-primary {
+  box-shadow: 0 0 16px rgba(245, 78, 0, 0.1);
+}
+
+/* ─── Refined Shadow Scale for Dark Mode ─────────────────────────────────── */
+
+.dark .surface-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.dark .surface-card-hover:hover {
+  border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+/* ─── Stagger Animation for Lists ────────────────────────────────────────── */
+
+@keyframes staggerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-item {
+  opacity: 0;
+  animation: staggerFadeIn 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 60ms; }
+.stagger-item:nth-child(3) { animation-delay: 120ms; }
+.stagger-item:nth-child(4) { animation-delay: 180ms; }
+.stagger-item:nth-child(5) { animation-delay: 240ms; }
+.stagger-item:nth-child(6) { animation-delay: 300ms; }
+.stagger-item:nth-child(7) { animation-delay: 360ms; }
+.stagger-item:nth-child(8) { animation-delay: 420ms; }
