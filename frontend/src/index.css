@@ -82,7 +82,7 @@
   --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
   --shadow-prominent: 0 8px 32px rgba(0, 0, 0, 0.16), 0 4px 8px rgba(0, 0, 0, 0.08);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.12);
-  --shadow-focus: 0 0 0 3px rgba(245, 78, 0, 0.2);
+  --shadow-focus: 0 0 0 3px rgba(232, 80, 15, 0.18);
 
   /* Glass effect tokens */
   --blur-sm: 8px;
@@ -91,143 +91,161 @@
   --blur-xl: 24px;
 }
 
-/* ─── Light Theme (Frosted Glass — clean white, subtle depth) ─────────── */
+/* ─── Light Theme (Frosted Glass — warm paper white, subtle depth) ───── */
 
 :root {
-  --background: #fdfdfc;
-  --foreground: #1c1a17;
+  /* Surface — warm off-white with very subtle warmth */
+  --background: #faf9f7;
+  --foreground: #1a1815;
 
-  --card: rgba(255, 255, 255, 0.75);
-  --card-foreground: #1c1a17;
+  --card: rgba(255, 255, 252, 0.80);
+  --card-foreground: #1a1815;
 
-  --popover: rgba(255, 255, 255, 0.95);
-  --popover-foreground: #1c1a17;
+  --popover: rgba(255, 255, 252, 0.96);
+  --popover-foreground: #1a1815;
 
-  --primary: #f54e00;
+  /* Primary — refined warm coral-orange, slightly less saturated than pure #f54e00.
+     Hints of red make it feel energetic but not harsh on large surfaces. */
+  --primary: #e8500f;
   --primary-foreground: #ffffff;
 
-  --secondary: rgba(30, 29, 27, 0.02);
-  --secondary-foreground: #2d2b27;
+  --secondary: rgba(26, 24, 21, 0.025);
+  --secondary-foreground: #2a2823;
 
-  --muted: rgba(30, 29, 27, 0.02);
-  --muted-foreground: #74726e;
+  --muted: rgba(26, 24, 21, 0.025);
+  --muted-foreground: #6b6963;
 
-  --accent: rgba(30, 29, 27, 0.03);
-  --accent-foreground: #1c1a17;
+  --accent: rgba(232, 80, 15, 0.04);
+  --accent-foreground: #1a1815;
 
-  --destructive: #df382b;
+  /* Destructive — warm red, not harsh pure red */
+  --destructive: #d6362a;
 
-  --border: rgba(30, 29, 27, 0.08);
-  --input: rgba(30, 29, 27, 0.04);
-  --ring: #f54e00;
+  --border: rgba(26, 24, 21, 0.09);
+  --input: rgba(26, 24, 21, 0.045);
+  --ring: #e8500f;
 
-  --chart-1: #f54e00;
-  --chart-2: #10b981;
-  --chart-3: #f59e0b;
-  --chart-4: #74726e;
-  --chart-5: #9c9a96;
+  /* Chart palette — harmonized with the warm theme */
+  --chart-1: #e8500f;
+  --chart-2: #0d9f8e;
+  --chart-3: #e8a317;
+  --chart-4: #6b6963;
+  --chart-5: #a8a6a0;
 
   --radius: 0.75rem;
 
-  --sidebar: #f7f6f3;
-  --sidebar-foreground: #2d2b27;
-  --sidebar-primary: #f54e00;
+  /* Sidebar — slightly warmer than background for separation */
+  --sidebar: #f4f2ed;
+  --sidebar-foreground: #2a2823;
+  --sidebar-primary: #e8500f;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(30, 29, 27, 0.02);
-  --sidebar-accent-foreground: #1c1a17;
-  --sidebar-border: rgba(30, 29, 27, 0.06);
-  --sidebar-ring: #f54e00;
+  --sidebar-accent: rgba(232, 80, 15, 0.03);
+  --sidebar-accent-foreground: #1a1815;
+  --sidebar-border: rgba(26, 24, 21, 0.06);
+  --sidebar-ring: #e8500f;
 
-  --status-accepted: #10b981;
-  --status-wrong: #df382b;
-  --status-pending: #9c9a96;
-  --status-tle: #f59e0b;
+  /* OJ Status — unified teal/amber/rose palette with consistent saturation */
+  --status-accepted: #0d9f8e;
+  --status-wrong: #d6362a;
+  --status-pending: #9c9a94;
+  --status-tle: #e8a317;
   --status-re: #8b5cf6;
 
-  --difficulty-easy: #10b981;
-  --difficulty-medium: #f59e0b;
-  --difficulty-hard: #df382b;
+  /* Difficulty — matching the status palette */
+  --difficulty-easy: #0d9f8e;
+  --difficulty-medium: #e8a317;
+  --difficulty-hard: #d6362a;
 
   /* Extended surface tokens */
-  --background-alt: rgba(30, 29, 27, 0.02);
-  --background-subtle: rgba(30, 29, 27, 0.01);
-  --border-subtle: rgba(30, 29, 27, 0.04);
-  --border-strong: rgba(30, 29, 27, 0.15);
-  --text-secondary: #6e6d6a;
-  --text-tertiary: #9c9a96;
+  --background-alt: rgba(26, 24, 21, 0.02);
+  --background-subtle: rgba(26, 24, 21, 0.01);
+  --border-subtle: rgba(26, 24, 21, 0.05);
+  --border-strong: rgba(26, 24, 21, 0.16);
+  --text-secondary: #6b6963;
+  --text-tertiary: #9c9a94;
 
   /* Glass effect variables */
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(30, 29, 27, 0.08);
+  --glass-bg: rgba(255, 255, 252, 0.72);
+  --glass-border: rgba(26, 24, 21, 0.08);
   --glass-blur: 20px;
-  --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  --glass-shadow: 0 4px 16px rgba(26, 24, 21, 0.05);
 }
 
-/* ─── Dark Theme (Cursor-Style Rich Warm Dark Mode) ──────────────────── */
+/* ─── Dark Theme (Rich Warm Charcoal — layered depth, not flat black) ─── */
 
 .dark {
-  --background: #0a0908;
-  --foreground: #f4f4f0;
+  /* Background — warm charcoal with depth, not pure black.
+     #11100e reads as "rich dark" rather than "void" on OLED. */
+  --background: #11100e;
+  --foreground: #f5f4f0;
 
-  --card: rgba(18, 17, 15, 0.65);
-  --card-foreground: #f4f4f0;
+  /* Cards — slightly lifted from background for visual hierarchy */
+  --card: rgba(24, 22, 19, 0.70);
+  --card-foreground: #f5f4f0;
 
-  --popover: rgba(18, 17, 15, 0.9);
-  --popover-foreground: #f4f4f0;
+  --popover: rgba(24, 22, 19, 0.94);
+  --popover-foreground: #f5f4f0;
 
-  --primary: #f54e00;
+  /* Primary — slightly brighter in dark mode for visibility.
+     A touch more saturation helps it pop against dark surfaces. */
+  --primary: #ff5e1a;
   --primary-foreground: #ffffff;
 
-  --secondary: rgba(242, 241, 237, 0.02);
-  --secondary-foreground: #e4e3de;
+  --secondary: rgba(245, 244, 240, 0.03);
+  --secondary-foreground: #e8e7e2;
 
-  --muted: rgba(242, 241, 237, 0.02);
-  --muted-foreground: #a8a6a1;
+  --muted: rgba(245, 244, 240, 0.03);
+  /* Raised from #a8a6a1 to #b8b6b0 for WCAG AA contrast on dark bg */
+  --muted-foreground: #b8b6b0;
 
-  --accent: rgba(242, 241, 237, 0.04);
-  --accent-foreground: #f4f4f0;
+  --accent: rgba(255, 94, 26, 0.06);
+  --accent-foreground: #f5f4f0;
 
-  --destructive: #e23b2c;
+  --destructive: #ef4444;
 
-  --border: rgba(242, 241, 237, 0.08);
-  --input: rgba(242, 241, 237, 0.03);
-  --ring: #f54e00;
+  --border: rgba(245, 244, 240, 0.09);
+  --input: rgba(245, 244, 240, 0.04);
+  --ring: #ff5e1a;
 
-  --chart-1: #f54e00;
-  --chart-2: #10b981;
-  --chart-3: #f59e0b;
-  --chart-4: #a8a6a1;
-  --chart-5: #74726e;
+  /* Chart palette — brightened for dark mode legibility */
+  --chart-1: #ff5e1a;
+  --chart-2: #14b8a6;
+  --chart-3: #fbbf24;
+  --chart-4: #b8b6b0;
+  --chart-5: #787671;
 
-  --sidebar: #0f0e0d;
-  --sidebar-foreground: #e4e3de;
-  --sidebar-primary: #f54e00;
+  /* Sidebar — slightly darker than main bg for layering */
+  --sidebar: #0c0b0a;
+  --sidebar-foreground: #e8e7e2;
+  --sidebar-primary: #ff5e1a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(242, 241, 237, 0.03);
-  --sidebar-accent-foreground: #f4f4f0;
-  --sidebar-border: rgba(242, 241, 237, 0.05);
-  --sidebar-ring: #f54e00;
+  --sidebar-accent: rgba(255, 94, 26, 0.05);
+  --sidebar-accent-foreground: #f5f4f0;
+  --sidebar-border: rgba(245, 244, 240, 0.06);
+  --sidebar-ring: #ff5e1a;
 
-  --status-accepted: #10b981;
-  --status-wrong: #e23b2c;
-  --status-pending: #a8a6a1;
-  --status-tle: #f59e0b;
+  /* OJ Status — brightened for dark mode */
+  --status-accepted: #14b8a6;
+  --status-wrong: #ef4444;
+  --status-pending: #b8b6b0;
+  --status-tle: #fbbf24;
   --status-re: #a78bfa;
 
-  --difficulty-easy: #10b981;
-  --difficulty-medium: #f59e0b;
-  --difficulty-hard: #e23b2c;
+  --difficulty-easy: #14b8a6;
+  --difficulty-medium: #fbbf24;
+  --difficulty-hard: #ef4444;
 
-  --background-alt: rgba(242, 241, 237, 0.02);
-  --background-subtle: rgba(242, 241, 237, 0.01);
-  --border-subtle: rgba(242, 241, 237, 0.05);
-  --border-strong: rgba(242, 241, 237, 0.12);
-  --text-secondary: #e4e3de;
-  --text-tertiary: #a8a6a1;
+  --background-alt: rgba(245, 244, 240, 0.02);
+  --background-subtle: rgba(245, 244, 240, 0.012);
+  --border-subtle: rgba(245, 244, 240, 0.06);
+  --border-strong: rgba(245, 244, 240, 0.14);
+  /* Brightened secondary text for AA compliance */
+  --text-secondary: #c8c6c0;
+  --text-tertiary: #88867f;
 
   /* Glass effect variables - dark */
-  --glass-bg: rgba(18, 17, 15, 0.65);
-  --glass-border: rgba(242, 241, 237, 0.08);
+  --glass-bg: rgba(24, 22, 19, 0.70);
+  --glass-border: rgba(245, 244, 240, 0.09);
   --glass-blur: 20px;
   --glass-shadow: rgba(0, 0, 0, 0.3) 0px 0px 0px 1px, rgba(0, 0, 0, 0.5) 0px 8px 32px;
 }
@@ -255,6 +273,32 @@
 
   html {
     scroll-behavior: smooth;
+  }
+
+  /* Refined scrollbar — subtle, matches warm theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(128, 125, 118, 0.25);
+    border-radius: 4px;
+    transition: background 150ms ease;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 125, 118, 0.4);
+  }
+
+  /* Selection — primary-tinted highlight */
+  ::selection {
+    background: rgba(232, 80, 15, 0.15);
+    color: inherit;
+  }
+  .dark ::selection {
+    background: rgba(255, 94, 26, 0.20);
   }
 }
 
