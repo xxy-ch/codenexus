@@ -9,33 +9,33 @@
 // ─── Status Colors (unified across all pages) ───────────────────────────
 
 export const statusColors = {
-  accepted: '#3ecf8e',      // Supabase green
-  wrongAnswer: '#cf2d56',   // Cursor error red
-  pending: '#0a72ef',       // Vercel develop blue
-  timeLimit: '#ffb287',     // Sentry coral
-  runtimeError: '#fa7faa',  // Sentry pink
-  compilationError: '#ffb287',
-  systemError: '#8a8f98',
-  memoryLimit: '#ffb287',
+  accepted: '#0d9f8e',      // Teal-green (light) / #14b8a6 (dark)
+  wrongAnswer: '#d6362a',   // Warm red
+  pending: '#9c9a94',       // Neutral gray
+  timeLimit: '#e8a317',     // Amber
+  runtimeError: '#8b5cf6',  // Violet
+  compilationError: '#e8a317',
+  systemError: '#88867f',
+  memoryLimit: '#e8a317',
 } as const
 
 // ─── Difficulty Colors ───────────────────────────────────────────────────
 
 export const difficultyColors = {
-  easy: '#10b981',     // Linear emerald
-  medium: '#F7A501',   // PostHog gold
-  hard: '#ff5b4f',     // Vercel ship red
+  easy: '#0d9f8e',     // Teal-green
+  medium: '#e8a317',   // Amber
+  hard: '#d6362a',     // Warm red
 } as const
 
 // ─── Dark Theme (Linear base) ────────────────────────────────────────────
 
 export const darkTheme = {
-  // Backgrounds
-  bgPrimary: '#08090a',
-  bgSecondary: '#0f1012',
-  bgTertiary: '#16181d',
-  bgElevated: '#1c1e24',
-  bgHover: '#1f2230',
+  // Backgrounds — warm charcoal, not flat black
+  bgPrimary: '#11100e',
+  bgSecondary: '#181613',
+  bgTertiary: '#1f1d1a',
+  bgElevated: '#262420',
+  bgHover: '#2a2823',
 
   // Text hierarchy (5 levels)
   textPrimary: '#f7f8f8',
@@ -50,9 +50,9 @@ export const darkTheme = {
   borderStrong: 'rgba(255, 255, 255, 0.12)',
 
   // Brand accent
-  accentPrimary: '#5e6ad2',
-  accentPrimaryHover: '#7170ff',
-  accentSecondary: '#3ecf8e',
+  accentPrimary: '#e8500f',
+  accentPrimaryHover: '#ff5e1a',
+  accentSecondary: '#0d9f8e',
 
   // Shadows
   shadowSm: '0 1px 2px rgba(0, 0, 0, 0.3)',
