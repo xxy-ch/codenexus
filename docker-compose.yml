@@ -190,6 +190,9 @@ services:
     cgroup: host
     cap_add:
       - SYS_ADMIN
+      - SYS_CHROOT
+      - SETUID
+      - SETGID
     cap_drop:
       - ALL
     security_opt:
@@ -198,7 +201,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pgrep -f judge-worker >/dev/null && python3 -c \"import socket; s=socket.create_connection(('redis', 6379), 3); s.sendall(b'PING\\r\\n'); assert b'PONG' in s.recv(16); s.close()\" && curl -f http://api:3000/health/ready",
+          "pgrep -f judge-worker >/dev/null && python3 -c \"import os, socket, urllib.parse as u; p=u.urlparse(os.environ['REDIS_URL']); s=socket.create_connection((p.hostname, p.port or 6379), 3); s.sendall(('AUTH %s\\r\\n' % p.password).encode()); assert b'OK' in s.recv(64); s.sendall(b'PING\\r\\n'); assert b'PONG' in s.recv(16); s.close()\" && curl -f http://api:3000/health/ready",
         ]
       interval: 30s
       timeout: 10s
