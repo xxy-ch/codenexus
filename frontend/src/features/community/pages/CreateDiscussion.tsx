@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, X, Send, RefreshCw, Lightbulb } from 'lucide-react'
+import { ArrowLeft, X, Send, RefreshCw, Lightbulb } from 'lucide-react'
 import { discussionsApi } from '@/features/community/services/discussionsApi'
 import type { CreateDiscussionRequest } from '@/features/community/types/community'
 import { EditorWithPreview } from '@/features/community/components/EditorWithPreview'

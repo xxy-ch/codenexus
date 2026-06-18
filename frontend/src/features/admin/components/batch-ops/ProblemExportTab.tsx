@@ -15,7 +15,6 @@ export function ProblemExportTab() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [exporting, setExporting] = useState(false)
   const [problems, setProblems] = useState<Array<{ id: string; title: string; difficulty: string }>>([])
-  const [loaded, setLoaded] = useState(false)
 
   const requestIdRef = useRef(0)
 
@@ -26,7 +25,6 @@ export function ProblemExportTab() {
       // Discard stale responses
       if (requestIdRef.current !== myId) return
       setProblems(data.problems.map((p) => ({ id: p.id, title: p.title, difficulty: p.difficulty })))
-      setLoaded(true)
     } catch (error: unknown) {
       if (requestIdRef.current !== myId) return
       const message = error instanceof Error ? error.message : 'Failed to load problems'

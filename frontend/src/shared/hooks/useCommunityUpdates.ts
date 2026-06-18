@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { websocketService } from '@/shared/services/websocket'
 
 /**
@@ -6,11 +6,6 @@ import { websocketService } from '@/shared/services/websocket'
  */
 export function useDiscussionUpdates(discussionId?: number) {
   const [update, setUpdate] = useState<any>(null)
-  const handlerRef = useState<any>(() => (message: any) => {
-    if (message.type === 'DiscussionReply' && message.data.discussion_id === discussionId) {
-      setUpdate(message.data)
-    }
-  })[0]
 
   useEffect(() => {
     if (!discussionId) return
@@ -20,9 +15,6 @@ export function useDiscussionUpdates(discussionId?: number) {
         setUpdate(message.data)
       }
     }
-
-    // Store current handler
-    handlerRef.current = handle
 
     // Set up the message handler
     const currentHandlers = (websocketService as any).handlers || {}
@@ -45,7 +37,7 @@ export function useDiscussionUpdates(discussionId?: number) {
         onMessage: originalOnMessage,
       })
     }
-  }, [discussionId, handlerRef])
+  }, [discussionId])
 
   return { update }
 }

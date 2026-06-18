@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { screen } from "@/test/test-utils"
 import { renderWithProviders } from "@/test/test-utils"
-import { Inbox, FolderOpen } from "lucide-react"
+import { FolderOpen } from "lucide-react"
 import { EmptyState } from "../EmptyState"
 
 describe("EmptyState", () => {

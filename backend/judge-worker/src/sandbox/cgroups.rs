@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use std::{fs, path::Path, path::PathBuf};
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 use crate::sandbox::SandboxConfig;
 
@@ -18,9 +18,7 @@ pub struct CgroupController {
 
 impl CgroupController {
     pub fn new(cgroup_name: &str, config: &SandboxConfig) -> Result<Self> {
-        let cgroup_root = std::env::var("OJ_CGROUP_ROOT")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| Path::new("/sys/fs/cgroup/onlinejudge").to_path_buf());
+        let cgroup_root = resolve_cgroup_root()?;
         let cgroup_path = cgroup_root.join(cgroup_name);
 
         fs::create_dir_all(&cgroup_path)
@@ -143,6 +141,76 @@ impl CgroupController {
     }
 }
 
+fn resolve_cgroup_root() -> Result<PathBuf> {
+    if let Ok(root) = std::env::var("OJ_CGROUP_ROOT") {
+        return Ok(PathBuf::from(root));
+    }
+
+    let current = current_cgroup_path().unwrap_or_else(|| PathBuf::from("/"));
+    if current == Path::new("/") {
+        return Ok(Path::new("/sys/fs/cgroup/onlinejudge").to_path_buf());
+    }
+
+    let current = if current
+        .file_name()
+        .is_some_and(|name| name == "onlinejudge-worker")
+    {
+        current.parent().unwrap_or(Path::new("/")).to_path_buf()
+    } else {
+        current
+    };
+    let relative = current.strip_prefix("/").unwrap_or(&current);
+    let container_root = Path::new("/sys/fs/cgroup").join(relative);
+    prepare_delegated_cgroup_root(&container_root).or_else(|error| {
+        warn!(
+            "Failed to prepare delegated cgroup root at {:?}: {}",
+            container_root, error
+        );
+        Ok(Path::new("/sys/fs/cgroup/onlinejudge").to_path_buf())
+    })
+}
+
+fn current_cgroup_path() -> Option<PathBuf> {
+    let content = fs::read_to_string("/proc/self/cgroup").ok()?;
+    parse_unified_cgroup_path(&content)
+}
+
+fn parse_unified_cgroup_path(content: &str) -> Option<PathBuf> {
+    content.lines().find_map(|line| {
+        let mut fields = line.splitn(3, ':');
+        let hierarchy = fields.next()?;
+        let controllers = fields.next()?;
+        let path = fields.next()?;
+
+        if hierarchy == "0" && controllers.is_empty() && !path.is_empty() {
+            Some(PathBuf::from(path))
+        } else {
+            None
+        }
+    })
+}
+
+fn prepare_delegated_cgroup_root(container_root: &Path) -> Result<PathBuf> {
+    let worker_holder = container_root.join("onlinejudge-worker");
+    let jobs_root = container_root.join("onlinejudge");
+
+    fs::create_dir_all(&worker_holder)
+        .with_context(|| format!("Failed to create worker holder cgroup: {:?}", worker_holder))?;
+    fs::write(
+        worker_holder.join("cgroup.procs"),
+        std::process::id().to_string(),
+    )
+    .with_context(|| format!("Failed to move worker into {:?}", worker_holder))?;
+
+    enable_parent_controllers(container_root)?;
+
+    fs::create_dir_all(&jobs_root)
+        .with_context(|| format!("Failed to create judge jobs cgroup root: {:?}", jobs_root))?;
+    enable_parent_controllers(&jobs_root)?;
+
+    Ok(jobs_root)
+}
+
 fn enable_parent_controllers(cgroup_root: &Path) -> Result<()> {
     let controllers_path = cgroup_root.join("cgroup.controllers");
     let subtree_control_path = cgroup_root.join("cgroup.subtree_control");
@@ -153,12 +221,19 @@ fn enable_parent_controllers(cgroup_root: &Path) -> Result<()> {
 
     let available = fs::read_to_string(&controllers_path)
         .with_context(|| format!("Failed to read {:?}", controllers_path))?;
+    let enabled = fs::read_to_string(&subtree_control_path)
+        .with_context(|| format!("Failed to read {:?}", subtree_control_path))?;
     let requested = ["cpu", "memory", "pids"]
         .iter()
         .filter(|controller| {
             available
                 .split_whitespace()
                 .any(|value| value == **controller)
+        })
+        .filter(|controller| {
+            !enabled
+                .split_whitespace()
+                .any(|value| value.trim_start_matches('+') == **controller)
         })
         .map(|controller| format!("+{}", controller))
         .collect::<Vec<_>>();
@@ -177,6 +252,13 @@ fn enable_parent_controllers(cgroup_root: &Path) -> Result<()> {
 mod tests {
     use super::*;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn parse_unified_cgroup_path_reads_v2_entry() {
+        let parsed = parse_unified_cgroup_path("0::/docker/abc123\n1:name=systemd:/ignored\n");
+
+        assert_eq!(parsed, Some(PathBuf::from("/docker/abc123")));
+    }
 
     #[test]
     fn create_writes_cgroup_v2_limits() {

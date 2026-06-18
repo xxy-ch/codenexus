@@ -73,7 +73,7 @@ export function useSubmissionPolling(): UseSubmissionPollingResult {
     if (!activeSubmissionId || !isPolling) return
 
     let active = true
-    let pollInterval: NodeJS.Timeout
+    const pollInterval = setInterval(poll, 1500)
 
     async function poll() {
       try {
@@ -95,7 +95,6 @@ export function useSubmissionPolling(): UseSubmissionPollingResult {
     }
 
     poll()
-    pollInterval = setInterval(poll, 1500)
 
     return () => {
       active = false

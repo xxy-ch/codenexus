@@ -12,7 +12,7 @@ const localStorageMock = {
   removeItem: (key: string) => { localStorageStore.delete(key) },
   clear: () => { localStorageStore.clear() },
   get length() { return localStorageStore.size },
-  key: (_index: number) => null,
+  key: () => null,
 }
 vi.stubGlobal('localStorage', localStorageMock)
 

@@ -5,7 +5,6 @@ import api from '@/shared/services/api'
 import {
   useFeatureRegistry,
   useSetFeatureFlag,
-  type FeatureRegistryEntry,
   type FeatureState,
 } from '@/shared/services/featureGateway'
 import { FeatureToggle } from '@/shared/components/FeatureToggle'
@@ -14,7 +13,6 @@ import { InlineError } from '@/shared/components/InlineError'
 import { Badge } from '@/shared/components/badge'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/shared/components/Card'
 import { Skeleton } from '@/shared/components/Skeleton'
-import { cn } from '@/shared/lib/utils'
 
 interface ClassInfo {
   id: number

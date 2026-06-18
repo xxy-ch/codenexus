@@ -204,22 +204,7 @@ pub fn prepare_chroot_rootfs(work_dir: &Path) -> Result<PathBuf> {
     // Make /tmp writable by nobody (uid 65534) so the submission can use it.
     fs::set_permissions(rootfs.join("tmp"), fs::Permissions::from_mode(0o1777))?;
 
-    // Bind-mount the dynamic linker and core shared libraries.
-    // These are needed for compiled C/C++ programs to run.
-    // We mount read-only so the submission cannot modify them.
-    let lib_dirs = find_host_lib_dirs();
-    for (host_path, guest_rel) in &lib_dirs {
-        let guest_path = rootfs.join(guest_rel);
-        if let Some(parent) = guest_path.parent() {
-            fs::create_dir_all(parent).ok();
-        }
-        // Symlink instead of bind-mount — simpler, no mount namespace needed,
-        // and the chroot itself prevents escape (symlinks inside a chroot
-        // resolve within the chroot root).
-        if host_path.exists() {
-            let _ = std::os::unix::fs::symlink(host_path, &guest_path);
-        }
-    }
+    copy_runtime_into_rootfs(&rootfs)?;
 
     // Create /dev/null inside the chroot.
     let dev_null = rootfs.join("dev/null");
@@ -240,8 +225,9 @@ pub fn prepare_chroot_rootfs(work_dir: &Path) -> Result<PathBuf> {
 #[cfg(target_os = "linux")]
 pub fn enter_chroot(rootfs: &Path) -> Result<()> {
     chroot(rootfs).with_context(|| format!("Failed to chroot to {:?}", rootfs))?;
-    chdir("/").with_context(|| "Failed to chdir to / after chroot")?;
-    tracing::debug!("Entered chroot at {:?}", rootfs);
+    chdir("/work")
+        .or_else(|_| chdir("/"))
+        .with_context(|| "Failed to chdir after chroot")?;
     Ok(())
 }
 
@@ -276,27 +262,71 @@ fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Discover the host's library directories to symlink into the chroot.
-/// Returns (host_path, guest_path) pairs.
+/// Copy the minimal runtime needed by currently accepted submission languages.
+///
+/// Absolute symlinks into the host do not work after chroot, and bind mounts
+/// would require mount cleanup on every submission. Copying these small runtime
+/// slices keeps the rootfs self-contained while still avoiding a full /usr/lib
+/// copy.
 #[cfg(target_os = "linux")]
-fn find_host_lib_dirs() -> Vec<(PathBuf, String)> {
-    let mut dirs = vec![];
-    // The dynamic linker — critical for exec to work.
-    for ld in &["/lib/ld-linux-x86-64.so.2", "/lib64/ld-linux-x86-64.so.2",
-                "/lib/ld-musl-x86_64.so.1", "/lib64/ld-linux-aarch64.so.1"] {
-        let p = Path::new(ld);
-        if p.exists() {
-            let guest = ld.trim_start_matches('/').to_string();
-            dirs.push((p.to_path_buf(), guest));
-        }
+fn copy_runtime_into_rootfs(rootfs: &Path) -> Result<()> {
+    for path in [
+        "/lib",
+        "/lib64",
+        "/usr/lib/python3.11",
+        "/usr/lib/libpython3.11.so.1.0",
+        "/usr/lib/libstdc++.so",
+        "/usr/lib/libstdc++.so.6",
+        "/usr/lib/libstdc++.so.6.0.32",
+        "/usr/lib/libgcc_s.so",
+        "/usr/lib/libgcc_s.so.1",
+        "/usr/bin/python3.11",
+    ] {
+        copy_host_path_into_rootfs(rootfs, Path::new(path))?;
     }
-    // Core libraries directory — symlink the whole dir so all .so files resolve.
-    for libdir in &["/lib", "/lib64", "/usr/lib", "/usr/lib64"] {
-        let p = Path::new(libdir);
-        if p.exists() && p.is_dir() {
-            let guest = libdir.trim_start_matches('/').to_string();
-            dirs.push((p.to_path_buf(), guest));
-        }
+
+    let python_link = rootfs.join("usr/bin/python3");
+    if !python_link.exists() {
+        std::os::unix::fs::symlink("python3.11", &python_link)
+            .with_context(|| format!("Failed to create {:?}", python_link))?;
     }
-    dirs
+
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+fn copy_host_path_into_rootfs(rootfs: &Path, host_path: &Path) -> Result<()> {
+    if !host_path.exists() {
+        return Ok(());
+    }
+
+    let relative = host_path.strip_prefix("/").unwrap_or(host_path);
+    let guest_path = rootfs.join(relative);
+    if let Some(parent) = guest_path.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("Failed to create runtime parent: {:?}", parent))?;
+    }
+
+    let metadata = fs::symlink_metadata(host_path)
+        .with_context(|| format!("Failed to stat runtime path: {:?}", host_path))?;
+
+    if metadata.file_type().is_symlink() {
+        let target = fs::read_link(host_path)
+            .with_context(|| format!("Failed to read symlink: {:?}", host_path))?;
+        let _ = fs::remove_file(&guest_path);
+        std::os::unix::fs::symlink(&target, &guest_path)
+            .with_context(|| format!("Failed to copy symlink into rootfs: {:?}", guest_path))?;
+    } else if metadata.is_dir() {
+        copy_dir_recursive(host_path, &guest_path)?;
+    } else if metadata.is_file() {
+        fs::copy(host_path, &guest_path).with_context(|| {
+            format!(
+                "Failed to copy runtime file {:?} into {:?}",
+                host_path, guest_path
+            )
+        })?;
+        fs::set_permissions(&guest_path, metadata.permissions()).ok();
+    }
+
+    Ok(())
 }

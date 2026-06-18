@@ -64,9 +64,7 @@ describe("SimilarSubmissions", () => {
 
   it("renders nothing when feature is disabled", () => {
     mockUseFeatureEnabled.mockReturnValue({ enabled: false, isLoading: false });
-    const { container } = renderWithProviders(
-      <SimilarSubmissions submissionId={42} />,
-    );
+    renderWithProviders(<SimilarSubmissions submissionId={42} />);
     expect(container.innerHTML).toBe("");
   });
 
@@ -117,9 +115,7 @@ describe("SimilarSubmissions", () => {
       similar_submissions: [],
     });
 
-    const { container } = renderWithProviders(
-      <SimilarSubmissions submissionId={42} />,
-    );
+    renderWithProviders(<SimilarSubmissions submissionId={42} />);
 
     await waitFor(() => {
       expect(analysisService.getSimilarSubmissions).toHaveBeenCalledWith(42);

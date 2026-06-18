@@ -97,18 +97,18 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'bg-sidebar/80 backdrop-blur-xl border-r border-sidebar-border flex-shrink-0 flex flex-col h-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10',
-        isCollapsed ? 'w-16' : 'w-60'
+        'bg-sidebar/95 backdrop-blur-xl border-r border-sidebar-border shadow-[1px_0_0_rgba(15,23,42,0.02)] flex-shrink-0 flex flex-col h-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10',
+        isCollapsed ? 'w-16' : 'w-[248px]'
       )}
     >
       {/* Logo area */}
-      <div className="h-12 flex items-center justify-between px-3 border-b border-sidebar-border flex-shrink-0 overflow-hidden">
+      <div className="h-14 flex items-center justify-between px-3 border-b border-sidebar-border flex-shrink-0 overflow-hidden">
         <div className="flex items-center">
-          <div className="h-7 w-7 bg-primary rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
-            <Code2 className="w-4 h-4 text-primary-foreground" />
+          <div className="h-8 w-8 bg-primary rounded-[8px] flex items-center justify-center shadow-[0_8px_18px_rgba(94,106,210,0.24)] flex-shrink-0">
+            <Code2 className="w-4 h-4 text-primary-foreground" strokeWidth={2.25} />
           </div>
           {!isCollapsed && (
-            <span className="ml-2.5 text-sm font-semibold tracking-tight text-sidebar-foreground font-serif">
+            <span className="ml-3 text-[15px] font-semibold text-sidebar-foreground font-heading">
               CodeNexus
             </span>
           )}
@@ -116,7 +116,7 @@ export function Sidebar() {
         {!isCollapsed && (
           <button
             onClick={toggleCollapse}
-            className="p-1 rounded-md text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all duration-200"
+            className="p-1.5 rounded-[8px] text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-all duration-200"
             title="收起侧边栏"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -128,7 +128,7 @@ export function Sidebar() {
         <div className="h-10 flex items-center justify-center flex-shrink-0">
           <button
             onClick={toggleCollapse}
-            className="p-1.5 rounded-md text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-all duration-200"
+            className="p-1.5 rounded-[8px] text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-all duration-200"
             title="展开侧边栏"
           >
             <Code2 className="w-4 h-4 text-primary" />
@@ -137,8 +137,8 @@ export function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-2 px-2">
-        <div className="space-y-0.5">
+      <nav className="flex-1 overflow-y-auto py-3 px-2.5">
+        <div className="space-y-1">
           {visibleItems.map((item) => {
             const isActive = location.pathname === item.path
             const Icon = item.icon
@@ -148,18 +148,19 @@ export function Sidebar() {
                 to={item.path}
                 title={isCollapsed ? item.label : undefined}
                 className={cn(
-                  'flex items-center rounded-md text-sm transition-all duration-200 ease-[cubic-bezier(0.4,0,0.2,1)]',
-                  isCollapsed ? 'justify-center py-2 mx-1' : 'gap-2.5 px-2.5 py-1.5',
+                  'relative flex h-9 items-center rounded-[9px] text-[13px] font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25',
+                  isCollapsed ? 'justify-center mx-1' : 'gap-2.5 px-2.5',
                   isActive
-                    ? 'bg-primary/10 text-primary font-semibold border-l-2 border-primary'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                    ? 'bg-sidebar-accent text-sidebar-primary shadow-[inset_0_0_0_1px_rgba(94,106,210,0.14),0_6px_14px_rgba(94,106,210,0.08)]'
+                    : 'text-sidebar-foreground/68 hover:bg-sidebar-accent/75 hover:text-sidebar-accent-foreground hover:translate-x-0.5'
                 )}
               >
                 <Icon
                   className={cn(
-                    'w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200',
-                    isActive ? 'text-primary' : 'text-muted-foreground'
+                    'w-4 h-4 flex-shrink-0 transition-colors duration-200',
+                    isActive ? 'text-sidebar-primary' : 'text-muted-foreground'
                   )}
+                  strokeWidth={2}
                 />
                 {!isCollapsed && <span className="truncate">{item.label}</span>}
                 {!isCollapsed && item.badge && (
@@ -178,7 +179,7 @@ export function Sidebar() {
         <div className={cn('flex items-center gap-2.5', isCollapsed && 'flex-col gap-3')}>
           <Link
             to="/profile"
-            className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold hover:bg-primary/20 transition-all duration-200 flex-shrink-0"
+            className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold hover:bg-primary/16 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-all duration-200 flex-shrink-0"
             title={isCollapsed ? '个人中心' : undefined}
           >
             {getUserInitials()}
@@ -201,17 +202,17 @@ export function Sidebar() {
               <div className="flex items-center gap-0.5">
                 <Link
                   to="/settings"
-                  className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1 rounded-md hover:bg-sidebar-accent transition-all duration-200"
+                  className="text-sidebar-foreground/45 hover:text-sidebar-foreground p-1.5 rounded-[8px] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-all duration-200"
                   title="设置"
                 >
-                  <UserCog className="w-[18px] h-[18px]" />
+                  <UserCog className="w-4 h-4" />
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1 rounded-md hover:bg-sidebar-accent transition-all duration-200"
+                  className="text-sidebar-foreground/45 hover:text-sidebar-foreground p-1.5 rounded-[8px] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-all duration-200"
                   title="退出登录"
                 >
-                  <LogOut className="w-[18px] h-[18px]" />
+                  <LogOut className="w-4 h-4" />
                 </button>
               </div>
             </>
@@ -219,17 +220,17 @@ export function Sidebar() {
             <div className="flex flex-col items-center gap-2">
               <Link
                 to="/settings"
-                className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1.5 rounded-md hover:bg-sidebar-accent transition-all duration-200"
+                className="text-sidebar-foreground/45 hover:text-sidebar-foreground p-1.5 rounded-[8px] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-all duration-200"
                 title="设置"
               >
-                <UserCog className="w-[16px] h-[16px]" />
+                <UserCog className="w-4 h-4" />
               </Link>
               <button
                 onClick={handleLogout}
-                className="text-sidebar-foreground/40 hover:text-sidebar-foreground p-1.5 rounded-md hover:bg-sidebar-accent transition-all duration-200"
+                className="text-sidebar-foreground/45 hover:text-sidebar-foreground p-1.5 rounded-[8px] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-all duration-200"
                 title="退出登录"
               >
-                <LogOut className="w-[16px] h-[16px]" />
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           )}

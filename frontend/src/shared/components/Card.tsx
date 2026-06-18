@@ -16,15 +16,11 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col gap-6 overflow-hidden rounded-[10px] bg-card backdrop-blur-xl py-6 text-[14px] text-card-foreground transition-all duration-250 ease-out has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-[9px] *:[img:last-child]:rounded-b-[9px]",
-        // Default variant - sleek warm dark border
-        variant === "default" && "shadow-card border border-border/50 hover:shadow-elevated hover:border-[#f54e00]/20 hover:-translate-y-0.5",
-        // Glass variant - frosted glass effect (explicitly more blur)
-        variant === "glass" && "bg-background/65 backdrop-blur-2xl border border-border/60 shadow-lg hover:bg-background/75 hover:shadow-xl hover:border-[#f54e00]/30 hover:-translate-y-0.5",
-        // Elevated variant - more prominent shadow
-        variant === "elevated" && "shadow-elevated border border-border/30 hover:shadow-prominent hover:border-[#f54e00]/30 hover:-translate-y-1",
-        // Outlined variant - no shadow, just border
-        variant === "outlined" && "border border-border hover:border-[#f54e00]/30",
+        "group/card flex flex-col gap-6 overflow-hidden rounded-[10px] bg-card backdrop-blur-xl py-6 text-[14px] text-card-foreground transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-[9px] *:[img:last-child]:rounded-b-[9px]",
+        variant === "default" && "shadow-card border border-border/60 hover:shadow-elevated hover:border-primary/20 hover:-translate-y-0.5",
+        variant === "glass" && "bg-card/72 backdrop-blur-2xl border border-border/65 shadow-card hover:bg-card/88 hover:shadow-elevated hover:border-primary/28 hover:-translate-y-0.5",
+        variant === "elevated" && "shadow-elevated border border-border/40 hover:shadow-prominent hover:border-primary/30 hover:-translate-y-0.5",
+        variant === "outlined" && "border border-border/80 hover:border-primary/30 hover:bg-card/70",
         className
       )}
       {...props}

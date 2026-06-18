@@ -7,13 +7,13 @@ interface MarkdownPreviewProps {
   darkMode?: boolean
 }
 
-export const MarkdownPreview = memo(({ content, darkMode: _darkMode = false }: MarkdownPreviewProps) => {
+export const MarkdownPreview = memo(({ content }: MarkdownPreviewProps) => {
   return (
     <div className="markdown-preview prose prose-lg dark:prose-invert max-w-none p-6">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          code({ node, className, children, ...props }: any) {
+          code({ className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || '')
             const inline = (props as any).inline
             return !inline && match ? (
@@ -36,7 +36,7 @@ export const MarkdownPreview = memo(({ content, darkMode: _darkMode = false }: M
               </code>
             )
           },
-          a({ node, children, href, ...props }) {
+          a({ children, href, ...props }) {
             return (
               <a
                 href={href}
@@ -49,7 +49,7 @@ export const MarkdownPreview = memo(({ content, darkMode: _darkMode = false }: M
               </a>
             )
           },
-          img({ node, src, alt, ...props }) {
+          img({ src, alt, ...props }) {
             return (
               <img
                 src={src}
@@ -60,7 +60,7 @@ export const MarkdownPreview = memo(({ content, darkMode: _darkMode = false }: M
               />
             )
           },
-          blockquote({ node, children, ...props }) {
+          blockquote({ children, ...props }) {
             return (
               <blockquote
                 className="border-l-4 border-primary pl-4 italic my-4 text-muted-foreground"
@@ -70,7 +70,7 @@ export const MarkdownPreview = memo(({ content, darkMode: _darkMode = false }: M
               </blockquote>
             )
           },
-          table({ node, children, ...props }) {
+          table({ children, ...props }) {
             return (
               <div className="overflow-x-auto my-4">
                 <table
@@ -82,7 +82,7 @@ export const MarkdownPreview = memo(({ content, darkMode: _darkMode = false }: M
               </div>
             )
           },
-          th({ node, children, ...props }) {
+          th({ children, ...props }) {
             return (
               <th
                 className="px-4 py-2 bg-secondary text-left font-semibold"
@@ -92,7 +92,7 @@ export const MarkdownPreview = memo(({ content, darkMode: _darkMode = false }: M
               </th>
             )
           },
-          td({ node, children, ...props }) {
+          td({ children, ...props }) {
             return (
               <td
                 className="px-4 py-2 border-t border-border"

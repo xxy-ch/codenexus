@@ -4,7 +4,7 @@ import { rankingService } from '@/features/ranking/services/ranking'
 import { Button } from '@/shared/components/Button'
 import { cn } from '@/shared/lib/utils'
 import { useAuth } from '@/features/auth/hooks/useAuth'
-import { BarChart3, Building2, Crown, Medal, Search, Sparkles, Trophy } from 'lucide-react'
+import { BarChart3, Building2, Crown, Medal, Search, Sparkles } from 'lucide-react'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { InlineError } from '@/shared/components/InlineError'
@@ -34,12 +34,6 @@ interface RankingResponse {
 }
 
 type RankingTab = 'global' | 'organization'
-
-const TOP_GRADIENTS = [
-  'from-amber-300 via-yellow-200 to-white',
-  'from-slate-300 via-slate-100 to-white',
-  'from-orange-300 via-amber-100 to-white',
-]
 
 export function Ranking() {
   const { user: currentUser } = useAuth()

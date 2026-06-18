@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Eye, MessageCircle, ThumbsUp, Edit3, CornerDownRight, X, Pin, CheckCircle, Lock, BookOpen, Send, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Eye, MessageCircle, ThumbsUp, Edit3, CornerDownRight, X, Pin, CheckCircle, Lock } from 'lucide-react'
 import { discussionsApi } from '@/features/community/services/discussionsApi'
 import type { DiscussionDetail, DiscussionReply } from '@/features/community/types/community'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
@@ -263,7 +263,7 @@ export function DiscussionDetail() {
   }
 
   if (loadError) {
-    return <InlineError title="讨论详情加载失败" onRetry={() => { if (id) { const fetchDiscussion = async () => { setLoading(true); setLoadError(false); try { const data = await discussionsApi.getDiscussion(parseInt(id)); setDiscussion(data); } catch (e) { setLoadError(true); } finally { setLoading(false); } }; fetchDiscussion(); } }} />
+    return <InlineError title="讨论详情加载失败" onRetry={() => { if (id) { const fetchDiscussion = async () => { setLoading(true); setLoadError(false); try { const data = await discussionsApi.getDiscussion(parseInt(id)); setDiscussion(data); } catch { setLoadError(true); } finally { setLoading(false); } }; fetchDiscussion(); } }} />
   }
 
   if (!discussion) {

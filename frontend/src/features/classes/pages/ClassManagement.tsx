@@ -6,20 +6,12 @@ import { InlineError } from "@/shared/components/InlineError";
 import { ClassCognitionPanel } from "@/features/analysis/components/ClassCognitionPanel";
 import { StudentManagementPanel } from "@/features/classes/components/StudentManagementPanel";
 
-function getMutationErrorMessage(error: unknown) {
-  if (!error) return null;
-  if (error instanceof Error && error.message) return error.message;
-  return "请求失败，请检查账号权限、班级归属或学生用户名后重试。";
-}
-
 export function ClassManagement() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [newClassName, setNewClassName] = useState("");
   const [newSemester, setNewSemester] = useState("");
-  const [studentUsername, setStudentUsername] = useState("");
-  const [studentImport, setStudentImport] = useState("");
   const [assignmentProblemId, setAssignmentProblemId] = useState("");
   const [assignmentDeadline, setAssignmentDeadline] = useState("");
   const [assignmentPoints, setAssignmentPoints] = useState("100");
@@ -121,34 +113,6 @@ export function ClassManagement() {
     },
   });
 
-  const addStudentMutation = useMutation({
-    mutationFn: () =>
-      classesService.addStudent(highlightedClass!.id, studentUsername.trim()),
-    onSuccess: () => {
-      setStudentUsername("");
-      invalidate();
-    },
-  });
-
-  const importStudentsMutation = useMutation({
-    mutationFn: () =>
-      classesService.batchImportStudents(
-        highlightedClass!.id,
-        studentImport
-          .split("\n")
-          .map((item) => item.trim())
-          .filter(Boolean),
-      ),
-    onSuccess: () => {
-      setStudentImport("");
-      invalidate();
-    },
-  });
-
-  const memberMutationError =
-    getMutationErrorMessage(addStudentMutation.error) ||
-    getMutationErrorMessage(importStudentsMutation.error);
-
   const createAssignmentMutation = useMutation({
     mutationFn: () =>
       classesService.createAssignment(highlightedClass!.id, {
@@ -210,7 +174,7 @@ export function ClassManagement() {
             </p>
           </div>
           <div className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-whisper transition-button-press button-press">
-            写操作已接通
+            可管理班级
           </div>
         </div>
       </div>

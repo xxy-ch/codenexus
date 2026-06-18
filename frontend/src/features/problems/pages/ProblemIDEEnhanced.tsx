@@ -10,7 +10,6 @@ import { AmbientBackground } from '@/shared/layouts/AmbientBackground'
 import type { Problem, TestCase } from '@/features/problems/types/problems'
 import {
   Play,
-  Terminal as TerminalIcon,
   History,
   FileText,
   Code2,

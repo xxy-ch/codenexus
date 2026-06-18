@@ -96,7 +96,7 @@ export function EditArticle() {
   }
 
   if (loadError) {
-    return <InlineError title="文章加载失败" onRetry={() => { if (slug) { const fetchArticle = async () => { setLoading(true); setLoadError(false); try { const detail = await blogApi.getArticle(slug); setTitle(detail.article.title); setContent(detail.article.content); setTags(detail.article.tags || []); setCategory(detail.article.category || ''); setIsPublished(detail.article.is_published); } catch (e) { setLoadError(true); } finally { setLoading(false); } }; fetchArticle(); } }} />
+    return <InlineError title="文章加载失败" onRetry={() => { if (slug) { const fetchArticle = async () => { setLoading(true); setLoadError(false); try { const detail = await blogApi.getArticle(slug); setTitle(detail.article.title); setContent(detail.article.content); setTags(detail.article.tags || []); setCategory(detail.article.category || ''); setIsPublished(detail.article.is_published); } catch { setLoadError(true); } finally { setLoading(false); } }; fetchArticle(); } }} />
   }
 
   return (

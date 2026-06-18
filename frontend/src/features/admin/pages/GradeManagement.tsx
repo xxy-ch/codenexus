@@ -9,7 +9,7 @@ import type { CreateGradeRequest } from '@/features/ranking/types/grade'
 
 export function GradeManagement() {
   const queryClient = useQueryClient()
-  const [campusId, setCampusId] = useState(1)
+  const campusId = 1
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [newGrade, setNewGrade] = useState<CreateGradeRequest>({
     campus_id: campusId,

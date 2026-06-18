@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { usersService } from '@/features/users/services/users'
-import type { UserActivity } from '@/features/users/types/users'
 
 export interface WeeklyActivityItem {
   day: string

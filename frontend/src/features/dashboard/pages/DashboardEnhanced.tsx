@@ -1,6 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { usersService } from '@/features/users/services/users'
 import { cn } from '@/shared/lib/utils'
 import type { UserActivity } from '@/features/users/types/users'
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -8,6 +7,7 @@ import { Activity, Code2, Trophy, Flame, CheckCircle, XCircle, Upload, Cpu, Star
 import { DashboardSkeleton } from '@/features/dashboard/DashboardSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { InlineError } from '@/shared/components/InlineError'
+import { Button } from '@/shared/components/Button'
 import { useDashboardData } from '@/features/dashboard/hooks/useDashboardData'
 import { ActivityHeatmap } from '@/features/dashboard/components/ActivityHeatmap'
 
@@ -542,4 +542,3 @@ export function DashboardEnhanced() {
     </div>
   )
 }
-

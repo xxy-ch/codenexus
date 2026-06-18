@@ -205,7 +205,7 @@ export function BlogDetail() {
   }
 
   if (loadError) {
-    return <InlineError title="文章加载失败" onRetry={() => { if (slug) { const fetchArticle = async () => { setLoading(true); setLoadError(false); try { const data = await blogApi.getArticle(slug); setArticle(data); } catch (e) { setLoadError(true); } finally { setLoading(false); } }; fetchArticle(); } }} />
+    return <InlineError title="文章加载失败" onRetry={() => { if (slug) { const fetchArticle = async () => { setLoading(true); setLoadError(false); try { const data = await blogApi.getArticle(slug); setArticle(data); } catch { setLoadError(true); } finally { setLoading(false); } }; fetchArticle(); } }} />
   }
 
   if (!article) {

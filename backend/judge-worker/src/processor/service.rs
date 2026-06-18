@@ -42,10 +42,8 @@ pub async fn process_submission(submission: &SubmissionMessage) -> Result<JudgeR
     #[cfg(target_os = "linux")]
     {
         if let Some(parent) = work_dir.parent() {
-            if let Ok(entries) = fs::read_dir(parent).await {
-                use futures::stream::StreamExt;
-                let mut entries = Box::pin(entries);
-                while let Some(Ok(entry)) = entries.next().await {
+            if let Ok(mut entries) = fs::read_dir(parent).await {
+                while let Ok(Some(entry)) = entries.next_entry().await {
                     let name = entry.file_name();
                     if name.to_string_lossy().starts_with("rootfs-") {
                         let _ = fs::remove_dir_all(entry.path()).await;
@@ -463,41 +461,31 @@ async fn execute_program(
     let _chroot_rootfs: Option<std::path::PathBuf> = None;
 
     let mut command = build_runtime_command(submission, source_file, executable_path, work_dir)?;
-    // Adjust the command to run from the chroot's /work path.
     #[cfg(target_os = "linux")]
-    if let Some(ref rootfs) = chroot_rootfs {
-        // The executable and source paths must be relative to the chroot root.
-        command.current_dir(rootfs.join("work"));
-        // Thread the rootfs path to pre_exec via env var (closures can't
-        // capture it because Command is consumed by spawn).
-        command.env("JUDGE_CHROOT_ROOTFS", rootfs);
-    }
+    let chroot_rootfs_for_child = chroot_rootfs.clone();
 
     unsafe {
-        command.pre_exec(|| {
+        command.pre_exec(move || {
             // Enter the chroot BEFORE dropping privileges (chroot requires root).
             #[cfg(target_os = "linux")]
             {
-                // rootfs path is passed via an environment variable because
-                // pre_exec closures capture by move but Command is already
-                // consumed — we use an env var to thread the path through.
-                if let Ok(rootfs) = std::env::var("JUDGE_CHROOT_ROOTFS") {
-                    crate::sandbox::chroot::enter_chroot(std::path::Path::new(&rootfs))
-                        .map_err(|err| std::io::Error::other(err.to_string()))?;
+                if let Some(ref rootfs) = chroot_rootfs_for_child {
+                    crate::sandbox::chroot::enter_chroot(rootfs)
+                        .map_err(|err| std::io::Error::other(format!("enter_chroot failed: {err:#}")))?;
                 }
             }
 
             // Apply hard RLIMITs BEFORE dropping privileges.
             crate::sandbox::chroot::apply_rlimits()
-                .map_err(|err| std::io::Error::other(err.to_string()))?;
+                .map_err(|err| std::io::Error::other(format!("apply_rlimits failed: {err:#}")))?;
 
             // Drop privileges to nobody.
             crate::sandbox::chroot::drop_privileges_to_nobody()
-                .map_err(|err| std::io::Error::other(err.to_string()))?;
+                .map_err(|err| std::io::Error::other(format!("drop_privileges failed: {err:#}")))?;
 
             // Apply deny-by-default seccomp filter.
             crate::sandbox::seccomp::apply_seccomp(0)
-                .map_err(|err| std::io::Error::other(err.to_string()))
+                .map_err(|err| std::io::Error::other(format!("apply_seccomp failed: {err:#}")))
         });
     }
     command
@@ -607,22 +595,34 @@ fn build_runtime_command(
     let mut command = match submission.language.as_str() {
         "python3" => {
             let mut command = Command::new("python3");
-            command.arg(source_file);
+            command.arg(
+                source_file
+                    .file_name()
+                    .map(|name| Path::new("/work").join(name))
+                    .context("Missing source file name")?,
+            );
             command
         }
         "javascript" => {
             let mut command = Command::new("node");
-            command.arg(source_file);
+            command.arg(
+                source_file
+                    .file_name()
+                    .map(|name| Path::new("/work").join(name))
+                    .context("Missing source file name")?,
+            );
             command
         }
         "java" => {
             let mut command = Command::new("java");
-            command.arg("-cp").arg(work_dir).arg("Main");
+            command.arg("-cp").arg("/work").arg("Main");
             command
         }
         "c" | "cpp" | "rust" | "go" => {
-            let executable = executable_path.context("Missing executable path")?;
-            Command::new(executable)
+            let executable = executable_path
+                .and_then(|path| path.file_name())
+                .context("Missing executable path")?;
+            Command::new(Path::new("/work").join(executable))
         }
         other => anyhow::bail!("Unsupported language: {}", other),
     };

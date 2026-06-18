@@ -9,7 +9,7 @@ interface HeaderProps {
 
 export function Header({ title, showSearch = true, actions }: HeaderProps) {
   return (
-    <header className="h-[52px] bg-background/60 backdrop-blur-xl border-b border-border/40 flex items-center justify-between px-4 z-10 shadow-sm shrink-0">
+    <header className="h-14 bg-card/72 backdrop-blur-xl border-b border-border/60 flex items-center justify-between px-4 sm:px-5 z-10 shadow-whisper shrink-0">
       <div className="flex items-center flex-1 gap-6">
         {title && (
           <h1 className="text-sm font-semibold text-foreground hidden md:block shrink-0">
@@ -25,17 +25,17 @@ export function Header({ title, showSearch = true, actions }: HeaderProps) {
 
       <div className="flex items-center gap-2">
         <button
-          className="relative p-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors duration-150"
+          className="relative p-2 text-muted-foreground hover:text-foreground rounded-[8px] hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all duration-150"
           aria-label="通知"
         >
-          <Bell className="w-[18px] h-[18px]" />
+          <Bell className="w-4 h-4" />
           <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-destructive rounded-full ring-2 ring-card" />
         </button>
 
         <div className="h-5 w-px bg-border mx-1" />
 
         {actions || (
-          <button className="bg-primary text-primary-foreground shadow-sm px-3.5 py-1.5 rounded-md text-[13px] font-medium hover:opacity-90 active:scale-[0.97] transition-all flex items-center gap-1.5">
+          <button className="bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(94,106,210,0.22)] px-3.5 py-1.5 rounded-[8px] text-[13px] font-medium hover:bg-primary/92 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all flex items-center gap-1.5">
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">新建提交</span>
           </button>

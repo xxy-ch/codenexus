@@ -55,7 +55,7 @@ export function SearchResults() {
           limit: 20,
         })
         setResults(response)
-      } catch (err: unknown) {
+      } catch {
         setError('搜索加载失败，请重试。')
       } finally {
         setLoading(false)
@@ -270,7 +270,7 @@ export function SearchResults() {
       {loading ? (
         <CardGridSkeleton cards={4} />
       ) : error ? (
-        <InlineError title="搜索失败" onRetry={() => { const fetchResults = async () => { if (!query && !category && !tag) { setResults(null); setLoading(false); return; } setLoading(true); setError(null); try { const response = await searchApi.search({ q: query, type, category, tag, sort, page, limit: 20 }); setResults(response); } catch (err) { setError('搜索加载失败，请重试。'); } finally { setLoading(false); } }; fetchResults(); }} />
+        <InlineError title="搜索失败" onRetry={() => { const fetchResults = async () => { if (!query && !category && !tag) { setResults(null); setLoading(false); return; } setLoading(true); setError(null); try { const response = await searchApi.search({ q: query, type, category, tag, sort, page, limit: 20 }); setResults(response); } catch { setError('搜索加载失败，请重试。'); } finally { setLoading(false); } }; fetchResults(); }} />
       ) : !query && !category && !tag ? (
         <div className="text-center py-20">
           <h2 className="text-xl font-bold text-foreground mb-2">

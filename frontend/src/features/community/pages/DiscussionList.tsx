@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { MessageSquare, Plus, Eye, MessageCircle, ThumbsUp, Pin, CheckCircle, Lock, BookOpen, Clock } from 'lucide-react'
+import { MessageSquare, Plus, Eye, MessageCircle, ThumbsUp, Pin, CheckCircle, Lock, Clock } from 'lucide-react'
 import { discussionsApi } from '@/features/community/services/discussionsApi'
 import type { Discussion, DiscussionFilters } from '@/features/community/types/community'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'

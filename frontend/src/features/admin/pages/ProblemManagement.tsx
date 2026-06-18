@@ -465,7 +465,7 @@ export function ProblemManagement() {
 
           <div className="flex flex-col gap-4 border-t border-border/40 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div className="text-[13px] text-muted-foreground">
-              已接通后台 CRUD，第 {page} / {totalPages} 页
+              第 {page} / {totalPages} 页
             </div>
             <div className="flex items-center gap-3">
               <button

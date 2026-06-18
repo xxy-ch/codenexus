@@ -172,7 +172,7 @@ export const typography = {
     bold: 700,
   },
   letterSpacing: {
-    tight: '-0.02em',
+    tight: '0',
     normal: '0',
     wide: '0.02em',
     uppercase: '0.08em',

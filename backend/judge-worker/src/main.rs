@@ -242,7 +242,7 @@ async fn recover_stream(
                         }
                         Err(e) => {
                             error!(
-                                "Failed to process recovered submission {} (message will reappear on next recovery scan): {}",
+                                "Failed to process recovered submission {} (message will reappear on next recovery scan): {:?}",
                                 submission.submission_id, e
                             );
                         }
@@ -554,7 +554,7 @@ async fn consume_and_process(
                 }
                 Err(e) => {
                     error!(
-                        "Failed to process submission {}: {}",
+                        "Failed to process submission {}: {:?}",
                         submission.submission_id, e
                     );
                 }

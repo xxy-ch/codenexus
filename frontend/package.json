@@ -8,7 +8,7 @@
     "dev:demo": "VITE_USE_MOCK=true vite --port 5174",
     "build": "vite build",
     "typecheck": "tsc -p tsconfig.release.json --noEmit",
-    "lint": "eslint src/services src/components/messages src/pages/community/DirectMessages.tsx src/pages/admin/SimilarityScanConfig.tsx src/pages/admin/PlagiarismReportList.tsx src/pages/admin/PlagiarismReportDetail.tsx src/pages/admin/JudgeSettings.tsx src/pages/admin/ProblemContentConfig.tsx",
+    "lint": "eslint src",
     "preview": "vite preview",
     "test": "vitest",
     "test:run": "vitest --run",

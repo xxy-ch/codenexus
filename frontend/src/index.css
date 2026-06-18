@@ -17,8 +17,8 @@
 /* ─── shadcn/ui Theme Inline ──────────────────────────────────────────── */
 
 @theme inline {
-  --font-heading: "Outfit", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-heading: "Outfit", "Geist Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-sans: "Geist Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --font-serif: "Galaxie Copernicus", "Tiempos Text", "Lora", "Merriweather", "Noto Serif SC", "Songti SC", "STSong", serif;
   --font-mono: "Maple Mono NF", "Maple Mono", "SF Mono", "JetBrains Mono", "Fira Code", Monaco, "Courier New", monospace;
 
@@ -77,12 +77,12 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 
   /* Gaussian blur shadow scale — frosted glass depth */
-  --shadow-whisper: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-elevated: 0 4px 16px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
-  --shadow-prominent: 0 8px 32px rgba(0, 0, 0, 0.16), 0 4px 8px rgba(0, 0, 0, 0.08);
+  --shadow-whisper: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
+  --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.055), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-elevated: 0 14px 36px rgba(15, 23, 42, 0.09), 0 2px 6px rgba(15, 23, 42, 0.06);
+  --shadow-prominent: 0 22px 54px rgba(15, 23, 42, 0.13), 0 8px 18px rgba(15, 23, 42, 0.08);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.12);
-  --shadow-focus: 0 0 0 3px rgba(232, 80, 15, 0.18);
+  --shadow-focus: 0 0 0 3px rgba(94, 106, 210, 0.22);
 
   /* Glass effect tokens */
   --blur-sm: 8px;
@@ -95,38 +95,37 @@
 
 :root {
   /* Surface — warm off-white with very subtle warmth */
-  --background: #faf9f7;
-  --foreground: #1a1815;
+  --background: #f7f8fa;
+  --foreground: #111827;
 
-  --card: rgba(255, 255, 252, 0.80);
-  --card-foreground: #1a1815;
+  --card: rgba(255, 255, 255, 0.88);
+  --card-foreground: #111827;
 
-  --popover: rgba(255, 255, 252, 0.96);
-  --popover-foreground: #1a1815;
+  --popover: rgba(255, 255, 255, 0.96);
+  --popover-foreground: #111827;
 
-  /* Primary — refined warm coral-orange, slightly less saturated than pure #f54e00.
-     Hints of red make it feel energetic but not harsh on large surfaces. */
-  --primary: #e8500f;
+  /* Primary — calm operational indigo; teal/amber carry runtime status. */
+  --primary: #5e6ad2;
   --primary-foreground: #ffffff;
 
-  --secondary: rgba(26, 24, 21, 0.025);
-  --secondary-foreground: #2a2823;
+  --secondary: rgba(17, 24, 39, 0.04);
+  --secondary-foreground: #1f2937;
 
-  --muted: rgba(26, 24, 21, 0.025);
-  --muted-foreground: #6b6963;
+  --muted: rgba(17, 24, 39, 0.04);
+  --muted-foreground: #64748b;
 
-  --accent: rgba(232, 80, 15, 0.04);
-  --accent-foreground: #1a1815;
+  --accent: rgba(20, 184, 166, 0.08);
+  --accent-foreground: #0f766e;
 
   /* Destructive — warm red, not harsh pure red */
   --destructive: #d6362a;
 
-  --border: rgba(26, 24, 21, 0.09);
-  --input: rgba(26, 24, 21, 0.045);
-  --ring: #e8500f;
+  --border: rgba(15, 23, 42, 0.10);
+  --input: rgba(15, 23, 42, 0.055);
+  --ring: #5e6ad2;
 
   /* Chart palette — harmonized with the warm theme */
-  --chart-1: #e8500f;
+  --chart-1: #5e6ad2;
   --chart-2: #0d9f8e;
   --chart-3: #e8a317;
   --chart-4: #6b6963;
@@ -135,14 +134,14 @@
   --radius: 0.75rem;
 
   /* Sidebar — slightly warmer than background for separation */
-  --sidebar: #f4f2ed;
-  --sidebar-foreground: #2a2823;
-  --sidebar-primary: #e8500f;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1f2937;
+  --sidebar-primary: #5e6ad2;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(232, 80, 15, 0.03);
-  --sidebar-accent-foreground: #1a1815;
-  --sidebar-border: rgba(26, 24, 21, 0.06);
-  --sidebar-ring: #e8500f;
+  --sidebar-accent: rgba(94, 106, 210, 0.08);
+  --sidebar-accent-foreground: #27316f;
+  --sidebar-border: rgba(15, 23, 42, 0.08);
+  --sidebar-ring: #5e6ad2;
 
   /* OJ Status — unified teal/amber/rose palette with consistent saturation */
   --status-accepted: #0d9f8e;
@@ -157,18 +156,18 @@
   --difficulty-hard: #d6362a;
 
   /* Extended surface tokens */
-  --background-alt: rgba(26, 24, 21, 0.02);
-  --background-subtle: rgba(26, 24, 21, 0.01);
-  --border-subtle: rgba(26, 24, 21, 0.05);
-  --border-strong: rgba(26, 24, 21, 0.16);
-  --text-secondary: #6b6963;
-  --text-tertiary: #9c9a94;
+  --background-alt: rgba(15, 23, 42, 0.025);
+  --background-subtle: rgba(15, 23, 42, 0.014);
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --border-strong: rgba(15, 23, 42, 0.16);
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
 
   /* Glass effect variables */
-  --glass-bg: rgba(255, 255, 252, 0.72);
-  --glass-border: rgba(26, 24, 21, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.76);
+  --glass-border: rgba(15, 23, 42, 0.09);
   --glass-blur: 20px;
-  --glass-shadow: 0 4px 16px rgba(26, 24, 21, 0.05);
+  --glass-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
 }
 
 /* ─── Dark Theme (Rich Warm Charcoal — layered depth, not flat black) ─── */
@@ -176,19 +175,19 @@
 .dark {
   /* Background — warm charcoal with depth, not pure black.
      #11100e reads as "rich dark" rather than "void" on OLED. */
-  --background: #11100e;
+  --background: #0d1117;
   --foreground: #f5f4f0;
 
   /* Cards — slightly lifted from background for visual hierarchy */
-  --card: rgba(24, 22, 19, 0.70);
+  --card: rgba(17, 24, 39, 0.72);
   --card-foreground: #f5f4f0;
 
-  --popover: rgba(24, 22, 19, 0.94);
+  --popover: rgba(17, 24, 39, 0.95);
   --popover-foreground: #f5f4f0;
 
   /* Primary — slightly brighter in dark mode for visibility.
      A touch more saturation helps it pop against dark surfaces. */
-  --primary: #ff5e1a;
+  --primary: #7c89ff;
   --primary-foreground: #ffffff;
 
   --secondary: rgba(245, 244, 240, 0.03);
@@ -198,31 +197,31 @@
   /* Raised from #a8a6a1 to #b8b6b0 for WCAG AA contrast on dark bg */
   --muted-foreground: #b8b6b0;
 
-  --accent: rgba(255, 94, 26, 0.06);
+  --accent: rgba(20, 184, 166, 0.10);
   --accent-foreground: #f5f4f0;
 
   --destructive: #ef4444;
 
   --border: rgba(245, 244, 240, 0.09);
   --input: rgba(245, 244, 240, 0.04);
-  --ring: #ff5e1a;
+  --ring: #7c89ff;
 
   /* Chart palette — brightened for dark mode legibility */
-  --chart-1: #ff5e1a;
+  --chart-1: #7c89ff;
   --chart-2: #14b8a6;
   --chart-3: #fbbf24;
   --chart-4: #b8b6b0;
   --chart-5: #787671;
 
   /* Sidebar — slightly darker than main bg for layering */
-  --sidebar: #0c0b0a;
+  --sidebar: #111827;
   --sidebar-foreground: #e8e7e2;
-  --sidebar-primary: #ff5e1a;
+  --sidebar-primary: #7c89ff;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(255, 94, 26, 0.05);
+  --sidebar-accent: rgba(124, 137, 255, 0.12);
   --sidebar-accent-foreground: #f5f4f0;
   --sidebar-border: rgba(245, 244, 240, 0.06);
-  --sidebar-ring: #ff5e1a;
+  --sidebar-ring: #7c89ff;
 
   /* OJ Status — brightened for dark mode */
   --status-accepted: #14b8a6;
@@ -268,7 +267,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
   html {
@@ -294,11 +293,11 @@
 
   /* Selection — primary-tinted highlight */
   ::selection {
-    background: rgba(232, 80, 15, 0.15);
+    background: rgba(94, 106, 210, 0.16);
     color: inherit;
   }
   .dark ::selection {
-    background: rgba(255, 94, 26, 0.20);
+    background: rgba(124, 137, 255, 0.24);
   }
 }
 
@@ -308,35 +307,35 @@
   font-size: 48px;
   font-weight: 700;
   line-height: 1.10;
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
 }
 
 .text-h1 {
   font-size: 36px;
   font-weight: 700;
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .text-h2 {
   font-size: 28px;
   font-weight: 600;
   line-height: 1.20;
-  letter-spacing: -0.015em;
+  letter-spacing: 0;
 }
 
 .text-h3 {
   font-size: 22px;
   font-weight: 600;
   line-height: 1.25;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .text-h4 {
   font-size: 18px;
   font-weight: 600;
   line-height: 1.30;
-  letter-spacing: -0.005em;
+  letter-spacing: 0;
 }
 
 .text-body-large {
@@ -403,15 +402,15 @@
 
 .glass-interactive:hover {
   background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(245, 78, 0, 0.25);
-  box-shadow: rgba(0, 0, 0, 0.3) 0px 0px 0px 1px, rgba(245, 78, 0, 0.06) 0px 8px 32px;
+  border-color: color-mix(in srgb, var(--primary) 24%, var(--border));
+  box-shadow: var(--shadow-elevated);
   transform: translateY(-2px);
 }
 
 .dark .glass-interactive:hover {
   background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(245, 78, 0, 0.3);
-  box-shadow: rgba(0, 0, 0, 0.4) 0px 0px 0px 1px, rgba(245, 78, 0, 0.12) 0px 12px 40px;
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38), 0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
 .glass-interactive:active {
@@ -748,6 +747,11 @@ h1, h2, h3, h4, h5, h6 {
 .dark .surface-card-hover:hover {
   border-color: color-mix(in srgb, var(--primary) 25%, var(--border));
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+.tracking-tight,
+.tracking-tighter {
+  letter-spacing: 0 !important;
 }
 
 /* ─── Stagger Animation for Lists ────────────────────────────────────────── */
