@@ -48,6 +48,7 @@ node_modules/
 frontend/dist/
 frontend/playwright-report/
 frontend/test-results/
+output/
 
 # Backup files
 *_backup*
