@@ -1,4 +1,4 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
 > 📄 **[Read in Chinese / 中文说明](GETTING-STARTED.zh-CN.md)**
 

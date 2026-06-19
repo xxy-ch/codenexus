@@ -1,4 +1,4 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
 > 📄 **[Read in Chinese / 中文说明](TESTING.zh-CN.md)**
 
@@ -92,14 +92,14 @@ cd frontend
 # Run complete Vitest suite
 npm run test
 
-# Run tests in continuous watch mode
-npm run test:watch
+# Run Vitest once for CI/local verification
+npm run test:run
 
 # Generate code coverage reports
 npm run test:coverage
 ```
 
-Every new component or custom hook **must** include a corresponding `.test.tsx` file inside its relative `__tests__` directory, maintaining a 80%+ line coverage gate.
+Add focused tests for changed service mappings, hooks, and user-facing states. Coverage is reported through `npm run test:coverage`; there is no repository-enforced global coverage threshold.
 
 ### End-to-End Testing (Playwright)
 

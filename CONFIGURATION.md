@@ -1,4 +1,4 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
 > 📄 **[Read in Chinese / 中文说明](CONFIGURATION.zh-CN.md)**
 
@@ -67,8 +67,15 @@ To execute cgroups, chroot, and seccomp filters, the judge worker's docker conta
 
 ```yaml
 cap_add:
-  - SYS_PTRACE    # Sandbox execution tracing
-  - SYS_ADMIN     # cgroups creation and filesystem mounts
+  - SYS_ADMIN     # cgroups management
+  - SYS_CHROOT    # chroot filesystem isolation
+  - SETUID        # privilege demotion
+  - SETGID        # privilege demotion
+cap_drop:
+  - ALL
+cgroup: host
+volumes:
+  - /sys/fs/cgroup:/sys/fs/cgroup:rw
 security_opt:
   - no-new-privileges:true
 ```

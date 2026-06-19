@@ -1,6 +1,6 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
-> 📄 **[Read in English / 英文说明](DEVELOPMENT.zh-CN.md)**
+> 📄 **[Read in English / 英文说明](DEVELOPMENT.md)**
 
 # 开发指南
 
@@ -196,7 +196,7 @@ Online_Judge/
 │   │   └── src/
 │   │       ├── queue/          # Redis Streams 消费者、生产者、死信队列
 │   │       ├── processor/      # 提交处理：获取测试用例、编译、执行、对比输出
-│   │       ├── compiler/       # 语言检测与编译配置（6 种语言）
+│   │       ├── compiler/       # 语言检测与编译配置（提交流默认 Python 3/C/C++）
 │   │       ├── sandbox/        # cgroups 内存/CPU 限制、chroot 文件系统隔离、seccomp 系统调用过滤
 │   │       ├── db/             # 直连 PostgreSQL 获取测试用例
 │   │       ├── circuit_breaker.rs  # API 不可用时的熔断器
@@ -209,17 +209,9 @@ Online_Judge/
 │           └── user.rs         # User、UserPublic 类型
 ├── frontend/                   # React 19 + TypeScript + Vite SPA
 │   ├── src/
-│   │   ├── components/         # UI 组件（按领域组织：ui/、problems/、contest/ 等）
-│   │   ├── hooks/              # 自定义 React hooks（useAuth、useWebSocket、useProblems 等）
-│   │   ├── services/           # API 服务层（每个领域一个文件）
-│   │   ├── store/              # Zustand 状态管理（authStore）
-│   │   ├── types/              # TypeScript 类型定义（每个领域一个文件）
-│   │   ├── pages/              # 路由级页面组件
-│   │   │   ├── admin/          # 管理员页面
-│   │   │   ├── auth/           # 登录注册页面
-│   │   │   ├── community/      # 社区页面（讨论、博客、私信）
-│   │   │   ├── contest/        # 竞赛页面
-│   │   │   ├── error/          # 错误页面
+│   │   ├── features/           # 领域功能模块（auth、problems、contests、admin 等）
+│   │   ├── shared/             # 共享组件、布局、hooks、服务、store、类型
+│   │   └── test/               # Vitest 设置与轻量冒烟测试
 │   │   │   ├── search/         # 搜索页面
 │   │   │   ├── teacher/        # 教师页面
 │   │   │   └── user/           # 用户页面
@@ -619,13 +611,13 @@ import { cn } from '@/lib/utils'
 
 #### 1. 创建页面组件
 
-在 `frontend/src/pages/` 下对应的领域目录中创建：
+在 `frontend/src/features/` 下对应的领域目录中创建：
 
 ```tsx
-// frontend/src/pages/your-feature/ItemList.tsx
+// frontend/src/features/your-feature/pages/ItemList.tsx
 import { useQuery } from '@tanstack/react-query'
-import { yourFeatureService } from '@/services/yourFeature'
-import type { Item } from '@/types/yourFeature'
+import { yourFeatureService } from '@/features/your-feature/services/yourFeature'
+import type { Item } from '@/features/your-feature/types'
 
 export default function ItemList() {
   const { data, isLoading, error } = useQuery({
@@ -641,12 +633,12 @@ export default function ItemList() {
 
 #### 2. 创建服务层
 
-在 `frontend/src/services/` 中创建对应的服务文件：
+在对应 feature 的 `services/` 目录中创建服务文件：
 
 ```typescript
-// frontend/src/services/yourFeature.ts
-import api from './api'
-import type { Item } from '@/types/yourFeature'
+// frontend/src/features/your-feature/services/yourFeature.ts
+import api from '@/shared/services/api'
+import type { Item } from '@/features/your-feature/types'
 
 export const yourFeatureService = {
   list: async (): Promise<Item[]> => {
@@ -721,7 +713,7 @@ export const contestsService = {
 
 #### Zustand — 客户端认证状态
 
-定义在 `frontend/src/store/authStore.ts`，管理用户登录状态：
+定义在 `frontend/src/shared/store/authStore.ts`，管理用户登录状态：
 
 ```typescript
 interface AuthState {
@@ -816,7 +808,7 @@ function MyForm() {
 |------|------|------|
 | 队列消费者 | `judge-worker/src/queue/` | Redis Streams XREADGROUP 消费者、死信队列 |
 | 处理器 | `judge-worker/src/processor/` | 提交生命周期：获取、编译、执行、对比 |
-| 编译器 | `judge-worker/src/compiler/` | 6 种语言的检测与编译配置 |
+| 编译器 | `judge-worker/src/compiler/` | 提交流默认 Python 3/C/C++，扩展语言配置见 `compiler/language.rs` |
 | 沙箱 | `judge-worker/src/sandbox/` | cgroups、chroot、seccomp 隔离 |
 | 熔断器 | `judge-worker/src/circuit_breaker.rs` | API 不可用时防止级联故障 |
 | 心跳 | `judge-worker/src/heartbeat.rs` | 周期性向 API 发送健康报告 |
@@ -838,8 +830,10 @@ pub struct SandboxConfig {
 
 ```yaml
 cap_add:
-  - SYS_PTRACE
   - SYS_ADMIN
+  - SYS_CHROOT
+  - SETUID
+  - SETGID
 security_opt:
   - no-new-privileges:true
 ```

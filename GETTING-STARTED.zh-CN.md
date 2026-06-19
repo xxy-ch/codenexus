@@ -1,6 +1,6 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
-> 📄 **[Read in English / 英文说明](GETTING-STARTED.zh-CN.md)**
+> 📄 **[Read in English / 英文说明](GETTING-STARTED.md)**
 
 # 快速上手指南
 
@@ -338,12 +338,14 @@ docker compose up -d --build
 
 ### 5.5 判题 Worker 注意事项
 
-判题 Worker 容器需要 `SYS_PTRACE` 和 `SYS_ADMIN` 内核能力以支持 cgroups 沙箱隔离，`docker-compose.yml` 中已配置：
+判题 Worker 容器需要 `SYS_ADMIN`、`SYS_CHROOT`、`SETUID` 和 `SETGID` 内核能力以支持 cgroups、chroot 和降权执行，`docker-compose.yml` 中已配置：
 
 ```yaml
 cap_add:
-  - SYS_PTRACE
   - SYS_ADMIN
+  - SYS_CHROOT
+  - SETUID
+  - SETGID
 ```
 
 在 Linux 宿主机上可直接运行。在 macOS 或 Windows 上，Docker Desktop 使用虚拟机，这些能力可能受限——判题沙箱功能可能无法正常工作，但其余功能不受影响。
@@ -552,7 +554,7 @@ docker compose up -d postgres redis   # 重新启动基础设施
    docker compose logs -f judge-worker
    ```
 3. 确认 Worker 能连接到 Redis（消费提交队列）和 API（回传判题结果）
-4. Worker 需要 `SYS_PTRACE` 和 `SYS_ADMIN` 能力——检查 Docker 是否正确分配了这些权限
+4. Worker 需要 `SYS_ADMIN`、`SYS_CHROOT`、`SETUID` 和 `SETGID` 能力——检查 Docker 是否正确分配了这些权限
 5. 在 macOS 上，由于内核限制，原生沙箱功能可能无法正常工作，建议使用 Linux 环境或接受部分功能受限
 
 ---

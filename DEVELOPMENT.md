@@ -1,4 +1,4 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
 > 📄 **[Read in Chinese / 中文说明](DEVELOPMENT.zh-CN.md)**
 
@@ -74,10 +74,9 @@ Online_Judge/
 │   └── domain-*/                 # Domain Boundary Crate layer (Core business logic)
 ├── frontend/                     # React 19 SPA
 │   ├── src/
-│   │   ├── components/           # Presentation layer (EmptyState, ErrorBoundary, Skeletons)
-│   │   ├── pages/                # Views (auth, admin, community, contests)
-│   │   ├── services/             # HTTP Client layers (Axios config)
-│   │   └── store/                # Zustand stores (JWT context, theme)
+│   │   ├── features/             # Domain modules (auth, problems, contests, admin, etc.)
+│   │   ├── shared/               # Components, layouts, hooks, services, store, types
+│   │   └── test/                 # Vitest setup and smoke tests
 │   └── e2e/                      # Playwright end-to-end suite
 └── docker-compose.yml            # Multi-container full deployment config
 ```

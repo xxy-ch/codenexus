@@ -29,9 +29,11 @@ The app runs at `http://localhost:5173` and expects the API at `http://localhost
 npm run typecheck
 npm run lint
 npm run build
+npm run test:run
+npm run test:e2e
 ```
 
-The Docker frontend image serves the production build through nginx on port `5173`.
+The Docker frontend image serves the production build through nginx on container port `80`; `docker-compose.yml` maps it to host port `5173`.
 
 ## Delivered Surfaces
 
@@ -46,3 +48,4 @@ The Docker frontend image serves the production build through nginx on port `517
 - Direct messages currently use REST queries/mutations plus unread counts; they are not pushed live over WebSocket.
 - Learning roadmap nodes are static topology cards driven by user stats and problem tags.
 - Feature availability is resolved through `/features/resolved`; disabled routes are still enforced by backend feature gates.
+- Vite splits large editor/chart/flow dependencies into manual vendor chunks to keep the current build warning-free without changing runtime UI.

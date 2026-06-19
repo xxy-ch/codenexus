@@ -1,4 +1,4 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
 > 📄 **[Read in Chinese / 中文说明](ARCHITECTURE.zh-CN.md)**
 
@@ -54,7 +54,7 @@ The system employs a distributed service architecture, utilizing REST APIs, Redi
 
 ## 2. Backend Crate Architecture (`backend/`)
 
-The backend is structured as a Cargo workspace consisting of 14 distinct crates. This enforces clean domain boundaries and limits compilation dependencies.
+The backend is structured as a Cargo workspace consisting of 18 crates. This enforces clean domain boundaries and limits compilation dependencies.
 
 ### Workspace Structure
 
@@ -76,8 +76,12 @@ backend/
 ├── domain-search/          # Search: Full-text indexing of problems, blogs, users
 ├── domain-leaderboard/     # Standings: Global, school-wide, class, and contest ranks
 ├── domain-imex/            # Import/Export: Batch ZIP and CSV processing
+├── domain-analysis/        # Analysis: AI feedback, similarity, recommendations
+├── feature-gateway/        # Runtime feature flag service
 │
 ├── judge-worker/           # Sandboxed Judge Worker (Redis Streams consumer)
+├── llm-worker/             # AI task worker behind feature flags
+├── monitor-server/         # Operational monitoring service
 ├── migration-tool/         # Database Migrator (MySQL dump to PostgreSQL)
 └── shared/                 # Workspace-wide Shared Types (Claims, Role, Permission)
 ```
@@ -172,11 +176,9 @@ The frontend is built using **React 19** and **TypeScript**, packaged with **Vit
 ```
 frontend/
 ├── src/
-│   ├── components/       # Reusable components (Skeletons, EmptyState, ErrorBoundary)
-│   ├── pages/            # View components (auth, community, problems, admin panels)
-│   ├── services/         # Axios wrapper with automatic JWT token refresh mutex
-│   ├── hooks/            # Custom hooks (e.g. useFeatureGate for feature gateway check)
-│   └── store/            # Lightweight client state stores built using Zustand
+│   ├── features/         # Route and domain modules (auth, problems, contests, admin, etc.)
+│   ├── shared/           # Components, layouts, hooks, services, store, types
+│   └── test/             # Vitest setup and lightweight smoke tests
 ```
 
 ### Production Stability Patterns

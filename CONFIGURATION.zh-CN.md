@@ -1,6 +1,6 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
-> 📄 **[Read in English / 英文说明](CONFIGURATION.zh-CN.md)**
+> 📄 **[Read in English / 英文说明](CONFIGURATION.md)**
 
 # CodeNexus 配置指南
 
@@ -157,12 +157,17 @@ Judge Worker 容器需要以下 Linux 能力和安全选项才能运行沙箱：
 
 ```yaml
 cap_add:
-  - SYS_PTRACE    # 沙箱进程追踪
-  - SYS_ADMIN     # cgroups、chroot 文件系统隔离、seccomp 系统调用过滤
+  - SYS_ADMIN     # cgroups 管理
+  - SYS_CHROOT    # chroot 文件系统隔离
+  - SETUID        # 降权执行
+  - SETGID        # 降权执行
+cap_drop:
+  - ALL
+cgroup: host
+volumes:
+  - /sys/fs/cgroup:/sys/fs/cgroup:rw
 security_opt:
   - no-new-privileges:true  # 防止权限提升
-volumes:
-  - /var/run/docker.sock:/var/run/docker.sock  # Docker-in-Docker 沙箱执行
 ```
 
 ---
@@ -206,7 +211,7 @@ cargo run --bin migration-tool -- \
 
 ## 5. 前端配置
 
-前端使用 Vite 构建工具，环境变量必须以 `VITE_` 前缀才能在客户端代码中通过 `import.meta.env` 访问。配置定义在 `frontend/src/services/config.ts` 中。
+前端使用 Vite 构建工具，环境变量必须以 `VITE_` 前缀才能在客户端代码中通过 `import.meta.env` 访问。配置定义在 `frontend/src/shared/services/config.ts` 中。
 
 ### 5.1 API 与 WebSocket 配置
 
@@ -228,7 +233,7 @@ cargo run --bin migration-tool -- \
 功能开关采用"默认启用"模式：只有显式设为字符串 `"false"` 才会禁用，省略或设为其他值均保持启用。
 
 ```typescript
-// frontend/src/services/config.ts
+// frontend/src/shared/services/config.ts
 export const FEATURE_FLAGS = {
   directMessages: import.meta.env.VITE_ENABLE_DIRECT_MESSAGES !== 'false',
   plagiarism: import.meta.env.VITE_ENABLE_PLAGIARISM !== 'false',
@@ -284,7 +289,7 @@ export const FEATURE_FLAGS = {
 |------|--------|------|
 | `postgres_data` | `/var/lib/postgresql/data` | PostgreSQL 持久化存储 |
 | `redis_data` | `/data` | Redis 持久化存储 |
-| Docker Socket | `/var/run/docker.sock`（judge-worker） | Worker 沙箱执行需要访问 Docker |
+| `/sys/fs/cgroup` | `/sys/fs/cgroup`（judge-worker） | Worker 创建和管理 cgroups 沙箱 |
 
 ### 6.3 服务依赖关系
 

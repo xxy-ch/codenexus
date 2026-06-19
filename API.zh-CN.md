@@ -1,6 +1,6 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
-> 📄 **[Read in English / 英文说明](API.zh-CN.md)**
+> 📄 **[Read in English / 英文说明](API.md)**
 
 # CodeNexus -- API 参考文档
 

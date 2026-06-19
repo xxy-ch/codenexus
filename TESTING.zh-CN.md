@@ -1,6 +1,6 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
-> 📄 **[Read in English / 英文说明](TESTING.zh-CN.md)**
+> 📄 **[Read in English / 英文说明](TESTING.md)**
 
 # CodeNexus — 测试指南
 
@@ -398,30 +398,17 @@ export default defineConfig({
 
 **测试文件分布：**
 
-| 目录 | 文件 | 测试类型 |
-|------|------|---------|
-| `src/services/__tests__/` | `contests.test.ts` | 竞赛服务 — mock API 调用，验证多端点数据聚合 |
-| `src/services/__tests__/` | `classes.test.ts` | 班级服务 |
-| `src/services/__tests__/` | `judgeConfig.test.ts` | 判题配置服务 |
-| `src/services/__tests__/` | `messages.test.ts` | 私信服务 |
-| `src/services/__tests__/` | `plagiarism.test.ts` | 抄袭检测服务 |
-| `src/services/__tests__/` | `ranking.test.ts` | 排行榜服务 |
-| `src/services/__tests__/` | `searchApi.test.ts` | 搜索 API 服务 |
-| `src/services/__tests__/` | `admin.test.ts` | 管理员服务 |
-| `src/services/__tests__/` | `smokeCoreFlows.test.ts` | 核心流程冒烟测试 |
-| `src/services/__tests__/` | `communityApi.test.ts` | 社区 API 服务 |
-| `src/hooks/__tests__/` | `useAuth.test.ts` | 认证状态 Hook（login/logout/checkAuth 状态流转） |
-| `src/hooks/__tests__/` | `useWebSocket.test.ts` | WebSocket Hook |
-| `src/hooks/__tests__/` | `useCountdown.test.ts` | 倒计时 Hook |
-| `src/components/ui/__tests__/` | `primitives.test.tsx` | UI 原语组件（Button、Input、Loading 的样式类验证） |
-| `src/lib/__tests__/` | `utils.test.ts` | 工具函数 |
-| `src/pages/user/__tests__/` | `ContestDetail.test.tsx` | 竞赛详情页面 |
-| `src/pages/user/__tests__/` | `ContestList.test.tsx` | 竞赛列表页面 |
-| `src/pages/user/__tests__/` | `SubmissionHistory.test.tsx` | 提交历史页面 |
-| `src/pages/user/__tests__/` | `SubmissionDetail.test.tsx` | 提交详情页面 |
-| `src/pages/user/__tests__/` | `DashboardEnhanced.test.tsx` | 增强仪表板 |
-| `src/pages/user/__tests__/` | `ProblemIDEEnhanced.test.tsx` | 题目 IDE 页面 |
-| `src/pages/teacher/__tests__/` | `ClassManagement.test.tsx` | 班级管理页面 |
+| 目录 | 测试类型 |
+|------|---------|
+| `src/features/*/pages/__tests__/` | 路由页面和角色工作流 |
+| `src/features/*/components/__tests__/` | 领域组件状态与交互 |
+| `src/features/*/services/__tests__/` | 领域 API 映射 |
+| `src/features/*/hooks/__tests__/` | 领域 hook 状态流 |
+| `src/shared/components/__tests__/` | 共享 UI 原语、状态组件、骨架屏 |
+| `src/shared/services/__tests__/` | 跨领域 API 服务、功能开关、核心冒烟流 |
+| `src/shared/hooks/__tests__/` | 通用 hook（WebSocket、倒计时等） |
+| `src/shared/lib/__tests__/` | 工具函数 |
+| `src/test/__tests__/` | 测试工具自身校验 |
 
 **服务层测试模式：**
 
@@ -524,8 +511,8 @@ npm test
 **运行特定测试文件：**
 
 ```bash
-npx vitest --run src/services/__tests__/contests.test.ts
-npx vitest --run src/hooks/__tests__/useAuth.test.ts
+npx vitest --run src/features/contests/services/__tests__/contests.test.ts
+npx vitest --run src/features/auth/hooks/__tests__/useAuth.test.ts
 ```
 
 **运行覆盖率报告：**
@@ -564,7 +551,7 @@ Judge Worker 的测试涵盖队列消费者、处理器、沙箱和心跳模块�
 | `test_judge_result_with_test_cases` | 带 WA 测试用例的结果结构体 |
 | `test_time_limit_validation` | 时间限制合理范围 |
 | `test_memory_limit_validation` | 内存限制合理范围 |
-| `test_supported_languages` | 6 种支持语言枚举（C/C++/Python3/Rust/Go/Java） |
+| `test_supported_languages` | Worker 语言枚举配置 |
 | `test_error_result` | 编译错误结果 |
 | `test_timeout_result` | 超时结果 |
 

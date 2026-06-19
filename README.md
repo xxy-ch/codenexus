@@ -67,7 +67,7 @@ CodeNexus is a modern, multi-tenant, and multi-role online judge and competitive
 
 ```
 Online_Judge/
-├── backend/                          # Rust Workspace (14 crates)
+├── backend/                          # Rust Workspace (18 crates)
 │   ├── Cargo.toml                    # Workspace Root Config
 │   ├── rust-toolchain.toml           # Toolchain Lock (Rust 1.90.0)
 │   │
@@ -84,16 +84,19 @@ Online_Judge/
 │   ├── domain-leaderboard/           # Ranking domain (Global/Contest/Class rankings)
 │   ├── domain-search/                # Search domain (Full-text search integration)
 │   ├── domain-imex/                  # Import/Export domain (Problem ZIP & User CSV)
+│   ├── domain-analysis/              # AI/plagiarism analysis and recommendations
+│   ├── feature-gateway/              # Runtime feature flag service
+│   ├── llm-worker/                   # AI task worker
+│   ├── monitor-server/               # Operational monitoring service
 │   │
 │   ├── judge-worker/                 # Independent Judge Worker (Redis Streams Consumer & Sandbox)
 │   └── migration-tool/               # Database Migration Tool (MySQL → PostgreSQL)
 │
 ├── frontend/                         # React Frontend Application
 │   ├── src/
-│   │   ├── pages/                    # Page components
-│   │   ├── components/               # Shared UI elements
-│   │   ├── services/                 # API Service Layer
-│   │   └── store/                    # Zustand Stores
+│   │   ├── features/                 # Feature modules (auth, problems, contests, admin, etc.)
+│   │   ├── shared/                   # Shared components, layouts, services, store, types
+│   │   └── test/                     # Vitest setup and smoke checks
 │   └── Dockerfile                    # Nginx deployment config
 │
 ├── docker-compose.yml                # Full-stack orchestrator
@@ -134,7 +137,7 @@ Service links:
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Technical architecture, domain boundaries, and data flow details. |
 | [DEVELOPMENT.md](DEVELOPMENT.md) | Backend and frontend local development guidelines. |
 | [TESTING.md](TESTING.md) | Unit, integration, E2E testing framework, and guidelines. |
-| [API.md](API.md) | Complete REST API endpoint reference. |
+| [API.md](API.md) | REST API overview and key endpoint reference. |
 | [CONFIGURATION.md](CONFIGURATION.md) | Environment variables and runtime configurations. |
 | [DEPLOYMENT.md](DEPLOYMENT.md) | Production-grade deployment and operations guide. |
 

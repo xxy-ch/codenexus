@@ -1,4 +1,4 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
 > 📄 **[Read in Chinese / 中文说明](DEPLOYMENT.zh-CN.md)**
 
@@ -45,9 +45,10 @@ The system uses a highly secure, container-orchestrated multi-tier architecture:
 | Public Host Port | Internal Container Port | Service | Protocol | Network Scope |
 |------------------|-------------------------|---------|----------|---------------|
 | `80` / `443` | `80` | Frontend Nginx | TCP | Public Internet |
-| None | `3000` | Axum API Server | TCP | Bridge Network Only |
-| None | `5432` | PostgreSQL DB | TCP | Bridge Network Only |
-| None | `6379` | Redis Broker | TCP | Bridge Network Only |
+| `3000` | `3000` | Axum API Server | TCP | Host / reverse proxy |
+| `3001` | `3001` | Feature Gateway | TCP | Internal admin/service use |
+| `127.0.0.1:5432` | `5432` | PostgreSQL DB | TCP | Host loopback only |
+| `127.0.0.1:6379` | `6379` | Redis Broker | TCP | Host loopback only |
 
 ---
 

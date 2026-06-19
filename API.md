@@ -1,4 +1,4 @@
-![CodeNexus Banner](codenexus_banner.png)
+![CodeNexus Banner](codenexus_banner.svg)
 
 > 📄 **[Read in Chinese / 中文说明](API.zh-CN.md)**
 
@@ -19,6 +19,30 @@ This document provides the complete API specification for **CodeNexus**, includi
 | **Data Format** | JSON (`application/json`) |
 | **Character Set** | UTF-8 |
 | **Authentication** | JWT Bearer Token / HTTP-Only Cookies |
+
+### Mounted API Areas
+
+The Axum API currently mounts these route groups:
+
+| Area | Prefix |
+|------|--------|
+| Auth/session | `/auth/*` |
+| Users | `/users/*` |
+| Problems and test cases | `/problems/*` |
+| Submissions and judge callbacks | `/submissions/*` |
+| Contests and scoreboards | `/contests/*` |
+| Classes and assignments | `/classes/*` |
+| Community discussions | `/discussions/*` |
+| Blog articles | `/blog/*` |
+| Search | `/search/*` |
+| Notifications | `/notifications/*` |
+| Learning roadmap | `/roadmap/*` |
+| Direct messages | `/messages/*` |
+| Import/export | `/imex/*` |
+| Feature flags | `/features/*` |
+| Admin judge monitor | `/admin/judge/*` |
+| Admin plagiarism | `/admin/plagiarism/*` |
+| Analysis / AI assistance | `/analysis/*` |
 
 ### Standard Response Schemas
 
@@ -220,16 +244,19 @@ Submits source code to be processed by the judging stream.
 **Request Payload:**
 ```json
 {
-  "problem_id": "problem-uuid",
+  "problem_id": 1,
   "language": "cpp",
-  "source_code": "#include <iostream>\nint main() { return 0; }"
+  "code": "#include <iostream>\nint main() { return 0; }",
+  "contest_id": null
 }
 ```
 
 **Success Response (`202 Accepted`):**
 ```json
 {
-  "submission_id": "submission-uuid",
+  "id": 123,
+  "problem_id": 1,
+  "language": "cpp",
   "status": "pending"
 }
 ```
