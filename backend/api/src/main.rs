@@ -5,6 +5,7 @@ mod judge_monitor;
 mod middleware;
 mod notifications;
 mod plagiarism;
+mod roadmap;
 mod redis;
 mod websocket;
 mod worker_heartbeat;
@@ -303,6 +304,7 @@ fn create_router(
         .nest("/blog", domain_community::blog_router())
         .nest("/search", domain_search::search_router())
         .nest("/notifications", notifications::notifications_router())
+        .nest("/roadmap", roadmap::roadmap_router())
         .nest("/messages", domain_community::messages_router())
         .nest("/imex", domain_imex::imex_router())
         .nest("/admin/plagiarism", plagiarism::plagiarism_router())

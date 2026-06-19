@@ -5,6 +5,7 @@ pub mod judge_monitor;
 pub mod middleware;
 pub mod notifications;
 pub mod plagiarism;
+pub mod roadmap;
 pub mod redis;
 pub mod websocket;
 

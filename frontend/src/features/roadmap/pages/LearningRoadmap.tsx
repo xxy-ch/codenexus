@@ -1,24 +1,29 @@
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { usersService } from '@/features/users/services/users'
-import { CheckCircle2, Circle, Lock, Map, Sparkles } from 'lucide-react'
+import { CheckCircle2, Circle, Lock, Map, Pencil, Save, Sparkles, X } from 'lucide-react'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { InlineError } from '@/shared/components/InlineError'
+import { Button } from '@/shared/components/Button'
+import api from '@/shared/services/api'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/shared/lib/utils'
 
 type RoadmapStatus = 'done' | 'current' | 'locked'
 
-interface RoadmapGraphNode {
+interface RoadmapNodeConfig {
   id: string
   title: string
   description: string
   topics: string[]
-  status: RoadmapStatus
-  color: string
-  bg: string
-  dot: string
   x: number
   y: number
+}
+
+interface RoadmapGraphNode extends RoadmapNodeConfig {
+  status: RoadmapStatus
+  bg: string
+  dot: string
 }
 
 interface RoadmapEdge {
@@ -28,71 +33,68 @@ interface RoadmapEdge {
   active: boolean
 }
 
-const getNodesAndEdges = (completion: number): { nodes: RoadmapGraphNode[]; edges: RoadmapEdge[] } => {
-  const isBasicDone = completion >= 25
-  const isMediumDsDone = completion >= 60
-  const isMediumAlgoDone = completion >= 75
-  const isAdvancedDone = completion >= 100
+interface RoadmapResponse {
+  nodes: RoadmapNodeConfig[]
+  editable: boolean
+}
 
-  const nodes: RoadmapGraphNode[] = [
-    {
-      id: 'basic',
-      title: '基础语法与算法',
-      description: '掌握编程竞赛入门必备的数据结构基础',
-      topics: ['数组与矩阵', '字符串处理', '哈希表'],
-      status: isBasicDone ? 'done' : 'current',
-      color: 'text-status-accepted',
-      bg: 'bg-status-accepted/10',
-      dot: 'text-status-accepted',
-      x: 50,
-      y: 18,
-    },
-    {
-      id: 'medium-ds',
-      title: '中级数据结构',
-      description: '学习常用的数据存储与区间查询方法',
-      topics: ['栈与队列', '链表高级操作', '并查集基础'],
-      status: isMediumDsDone ? 'done' : (isBasicDone ? 'current' : 'locked'),
-      color: 'text-primary',
-      bg: 'bg-primary/10',
-      dot: 'text-primary',
-      x: 28,
-      y: 50,
-    },
-    {
-      id: 'medium-algo',
-      title: '核心算法技巧',
-      description: '掌握经典算法的优化与常见变种',
-      topics: ['二分与三分', '滑动窗口', '贪心与排序'],
-      status: isMediumAlgoDone ? 'done' : (isBasicDone ? 'current' : 'locked'),
-      color: 'text-amber-500',
-      bg: 'bg-amber-500/10',
-      dot: 'text-amber-500',
-      x: 72,
-      y: 50,
-    },
-    {
-      id: 'advanced',
-      title: '高级动态规划与图论',
-      description: '挑战高难度综合性算法竞赛题目',
-      topics: ['状态压缩DP', '最短路算法', '网络流计算'],
-      status: isAdvancedDone ? 'done' : (isMediumDsDone || isMediumAlgoDone ? 'current' : 'locked'),
-      color: 'text-purple-500',
-      bg: 'bg-purple-500/10',
-      dot: 'text-purple-500',
-      x: 50,
-      y: 82,
-    },
-  ]
+const progressThresholds = [25, 60, 75, 100]
+const nodeStyles = [
+  { bg: 'bg-status-accepted/10', dot: 'text-status-accepted' },
+  { bg: 'bg-primary/10', dot: 'text-primary' },
+  { bg: 'bg-amber-500/10', dot: 'text-amber-500' },
+  { bg: 'bg-purple-500/10', dot: 'text-purple-500' },
+]
 
-  const edges: RoadmapEdge[] = [
-    { id: 'e1', from: [50, 18], to: [28, 50], active: isBasicDone },
-    { id: 'e2', from: [50, 18], to: [72, 50], active: isBasicDone },
-    { id: 'e3', from: [28, 50], to: [50, 82], active: isMediumDsDone },
-    { id: 'e4', from: [72, 50], to: [50, 82], active: isMediumAlgoDone },
-  ]
+function nodeStatus(index: number, completion: number): RoadmapStatus {
+  const threshold = progressThresholds[index] ?? 100
+  if (completion >= threshold) return 'done'
+  if (index === 0 || completion >= (progressThresholds[index - 1] ?? 0)) return 'current'
+  return 'locked'
+}
+
+function buildGraph(nodesConfig: RoadmapNodeConfig[], completion: number): { nodes: RoadmapGraphNode[]; edges: RoadmapEdge[] } {
+  const nodes = nodesConfig.map((node, index) => ({
+    ...node,
+    status: nodeStatus(index, completion),
+    ...(nodeStyles[index % nodeStyles.length]),
+  }))
+
+  const edgePairs = nodes.length === 4
+    ? [[0, 1], [0, 2], [1, 3], [2, 3]]
+    : nodes.slice(1).map((_, index) => [index, index + 1])
+
+  const edges = edgePairs.map(([fromIndex, toIndex]) => {
+    const from = nodes[fromIndex]
+    const to = nodes[toIndex]
+    return {
+      id: `${from.id}-${to.id}`,
+      from: [from.x, from.y] as [number, number],
+      to: [to.x, to.y] as [number, number],
+      active: from.status === 'done',
+    }
+  })
 
   return { nodes, edges }
+}
+
+function normalizeNodes(nodes: RoadmapNodeConfig[]): RoadmapNodeConfig[] {
+  return nodes.map((node) => ({
+    ...node,
+    topics: node.topics.filter(Boolean),
+    x: Math.min(100, Math.max(0, Number(node.x) || 0)),
+    y: Math.min(100, Math.max(0, Number(node.y) || 0)),
+  }))
+}
+
+async function fetchRoadmap(): Promise<RoadmapResponse> {
+  const { data } = await api.get<RoadmapResponse>('/roadmap')
+  return data
+}
+
+async function saveRoadmap(nodes: RoadmapNodeConfig[]): Promise<RoadmapResponse> {
+  const { data } = await api.put<RoadmapResponse>('/roadmap', { nodes: normalizeNodes(nodes) })
+  return data
 }
 
 function RoadmapCard({ node, onClick }: { node: RoadmapGraphNode; onClick: () => void }) {
@@ -136,23 +138,136 @@ function RoadmapCard({ node, onClick }: { node: RoadmapGraphNode; onClick: () =>
   )
 }
 
+function RoadmapEditor({
+  nodes,
+  saving,
+  onChange,
+  onCancel,
+  onSave,
+}: {
+  nodes: RoadmapNodeConfig[]
+  saving: boolean
+  onChange: (nodes: RoadmapNodeConfig[]) => void
+  onCancel: () => void
+  onSave: () => void
+}) {
+  const patchNode = (index: number, patch: Partial<RoadmapNodeConfig>) => {
+    onChange(nodes.map((node, i) => i === index ? { ...node, ...patch } : node))
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-card-foreground">管理员编辑</h2>
+          <p className="text-xs text-muted-foreground">修改标题、说明、标签和节点位置，保存后对本组织生效。</p>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={onCancel}>
+            <X className="mr-2 h-4 w-4" />
+            取消
+          </Button>
+          <Button type="button" size="sm" onClick={onSave} disabled={saving}>
+            <Save className="mr-2 h-4 w-4" />
+            保存
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-3 lg:grid-cols-2">
+        {nodes.map((node, index) => (
+          <div key={node.id} className="rounded-lg border border-border bg-background/70 p-3">
+            <div className="grid gap-2 md:grid-cols-2">
+              <input
+                value={node.title}
+                onChange={(e) => patchNode(index, { title: e.target.value })}
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                aria-label="节点标题"
+              />
+              <input
+                value={node.topics.join(',')}
+                onChange={(e) => patchNode(index, { topics: e.target.value.split(',').map((item) => item.trim()) })}
+                className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                aria-label="节点标签"
+              />
+            </div>
+            <textarea
+              value={node.description}
+              onChange={(e) => patchNode(index, { description: e.target.value })}
+              className="mt-2 min-h-16 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              aria-label="节点说明"
+            />
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <label className="text-xs text-muted-foreground">
+                X
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={node.x}
+                  onChange={(e) => patchNode(index, { x: Number(e.target.value) })}
+                  className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+              </label>
+              <label className="text-xs text-muted-foreground">
+                Y
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={node.y}
+                  onChange={(e) => patchNode(index, { y: Number(e.target.value) })}
+                  className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                />
+              </label>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function LearningRoadmap() {
   const navigate = useNavigate()
-  const { data: stats, isLoading, error, refetch } = useQuery({
+  const queryClient = useQueryClient()
+  const [editing, setEditing] = useState(false)
+  const [draftNodes, setDraftNodes] = useState<RoadmapNodeConfig[]>([])
+  const { data: stats, isLoading: statsLoading, error: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['roadmap-stats'],
     queryFn: () => usersService.getUserStats(),
   })
+  const { data: roadmap, isLoading: roadmapLoading, error: roadmapError, refetch: refetchRoadmap } = useQuery({
+    queryKey: ['roadmap'],
+    queryFn: fetchRoadmap,
+  })
+  const saveMutation = useMutation({
+    mutationFn: saveRoadmap,
+    onSuccess: (data) => {
+      queryClient.setQueryData(['roadmap'], data)
+      setEditing(false)
+    },
+  })
 
-  if (isLoading) {
+  useEffect(() => {
+    if (roadmap?.nodes && !editing) {
+      setDraftNodes(roadmap.nodes)
+    }
+  }, [editing, roadmap?.nodes])
+
+  if (statsLoading || roadmapLoading) {
     return <CardGridSkeleton cards={4} />
   }
 
-  if (error || !stats) {
+  if (statsError || !stats || roadmapError || !roadmap) {
     return (
       <InlineError
         title="学习路线图加载失败"
         message="无法加载学习进度数据，请稍后重试"
-        onRetry={() => refetch()}
+        onRetry={() => {
+          refetchStats()
+          refetchRoadmap()
+        }}
       />
     )
   }
@@ -162,16 +277,16 @@ export function LearningRoadmap() {
     Math.round((stats.unique_problems_solved / Math.max(1, stats.unique_problems_solved + 40)) * 100)
   )
 
-  const { nodes, edges } = getNodesAndEdges(completion)
+  const visibleNodes = editing ? draftNodes : roadmap.nodes
+  const { nodes, edges } = buildGraph(visibleNodes, completion)
 
   const handleNodeClick = (node: RoadmapGraphNode) => {
-    const tags = node.topics.join(',')
-    navigate(`/problems?tags=${encodeURIComponent(tags)}`)
+    if (editing) return
+    navigate(`/problems?tags=${encodeURIComponent(node.topics.join(','))}`)
   }
 
   return (
     <div className="space-y-6 h-full flex flex-col">
-      {/* Page header */}
       <div className="rounded-xl border border-border bg-card p-6 flex-shrink-0">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-3">
@@ -187,29 +302,49 @@ export function LearningRoadmap() {
               </p>
             </div>
           </div>
-          
-          <div className="flex-1 md:max-w-xs">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-sm font-medium text-card-foreground">总体进度</span>
+
+          <div className="flex flex-col gap-3 md:min-w-72">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm font-medium text-card-foreground">总体进度</span>
+                </div>
+                <span className="text-sm font-semibold text-primary tabular-nums">{completion}%</span>
               </div>
-              <span className="text-sm font-semibold text-primary tabular-nums">{completion}%</span>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
+                  style={{ width: `${completion}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground text-right">
+                已解决 {stats.unique_problems_solved} 题
+              </p>
             </div>
-            <div className="h-2 rounded-full bg-muted overflow-hidden">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-500 ease-out"
-                style={{ width: `${completion}%` }}
-              />
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground text-right">
-              已解决 {stats.unique_problems_solved} 题
-            </p>
+            {roadmap.editable && !editing && (
+              <Button type="button" size="sm" variant="outline" onClick={() => setEditing(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                编辑路线图
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Topology Graph Canvas */}
+      {editing && (
+        <RoadmapEditor
+          nodes={draftNodes}
+          saving={saveMutation.isPending}
+          onChange={setDraftNodes}
+          onCancel={() => {
+            setDraftNodes(roadmap.nodes)
+            setEditing(false)
+          }}
+          onSave={() => saveMutation.mutate(draftNodes)}
+        />
+      )}
+
       <div className="relative min-h-[640px] overflow-hidden rounded-xl border border-border bg-background/50 bg-[radial-gradient(circle_at_1px_1px,var(--border)_1px,transparent_0)] [background-size:24px_24px]">
         <svg aria-hidden="true" className="absolute inset-0 h-full w-full">
           {edges.map((edge) => (
