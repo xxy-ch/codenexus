@@ -38,7 +38,7 @@ export function UserManagement() {
     staleTime: 5 * 60 * 1000,
   })
 
-  const activeGrades = (gradesData?.grades || []).filter((g) => g.is_active)
+  const activeGrades = useMemo(() => (gradesData?.grades ?? []).filter((g) => g.is_active), [gradesData?.grades])
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['adminUsers', search, role, status, sortBy, page],
@@ -82,7 +82,7 @@ export function UserManagement() {
     },
   })
 
-  const users = data?.users || []
+  const users = useMemo(() => data?.users ?? [], [data?.users])
   const total = data?.total || 0
   const totalPages = Math.max(1, Math.ceil(total / 20))
 

@@ -4,6 +4,7 @@ const { mockApi } = vi.hoisted(() => ({
   mockApi: {
     get: vi.fn(),
     post: vi.fn(),
+    delete: vi.fn(),
   },
 }))
 
@@ -62,6 +63,7 @@ describe('contestsService', () => {
             problem_id: 1,
             title: 'Two Sum',
             difficulty: 'easy',
+            category: '基础题',
             points: 100,
             order_index: 1,
           },
@@ -102,6 +104,7 @@ describe('contestsService', () => {
             problem_id: 1,
             title: 'Two Sum',
             difficulty: 'easy',
+            category: '基础题',
             points: 100,
             order_index: 1,
           },
@@ -131,6 +134,8 @@ describe('contestsService', () => {
     expect(mockApi.get).toHaveBeenCalledWith('/contests/1/participants')
     expect(data.is_registered).toBe(true)
     expect(data.problems[0].id).toBe('1')
+    expect(data.problems[0].category).toBe('基础题')
+    expect(data.problems[0].order_index).toBe(1)
   })
 
   it('skips participant roster lookup for students', async () => {
@@ -158,6 +163,7 @@ describe('contestsService', () => {
             problem_id: 1,
             title: 'Two Sum',
             difficulty: 'easy',
+            category: '基础题',
             points: 100,
             order_index: 1,
           },
@@ -177,5 +183,42 @@ describe('contestsService', () => {
     expect(mockApi.get).toHaveBeenCalledWith('/users/me')
     expect(mockApi.get).not.toHaveBeenCalledWith('/contests/1/participants')
     expect(data.is_registered).toBe(false)
+  })
+
+  it('adds a problem to a contest', async () => {
+    mockApi.post.mockResolvedValueOnce({
+      data: {
+        id: 9,
+        problem_id: 3,
+        title: 'Binary Search',
+        difficulty: 'medium',
+        category: '基础题',
+        points: 150,
+        order_index: 2,
+      },
+    })
+
+    const data = await contestsService.addProblem('7', {
+      problem_id: 3,
+      category: '基础题',
+      points: 150,
+      order_index: 2,
+    })
+
+    expect(mockApi.post).toHaveBeenCalledWith('/contests/7/problems', {
+      problem_id: 3,
+      category: '基础题',
+      points: 150,
+      order_index: 2,
+    })
+    expect(data.problem_id).toBe(3)
+  })
+
+  it('removes a problem from a contest', async () => {
+    mockApi.delete.mockResolvedValue({ data: null })
+
+    await contestsService.removeProblem('7', '3')
+
+    expect(mockApi.delete).toHaveBeenCalledWith('/contests/7/problems/3')
   })
 })

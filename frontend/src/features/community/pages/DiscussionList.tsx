@@ -25,30 +25,30 @@ export function DiscussionList() {
     ? parseInt(searchParams.get('problem_id')!)
     : undefined
 
-  const fetchDiscussions = async () => {
-    setLoading(true)
-    setLoadError(false)
-    try {
-      const filters: DiscussionFilters = {
-        page,
-        limit: 20,
-        sort,
-        status,
-        tag,
-        problem_id: problemId,
-      }
-      const response = await discussionsApi.getDiscussions(filters)
-      setDiscussions(response.discussions)
-      setHasMore(response.has_more)
-    } catch (error) {
-      console.error('Failed to fetch discussions:', error)
-      setLoadError(true)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
+    const fetchDiscussions = async () => {
+      setLoading(true)
+      setLoadError(false)
+      try {
+        const filters: DiscussionFilters = {
+          page,
+          limit: 20,
+          sort,
+          status,
+          tag,
+          problem_id: problemId,
+        }
+        const response = await discussionsApi.getDiscussions(filters)
+        setDiscussions(response.discussions)
+        setHasMore(response.has_more)
+      } catch (error) {
+        console.error('Failed to fetch discussions:', error)
+        setLoadError(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchDiscussions()
   }, [page, sort, status, tag, problemId])
 

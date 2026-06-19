@@ -18,7 +18,9 @@ export interface ContestProblem {
   id: string
   title: string
   difficulty: 'easy' | 'medium' | 'hard'
+  category: string
   points: number
+  order_index?: number
   accepted_count: number
   submission_count: number
 }

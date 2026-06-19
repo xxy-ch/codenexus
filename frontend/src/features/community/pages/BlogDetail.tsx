@@ -45,7 +45,7 @@ export function BlogDetail() {
   }, [slug])
 
   useEffect(() => {
-    if (update && article) {
+    if (update) {
       const newComment: ArticleComment = {
         id: update.comment_id,
         article_id: update.article_id,

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Folder, History, Search, Tag, X } from 'lucide-react'
 import { searchApi } from '@/features/search/services/searchApi'
 import type { SearchSuggestion } from '@/features/search/types/search'
 
@@ -90,11 +91,11 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
   const getSuggestionIcon = (type: string) => {
     switch (type) {
       case 'tag':
-        return <span className="material-icons text-sm text-text-muted">label</span>
+        return <Tag className="h-4 w-4 text-text-muted" />
       case 'category':
-        return <span className="material-icons text-sm text-text-muted">folder</span>
+        return <Folder className="h-4 w-4 text-text-muted" />
       default:
-        return <span className="material-icons text-sm text-text-muted">history</span>
+        return <History className="h-4 w-4 text-text-muted" />
     }
   }
 
@@ -103,7 +104,7 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
           <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
-            <span className="material-icons text-xl">search</span>
+            <Search className="h-5 w-5" />
           </span>
           <input
             ref={inputRef}
@@ -127,7 +128,7 @@ export function SearchBar({ placeholder = 'Search problems and discussions...', 
                 }}
                 className="p-1 text-text-muted hover:text-foreground transition-colors"
               >
-                <span className="material-icons text-lg">close</span>
+                <X className="h-4 w-4" />
               </button>
             )}
             <kbd className="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold text-text-muted bg-secondary border border-border rounded">

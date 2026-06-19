@@ -234,12 +234,20 @@ impl ContestService {
             }
         }
 
+        let category = req
+            .category
+            .as_deref()
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or("默认");
+
         let contest_problem = sqlx::query_as::<_, ContestProblem>(
             r#"
-            INSERT INTO contest_problems (contest_id, problem_id, points, order_index)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO contest_problems (contest_id, problem_id, category, points, order_index)
+            VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (contest_id, problem_id)
             DO UPDATE SET
+                category = EXCLUDED.category,
                 points = EXCLUDED.points,
                 order_index = EXCLUDED.order_index
             RETURNING *
@@ -247,6 +255,7 @@ impl ContestService {
         )
         .bind(contest_id)
         .bind(req.problem_id)
+        .bind(category)
         .bind(req.points.unwrap_or(100))
         .bind(req.order_index.unwrap_or(0))
         .fetch_one(&self.pool)
@@ -264,6 +273,7 @@ impl ContestService {
                 cp.problem_id,
                 p.title,
                 p.difficulty,
+                cp.category,
                 cp.points,
                 cp.order_index
             FROM contest_problems cp

@@ -26,50 +26,50 @@ export function BlogList() {
   const tag = searchParams.get('tag') || undefined
   const sort = searchParams.get('sort') || undefined
 
-  const fetchArticles = async () => {
-    setLoading(true)
-    setLoadError(false)
-    try {
-      if (sort === 'trending') {
-        const trending = await blogApi.getTrendingArticles(12)
-        setArticles(trending)
-        setHasMore(false)
-      } else if (sort === 'featured') {
-        const featuredOnly = await blogApi.getFeaturedArticles(12)
-        setArticles(featuredOnly)
-        setHasMore(false)
-      } else {
-        const filters: ArticleFilters = {
-          page,
-          limit: 12,
-          category,
-          tag,
-          sort: sort as ArticleFilters['sort'],
-        }
-        const response = await blogApi.getArticles(filters)
-        setArticles(response.articles)
-        setHasMore(response.has_more ?? page < Math.ceil(response.total / Math.max(1, response.limit)))
-      }
-
-      if (page === 1 && !category && !tag && !sort) {
-        const [featured, cats, tags] = await Promise.all([
-          blogApi.getFeaturedArticles(3),
-          blogApi.getCategories(),
-          blogApi.getPopularTags(10),
-        ])
-        setFeaturedArticles(featured)
-        setCategories(cats)
-        setPopularTags(tags)
-      }
-    } catch (error) {
-      console.error('Failed to fetch articles:', error)
-      setLoadError(true)
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
+    const fetchArticles = async () => {
+      setLoading(true)
+      setLoadError(false)
+      try {
+        if (sort === 'trending') {
+          const trending = await blogApi.getTrendingArticles(12)
+          setArticles(trending)
+          setHasMore(false)
+        } else if (sort === 'featured') {
+          const featuredOnly = await blogApi.getFeaturedArticles(12)
+          setArticles(featuredOnly)
+          setHasMore(false)
+        } else {
+          const filters: ArticleFilters = {
+            page,
+            limit: 12,
+            category,
+            tag,
+            sort: sort as ArticleFilters['sort'],
+          }
+          const response = await blogApi.getArticles(filters)
+          setArticles(response.articles)
+          setHasMore(response.has_more ?? page < Math.ceil(response.total / Math.max(1, response.limit)))
+        }
+
+        if (page === 1 && !category && !tag && !sort) {
+          const [featured, cats, tags] = await Promise.all([
+            blogApi.getFeaturedArticles(3),
+            blogApi.getCategories(),
+            blogApi.getPopularTags(10),
+          ])
+          setFeaturedArticles(featured)
+          setCategories(cats)
+          setPopularTags(tags)
+        }
+      } catch (error) {
+        console.error('Failed to fetch articles:', error)
+        setLoadError(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchArticles()
   }, [page, category, tag, sort])
 

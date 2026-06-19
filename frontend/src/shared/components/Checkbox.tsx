@@ -19,7 +19,8 @@ export function Checkbox({
   id,
   ...props
 }: CheckboxProps) {
-  const checkboxId = id || React.useId()
+  const generatedId = React.useId()
+  const checkboxId = id || generatedId
   const isIndeterminate = checked === 'indeterminate'
   const isChecked = checked === true
 

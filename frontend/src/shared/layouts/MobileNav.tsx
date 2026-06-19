@@ -32,7 +32,7 @@ export function MobileNav() {
               className={cn(
                 'flex min-h-12 flex-col items-center justify-center gap-1 px-3 py-2 rounded-[10px] transition-all duration-200 min-w-0 flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
                 isActive
-                  ? 'text-primary bg-primary/10 shadow-[inset_0_0_0_1px_rgba(94,106,210,0.16)]'
+                  ? 'text-primary bg-primary/10 shadow-[inset_0_0_0_1px_rgba(159,79,36,0.16)]'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Columns2, Eye, Pencil } from 'lucide-react'
 import { MarkdownEditor } from './MarkdownEditor'
 import { MarkdownPreview } from './MarkdownPreview'
 
@@ -38,7 +39,7 @@ export function EditorWithPreview({
                 : 'text-text-muted hover:text-foreground hover:bg-secondary'
             }`}
           >
-            <span className="material-icons text-[18px] align-middle mr-1">edit</span>
+            <Pencil className="mr-1 inline h-4 w-4 align-middle" />
             Edit
           </button>
           <button
@@ -49,7 +50,7 @@ export function EditorWithPreview({
                 : 'text-text-muted hover:text-foreground hover:bg-secondary'
             }`}
           >
-            <span className="material-icons text-[18px] align-middle mr-1">view_column</span>
+            <Columns2 className="mr-1 inline h-4 w-4 align-middle" />
             Split
           </button>
           <button
@@ -60,7 +61,7 @@ export function EditorWithPreview({
                 : 'text-text-muted hover:text-foreground hover:bg-secondary'
             }`}
           >
-            <span className="material-icons text-[18px] align-middle mr-1">visibility</span>
+            <Eye className="mr-1 inline h-4 w-4 align-middle" />
             Preview
           </button>
         </div>

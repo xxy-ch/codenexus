@@ -26,7 +26,7 @@ export function ClassManagement() {
     queryFn: () => classesService.getClasses(page, limit),
   });
 
-  const classes = data?.classes || [];
+  const classes = useMemo(() => data?.classes ?? [], [data?.classes]);
   const total = data?.total || 0;
   const totalPages = Math.max(1, Math.ceil(total / limit));
 

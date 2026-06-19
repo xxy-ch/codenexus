@@ -32,6 +32,8 @@ interface DeleteFlagPayload {
 
 const FEATURE_QUERY_KEY = ['features'] as const
 
+export type FeaturePackageItem = SetFlagPayload
+
 /**
  * Resolves whether a feature is enabled for the current user context.
  *
@@ -86,6 +88,7 @@ export function useSetFeatureFlag() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...FEATURE_QUERY_KEY, 'resolved'] })
       queryClient.invalidateQueries({ queryKey: [...FEATURE_QUERY_KEY, 'registry'] })
+      queryClient.invalidateQueries({ queryKey: FEATURE_QUERY_KEY })
     },
   })
 }
@@ -110,6 +113,13 @@ export function useDeleteFeatureFlag() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...FEATURE_QUERY_KEY, 'resolved'] })
       queryClient.invalidateQueries({ queryKey: [...FEATURE_QUERY_KEY, 'registry'] })
+      queryClient.invalidateQueries({ queryKey: FEATURE_QUERY_KEY })
     },
   })
+}
+
+export async function importFeaturePackage(items: FeaturePackageItem[]) {
+  await Promise.all(
+    items.map(({ slug, ...body }) => api.post(`/features/${slug}/flags`, body)),
+  )
 }

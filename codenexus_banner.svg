@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" role="img" aria-labelledby="title desc">
+  <title id="title">CodeNexus</title>
+  <desc id="desc">Black geometric CodeNexus logo on a warm paper background.</desc>
+  <defs>
+    <radialGradient id="paper" cx="50%" cy="40%" r="72%">
+      <stop offset="0" stop-color="#fbf7ef"/>
+      <stop offset="0.62" stop-color="#f4efe7"/>
+      <stop offset="1" stop-color="#e9e1d6"/>
+    </radialGradient>
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#2a2119" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+  <rect width="1254" height="1254" fill="url(#paper)"/>
+  <g fill="#111" filter="url(#soft-shadow)">
+    <path d="M399 402h-22L254 525c-14 14-14 37 0 51l123 123h22v-73l-84-76 84-76z"/>
+    <path d="M853 402h22l123 123c14 14 14 37 0 51L875 699h-22v-73l84-76-84-76z"/>
+    <path d="M499 389h113l127 194V438h54v235H685L560 481h-47c-14 0-25 11-25 25v70c0 14 11 25 25 25h50l-54 72h-35c-39 0-70-31-70-70V459c0-39 31-70 70-70z"/>
+    <path d="M490 740l142-165 26 28-142 165z"/>
+    <path d="M682 438l60-73 23 23-60 73z"/>
+    <circle cx="499" cy="731" r="42"/>
+    <circle cx="764" cy="342" r="42"/>
+  </g>
+  <text x="627" y="958" text-anchor="middle" fill="#111"
+        font-family="Galaxie Copernicus, Helvetica Neue, Arial, sans-serif"
+        font-size="126" font-weight="300" letter-spacing="0">CodeNexus</text>
+</svg>

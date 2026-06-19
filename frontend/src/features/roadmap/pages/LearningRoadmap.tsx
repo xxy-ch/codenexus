@@ -17,8 +17,8 @@ interface RoadmapGraphNode {
   color: string
   bg: string
   dot: string
-  left: string
-  top: string
+  x: number
+  y: number
 }
 
 interface RoadmapEdge {
@@ -44,8 +44,8 @@ const getNodesAndEdges = (completion: number): { nodes: RoadmapGraphNode[]; edge
       color: 'text-status-accepted',
       bg: 'bg-status-accepted/10',
       dot: 'text-status-accepted',
-      left: '50%',
-      top: '8%',
+      x: 50,
+      y: 18,
     },
     {
       id: 'medium-ds',
@@ -56,8 +56,8 @@ const getNodesAndEdges = (completion: number): { nodes: RoadmapGraphNode[]; edge
       color: 'text-primary',
       bg: 'bg-primary/10',
       dot: 'text-primary',
-      left: '28%',
-      top: '44%',
+      x: 28,
+      y: 50,
     },
     {
       id: 'medium-algo',
@@ -68,8 +68,8 @@ const getNodesAndEdges = (completion: number): { nodes: RoadmapGraphNode[]; edge
       color: 'text-amber-500',
       bg: 'bg-amber-500/10',
       dot: 'text-amber-500',
-      left: '72%',
-      top: '44%',
+      x: 72,
+      y: 50,
     },
     {
       id: 'advanced',
@@ -80,16 +80,16 @@ const getNodesAndEdges = (completion: number): { nodes: RoadmapGraphNode[]; edge
       color: 'text-purple-500',
       bg: 'bg-purple-500/10',
       dot: 'text-purple-500',
-      left: '50%',
-      top: '80%',
+      x: 50,
+      y: 82,
     },
   ]
 
   const edges: RoadmapEdge[] = [
-    { id: 'e1', from: [50, 28], to: [28, 44], active: isBasicDone },
-    { id: 'e2', from: [50, 28], to: [72, 44], active: isBasicDone },
-    { id: 'e3', from: [28, 60], to: [50, 80], active: isMediumDsDone },
-    { id: 'e4', from: [72, 60], to: [50, 80], active: isMediumAlgoDone },
+    { id: 'e1', from: [50, 18], to: [28, 50], active: isBasicDone },
+    { id: 'e2', from: [50, 18], to: [72, 50], active: isBasicDone },
+    { id: 'e3', from: [28, 50], to: [50, 82], active: isMediumDsDone },
+    { id: 'e4', from: [72, 50], to: [50, 82], active: isMediumAlgoDone },
   ]
 
   return { nodes, edges }
@@ -110,7 +110,7 @@ function RoadmapCard({ node, onClick }: { node: RoadmapGraphNode; onClick: () =>
         isCurrent ? 'border-primary shadow-focus' :
         'border-border opacity-75 grayscale-[0.4]'
       )}
-      style={{ left: node.left, top: node.top }}
+      style={{ left: `${node.x}%`, top: `${node.y}%` }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">

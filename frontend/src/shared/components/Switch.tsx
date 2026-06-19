@@ -18,7 +18,8 @@ export function Switch({
   id,
   ...props
 }: SwitchProps) {
-  const switchId = id || React.useId()
+  const generatedId = React.useId()
+  const switchId = id || generatedId
 
   return (
     <div className={cn("flex items-center gap-2", className)}>

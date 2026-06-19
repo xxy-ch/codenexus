@@ -322,6 +322,7 @@ async fn seed_contest_for_freeze(
             contest.id,
             domain_contests::models::AddProblemToContestRequest {
                 problem_id,
+                category: Some("基础题".to_string()),
                 points: Some(100),
                 order_index: Some(0),
             },

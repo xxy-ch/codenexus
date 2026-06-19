@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '@/shared/store/authStore'
 import type { AuthResponse } from '@/shared/types/auth'
 import api, { request } from '@/shared/services/api'
+import { AxiosError } from 'axios'
 
 // Mock the request module
 vi.mock('@/shared/services/api', () => ({
@@ -39,6 +40,16 @@ const mockAuthResponse: AuthResponse = {
   user: mockUser,
   token: 'mock-access-token',
   refresh_token: 'mock-refresh-token',
+}
+
+function unauthorizedError() {
+  return new AxiosError('Unauthorized', undefined, undefined, undefined, {
+    status: 401,
+    statusText: 'Unauthorized',
+    headers: {},
+    config: {} as never,
+    data: {},
+  })
 }
 
 describe('useAuthStore', () => {
@@ -164,7 +175,7 @@ describe('useAuthStore', () => {
       isAuthenticated: true,
     })
 
-    vi.mocked(request).mockRejectedValueOnce(new Error('Unauthorized'))
+    vi.mocked(request).mockRejectedValueOnce(unauthorizedError())
 
     await useAuthStore.getState().checkAuth()
 

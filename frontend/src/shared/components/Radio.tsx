@@ -26,7 +26,8 @@ export function RadioGroup({
   className,
   ...props
 }: RadioGroupProps) {
-  const groupName = name || React.useId()
+  const generatedName = React.useId()
+  const groupName = name || generatedName
 
   return (
     <div

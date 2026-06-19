@@ -1,18 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { CalendarDays, ChevronRight, Eye, FileText, Timer, Trophy } from 'lucide-react'
-import api from '@/shared/services/api'
-
-interface CreateContestPayload {
-  organization_id: number
-  campus_id?: number
-  name: string
-  description?: string
-  rules?: string
-  start_time: string
-  end_time: string
-  freeze_minutes?: number
-}
+import { CalendarDays, ChevronRight, Eye, FileText, Search, Timer, Trophy } from 'lucide-react'
+import { useProblems } from '@/features/problems/hooks/useProblems'
+import { contestsService, type CreateContestPayload } from '@/features/contests/services/contests'
+import type { Problem } from '@/features/problems/types/problems'
 
 const RULESETS = [
   {
@@ -34,10 +25,17 @@ const RULESETS = [
 
 const STEPS = [
   { id: 1, title: '基本信息', description: '竞赛名称、时间与组织信息' },
-  { id: 2, title: '题目配置', description: '创建后在竞赛详情中继续配置题目' },
+  { id: 2, title: '题目配置', description: '选择题目、分数和顺序' },
   { id: 3, title: '参赛者', description: '后续通过班级和报名页组织参赛范围' },
   { id: 4, title: '高级设置', description: '榜单冻结与可见性' },
 ]
+
+type ContestProblemDraft = {
+  problemId: string
+  category: string
+  points: number
+  orderIndex: number
+}
 
 function toUtcInputValue(value?: string) {
   if (!value) return ''
@@ -62,14 +60,33 @@ export function ContestWizard() {
     freeze_minutes: 0,
   })
   const [message, setMessage] = useState<string>('')
+  const [problemSearch, setProblemSearch] = useState('')
+  const [problemDifficulty, setProblemDifficulty] = useState<'all' | Problem['difficulty']>('all')
+  const [selectedProblems, setSelectedProblems] = useState<ContestProblemDraft[]>([])
+  const { data: problemData, isLoading: problemsLoading } = useProblems({
+    search: problemSearch,
+    difficulty: problemDifficulty,
+    limit: 100,
+    page: 1,
+  })
 
   const createMutation = useMutation({
     mutationFn: async (payload: CreateContestPayload) => {
-      const response = await api.post('/contests', payload)
-      return response.data
+      const contest = await contestsService.createContest(payload)
+      await Promise.all(
+        selectedProblems.map((problem) =>
+          contestsService.addProblem(contest.id, {
+            problem_id: Number(problem.problemId),
+            category: problem.category,
+            points: problem.points,
+            order_index: problem.orderIndex,
+          }),
+        ),
+      )
+      return contest
     },
     onSuccess: (data) => {
-      setMessage(`创建成功，竞赛 ID: ${data.id}`)
+      setMessage(`创建成功，竞赛 ID: ${data.id}，已配置 ${selectedProblems.length} 道题`)
     },
     onError: (error: any) => {
       setMessage(`创建失败: ${error?.response?.data?.message || error?.message || 'unknown error'}`)
@@ -84,6 +101,8 @@ export function ContestWizard() {
   }, [form.end_time, form.start_time])
 
   const selectedRuleset = RULESETS.find((item) => item.value === form.rules) ?? RULESETS[0]
+  const problems = problemData?.problems ?? []
+  const selectedProblemIds = new Set(selectedProblems.map((problem) => problem.problemId))
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -92,6 +111,32 @@ export function ContestWizard() {
       start_time: toUtcIsoString(form.start_time),
       end_time: toUtcIsoString(form.end_time),
     })
+  }
+
+  const toggleProblem = (problem: Problem) => {
+    setSelectedProblems((prev) => {
+      if (prev.some((item) => item.problemId === problem.id)) {
+        return prev.filter((item) => item.problemId !== problem.id)
+      }
+      return [
+        ...prev,
+        {
+          problemId: problem.id,
+          category: '默认',
+          points: problem.points || 100,
+          orderIndex: prev.length + 1,
+        },
+      ]
+    })
+  }
+
+  const updateSelectedProblem = (
+    problemId: string,
+    patch: Partial<Pick<ContestProblemDraft, 'category' | 'points' | 'orderIndex'>>,
+  ) => {
+    setSelectedProblems((prev) =>
+      prev.map((item) => (item.problemId === problemId ? { ...item, ...patch } : item)),
+    )
   }
 
   return (
@@ -304,6 +349,136 @@ export function ContestWizard() {
               </div>
             </section>
 
+            {/* Problems */}
+            <section className="space-y-6 border-t border-border pt-8">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">题目配置</h2>
+                <p className="mt-1 text-sm text-muted-foreground">选择题目并设置分数、出题顺序，发布时会同步写入竞赛。</p>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+                <div className="rounded-xl border border-border bg-muted/50 p-4">
+                  <div className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_160px]">
+                    <label className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <input
+                        value={problemSearch}
+                        onChange={(e) => setProblemSearch(e.target.value)}
+                        className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                        placeholder="搜索题目"
+                      />
+                    </label>
+                    <select
+                      value={problemDifficulty}
+                      onChange={(e) => setProblemDifficulty(e.target.value as typeof problemDifficulty)}
+                      className="rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+                    >
+                      <option value="all">全部难度</option>
+                      <option value="easy">简单</option>
+                      <option value="medium">中等</option>
+                      <option value="hard">困难</option>
+                    </select>
+                  </div>
+
+                  <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+                    {problemsLoading ? (
+                      <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+                        正在加载题库...
+                      </div>
+                    ) : problems.length === 0 ? (
+                      <div className="rounded-lg border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+                        没有匹配题目
+                      </div>
+                    ) : (
+                      problems.map((problem) => {
+                        const checked = selectedProblemIds.has(problem.id)
+                        return (
+                          <label
+                            key={problem.id}
+                            className="flex cursor-pointer items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm transition hover:border-primary/30"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => toggleProblem(problem)}
+                              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-medium text-foreground">{problem.title}</span>
+                              <span className="text-xs text-muted-foreground">
+                                #{problem.id} / {problem.difficulty} / {problem.points || 100} 分
+                              </span>
+                            </span>
+                          </label>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border bg-muted/50 p-4">
+                  <div className="mb-3 text-sm font-semibold text-foreground">
+                    已选题目 ({selectedProblems.length})
+                  </div>
+                  {selectedProblems.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
+                      暂未选择题目
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {selectedProblems.map((item) => {
+                        const problem = problems.find((p) => p.id === item.problemId)
+                        return (
+                          <div key={item.problemId} className="rounded-lg border border-border bg-card p-3">
+                            <div className="truncate text-sm font-medium text-foreground">
+                              {problem?.title ?? `题目 #${item.problemId}`}
+                            </div>
+                            <label className="mt-3 block space-y-1 text-xs text-muted-foreground">
+                              <span>分类</span>
+                              <input
+                                value={item.category}
+                                onChange={(e) =>
+                                  updateSelectedProblem(item.problemId, { category: e.target.value })
+                                }
+                                className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+                                placeholder="默认"
+                              />
+                            </label>
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                              <label className="space-y-1 text-xs text-muted-foreground">
+                                <span>顺序</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.orderIndex}
+                                  onChange={(e) =>
+                                    updateSelectedProblem(item.problemId, { orderIndex: Number(e.target.value) })
+                                  }
+                                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+                                />
+                              </label>
+                              <label className="space-y-1 text-xs text-muted-foreground">
+                                <span>分数</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  value={item.points}
+                                  onChange={(e) =>
+                                    updateSelectedProblem(item.problemId, { points: Number(e.target.value) })
+                                  }
+                                  className="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+
             {/* Visibility & Freeze */}
             <section className="space-y-6 border-t border-border pt-8">
               <div>
@@ -333,7 +508,7 @@ export function ContestWizard() {
                   <div className="rounded-lg border border-lime-500/30 bg-lime-500/5 p-4 text-xs text-lime-300">
                     <div className="font-semibold">赛后配置提示</div>
                     <ul className="mt-3 space-y-2 leading-6 text-lime-300/80">
-                      <li>创建成功后前往竞赛详情继续配置题目。</li>
+                      <li>题目会在发布时同步保存到竞赛。</li>
                       <li>参赛者范围可通过班级和报名页组织。</li>
                       <li>冻结分钟数会影响榜单最后阶段的展示。</li>
                     </ul>
@@ -346,7 +521,7 @@ export function ContestWizard() {
           <div className="flex flex-col gap-4 border-t border-border bg-muted/50 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <FileText className="h-4 w-4" />
-              {message ? <span>{message}</span> : <span>创建成功后再进入题目配置、参与者管理和细节设置。</span>}
+              {message ? <span>{message}</span> : <span>发布时会保存基本信息、规则、题目分数和顺序。</span>}
             </div>
 
             <div className="flex items-center gap-3">

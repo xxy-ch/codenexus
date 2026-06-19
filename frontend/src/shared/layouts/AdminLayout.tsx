@@ -1,7 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import {
   BookOpen,
-  Code2,
   Database,
   Edit,
   FileSearch,
@@ -57,8 +56,8 @@ export function AdminLayout() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
               <Link to="/" className="flex shrink-0 items-center gap-2.5 rounded-[9px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25">
-                <span className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(94,106,210,0.22)]">
-                  <Code2 className="h-4 w-4" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(159,79,36,0.22)]">
+                  <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-5 w-5 rounded-[4px]" />
                 </span>
                 <span className="font-semibold text-[15px] font-heading">CodeNexus</span>
               </Link>
@@ -73,7 +72,7 @@ export function AdminLayout() {
                       className={cn(
                         'flex h-9 items-center gap-1.5 px-3 rounded-[9px] text-[13px] font-medium transition-all duration-200 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
                         isActive
-                          ? 'bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(94,106,210,0.20)]'
+                          ? 'bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(159,79,36,0.20)]'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:-translate-y-0.5'
                       )}
                     >

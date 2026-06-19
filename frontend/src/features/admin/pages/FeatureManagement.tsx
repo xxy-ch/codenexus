@@ -1,16 +1,21 @@
-import { useQuery } from '@tanstack/react-query'
-import { Puzzle } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { PackageOpen, Puzzle } from 'lucide-react'
 import api from '@/shared/services/api'
 import {
+  importFeaturePackage,
   useFeatureRegistry,
   useSetFeatureFlag,
   useDeleteFeatureFlag,
+  type FeaturePackageItem,
   type FeatureRegistryEntry,
 } from '@/shared/services/featureGateway'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { FeatureToggle } from '@/shared/components/FeatureToggle'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { InlineError } from '@/shared/components/InlineError'
+import { Button } from '@/shared/components/Button'
+import { Textarea } from '@/shared/components/Textarea'
 import { Badge } from '@/shared/components/badge'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
@@ -32,16 +37,41 @@ interface FeatureFlagEntry {
 
 /** Determine which scopes a user can write to, per D-06. */
 function getWritableScopes(role: string): Scope[] {
-  switch (role) {
+  switch (role.toLowerCase()) {
     case 'root':
       return ['global', 'campus']
-    case 'campusAdmin':
+    case 'campusadmin':
       return ['campus', 'grade']
-    case 'gradeAdmin':
+    case 'gradeadmin':
       return ['grade']
     default:
       return []
   }
+}
+
+function parseFeaturePackage(value: string): FeaturePackageItem[] {
+  const parsed = JSON.parse(value)
+  const items = Array.isArray(parsed) ? parsed : parsed?.flags
+  if (!Array.isArray(items)) {
+    throw new Error('功能包格式错误')
+  }
+
+  return items.map((item) => {
+    if (
+      !item ||
+      typeof item.slug !== 'string' ||
+      typeof item.enabled !== 'boolean' ||
+      typeof item.scope !== 'string'
+    ) {
+      throw new Error('功能包条目格式错误')
+    }
+    return {
+      slug: item.slug,
+      enabled: item.enabled,
+      scope: item.scope,
+      scope_id: typeof item.scope_id === 'number' ? item.scope_id : undefined,
+    }
+  })
 }
 
 /** Fetch per-feature flag overrides for the admin matrix. */
@@ -83,7 +113,26 @@ export function FeatureManagement() {
   const { data: flagsMap } = useAdminFeatureMatrix(registry)
   const setFlag = useSetFeatureFlag()
   const deleteFlag = useDeleteFeatureFlag()
+  const queryClient = useQueryClient()
   const { user } = useAuth()
+  const [packageText, setPackageText] = useState('')
+  const [packageMessage, setPackageMessage] = useState('')
+
+  const importMutation = useMutation({
+    mutationFn: async (text: string) => {
+      const items = parseFeaturePackage(text)
+      await importFeaturePackage(items)
+      return items.length
+    },
+    onSuccess: (count) => {
+      setPackageText('')
+      setPackageMessage(`已导入 ${count} 条覆盖`)
+      queryClient.invalidateQueries({ queryKey: ['features'] })
+    },
+    onError: (err) => {
+      setPackageMessage(err instanceof Error ? err.message : '导入失败')
+    },
+  })
 
   const userRole = user?.role ?? 'student'
   const writableScopes = getWritableScopes(userRole)
@@ -156,6 +205,12 @@ export function FeatureManagement() {
     }
   }
 
+  const handleImport = (e: FormEvent) => {
+    e.preventDefault()
+    if (!packageText.trim()) return
+    importMutation.mutate(packageText)
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -164,6 +219,33 @@ export function FeatureManagement() {
           管理系统功能的启用/禁用和作用域覆盖
         </p>
       </div>
+
+      <form onSubmit={handleImport} className="rounded-xl border border-border/40 bg-background/60 p-4 shadow-sm backdrop-blur-xl">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
+          <div className="flex min-w-48 items-center gap-2 text-sm font-semibold text-foreground">
+            <PackageOpen className="h-4 w-4 text-primary" />
+            功能包导入
+          </div>
+          <div className="flex-1 space-y-2">
+            <Textarea
+              value={packageText}
+              onChange={(e) => setPackageText(e.target.value)}
+              placeholder='{"flags":[{"slug":"plagiarism","enabled":true,"scope":"global"}]}'
+              className="min-h-24 font-mono text-xs"
+            />
+            {packageMessage && (
+              <div className="text-xs text-muted-foreground">{packageMessage}</div>
+            )}
+          </div>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={importMutation.isPending || !packageText.trim()}
+          >
+            导入
+          </Button>
+        </div>
+      </form>
 
       <div className="overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-sm">
         <Table>
@@ -204,7 +286,8 @@ export function FeatureManagement() {
                     const effectiveEnabled = override
                       ? override.enabled
                       : feature.default_enabled
-                    const isWritable = writableScopes.includes(col.scope)
+                    const hasScopeTarget = col.scope === 'global' || col.scopeId != null
+                    const isWritable = writableScopes.includes(col.scope) && hasScopeTarget
                     return (
                       <TableCell key={col.scope} className="align-top pt-4">
                         <div className="flex justify-center">

@@ -51,7 +51,7 @@ export function AssignmentReport() {
     queryFn: () => classesService.getClasses(1, 50),
   })
 
-  const classes = data?.classes || []
+  const classes = useMemo(() => data?.classes ?? [], [data?.classes])
 
   const { data: assignmentRows = [] } = useQuery({
     queryKey: ['assignment-report-rows', classes.map((c) => c.id)],

@@ -101,7 +101,7 @@ export function MonacoEditor({
         'editor.background': '#08090a',
         'editor.foreground': '#d4d4d4',
         'editor.lineHighlightBackground': '#141618',
-        'editorCursor.foreground': '#5e6ad2',
+        'editorCursor.foreground': '#9f4f24',
         'editor.selectionBackground': '#262930',
         'editor.inactiveSelectionBackground': '#1b1d20',
       },

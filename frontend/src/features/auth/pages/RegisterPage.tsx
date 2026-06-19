@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/Ca
 import { Loading } from '@/shared/components/Loading'
 import { FormSkeleton } from '@/shared/components/FormSkeleton'
 import { Checkbox } from '@/shared/components/Checkbox'
-import { Code2, AlertCircle, UserPlus } from 'lucide-react'
+import { AlertCircle, UserPlus } from 'lucide-react'
 import type { RegisterRequest } from '@/shared/types/auth'
 
 export function RegisterPage() {
@@ -126,7 +126,7 @@ export function RegisterPage() {
         {/* Logo & Brand Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-primary rounded-xl shadow-lg shadow-primary/25 mb-6">
-            <Code2 className="w-7 h-7 text-primary-foreground" />
+            <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-9 w-9 rounded-[6px]" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
             加入 CodeNexus

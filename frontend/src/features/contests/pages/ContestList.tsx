@@ -58,7 +58,7 @@ export function ContestList() {
     <div className="space-y-6">
       {/* Hero Header — ClickHouse high-energy */}
       <div className="relative overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-sm">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(94,106,210,0.15),_transparent_40%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(159,79,36,0.15),_transparent_40%)]" />
         <div className="relative px-6 py-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
@@ -150,7 +150,7 @@ export function ContestList() {
                 className={cn(
                   'rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition button-press',
                   statusFilter === 'upcoming'
-                    ? 'bg-[#5e6ad2] text-white shadow-sm'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >

@@ -266,7 +266,7 @@ export function DashboardEnhanced() {
 
         <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-card glass-interactive hover-lift transition-all duration-300">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shadow-[0_0_12px_rgba(94,106,210,0.2)]">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shadow-[0_0_12px_rgba(159,79,36,0.2)]">
               <Upload className="w-5 h-5 text-primary" />
             </div>
             <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">总提交</span>

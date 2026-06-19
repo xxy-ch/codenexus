@@ -47,7 +47,7 @@ export function ProblemManagement() {
       }),
   })
 
-  const problems = data?.problems || []
+  const problems = useMemo(() => data?.problems ?? [], [data?.problems])
   const total = data?.total || 0
   const totalPages = Math.max(1, Math.ceil(total / 20))
 

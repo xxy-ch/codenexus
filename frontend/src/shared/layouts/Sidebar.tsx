@@ -5,7 +5,6 @@ import { cn } from '@/shared/lib/utils'
 import { useFeatureEnabled } from '@/shared/hooks/useFeatureGate'
 import { isAdmin, isTeacherOrAbove, roleLabel, type Role } from '@/shared/types/auth'
 import {
-  Code2,
   LayoutDashboard,
   Terminal,
   History,
@@ -104,8 +103,8 @@ export function Sidebar() {
       {/* Logo area */}
       <div className="h-14 flex items-center justify-between px-3 border-b border-sidebar-border flex-shrink-0 overflow-hidden">
         <div className="flex items-center">
-          <div className="h-8 w-8 bg-primary rounded-[8px] flex items-center justify-center shadow-[0_8px_18px_rgba(94,106,210,0.24)] flex-shrink-0">
-            <Code2 className="w-4 h-4 text-primary-foreground" strokeWidth={2.25} />
+          <div className="h-8 w-8 bg-primary rounded-[8px] flex items-center justify-center shadow-[0_8px_18px_rgba(159,79,36,0.24)] flex-shrink-0">
+            <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-5 w-5 rounded-[4px]" />
           </div>
           {!isCollapsed && (
             <span className="ml-3 text-[15px] font-semibold text-sidebar-foreground font-heading">
@@ -131,7 +130,7 @@ export function Sidebar() {
             className="p-1.5 rounded-[8px] text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-all duration-200"
             title="展开侧边栏"
           >
-            <Code2 className="w-4 h-4 text-primary" />
+            <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-5 w-5 rounded-[4px]" />
           </button>
         </div>
       )}
@@ -151,7 +150,7 @@ export function Sidebar() {
                   'relative flex h-9 items-center rounded-[9px] text-[13px] font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25',
                   isCollapsed ? 'justify-center mx-1' : 'gap-2.5 px-2.5',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-primary shadow-[inset_0_0_0_1px_rgba(94,106,210,0.14),0_6px_14px_rgba(94,106,210,0.08)]'
+                    ? 'bg-sidebar-accent text-sidebar-primary shadow-[inset_0_0_0_1px_rgba(159,79,36,0.14),0_6px_14px_rgba(159,79,36,0.08)]'
                     : 'text-sidebar-foreground/68 hover:bg-sidebar-accent/75 hover:text-sidebar-accent-foreground hover:translate-x-0.5'
                 )}
               >

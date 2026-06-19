@@ -6,15 +6,20 @@ import { Button } from '@/shared/components/Button'
 import { cn } from '@/shared/lib/utils'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { InlineError } from '@/shared/components/InlineError'
-import { ArrowLeft, BarChart3, Play, UserCheck, CircleCheck, Share2, Calendar, Flame } from 'lucide-react'
+import { ArrowLeft, BarChart3, Play, UserCheck, CircleCheck, Share2, Calendar, Flame, Save, Trash2 } from 'lucide-react'
 import { ContestStats } from '@/features/contests/components/ContestStats'
 import { ContestProblemList } from '@/features/contests/components/ContestProblemList'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import { useProblems } from '@/features/problems/hooks/useProblems'
+import { isTeacherOrAbove } from '@/shared/types/auth'
 
 interface ContestProblem {
   id: string
   title: string
   difficulty: 'easy' | 'medium' | 'hard'
+  category: string
   points: number
+  order_index?: number
   accepted_count: number
   submission_count: number
 }
@@ -87,6 +92,13 @@ export function ContestDetail() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [countdown, setCountdown] = useState('')
+  const [problemId, setProblemId] = useState('')
+  const [problemCategory, setProblemCategory] = useState('默认')
+  const [problemPoints, setProblemPoints] = useState(100)
+  const [problemOrder, setProblemOrder] = useState(1)
+  const [problemMessage, setProblemMessage] = useState('')
+  const { user } = useAuth()
+  const canManageContest = user?.role ? isTeacherOrAbove(user.role) : false
 
   const { data: contest, isLoading, error, refetch } = useQuery({
     queryKey: ['contest', contestId],
@@ -94,6 +106,8 @@ export function ContestDetail() {
     enabled: !!contestId,
     refetchInterval: 30000,
   })
+
+  const { data: problemData } = useProblems({ limit: 100, page: 1 })
 
   // 注册竞赛
   const registerMutation = useMutation({
@@ -111,6 +125,33 @@ export function ContestDetail() {
       if (contest?.problems && contest.problems.length > 0) {
         navigate(`/contests/${contestId}/problems/${contest.problems[0].id}/solve`)
       }
+    },
+  })
+
+  const saveProblemMutation = useMutation({
+    mutationFn: () => contestsService.addProblem(contestId!, {
+      problem_id: Number(problemId),
+      category: problemCategory.trim() || '默认',
+      points: problemPoints,
+      order_index: problemOrder,
+    }),
+    onSuccess: () => {
+      setProblemMessage('题目配置已保存')
+      queryClient.invalidateQueries({ queryKey: ['contest', contestId] })
+    },
+    onError: (error: any) => {
+      setProblemMessage(`保存失败: ${error?.response?.data?.message || error?.message || 'unknown error'}`)
+    },
+  })
+
+  const removeProblemMutation = useMutation({
+    mutationFn: (id: string) => contestsService.removeProblem(contestId!, id),
+    onSuccess: () => {
+      setProblemMessage('题目已移除')
+      queryClient.invalidateQueries({ queryKey: ['contest', contestId] })
+    },
+    onError: (error: any) => {
+      setProblemMessage(`移除失败: ${error?.response?.data?.message || error?.message || 'unknown error'}`)
     },
   })
 
@@ -176,12 +217,20 @@ export function ContestDetail() {
   const statusConfig = STATUS_CONFIG[contest.status]
   const difficultyConfig = DIFFICULTY_CONFIG[contest.difficulty]
   const isLive = contest.status === 'ongoing'
+  const allProblems = problemData?.problems ?? []
+
+  const editProblem = (problem: ContestProblem, index: number) => {
+    setProblemId(problem.id)
+    setProblemCategory(problem.category || '默认')
+    setProblemPoints(problem.points || 100)
+    setProblemOrder(problem.order_index || index + 1)
+  }
 
   return (
     <div className="space-y-5">
       {/* Hero Header — ClickHouse high-energy */}
       <div className="relative overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl shadow-sm">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(94,106,210,0.15),_transparent_40%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(159,79,36,0.15),_transparent_40%)]" />
         {isLive && (
           <div className="h-[2px] bg-gradient-to-r from-status-accepted via-primary to-status-accepted animate-pulse" />
         )}
@@ -363,6 +412,101 @@ export function ContestDetail() {
 
       {/* Problems List — extracted to ContestProblemList component */}
       <ContestProblemList problems={contest.problems} contestId={contestId!} />
+
+      {canManageContest && (
+        <div className="bg-background/60 backdrop-blur-xl border border-border/40 rounded-xl p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">
+                题目管理
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">添加题目，或调整分类、分数和顺序。</p>
+            </div>
+            {problemMessage && <span className="text-[13px] text-muted-foreground">{problemMessage}</span>}
+          </div>
+
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1.4fr)_minmax(120px,0.7fr)_100px_100px_auto]">
+            <select
+              value={problemId}
+              onChange={(e) => setProblemId(e.target.value)}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              aria-label="选择题目"
+            >
+              <option value="">选择题目</option>
+              {allProblems.map((problem) => (
+                <option key={problem.id} value={problem.id}>
+                  #{problem.id} {problem.title}
+                </option>
+              ))}
+            </select>
+            <input
+              value={problemCategory}
+              onChange={(e) => setProblemCategory(e.target.value)}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              placeholder="分类"
+              aria-label="题目分类"
+            />
+            <input
+              type="number"
+              min="1"
+              value={problemPoints}
+              onChange={(e) => setProblemPoints(Number(e.target.value))}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              aria-label="题目分数"
+            />
+            <input
+              type="number"
+              min="1"
+              value={problemOrder}
+              onChange={(e) => setProblemOrder(Number(e.target.value))}
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+              aria-label="题目顺序"
+            />
+            <Button
+              type="button"
+              size="sm"
+              disabled={!problemId || saveProblemMutation.isPending}
+              onClick={() => saveProblemMutation.mutate()}
+              className="rounded-lg"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              保存
+            </Button>
+          </div>
+
+          {contest.problems.length > 0 && (
+            <div className="mt-4 divide-y divide-border/40 rounded-lg border border-border/40">
+              {contest.problems.map((problem, index) => (
+                <div key={problem.id} className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold text-foreground">
+                      {index + 1}. {problem.title}
+                    </div>
+                    <div className="mt-1 text-[13px] text-muted-foreground">
+                      {problem.category || '默认'} / {problem.points} 分
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => editProblem(problem, index)}>
+                      编辑
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeProblemMutation.mutate(problem.id)}
+                      disabled={removeProblemMutation.isPending}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      移除
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Contest Statistics — oversized numbers */}
       <div className="bg-background/60 backdrop-blur-xl border border-border/40 rounded-xl p-5 shadow-sm">

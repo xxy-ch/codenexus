@@ -17,7 +17,7 @@
 /* ─── shadcn/ui Theme Inline ──────────────────────────────────────────── */
 
 @theme inline {
-  --font-heading: "Outfit", "Geist Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-heading: "Galaxie Copernicus", "Outfit", "Geist Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --font-sans: "Geist Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   --font-serif: "Galaxie Copernicus", "Tiempos Text", "Lora", "Merriweather", "Noto Serif SC", "Songti SC", "STSong", serif;
   --font-mono: "Maple Mono NF", "Maple Mono", "SF Mono", "JetBrains Mono", "Fira Code", Monaco, "Courier New", monospace;
@@ -77,12 +77,12 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 
   /* Gaussian blur shadow scale — frosted glass depth */
-  --shadow-whisper: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.05);
-  --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.055), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-elevated: 0 14px 36px rgba(15, 23, 42, 0.09), 0 2px 6px rgba(15, 23, 42, 0.06);
-  --shadow-prominent: 0 22px 54px rgba(15, 23, 42, 0.13), 0 8px 18px rgba(15, 23, 42, 0.08);
+  --shadow-whisper: 0 1px 2px rgba(76, 52, 36, 0.045), 0 1px 3px rgba(76, 52, 36, 0.055);
+  --shadow-card: 0 8px 24px rgba(76, 52, 36, 0.07), 0 1px 2px rgba(76, 52, 36, 0.045);
+  --shadow-elevated: 0 14px 36px rgba(76, 52, 36, 0.11), 0 2px 6px rgba(76, 52, 36, 0.07);
+  --shadow-prominent: 0 22px 54px rgba(76, 52, 36, 0.15), 0 8px 18px rgba(76, 52, 36, 0.09);
   --shadow-overlay: 0 16px 48px rgba(0, 0, 0, 0.24), 0 8px 16px rgba(0, 0, 0, 0.12);
-  --shadow-focus: 0 0 0 3px rgba(94, 106, 210, 0.22);
+  --shadow-focus: 0 0 0 3px rgba(159, 79, 36, 0.22);
 
   /* Glass effect tokens */
   --blur-sm: 8px;
@@ -94,80 +94,80 @@
 /* ─── Light Theme (Frosted Glass — warm paper white, subtle depth) ───── */
 
 :root {
-  /* Surface — warm off-white with very subtle warmth */
-  --background: #f7f8fa;
-  --foreground: #111827;
+  /* Surface — warm paper white with restrained retro depth */
+  --background: #f6efe3;
+  --foreground: #2b2118;
 
-  --card: rgba(255, 255, 255, 0.88);
-  --card-foreground: #111827;
+  --card: rgba(255, 251, 242, 0.88);
+  --card-foreground: #2b2118;
 
-  --popover: rgba(255, 255, 255, 0.96);
-  --popover-foreground: #111827;
+  --popover: rgba(255, 251, 242, 0.96);
+  --popover-foreground: #2b2118;
 
-  /* Primary — calm operational indigo; teal/amber carry runtime status. */
-  --primary: #5e6ad2;
-  --primary-foreground: #ffffff;
+  /* Primary — warm umber; teal/amber carry runtime status. */
+  --primary: #9f4f24;
+  --primary-foreground: #fff8ed;
 
-  --secondary: rgba(17, 24, 39, 0.04);
-  --secondary-foreground: #1f2937;
+  --secondary: rgba(92, 64, 42, 0.07);
+  --secondary-foreground: #3b2b1d;
 
-  --muted: rgba(17, 24, 39, 0.04);
-  --muted-foreground: #64748b;
+  --muted: rgba(92, 64, 42, 0.07);
+  --muted-foreground: #7a6a58;
 
-  --accent: rgba(20, 184, 166, 0.08);
-  --accent-foreground: #0f766e;
+  --accent: rgba(188, 111, 55, 0.12);
+  --accent-foreground: #8c3f1d;
 
   /* Destructive — warm red, not harsh pure red */
   --destructive: #d6362a;
 
   --border: rgba(15, 23, 42, 0.10);
   --input: rgba(15, 23, 42, 0.055);
-  --ring: #5e6ad2;
+  --ring: #9f4f24;
 
   /* Chart palette — harmonized with the warm theme */
-  --chart-1: #5e6ad2;
-  --chart-2: #0d9f8e;
-  --chart-3: #e8a317;
-  --chart-4: #6b6963;
-  --chart-5: #a8a6a0;
+  --chart-1: #9f4f24;
+  --chart-2: #2f8f83;
+  --chart-3: #d49321;
+  --chart-4: #6f5a46;
+  --chart-5: #aa9a84;
 
-  --radius: 0.75rem;
+  --radius: 0.625rem;
 
   /* Sidebar — slightly warmer than background for separation */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1f2937;
-  --sidebar-primary: #5e6ad2;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(94, 106, 210, 0.08);
-  --sidebar-accent-foreground: #27316f;
-  --sidebar-border: rgba(15, 23, 42, 0.08);
-  --sidebar-ring: #5e6ad2;
+  --sidebar: #fff8ed;
+  --sidebar-foreground: #3b2b1d;
+  --sidebar-primary: #9f4f24;
+  --sidebar-primary-foreground: #fff8ed;
+  --sidebar-accent: rgba(159, 79, 36, 0.10);
+  --sidebar-accent-foreground: #713612;
+  --sidebar-border: rgba(92, 64, 42, 0.12);
+  --sidebar-ring: #9f4f24;
 
   /* OJ Status — unified teal/amber/rose palette with consistent saturation */
-  --status-accepted: #0d9f8e;
+  --status-accepted: #2f8f83;
   --status-wrong: #d6362a;
-  --status-pending: #9c9a94;
-  --status-tle: #e8a317;
+  --status-pending: #9b8b76;
+  --status-tle: #d49321;
   --status-re: #8b5cf6;
 
   /* Difficulty — matching the status palette */
-  --difficulty-easy: #0d9f8e;
-  --difficulty-medium: #e8a317;
+  --difficulty-easy: #2f8f83;
+  --difficulty-medium: #d49321;
   --difficulty-hard: #d6362a;
 
   /* Extended surface tokens */
-  --background-alt: rgba(15, 23, 42, 0.025);
-  --background-subtle: rgba(15, 23, 42, 0.014);
-  --border-subtle: rgba(15, 23, 42, 0.06);
-  --border-strong: rgba(15, 23, 42, 0.16);
-  --text-secondary: #475569;
-  --text-tertiary: #94a3b8;
+  --background-alt: rgba(92, 64, 42, 0.035);
+  --background-subtle: rgba(92, 64, 42, 0.02);
+  --border-subtle: rgba(92, 64, 42, 0.08);
+  --border-strong: rgba(92, 64, 42, 0.18);
+  --text-secondary: #5c4a38;
+  --text-tertiary: #9b8b76;
 
   /* Glass effect variables */
-  --glass-bg: rgba(255, 255, 255, 0.76);
-  --glass-border: rgba(15, 23, 42, 0.09);
-  --glass-blur: 20px;
-  --glass-shadow: 0 10px 30px rgba(15, 23, 42, 0.07);
+  --glass-bg: rgba(255, 248, 237, 0.76);
+  --glass-border: rgba(92, 64, 42, 0.12);
+  --glass-blur: 16px;
+  --glass-shadow: 0 10px 30px rgba(76, 52, 36, 0.08);
 }
 
 /* ─── Dark Theme (Rich Warm Charcoal — layered depth, not flat black) ─── */
@@ -175,20 +175,19 @@
 .dark {
   /* Background — warm charcoal with depth, not pure black.
      #11100e reads as "rich dark" rather than "void" on OLED. */
-  --background: #0d1117;
+  --background: #18110c;
   --foreground: #f5f4f0;
 
   /* Cards — slightly lifted from background for visual hierarchy */
-  --card: rgba(17, 24, 39, 0.72);
+  --card: rgba(35, 26, 20, 0.76);
   --card-foreground: #f5f4f0;
 
-  --popover: rgba(17, 24, 39, 0.95);
+  --popover: rgba(35, 26, 20, 0.96);
   --popover-foreground: #f5f4f0;
 
-  /* Primary — slightly brighter in dark mode for visibility.
-     A touch more saturation helps it pop against dark surfaces. */
-  --primary: #7c89ff;
-  --primary-foreground: #ffffff;
+  /* Primary — warm copper, readable on charcoal. */
+  --primary: #d97745;
+  --primary-foreground: #1b120d;
 
   --secondary: rgba(245, 244, 240, 0.03);
   --secondary-foreground: #e8e7e2;
@@ -204,24 +203,24 @@
 
   --border: rgba(245, 244, 240, 0.09);
   --input: rgba(245, 244, 240, 0.04);
-  --ring: #7c89ff;
+  --ring: #d97745;
 
   /* Chart palette — brightened for dark mode legibility */
-  --chart-1: #7c89ff;
+  --chart-1: #d97745;
   --chart-2: #14b8a6;
   --chart-3: #fbbf24;
   --chart-4: #b8b6b0;
   --chart-5: #787671;
 
   /* Sidebar — slightly darker than main bg for layering */
-  --sidebar: #111827;
+  --sidebar: #211711;
   --sidebar-foreground: #e8e7e2;
-  --sidebar-primary: #7c89ff;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(124, 137, 255, 0.12);
+  --sidebar-primary: #d97745;
+  --sidebar-primary-foreground: #1b120d;
+  --sidebar-accent: rgba(217, 119, 69, 0.14);
   --sidebar-accent-foreground: #f5f4f0;
   --sidebar-border: rgba(245, 244, 240, 0.06);
-  --sidebar-ring: #7c89ff;
+  --sidebar-ring: #d97745;
 
   /* OJ Status — brightened for dark mode */
   --status-accepted: #14b8a6;
@@ -243,7 +242,7 @@
   --text-tertiary: #88867f;
 
   /* Glass effect variables - dark */
-  --glass-bg: rgba(24, 22, 19, 0.70);
+  --glass-bg: rgba(35, 26, 20, 0.70);
   --glass-border: rgba(245, 244, 240, 0.09);
   --glass-blur: 20px;
   --glass-shadow: rgba(0, 0, 0, 0.3) 0px 0px 0px 1px, rgba(0, 0, 0, 0.5) 0px 8px 32px;
@@ -401,7 +400,7 @@
 }
 
 .glass-interactive:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 248, 237, 0.84);
   border-color: color-mix(in srgb, var(--primary) 24%, var(--border));
   box-shadow: var(--shadow-elevated);
   transform: translateY(-2px);
@@ -460,11 +459,11 @@
 }
 
 .admin-readable-label {
-  color: #3b3730 !important;
+  color: #3b2b1d !important;
 }
 
 .admin-readable-muted {
-  color: #4f4a42 !important;
+  color: #5c4a38 !important;
 }
 
 .text-secondary {
@@ -752,6 +751,17 @@ h1, h2, h3, h4, h5, h6 {
 .tracking-tight,
 .tracking-tighter {
   letter-spacing: 0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
 }
 
 /* ─── Stagger Animation for Lists ────────────────────────────────────────── */

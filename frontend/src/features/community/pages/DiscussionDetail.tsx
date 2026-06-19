@@ -46,7 +46,7 @@ export function DiscussionDetail() {
   }, [id])
 
   useEffect(() => {
-    if (update && discussion) {
+    if (update) {
       const newReply: DiscussionReply = {
         id: update.reply_id,
         discussion_id: update.discussion_id,

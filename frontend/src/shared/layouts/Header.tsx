@@ -35,7 +35,7 @@ export function Header({ title, showSearch = true, actions }: HeaderProps) {
         <div className="h-5 w-px bg-border mx-1" />
 
         {actions || (
-          <button className="bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(94,106,210,0.22)] px-3.5 py-1.5 rounded-[8px] text-[13px] font-medium hover:bg-primary/92 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all flex items-center gap-1.5">
+          <button className="bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(159,79,36,0.22)] px-3.5 py-1.5 rounded-[8px] text-[13px] font-medium hover:bg-primary/92 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all flex items-center gap-1.5">
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">新建提交</span>
           </button>

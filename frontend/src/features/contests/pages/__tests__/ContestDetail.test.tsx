@@ -5,13 +5,50 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { ContestDetail } from '../ContestDetail'
 
+const { mockGetContestDetail, mockRegisterContest, mockEnterContest, mockAddProblem, mockRemoveProblem } = vi.hoisted(() => ({
+  mockGetContestDetail: vi.fn(),
+  mockRegisterContest: vi.fn(),
+  mockEnterContest: vi.fn(),
+  mockAddProblem: vi.fn(),
+  mockRemoveProblem: vi.fn(),
+}))
+
 // Mock the API service
 vi.mock('@/features/contests/services/contests', () => ({
   contestsService: {
-    getContestDetail: vi.fn(),
-    registerContest: vi.fn(),
-    enterContest: vi.fn(),
+    getContestDetail: mockGetContestDetail,
+    registerContest: mockRegisterContest,
+    enterContest: mockEnterContest,
+    addProblem: mockAddProblem,
+    removeProblem: mockRemoveProblem,
   },
+}))
+
+vi.mock('@/features/problems/hooks/useProblems', () => ({
+  useProblems: () => ({
+    data: {
+      problems: [
+        {
+          id: '1',
+          title: 'Two Sum',
+          description: '',
+          difficulty: 'easy',
+          tags: [],
+          time_limit: 1000,
+          memory_limit: 262144,
+          points: 10,
+          created_at: '',
+          updated_at: '',
+        },
+      ],
+    },
+  }),
+}))
+
+vi.mock('@/features/auth/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: { id: 'teacher-1', role: 'teacher' },
+  }),
 }))
 
 import { contestsService } from '@/features/contests/services/contests'
@@ -38,6 +75,7 @@ describe('ContestDetail', () => {
         id: '1',
         title: 'Two Sum',
         difficulty: 'easy',
+        category: '基础题',
         points: 10,
         accepted_count: 120,
         submission_count: 150,
@@ -46,6 +84,7 @@ describe('ContestDetail', () => {
         id: '2',
         title: 'Add Two Numbers',
         difficulty: 'medium',
+        category: '进阶题',
         points: 20,
         accepted_count: 45,
         submission_count: 80,
@@ -191,8 +230,8 @@ describe('ContestDetail', () => {
       renderComponent()
 
       await waitFor(() => {
-        expect(screen.getByText(/10.*分|points/i)).toBeInTheDocument()
-        expect(screen.getByText(/20.*分|points/i)).toBeInTheDocument()
+        expect(screen.getAllByText(/10.*分|points/i).length).toBeGreaterThanOrEqual(1)
+        expect(screen.getAllByText(/20.*分|points/i).length).toBeGreaterThanOrEqual(1)
       })
     })
 
@@ -220,6 +259,44 @@ describe('ContestDetail', () => {
 
       const problemLink = screen.getByText('Two Sum').closest('a')
       expect(problemLink).toHaveAttribute('href', '/contests/1/problems/1/solve')
+    })
+
+    it('教师可以保存题目分类配置', async () => {
+      const user = userEvent.setup()
+      vi.mocked(contestsService.getContestDetail).mockResolvedValue(mockContest)
+      vi.mocked(contestsService.addProblem).mockResolvedValue({
+        id: 1,
+        problem_id: 1,
+        title: 'Two Sum',
+        difficulty: 'easy',
+        category: '算法基础',
+        points: 30,
+        order_index: 2,
+      } as any)
+
+      renderComponent()
+
+      await waitFor(() => {
+        expect(screen.getByText('题目管理')).toBeInTheDocument()
+      })
+
+      await user.selectOptions(screen.getByLabelText('选择题目'), '1')
+      await user.clear(screen.getByLabelText('题目分类'))
+      await user.type(screen.getByLabelText('题目分类'), '算法基础')
+      await user.clear(screen.getByLabelText('题目分数'))
+      await user.type(screen.getByLabelText('题目分数'), '30')
+      await user.clear(screen.getByLabelText('题目顺序'))
+      await user.type(screen.getByLabelText('题目顺序'), '2')
+      await user.click(screen.getByRole('button', { name: /保存/ }))
+
+      await waitFor(() => {
+        expect(contestsService.addProblem).toHaveBeenCalledWith('1', {
+          problem_id: 1,
+          category: '算法基础',
+          points: 30,
+          order_index: 2,
+        })
+      })
     })
   })
 

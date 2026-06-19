@@ -61,6 +61,7 @@ pub struct ContestProblem {
     pub id: i64,
     pub contest_id: i64,
     pub problem_id: i64,
+    pub category: String,
     pub points: i32,
     pub order_index: i32,
     pub created_at: DateTime<Utc>,
@@ -69,6 +70,7 @@ pub struct ContestProblem {
 #[derive(Debug, Deserialize)]
 pub struct AddProblemToContestRequest {
     pub problem_id: i64,
+    pub category: Option<String>,
     pub points: Option<i32>,
     pub order_index: Option<i32>,
 }
@@ -79,6 +81,7 @@ pub struct ContestProblemDetail {
     pub problem_id: i64,
     pub title: String,
     pub difficulty: String,
+    pub category: String,
     pub points: i32,
     pub order_index: i32,
 }

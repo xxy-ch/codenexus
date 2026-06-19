@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CodeNexus">
+  <rect width="512" height="512" rx="96" fill="#fbf7ef"/>
+  <g fill="#111">
+    <path d="M154 163h-11L76 230c-8 8-8 21 0 29l67 67h11v-48l-43-34 43-34z"/>
+    <path d="M358 163h11l67 67c8 8 8 21 0 29l-67 67h-11v-48l43-34-43-34z"/>
+    <path d="M203 158h62l67 104v-79h45v143h-61l-67-103h-21c-8 0-14 6-14 14v38c0 8 6 14 14 14h29l-38 37h-9c-31 0-56-25-56-56v-56c0-31 25-56 56-56z"/>
+    <path d="M194 342l83-96 24 21-83 96z"/>
+    <path d="M292 184l39-48 23 19-39 48z"/>
+    <circle cx="194" cy="359" r="28"/>
+    <circle cx="354" cy="134" r="28"/>
+  </g>
+</svg>

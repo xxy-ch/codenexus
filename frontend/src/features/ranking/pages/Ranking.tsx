@@ -65,7 +65,10 @@ export function Ranking() {
     enabled: searchQuery.trim().length > 0,
   })
 
-  const displayUsers = searchQuery.trim().length > 0 ? searchResults?.users || [] : data?.users || []
+  const displayUsers = useMemo(
+    () => (searchQuery.trim().length > 0 ? searchResults?.users ?? [] : data?.users ?? []),
+    [data?.users, searchQuery, searchResults?.users]
+  )
   const topThree = useMemo(() => displayUsers.slice(0, 3), [displayUsers])
   const totalPages = Math.max(1, Math.ceil((data?.total || 0) / limit))
   const currentUserEntry = useMemo(
@@ -91,7 +94,7 @@ export function Ranking() {
     <div className="space-y-6">
       {/* PostHog warm hero banner */}
       <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(94,106,210,0.15),_transparent_40%)] px-6 py-8">
+        <div className="bg-[radial-gradient(circle_at_top_left,_rgba(159,79,36,0.15),_transparent_40%)] px-6 py-8">
           <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="space-y-3">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary">

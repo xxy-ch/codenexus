@@ -5,6 +5,7 @@ interface ContestProblem {
   id: string
   title: string
   difficulty: 'easy' | 'medium' | 'hard'
+  category: string
   points: number
   accepted_count: number
   submission_count: number
@@ -52,6 +53,9 @@ export function ContestProblemList({ problems, contestId }: ContestProblemListPr
                   <div className="flex items-center gap-3">
                     <span className={cn('rounded-full px-2.5 py-0.5 text-[13px] font-semibold border', cfg.bgColor, cfg.textColor, cfg.borderColor)}>
                       {cfg.label}
+                    </span>
+                    <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-[13px] font-semibold text-muted-foreground">
+                      {problem.category || '默认'}
                     </span>
                     <span className="text-[13px] font-semibold tabular-nums text-muted-foreground">{problem.points} 分</span>
                     <span className="text-[13px] font-semibold tabular-nums text-muted-foreground">通过率 {passRate}</span>

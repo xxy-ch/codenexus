@@ -15,6 +15,24 @@ export interface ContestsResponse {
   total: number
 }
 
+export interface CreateContestPayload {
+  organization_id: number
+  campus_id?: number
+  name: string
+  description?: string
+  rules?: string
+  start_time: string
+  end_time: string
+  freeze_minutes?: number
+}
+
+export interface ContestProblemPayload {
+  problem_id: number
+  category?: string
+  points?: number
+  order_index?: number
+}
+
 interface BackendContest {
   id: number
   organization_id: number
@@ -39,6 +57,7 @@ interface BackendContestProblem {
   problem_id: number
   title: string
   difficulty: 'easy' | 'medium' | 'hard' | string
+  category?: string | null
   points: number
   order_index: number
 }
@@ -130,6 +149,20 @@ function matchesContestFilters(contest: Contest, filters: ContestFilters): boole
 }
 
 export const contestsService = {
+  async createContest(payload: CreateContestPayload): Promise<BackendContest> {
+    const response = await api.post<BackendContest>('/contests', payload)
+    return response.data
+  },
+
+  async addProblem(contestId: string | number, payload: ContestProblemPayload): Promise<BackendContestProblem> {
+    const response = await api.post<BackendContestProblem>(`/contests/${contestId}/problems`, payload)
+    return response.data
+  },
+
+  async removeProblem(contestId: string | number, problemId: string | number): Promise<void> {
+    await api.delete(`/contests/${contestId}/problems/${problemId}`)
+  },
+
   async getContests(filters: ContestFilters = {}): Promise<ContestsResponse> {
     const page = Math.max(filters.page ?? 1, 1)
     const limit = Math.max(filters.limit ?? 20, 1)
@@ -198,7 +231,9 @@ export const contestsService = {
         id: String(problem.problem_id),
         title: problem.title,
         difficulty: normalizeDifficulty([{ difficulty: problem.difficulty }]),
+        category: problem.category || '默认',
         points: Number(problem.points ?? 0),
+        order_index: Number(problem.order_index ?? 0),
         accepted_count: 0,
         submission_count: 0,
       })),
