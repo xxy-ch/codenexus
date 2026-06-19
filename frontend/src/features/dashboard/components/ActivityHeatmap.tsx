@@ -14,11 +14,11 @@ export function ActivityHeatmap({ weeks, monthLabels, totalSubmissions, solvedTh
   const [selectedDay, setSelectedDay] = useState<{ dateKey: string; count: number; accepted: number } | null>(null)
 
   return (
-    <section className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-prominent glass-interactive hover-lift transition-all duration-300">
+    <section className="rounded-[8px] bg-card p-5">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-base font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary animate-pulse" />
+          <h2 className="font-cjk-heading text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
+            <Activity className="w-5 h-5 text-accent" />
             年度提交热力图
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -33,7 +33,7 @@ export function ActivityHeatmap({ weeks, monthLabels, totalSubmissions, solvedTh
           <div className="h-8 w-px bg-border" />
           <div className="text-right">
             <span className="text-[13px] text-muted-foreground uppercase tracking-widest block">本周已解决</span>
-            <span className="text-base font-bold text-primary">{solvedThisWeek} 题</span>
+            <span className="text-base font-bold text-foreground">{solvedThisWeek} 题</span>
           </div>
         </div>
       </div>
@@ -68,18 +68,18 @@ export function ActivityHeatmap({ weeks, monthLabels, totalSubmissions, solvedTh
                 <div key={wIdx} className="flex flex-col gap-[3px] flex-shrink-0">
                   {week.days.map((day, dIdx) => {
                     const count = day.count
-                    let bgClass = 'bg-white/[0.02] border border-white/[0.04]'
-                    if (count > 0 && count <= 2) bgClass = 'bg-primary/20 border border-primary/15 hover:bg-primary/30'
-                    else if (count > 2 && count <= 4) bgClass = 'bg-primary/45 border border-primary/25 hover:bg-primary/55'
-                    else if (count > 4 && count <= 6) bgClass = 'bg-primary/70 border border-primary/40 hover:bg-primary/80'
-                    else if (count > 6) bgClass = 'bg-primary border border-primary/50 shadow-sm shadow-primary/20 hover:opacity-90'
+                    let bgClass = 'bg-background'
+                    if (count > 0 && count <= 2) bgClass = 'bg-accent-wash hover:bg-accent-soft'
+                    else if (count > 2 && count <= 4) bgClass = 'bg-accent-soft hover:bg-accent/70'
+                    else if (count > 4 && count <= 6) bgClass = 'bg-accent/70 hover:bg-accent/85'
+                    else if (count > 6) bgClass = 'bg-accent hover:bg-accent/85'
 
                     return (
                       <div
                         key={dIdx}
                         onClick={() => setSelectedDay({ dateKey: day.dateKey, count, accepted: day.accepted })}
                         className={cn(
-                          'w-3 h-3 rounded-[2px] transition-all duration-150 hover:scale-130 hover:z-10 cursor-pointer',
+                          'w-3 h-3 rounded-[2px] cursor-pointer transition-colors duration-150',
                           bgClass
                         )}
                         title={`${day.dateKey}: ${count} 次提交 (${day.accepted} 次通过)`}
@@ -96,9 +96,9 @@ export function ActivityHeatmap({ weeks, monthLabels, totalSubmissions, solvedTh
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-t border-border-subtle pt-4 mt-2 gap-4">
         <div className="text-[13px] text-muted-foreground font-medium">
           {selectedDay ? (
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/15 text-foreground animate-fade-in-up">
-              📅 <strong className="text-primary">{selectedDay.dateKey}</strong>
-              <span>• 共 <strong>{selectedDay.count}</strong> 次提交</span>
+            <span className="inline-flex items-center gap-2 bg-background px-3 py-1 text-foreground animate-fade-in-up">
+              <strong>{selectedDay.dateKey}</strong>
+              <span>共 <strong>{selectedDay.count}</strong> 次提交</span>
               {selectedDay.count > 0 && (
                 <span className="text-status-accepted font-semibold">({selectedDay.accepted} 次通过)</span>
               )}
@@ -110,11 +110,11 @@ export function ActivityHeatmap({ weeks, monthLabels, totalSubmissions, solvedTh
 
         <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground font-medium self-end">
           <span>少</span>
-          <div className="w-2.5 h-2.5 rounded-[2px] bg-white/[0.02] border border-white/[0.04]" />
-          <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/20 border border-primary/15" />
-          <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/45 border border-primary/25" />
-          <div className="w-2.5 h-2.5 rounded-[2px] bg-primary/70 border border-primary/40" />
-          <div className="w-2.5 h-2.5 rounded-[2px] bg-primary border border-primary/50 shadow-sm shadow-primary/20" />
+          <div className="w-2.5 h-2.5 rounded-[2px] bg-background" />
+          <div className="w-2.5 h-2.5 rounded-[2px] bg-accent-wash" />
+          <div className="w-2.5 h-2.5 rounded-[2px] bg-accent-soft" />
+          <div className="w-2.5 h-2.5 rounded-[2px] bg-accent/70" />
+          <div className="w-2.5 h-2.5 rounded-[2px] bg-accent" />
           <span>多</span>
         </div>
       </div>

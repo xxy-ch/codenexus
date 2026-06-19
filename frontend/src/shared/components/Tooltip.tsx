@@ -59,8 +59,8 @@ export function Tooltip({
           role="tooltip"
           className={cn(
             "absolute z-50 px-3 py-1.5 text-xs font-medium text-foreground whitespace-nowrap",
-            "bg-background/90 backdrop-blur-xl border border-border/50 rounded-lg",
-            "shadow-elevated animate-fade-in",
+            "bg-background border border-border rounded-none",
+            "animate-fade-in",
             positionClasses[side],
             className
           )}
@@ -68,7 +68,7 @@ export function Tooltip({
           {content}
           <div
             className={cn(
-              "absolute w-2 h-2 bg-background/90 border-border/50 rotate-45",
+              "absolute w-2 h-2 bg-background border-border rotate-45",
               side === 'top' && "bottom-[-4px] left-1/2 -translate-x-1/2 border-r border-b",
               side === 'right' && "left-[-4px] top-1/2 -translate-y-1/2 border-b border-l",
               side === 'bottom' && "top-[-4px] left-1/2 -translate-x-1/2 border-t border-l",

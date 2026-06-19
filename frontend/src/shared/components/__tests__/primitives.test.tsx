@@ -10,16 +10,16 @@ describe('ui primitives', () => {
     const button = screen.getByRole('button', { name: 'Sign In' })
     expect(button).toHaveClass('bg-primary')
     expect(button).toHaveClass('text-primary-foreground')
-    expect(button).toHaveClass('rounded-[8px]')
+    expect(button).toHaveClass('rounded-none')
   })
 
   it('renders input with project surface and border classes', () => {
     render(<Input aria-label="Username" placeholder="1001" />)
 
     const input = screen.getByRole('textbox', { name: 'Username' })
-    expect(input).toHaveClass('bg-background/60')
-    expect(input).toHaveClass('border-border/40')
-    expect(input).toHaveClass('rounded-[8px]')
+    expect(input).toHaveClass('bg-background')
+    expect(input).toHaveClass('border-border')
+    expect(input).toHaveClass('rounded-none')
   })
 
   it('renders loading spinner without material ui progressbar', () => {

@@ -14,7 +14,7 @@ export function DetailSkeleton({ className }: DetailSkeletonProps) {
         <Skeleton className="h-4 w-2/3" />
       </div>
       {/* Content area */}
-      <Skeleton className="h-64 w-full rounded-xl" />
+      <Skeleton className="h-64 w-full rounded-[8px]" />
     </div>
   )
 }

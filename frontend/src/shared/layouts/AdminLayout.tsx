@@ -51,15 +51,15 @@ export function AdminLayout() {
     <div className="min-h-screen relative z-0 flex flex-col text-foreground bg-background">
       <AmbientBackground />
       {/* Admin Header */}
-      <header className="sticky top-0 z-10 bg-card/78 backdrop-blur-xl border-b border-border/60 shadow-whisper">
+      <header className="sticky top-0 z-10 bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-8">
-              <Link to="/" className="flex shrink-0 items-center gap-2.5 rounded-[9px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25">
-                <span className="flex h-8 w-8 items-center justify-center rounded-[8px] bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(159,79,36,0.22)]">
-                  <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-5 w-5 rounded-[4px]" />
+              <Link to="/" className="flex shrink-0 items-center gap-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30">
+                <span className="flex h-8 w-11 items-center justify-center">
+                  <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-7 w-11" />
                 </span>
-                <span className="font-semibold text-[15px] font-heading">CodeNexus</span>
+                <span className="text-[17px] font-normal font-english">CodeNexus</span>
               </Link>
               <nav className="hidden md:flex gap-1 overflow-x-auto [&::-webkit-scrollbar]:hidden">
                 {navigation.map((item) => {
@@ -70,10 +70,10 @@ export function AdminLayout() {
                       key={item.href}
                       to={item.href}
                       className={cn(
-                        'flex h-9 items-center gap-1.5 px-3 rounded-[9px] text-[13px] font-medium transition-all duration-200 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25',
+                        'flex h-9 items-center gap-1.5 px-3 text-[13px] font-medium transition-colors duration-150 whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30',
                         isActive
-                          ? 'bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(159,79,36,0.20)]'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:-translate-y-0.5'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       )}
                     >
                       <IconComponent className="h-4 w-4" strokeWidth={2} />
@@ -86,7 +86,7 @@ export function AdminLayout() {
             <div className="flex items-center gap-4">
               <Link
                 to="/dashboard"
-                className="rounded-[8px] px-2 py-1 text-[14px] text-muted-foreground hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-all"
+                className="border border-transparent px-2 py-1 text-[14px] text-muted-foreground hover:border-foreground hover:bg-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 transition-colors"
               >
                 返回用户界面
               </Link>

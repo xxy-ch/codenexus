@@ -13,7 +13,7 @@ export function FormSkeleton({ rows = 5, className }: FormSkeletonProps) {
       {Array.from({ length: rows }).map((_, i) => (
         <div key={`form-row-${i}`} className="space-y-2">
           <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-10 w-full rounded-xl" />
+          <Skeleton className="h-10 w-full rounded-[8px]" />
         </div>
       ))}
     </div>

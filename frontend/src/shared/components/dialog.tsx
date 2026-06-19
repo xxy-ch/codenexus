@@ -32,7 +32,7 @@ function DialogOverlay({
       data-slot="dialog-overlay"
       className={cn(
         "fixed inset-0 isolate z-50",
-        "bg-black/20 backdrop-blur-sm",
+        "bg-foreground/20",
         "duration-200",
         "data-open:animate-in data-open:fade-in-0",
         "data-closed:animate-out data-closed:fade-out-0",
@@ -58,10 +58,8 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 p-6 text-sm",
-          // Glass effect
-          "bg-background/80 backdrop-blur-xl",
-          "border border-border/50 rounded-xl",
-          "shadow-overlay",
+          "bg-background",
+          "border border-border rounded-[8px]",
           "text-foreground",
           // Animations
           "duration-200 outline-none",
@@ -118,8 +116,8 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-xl border-t border-border/50 p-4",
-        "bg-background/40 backdrop-blur-sm",
+        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-[8px] border-t border-border p-4",
+        "bg-card",
         "sm:flex-row sm:justify-end",
         className
       )}

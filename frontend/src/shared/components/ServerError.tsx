@@ -47,7 +47,7 @@ export function ServerError() {
         </div>
 
         {/* Error Info */}
-        <div className="mt-16 p-5 bg-destructive/5 border border-destructive/10 rounded-xl max-w-md mx-auto">
+        <div className="mt-16 mx-auto max-w-md rounded-[8px] border border-destructive/20 bg-background p-5">
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
             <div className="text-left">

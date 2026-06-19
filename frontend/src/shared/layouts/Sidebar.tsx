@@ -96,18 +96,18 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'bg-sidebar/95 backdrop-blur-xl border-r border-sidebar-border shadow-[1px_0_0_rgba(15,23,42,0.02)] flex-shrink-0 flex flex-col h-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10',
+        'hidden bg-sidebar border-r border-sidebar-border flex-shrink-0 lg:flex flex-col h-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] z-10',
         isCollapsed ? 'w-16' : 'w-[248px]'
       )}
     >
       {/* Logo area */}
       <div className="h-14 flex items-center justify-between px-3 border-b border-sidebar-border flex-shrink-0 overflow-hidden">
         <div className="flex items-center">
-          <div className="h-8 w-8 bg-primary rounded-[8px] flex items-center justify-center shadow-[0_8px_18px_rgba(159,79,36,0.24)] flex-shrink-0">
-            <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-5 w-5 rounded-[4px]" />
+          <div className="flex h-8 w-11 items-center justify-center flex-shrink-0">
+            <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-7 w-11" />
           </div>
           {!isCollapsed && (
-            <span className="ml-3 text-[15px] font-semibold text-sidebar-foreground font-heading">
+            <span className="ml-3 text-[17px] font-normal text-sidebar-foreground font-english">
               CodeNexus
             </span>
           )}
@@ -115,7 +115,7 @@ export function Sidebar() {
         {!isCollapsed && (
           <button
             onClick={toggleCollapse}
-            className="p-1.5 rounded-[8px] text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-all duration-200"
+            className="border border-transparent p-1.5 text-sidebar-foreground/50 hover:border-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-colors duration-150"
             title="收起侧边栏"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -127,10 +127,10 @@ export function Sidebar() {
         <div className="h-10 flex items-center justify-center flex-shrink-0">
           <button
             onClick={toggleCollapse}
-            className="p-1.5 rounded-[8px] text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-all duration-200"
+            className="border border-transparent p-1.5 text-sidebar-foreground/50 hover:border-sidebar-foreground hover:text-sidebar-foreground hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-colors duration-150"
             title="展开侧边栏"
           >
-            <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-5 w-5 rounded-[4px]" />
+            <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-6 w-9" />
           </button>
         </div>
       )}
@@ -147,23 +147,23 @@ export function Sidebar() {
                 to={item.path}
                 title={isCollapsed ? item.label : undefined}
                 className={cn(
-                  'relative flex h-9 items-center rounded-[9px] text-[13px] font-medium transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25',
+                  'relative flex h-9 items-center border-l-2 text-[13px] font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25',
                   isCollapsed ? 'justify-center mx-1' : 'gap-2.5 px-2.5',
                   isActive
-                    ? 'bg-sidebar-accent text-sidebar-primary shadow-[inset_0_0_0_1px_rgba(159,79,36,0.14),0_6px_14px_rgba(159,79,36,0.08)]'
-                    : 'text-sidebar-foreground/68 hover:bg-sidebar-accent/75 hover:text-sidebar-accent-foreground hover:translate-x-0.5'
+                    ? 'border-accent bg-sidebar-accent text-sidebar-foreground'
+                    : 'border-transparent text-sidebar-foreground/68 hover:border-accent/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}
               >
                 <Icon
                   className={cn(
                     'w-4 h-4 flex-shrink-0 transition-colors duration-200',
-                    isActive ? 'text-sidebar-primary' : 'text-muted-foreground'
+                    isActive ? 'text-accent' : 'text-muted-foreground'
                   )}
                   strokeWidth={2}
                 />
                 {!isCollapsed && <span className="truncate">{item.label}</span>}
                 {!isCollapsed && item.badge && (
-                  <span className="ml-auto text-[11px] font-medium bg-primary/15 text-primary px-1.5 py-0.5 rounded-full leading-none">
+                  <span className="ml-auto border border-accent/45 bg-accent-wash px-1.5 py-0.5 text-[11px] font-medium leading-none text-accent">
                     {item.badge}
                   </span>
                 )}
@@ -178,7 +178,7 @@ export function Sidebar() {
         <div className={cn('flex items-center gap-2.5', isCollapsed && 'flex-col gap-3')}>
           <Link
             to="/profile"
-            className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-semibold hover:bg-primary/16 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-all duration-200 flex-shrink-0"
+            className="h-8 w-8 border border-sidebar-border bg-background flex items-center justify-center text-primary text-xs font-semibold hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 transition-colors duration-150 flex-shrink-0"
             title={isCollapsed ? '个人中心' : undefined}
           >
             {getUserInitials()}
@@ -201,14 +201,14 @@ export function Sidebar() {
               <div className="flex items-center gap-0.5">
                 <Link
                   to="/settings"
-                  className="text-sidebar-foreground/45 hover:text-sidebar-foreground p-1.5 rounded-[8px] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-all duration-200"
+                  className="border border-transparent p-1.5 text-sidebar-foreground/45 hover:border-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-colors duration-150"
                   title="设置"
                 >
                   <UserCog className="w-4 h-4" />
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="text-sidebar-foreground/45 hover:text-sidebar-foreground p-1.5 rounded-[8px] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-all duration-200"
+                  className="border border-transparent p-1.5 text-sidebar-foreground/45 hover:border-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-colors duration-150"
                   title="退出登录"
                 >
                   <LogOut className="w-4 h-4" />
@@ -219,14 +219,14 @@ export function Sidebar() {
             <div className="flex flex-col items-center gap-2">
               <Link
                 to="/settings"
-                className="text-sidebar-foreground/45 hover:text-sidebar-foreground p-1.5 rounded-[8px] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-all duration-200"
+                className="border border-transparent p-1.5 text-sidebar-foreground/45 hover:border-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-colors duration-150"
                 title="设置"
               >
                 <UserCog className="w-4 h-4" />
               </Link>
               <button
                 onClick={handleLogout}
-                className="text-sidebar-foreground/45 hover:text-sidebar-foreground p-1.5 rounded-[8px] hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-all duration-200"
+                className="border border-transparent p-1.5 text-sidebar-foreground/45 hover:border-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/25 transition-colors duration-150"
                 title="退出登录"
               >
                 <LogOut className="w-4 h-4" />

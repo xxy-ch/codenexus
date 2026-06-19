@@ -36,8 +36,8 @@ export function Switch({
         <label
           htmlFor={switchId}
           className={cn(
-            "block h-6 w-11 shrink-0 cursor-pointer rounded-full transition-all duration-200",
-            "peer-focus-visible:ring-4 peer-focus-visible:ring-primary/20",
+            "block h-6 w-11 shrink-0 cursor-pointer rounded-full border border-border transition-colors duration-150",
+            "peer-focus-visible:ring-2 peer-focus-visible:ring-ring/30",
             "peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
             // Unchecked state
             !checked && [
@@ -47,7 +47,6 @@ export function Switch({
             // Checked state
             checked && [
               "bg-primary",
-              "shadow-sm shadow-primary/25",
             ],
             // Error state
             error && "ring-2 ring-destructive"
@@ -55,7 +54,7 @@ export function Switch({
         >
           <div
             className={cn(
-              "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-all duration-200",
+              "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-background border border-border transition-transform duration-150",
               checked && "translate-x-5"
             )}
           />

@@ -31,7 +31,7 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'inline-flex items-center gap-1 p-1 rounded-lg glass-subtle',
+        'inline-flex items-center gap-1 border border-border bg-card p-1',
         className
       )}
     >
@@ -42,10 +42,10 @@ export function ThemeToggle({ className }: { className?: string }) {
             key={value}
             onClick={() => handleThemeChange(value)}
             className={cn(
-              'inline-flex items-center justify-center w-8 h-8 rounded-md transition-all duration-200',
-              'hover:bg-accent hover:text-accent-foreground',
+              'inline-flex h-8 w-8 items-center justify-center border border-transparent transition-colors duration-150',
+              'hover:border-foreground hover:bg-muted',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-              isActive && 'bg-primary text-primary-foreground shadow-sm'
+              isActive && 'border-foreground bg-primary text-primary-foreground'
             )}
             title={label}
             aria-label={`Switch to ${label} theme`}

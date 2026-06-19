@@ -54,7 +54,7 @@ describe('Select', () => {
 
   it('renders glass variant', () => {
     render(<Select options={options} variant="glass" />)
-    expect(screen.getByRole('combobox')).toHaveClass('backdrop-blur-sm')
+    expect(screen.getByRole('combobox')).toHaveClass('bg-card')
   })
 
   it('has correct ARIA attributes', async () => {

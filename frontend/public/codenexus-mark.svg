@@ -1,12 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CodeNexus">
-  <rect width="512" height="512" rx="96" fill="#fbf7ef"/>
-  <g fill="#111">
-    <path d="M154 163h-11L76 230c-8 8-8 21 0 29l67 67h11v-48l-43-34 43-34z"/>
-    <path d="M358 163h11l67 67c8 8 8 21 0 29l-67 67h-11v-48l43-34-43-34z"/>
-    <path d="M203 158h62l67 104v-79h45v143h-61l-67-103h-21c-8 0-14 6-14 14v38c0 8 6 14 14 14h29l-38 37h-9c-31 0-56-25-56-56v-56c0-31 25-56 56-56z"/>
-    <path d="M194 342l83-96 24 21-83 96z"/>
-    <path d="M292 184l39-48 23 19-39 48z"/>
-    <circle cx="194" cy="359" r="28"/>
-    <circle cx="354" cy="134" r="28"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 512" role="img" aria-label="CodeNexus">
+  <g fill="#141413" fill-rule="evenodd" clip-rule="evenodd">
+    <path d="M184 132h-48L44 224c-18 18-18 46 0 64l92 92h48v-56l-68-68 68-68z"/>
+    <path d="M596 132h48l92 92c18 18 18 46 0 64l-92 92h-48v-56l68-68-68-68z"/>
+    <path d="M318 124h106l42 70H332c-34 0-58 24-58 62s24 62 58 62h88l-58 70h-46c-74 0-124-54-124-132s50-132 126-132zm14 84c-25 0-42 17-42 48s17 48 42 48h48l40-48-28-48z"/>
+    <path d="M430 154h62l104 158V154h60v234h-72L480 230v158h-60V154z"/>
+    <path d="M362 318 296 396l-28-24 66-78z"/>
+    <path d="M548 184 616 98l28 24-68 86z"/>
+    <circle cx="272" cy="420" r="34"/>
+    <circle cx="638" cy="80" r="34"/>
   </g>
 </svg>

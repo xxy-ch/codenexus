@@ -106,11 +106,9 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-4 rounded-xl pointer-events-auto',
-        // Glass effect
-        'bg-background/90 backdrop-blur-xl',
-        'border border-border/50',
-        'shadow-elevated',
+        'flex items-start gap-3 rounded-[8px] p-4 pointer-events-auto',
+        'bg-background',
+        'border border-border',
         // Animation
         'animate-slide-up',
         // Accent border
@@ -128,10 +126,10 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: () => void }) 
       <button
         onClick={onRemove}
         className={cn(
-          'shrink-0 p-0.5 rounded-md',
+          'shrink-0 border border-transparent p-0.5',
           'text-muted-foreground hover:text-foreground',
           'transition-colors duration-150',
-          'hover:bg-muted/60'
+          'hover:border-foreground hover:bg-muted'
         )}
       >
         <X className="w-4 h-4" />

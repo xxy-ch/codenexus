@@ -7,16 +7,16 @@ describe('Input', () => {
   it('renders with default variant', () => {
     render(<Input placeholder="Enter text" />)
     const input = screen.getByPlaceholderText('Enter text')
-    expect(input).toHaveClass('bg-background/60')
-    expect(input).toHaveClass('rounded-[8px]')
-    expect(input).toHaveClass('border-border/40')
+    expect(input).toHaveClass('bg-background')
+    expect(input).toHaveClass('rounded-none')
+    expect(input).toHaveClass('border-border')
   })
 
   it('renders glass variant', () => {
     render(<Input variant="glass" placeholder="Glass input" />)
     const input = screen.getByPlaceholderText('Glass input')
-    expect(input).toHaveClass('backdrop-blur-xl')
-    expect(input).toHaveClass('bg-background/60')
+    expect(input).toHaveClass('bg-card')
+    expect(input).toHaveClass('border-border')
   })
 
   it('accepts text input', async () => {

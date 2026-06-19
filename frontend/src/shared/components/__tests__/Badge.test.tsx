@@ -7,13 +7,13 @@ describe('Badge', () => {
     render(<Badge>Default</Badge>)
     const badge = screen.getByText('Default')
     expect(badge.tagName).toBe('SPAN')
-    expect(badge).toHaveClass('rounded-full')
-    expect(badge).toHaveClass('bg-primary/10')
+    expect(badge).toHaveClass('rounded-none')
+    expect(badge).toHaveClass('bg-transparent')
   })
 
   it('renders secondary variant', () => {
     render(<Badge variant="secondary">Secondary</Badge>)
-    expect(screen.getByText('Secondary')).toHaveClass('bg-secondary')
+    expect(screen.getByText('Secondary')).toHaveClass('bg-transparent')
   })
 
   it('renders destructive variant', () => {
@@ -23,33 +23,33 @@ describe('Badge', () => {
 
   it('renders outline variant', () => {
     render(<Badge variant="outline">Outline</Badge>)
-    expect(screen.getByText('Outline')).toHaveClass('border-border/60')
+    expect(screen.getByText('Outline')).toHaveClass('border-border')
   })
 
   it('renders success variant', () => {
     render(<Badge variant="success">Passed</Badge>)
-    expect(screen.getByText('Passed')).toHaveClass('bg-status-accepted/10')
+    expect(screen.getByText('Passed')).toHaveClass('text-status-accepted')
   })
 
   it('renders warning variant', () => {
     render(<Badge variant="warning">TLE</Badge>)
-    expect(screen.getByText('TLE')).toHaveClass('bg-status-tle/10')
+    expect(screen.getByText('TLE')).toHaveClass('text-status-tle')
   })
 
   it('renders info variant', () => {
     render(<Badge variant="info">Pending</Badge>)
-    expect(screen.getByText('Pending')).toHaveClass('bg-status-pending/10')
+    expect(screen.getByText('Pending')).toHaveClass('text-status-pending')
   })
 
   it('renders difficulty variants', () => {
     const { rerender } = render(<Badge variant="easy">Easy</Badge>)
-    expect(screen.getByText('Easy')).toHaveClass('bg-difficulty-easy/10')
+    expect(screen.getByText('Easy')).toHaveClass('text-difficulty-easy')
 
     rerender(<Badge variant="medium">Medium</Badge>)
-    expect(screen.getByText('Medium')).toHaveClass('bg-difficulty-medium/10')
+    expect(screen.getByText('Medium')).toHaveClass('text-difficulty-medium')
 
     rerender(<Badge variant="hard">Hard</Badge>)
-    expect(screen.getByText('Hard')).toHaveClass('bg-difficulty-hard/10')
+    expect(screen.getByText('Hard')).toHaveClass('text-difficulty-hard')
   })
 
   it('applies custom className', () => {

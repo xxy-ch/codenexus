@@ -7,16 +7,16 @@ describe('Textarea', () => {
   it('renders with default variant', () => {
     render(<Textarea placeholder="Write here" />)
     const textarea = screen.getByPlaceholderText('Write here')
-    expect(textarea).toHaveClass('bg-card')
-    expect(textarea).toHaveClass('rounded-lg')
+    expect(textarea).toHaveClass('bg-background')
+    expect(textarea).toHaveClass('rounded-none')
     expect(textarea.tagName).toBe('TEXTAREA')
   })
 
   it('renders glass variant', () => {
     render(<Textarea variant="glass" placeholder="Glass" />)
     const textarea = screen.getByPlaceholderText('Glass')
-    expect(textarea).toHaveClass('backdrop-blur-sm')
-    expect(textarea).toHaveClass('bg-background/60')
+    expect(textarea).toHaveClass('bg-card')
+    expect(textarea).toHaveClass('border-border')
   })
 
   it('accepts text input', async () => {

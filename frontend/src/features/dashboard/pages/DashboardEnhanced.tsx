@@ -81,17 +81,18 @@ export function DashboardEnhanced() {
 
   return (
     <div className="space-y-8">
-      {/* Hero Section — Premium dark design with warm details */}
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-8 overflow-hidden rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-prominent glass-interactive hover-lift transition-all duration-300">
+      <section className="grid grid-cols-1 gap-6 border-b border-border pb-8 lg:grid-cols-12">
+        <div className="lg:col-span-8 overflow-hidden bg-background p-1">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="max-w-2xl space-y-4">
-              <div className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-[13px] font-semibold uppercase tracking-widest text-primary">
+              <div className="font-mono text-[12px] uppercase text-muted-foreground">
                 仪表盘概览
               </div>
               <div>
-                <h1 className="text-2xl font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground via-foreground to-primary/80 bg-clip-text text-transparent">
-                  欢迎回来，继续把这周的通过数往上推。
+                <h1 className="font-cjk-editorial max-w-2xl text-[30px] font-semibold leading-[1.18] text-foreground md:text-[42px]">
+                  欢迎回来，继续把这周的
+                  <span className="underline decoration-[3px] underline-offset-[6px] decoration-accent">通过数</span>
+                  往上推。
                 </h1>
                 <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
                   过去 7 天共提交 {totalWeeklySubmissions} 次，成功通过 {solvedThisWeek} 次。当前连续活跃 {userStats.current_streak} 天，保持今天的节奏就能继续拉高排名。
@@ -100,12 +101,12 @@ export function DashboardEnhanced() {
               <div className="flex flex-wrap items-center gap-8">
                 <div>
                   <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">全球排名</p>
-                  <p className="mt-1 text-2xl font-bold text-foreground">#{userStats.ranking}</p>
+                  <p className="mt-1 text-2xl font-bold text-accent">#{userStats.ranking}</p>
                 </div>
                 <div className="h-12 w-px bg-border" />
                 <div>
                   <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">总积分</p>
-                  <p className="mt-1 text-2xl font-bold text-primary">{userStats.total_points}</p>
+                  <p className="mt-1 text-2xl font-bold text-foreground">{userStats.total_points}</p>
                 </div>
               </div>
             </div>
@@ -117,7 +118,7 @@ export function DashboardEnhanced() {
                 return (
                   <div key={item.day} className="flex flex-1 flex-col items-center justify-end gap-2">
                     <div
-                      className="w-full rounded-sm bg-primary/15 transition-all duration-200 hover:bg-primary/35 hover:scale-x-105"
+                      className="w-full bg-accent-soft transition-colors duration-150 hover:bg-accent"
                       style={{ height }}
                     />
                     <span className="text-[13px] font-medium text-muted-foreground">{item.day}</span>
@@ -128,15 +129,15 @@ export function DashboardEnhanced() {
           </div>
         </div>
 
-        <div className="lg:col-span-4 rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-prominent glass-interactive hover-lift transition-all duration-300">
+        <div className="lg:col-span-4 rounded-[8px] bg-card p-5">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">当前连续</p>
+              <p className="font-mono text-[12px] uppercase text-muted-foreground">当前连续</p>
               <p className="mt-2 text-2xl font-bold text-foreground">{userStats.current_streak} <span className="text-base font-semibold text-muted-foreground">天</span></p>
               <p className="mt-2 text-sm text-muted-foreground">最高纪录 {userStats.longest_streak} 天，今天再完成 1 道题就能继续保持。</p>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary animate-pulse">
-              <Flame className="w-6 h-6 fill-primary/30" />
+            <div className="flex h-11 w-11 items-center justify-center border border-accent/35 bg-accent-wash text-accent">
+              <Flame className="w-6 h-6" />
             </div>
           </div>
 
@@ -145,12 +146,12 @@ export function DashboardEnhanced() {
               <div key={item.day} className="space-y-2">
                 <div>{item.day}</div>
                 <div className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-full border text-[13px] font-semibold transition-all duration-200',
+                  'flex h-9 w-9 items-center justify-center border text-[13px] font-semibold transition-colors duration-150',
                   index === 6
-                    ? 'border-primary bg-primary text-primary-foreground shadow-sm shadow-primary/30 hover:scale-110'
+                    ? 'border-accent bg-accent text-primary-foreground'
                     : item['提交'] > 0
-                      ? 'border-primary/20 bg-primary/10 text-primary hover:bg-primary/20'
-                      : 'border-border/40 bg-muted/40 text-muted-foreground hover:bg-muted/60'
+                      ? 'border-accent/25 bg-accent-wash text-foreground hover:border-accent/50 hover:bg-accent-soft'
+                      : 'border-transparent bg-background text-muted-foreground hover:bg-muted'
                 )}>
                   {item['提交'] > 0 ? item['提交'] : '-'}
                 </div>
@@ -163,14 +164,14 @@ export function DashboardEnhanced() {
       {/* Dark CTA buttons */}
       <div className="flex flex-wrap gap-3">
         <Link to="/problems">
-          <Button variant="default" className="bg-primary text-primary-foreground font-semibold button-press hover-lift">
+          <Button variant="outline" className="font-semibold bg-background">
             <Code2 className="w-5 h-5 mr-2" />
             开始刷题
           </Button>
         </Link>
         <Link to="/contests">
-          <Button variant="outline" className="border-border/40 text-foreground font-semibold hover:bg-muted/40 button-press hover-lift">
-            <Trophy className="w-5 h-5 mr-2 text-primary" />
+          <Button variant="outline" className="font-semibold border-accent bg-accent-wash text-foreground hover:bg-accent hover:text-primary-foreground">
+            <Trophy className="w-5 h-5 mr-2" />
             查看竞赛
           </Button>
         </Link>
@@ -184,34 +185,33 @@ export function DashboardEnhanced() {
         solvedThisWeek={solvedThisWeek}
       />
 
-      {/* PostHog-style large metric cards */}
       <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-card glass-interactive hover-lift transition-all duration-300">
+        <div className="rounded-[8px] bg-card p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[13px] font-semibold uppercase tracking-widest text-primary">本周重点</p>
-              <h2 className="mt-2 text-base font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-primary/80 bg-clip-text text-transparent">本周推进面板</h2>
+              <p className="font-mono text-[12px] uppercase text-muted-foreground">本周重点</p>
+              <h2 className="mt-2 font-cjk-heading text-base font-semibold tracking-tight text-foreground">本周推进面板</h2>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 活跃天数、推荐题和最近提交放在同一层级，减少来回跳页。
               </p>
             </div>
-            <div className="rounded-full bg-primary/10 px-3 py-1 text-[13px] font-semibold uppercase tracking-widest text-primary">
+            <div className="font-mono text-[12px] uppercase text-muted-foreground">
               实时数据
             </div>
           </div>
 
           <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl bg-muted/20 p-4 border border-border-subtle hover:bg-muted/40 transition-colors duration-200">
+            <div className="rounded-[8px] bg-background p-4 transition-colors duration-150 hover:bg-muted">
               <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">本周通过</p>
-              <p className="mt-3 text-2xl font-bold text-foreground">{solvedThisWeek}</p>
+              <p className="mt-3 text-2xl font-bold text-accent">{solvedThisWeek}</p>
               <p className="mt-2 text-[13px] text-muted-foreground">来自最近 7 天的通过记录。</p>
             </div>
-            <div className="rounded-xl bg-muted/20 p-4 border border-border-subtle hover:bg-muted/40 transition-colors duration-200">
+            <div className="rounded-[8px] bg-background p-4 transition-colors duration-150 hover:bg-muted">
               <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">推荐队列</p>
               <p className="mt-3 text-2xl font-bold text-foreground">{recommendedProblems?.length ?? 0}</p>
               <p className="mt-2 text-[13px] text-muted-foreground">当前实时推荐题目数量。</p>
             </div>
-            <div className="rounded-xl bg-muted/20 p-4 border border-border-subtle hover:bg-muted/40 transition-colors duration-200">
+            <div className="rounded-[8px] bg-background p-4 transition-colors duration-150 hover:bg-muted">
               <p className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">最近活动</p>
               <p className="mt-3 text-2xl font-bold text-foreground">{recentActivity?.length ?? 0}</p>
               <p className="mt-2 text-[13px] text-muted-foreground">最新活动流条目数。</p>
@@ -219,14 +219,14 @@ export function DashboardEnhanced() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-card glass-interactive hover-lift transition-all duration-300">
-          <p className="text-[13px] font-semibold uppercase tracking-widest text-primary">进度快照</p>
-          <h2 className="mt-2 text-base font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-primary/80 bg-clip-text text-transparent">刷题进度快照</h2>
+        <div className="rounded-[8px] bg-card p-5">
+          <p className="font-mono text-[12px] uppercase text-muted-foreground">进度快照</p>
+          <h2 className="mt-2 font-cjk-heading text-base font-semibold tracking-tight text-foreground">刷题进度快照</h2>
           <div className="mt-5 space-y-4">
             {[
-              { label: '简单', value: userStats.easy_solved, color: 'bg-difficulty-easy shadow-[0_0_8px_rgba(16,185,129,0.3)]' },
-              { label: '中等', value: userStats.medium_solved, color: 'bg-difficulty-medium shadow-[0_0_8px_rgba(245,158,11,0.3)]' },
-              { label: '困难', value: userStats.hard_solved, color: 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.3)]' },
+              { label: '简单', value: userStats.easy_solved, color: 'bg-difficulty-easy' },
+              { label: '中等', value: userStats.medium_solved, color: 'bg-difficulty-medium' },
+              { label: '困难', value: userStats.hard_solved, color: 'bg-difficulty-hard' },
             ].map((item) => {
               const totalSolved = Math.max(1, userStats.unique_problems_solved)
               const width = Math.max(8, Math.round((item.value / totalSolved) * 100))
@@ -237,8 +237,8 @@ export function DashboardEnhanced() {
                     <span className="font-semibold text-foreground">{item.label}</span>
                     <span className="text-muted-foreground font-semibold">{item.value}</span>
                   </div>
-                  <div className="mt-2 h-2 rounded-full bg-muted/40 overflow-hidden">
-                    <div className={cn('h-2 rounded-full transition-all duration-500', item.color)} style={{ width: `${width}%` }} />
+                  <div className="mt-2 h-2 bg-background overflow-hidden">
+                    <div className={cn('h-full transition-all duration-500', item.color)} style={{ width: `${width}%` }} />
                   </div>
                 </div>
               )
@@ -247,16 +247,15 @@ export function DashboardEnhanced() {
         </div>
       </section>
 
-      {/* PostHog oversized metric cards — Re-styled with Linear Premium Glass */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-card glass-interactive hover-lift transition-all duration-300">
+        <div className="bg-card rounded-[8px] p-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-status-accepted/10 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+            <div className="flex h-10 w-10 items-center justify-center bg-background">
               <CheckCircle className="w-5 h-5 text-status-accepted" />
             </div>
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">已解决</span>
+            <span className="font-mono text-[12px] uppercase text-muted-foreground">已解决</span>
           </div>
-          <p className="text-2xl font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-status-accepted/80 bg-clip-text text-transparent">
+          <p className="text-2xl font-bold tracking-tight text-foreground">
             {userStats.unique_problems_solved}
           </p>
           <p className="mt-1.5 text-[13px] font-semibold text-muted-foreground uppercase tracking-widest">
@@ -264,14 +263,14 @@ export function DashboardEnhanced() {
           </p>
         </div>
 
-        <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-card glass-interactive hover-lift transition-all duration-300">
+        <div className="bg-card rounded-[8px] p-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shadow-[0_0_12px_rgba(159,79,36,0.2)]">
-              <Upload className="w-5 h-5 text-primary" />
+            <div className="flex h-10 w-10 items-center justify-center bg-background">
+              <Upload className="w-5 h-5 text-accent" />
             </div>
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">总提交</span>
+            <span className="font-mono text-[12px] uppercase text-muted-foreground">总提交</span>
           </div>
-          <p className="text-2xl font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-primary/80 bg-clip-text text-transparent">
+          <p className="text-2xl font-bold tracking-tight text-foreground">
             {userStats.total_submissions}
           </p>
           <p className="mt-1.5 text-[13px] font-semibold text-muted-foreground uppercase tracking-widest">
@@ -279,14 +278,14 @@ export function DashboardEnhanced() {
           </p>
         </div>
 
-        <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-card glass-interactive hover-lift transition-all duration-300">
+        <div className="bg-card rounded-[8px] p-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-status-re/10 shadow-[0_0_12px_rgba(167,139,250,0.2)]">
+            <div className="flex h-10 w-10 items-center justify-center bg-background">
               <Cpu className="w-5 h-5 text-status-re" />
             </div>
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">准确率</span>
+            <span className="font-mono text-[12px] uppercase text-muted-foreground">准确率</span>
           </div>
-          <p className="text-2xl font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-status-re/80 bg-clip-text text-transparent">
+          <p className="text-2xl font-bold tracking-tight text-foreground">
             {userStats.accuracy_rate}%
           </p>
           <p className="mt-1.5 text-[13px] font-semibold text-muted-foreground uppercase tracking-widest">
@@ -294,14 +293,14 @@ export function DashboardEnhanced() {
           </p>
         </div>
 
-        <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-card glass-interactive hover-lift transition-all duration-300">
+        <div className="bg-card rounded-[8px] p-5">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 shadow-[0_0_12px_rgba(245,158,11,0.2)]">
-              <Flame className="w-5 h-5 text-amber-500 fill-amber-500/20" />
+            <div className="flex h-10 w-10 items-center justify-center bg-background">
+              <Flame className="w-5 h-5 text-accent" />
             </div>
-            <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">连续天数</span>
+            <span className="font-mono text-[12px] uppercase text-muted-foreground">连续天数</span>
           </div>
-          <p className="text-2xl font-bold tracking-tight text-foreground bg-gradient-to-r from-foreground to-amber-500 bg-clip-text text-transparent">
+          <p className="text-2xl font-bold tracking-tight text-foreground">
             {userStats.current_streak}
           </p>
           <p className="mt-1.5 text-[13px] font-semibold text-muted-foreground uppercase tracking-widest">
@@ -311,8 +310,8 @@ export function DashboardEnhanced() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-whisper">
-          <h3 className="text-base font-bold tracking-tight text-foreground mb-4">
+        <div className="bg-card rounded-[8px] p-5">
+          <h3 className="font-cjk-heading text-base font-semibold tracking-tight text-foreground mb-4">
             本周学习活动
           </h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -322,14 +321,14 @@ export function DashboardEnhanced() {
               <YAxis className="text-muted-foreground" />
               <Tooltip />
               <Legend />
-              <Bar dataKey="提交" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="通过" fill="var(--status-accepted)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="提交" fill="var(--accent)" />
+              <Bar dataKey="通过" fill="var(--status-accepted)" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-whisper">
-          <h3 className="text-base font-bold tracking-tight text-foreground mb-4">
+        <div className="bg-card rounded-[8px] p-5">
+          <h3 className="font-cjk-heading text-base font-semibold tracking-tight text-foreground mb-4">
             难度分布
           </h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -354,7 +353,7 @@ export function DashboardEnhanced() {
           <div className="flex justify-center gap-6 mt-4">
             {difficultyDistribution.map((item) => (
               <div key={item.name} className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                <div className="w-3 h-3" style={{ backgroundColor: item.color }} />
                 <span className="text-sm text-muted-foreground">
                   {item.name}: {item.value}
                 </span>
@@ -365,9 +364,9 @@ export function DashboardEnhanced() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-whisper">
+        <div className="lg:col-span-2 bg-card rounded-[8px] p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-bold tracking-tight text-foreground">
+            <h3 className="font-cjk-heading text-base font-semibold tracking-tight text-foreground">
               最近活动
             </h3>
             <Link to="/submissions" className="text-sm text-primary hover:underline">
@@ -381,7 +380,7 @@ export function DashboardEnhanced() {
                 return (
                   <div
                     key={activity.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border-b border-border-subtle last:border-b-0 hover:bg-background-alt transition-colors duration-150"
+                    className="flex items-center gap-3 p-3 border-b border-border-subtle last:border-b-0 hover:bg-background-alt transition-colors duration-150"
                   >
                     <IconComponent className={cn('w-5 h-5', getActivityColor(activity))} />
                     <div className="flex-1 min-w-0">
@@ -420,14 +419,14 @@ export function DashboardEnhanced() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-whisper">
-            <h3 className="text-base font-bold tracking-tight text-foreground mb-4">
+          <div className="bg-card rounded-[8px] p-5">
+            <h3 className="font-cjk-heading text-base font-semibold tracking-tight text-foreground mb-4">
               排名与积分
             </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-difficulty-medium" />
+                  <Trophy className="w-5 h-5 text-accent" />
                   <span className="text-sm text-muted-foreground">当前排名</span>
                 </div>
                 <span className="text-2xl font-bold text-foreground">
@@ -436,7 +435,7 @@ export function DashboardEnhanced() {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-primary" />
+                  <Star className="w-5 h-5 text-accent" />
                   <span className="text-sm text-muted-foreground">总积分</span>
                 </div>
                 <span className="text-2xl font-bold text-foreground">
@@ -447,9 +446,9 @@ export function DashboardEnhanced() {
           </div>
 
           {userStats.achievements && userStats.achievements.length > 0 && (
-            <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-whisper">
+            <div className="bg-card rounded-[8px] p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold tracking-tight text-foreground">
+                <h3 className="font-cjk-heading text-base font-semibold tracking-tight text-foreground">
                   最近成就
                 </h3>
                 <span className="text-[13px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -460,9 +459,9 @@ export function DashboardEnhanced() {
                 {userStats.achievements.slice(0, 3).map((achievement) => (
                   <div
                     key={achievement.id}
-                    className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20"
+                    className="flex items-center gap-3 bg-background p-2"
                   >
-                    <Award className="w-6 h-6 text-difficulty-medium" />
+                    <Award className="w-6 h-6 text-accent" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">
                         {achievement.name}
@@ -480,10 +479,10 @@ export function DashboardEnhanced() {
       </div>
 
       {recommendedProblems && recommendedProblems.length > 0 && (
-        <div className="bg-background/60 backdrop-blur-xl rounded-xl border border-border/40 p-5 shadow-card">
+        <div className="bg-card rounded-[8px] p-5">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-base font-bold tracking-tight text-foreground">
+              <h3 className="font-cjk-heading text-base font-semibold tracking-tight text-foreground">
                 推荐题目
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
@@ -497,9 +496,9 @@ export function DashboardEnhanced() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {recommendedProblems.map((problem) => {
               const difficultyColor = {
-                easy: 'bg-difficulty-easy/10 text-difficulty-easy',
-                medium: 'bg-difficulty-medium/10 text-difficulty-medium',
-                hard: 'bg-difficulty-hard/10 text-difficulty-hard',
+                easy: 'text-difficulty-easy',
+                medium: 'text-difficulty-medium',
+                hard: 'text-difficulty-hard',
               }[problem.difficulty]
 
               const difficultyLabel = {
@@ -512,7 +511,7 @@ export function DashboardEnhanced() {
                 <Link
                   key={problem.id}
                   to={`/problems/${problem.id}`}
-                  className="block border border-border/40 rounded-lg p-4 hover:-translate-y-0.5 hover:shadow-elevated transition-all"
+                  className="block rounded-[8px] bg-background p-4 transition-colors hover:bg-muted"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-medium text-foreground text-sm line-clamp-2">
@@ -520,7 +519,7 @@ export function DashboardEnhanced() {
                     </h4>
                   </div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={cn('px-2 py-0.5 rounded-full text-[13px] font-medium', difficultyColor)}>
+                    <span className={cn('font-mono text-[12px] uppercase', difficultyColor)}>
                       {difficultyLabel}
                     </span>
                     <span className="text-[13px] text-muted-foreground">

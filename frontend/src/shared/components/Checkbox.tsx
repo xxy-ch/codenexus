@@ -39,9 +39,9 @@ export function Checkbox({
         <label
           htmlFor={checkboxId}
           className={cn(
-            "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-md border-2 transition-all duration-200",
+            "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-none border transition-colors duration-150",
             "hover:border-primary/50",
-            "peer-focus-visible:ring-4 peer-focus-visible:ring-primary/20",
+            "peer-focus-visible:ring-2 peer-focus-visible:ring-ring/30",
             "peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
             // Unchecked state
             !isChecked && !isIndeterminate && [
@@ -51,12 +51,10 @@ export function Checkbox({
             // Checked state
             isChecked && [
               "border-primary bg-primary text-primary-foreground",
-              "shadow-sm shadow-primary/25",
             ],
             // Indeterminate state
             isIndeterminate && [
               "border-primary bg-primary text-primary-foreground",
-              "shadow-sm shadow-primary/25",
             ],
             // Error state
             error && "border-destructive"

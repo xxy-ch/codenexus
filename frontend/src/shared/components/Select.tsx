@@ -44,16 +44,16 @@ export function Select({
         onClick={() => setIsOpen(!isOpen)}
         onBlur={() => setTimeout(() => setIsOpen(false), 200)}
         className={cn(
-          "flex w-full items-center justify-between rounded-lg border px-4 py-2.5 text-sm outline-none transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50",
+          "flex w-full items-center justify-between rounded-none border px-4 py-2.5 text-sm outline-none transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50",
           variant === 'default' && [
-            "bg-card shadow-sm",
-            "focus:border-primary focus:ring-4 focus:ring-primary/20 focus:shadow-md",
+            "bg-background",
+            "focus:border-foreground focus:ring-2 focus:ring-ring/20",
             error ? "border-destructive" : "border-border",
           ],
           variant === 'glass' && [
-            "bg-background/60 backdrop-blur-sm border-border/50 shadow-sm",
-            "focus:bg-background/80 focus:border-primary focus:ring-4 focus:ring-primary/20 focus:shadow-md",
-            error ? "border-destructive" : "border-border/50",
+            "bg-card border-border",
+            "focus:bg-background focus:border-foreground focus:ring-2 focus:ring-ring/20",
+            error ? "border-destructive" : "border-border",
           ],
           className
         )}
@@ -69,7 +69,7 @@ export function Select({
         <div
           role="listbox"
           className={cn(
-            "absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-border/50 bg-background/90 backdrop-blur-xl shadow-elevated animate-scale-in",
+            "absolute z-50 mt-1 w-full overflow-hidden rounded-none border border-border bg-background animate-scale-in",
             "max-h-60 overflow-y-auto"
           )}
         >

@@ -64,11 +64,11 @@ export function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo & Brand Header */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary rounded-xl shadow-lg shadow-primary/25 mb-6">
-            <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-9 w-9 rounded-[6px]" />
+          <div className="inline-flex items-center justify-center h-16 w-24 mb-6">
+            <img src="/codenexus-mark.svg" alt="" aria-hidden="true" className="h-14 w-24" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">
-            欢迎使用 <span className="font-serif tracking-normal">CodeNexus</span>
+            欢迎使用 <span className="font-english tracking-normal">CodeNexus</span>
           </h1>
           <p className="text-sm text-muted-foreground">
             登录以继续你的编程之旅

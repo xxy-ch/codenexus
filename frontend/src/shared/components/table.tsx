@@ -6,7 +6,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto rounded-xl border border-border/50 bg-background/40 backdrop-blur-sm shadow-whisper"
+      className="relative w-full overflow-x-auto rounded-[8px] border border-border bg-background"
     >
       <table
         data-slot="table"
@@ -58,10 +58,10 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b border-border/50 transition-colors duration-150",
-        "hover:bg-muted/40",
-        "has-aria-expanded:bg-muted/40",
-        "data-[state=selected]:bg-primary/5",
+        "border-b border-border-subtle transition-colors duration-150",
+        "hover:bg-muted",
+        "has-aria-expanded:bg-muted",
+        "data-[state=selected]:bg-muted",
         className
       )}
       {...props}
@@ -74,7 +74,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-10 px-4 text-left align-middle text-caption font-semibold whitespace-nowrap text-muted-foreground tracking-wide",
+        "h-10 px-4 text-left align-middle font-mono text-[12px] font-normal uppercase whitespace-nowrap text-muted-foreground",
         "[&:has([role=checkbox])]:pr-0",
         className
       )}

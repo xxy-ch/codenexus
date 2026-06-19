@@ -20,18 +20,18 @@ export function Textarea({
     <div className={cn(fullWidth ? 'w-full' : 'w-fit')}>
       <textarea
         className={cn(
-          'w-full rounded-lg border px-4 py-2.5 text-sm text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 min-h-[80px] resize-y',
+          'w-full rounded-none border px-4 py-2.5 text-sm text-foreground outline-none transition-colors duration-150 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 min-h-[80px] resize-y',
           // Default variant
           variant === 'default' && [
-            'bg-card shadow-sm',
-            'focus:border-primary focus:ring-4 focus:ring-primary/20 focus:shadow-md',
+            'bg-background',
+            'focus:border-foreground focus:ring-2 focus:ring-ring/20',
             error ? 'border-destructive focus:ring-destructive/20' : 'border-border',
           ],
           // Glass variant - frosted glass effect
           variant === 'glass' && [
-            'bg-background/60 backdrop-blur-sm border-border/50 shadow-sm',
-            'focus:bg-background/80 focus:border-primary focus:ring-4 focus:ring-primary/20 focus:shadow-md',
-            error ? 'border-destructive focus:ring-destructive/20' : 'border-border/50',
+            'bg-card border-border',
+            'focus:bg-background focus:border-foreground focus:ring-2 focus:ring-ring/20',
+            error ? 'border-destructive focus:ring-destructive/20' : 'border-border',
           ],
           // Disabled state
           disabled && 'bg-muted/50 text-muted-foreground',

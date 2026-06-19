@@ -24,16 +24,13 @@ function Tabs({
 }
 
 const tabsListVariants = cva(
-  "group/tabs-list inline-flex w-fit items-center justify-center rounded-xl p-1 text-muted-foreground group-data-horizontal/tabs:h-10 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
+  "group/tabs-list inline-flex w-fit items-center justify-center rounded-none p-1 text-muted-foreground group-data-horizontal/tabs:h-10 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col",
   {
     variants: {
       variant: {
-        // Default: frosted glass pill style
         default:
-          "bg-muted/60 backdrop-blur-sm border border-border/30 shadow-whisper",
-        // Line: clean underline style
+          "bg-muted border border-border",
         line: "gap-1 bg-transparent border-0 shadow-none p-0",
-        // Pills: individual pill buttons
         pills: "gap-1.5 bg-transparent border-0 shadow-none p-0",
       },
     },
@@ -63,8 +60,8 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "relative inline-flex h-[calc(100%-2px)] flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-1 text-sm font-medium whitespace-nowrap",
-        "transition-all duration-200",
+        "relative inline-flex h-[calc(100%-2px)] flex-1 items-center justify-center gap-1.5 rounded-none px-3 py-1 text-sm font-medium whitespace-nowrap",
+        "transition-colors duration-150",
         // Text colors
         "text-foreground/60 hover:text-foreground",
         "group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start",
@@ -79,8 +76,7 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         // Default variant active state
         "group-data-[variant=default]/tabs-list:data-active:bg-background",
         "group-data-[variant=default]/tabs-list:data-active:text-foreground",
-        "group-data-[variant=default]/tabs-list:data-active:shadow-sm",
-        "group-data-[variant=default]/tabs-list:data-active:border-border/30",
+        "group-data-[variant=default]/tabs-list:data-active:border-border",
         // Line variant
         "group-data-[variant=line]/tabs-list:bg-transparent",
         "group-data-[variant=line]/tabs-list:data-active:bg-transparent",
@@ -90,14 +86,13 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         "group-data-[variant=line]/tabs-list:after:absolute",
         "group-data-horizontal/tabs:group-data-[variant=line]/tabs-list:after:inset-x-0 group-data-horizontal/tabs:group-data-[variant=line]/tabs-list:after:bottom-[-5px] group-data-horizontal/tabs:group-data-[variant=line]/tabs-list:after:h-0.5",
         "group-data-vertical/tabs:group-data-[variant=line]/tabs-list:after:inset-y-0 group-data-vertical/tabs:group-data-[variant=line]/tabs-list:after:-right-1 group-data-vertical/tabs:group-data-[variant=line]/tabs-list:after:w-0.5",
-        "group-data-[variant=line]/tabs-list:after:rounded-full group-data-[variant=line]/tabs-list:after:bg-primary",
+        "group-data-[variant=line]/tabs-list:after:bg-primary",
         "group-data-[variant=line]/tabs-list:after:opacity-0 group-data-[variant=line]/tabs-list:after:transition-opacity",
         "group-data-[variant=line]/tabs-list:data-active:after:opacity-100",
         // Pills variant
-        "group-data-[variant=pills]/tabs-list:rounded-lg",
+        "group-data-[variant=pills]/tabs-list:rounded-none",
         "group-data-[variant=pills]/tabs-list:data-active:bg-primary",
         "group-data-[variant=pills]/tabs-list:data-active:text-primary-foreground",
-        "group-data-[variant=pills]/tabs-list:data-active:shadow-sm",
         // Dark mode
         "dark:text-muted-foreground dark:hover:text-foreground",
         "dark:group-data-[variant=default]/tabs-list:data-active:border-input",

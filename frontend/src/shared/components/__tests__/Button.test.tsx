@@ -9,32 +9,32 @@ describe('Button', () => {
     const button = screen.getByRole('button', { name: 'Click me' })
     expect(button).toHaveClass('bg-primary')
     expect(button).toHaveClass('text-primary-foreground')
-    expect(button).toHaveClass('rounded-[8px]')
+    expect(button).toHaveClass('rounded-none')
   })
 
   it('renders outline variant', () => {
     render(<Button variant="outline">Outline</Button>)
     const button = screen.getByRole('button', { name: 'Outline' })
-    expect(button).toHaveClass('border-border/60')
-    expect(button).toHaveClass('backdrop-blur-sm')
+    expect(button).toHaveClass('border-foreground')
+    expect(button).toHaveClass('bg-background')
   })
 
   it('renders secondary variant', () => {
     render(<Button variant="secondary">Secondary</Button>)
     const button = screen.getByRole('button', { name: 'Secondary' })
-    expect(button).toHaveClass('bg-secondary/80')
+    expect(button).toHaveClass('bg-secondary')
   })
 
   it('renders ghost variant', () => {
     render(<Button variant="ghost">Ghost</Button>)
     const button = screen.getByRole('button', { name: 'Ghost' })
-    expect(button).toHaveClass('hover:bg-accent/80')
+    expect(button).toHaveClass('border-transparent')
   })
 
   it('renders destructive variant', () => {
     render(<Button variant="destructive">Delete</Button>)
     const button = screen.getByRole('button', { name: 'Delete' })
-    expect(button).toHaveClass('bg-destructive/10')
+    expect(button).toHaveClass('bg-background')
     expect(button).toHaveClass('text-destructive')
   })
 
@@ -48,8 +48,8 @@ describe('Button', () => {
   it('renders glass variant', () => {
     render(<Button variant="glass">Glass</Button>)
     const button = screen.getByRole('button', { name: 'Glass' })
-    expect(button).toHaveClass('backdrop-blur-xl')
-    expect(button).toHaveClass('bg-background/65')
+    expect(button).toHaveClass('bg-card')
+    expect(button).toHaveClass('border-foreground')
   })
 
   it('renders different sizes', () => {

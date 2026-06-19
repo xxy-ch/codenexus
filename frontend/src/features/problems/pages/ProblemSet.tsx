@@ -61,6 +61,7 @@ export function ProblemSet() {
             variant="outline"
             size="sm"
             className="glass-interactive button-press"
+            nativeButton={false}
             render={<Link to="/submissions" />}
           >
             <History className="w-4 h-4 mr-1.5" />
@@ -69,6 +70,7 @@ export function ProblemSet() {
           <Button
             size="sm"
             className="button-press bg-primary text-primary-foreground hover:bg-primary/90 shadow-whisper"
+            nativeButton={false}
             render={<Link to="/contests" />}
           >
             <Trophy className="w-4 h-4 mr-1.5" />

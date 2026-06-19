@@ -1,7 +1,51 @@
 import { useRef } from 'react'
-import Editor, { loader, type Monaco } from '@monaco-editor/react'
-import * as monaco from 'monaco-editor'
-import { type editor } from 'monaco-editor'
+import Editor, { loader } from '@monaco-editor/react'
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+import 'monaco-editor/esm/vs/editor/browser/coreCommands'
+import 'monaco-editor/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget'
+import 'monaco-editor/esm/vs/editor/contrib/bracketMatching/browser/bracketMatching'
+import 'monaco-editor/esm/vs/editor/contrib/clipboard/browser/clipboard'
+import 'monaco-editor/esm/vs/editor/contrib/comment/browser/comment'
+import 'monaco-editor/esm/vs/editor/contrib/contextmenu/browser/contextmenu'
+import 'monaco-editor/esm/vs/editor/contrib/cursorUndo/browser/cursorUndo'
+import 'monaco-editor/esm/vs/editor/contrib/find/browser/findController'
+import 'monaco-editor/esm/vs/editor/contrib/folding/browser/folding'
+import 'monaco-editor/esm/vs/editor/contrib/format/browser/formatActions'
+import 'monaco-editor/esm/vs/editor/contrib/gotoError/browser/gotoError'
+import 'monaco-editor/esm/vs/editor/contrib/hover/browser/hoverContribution'
+import 'monaco-editor/esm/vs/editor/contrib/indentation/browser/indentation'
+import 'monaco-editor/esm/vs/editor/contrib/linesOperations/browser/linesOperations'
+import 'monaco-editor/esm/vs/editor/contrib/multicursor/browser/multicursor'
+import 'monaco-editor/esm/vs/editor/contrib/snippet/browser/snippetController2'
+import 'monaco-editor/esm/vs/editor/contrib/suggest/browser/suggestController'
+import 'monaco-editor/esm/vs/editor/contrib/tokenization/browser/tokenization'
+import 'monaco-editor/esm/vs/editor/contrib/wordHighlighter/browser/wordHighlighter'
+import 'monaco-editor/esm/vs/editor/contrib/wordOperations/browser/wordOperations'
+import 'monaco-editor/esm/vs/editor/common/standaloneStrings'
+import 'monaco-editor/esm/vs/base/browser/ui/codicons/codicon/codicon.css'
+import 'monaco-editor/esm/vs/base/browser/ui/codicons/codicon/codicon-modifiers.css'
+import 'monaco-editor/esm/vs/basic-languages/cpp/cpp.contribution'
+import 'monaco-editor/esm/vs/basic-languages/csharp/csharp.contribution'
+import 'monaco-editor/esm/vs/basic-languages/go/go.contribution'
+import 'monaco-editor/esm/vs/basic-languages/java/java.contribution'
+import 'monaco-editor/esm/vs/basic-languages/javascript/javascript.contribution'
+import 'monaco-editor/esm/vs/basic-languages/kotlin/kotlin.contribution'
+import 'monaco-editor/esm/vs/basic-languages/php/php.contribution'
+import 'monaco-editor/esm/vs/basic-languages/python/python.contribution'
+import 'monaco-editor/esm/vs/basic-languages/ruby/ruby.contribution'
+import 'monaco-editor/esm/vs/basic-languages/rust/rust.contribution'
+import 'monaco-editor/esm/vs/basic-languages/swift/swift.contribution'
+import 'monaco-editor/esm/vs/basic-languages/typescript/typescript.contribution'
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import { type editor } from 'monaco-editor/esm/vs/editor/editor.api'
+
+type MonacoWorkerEnvironment = {
+  getWorker: () => Worker
+}
+
+;(globalThis as unknown as { MonacoEnvironment: MonacoWorkerEnvironment }).MonacoEnvironment = {
+  getWorker: () => new editorWorker(),
+}
 
 loader.config({ monaco })
 
@@ -50,7 +94,7 @@ export function MonacoEditor({
 
   const monacoLanguage = LANGUAGE_CONFIG[language] || language
 
-  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor, monaco: Monaco) => {
+  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor, monacoApi: typeof monaco) => {
     editorRef.current = editor
 
     // 配置编辑器选项
@@ -85,7 +129,7 @@ export function MonacoEditor({
     })
 
     // 配置主题
-    monaco.editor.defineTheme('custom-dark', {
+    monacoApi.editor.defineTheme('custom-dark', {
       base: 'vs-dark',
       inherit: true,
       rules: [
@@ -108,7 +152,7 @@ export function MonacoEditor({
     })
 
     // 添加自定义代码片段
-    monaco.languages.registerCompletionItemProvider(monacoLanguage, {
+    monacoApi.languages.registerCompletionItemProvider(monacoLanguage, {
       provideCompletionItems: (model: any, position: any) => {
         const word = model.getWordUntilPosition(position)
         const range = {
@@ -122,23 +166,23 @@ export function MonacoEditor({
         const suggestions = [
           {
             label: 'for',
-            kind: monaco.languages.CompletionItemKind.Snippet,
+            kind: monacoApi.languages.CompletionItemKind.Snippet,
             insertText: 'for (${1:int} ${2:i} = 0; $2 < ${3:n}; $2++) {\n\t$0\n}',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            insertTextRules: monacoApi.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             range,
           },
           {
             label: 'if',
-            kind: monaco.languages.CompletionItemKind.Snippet,
+            kind: monacoApi.languages.CompletionItemKind.Snippet,
             insertText: 'if (${1:condition}) {\n\t$0\n}',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            insertTextRules: monacoApi.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             range,
           },
           {
             label: 'while',
-            kind: monaco.languages.CompletionItemKind.Snippet,
+            kind: monacoApi.languages.CompletionItemKind.Snippet,
             insertText: 'while (${1:condition}) {\n\t$0\n}',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            insertTextRules: monacoApi.languages.CompletionItemInsertTextRule.InsertAsSnippet,
             range,
           },
         ]
@@ -148,13 +192,13 @@ export function MonacoEditor({
     })
 
     // 添加键盘快捷键
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+    editor.addCommand(monacoApi.KeyMod.CtrlCmd | monacoApi.KeyCode.KeyS, () => {
       // Prevent browser's default save dialog — no-op placeholder.
       // TODO: wire up an onSave callback prop when needed.
     })
 
     // 格式化文档
-    editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => {
+    editor.addCommand(monacoApi.KeyMod.Shift | monacoApi.KeyCode.KeyF, () => {
       editor.getAction('editor.action.formatDocument')?.run()
     })
   }

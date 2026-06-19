@@ -7,22 +7,22 @@ describe('Card', () => {
     render(<Card>Card content</Card>)
     const card = screen.getByText('Card content')
     expect(card).toHaveAttribute('data-slot', 'card')
-    expect(card).toHaveClass('rounded-[10px]')
+    expect(card).toHaveClass('rounded-[8px]')
     expect(card).toHaveClass('bg-card')
-    expect(card).toHaveClass('shadow-card')
+    expect(card).toHaveClass('border')
   })
 
   it('renders glass variant', () => {
     render(<Card variant="glass">Glass card</Card>)
     const card = screen.getByText('Glass card')
-    expect(card).toHaveClass('backdrop-blur-2xl')
-    expect(card).toHaveClass('bg-background/65')
+    expect(card).toHaveClass('bg-card')
+    expect(card).toHaveClass('hover:bg-muted')
   })
 
   it('renders elevated variant', () => {
     render(<Card variant="elevated">Elevated</Card>)
     const card = screen.getByText('Elevated')
-    expect(card).toHaveClass('shadow-elevated')
+    expect(card).toHaveClass('border-foreground')
   })
 
   it('renders outlined variant', () => {

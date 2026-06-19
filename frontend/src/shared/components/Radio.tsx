@@ -87,8 +87,8 @@ function RadioItem({
         <label
           htmlFor={radioId}
           className={cn(
-            "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 transition-all duration-200",
-            "peer-focus-visible:ring-4 peer-focus-visible:ring-primary/20",
+            "flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors duration-150",
+            "peer-focus-visible:ring-2 peer-focus-visible:ring-ring/30",
             "peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
             // Unchecked state
             !checked && [
@@ -98,7 +98,6 @@ function RadioItem({
             // Checked state
             checked && [
               "border-primary bg-primary",
-              "shadow-sm shadow-primary/25",
             ],
             // Error state
             error && "border-destructive"

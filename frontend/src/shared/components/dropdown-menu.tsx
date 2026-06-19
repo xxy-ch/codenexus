@@ -41,10 +41,8 @@ function DropdownMenuContent({
           data-slot="dropdown-menu-content"
           className={cn(
             "z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto p-1.5 text-foreground",
-            // Glass effect
-            "bg-popover/90 backdrop-blur-xl",
-            "border border-border/50 rounded-xl",
-            "shadow-elevated",
+            "bg-popover",
+            "border border-border rounded-[8px]",
             // Animations
             "duration-200 outline-none",
             "data-[side=bottom]:slide-in-from-top-2",
@@ -104,7 +102,7 @@ function DropdownMenuItem({
       data-inset={inset}
       data-variant={variant}
       className={cn(
-        "group/dropdown-menu-item relative flex cursor-default items-center gap-2 rounded-lg px-2 py-1.5 text-sm outline-hidden select-none",
+        "group/dropdown-menu-item relative flex cursor-default items-center gap-2 rounded-none px-2 py-1.5 text-sm outline-hidden select-none",
         "transition-colors duration-150",
         "focus:bg-accent focus:text-accent-foreground",
         "not-data-[variant=destructive]:focus:**:text-accent-foreground",
