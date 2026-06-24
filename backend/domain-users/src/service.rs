@@ -39,9 +39,14 @@ impl UserService {
     }
 
     pub async fn register(&self, req: RegisterRequest) -> Result<UserProfile> {
-        // Validate password complexity
+        // Validate password: min 8, max 72 bytes (bcrypt input limit — bcrypt
+        // silently truncates beyond 72 bytes, causing false-positive matches
+        // between passwords sharing the same 72-byte prefix).
         if req.password.len() < 8 {
             return Err(anyhow::anyhow!("Password must be at least 8 characters"));
+        }
+        if req.password.len() > 72 {
+            return Err(anyhow::anyhow!("Password must be at most 72 bytes (bcrypt limit)"));
         }
 
         // Validate organization exists
@@ -103,7 +108,9 @@ impl UserService {
         // SECURITY: Wrap uniqueness checks + INSERT in transaction to prevent TOCTOU race
         let mut tx = self.pool.begin().await?;
 
-        // Check if username already exists (inside transaction for atomicity)
+        // Check if username already exists (inside transaction for atomicity).
+        // Use a generic error to prevent account enumeration — an attacker
+        // should not be able to distinguish "username taken" from "email taken".
         let existing_user =
             sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE username = $1")
                 .bind(&req.username)
@@ -111,7 +118,7 @@ impl UserService {
                 .await?;
 
         if existing_user.is_some() {
-            return Err(anyhow::anyhow!("Username already exists"));
+            return Err(anyhow::anyhow!("Registration failed: an account with these credentials already exists"));
         }
 
         if let Some(user_code) = &req.user_code {
@@ -122,7 +129,7 @@ impl UserService {
                     .await?;
 
             if existing_user_code.is_some() {
-                return Err(anyhow::anyhow!("User code already exists"));
+                return Err(anyhow::anyhow!("Registration failed: an account with these credentials already exists"));
             }
         }
 
@@ -136,7 +143,7 @@ impl UserService {
                         .await?;
 
                 if existing_email.is_some() {
-                    return Err(anyhow::anyhow!("Email already exists"));
+                    return Err(anyhow::anyhow!("Registration failed: an account with these credentials already exists"));
                 }
             }
         }
@@ -465,6 +472,11 @@ impl UserService {
             if password.len() < 8 {
                 return Err(anyhow::anyhow!(
                     "Password must be at least 8 characters"
+                ));
+            }
+            if password.len() > 72 {
+                return Err(anyhow::anyhow!(
+                    "Password must be at most 72 bytes (bcrypt limit)"
                 ));
             }
             // Require proof of the current password to prevent a stolen session

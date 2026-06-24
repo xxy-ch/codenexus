@@ -360,6 +360,11 @@ fn create_router(
             middleware::request_id::request_id_middleware,
         ))
         .layer(cors)
+        // Global body limit: 2 MiB for all JSON endpoints. Individual upload
+        // routes (imex) override with larger limits (10-50 MiB). This
+        // defense-in-depth guard prevents unbounded body reads on endpoints
+        // that don't explicitly set a higher limit.
+        .layer(axum::extract::DefaultBodyLimit::max(2 * 1024 * 1024))
         .with_state(state)
 }
 

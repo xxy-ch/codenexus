@@ -87,6 +87,15 @@ impl AppConfig {
                 return Err(AppStartupError::MissingSecret("JWT_SECRET"));
             }
         };
+        // Enforce minimum secret length: HS256 is brute-forceable offline if
+        // an attacker obtains any token. 32 bytes (256 bits) is the minimum
+        // recommended for HMAC-SHA256 per NIST SP 800-107.
+        if jwt_secret.len() < 32 {
+            return Err(AppStartupError::InvalidValue {
+                key: "JWT_SECRET",
+                reason: "must be at least 32 bytes for HS256 security".to_string(),
+            });
+        }
 
         let worker_secret = match env::var("WORKER_SECRET") {
             Ok(v) if !v.is_empty() => v,
@@ -94,6 +103,14 @@ impl AppConfig {
                 return Err(AppStartupError::MissingSecret("WORKER_SECRET"));
             }
         };
+        // WORKER_SECRET is used for HMAC-style callback authentication; enforce
+        // the same 32-byte minimum to prevent brute-force on the worker callback.
+        if worker_secret.len() < 32 {
+            return Err(AppStartupError::InvalidValue {
+                key: "WORKER_SECRET",
+                reason: "must be at least 32 bytes".to_string(),
+            });
+        }
 
         let database_url =
             env::var("DATABASE_URL").map_err(|_| AppStartupError::MissingSecret("DATABASE_URL"))?;
@@ -133,8 +150,8 @@ impl AppConfig {
             app_env: AppEnv::Test,
             database_url: "postgres://localhost/test".to_string(),
             redis_url: "redis://127.0.0.1:6379".to_string(),
-            jwt_secret: "test-jwt-secret".to_string(),
-            worker_secret: "test-worker-secret".to_string(),
+            jwt_secret: "test-jwt-secret-must-be-at-least-32b".to_string(),
+            worker_secret: "test-worker-secret-must-be-32b-long".to_string(),
             bind_address: "0.0.0.0:0".to_string(),
             cors_origins: vec!["*".to_string()],
         }
@@ -233,7 +250,7 @@ mod tests {
     fn test_missing_worker_secret_in_production() {
         let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::set_var("APP_ENV", "production");
-        std::env::set_var("JWT_SECRET", "a-real-secret");
+        std::env::set_var("JWT_SECRET", "a-real-secret-must-be-at-least-32-bytes");
         std::env::remove_var("WORKER_SECRET");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
 
@@ -252,7 +269,7 @@ mod tests {
         let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::set_var("APP_ENV", "production");
         std::env::set_var("JWT_SECRET", ""); // empty string
-        std::env::set_var("WORKER_SECRET", "real-secret");
+        std::env::set_var("WORKER_SECRET", "real-secret-must-be-at-least-32-bytes!");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
 
         let result = AppConfig::from_env();
@@ -267,7 +284,7 @@ mod tests {
         let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::remove_var("APP_ENV");
         std::env::remove_var("JWT_SECRET");
-        std::env::set_var("WORKER_SECRET", "real-secret");
+        std::env::set_var("WORKER_SECRET", "real-secret-must-be-at-least-32-bytes!");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
 
         let result = AppConfig::from_env();
@@ -286,8 +303,8 @@ mod tests {
             "CORS_ORIGINS",
         ]);
         std::env::set_var("APP_ENV", "production");
-        std::env::set_var("JWT_SECRET", "real-secret");
-        std::env::set_var("WORKER_SECRET", "real-secret");
+        std::env::set_var("JWT_SECRET", "real-secret-must-be-at-least-32-bytes!");
+        std::env::set_var("WORKER_SECRET", "real-secret-must-be-at-least-32-bytes!");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
         std::env::remove_var("CORS_ORIGINS");
 
@@ -303,8 +320,8 @@ mod tests {
     fn test_development_cors_allows_all() {
         let _guard = EnvGuard::new(&["APP_ENV", "JWT_SECRET", "WORKER_SECRET", "DATABASE_URL"]);
         std::env::remove_var("APP_ENV");
-        std::env::set_var("JWT_SECRET", "dev-secret");
-        std::env::set_var("WORKER_SECRET", "dev-secret");
+        std::env::set_var("JWT_SECRET", "dev-secret-must-be-at-least-32-bytes!");
+        std::env::set_var("WORKER_SECRET", "dev-secret-must-be-at-least-32-bytes!");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
 
         let config = AppConfig::from_env().unwrap();
@@ -321,8 +338,8 @@ mod tests {
             "CORS_ORIGINS",
         ]);
         std::env::set_var("APP_ENV", "production");
-        std::env::set_var("JWT_SECRET", "real-secret");
-        std::env::set_var("WORKER_SECRET", "real-secret");
+        std::env::set_var("JWT_SECRET", "real-secret-must-be-at-least-32-bytes!");
+        std::env::set_var("WORKER_SECRET", "real-secret-must-be-at-least-32-bytes!");
         std::env::set_var("DATABASE_URL", "postgres://localhost/test");
         std::env::set_var(
             "CORS_ORIGINS",
@@ -343,8 +360,8 @@ mod tests {
     fn test_test_config() {
         let config = AppConfig::test_config();
         assert_eq!(config.app_env, AppEnv::Test);
-        assert_eq!(config.jwt_secret, "test-jwt-secret");
-        assert_eq!(config.worker_secret, "test-worker-secret");
+        assert_eq!(config.jwt_secret, "test-jwt-secret-must-be-at-least-32b");
+        assert_eq!(config.worker_secret, "test-worker-secret-must-be-32b-long");
         assert_eq!(config.cors_origins, vec!["*"]);
     }
 }
