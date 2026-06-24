@@ -112,6 +112,24 @@ impl SubmissionService {
             ));
         }
 
+        // DoS protection: limit the number of in-flight (queued/pending/judging)
+        // submissions per user. Prevents a single user from flooding the judge
+        // queue with thousands of concurrent submissions.
+        const MAX_INFLIGHT_SUBMISSIONS: i64 = 10;
+        let inflight_count = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM submissions WHERE user_id = $1 AND status IN ('queued', 'pending', 'judging')",
+        )
+        .bind(user_id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        if inflight_count >= MAX_INFLIGHT_SUBMISSIONS {
+            return Err(anyhow::anyhow!(
+                "You have {} submissions being processed. Please wait for some to complete before submitting again.",
+                inflight_count
+            ));
+        }
+
         // Validate problem exists AND belongs to the user's organization (SEC-03 tenant check)
         let problem_exists = sqlx::query_scalar::<_, bool>(
             "SELECT EXISTS(SELECT 1 FROM problems WHERE id = $1 AND organization_id = $2)",

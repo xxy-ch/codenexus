@@ -35,8 +35,8 @@ impl BlogService {
         filters: ArticleFilters,
         organization_id: i64,
     ) -> Result<ArticleListResponse> {
-        let page = filters.page.unwrap_or(1);
-        let limit = filters.limit.unwrap_or(20);
+        let page = filters.page.unwrap_or(1).max(1);
+        let limit = filters.limit.unwrap_or(20).clamp(1, 100);
         let offset = (page - 1) * limit;
 
         // Build parameterized query (SECURITY: no string interpolation with user input)

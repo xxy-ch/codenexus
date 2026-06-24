@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **Online_Judge** (7402 symbols, 15336 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **Online_Judge** (7487 symbols, 15618 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -104,22 +104,16 @@ To check whether embeddings exist, inspect `.gitnexus/meta.json` — the `stats.
 <claude-mem-context>
 # Memory Context
 
-# [Online_Judge] recent context, 2026-06-09 10:45am GMT+8
+# [Online_Judge] recent context, 2026-06-19 11:23am GMT+8
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 50 obs (10,030t read) | 862,514t work | 99% savings
+Stats: 50 obs (10,581t read) | 821,360t work | 99% savings
 
-### Apr 10, 2026
-248 8:12a 🔵 User requested to examine Shared repository and run gitnexus
-### Apr 11, 2026
-262 8:11a 🔵 User requested to examine Shared repository and run gitnexus
 ### Apr 14, 2026
-325 8:00a 🔵 Available Tools Queried in Online Judge Project
-326 8:01a 🔵 GSD Discuss Mode Configuration Checked
-327 " 🔵 GSD Discuss-Phase Workflow Documentation Reviewed
+327 8:01a 🔵 GSD Discuss-Phase Workflow Documentation Reviewed
 328 " 🔵 GSD Phase 2 Initialization Completed
 329 " 🔵 Online Judge PROJECT.md System Overview Reviewed
 330 " 🔵 Online Judge REQUIREMENTS.md Phase 2 Mapping Reviewed
@@ -182,28 +176,34 @@ S202 Parallel code reviews and build verification for Online Judge backend (Apr 
 720 12:08a 🔵 OJ System Analysis Initiated
 ### May 30, 2026
 721 9:27a ⚖️ Updated implementation plan for OJ full workflow verification
-**722** 9:53a 🔵 **Found demo user records in bootstrap SQL**
-While searching for specific strings in the bootstrap demo SQL and migration files, the rg command revealed that scripts/bootstrap_demo.sql contains predefined demo user records. These records include UUIDs, usernames, email placeholders, identical password hashes, role assignments, and active status, indicating the data is used for initial system setup or testing.
-~235t 🔍 3,266
-
-**723** " 🔵 **Verified demo users exist in database**
-After executing a SQL query against the PostgreSQL database in the Docker container, the system confirmed that the demo user records inserted via bootstrap_demo.sql are present in the users table. This verifies that the database initialization succeeded and the test accounts are available for system validation.
-~196t 🔍 5,001
-
-**724** " 🔵 **Reviewed browser automation skill documentation**
-The user examined the browser skill documentation to understand proper procedures for in-app browser automation, including setup, runtime behavior, API usage, and best practices for reliable browser interactions in the Codex environment. This informs subsequent testing and validation steps for the Online Judge system.
-~227t 🔍 10,328
-
+722 9:53a 🔵 Found demo user records in bootstrap SQL
+723 " 🔵 Verified demo users exist in database
+724 " 🔵 Reviewed browser automation skill documentation
 ### Jun 3, 2026
-**741** 5:43p ✅ **Project plan updated to reflect current progress**
-The user updated the project plan to track progress toward the goal of making the repository production-ready. The plan now shows that verification of the main worktree and its fixes is complete, the UI worktree's modular routing implementation is being checked, and a final summary audit will be performed once the UI worktree verification finishes.
-~170t 🛠️ 2,385
-
+741 5:43p ✅ Project plan updated to reflect current progress
 ### Jun 5, 2026
 **746** 8:05p ⚖️ **Updated remediation plan for production readiness**
 The user updated the project plan to outline concrete actions needed to achieve production‑ready status: first verify current uncommitted changes and impacted symbols, then address missing production and registration configurations, mitigate frontend token exposure, resolve MD5 migration comment inconsistencies, and finally run focused tests and build checks to confirm all functionality works for student, root, and teacher scenarios.
 ~229t ⚖️ 2,709
 
+### Jun 18, 2026
+**869** 6:07p 🔵 **Goal creation blocked by existing unfinished goal**
+The user tried to set a new goal for constructing and replacing a production Docker image, running final release tests, verifying all role operations, and checking for dead code and frontend state. However, the system prevented goal creation because an earlier goal in the same thread remains unfinished, indicating that goal management requires completion or cancellation of prior goals before starting a new one.
+~231t 🔍 2,672
 
-Access 863k tokens of past work via get_observations([IDs]) or mem-search skill.
+**870** " 🔵 **Repository status shows master branch ahead of origin with local modifications**
+The user ran pwd and git status to check the repository state. The output shows they are in the Online_Judge project directory, on the master branch which is 45 commits ahead of the remote origin/master, and there is a local modification to the file AGENTS.md. This indicates ongoing work that has not been pushed to the remote repository.
+~173t 🔍 3,439
+
+**871** " 🔵 **Memory file reveals Online_Judge production hardening details and regression notes**
+The ripgrep search of MEMORY.md uncovered historical notes about the Online_Judge project: ongoing production hardening tasks, recorded rollout summaries with live verification steps, the Docker-based deployment workflow and health checks, the account seeding script, and details of a teacher/class statistics regression where the student list was fixed but the summary stats remained broken. It also notes the correct way to build the API image and confirms the judge pipeline works with a real submission. This provides context for the current goal of building a production image and running final release tests.
+~497t 🔍 7,513
+
+### Jun 19, 2026
+**880** 9:08a ✅ **Updated project plan for Online Judge UI optimization**
+The user updated the project plan in the Online Judge repository to outline a structured approach for UI optimization and production readiness. The plan begins with reviewing the current git and frontend status, proceeds to select UI optimization directions using design/production tools, then implement style improvements including shadows, icons, spacing, interactions, color scheme, and typography. After implementation, the plan calls for dead code detection and validation via build, type checking, and browser testing, concluding with committing and pushing changes to GitHub.
+~250t 🛠️ 2,796
+
+
+Access 821k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

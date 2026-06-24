@@ -67,6 +67,11 @@ async fn create_stream(pool: &Pool, stream_name: &str) -> Result<(), deadpool_re
 ///
 /// # Returns
 /// The ID of the added message.
+///
+/// Uses `MAXLEN ~ 50000` to cap the stream at ~50k entries (approximate
+/// trimming). This prevents unbounded growth if judge workers fall behind.
+/// 50k is well above the expected backlog for any realistic deployment;
+/// older entries are trimmed automatically by Redis.
 async fn add_message(
     pool: &Pool,
     stream_name: &str,
@@ -74,7 +79,14 @@ async fn add_message(
 ) -> Result<String, deadpool_redis::PoolError> {
     let mut conn = pool.get().await?;
     let mut cmd = deadpool_redis::redis::cmd("XADD");
-    cmd.arg(stream_name).arg("*");
+    cmd.arg(stream_name)
+       // MAXLEN ~ N: approximate trim to ~50k entries. The `~` flag
+       // lets Redis use a fast probabilistic trim (O(1) amortized)
+       // instead of exact trimming. Messages already in the PEL
+       // (pending entries list — consumed but not ACKed) are NOT
+       // trimmed, so in-flight submissions are never lost.
+       .arg("MAXLEN").arg("~").arg("50000")
+       .arg("*");
     for (key, value) in fields {
         cmd.arg(key).arg(value);
     }

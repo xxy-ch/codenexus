@@ -73,11 +73,31 @@ pub fn parse_user_csv(
 
     let mut rows = Vec::new();
 
+    // DoS protection: cap the number of rows we process. A 10MB CSV can
+    // contain hundreds of thousands of short rows; without this cap the
+    // entire file is parsed and stored in memory.
+    const MAX_ROWS: usize = 10000;
+    let mut row_count = 0;
+
     // First pass: parse all rows, collecting username frequencies
     let mut username_counts: std::collections::HashMap<String, usize> =
         std::collections::HashMap::new();
 
     for record_result in reader.records() {
+        if row_count >= MAX_ROWS {
+            rows.push(UserImportRow {
+                username: String::new(),
+                role: String::new(),
+                campus_id: 0,
+                grade_id: None,
+                display_name: String::new(),
+                email: None,
+                status: ImportItemStatus::Error,
+                warning: Some(format!("CSV has more than {} rows. Only the first {} rows will be imported.", MAX_ROWS, MAX_ROWS)),
+            });
+            break;
+        }
+        row_count += 1;
         let record = match record_result {
             Ok(r) => r,
             Err(e) => {
