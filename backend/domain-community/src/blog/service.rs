@@ -160,10 +160,12 @@ impl BlogService {
         .await?;
 
         // Get comments (tenant-scoped to prevent cross-org data leakage from dirty data)
+        // LIMIT 500 to prevent unbounded result sets on very commented articles.
         let comments = sqlx::query_as::<_, ArticleComment>(
             "SELECT * FROM article_comments
              WHERE article_id = $1 AND organization_id = $2
-             ORDER BY created_at ASC",
+             ORDER BY created_at ASC
+             LIMIT 500",
         )
         .bind(article.id)
         .bind(organization_id)

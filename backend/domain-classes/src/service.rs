@@ -1174,6 +1174,7 @@ impl ClassService {
                 AND s.created_at >= COALESCE(a.published_at, a.created_at)
             WHERE a.id = $1
             ORDER BY s.created_at DESC
+            LIMIT 500
             "#
         )
         .bind(assignment_id)

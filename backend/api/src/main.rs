@@ -185,9 +185,9 @@ fn create_router(
             .unwrap(),
     );
 
-    // Clone the pause flag for both rate_limited_public and protected_router.
+    // Clone the pause flag for all public routers.
     let api_paused_public = api_paused.clone();
-    let api_paused_protected = api_paused;
+    let api_paused_auth = api_paused.clone();
 
     // Unrestricted endpoints: health probes, metrics, worker heartbeat
     // These must not be rate-limited to avoid breaking infrastructure
@@ -208,11 +208,32 @@ fn create_router(
         // Internal judge result callback (auth via X-Worker-Secret, not JWT)
         .nest("/submissions", domain_submissions::worker_results_router());
 
-    // Rate-limited public endpoints (auth, websocket)
-    let rate_limited_public = Router::new()
+    // Stricter rate limit for auth endpoints (credential stuffing / registration flood).
+    // 3 req/s per IP with burst of 5 — tight enough to block brute-force but
+    // generous enough for legitimate retry-after-typo.
+    let auth_governor_config = std::sync::Arc::new(
+        GovernorConfigBuilder::default()
+            .per_second(3)
+            .burst_size(5)
+            .finish()
+            .unwrap(),
+    );
+
+    // Rate-limited auth endpoints (stricter governor for credential endpoints)
+    let auth_router = Router::new()
         .route("/auth/login", post(auth::login))
-        .route("/auth/refresh", post(auth::refresh))
         .route("/auth/register", post(auth::register))
+        .layer(axum::middleware::from_fn(move |req, next| {
+            let flag = api_paused_auth.clone();
+            async move { middleware::control_signal::pause_middleware(flag, req, next).await }
+        }))
+        .layer(GovernorLayer {
+            config: auth_governor_config,
+        });
+
+    // Rate-limited public endpoints (refresh, websocket)
+    let rate_limited_public = Router::new()
+        .route("/auth/refresh", post(auth::refresh))
         .route("/ws", get(websocket::handler::websocket_upgrade_handler))
         .layer(axum::middleware::from_fn(move |req, next| {
             let flag = api_paused_public.clone();
@@ -319,7 +340,7 @@ fn create_router(
         ))
         // Control-signal pause middleware: returns 503 when paused.
         .layer(axum::middleware::from_fn(move |req, next| {
-            let flag = api_paused_protected.clone();
+            let flag = api_paused.clone();
             async move { middleware::control_signal::pause_middleware(flag, req, next).await }
         }))
         .layer(GovernorLayer {
@@ -329,6 +350,7 @@ fn create_router(
     // Layer ordering: CORS -> request id -> metrics -> handler
     // Rate limiting applied per-router above (not on unrestricted routes)
     unrestricted_router
+        .merge(auth_router)
         .merge(rate_limited_public)
         .merge(protected_router)
         .route_layer(axum::middleware::from_fn(

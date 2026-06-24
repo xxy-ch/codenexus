@@ -140,10 +140,12 @@ impl DiscussionService {
         .await?;
 
         // Get replies (tenant-scoped to prevent cross-org data leakage from dirty data)
+        // LIMIT 500 to prevent unbounded result sets on very long threads.
         let replies = sqlx::query_as::<_, DiscussionReply>(
             "SELECT * FROM discussion_replies
              WHERE discussion_id = $1 AND organization_id = $2
-             ORDER BY created_at ASC",
+             ORDER BY created_at ASC
+             LIMIT 500",
         )
         .bind(id)
         .bind(organization_id)
