@@ -1085,7 +1085,7 @@ impl ClassService {
     /// List assignments for class
     pub async fn list_assignments(&self, class_id: i64) -> Result<Vec<Assignment>> {
         let assignments = sqlx::query_as::<_, Assignment>(
-            "SELECT id, class_id, problem_id, deadline, points, published_at, created_at, updated_at FROM assignments WHERE class_id = $1 ORDER BY deadline ASC"
+            "SELECT id, class_id, problem_id, deadline, points, published_at, created_at, updated_at FROM assignments WHERE class_id = $1 ORDER BY deadline ASC LIMIT 200"
         )
         .bind(class_id)
         .fetch_all(&self.pool)

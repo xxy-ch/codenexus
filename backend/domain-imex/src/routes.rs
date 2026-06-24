@@ -272,9 +272,10 @@ pub async fn validate_problem_import(
     let fields = collect_multipart_fields(&mut multipart).await?;
     let file_bytes = get_file_field(&fields, "file")?;
 
-    // Query existing problem titles for the organization to detect duplicates
+    // Query existing problem titles for the organization to detect duplicates.
+    // LIMIT 50000 caps memory usage for very large orgs.
     let existing_titles: Vec<String> =
-        sqlx::query_scalar("SELECT title FROM problems WHERE organization_id = $1")
+        sqlx::query_scalar("SELECT title FROM problems WHERE organization_id = $1 LIMIT 50000")
             .bind(claims.school_id)
             .fetch_all(&state.db_pool)
             .await
@@ -647,9 +648,10 @@ pub async fn validate_user_import(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    // Query existing usernames within the caller's organization to detect duplicates
+    // Query existing usernames within the caller's organization to detect duplicates.
+    // LIMIT 50000 caps memory usage for very large orgs.
     let existing_usernames: Vec<String> =
-        sqlx::query_scalar("SELECT username FROM users WHERE organization_id = $1")
+        sqlx::query_scalar("SELECT username FROM users WHERE organization_id = $1 LIMIT 50000")
             .bind(claims.school_id)
             .fetch_all(&state.db_pool)
             .await
@@ -1034,6 +1036,7 @@ pub async fn export_users(
                     WHEN 'student' THEN 6
                     ELSE 7
                 END ASC
+            LIMIT 10000
             "#,
         )
         .bind(claims.school_id)
@@ -1061,6 +1064,7 @@ pub async fn export_users(
                     WHEN 'student' THEN 6
                     ELSE 7
                 END ASC
+            LIMIT 10000
             "#,
         )
         .bind(claims.school_id)
@@ -1086,6 +1090,7 @@ pub async fn export_users(
                     WHEN 'student' THEN 6
                     ELSE 7
                 END ASC
+            LIMIT 10000
             "#,
         )
         .bind(claims.school_id)
