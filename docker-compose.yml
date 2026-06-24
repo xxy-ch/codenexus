@@ -94,7 +94,7 @@ services:
     container_name: online-judge-api
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       APP_ENV: production
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
@@ -106,7 +106,7 @@ services:
       PUBLIC_REGISTRATION_GRADE_ID: ${PUBLIC_REGISTRATION_GRADE_ID:-}
       API_BIND_ADDRESS: 0.0.0.0:3000
       FEATURE_GATEWAY_URL: http://feature-gateway:3001
-      RUST_LOG: api=debug,tower_http=debug,axum=trace
+      RUST_LOG: api=info,tower_http=warn,axum=warn
     depends_on:
       postgres:
         condition: service_healthy
@@ -143,7 +143,7 @@ services:
     container_name: online-judge-feature-gateway
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "127.0.0.1:3001:3001"
     environment:
       APP_ENV: production
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
