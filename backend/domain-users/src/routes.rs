@@ -94,6 +94,20 @@ async fn batch_create_users(
     // SECURITY: Force organization_id from JWT claims, never trust client input
     request.organization_id = claims.school_id;
 
+    // DoS protection: cap the batch size. Each entry triggers a bcrypt hash
+    // (CPU-intensive, ~100ms at default cost) plus multiple DB queries.
+    // Without this cap, an admin can submit tens of thousands of entries
+    // in a single request, causing a long-running synchronous loop that
+    // holds DB connections and burns CPU.
+    const MAX_BATCH_SIZE: usize = 500;
+    if request.users.len() > MAX_BATCH_SIZE {
+        return Err(AppError::Validation(format!(
+            "Batch size {} exceeds maximum of {} users per request",
+            request.users.len(),
+            MAX_BATCH_SIZE
+        )));
+    }
+
     // SECURITY: Prevent privilege escalation — validate each requested role
     // does not equal or exceed the caller's role level (no same-level granting)
     let caller_role = claims

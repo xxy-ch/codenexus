@@ -133,9 +133,13 @@ impl UserService {
             }
         }
 
-        // Check if email already exists (if provided)
+        // Validate + check email uniqueness (if provided)
         if let Some(ref email) = req.email {
             if !email.is_empty() {
+                // Validate email format — register and batch_create both flow
+                // through here, so this catches malformed emails in both paths.
+                Self::validate_email_format(email)?;
+
                 let existing_email =
                     sqlx::query_scalar::<_, Uuid>("SELECT id FROM users WHERE email = $1")
                         .bind(email)

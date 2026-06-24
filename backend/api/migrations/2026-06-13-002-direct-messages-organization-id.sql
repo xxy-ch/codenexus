@@ -15,10 +15,21 @@
 -- 1. direct_conversations: add + backfill + constrain organization_id.
 ALTER TABLE direct_conversations ADD COLUMN IF NOT EXISTS organization_id BIGINT;
 
+-- Backfill from user1_id. Orphaned conversations (user1_id no longer in
+-- users) cannot be backfilled — delete them first so SET NOT NULL does not
+-- fail on a NULL organization_id.
+DELETE FROM direct_conversations
+WHERE user1_id NOT IN (SELECT id FROM users);
+
 UPDATE direct_conversations c
 SET organization_id = u.organization_id
 FROM users u
 WHERE c.user1_id = u.id AND c.organization_id IS NULL;
+
+-- Safety: if any row still has NULL (edge case from a race), set it to a
+-- sentinel so SET NOT NULL succeeds. NULL-org conversations are useless
+-- anyway since no query would match them.
+UPDATE direct_conversations SET organization_id = 0 WHERE organization_id IS NULL;
 
 ALTER TABLE direct_conversations ALTER COLUMN organization_id SET NOT NULL;
 
@@ -34,10 +45,18 @@ CREATE INDEX IF NOT EXISTS idx_direct_conversations_organization
 -- 2. direct_messages: add + backfill + constrain organization_id.
 ALTER TABLE direct_messages ADD COLUMN IF NOT EXISTS organization_id BIGINT;
 
+-- Delete orphaned messages (conversation_id no longer exists) before
+-- backfill, so SET NOT NULL cannot fail on a NULL org.
+DELETE FROM direct_messages
+WHERE conversation_id NOT IN (SELECT id FROM direct_conversations);
+
 UPDATE direct_messages m
 SET organization_id = c.organization_id
 FROM direct_conversations c
 WHERE m.conversation_id = c.id AND m.organization_id IS NULL;
+
+-- Safety fallback for any edge-case NULL rows.
+UPDATE direct_messages SET organization_id = 0 WHERE organization_id IS NULL;
 
 ALTER TABLE direct_messages ALTER COLUMN organization_id SET NOT NULL;
 
